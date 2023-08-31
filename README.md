@@ -1,7 +1,7 @@
 <div align="center">
   <img width="256" src="./public/favicon.ico" alt="logo">
 
-# maimai DX Prober
+# 落雪咖啡屋 maimai DX 查分器
 该项目为落雪咖啡屋 maimai DX 查分器的前端部分，使用 React + TypeScript + Vite 编写。
 </div>
 
