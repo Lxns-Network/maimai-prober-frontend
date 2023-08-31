@@ -3,10 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 const useStyles = createStyles((theme) => ({
   root: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "calc(100vh - 112px)",
+    paddingTop: rem(80),
+    paddingBottom: rem(80),
   },
 
   content: {

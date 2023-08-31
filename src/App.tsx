@@ -13,6 +13,8 @@ import Header from "./components/Layout/Header";
 import Home from "./components/Home";
 import NotFound from "./components/NotFound";
 import Login from "./components/Login";
+import Settings from "./components/Settings";
+import RouterTransition from "./components/Layout/RouterTransition";
 
 export const NAVBAR_WIDTH = 300;
 export const NAVBAR_BREAKPOINT = 800;
@@ -52,12 +54,14 @@ export default function App() {
         withNormalizeCSS
         theme={{ colorScheme }}
       >
+        <RouterTransition />
         <Navbar opened={opened} onClose={toggle} />
         <Header navbarOpened={opened} onNavbarToggle={toggle} />
         <ScrollArea h="100vh" type="scroll" className={classes.routesWrapper}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ScrollArea>

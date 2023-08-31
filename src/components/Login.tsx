@@ -1,10 +1,18 @@
-import { Card, PasswordInput, TextInput, Text, Group, Anchor, Button } from '@mantine/core';
+import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 
-const useStyles = createStyles(() => ({
+const useStyles = createStyles((theme) => ({
   root: {
     paddingTop: rem(80),
     paddingBottom: rem(80),
+  },
+
+  highlight: {
+    position: 'relative',
+    backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
+    borderRadius: theme.radius.sm,
+    padding: `${rem(4)} ${rem(8)}`,
+    color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
   },
 }));
 
@@ -13,6 +21,23 @@ export default function Login() {
 
   return (
     <Container className={classes.root} size={400}>
+      <Title
+        order={2}
+        size="h2"
+        weight={900}
+        align="center"
+      >
+        登录到 maimai DX 查分器
+      </Title>
+      <Text
+        color="dimmed"
+        size="sm"
+        align="center"
+        mt="sm"
+        mb="xl"
+      >
+        请使用 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号
+      </Text>
       <Card
         radius="md"
         shadow="md"
@@ -22,12 +47,7 @@ export default function Login() {
           backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
         })}
       >
-        <Text ta="center" fz={28} fw={700} mb="xl">
-          登录到
-          <br />
-          maimai DX 查分器
-        </Text>
-        <TextInput label="邮箱" />
+        <TextInput label="邮箱" variant="filled" placeholder="你的邮箱" />
         <Group position="apart" mt="md">
           <Text component="label" htmlFor="password" size="sm" weight={500}>
             密码
@@ -45,7 +65,11 @@ export default function Login() {
             忘记密码？
           </Anchor>
         </Group>
-        <PasswordInput id="password" />
+        <PasswordInput
+          id="password"
+          variant="filled"
+          placeholder="你的密码"
+        />
         <Group position="right" mt="xl">
           <Button size="sm" variant="default" color="gray">注册</Button>
           <Button size="sm">登录</Button>
