@@ -1,4 +1,5 @@
 import { createStyles, Title, Text, Button, Container, rem } from '@mantine/core';
+import { useNavigate } from "react-router-dom";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -10,11 +11,6 @@ const useStyles = createStyles((theme) => ({
       paddingTop: rem(80),
       paddingBottom: rem(60),
     },
-  },
-
-  inner: {
-    position: 'relative',
-    zIndex: 1,
   },
 
   title: {
@@ -74,33 +70,37 @@ const useStyles = createStyles((theme) => ({
 
 export default function Home() {
   const { classes } = useStyles();
+    const navigate = useNavigate();
 
   return (
     <Container className={classes.root}>
-      <div className={classes.inner}>
-        <Title className={classes.title}>
-          落雪咖啡屋{' '}
-          <Text component="span" className={classes.highlight} inherit>
-            maimai
-          </Text>{' '}
-          DX 查分器
-        </Title>
+      <Title className={classes.title}>
+        落雪咖啡屋{' '}
+        <Text component="span" className={classes.highlight} inherit>
+          maimai
+        </Text>{' '}
+        DX 查分器
+      </Title>
 
-        <Container p={0} size={600}>
-          <Text size="lg" color="dimmed" className={classes.description}>
-            Build more reliable software with AI companion. AI is also trained to detect lazy
-            developers who do nothing and just complain on Twitter.
-          </Text>
-        </Container>
+      <Container p={0} size={600}>
+        <Text size="lg" color="dimmed" className={classes.description}>
+          一个简单的国服 maimai DX 查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。
+        </Text>
+      </Container>
 
-        <div className={classes.controls}>
-          <Button className={classes.control} size="lg" variant="default" color="gray">
-            登录
-          </Button>
-          <Button className={classes.control} size="lg">
-            注册 maimai DX 查分器账号
-          </Button>
-        </div>
+      <div className={classes.controls}>
+        <Button
+          className={classes.control}
+          size="lg"
+          variant="default"
+          color="gray"
+          onClick={() => navigate("/login")}
+        >
+          登录
+        </Button>
+        <Button className={classes.control} size="lg">
+          注册 maimai DX 查分器账号
+        </Button>
       </div>
     </Container>
   );

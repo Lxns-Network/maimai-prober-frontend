@@ -1,42 +1,10 @@
-import { Paper, PasswordInput, TextInput, Text, Group, Anchor, Button } from '@mantine/core';
+import { Card, PasswordInput, TextInput, Text, Group, Anchor, Button } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 
-const useStyles = createStyles((theme) => ({
+const useStyles = createStyles(() => ({
   root: {
     paddingTop: rem(80),
     paddingBottom: rem(80),
-  },
-
-  inner: {
-    position: 'relative',
-  },
-
-  content: {
-    paddingTop: rem(220),
-    position: 'relative',
-    zIndex: 1,
-
-    [theme.fn.smallerThan('sm')]: {
-      paddingTop: rem(120),
-    },
-  },
-
-  title: {
-    fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-    textAlign: 'center',
-    fontWeight: 900,
-    fontSize: rem(38),
-
-    [theme.fn.smallerThan('sm')]: {
-      fontSize: rem(32),
-    },
-  },
-
-  description: {
-    maxWidth: rem(540),
-    margin: 'auto',
-    marginTop: theme.spacing.xl,
-    marginBottom: `calc(${theme.spacing.xl} * 1.5)`,
   },
 }));
 
@@ -45,15 +13,16 @@ export default function Login() {
 
   return (
     <Container className={classes.root} size={400}>
-      <Paper
+      <Card
         radius="md"
+        shadow="md"
         withBorder
-        p="lg"
+        p="xl"
         sx={(theme) => ({
           backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
         })}
       >
-        <Text ta="center" fz={28} fw={700} mb="lg">
+        <Text ta="center" fz={28} fw={700} mb="xl">
           登录到
           <br />
           maimai DX 查分器
@@ -77,11 +46,11 @@ export default function Login() {
           </Anchor>
         </Group>
         <PasswordInput id="password" />
-        <Group position="center" mt="lg">
+        <Group position="right" mt="xl">
           <Button size="sm" variant="default" color="gray">注册</Button>
           <Button size="sm">登录</Button>
         </Group>
-      </Paper>
+      </Card>
     </Container>
   );
 }

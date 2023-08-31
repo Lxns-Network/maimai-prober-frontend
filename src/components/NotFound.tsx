@@ -7,10 +7,6 @@ const useStyles = createStyles((theme) => ({
     paddingBottom: rem(80),
   },
 
-  inner: {
-    position: 'relative',
-  },
-
   content: {
     paddingTop: rem(220),
     position: 'relative',
@@ -46,16 +42,14 @@ export default function NotFound() {
 
   return (
     <Container className={classes.root}>
-      <div className={classes.inner}>
-        <div className={classes.content}>
-          <Title className={classes.title}>页面不存在</Title>
-          <Text color="dimmed" size="lg" align="center" className={classes.description}>
-            你访问的页面不存在，可能已经被删除或者地址错误。
-          </Text>
-          <Group position="center">
-            <Button size="md" onClick={() => navigate("/")}>返回首页</Button>
-          </Group>
-        </div>
+      <div className={classes.content}>
+        <Title className={classes.title}>页面不存在</Title>
+        <Text color="dimmed" size="lg" align="center" className={classes.description}>
+          你访问的页面不存在，可能已经被删除或者地址错误。
+        </Text>
+        <Group position="center">
+          <Button size="md" onClick={() => navigate("/")}>返回首页</Button>
+        </Group>
       </div>
     </Container>
   );
