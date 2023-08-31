@@ -1,20 +1,17 @@
 import { createStyles, Container, Title, Text, Button, Group, rem } from '@mantine/core';
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const useStyles = createStyles((theme) => ({
   root: {
-    paddingTop: rem(80),
-    paddingBottom: rem(80),
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "calc(100vh - 112px)",
   },
 
   content: {
-    paddingTop: rem(220),
     position: 'relative',
     zIndex: 1,
-
-    [theme.fn.smallerThan('sm')]: {
-      paddingTop: rem(120),
-    },
   },
 
   title: {
