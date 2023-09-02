@@ -1,5 +1,6 @@
 import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
+import {useNavigate} from "react-router-dom";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -18,6 +19,7 @@ const useStyles = createStyles((theme) => ({
 
 export default function Login() {
   const { classes } = useStyles();
+  const navigate = useNavigate();
 
   return (
     <Container className={classes.root} size={400}>
@@ -47,7 +49,7 @@ export default function Login() {
           backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
         })}
       >
-        <TextInput label="邮箱" variant="filled" placeholder="你的邮箱" />
+        <TextInput label="邮箱" variant="filled" placeholder="请输入你的邮箱" />
         <Group position="apart" mt="md">
           <Text component="label" htmlFor="password" size="sm" weight={500}>
             密码
@@ -68,10 +70,17 @@ export default function Login() {
         <PasswordInput
           id="password"
           variant="filled"
-          placeholder="你的密码"
+          placeholder="请输入你的密码"
         />
         <Group position="right" mt="xl">
-          <Button size="sm" variant="default" color="gray">注册</Button>
+          <Button
+            size="sm"
+            variant="default"
+            color="gray"
+            onClick={() => navigate("/register")}
+          >
+            注册
+          </Button>
           <Button size="sm">登录</Button>
         </Group>
       </Card>
