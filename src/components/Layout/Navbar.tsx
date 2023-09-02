@@ -129,23 +129,21 @@ export default function Navbar({ opened, onClose }: NavbarProps) {
       p="md"
       hiddenBreakpoint="sm"
     >
-      <ScrollArea h="100vh" type="scroll">
-        <MantineNavbar.Section grow>
-          {links}
-        </MantineNavbar.Section>
+      <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
+        {links}
+      </MantineNavbar.Section>
 
-        <MantineNavbar.Section className={classes.navbarFooter}>
-          <a href="src/components#" className={classes.link} onClick={(event) => event.preventDefault()}>
-            <IconInfoCircle className={classes.linkIcon} stroke={1.5} />
-            <span>关于 maimai DX 查分器</span>
-          </a>
+      <MantineNavbar.Section className={classes.navbarFooter}>
+        <a href="src/components#" className={classes.link} onClick={(event) => event.preventDefault()}>
+          <IconInfoCircle className={classes.linkIcon} stroke={1.5} />
+          <span>关于 maimai DX 查分器</span>
+        </a>
 
-          <a href="src/components#" className={classes.link} onClick={(event) => event.preventDefault()}>
-            <IconLogout className={classes.linkIcon} stroke={1.5} />
-            <span>登出</span>
-          </a>
-        </MantineNavbar.Section>
-      </ScrollArea>
+        <a href="src/components#" className={classes.link} onClick={(event) => event.preventDefault()}>
+          <IconLogout className={classes.linkIcon} stroke={1.5} />
+          <span>登出</span>
+        </a>
+      </MantineNavbar.Section>
     </MantineNavbar>
   );
 }

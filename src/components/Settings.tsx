@@ -1,6 +1,6 @@
 import { Title, Text } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import SwitchesCard from "./Layout/SwitchesCard";
+import SettingsCard from "./Layout/SettingsCard";
 
 const useStyles = createStyles(() => ({
   root: {
@@ -32,26 +32,73 @@ export default function Settings() {
       >
         你可以在这里设置你的 maimai DX 查分器账号
       </Text>
-      <SwitchesCard title="爬取数据" description="设置每次使用官方代理爬取时获取的数据" data={[{
+      <SettingsCard title="爬取数据" description="设置每次使用官方代理爬取时获取的数据" data={[{
         key: "allow_crawl_scores",
         title: "允许爬取谱面成绩",
         description: "关闭后，每次爬取数据时将不会爬取成绩数据。",
+        optionType: "switch",
+        defaultValue: true,
+      }, {
+        key: "crawl_scores_difficulty",
+        title: "爬取谱面成绩的难度",
+        description: "设置每次爬取数据时爬取的难度页面，越少爬取越稳定。",
+        placeholder: "请选择难度",
+        optionType: "multi-select",
+        defaultValue: ["basic", "advanced", "expert", "master", "remaster"],
+        options: [{
+          value: "basic",
+          label: "🟢 Basic",
+        }, {
+          value: "advanced",
+          label: "🟡 Advanced",
+        }, {
+          value: "expert",
+          label: "🔴 Expert",
+        }, {
+          value: "master",
+          label: "🟣 Master",
+        }, {
+          value: "remaster",
+          label: "⚪ Re:Master",
+        }]
       }]}
       />
-      <SwitchesCard title="隐私设置" description="将影响第三方开发者通过查分器 API 访问你的数据" data={[{
+      <SettingsCard title="隐私设置" description="将影响第三方开发者通过查分器 API 访问你的数据" data={[{
         key: "allow_third_party_fetch_player",
         title: "允许读取玩家信息",
         description: "关闭后，第三方开发者将无法获取你的玩家信息。",
+        optionType: "switch",
+        defaultValue: true,
       }, {
         key: "allow_third_party_fetch_scores",
         title: "允许读取谱面成绩",
         description: "关闭后，第三方开发者将无法获取你的谱面成绩。",
+        optionType: "switch",
+        defaultValue: true,
       }, {
         key: "allow_third_party_write_data",
         title: "允许写入任何数据",
         description: "关闭后，第三方开发者将无法覆盖你的任何数据。",
+        optionType: "switch",
+        defaultValue: false,
       }]}
       />
+      <SettingsCard title="其它设置" description="重置密码、删除账号等操作" data={[{
+        key: "reset_password",
+        title: "重置密码",
+        description: "重置你的查分器账号密码。",
+        placeholder: "重置",
+        optionType: "button",
+        onClick: () => { },
+      }, {
+        key: "delete_account",
+        title: "删除账号",
+        description: "删除你的查分器账号。",
+        placeholder: "删除",
+        color: "red",
+        optionType: "button",
+        onClick: () => { },
+      }]} />
     </Container>
   );
 }
