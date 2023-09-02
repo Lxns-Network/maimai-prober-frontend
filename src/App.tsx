@@ -15,6 +15,7 @@ import NotFound from "./components/NotFound";
 import Login from "./components/Login";
 import Settings from "./components/Settings";
 import RouterTransition from "./components/Layout/RouterTransition";
+import Register from "./components/Register";
 
 export const NAVBAR_WIDTH = 300;
 export const NAVBAR_BREAKPOINT = 800;
@@ -61,6 +62,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

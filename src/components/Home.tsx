@@ -92,7 +92,11 @@ export default function Home() {
         >
           登录
         </Button>
-        <Button className={classes.control} size="lg">
+        <Button
+          className={classes.control}
+          size="lg"
+          onClick={() => navigate("/register")}
+        >
           注册 maimai DX 查分器账号
         </Button>
       </div>
