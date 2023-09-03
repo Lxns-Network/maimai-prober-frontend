@@ -1,10 +1,10 @@
-import { createStyles, Title, Text, Button, Container, rem } from '@mantine/core';
+import { createStyles, Title, Text, Image, Button, Container, rem } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 
 const useStyles = createStyles((theme) => ({
   root: {
     position: 'relative',
-    paddingTop: rem(120),
+    paddingTop: rem(80),
     paddingBottom: rem(80),
   },
 
@@ -64,10 +64,18 @@ const useStyles = createStyles((theme) => ({
 
 export default function Home() {
   const { classes } = useStyles();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   return (
     <Container className={classes.root}>
+      <Image
+        src="/favicon.ico"
+        alt="落雪咖啡屋 maimai DX 查分器"
+        maw={240}
+        mx="auto"
+        mb="md"
+      />
+
       <Title className={classes.title}>
         落雪咖啡屋{' '}
         <Text component="span" className={classes.highlight} inherit>
@@ -82,7 +90,7 @@ export default function Home() {
         </Text>
       </Container>
 
-      <div className={classes.controls}>
+      <Container className={classes.controls} p={0}>
         <Button
           className={classes.control}
           size="lg"
@@ -99,7 +107,7 @@ export default function Home() {
         >
           注册 maimai DX 查分器账号
         </Button>
-      </div>
+      </Container>
     </Container>
   );
 }

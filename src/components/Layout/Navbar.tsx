@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Navbar as MantineNavbar,
@@ -22,12 +22,6 @@ const useStyles = createStyles((theme) => ({
     position: 'fixed',
     backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
 
-    [`@media (max-width: ${em(NAVBAR_BREAKPOINT)})`]: {
-      display: 'none',
-    },
-  },
-
-  opened: {
     [`@media (max-width: ${em(NAVBAR_BREAKPOINT)})`]: {
       display: 'block',
       width: '100%',
@@ -90,18 +84,18 @@ const useStyles = createStyles((theme) => ({
 }));
 
 interface NavbarProps {
-  opened: boolean;
+  style?: React.CSSProperties;
   onClose(): void;
 }
 
-export default function Navbar({ opened, onClose }: NavbarProps) {
+export default function Navbar({ style, onClose }: NavbarProps) {
   const { classes, cx } = useStyles();
   const [active, setActive] = useState('首页');
   const navigate = useNavigate();
 
   const navbarData = [
     { label: '首页', icon: IconHome, to: '/' },
-    { label: '我的成绩', icon: IconChartBar, to: '/scores' },
+    { label: '成绩管理', icon: IconChartBar, to: '/scores' },
     { label: '设置', icon: IconSettings, to: '/settings' },
   ];
 
@@ -124,10 +118,11 @@ export default function Navbar({ opened, onClose }: NavbarProps) {
 
   return (
     <MantineNavbar
-      className={cx(classes.navbar, { [classes.opened]: opened })}
+      className={classes.navbar}
       width={{ sm: NAVBAR_WIDTH }}
       p="md"
       hiddenBreakpoint="sm"
+      style={style}
     >
       <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
         {links}
