@@ -1,6 +1,11 @@
 import { Title, Card, PasswordInput, TextInput, Text, Group, Button } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import {useNavigate} from "react-router-dom";
+import {
+  IconUser,
+  IconLock,
+  IconMail,
+} from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -54,6 +59,7 @@ export default function Register() {
           variant="filled"
           placeholder="请输入你的用户名"
           mb={4}
+          icon={<IconUser size="1rem" />}
           required
         />
         <Text
@@ -69,6 +75,7 @@ export default function Register() {
           variant="filled"
           placeholder="请输入你的邮箱"
           mb="sm"
+          icon={<IconMail size="1rem" />}
           required
         />
         <PasswordInput
@@ -77,6 +84,7 @@ export default function Register() {
           label="密码"
           placeholder="请输入你的密码"
           mb="sm"
+          icon={<IconLock size="1rem" />}
           required
         />
         <PasswordInput
@@ -85,6 +93,7 @@ export default function Register() {
           label="确认密码"
           placeholder="请再次输入你的密码"
           mb="sm"
+          icon={<IconLock size="1rem" />}
           required
         />
         <Text

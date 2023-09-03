@@ -1,6 +1,10 @@
 import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import {
+  IconUser,
+  IconLock,
+} from '@tabler/icons-react';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -49,7 +53,12 @@ export default function Login() {
           backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
         })}
       >
-        <TextInput label="邮箱" variant="filled" placeholder="请输入你的邮箱" />
+        <TextInput
+          label="用户名"
+          variant="filled"
+          placeholder="请输入你的用户名"
+            icon={<IconUser size="1rem" />}
+        />
         <Group position="apart" mt="md">
           <Text component="label" htmlFor="password" size="sm" weight={500}>
             密码
@@ -71,6 +80,7 @@ export default function Login() {
           id="password"
           variant="filled"
           placeholder="请输入你的密码"
+          icon={<IconLock size="1rem" />}
         />
         <Group position="right" mt="xl">
           <Button
