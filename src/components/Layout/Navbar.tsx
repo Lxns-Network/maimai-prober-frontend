@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, {useEffect, useState} from "react";
+import {useLocation, useNavigate } from "react-router-dom";
 import {
   Navbar as MantineNavbar,
   ScrollArea,
@@ -90,14 +90,23 @@ interface NavbarProps {
 
 export default function Navbar({ style, onClose }: NavbarProps) {
   const { classes, cx } = useStyles();
-  const [active, setActive] = useState('首页');
+  const [active, setActive] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const navbarData = [
     { label: '首页', icon: IconHome, to: '/' },
     { label: '成绩管理', icon: IconChartBar, to: '/scores' },
     { label: '设置', icon: IconSettings, to: '/settings' },
   ];
+
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const activeNavItem = navbarData.find(item => item.to.startsWith(currentPath));
+    if (activeNavItem) {
+      setActive(activeNavItem.label);
+    }
+  }, [location.pathname, navbarData]);
 
   const links = navbarData.map((item) => (
     <a
