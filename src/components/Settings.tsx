@@ -32,16 +32,30 @@ export default function Settings() {
       >
         你可以在这里设置你的 maimai DX 查分器账号
       </Text>
-      <SettingsCard title="爬取数据" description="设置每次使用官方代理爬取时获取的数据" data={[{
+      <SettingsCard title="爬取数据" description="设置每次爬取的方式与获取的数据" data={[{
         key: "allow_crawl_scores",
         title: "允许爬取谱面成绩",
-        description: "关闭后，每次爬取数据时将不会爬取成绩数据。",
+        description: "关闭后，每次爬取时将不会爬取成绩数据。",
         optionType: "switch",
         defaultValue: true,
       }, {
+        key: "crawl_scores_method",
+        title: "爬取谱面成绩的方式",
+        description: "设置每次爬取时使用的爬取方式，增量爬取依赖最近游玩记录，适合已经完整爬取后频繁爬取，更加稳定。",
+        placeholder: "请选择爬取方式",
+        optionType: "select",
+        defaultValue: "full",
+        options: [{
+          value: "full",
+          label: "完整爬取",
+        }, {
+          value: "incremental",
+          label: "增量爬取",
+        }]
+      }, {
         key: "crawl_scores_difficulty",
         title: "爬取谱面成绩的难度",
-        description: "设置每次爬取数据时爬取的难度页面，越少爬取越稳定。",
+        description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
         placeholder: "请选择难度",
         optionType: "multi-select",
         defaultValue: ["basic", "advanced", "expert", "master", "remaster"],
@@ -88,6 +102,15 @@ export default function Settings() {
         title: "重置密码",
         description: "重置你的查分器账号密码。",
         placeholder: "重置",
+        optionType: "button",
+        onClick: () => {
+        },
+      }, {
+        key: "reset_account",
+        title: "删除所有谱面成绩",
+        description: "删除你的查分器账号里所有的谱面成绩。",
+        placeholder: "删除",
+        color: "red",
         optionType: "button",
         onClick: () => { },
       }, {

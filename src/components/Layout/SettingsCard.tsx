@@ -73,14 +73,14 @@ export default function SettingsCard({ title, description, data }: SettingsCardP
       )}
       {item.optionType === 'select' && (
         <Select
-          mt="md"
-          withinPortal
+          variant="filled"
           data={item.options || []}
           defaultValue={item.defaultValue as string}
         />
       )}
       {item.optionType === 'multi-select' && (
         <MultiSelect
+          variant="filled"
           data={item.options || []}
           placeholder={item.placeholder}
           defaultValue={item.defaultValue as string[]}
