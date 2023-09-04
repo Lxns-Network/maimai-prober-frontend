@@ -15,6 +15,8 @@ import {
   IconLogout,
   IconUserCircle,
   IconTable,
+  IconUserPlus,
+  IconUserCheck,
 } from '@tabler/icons-react';
 import { NAVBAR_WIDTH, NAVBAR_BREAKPOINT } from "../../App";
 
@@ -96,11 +98,15 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isLoggedOut = !Boolean(localStorage.getItem("token"));
+
   const navbarData = [
-    { label: '首页', icon: IconHome, to: '/', loginRequired: false },
-    { label: '账号管理', icon: IconUserCircle, to: '/profile', loginRequired: true},
-    { label: '成绩管理', icon: IconTable, to: '/scores', loginRequired: true },
-    { label: '设置', icon: IconSettings, to: '/settings', loginRequired: true },
+    { label: '首页', icon: IconHome, to: '/', enabled: true },
+    { label: '登录', icon: IconUserCheck, to: '/login', enabled: isLoggedOut },
+    { label: '注册', icon: IconUserPlus, to: '/register', enabled: isLoggedOut },
+    { label: '账号管理', icon: IconUserCircle, to: '/profile', enabled: !isLoggedOut },
+    { label: '成绩管理', icon: IconTable, to: '/scores', enabled: !isLoggedOut },
+    { label: '设置', icon: IconSettings, to: '/settings', enabled: !isLoggedOut },
   ];
 
   useEffect(() => {
@@ -120,17 +126,15 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       style={style}
     >
       <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
-        {navbarData.map((item) => (item.loginRequired && !Boolean(localStorage.getItem("token"))) ? null :
-          <a
-            className={cx(classes.link, { [classes.linkActive]: item.label === active })}
-            href={item.to}
-            key={item.label}
-            onClick={(event) => {
-              event.preventDefault();
-              setActive(item.label);
-              navigate(item.to);
-              onClose();
-            }}
+        {navbarData.map((item) => !item.enabled ? null :
+          <a href={item.to} key={item.label}
+             className={cx(classes.link, { [classes.linkActive]: item.label === active })}
+             onClick={(event) => {
+               event.preventDefault();
+               setActive(item.label);
+               navigate(item.to);
+               onClose();
+             }}
           >
             <item.icon className={classes.linkIcon} stroke={1.5} />
             <span>{item.label}</span>

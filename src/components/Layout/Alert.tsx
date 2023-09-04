@@ -1,10 +1,4 @@
-import { Button, createStyles, Group, Modal, Text } from '@mantine/core';
-
-const useStyles = createStyles(() => ({
-  root: {
-    minWidth: 300,
-  }
-}));
+import { Button, Group, Modal, Text } from '@mantine/core';
 
 interface AlertProps {
   title: string;
@@ -15,12 +9,10 @@ interface AlertProps {
 }
 
 export default function Alert({ title, content, opened, onClose, onConfirm }: AlertProps) {
-  const { classes } = useStyles();
-
   return (
-    <Modal.Root className={classes.root} opened={opened} onClose={onClose} size="auto" centered>
+    <Modal.Root opened={opened} onClose={onClose} size="auto" centered>
       <Modal.Overlay />
-      <Modal.Content>
+      <Modal.Content miw={300}>
         <Modal.Header>
           <Modal.Title fz="lg">{title}</Modal.Title>
           <Modal.CloseButton />
