@@ -17,6 +17,7 @@ import Logo from "./Logo";
 const useStyles = createStyles((theme) => ({
   header: {
     position: 'fixed',
+    zIndex: 100,
     paddingLeft: theme.spacing.md,
     paddingRight: theme.spacing.md,
   },

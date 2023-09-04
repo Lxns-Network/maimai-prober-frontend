@@ -14,22 +14,10 @@ export default function Settings() {
 
   return (
     <Container className={classes.root} size={400}>
-      <Title
-        order={2}
-        size="h2"
-        weight={900}
-        align="center"
-        mt="xs"
-      >
+      <Title order={2} size="h2" weight={900} align="center" mt="xs">
         查分器账号设置
       </Title>
-      <Text
-        color="dimmed"
-        size="sm"
-        align="center"
-        mt="sm"
-        mb="xl"
-      >
+      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         你可以在这里设置你的 maimai DX 查分器账号
       </Text>
       <SettingsCard title="爬取数据" description="设置每次爬取的方式与获取的数据" data={[{
@@ -61,19 +49,19 @@ export default function Settings() {
         defaultValue: ["basic", "advanced", "expert", "master", "remaster"],
         options: [{
           value: "basic",
-          label: "🟢 Basic",
+          label: "🟢 BASIC",
         }, {
           value: "advanced",
-          label: "🟡 Advanced",
+          label: "🟡 ADVANCED",
         }, {
           value: "expert",
-          label: "🔴 Expert",
+          label: "🔴 EXPERT",
         }, {
           value: "master",
-          label: "🟣 Master",
+          label: "🟣 MASTER",
         }, {
           value: "remaster",
-          label: "⚪ Re:Master",
+          label: "⚪ Re:MASTER",
         }]
       }]}
       />

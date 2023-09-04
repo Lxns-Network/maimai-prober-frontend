@@ -110,22 +110,10 @@ export default function Scores() {
 
   return (
     <Container className={classes.root} size={400}>
-      <Title
-        order={2}
-        size="h2"
-        weight={900}
-        align="center"
-        mt="xs"
-      >
+      <Title order={2} size="h2" weight={900} align="center" mt="xs">
         账号成绩管理
       </Title>
-      <Text
-        color="dimmed"
-        size="sm"
-        align="center"
-        mt="sm"
-        mb="xl"
-      >
+      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         你可以在这里管理你的 maimai DX 查分器账号的成绩
       </Text>
       <Card withBorder radius="md" className={classes.card} mb="md">

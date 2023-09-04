@@ -1,6 +1,4 @@
-import {
-  Flex, Image, Badge, Text, Space
-} from '@mantine/core'
+import { Flex, Image, Badge, Text, Space } from '@mantine/core'
 
 export default function Logo() {
   return (

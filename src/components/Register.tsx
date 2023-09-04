@@ -1,6 +1,6 @@
 import { Title, Card, PasswordInput, TextInput, Text, Group, Button } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   IconUser,
   IconLock,

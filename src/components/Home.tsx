@@ -90,24 +90,27 @@ export default function Home() {
         </Text>
       </Container>
 
-      <Container className={classes.controls} p={0}>
-        <Button
-          className={classes.control}
-          size="lg"
-          variant="default"
-          color="gray"
-          onClick={() => navigate("/login")}
-        >
-          登录
-        </Button>
-        <Button
-          className={classes.control}
-          size="lg"
-          onClick={() => navigate("/register")}
-        >
-          注册 maimai DX 查分器账号
-        </Button>
-      </Container>
+      {Boolean(localStorage.getItem("token")) ?
+        <Container className={classes.controls} p={0}>
+          <Button className={classes.control} size="lg" variant="default">
+            查看文档
+          </Button>
+          <Button className={classes.control} size="lg" variant="default"
+                  onClick={() => navigate("/profile")}>
+            管理我的查分器账号
+          </Button>
+        </Container> :
+        <Container className={classes.controls} p={0}>
+          <Button className={classes.control} size="lg" variant="default"
+                  onClick={() => navigate("/login")}>
+            登录
+          </Button>
+          <Button className={classes.control} size="lg"
+                  onClick={() => navigate("/register")}>
+            注册 maimai DX 查分器账号
+          </Button>
+        </Container>
+      }
     </Container>
   );
 }

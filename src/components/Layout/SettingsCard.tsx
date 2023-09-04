@@ -1,4 +1,4 @@
-import {createStyles, Card, Group, Switch, Text, rem, Select, MultiSelect, Button} from '@mantine/core';
+import { createStyles, Card, Group, Switch, Text, rem, Select, MultiSelect, Button } from '@mantine/core';
 
 const useStyles = createStyles((theme) => ({
   card: {
@@ -76,6 +76,7 @@ export default function SettingsCard({ title, description, data }: SettingsCardP
           variant="filled"
           data={item.options || []}
           defaultValue={item.defaultValue as string}
+          transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
         />
       )}
       {item.optionType === 'multi-select' && (
@@ -84,6 +85,7 @@ export default function SettingsCard({ title, description, data }: SettingsCardP
           data={item.options || []}
           placeholder={item.placeholder}
           defaultValue={item.defaultValue as string[]}
+          transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
         />
       )}
       {item.optionType === 'button' && (
