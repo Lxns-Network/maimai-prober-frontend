@@ -7,13 +7,7 @@ const useStyles = createStyles((theme) => ({
     paddingBottom: rem(80),
   },
 
-  content: {
-    position: 'relative',
-    zIndex: 1,
-  },
-
   title: {
-    fontFamily: `Greycliff CF, ${theme.fontFamily}`,
     textAlign: 'center',
     fontWeight: 900,
     fontSize: rem(38),
@@ -37,15 +31,13 @@ export default function NotFound() {
 
   return (
     <Container className={classes.root}>
-      <div className={classes.content}>
-        <Title className={classes.title}>页面不存在</Title>
-        <Text color="dimmed" size="lg" align="center" className={classes.description}>
-          你访问的页面不存在，可能已经被删除或者地址错误。
-        </Text>
-        <Group position="center">
-          <Button size="md" onClick={() => navigate("/")}>返回首页</Button>
-        </Group>
-      </div>
+      <Title className={classes.title}>页面不存在</Title>
+      <Text color="dimmed" size="lg" align="center" className={classes.description}>
+        你访问的页面不存在，可能已经被删除或者地址错误。
+      </Text>
+      <Group position="center">
+        <Button size="md" onClick={() => navigate("/")}>返回首页</Button>
+      </Group>
     </Container>
   );
 }

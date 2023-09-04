@@ -1,4 +1,4 @@
-import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button } from '@mantine/core';
+import {Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay} from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,6 +9,7 @@ import reCAPTCHA from "../utils/reCAPTCHA";
 import useAlert from '../utils/useAlert';
 import useFormInput from "../utils/useFormInput";
 import Alert from './Layout/Alert';
+import {useState} from "react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -28,13 +29,37 @@ const useStyles = createStyles((theme) => ({
 export default function Login() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
+  const [visible, setVisible] = useState(false);
   const recaptcha = new reCAPTCHA("6LefxhIjAAAAADI0_XvRZmguDUharyWf3kGFhxqX", "login");
   const navigate = useNavigate();
 
   const nameInput = useFormInput('');
   const passwordInput = useFormInput('');
 
+  const validationRules = {
+    name: "用户名不能为空",
+    password: "密码不能为空",
+  };
+
+  const validateInputs = (inputs: any) => {
+    for (const [inputName, errorMessage] of Object.entries(validationRules)) {
+      if (!inputs[inputName]) {
+        openAlert("登录失败", errorMessage);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const submitLogin = async () => {
+    if (!validateInputs({
+      name: nameInput.value,
+      password: passwordInput.value,
+    })) {
+      return;
+    }
+    setVisible(true);
     fetch(`http://localhost:7000/api/v0/user/login?recaptcha=${await recaptcha.getToken()}`, {
       method: 'POST',
       headers: {
@@ -47,6 +72,7 @@ export default function Login() {
     })
       .then((response) => response.json())
       .then((data) => {
+        setVisible(false);
         if (data.success) {
           localStorage.setItem("token", data.data.token);
           navigate("/")
@@ -55,6 +81,7 @@ export default function Login() {
         }
       })
       .catch((error) => {
+        setVisible(false);
         openAlert("登录失败", error);
       });
   };
@@ -76,6 +103,7 @@ export default function Login() {
       <Card radius="md" shadow="md" p="xl" withBorder sx={(theme) => ({
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}>
+        <LoadingOverlay visible={visible} overlayBlur={2} />
         <TextInput
           name="name"
           label="用户名"

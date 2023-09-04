@@ -1,4 +1,5 @@
-import { Title, Card, PasswordInput, TextInput, Text, Group, Button } from '@mantine/core';
+import { useState } from "react";
+import { Title, Card, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,9 +8,9 @@ import {
   IconMail,
 } from "@tabler/icons-react";
 import useAlert from '../utils/useAlert';
-import Alert from "./Layout/Alert";
 import useFormInput from '../utils/useFormInput';
 import reCAPTCHA from '../utils/reCAPTCHA';
+import Alert from "./Layout/Alert";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -29,6 +30,7 @@ const useStyles = createStyles((theme) => ({
 export default function Register() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
+  const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
   const recaptcha = new reCAPTCHA("6LefxhIjAAAAADI0_XvRZmguDUharyWf3kGFhxqX", "register");
 
@@ -37,8 +39,44 @@ export default function Register() {
   const passwordInput = useFormInput('');
   const confirmPasswordInput = useFormInput('');
 
+  const validationRules = {
+    name: "用户名不能为空",
+    email: "邮箱不能为空",
+    password: "密码不能为空",
+    confirmPassword: "确认密码不能为空",
+  };
+
+  const validateInputs = (inputs: any) => {
+    for (const [inputName, errorMessage] of Object.entries(validationRules)) {
+      if (!inputs[inputName]) {
+        openAlert("注册失败", errorMessage);
+        return false;
+      }
+    }
+
+    if (inputs.password !== inputs.confirmPassword) {
+      openAlert("注册失败", "两次输入的密码不一致");
+      return false;
+    }
+
+    return true;
+  };
+
   const submitRegister = async () => {
-    fetch(`http://localhost:7000/api/v0/user/register?recaptcha=${await recaptcha.getToken()}`, {
+    if (!validateInputs({
+      name: nameInput.value,
+      email: emailInput.value,
+      password: passwordInput.value,
+      confirmPassword: confirmPasswordInput.value,
+    })) {
+      return;
+    }
+    if (passwordInput.value !== confirmPasswordInput.value) {
+      openAlert("注册失败", "两次输入的密码不一致");
+      return;
+    }
+    setVisible(true);
+    return fetch(`http://localhost:7000/api/v0/user/register?recaptcha=${await recaptcha.getToken()}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -52,6 +90,7 @@ export default function Register() {
     })
       .then((response) => response.json())
       .then((data) => {
+        setVisible(false);
         if (data.success) {
           openAlert("注册成功", "请登录你的邮箱，根据指引完成账号激活。");
         } else {
@@ -59,6 +98,7 @@ export default function Register() {
         }
       })
       .catch((error) => {
+        setVisible(false);
         openAlert("注册失败", error);
       });
   }
@@ -81,6 +121,7 @@ export default function Register() {
       <Card radius="md" shadow="md" p="xl" withBorder sx={(theme) => ({
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}>
+        <LoadingOverlay visible={visible} overlayBlur={2} />
         <TextInput
           name="name"
           label="用户名"
