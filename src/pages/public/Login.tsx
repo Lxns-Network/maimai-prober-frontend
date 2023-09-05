@@ -1,16 +1,14 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
-import {
-  IconUser,
-  IconLock,
-} from '@tabler/icons-react';
-import reCAPTCHA from "../../utils/reCAPTCHA";
 import useAlert from '../../utils/useAlert';
 import useFormInput from "../../utils/useFormInput";
+import ReCaptcha from "../../utils/reCaptcha";
 import Alert from '../../components/Alert';
-import { API_URL } from '../../main';
+import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
+import Icon from "@mdi/react";
+import { mdiAccountOutline, mdiLockOutline} from "@mdi/js";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -31,8 +29,16 @@ export default function Login() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
-  const recaptcha = new reCAPTCHA("6LefxhIjAAAAADI0_XvRZmguDUharyWf3kGFhxqX", "login");
   const navigate = useNavigate();
+  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
+
+  useEffect(() => {
+    recaptcha.render();
+
+    return () => {
+      recaptcha.destroy();
+    }
+  }, [])
 
   const nameInput = useFormInput('');
   const passwordInput = useFormInput('');
@@ -110,7 +116,7 @@ export default function Login() {
           label="用户名"
           variant="filled"
           placeholder="请输入你的用户名"
-          icon={<IconUser size="1rem" />}
+          icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
           {...nameInput}
         />
         <Group position="apart" mt="md">
@@ -128,7 +134,7 @@ export default function Login() {
           name="password"
           variant="filled"
           placeholder="请输入你的密码"
-          icon={<IconLock size="1rem" />}
+          icon={<Icon path={mdiLockOutline} size={rem(16)} />}
           {...passwordInput}
         />
         <Group position="right" mt="xl">

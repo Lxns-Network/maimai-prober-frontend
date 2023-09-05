@@ -1,17 +1,14 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
-import {
-  IconUser,
-  IconLock,
-  IconMail,
-} from "@tabler/icons-react";
 import useAlert from '../../utils/useAlert';
 import useFormInput from '../../utils/useFormInput';
-import reCAPTCHA from '../../utils/reCAPTCHA';
+import ReCaptcha from '../../utils/reCaptcha';
 import Alert from "../../components/Alert";
-import {API_URL} from "../../main";
+import {API_URL, RECAPTCHA_SITE_KEY} from "../../main";
+import Icon from "@mdi/react";
+import { mdiAccountOutline, mdiEmailOutline, mdiLockOutline } from "@mdi/js";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -33,7 +30,15 @@ export default function Register() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const recaptcha = new reCAPTCHA("6LefxhIjAAAAADI0_XvRZmguDUharyWf3kGFhxqX", "register");
+  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
+
+  useEffect(() => {
+    recaptcha.render();
+
+    return () => {
+      recaptcha.destroy();
+    }
+  }, [])
 
   const nameInput = useFormInput('');
   const emailInput = useFormInput('');
@@ -129,7 +134,7 @@ export default function Register() {
           variant="filled"
           placeholder="请输入你的用户名"
           mb={4}
-          icon={<IconUser size="1rem" />}
+          icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
           {...nameInput}
         />
         <Text color="dimmed" size="xs" align="left" mb="sm">
@@ -141,7 +146,7 @@ export default function Register() {
           variant="filled"
           placeholder="请输入你的邮箱"
           mb="sm"
-          icon={<IconMail size="1rem" />}
+          icon={<Icon path={mdiEmailOutline} size={rem(16)} />}
           {...emailInput}
         />
         <PasswordInput
@@ -150,7 +155,7 @@ export default function Register() {
           variant="filled"
           placeholder="请输入你的密码"
           mb="sm"
-          icon={<IconLock size="1rem" />}
+          icon={<Icon path={mdiLockOutline} size={rem(16)} />}
           {...passwordInput}
         />
         <PasswordInput
@@ -159,7 +164,7 @@ export default function Register() {
           variant="filled"
           placeholder="请再次输入你的密码"
           mb="sm"
-          icon={<IconLock size="1rem" />}
+          icon={<Icon path={mdiLockOutline} size={rem(16)} />}
           {...confirmPasswordInput}
         />
         <Text color="dimmed" size="xs" align="left" mt="sm">

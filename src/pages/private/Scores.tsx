@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, Container, createStyles, rem, Table, Text, Title } from '@mantine/core';
+import { Button, Card, Container, createStyles, Pagination, rem, Table, Text, Title } from '@mantine/core';
 import {
   IconArrowDown,
   IconArrowUp,
@@ -140,6 +140,7 @@ export default function Scores() {
           ))}
           </tbody>
         </Table>
+        <Pagination total={10} />
       </Card>
     </Container>
   );
