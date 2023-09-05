@@ -21,6 +21,7 @@ import Scores from "./pages/private/Scores";
 import Settings from "./pages/private/Settings";
 import Register from "./pages/public/Register";
 import NotFound from "./pages/public/NotFound";
+import Sync from "./pages/private/Sync";
 
 export const NAVBAR_WIDTH = 300;
 export const NAVBAR_BREAKPOINT = 800;
@@ -85,6 +86,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/profile" element={<Home />} />
+            <Route path="/sync" element={<Sync />} />
             <Route path="/scores" element={<Scores />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
