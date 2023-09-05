@@ -1,6 +1,6 @@
 import { Title, Text } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import SettingsCard from "./Layout/SettingsCard";
+import SettingsCard from "../../components/SettingsCard";
 
 const useStyles = createStyles(() => ({
   root: {

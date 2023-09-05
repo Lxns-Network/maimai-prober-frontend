@@ -11,16 +11,16 @@ import {
 import { useLocalStorage } from '@mantine/hooks';
 import { useEffect, useState } from "react";
 // Layouts
-import Navbar from "./components/Layout/Navbar";
-import Header from "./components/Layout/Header";
-import RouterTransition from "./components/Layout/RouterTransition";
+import Navbar from "./components/Navbar";
+import Header from "./components/Header";
+import RouterTransition from "./components/RouterTransition";
 // Routes
-import Home from "./components/Home";
-import Login from "./components/Login";
-import Scores from "./components/Scores";
-import Settings from "./components/Settings";
-import Register from "./components/Register";
-import NotFound from "./components/NotFound";
+import Home from "./pages/public/Home";
+import Login from "./pages/public/Login";
+import Scores from "./pages/private/Scores";
+import Settings from "./pages/private/Settings";
+import Register from "./pages/public/Register";
+import NotFound from "./pages/public/NotFound";
 
 export const NAVBAR_WIDTH = 300;
 export const NAVBAR_BREAKPOINT = 800;

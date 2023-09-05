@@ -8,17 +8,18 @@ import {
   rem,
   em,
 } from '@mantine/core';
+import Icon from "@mdi/react";
 import {
-  IconHome,
-  IconSettings,
-  IconInfoCircle,
-  IconLogout,
-  IconUserCircle,
-  IconTable,
-  IconUserPlus,
-  IconUserCheck,
-} from '@tabler/icons-react';
-import { NAVBAR_WIDTH, NAVBAR_BREAKPOINT } from "../../App";
+  mdiAccountCheckOutline,
+  mdiAccountOutline,
+  mdiAccountPlusOutline,
+  mdiCogOutline,
+  mdiDatabaseSyncOutline,
+  mdiHomeOutline, mdiInformationOutline,
+  mdiLogoutVariant,
+  mdiTable
+} from '@mdi/js';
+import { NAVBAR_WIDTH, NAVBAR_BREAKPOINT } from "../App";
 
 const useStyles = createStyles((theme) => ({
   navbar: {
@@ -101,12 +102,13 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
   const navbarData = [
-    { label: '首页', icon: IconHome, to: '/', enabled: true },
-    { label: '登录', icon: IconUserCheck, to: '/login', enabled: isLoggedOut },
-    { label: '注册', icon: IconUserPlus, to: '/register', enabled: isLoggedOut },
-    { label: '账号管理', icon: IconUserCircle, to: '/profile', enabled: !isLoggedOut },
-    { label: '成绩管理', icon: IconTable, to: '/scores', enabled: !isLoggedOut },
-    { label: '设置', icon: IconSettings, to: '/settings', enabled: !isLoggedOut },
+    { label: '首页', icon: mdiHomeOutline, to: '/', enabled: true },
+    { label: '登录', icon: mdiAccountCheckOutline, to: '/login', enabled: isLoggedOut },
+    { label: '注册', icon: mdiAccountPlusOutline, to: '/register', enabled: isLoggedOut },
+    { label: '账号详情', icon: mdiAccountOutline, to: '/profile', enabled: !isLoggedOut },
+    { label: '同步游戏数据', icon: mdiDatabaseSyncOutline, to: '/sync', enabled: !isLoggedOut },
+    { label: '成绩管理', icon: mdiTable, to: '/scores', enabled: !isLoggedOut },
+    { label: '账号设置', icon: mdiCogOutline, to: '/settings', enabled: !isLoggedOut },
   ];
 
   useEffect(() => {
@@ -136,15 +138,15 @@ export default function Navbar({ style, onClose }: NavbarProps) {
                onClose();
              }}
           >
-            <item.icon className={classes.linkIcon} stroke={1.5} />
+            <Icon className={classes.linkIcon} path={item.icon} size={1} />
             <span>{item.label}</span>
           </a>
         )}
       </MantineNavbar.Section>
 
       <MantineNavbar.Section className={classes.navbarFooter}>
-        <a href="/about" className={classes.link} onClick={(event) => event.preventDefault()}>
-          <IconInfoCircle className={classes.linkIcon} stroke={1.5} />
+        <a href="/public/About" className={classes.link} onClick={(event) => event.preventDefault()}>
+          <Icon className={classes.linkIcon} path={mdiInformationOutline} size={1} />
           <span>关于 maimai DX 查分器</span>
         </a>
 
@@ -153,7 +155,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
           localStorage.removeItem("token")
           navigate("/")
         }}>
-          <IconLogout className={classes.linkIcon} stroke={1.5} />
+          <Icon className={classes.linkIcon} path={mdiLogoutVariant} size={1} />
           <span>登出</span>
         </a>
       </MantineNavbar.Section>

@@ -7,11 +7,9 @@ import {
   useMantineColorScheme,
   rem
 } from '@mantine/core';
-import {
-  IconMoonStars,
-  IconSun
-} from "@tabler/icons-react";
-import { NAVBAR_BREAKPOINT } from "../../App";
+import Icon from "@mdi/react";
+import { mdiWeatherNight, mdiWeatherSunny } from "@mdi/js";
+import { NAVBAR_BREAKPOINT } from "../App";
 import Logo from "./Logo";
 
 const useStyles = createStyles((theme) => ({
@@ -50,7 +48,7 @@ export function ActionToggle() {
           color: theme.colorScheme === 'dark' ? theme.colors.yellow[4] : theme.colors.blue[6],
         })}
       >
-        {colorScheme === 'dark' ? <IconSun size="1.2rem" /> : <IconMoonStars size="1.2rem" />}
+        <Icon path={colorScheme === 'dark' ? mdiWeatherSunny : mdiWeatherNight} size={1} />
       </ActionIcon>
     </Group>
   );

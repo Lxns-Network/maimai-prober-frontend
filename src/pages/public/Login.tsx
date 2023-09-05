@@ -1,15 +1,16 @@
-import {Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay} from '@mantine/core';
+import { useState } from "react";
+import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import {
   IconUser,
   IconLock,
 } from '@tabler/icons-react';
-import reCAPTCHA from "../utils/reCAPTCHA";
-import useAlert from '../utils/useAlert';
-import useFormInput from "../utils/useFormInput";
-import Alert from './Layout/Alert';
-import {useState} from "react";
+import reCAPTCHA from "../../utils/reCAPTCHA";
+import useAlert from '../../utils/useAlert';
+import useFormInput from "../../utils/useFormInput";
+import Alert from '../../components/Alert';
+import { API_URL } from '../../main';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -60,7 +61,7 @@ export default function Login() {
       return;
     }
     setVisible(true);
-    fetch(`http://localhost:7000/api/v0/user/login?recaptcha=${await recaptcha.getToken()}`, {
+    fetch(`${API_URL}/user/login?recaptcha=${await recaptcha.getToken()}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

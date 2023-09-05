@@ -7,10 +7,11 @@ import {
   IconLock,
   IconMail,
 } from "@tabler/icons-react";
-import useAlert from '../utils/useAlert';
-import useFormInput from '../utils/useFormInput';
-import reCAPTCHA from '../utils/reCAPTCHA';
-import Alert from "./Layout/Alert";
+import useAlert from '../../utils/useAlert';
+import useFormInput from '../../utils/useFormInput';
+import reCAPTCHA from '../../utils/reCAPTCHA';
+import Alert from "../../components/Alert";
+import {API_URL} from "../../main";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -76,7 +77,7 @@ export default function Register() {
       return;
     }
     setVisible(true);
-    return fetch(`http://localhost:7000/api/v0/user/register?recaptcha=${await recaptcha.getToken()}`, {
+    fetch(`${API_URL}/user/register?recaptcha=${await recaptcha.getToken()}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
