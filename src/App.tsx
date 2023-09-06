@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import {
   ScrollArea,
   createStyles,
@@ -9,19 +9,11 @@ import {
   Transition
 } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 // Layouts
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
 import RouterTransition from "./components/RouterTransition";
-// Routes
-import Home from "./pages/public/Home";
-import Login from "./pages/public/Login";
-import Scores from "./pages/private/Scores";
-import Settings from "./pages/private/Settings";
-import Register from "./pages/public/Register";
-import NotFound from "./pages/public/NotFound";
-import Sync from "./pages/private/Sync";
 
 export const NAVBAR_WIDTH = 300;
 export const NAVBAR_BREAKPOINT = 800;
@@ -40,6 +32,8 @@ const useStyles = createStyles((theme) => ({
     }
   }
 }));
+
+export const ApiContext = React.createContext({});
 
 export default function App() {
   const { classes } = useStyles();
@@ -69,31 +63,26 @@ export default function App() {
   const toggleColorScheme = (value?: ColorScheme) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
 
+  const value = useMemo(() => ({}), []);
+
   return (
-    <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-      <MantineProvider
-        withGlobalStyles
-        withNormalizeCSS
-        theme={{ colorScheme }}
-      >
-        <RouterTransition />
-        <Transition mounted={opened} transition="slide-right" duration={300} timingFunction="ease">
-          {(styles) => <Navbar style={styles} onClose={toggleNavbarOpened} />}
-        </Transition>
-        <Header navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} />
-        <ScrollArea style={{ height: 'calc(100vh - 56px)' }} type="scroll" className={classes.routesWrapper}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/profile" element={<Home />} />
-            <Route path="/sync" element={<Sync />} />
-            <Route path="/scores" element={<Scores />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </ScrollArea>
-      </MantineProvider>
-    </ColorSchemeProvider>
+    <ApiContext.Provider value={value}>
+      <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+        <MantineProvider
+          withGlobalStyles
+          withNormalizeCSS
+          theme={{ colorScheme }}
+        >
+          <RouterTransition />
+          <Transition mounted={opened} transition="slide-right" duration={300} timingFunction="ease">
+            {(styles) => <Navbar style={styles} onClose={toggleNavbarOpened} />}
+          </Transition>
+          <Header navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} />
+          <ScrollArea style={{ height: 'calc(100vh - 56px)' }} type="scroll" className={classes.routesWrapper}>
+            <Outlet />
+          </ScrollArea>
+        </MantineProvider>
+      </ColorSchemeProvider>
+    </ApiContext.Provider>
   );
 }

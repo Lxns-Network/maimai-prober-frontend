@@ -43,7 +43,7 @@ const useStyles = createStyles((theme) => ({
 async function checkProxySettingStatus() {
   try {
     // Try to fetch the external URL
-    await fetch(`https://maimai.wahlap.com/`, { mode: 'no-cors' });
+    await fetch(`https://maimai.wahlap.com/maimai-mobile/error/`, { mode: 'no-cors' });
   } catch (error) {
     try {
       // Fetch current location's href to detect network issue
@@ -103,8 +103,8 @@ export default function Sync() {
         <Flex align="center" justify="space-between" m="md">
           <Group className={classes.loaderText} noWrap>
             {proxyAvailable ? (
-              <div>
-                <Text size="lg" color="teal">
+              <div>e
+                <Text size="lg" color="tal">
                   HTTP 代理已配置
                 </Text>
                 <Text size="xs" color="dimmed">

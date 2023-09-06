@@ -105,10 +105,10 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '首页', icon: mdiHomeOutline, to: '/', enabled: true },
     { label: '登录', icon: mdiAccountCheckOutline, to: '/login', enabled: isLoggedOut },
     { label: '注册', icon: mdiAccountPlusOutline, to: '/register', enabled: isLoggedOut },
-    { label: '账号详情', icon: mdiAccountOutline, to: '/profile', enabled: !isLoggedOut },
-    { label: '同步游戏数据', icon: mdiDatabaseSyncOutline, to: '/sync', enabled: !isLoggedOut },
-    { label: '成绩管理', icon: mdiTable, to: '/scores', enabled: !isLoggedOut },
-    { label: '账号设置', icon: mdiCogOutline, to: '/settings', enabled: !isLoggedOut },
+    { label: '账号详情', icon: mdiAccountOutline, to: '/user/profile', enabled: !isLoggedOut },
+    { label: '同步游戏数据', icon: mdiDatabaseSyncOutline, to: '/user/sync', enabled: !isLoggedOut },
+    { label: '成绩管理', icon: mdiTable, to: '/user/scores', enabled: !isLoggedOut },
+    { label: '账号设置', icon: mdiCogOutline, to: '/user/settings', enabled: !isLoggedOut },
   ];
 
   useEffect(() => {

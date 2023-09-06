@@ -114,7 +114,7 @@ export default function Scores() {
         账号成绩管理
       </Title>
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
-        你可以在这里管理你的 maimai DX 查分器账号的成绩
+        管理你的 maimai DX 查分器账号的成绩
       </Text>
       <Card withBorder radius="md" className={classes.card} mb="md">
         <Table highlightOnHover verticalSpacing="sm">

@@ -18,7 +18,7 @@ export default function Settings() {
         查分器账号设置
       </Title>
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
-        你可以在这里设置你的 maimai DX 查分器账号
+        设置你的 maimai DX 查分器账号
       </Text>
       <SettingsCard title="爬取数据" description="设置每次爬取的方式与获取的数据" data={[{
         key: "allow_crawl_scores",
