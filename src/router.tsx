@@ -1,8 +1,8 @@
-import {createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route, useLocation } from "react-router-dom";
+import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route, useLocation } from "react-router-dom";
 import Home from "./pages/public/Home";
 import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
-import Profile, {profileLoader} from "./pages/private/Profile";
+import Profile, { profileLoader } from "./pages/private/Profile";
 import Sync from "./pages/private/Sync";
 import Scores from "./pages/private/Scores";
 import Settings from "./pages/private/Settings";

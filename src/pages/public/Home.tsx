@@ -96,7 +96,7 @@ export default function Home() {
             查看文档
           </Button>
           <Button className={classes.control} size="lg" variant="default"
-                  onClick={() => navigate("/profile")}>
+                  onClick={() => navigate("/user/profile")}>
             管理我的查分器账号
           </Button>
         </Container> :
