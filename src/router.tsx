@@ -4,11 +4,10 @@ import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
 import Profile, { profileLoader } from "./pages/private/Profile";
 import Sync from "./pages/private/Sync";
-import Scores from "./pages/private/Scores";
+import Scores, { scoresLoader } from "./pages/private/Scores";
 import Settings from "./pages/private/Settings";
 import NotFound from "./pages/public/NotFound";
 import App from "./App";
-import ErrorPage from "./pages/public/Error";
 
 const ProtectedRoute = () => {
   const location = useLocation();
@@ -19,7 +18,7 @@ const ProtectedRoute = () => {
 }
 
 const routesConfig = (
-  <Route element={<App />} errorElement={<ErrorPage />}>
+  <Route element={<App />}>
     <Route path="/" element={<Home />} />
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
@@ -27,7 +26,7 @@ const routesConfig = (
       <Route index element={<Home />} />
       <Route path="profile" element={<Profile />} loader={profileLoader} />
       <Route path="sync" element={<Sync />} />
-      <Route path="scores" element={<Scores />} />
+      <Route path="scores" element={<Scores />} loader={scoresLoader} />
       <Route path="settings" element={<Settings />} />
     </Route>
     <Route path="*" element={<NotFound />} />

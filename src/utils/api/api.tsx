@@ -23,17 +23,17 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
   }
 
   try {
-    const response = await fetch(`${API_URL}/${endpoint}`, requestOptions);
+    const response = await fetch(`${API_URL}/${endpoint}`, requestOptions)
 
     if (response.status === 200) {
       const data = await response.json();
       if (data.success) {
         return data.data;
       } else {
-        throw data; // 抛出数据以处理错误
+        throw data;
       }
     } else {
-      throw response; // 抛出响应以处理错误
+      throw response;
     }
   } catch (error) {
     return null;
@@ -44,6 +44,10 @@ export function getProfile() {
   return fetchAPI("user/profile", { method: "GET" });
 }
 
-export function getPlayerData() {
+export function getPlayerDetail() {
   return fetchAPI("user/player", { method: "GET" });
+}
+
+export function getPlayerScores() {
+  return fetchAPI("user/player/scores", { method: "GET" });
 }
