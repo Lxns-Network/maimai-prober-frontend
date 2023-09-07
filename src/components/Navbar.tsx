@@ -13,9 +13,10 @@ import {
   mdiAccountCheckOutline,
   mdiAccountOutline,
   mdiAccountPlusOutline,
+  mdiCloudSyncOutline,
   mdiCogOutline,
-  mdiDatabaseSyncOutline,
-  mdiHomeOutline, mdiInformationOutline,
+  mdiHomeOutline,
+  mdiInformationOutline,
   mdiLogoutVariant,
   mdiTable
 } from '@mdi/js';
@@ -106,7 +107,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '登录', icon: mdiAccountCheckOutline, to: '/login', enabled: isLoggedOut },
     { label: '注册', icon: mdiAccountPlusOutline, to: '/register', enabled: isLoggedOut },
     { label: '账号详情', icon: mdiAccountOutline, to: '/user/profile', enabled: !isLoggedOut },
-    { label: '同步游戏数据', icon: mdiDatabaseSyncOutline, to: '/user/sync', enabled: !isLoggedOut },
+    { label: '同步游戏数据', icon: mdiCloudSyncOutline, to: '/user/sync', enabled: !isLoggedOut },
     { label: '成绩管理', icon: mdiTable, to: '/user/scores', enabled: !isLoggedOut },
     { label: '账号设置', icon: mdiCogOutline, to: '/user/settings', enabled: !isLoggedOut },
   ];

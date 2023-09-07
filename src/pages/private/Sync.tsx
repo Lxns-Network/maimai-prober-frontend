@@ -103,7 +103,7 @@ export default function Sync() {
         <Flex align="center" justify="space-between" m="md">
           <Group className={classes.loaderText} noWrap>
             {proxyAvailable ? (
-              <div>e
+              <div>
                 <Text size="lg" color="tal">
                   HTTP 代理已配置
                 </Text>
