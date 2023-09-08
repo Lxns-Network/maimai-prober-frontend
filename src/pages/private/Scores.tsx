@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import {
-  Accordion, Alert,
-  Badge,
+  Accordion,
+  Alert,
   Button,
-  Card,
+  Card, Chip,
   Container,
   createStyles,
   Grid,
   Group,
-  Input, Loader,
-  MultiSelect,
+  Input,
+  Loader,
+  MultiSelect, Pagination, RangeSlider,
   rem,
   SimpleGrid,
   Text,
@@ -20,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
 import useFormInput from "../../utils/useFormInput";
+import {Score, ScoresProps } from '../../components/Scores/Score';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -55,104 +57,26 @@ const sortKeys = [
   { name: '上传时间', key: 'upload_time' },
 ];
 
-const difficultyColor = [
-  [
-    "rgb(129,217,85)",
-    "rgb(248,183,9)",
-    "rgb(249,126,138)",
-    "rgb(192,69,227)",
-    "rgb(233,233,233)",
-  ],
-  [
-    "rgb(34,187,91)",
-    "rgb(251,156,45)",
-    "rgb(246,72,97)",
-    "rgb(158,69,226)",
-    "rgb(186,103,248)",
-  ],
-  [
-    "rgb(14,117,54)",
-    "rgb(213,117,12)",
-    "rgb(188,38,52)",
-    "rgb(111,24,173)",
-    "rgb(192,69,227)",
-  ]
-]
-
-const getScoreSecondaryColor = (level_index: number) => {
-  return difficultyColor[2][level_index]
-}
-
-const getScoreCardBackgroundColor = (level_index: number) => {
-  return difficultyColor[localStorage.getItem("theme") === "\"light\"" ? 0 : 1][level_index]
-}
-
-interface ScoresProps {
-  id: number;
-  song_name: string;
-  level: string;
-  level_index: number;
-  achievements: number;
-  fc: string;
-  fs: string;
-  dx_score: number;
-  dx_rating: number;
-  rate: string;
-  type: string;
-  upload_time: string;
-}
-
-const Score = ({ score }: { score: ScoresProps }) => {
-  const { classes } = useStyles();
-
-  return (
-    <Card shadow="sm" radius="md" p={0} className={[classes.card, classes.scoreCard].join(' ')} style={{
-      border: `2px solid ${getScoreSecondaryColor(score.level_index)}`,
-      backgroundColor: getScoreCardBackgroundColor(score.level_index)
-    }}>
-      <Group position="apart" noWrap pt={5} pb={2} pl="xs" pr="xs" spacing="xs" style={{
-        backgroundColor: difficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 2][score.level_index]
-      }}>
-        <Text size="sm" weight={500} truncate color="white">{score.song_name}</Text>
-        {score.type === "standard" ? (
-          <Badge variant="filled" color="blue" size="sm">标准</Badge>
-        ) : (
-          <Badge variant="filled" color="orange" size="sm">DX</Badge>
-        )}
-      </Group>
-      <Group position="apart" m={10} mt={5} mb={5}>
-        <div>
-          <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
-            {parseInt(String(score.achievements))}
-            <span style={{ fontSize: rem(16) }}>.{
-              String(score.achievements).split(".")[1]
-            }%</span>
-          </Text>
-          <Text size="xs">
-            DX Rating: {parseInt(String(score.dx_rating))}
-          </Text>
-        </div>
-        <Card w={30} h={30} shadow="sm" padding={0} radius="md" withBorder>
-          <Text size="md" weight={500} align="center" pt={2}>
-            {score.level}
-          </Text>
-        </Card>
-      </Group>
-    </Card>
-  )
-}
-
 export default function Scores() {
   const { classes } = useStyles();
+  const [defaultScores, setDefaultScores] = useState<ScoresProps[]>([]);
+  const [scores, setScores] = useState<ScoresProps[]>([]);
+  const [displayScores, setDisplayScores] = useState<ScoresProps[]>([]); // 用于分页显示的成绩列表
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // 排序相关
   const [sortBy, setSortBy] = useState();
   const [sortOrder, setSortOrder] = useState('asc');
 
-  const [defaultScores, setDefaultScores] = useState<ScoresProps[]>([]);
-  const [scores, setScores] = useState<ScoresProps[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-
+  // 筛选相关
   const searchInput = useFormInput('');
-  const [difficulty, setDifficulty] = useState<string[]>();
+  const [difficulty, setDifficulty] = useState<string[]>([]);
+  const [type, setType] = useState<string[]>([]);
+
+  // 分页相关
+  const separator = 20;
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const navigate = useNavigate();
 
@@ -168,33 +92,54 @@ export default function Scores() {
     getScores().then((data) => {
       setDefaultScores(data.data);
       setScores(data.data);
+      setDisplayScores(data.data.slice(0, separator));
       setIsLoaded(true);
     });
   }, []);
 
   useEffect(() => {
-    handleSearchAndDifficulty();
-  }, [searchInput.value, difficulty]);
+    setTotalPages(Math.ceil(scores.length / separator));
+  }, [scores]);
+
+  useEffect(() => {
+    const start = (page - 1) * separator;
+    const end = start + separator;
+    setDisplayScores(scores.slice(start, end));
+  }, [page]);
+
+  useEffect(() => {
+    handleFilter();
+  }, [searchInput.value, difficulty, type]);
 
   const resetFilter = () => {
     searchInput.setValue("");
     setDifficulty([]);
     setScores(defaultScores);
+    setType([]);
   }
 
-  const handleSearchAndDifficulty = () => {
+  const handleFilter = () => {
     const searchFilteredData = defaultScores.filter(
       (score) => score.song_name.toLowerCase().includes(searchInput.value.toLowerCase())
     );
 
-    const filteredData = searchFilteredData.filter((score) => {
+    const difficultyFilteredData = searchFilteredData.filter((score) => {
       if (difficulty?.length === 0) {
         return true;
       }
       return difficulty?.includes(score.level_index.toString());
     });
 
-    setScores(filteredData);
+    const typeFilteredData = difficultyFilteredData.filter((score) => {
+      if (type?.length === 0) {
+        return true;
+      }
+      return type?.includes(score.type);
+    })
+
+    setScores(typeFilteredData);
+    setPage(1);
+    setDisplayScores(typeFilteredData.slice(0, separator));
   }
 
   const handleSort = (key: any) => {
@@ -212,6 +157,8 @@ export default function Scores() {
     });
 
     setScores(sortedElements);
+    setPage(1);
+    setDisplayScores(sortedElements.slice(0, separator));
   };
 
   const renderSortIndicator = (key: any) => {
@@ -226,7 +173,7 @@ export default function Scores() {
   return (
     <Container className={classes.root} size={400}>
       <Title order={2} size="h2" weight={900} align="center" mt="xs">
-        账号成绩管理
+        成绩管理
       </Title>
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         管理你的 maimai DX 查分器账号的成绩
@@ -297,6 +244,29 @@ export default function Scores() {
                     transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
                   />
                 </Grid.Col>
+                <Grid.Col span={12} mb="md">
+                  <Text fz="xs" c="dimmed" mb={3}>筛选谱面定数</Text>
+                  <RangeSlider
+                    min={1}
+                    max={15}
+                    step={0.1}
+                    minRange={0.1}
+                    defaultValue={[1, 15]}
+                    marks={Array.from({ length: 15 }, (_, index) => ({
+                      value: index + 1,
+                      label: String(index + 1),
+                    }))}
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Text fz="xs" c="dimmed" mb={3}>筛选谱面类型</Text>
+                  <Group>
+                    <Chip.Group multiple value={type} onChange={setType}>
+                      <Chip variant="filled" value="standard" color="blue">标准</Chip>
+                      <Chip variant="filled" value="dx" color="orange">DX</Chip>
+                    </Chip.Group>
+                  </Group>
+                </Grid.Col>
               </Grid>
               <Button leftIcon={<Icon path={mdiReload} size={0.8} />} variant="light" onClick={resetFilter}>
                 重置筛选条件
@@ -330,14 +300,19 @@ export default function Scores() {
                 </Text>
               </Alert>
             )}
-            <SimpleGrid
-              cols={2}
-              spacing="xs"
-            >
-              {scores.map((score) => (
-                <Score key={`${score.id}.${score.level_index}`} score={score} />
-              ))}
-            </SimpleGrid>
+            <Group position="center">
+              <Pagination total={totalPages} value={page} onChange={setPage} />
+              <SimpleGrid
+                cols={2}
+                spacing="xs"
+                w="100%"
+              >
+                {displayScores.map((score) => (
+                  <Score key={`${score.id}.${score.level_index}`} score={score} />
+                ))}
+              </SimpleGrid>
+              <Pagination total={totalPages} value={page} onChange={setPage} />
+            </Group>
           </>
         )
       )}
