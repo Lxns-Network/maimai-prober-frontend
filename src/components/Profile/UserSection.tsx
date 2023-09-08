@@ -1,8 +1,8 @@
-import {useState} from "react";
-import {Alert, Card, Group, Input, InputBase, Switch, Text} from "@mantine/core";
+import { Alert, Card, Group, Input, InputBase, Switch, Text } from "@mantine/core";
 import Icon from "@mdi/react";
-import {mdiEye, mdiEyeOff, mdiWebOff} from "@mdi/js";
-import {useStyles} from "./PlayerSection";
+import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
+import { useStyles } from "./PlayerSection";
+import { useDisclosure } from "@mantine/hooks";
 
 interface UserDataProps {
   name: string;
@@ -11,7 +11,7 @@ interface UserDataProps {
 
 export const UserSection = ({ userData }: { userData: UserDataProps | null }) => {
   const { classes } = useStyles();
-  const [visible, setVisible] = useState(true);
+  const [visible, visibleHandler] = useDisclosure(false)
 
   if (userData === null) {
     return (
@@ -35,11 +35,11 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
           </Text>
         </div>
         <Switch
-          size="md"
+          size="lg"
           value={visible ? "visible" : "hidden"}
-          onClick={() => setVisible(!visible)}
-          onLabel={<Icon path={mdiEyeOff} size={0.8} />}
-          offLabel={<Icon path={mdiEye} size={0.8} />}
+          onClick={visibleHandler.toggle}
+          onLabel={<Icon path={mdiEye} size={0.8} />}
+          offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
       </Group>
       <InputBase variant="filled" component="button" label="用户名" mb={5}>

@@ -1,5 +1,12 @@
-import { createStyles, Title, Text, Image, Button, Container, rem } from '@mantine/core';
+import {createStyles, Title, Text, Image, Button, Container, rem, SimpleGrid, ThemeIcon} from '@mantine/core';
 import { useNavigate } from "react-router-dom";
+import React from "react";
+import Icon from '@mdi/react';
+import {
+  mdiHandBackRight,
+  mdiPoll,
+  mdiXml
+} from "@mdi/js";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -20,10 +27,6 @@ const useStyles = createStyles((theme) => ({
       fontSize: rem(28),
       textAlign: 'left',
     },
-  },
-
-  highlight: {
-    color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
   },
 
   description: {
@@ -60,11 +63,65 @@ const useStyles = createStyles((theme) => ({
       },
     },
   },
+
+  feature: {
+    position: 'relative',
+  },
+
+  featureTitle: {
+    color: theme.colorScheme === 'dark' ? theme.white : theme.black,
+  },
 }));
+
+interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
+  path: any;
+  title: string;
+  description: string;
+}
+
+function Feature({ path, title, description, className, ...others }: FeatureProps) {
+  const { classes, cx } = useStyles();
+
+  return (
+    <div className={cx(classes.feature, className)} {...others}>
+      <ThemeIcon variant="gradient" size={40} radius={40}>
+        <Icon path={path} size={1} />
+      </ThemeIcon>
+      <Text mt="sm" mb={7}>
+        {title}
+      </Text>
+      <Text size="sm" color="dimmed" sx={{ lineHeight: 1.6 }}>
+        {description}
+      </Text>
+    </div>
+  );
+}
+
+const mockdata = [
+  {
+    path: mdiHandBackRight,
+    title: '易于使用',
+    description:
+      '摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。',
+  },
+  {
+    path: mdiPoll,
+    title: '高效的成绩管理',
+    description:
+      'maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。',
+  },
+  {
+    path: mdiXml,
+    title: '开发者友好',
+    description:
+      '我们提供了对开发者友好的 API 接口，开发者可以通过 API 接口获取、管理玩家的数据。',
+  },
+];
 
 export default function Home() {
   const { classes } = useStyles();
   const navigate = useNavigate();
+  const items = mockdata.map((item) => <Feature {...item} key={item.title} />);
 
   return (
     <Container className={classes.root}>
@@ -78,7 +135,7 @@ export default function Home() {
 
       <Title className={classes.title}>
         落雪咖啡屋{' '}
-        <Text component="span" className={classes.highlight} inherit>
+        <Text variant="gradient" component="span" inherit>
           maimai
         </Text>{' '}
         DX 查分器
@@ -105,12 +162,18 @@ export default function Home() {
                   onClick={() => navigate("/login")}>
             登录
           </Button>
-          <Button className={classes.control} size="lg"
+          <Button className={classes.control} size="lg" variant="gradient"
                   onClick={() => navigate("/register")}>
             注册 maimai DX 查分器账号
           </Button>
         </Container>
       }
+
+      <Container mt={rem(120)} mb={rem(30)} size="lg">
+        <SimpleGrid cols={3} breakpoints={[{ maxWidth: 'sm', cols: 1 }]} spacing={50}>
+          {items}
+        </SimpleGrid>
+      </Container>
     </Container>
   );
 }

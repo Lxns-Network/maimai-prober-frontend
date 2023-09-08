@@ -101,8 +101,8 @@ export default function SettingsSection({ title, description, data }: SettingsCa
   ));
 
   return (
-    <Card withBorder radius="md" p="xl" className={classes.card} mb="md">
-      <Text fz="lg" className={classes.title} fw={700}>
+    <Card withBorder radius="md" className={classes.card} mb="md">
+      <Text fz="lg" fw={700}>
         {title}
       </Text>
       <Text fz="xs" c="dimmed" mt={3} mb="xl">
