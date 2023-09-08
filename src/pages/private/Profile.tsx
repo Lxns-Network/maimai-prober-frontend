@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Accordion,
   Alert,
@@ -15,13 +16,12 @@ import {
   Switch,
   Text,
   Title,
-  rem,
+  rem, Loader,
 } from '@mantine/core';
-import { Await, json, useLoaderData, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getPlayerDetail, getProfile } from "../../utils/api/api";
 import Icon from "@mdi/react";
-import { mdiAlertCircleOutline, mdiEye, mdiEyeOff } from "@mdi/js";
-import React, { useState } from 'react';
+import { mdiAlertCircleOutline, mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -84,13 +84,13 @@ interface PlayerDataProps {
   upload_time: string;
 }
 
-const PlayerSection = ({ playerData }: { playerData: PlayerDataProps }) => {
+const PlayerSection = ({ playerData }: { playerData: PlayerDataProps | null }) => {
   const { classes } = useStyles();
   const navigate = useNavigate();
 
   if (playerData === null) {
     return (
-      <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到游戏数据" color="red">
+      <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到游戏数据" color="red" mb="md">
         <Text size="sm" mb="md">
           请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
         </Text>
@@ -142,9 +142,24 @@ const PlayerSection = ({ playerData }: { playerData: PlayerDataProps }) => {
   )
 }
 
-const UserSection = ({ userData }: { userData: any }) => {
+interface UserDataProps {
+  name: string;
+  email: string;
+}
+
+const UserSection = ({ userData }: { userData: UserDataProps | null }) => {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(true);
+
+  if (userData === null) {
+    return (
+      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red">
+        <Text size="sm">
+          可能是网络连接已断开，请检查你的网络连接是否正常。
+        </Text>
+      </Alert>
+    )
+  }
 
   return (
     <Card withBorder radius="md" className={classes.card} mb="md">
@@ -181,7 +196,28 @@ const UserSection = ({ userData }: { userData: any }) => {
 
 export default function Profile() {
   const { classes } = useStyles();
-  const { userData, playerData } = useLoaderData() as { userData: any, playerData: PlayerDataProps };
+  const [playerData, setPlayerData] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getPlayerDetail(), getProfile()]).then((responses) => {
+      const [playerResponse, userResponse] = responses;
+
+      if (playerResponse?.status === 200) {
+        playerResponse.json().then((data) => {
+          setPlayerData(data.data);
+        });
+      }
+
+      if (userResponse?.status === 200) {
+        userResponse.json().then((data) => {
+          setUserData(data.data);
+        });
+      }
+      setIsLoaded(true);
+    });
+  }, []);
 
   return (
     <Container className={classes.root} size={400}>
@@ -191,35 +227,16 @@ export default function Profile() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         查看你的 maimai DX 查分器账号的详情与游戏数据
       </Text>
-      <React.Suspense fallback={<p>Loading data...</p>}>
-        <Await
-          resolve={playerData}
-          errorElement={<p>Error loading data</p>}
-        >
-          {(playerData) => (
-            <PlayerSection playerData={playerData} />
-          )}
-        </Await>
-        <Await
-          resolve={userData}
-          errorElement={<p>Error loading data</p>}
-        >
-          {(userData) => (
-            <UserSection userData={userData} />
-          )}
-        </Await>
-      </React.Suspense>
+      {!isLoaded ? (
+        <Group position="center" mt="xl">
+          <Loader />
+        </Group>
+      ) : (
+        <>
+          <PlayerSection playerData={playerData} />
+          <UserSection userData={userData} />
+        </>
+      )}
     </Container>
   );
-}
-
-export const profileLoader = async () => {
-  if (localStorage.getItem("token") === null) {
-    return { data: null };
-  }
-  const [userData, playerData] = await Promise.all([
-    getProfile(),
-    getPlayerDetail(),
-  ]);
-  return json({ userData, playerData });
 }

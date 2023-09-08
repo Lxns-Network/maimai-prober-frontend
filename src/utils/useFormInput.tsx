@@ -10,6 +10,9 @@ function useFormInput(initialValue: string) {
   return {
     value,
     onChange: handleInputChange,
+    setValue(s: string) {
+      setValue(s);
+    }
   };
 }
 

@@ -23,31 +23,20 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
   }
 
   try {
-    const response = await fetch(`${API_URL}/${endpoint}`, requestOptions)
-
-    if (response.status === 200) {
-      const data = await response.json();
-      if (data.success) {
-        return data.data;
-      } else {
-        throw data;
-      }
-    } else {
-      throw response;
-    }
+    return await fetch(`${API_URL}/${endpoint}`, requestOptions)
   } catch (error) {
     return null;
   }
 }
 
-export function getProfile() {
+export async function getProfile() {
   return fetchAPI("user/profile", { method: "GET" });
 }
 
-export function getPlayerDetail() {
+export async function getPlayerDetail() {
   return fetchAPI("user/player", { method: "GET" });
 }
 
-export function getPlayerScores() {
+export async function getPlayerScores() {
   return fetchAPI("user/player/scores", { method: "GET" });
 }

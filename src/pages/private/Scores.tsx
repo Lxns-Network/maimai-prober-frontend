@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Accordion,
+  Accordion, Alert,
   Badge,
   Button,
   Card,
@@ -8,7 +8,7 @@ import {
   createStyles,
   Grid,
   Group,
-  Input,
+  Input, Loader,
   MultiSelect,
   rem,
   SimpleGrid,
@@ -16,9 +16,10 @@ import {
   Title
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/api";
-import { json, useLoaderData } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Icon from "@mdi/react";
-import { mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
+import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
+import useFormInput from "../../utils/useFormInput";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -146,36 +147,54 @@ export default function Scores() {
   const [sortBy, setSortBy] = useState();
   const [sortOrder, setSortOrder] = useState('asc');
 
-  const [search, setSearch] = useState("");
-  const [difficulty, setDifficulty] = useState(["0", "1", "2", "3", "4"]);
-  const loaderData = useLoaderData() as { data: ScoresProps[] };
-  const [scores, setScores] = useState(loaderData.data);
+  const [defaultScores, setDefaultScores] = useState<ScoresProps[]>([]);
+  const [scores, setScores] = useState<ScoresProps[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const searchInput = useFormInput('');
+  const [difficulty, setDifficulty] = useState<string[]>();
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const getScores = async () => {
+      const res = await getPlayerScores();
+      if (res?.status !== 200) {
+        return [];
+      }
+      return res?.json();
+    }
+
+    getScores().then((data) => {
+      setDefaultScores(data.data);
+      setScores(data.data);
+      setIsLoaded(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    handleSearchAndDifficulty();
+  }, [searchInput.value, difficulty]);
 
   const resetFilter = () => {
-    setSearch("");
-    setDifficulty(["0", "1", "2", "3", "4"]);
-    setScores(loaderData.data);
+    searchInput.setValue("");
+    setDifficulty([]);
+    setScores(defaultScores);
   }
 
-  const handleSearchAndDifficulty = (searchValue: string, difficultyValue: any) => {
-    const searchFilteredData = loaderData.data.filter(
-      (score) => score.song_name.toLowerCase().includes(searchValue.toLowerCase())
+  const handleSearchAndDifficulty = () => {
+    const searchFilteredData = defaultScores.filter(
+      (score) => score.song_name.toLowerCase().includes(searchInput.value.toLowerCase())
     );
 
-    const filteredData = searchFilteredData.filter((score) =>
-      difficultyValue.includes(score.level_index.toString())
-    );
+    const filteredData = searchFilteredData.filter((score) => {
+      if (difficulty?.length === 0) {
+        return true;
+      }
+      return difficulty?.includes(score.level_index.toString());
+    });
 
     setScores(filteredData);
-  }
-
-  const handleSearch = () => {
-    handleSearchAndDifficulty(search, difficulty);
-  }
-
-  const handleDifficulty = (value: any) => {
-    setDifficulty(value);
-    handleSearchAndDifficulty(search, value);
   }
 
   const handleSort = (key: any) => {
@@ -249,10 +268,7 @@ export default function Scores() {
                     variant="filled"
                     icon={<Icon path={mdiMagnify} size={0.8} />}
                     placeholder="请输入曲名"
-                    onChange={(event: any) => {
-                      setSearch(event.currentTarget.value);
-                      handleSearch();
-                    }}
+                    {...searchInput}
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
@@ -276,7 +292,8 @@ export default function Scores() {
                       label: "⚪ Re:MASTER",
                     }]}
                     placeholder="请选择难度"
-                    onChange={handleDifficulty}
+                    value={difficulty}
+                    onChange={(value) => setDifficulty(value)}
                     transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
                   />
                 </Grid.Col>
@@ -288,22 +305,42 @@ export default function Scores() {
           </Accordion.Item>
         </Accordion>
       </Card>
-      <SimpleGrid
-        cols={2}
-        spacing="xs"
-      >
-        {scores.map((score) => (
-          <Score key={`${score.id}.${score.level_index}`} score={score} />
-        ))}
-      </SimpleGrid>
+      {!isLoaded ? (
+        <Group position="center" mt="xl">
+          <Loader />
+        </Group>
+      ) : (
+        !scores ? (
+          <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到任何成绩" color="red">
+            <Text size="sm" mb="md">
+              请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
+            </Text>
+            <Group>
+              <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
+                同步游戏数据
+              </Button>
+            </Group>
+          </Alert>
+        ) : (
+          <>
+            {scores.length === 0 && (
+              <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有筛选到任何成绩" color="yellow">
+                <Text size="sm">
+                  请修改筛选条件后重试。
+                </Text>
+              </Alert>
+            )}
+            <SimpleGrid
+              cols={2}
+              spacing="xs"
+            >
+              {scores.map((score) => (
+                <Score key={`${score.id}.${score.level_index}`} score={score} />
+              ))}
+            </SimpleGrid>
+          </>
+        )
+      )}
     </Container>
   );
-}
-
-export const scoresLoader = async () => {
-  if (localStorage.getItem("token") === null) {
-    return { data: null };
-  }
-  const data = await getPlayerScores();
-  return json({ data: data });
 }
