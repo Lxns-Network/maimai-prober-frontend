@@ -146,7 +146,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       </MantineNavbar.Section>
 
       <MantineNavbar.Section className={classes.navbarFooter}>
-        <a href="/public/About" className={classes.link} onClick={(event) => event.preventDefault()}>
+        <a href="/about" className={classes.link} onClick={(event) => event.preventDefault()}>
           <Icon className={classes.linkIcon} path={mdiInformationOutline} size={1} />
           <span>关于 maimai DX 查分器</span>
         </a>
@@ -155,6 +155,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
           event.preventDefault()
           localStorage.removeItem("token")
           navigate("/")
+          onClose()
         }}>
           <Icon className={classes.linkIcon} path={mdiLogoutVariant} size={1} />
           <span>登出</span>

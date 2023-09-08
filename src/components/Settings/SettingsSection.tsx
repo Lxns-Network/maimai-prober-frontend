@@ -51,7 +51,7 @@ interface SettingsCardProps {
   data: SettingsProps[];
 }
 
-export default function SettingsCard({ title, description, data }: SettingsCardProps) {
+export default function SettingsSection({ title, description, data }: SettingsCardProps) {
   const { classes } = useStyles();
 
   const settings = data.map((item) => (

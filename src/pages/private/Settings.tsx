@@ -1,6 +1,6 @@
 import { Title, Text } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import SettingsCard from "../../components/SettingsCard";
+import SettingsSection from "../../components/Settings/SettingsSection";
 
 const useStyles = createStyles(() => ({
   root: {
@@ -15,12 +15,12 @@ export default function Settings() {
   return (
     <Container className={classes.root} size={400}>
       <Title order={2} size="h2" weight={900} align="center" mt="xs">
-        查分器账号设置
+        账号设置
       </Title>
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         设置你的 maimai DX 查分器账号
       </Text>
-      <SettingsCard title="爬取数据" description="设置每次爬取的方式与获取的数据" data={[{
+      <SettingsSection title="爬取数据" description="设置每次爬取的方式与获取的数据" data={[{
         key: "allow_crawl_scores",
         title: "允许爬取谱面成绩",
         description: "关闭后，每次爬取时将不会爬取成绩数据。",
@@ -65,7 +65,7 @@ export default function Settings() {
         }]
       }]}
       />
-      <SettingsCard title="隐私设置" description="将影响第三方开发者通过查分器 API 访问你的数据" data={[{
+      <SettingsSection title="隐私设置" description="将影响第三方开发者通过查分器 API 访问你的数据" data={[{
         key: "allow_third_party_fetch_player",
         title: "允许读取玩家信息",
         description: "关闭后，第三方开发者将无法获取你的玩家信息。",
@@ -85,7 +85,7 @@ export default function Settings() {
         defaultValue: false,
       }]}
       />
-      <SettingsCard title="其它设置" description="重置密码、删除账号等操作" data={[{
+      <SettingsSection title="其它设置" description="重置密码、删除账号等操作" data={[{
         key: "reset_password",
         title: "重置密码",
         description: "重置你的查分器账号密码。",
