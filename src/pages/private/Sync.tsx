@@ -12,12 +12,13 @@ import {
   rem,
   Text,
   Title,
-  CopyButton,
   ThemeIcon, Alert, Avatar
 } from '@mantine/core';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
-import { mdiAlertCircleOutline, mdiCheck } from "@mdi/js";
+import { mdiAlertCircleOutline, mdiCheck, mdiContentCopy, mdiPause } from "@mdi/js";
+import { useClipboard, useIdle } from '@mantine/hooks';
+import { useNavigate } from 'react-router-dom';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -56,13 +57,41 @@ async function checkProxySettingStatus() {
   return 0; // If successful, return 0 (no proxy)
 }
 
+const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
+  const clipboard = useClipboard();
+
+  return (
+    <Button
+      variant="light"
+      rightIcon={
+        <Icon path={clipboard.copied ? (mdiCheck) : (mdiContentCopy)} size={0.8} />
+      }
+      color={clipboard.copied ? 'teal' : 'blue'}
+      radius="xl"
+      size="md"
+      styles={{
+        root: { height: rem(48) },
+        rightIcon: { marginLeft: rem(22) },
+      }}
+      onClick={() => clipboard.copy(content)}
+      {...others}
+    >
+      {label}
+    </Button>
+  )
+}
+
 export default function Sync() {
   const { classes } = useStyles();
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const navigate = useNavigate();
+  const idle = useIdle(60000);
 
   useEffect(() => {
     const checkProxy = () => {
+      if (idle) return;
+
       checkProxySettingStatus().then(r => {
         if (r === 0) { // No proxy
           setProxyAvailable(false);
@@ -118,6 +147,13 @@ export default function Sync() {
                   请检查你的 HTTP 代理设置是否正确
                 </Text>
               </div>
+            ) : (idle ? (
+              <div>
+                <Text size="lg">已暂停检测 HTTP 代理</Text>
+                <Text size="xs" color="dimmed">
+                  请移动鼠标或触摸屏幕以继续检测
+                </Text>
+              </div>
             ) : (
               <div>
                 <Text size="lg">正在检测 HTTP 代理</Text>
@@ -125,15 +161,19 @@ export default function Sync() {
                   正在检测 HTTP 代理是否正确配置
                 </Text>
               </div>
-            ))}
+            )))}
           </Group>
           {proxyAvailable ? (
             <ThemeIcon variant="light" color="teal" size="xl" radius="xl">
               <Icon path={mdiCheck} size={10} />
             </ThemeIcon>
+          ) : (idle ? (
+            <ThemeIcon variant="light" color="gray" size="xl" radius="xl">
+              <Icon path={mdiPause} size={10} />
+            </ThemeIcon>
           ) : (
             <Loader size="md" />
-          )}
+          ))}
         </Flex>
         <Accordion variant="filled" chevronPosition="left" defaultValue="how-to-set-http-proxy">
           <Accordion.Item value="how-to-set-http-proxy">
@@ -142,13 +182,7 @@ export default function Sync() {
               <Text size="sm" color="dimmed"  mb="md">
                 请将系统的 WLAN 代理设置为 <Code>proxy.maimai.lxns.net:8080</Code>，Android 用户在移动网络下需要设置接入点名称（APN）代理。
               </Text>
-              <CopyButton value="proxy.maimai.lxns.net">
-                {({ copied, copy }) => (
-                  <Button color={copied ? 'teal' : 'blue'} onClick={copy}>
-                    {copied ? '已复制 HTTP 代理地址' : '复制 HTTP 代理地址'}
-                  </Button>
-                )}
-              </CopyButton>
+              <CopyButtonWithIcon label="复制 HTTP 代理" content="proxy.maimai.lxns.net" />
             </Accordion.Panel>
           </Accordion.Item>
         </Accordion>
@@ -164,13 +198,11 @@ export default function Sync() {
         <Text size="sm" mb="md">
           请复制下方的微信 OAuth 链接，然后使用微信内置浏览器打开，等待同步结果返回。
         </Text>
-        <CopyButton value={`${API_URL}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}>
-          {({ copied, copy }) => (
-            <Button color={copied ? 'teal' : 'blue'} onClick={copy} disabled={!proxyAvailable}>
-              {copied ? '已复制微信 OAuth 链接' : '复制微信 OAuth 链接'}
-            </Button>
-          )}
-        </CopyButton>
+        <CopyButtonWithIcon
+          label="复制微信 OAuth 链接"
+          content={`${API_URL}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}
+          disabled={!proxyAvailable}
+        />
         <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="请不要泄露该 OAuth 链接！" color="red" mt="md">
           请不要将该 OAuth 链接分享给他人，否则可能导致你的账号被盗用。
         </Alert>
@@ -187,10 +219,10 @@ export default function Sync() {
           若同步成功，你的国服 maimai DX 玩家数据与成绩将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
         </Text>
         <Group>
-          <Button variant="light">
+          <Button variant="light" onClick={() => navigate("/user/profile")}>
             账号详情
           </Button>
-          <Button variant="light">
+          <Button variant="light" onClick={() => navigate("/user/scores")}>
             成绩管理
           </Button>
         </Group>
