@@ -6,10 +6,12 @@ import {
   ColorScheme,
   ColorSchemeProvider,
   rem,
-  Transition
+  Transition,
+  Loader,
+  Group
 } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 // Layouts
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
@@ -79,7 +81,13 @@ export default function App() {
           </Transition>
           <Header navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} />
           <ScrollArea style={{ height: 'calc(100vh - 56px)' }} type="scroll" className={classes.routesWrapper}>
-            <Outlet />
+            <Suspense fallback={(
+              <Group position="center" p={rem(80)}>
+                <Loader variant="dots" size="xl" />
+              </Group>
+            )}>
+              <Outlet />
+            </Suspense>
           </ScrollArea>
         </MantineProvider>
       </ColorSchemeProvider>

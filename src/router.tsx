@@ -1,13 +1,15 @@
 import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route, useLocation } from "react-router-dom";
-import Home from "./pages/public/Home";
-import Login from "./pages/public/Login";
-import Register from "./pages/public/Register";
-import Profile from "./pages/private/Profile";
-import Sync from "./pages/private/Sync";
-import Scores from "./pages/private/Scores";
-import Settings from "./pages/private/Settings";
-import NotFound from "./pages/public/NotFound";
+import { lazy } from "react";
 import App from "./App";
+
+const Home = lazy(() => import('./pages/public/Home'));
+const Login = lazy(() => import('./pages/public/Login'));
+const Register = lazy(() => import('./pages/public/Register'));
+const Profile = lazy(() => import('./pages/private/Profile'));
+const Sync = lazy(() => import('./pages/private/Sync'));
+const Scores = lazy(() => import('./pages/private/Scores'));
+const Settings = lazy(() => import('./pages/private/Settings'));
+const NotFound = lazy(() => import('./pages/public/NotFound'));
 
 const ProtectedRoute = () => {
   const location = useLocation();
