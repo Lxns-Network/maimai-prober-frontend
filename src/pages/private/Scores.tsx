@@ -18,10 +18,10 @@ import {
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/api";
 import { useNavigate } from "react-router-dom";
+import { useInputState } from "@mantine/hooks";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
-import useFormInput from "../../utils/useFormInput";
-import {Score, ScoresProps } from '../../components/Scores/Score';
+import { Score, ScoresProps } from '../../components/Scores/Score';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -69,7 +69,7 @@ export default function Scores() {
   const [sortOrder, setSortOrder] = useState('asc');
 
   // 筛选相关
-  const searchInput = useFormInput('');
+  const [search, setSearchValue] = useInputState('');
   const [difficulty, setDifficulty] = useState<string[]>([]);
   const [type, setType] = useState<string[]>([]);
 
@@ -109,10 +109,10 @@ export default function Scores() {
 
   useEffect(() => {
     handleFilter();
-  }, [searchInput.value, difficulty, type]);
+  }, [search, difficulty, type]);
 
   const resetFilter = () => {
-    searchInput.setValue("");
+    setSearchValue('');
     setDifficulty([]);
     setScores(defaultScores);
     setType([]);
@@ -120,7 +120,7 @@ export default function Scores() {
 
   const handleFilter = () => {
     const searchFilteredData = defaultScores.filter(
-      (score) => score.song_name.toLowerCase().includes(searchInput.value.toLowerCase())
+      (score) => score.song_name.toLowerCase().includes(search.toLowerCase())
     );
 
     const difficultyFilteredData = searchFilteredData.filter((score) => {
@@ -215,7 +215,8 @@ export default function Scores() {
                     variant="filled"
                     icon={<Icon path={mdiMagnify} size={0.8} />}
                     placeholder="请输入曲名"
-                    {...searchInput}
+                    value={search}
+                    onChange={setSearchValue}
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>

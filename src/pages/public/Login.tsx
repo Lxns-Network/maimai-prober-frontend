@@ -3,12 +3,12 @@ import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button, Loa
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
-import useFormInput from "../../utils/useFormInput";
 import ReCaptcha from "../../utils/reCaptcha";
 import Alert from '../../components/Alert';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiLockOutline} from "@mdi/js";
+import {useInputState} from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -40,8 +40,8 @@ export default function Login() {
     }
   }, [])
 
-  const nameInput = useFormInput('');
-  const passwordInput = useFormInput('');
+  const [name, setNameValue] = useInputState('')
+  const [password, setPasswordValue] = useInputState('');
 
   const validationRules = {
     name: "用户名不能为空",
@@ -61,8 +61,8 @@ export default function Login() {
 
   const submitLogin = async () => {
     if (!validateInputs({
-      name: nameInput.value,
-      password: passwordInput.value,
+      name: name,
+      password: password,
     })) {
       return;
     }
@@ -73,8 +73,8 @@ export default function Login() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        "name": nameInput.value,
-        "password": passwordInput.value,
+        "name": name,
+        "password": password,
       }),
     })
       .then((response) => response.json())
@@ -117,7 +117,8 @@ export default function Login() {
           variant="filled"
           placeholder="请输入你的用户名"
           icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
-          {...nameInput}
+          value={name}
+          onChange={setNameValue}
         />
         <Group position="apart" mt="md">
           <Text component="label" htmlFor="password" size="sm" weight={500}>密码</Text>
@@ -135,7 +136,8 @@ export default function Login() {
           variant="filled"
           placeholder="请输入你的密码"
           icon={<Icon path={mdiLockOutline} size={rem(16)} />}
-          {...passwordInput}
+          value={password}
+          onChange={setPasswordValue}
         />
         <Group position="right" mt="xl">
           <Button size="sm" variant="default" color="gray" onClick={() => navigate("/register")}>注册</Button>

@@ -3,12 +3,12 @@ import { Title, Card, PasswordInput, TextInput, Text, Group, Button, LoadingOver
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
-import useFormInput from '../../utils/useFormInput';
 import ReCaptcha from '../../utils/reCaptcha';
 import Alert from "../../components/Alert";
 import {API_URL, RECAPTCHA_SITE_KEY} from "../../main";
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiEmailOutline, mdiLockOutline } from "@mdi/js";
+import {useInputState} from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -40,10 +40,10 @@ export default function Register() {
     }
   }, [])
 
-  const nameInput = useFormInput('');
-  const emailInput = useFormInput('');
-  const passwordInput = useFormInput('');
-  const confirmPasswordInput = useFormInput('');
+  const [name, setNameValue] = useInputState('');
+  const [email, setEmailValue] = useInputState('');
+  const [password, setPasswordValue] = useInputState('');
+  const [confirmPassword, setConfirmPasswordValue] = useInputState('');
 
   const validationRules = {
     name: "用户名不能为空",
@@ -70,14 +70,14 @@ export default function Register() {
 
   const submitRegister = async () => {
     if (!validateInputs({
-      name: nameInput.value,
-      email: emailInput.value,
-      password: passwordInput.value,
-      confirmPassword: confirmPasswordInput.value,
+      name: name,
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
     })) {
       return;
     }
-    if (passwordInput.value !== confirmPasswordInput.value) {
+    if (password !== confirmPassword) {
       openAlert("注册失败", "两次输入的密码不一致");
       return;
     }
@@ -88,10 +88,10 @@ export default function Register() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        "name": nameInput.value,
-        "email": emailInput.value,
-        "password": passwordInput.value,
-        "confirmPassword": confirmPasswordInput.value,
+        "name": name,
+        "email": email,
+        "password": password,
+        "confirmPassword": confirmPassword,
       }),
     })
       .then((response) => response.json())
@@ -135,7 +135,8 @@ export default function Register() {
           placeholder="请输入你的用户名"
           mb={4}
           icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
-          {...nameInput}
+          value={name}
+          onChange={setNameValue}
         />
         <Text color="dimmed" size="xs" align="left" mb="sm">
           此用户名将会作为你的 maimai DX 查分器账号的唯一标识，且不会用作查分用途。
@@ -147,7 +148,8 @@ export default function Register() {
           placeholder="请输入你的邮箱"
           mb="sm"
           icon={<Icon path={mdiEmailOutline} size={rem(16)} />}
-          {...emailInput}
+          value={email}
+          onChange={setEmailValue}
         />
         <PasswordInput
           name="password"
@@ -156,7 +158,8 @@ export default function Register() {
           placeholder="请输入你的密码"
           mb="sm"
           icon={<Icon path={mdiLockOutline} size={rem(16)} />}
-          {...passwordInput}
+          value={password}
+          onChange={setPasswordValue}
         />
         <PasswordInput
           name="confirm-password"
@@ -165,7 +168,8 @@ export default function Register() {
           placeholder="请再次输入你的密码"
           mb="sm"
           icon={<Icon path={mdiLockOutline} size={rem(16)} />}
-          {...confirmPasswordInput}
+          value={confirmPassword}
+          onChange={setConfirmPasswordValue}
         />
         <Text color="dimmed" size="xs" align="left" mt="sm">
           注册即代表你同意我们的服务条款和隐私政策，请在注册后根据指引绑定你的游戏账号。
