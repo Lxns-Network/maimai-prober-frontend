@@ -89,6 +89,8 @@ export default function Sync() {
   const idle = useIdle(60000);
 
   useEffect(() => {
+    document.title = "同步游戏数据 - maimai DX 查分器";
+
     const checkProxy = () => {
       if (idle) return;
 

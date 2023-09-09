@@ -29,6 +29,8 @@ export default function Profile() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    document.title = "账号详情 - maimai DX 查分器";
+
     Promise.all([getPlayerDetail(), getProfile()]).then((responses) => {
       const [playerResponse, userResponse] = responses;
 

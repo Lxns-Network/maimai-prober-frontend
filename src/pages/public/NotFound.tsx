@@ -1,5 +1,6 @@
 import { createStyles, Container, Title, Text, Button, Group, rem } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
+import {useEffect} from "react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -28,6 +29,10 @@ const useStyles = createStyles((theme) => ({
 export default function NotFound() {
   const { classes } = useStyles();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = "页面不存在 - maimai DX 查分器";
+  });
 
   return (
     <Container className={classes.root}>

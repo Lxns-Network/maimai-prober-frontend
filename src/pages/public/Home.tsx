@@ -1,6 +1,6 @@
-import {createStyles, Title, Text, Image, Button, Container, rem, SimpleGrid, ThemeIcon} from '@mantine/core';
+import { createStyles, Title, Text, Image, Button, Container, rem, SimpleGrid, ThemeIcon } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
-import React from "react";
+import React, { useEffect } from "react";
 import Icon from '@mdi/react';
 import {
   mdiHandBackRight,
@@ -123,6 +123,10 @@ export default function Home() {
   const navigate = useNavigate();
   const items = mockdata.map((item) => <Feature {...item} key={item.title} />);
 
+  useEffect(() => {
+    document.title = "落雪咖啡屋 maimai DX 查分器";
+  });
+
   return (
     <Container className={classes.root}>
       <Image
@@ -169,7 +173,7 @@ export default function Home() {
         </Container>
       }
 
-      <Container mt={rem(120)} mb={rem(30)} size="lg">
+      <Container mt={rem(130)} mb={rem(30)} size="lg">
         <SimpleGrid cols={3} breakpoints={[{ maxWidth: 'sm', cols: 1 }]} spacing={50}>
           {items}
         </SimpleGrid>

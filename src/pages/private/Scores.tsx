@@ -81,12 +81,14 @@ export default function Scores() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "成绩管理 - maimai DX 查分器";
+
     const getScores = async () => {
       const res = await getPlayerScores();
       if (res?.status !== 200) {
         return [];
       }
-      return res?.json();
+      return res.json();
     }
 
     getScores().then((data) => {

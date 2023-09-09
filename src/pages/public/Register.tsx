@@ -5,7 +5,7 @@ import { useInputState } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
 import ReCaptcha from '../../utils/reCaptcha';
-import Alert from "../../components/Alert";
+import AlertModal from "../../components/AlertModal";
 import {API_URL, RECAPTCHA_SITE_KEY} from "../../main";
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiEmailOutline, mdiLockOutline } from "@mdi/js";
@@ -33,6 +33,8 @@ export default function Register() {
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
 
   useEffect(() => {
+    document.title = "注册 - maimai DX 查分器";
+
     recaptcha.render();
 
     return () => {
@@ -111,7 +113,7 @@ export default function Register() {
 
   return (
     <Container className={classes.root} size={400}>
-      <Alert
+      <AlertModal
         title={alertTitle}
         content={alertContent}
         opened={isAlertVisible}

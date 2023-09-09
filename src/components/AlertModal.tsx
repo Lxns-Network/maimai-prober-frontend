@@ -8,7 +8,7 @@ interface AlertProps {
   onConfirm?: () => void;
 }
 
-export default function Alert({ title, content, opened, onClose, onConfirm }: AlertProps) {
+export default function AlertModal({ title, content, opened, onClose, onConfirm }: AlertProps) {
   return (
     <Modal.Root opened={opened} onClose={onClose} size="auto" centered>
       <Modal.Overlay />
