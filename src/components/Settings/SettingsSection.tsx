@@ -49,9 +49,10 @@ interface SettingsCardProps {
   title: string;
   description: string;
   data: SettingsProps[];
+  onChange?: (key: string, value: any) => void;
 }
 
-export default function SettingsSection({ title, description, data }: SettingsCardProps) {
+export default function SettingsSection({ title, description, data, onChange }: SettingsCardProps) {
   const { classes } = useStyles();
 
   const settings = data.map((item) => (
@@ -69,6 +70,7 @@ export default function SettingsSection({ title, description, data }: SettingsCa
           className={classes.switch}
           size="lg"
           defaultChecked={item.defaultValue as boolean}
+          onChange={(event) => onChange && onChange(item.key, event.currentTarget.checked)}
         />
       )}
       {item.optionType === 'select' && (
@@ -77,6 +79,7 @@ export default function SettingsSection({ title, description, data }: SettingsCa
           data={item.options || []}
           defaultValue={item.defaultValue as string}
           transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+          onChange={(value) => onChange && onChange(item.key, value)}
         />
       )}
       {item.optionType === 'multi-select' && (
@@ -86,6 +89,7 @@ export default function SettingsSection({ title, description, data }: SettingsCa
           placeholder={item.placeholder}
           defaultValue={item.defaultValue as string[]}
           transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+          onChange={(value) => onChange && onChange(item.key, value)}
         />
       )}
       {item.optionType === 'button' && (
