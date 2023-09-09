@@ -1,3 +1,5 @@
+import { logout } from "../session";
+
 export const API_URL = import.meta.env.VITE_API_URL;
 
 interface RequestOptions {
@@ -23,7 +25,14 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
   }
 
   try {
-    return await fetch(`${API_URL}/${endpoint}`, requestOptions)
+    const res = await fetch(`${API_URL}/${endpoint}`, requestOptions)
+
+    if (res.status === 401) {
+      logout();
+      window.location.reload();
+    }
+
+    return res
   } catch (error) {
     return null;
   }
@@ -39,4 +48,12 @@ export async function getPlayerDetail() {
 
 export async function getPlayerScores() {
   return fetchAPI("user/player/scores", { method: "GET" });
+}
+
+export async function getUserConfig() {
+  return fetchAPI("user/config", { method: "GET" });
+}
+
+export async function updateUserConfig(data: any) {
+  return fetchAPI("user/config", { method: "POST", body: data });
 }

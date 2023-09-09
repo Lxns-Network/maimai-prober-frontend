@@ -1,14 +1,14 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
 import ReCaptcha from "../../utils/reCaptcha";
-import Alert from '../../components/Alert';
+import AlertModal from '../../components/AlertModal';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiLockOutline} from "@mdi/js";
-import {useInputState} from "@mantine/hooks";
+import { useInputState } from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -30,9 +30,15 @@ export default function Login() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state;
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
 
   useEffect(() => {
+    document.title = "登录 - maimai DX 查分器";
+
+    if (state && state.expired) openAlert("您已登出", "登录会话已过期，请重新登录");
+
     recaptcha.render();
 
     return () => {
@@ -95,7 +101,7 @@ export default function Login() {
 
   return (
     <Container className={classes.root} size={400}>
-      <Alert
+      <AlertModal
         title={alertTitle}
         content={alertContent}
         opened={isAlertVisible}

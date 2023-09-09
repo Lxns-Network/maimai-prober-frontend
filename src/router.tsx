@@ -1,6 +1,7 @@
 import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route, useLocation } from "react-router-dom";
 import { lazy } from "react";
 import App from "./App";
+import { isTokenExpired, logout } from "./utils/session";
 
 const Home = lazy(() => import('./pages/public/Home'));
 const Login = lazy(() => import('./pages/public/Login'));
@@ -14,9 +15,12 @@ const NotFound = lazy(() => import('./pages/public/NotFound'));
 const ProtectedRoute = () => {
   const location = useLocation();
 
-  return localStorage.getItem('token')
-    ? <Outlet />
-    : <Navigate to="/login" state={{ from: location }} replace />;
+  if (isTokenExpired()) {
+    logout();
+    return <Navigate to="/login" state={{ from: location, expired: true }} replace />;
+  }
+
+  return <Outlet />
 }
 
 const routesConfig = (
