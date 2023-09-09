@@ -1,6 +1,8 @@
-import { Title, Text } from '@mantine/core';
+import { Title, Text, Alert } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import SettingsSection from "../../components/Settings/SettingsSection";
+import Icon from "@mdi/react";
+import { mdiCodeTags } from "@mdi/js";
 
 const useStyles = createStyles(() => ({
   root: {
@@ -20,6 +22,11 @@ export default function Settings() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         设置你的 maimai DX 查分器账号
       </Text>
+      <Alert radius="md" icon={<Icon path={mdiCodeTags} />} title="此页面正在开发中" color="blue" mb="md">
+        <Text size="sm">
+          此页面正在开发中，功能暂不可用。
+        </Text>
+      </Alert>
       <SettingsSection title="爬取数据" description="设置每次爬取的方式与获取的数据" data={[{
         key: "allow_crawl_scores",
         title: "允许爬取谱面成绩",

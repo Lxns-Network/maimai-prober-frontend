@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
+import { useInputState } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
 import ReCaptcha from '../../utils/reCaptcha';
@@ -8,7 +9,6 @@ import Alert from "../../components/Alert";
 import {API_URL, RECAPTCHA_SITE_KEY} from "../../main";
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiEmailOutline, mdiLockOutline } from "@mdi/js";
-import {useInputState} from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   root: {

@@ -44,12 +44,12 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
       </Group>
       <InputBase variant="filled" component="button" label="用户名" mb={5}>
         <Input.Placeholder>{
-          visible ? userData.name : userData.name.replace(/./g, "•")
+          visible ? userData.name : "已隐藏"
         }</Input.Placeholder>
       </InputBase>
       <InputBase variant="filled" component="button" label="邮箱">
         <Input.Placeholder>{
-          visible ? userData.email : userData.email.replace(/./g, "•")
+          visible ? userData.email : "已隐藏"
         }</Input.Placeholder>
       </InputBase>
     </Card>

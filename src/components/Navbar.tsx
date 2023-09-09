@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   Navbar as MantineNavbar,
   ScrollArea,
   createStyles,
-  getStylesRef,
   rem,
-  em,
+  em, Divider,
 } from '@mantine/core';
-import Icon from "@mdi/react";
 import {
   mdiAccountCheckOutline,
   mdiAccountOutline,
@@ -19,8 +17,10 @@ import {
   mdiHomeOutline,
   mdiInformationOutline,
   mdiLogoutVariant,
+  mdiWrenchCheckOutline,
 } from '@mdi/js';
 import { NAVBAR_WIDTH, NAVBAR_BREAKPOINT } from "../App";
+import { NavbarButton } from "./NavbarButton";
 
 const useStyles = createStyles((theme) => ({
   navbar: {
@@ -50,43 +50,6 @@ const useStyles = createStyles((theme) => ({
       theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
     }`,
   },
-
-  link: {
-    ...theme.fn.focusStyles(),
-    display: 'flex',
-    alignItems: 'center',
-    textDecoration: 'none',
-    fontSize: theme.fontSizes.sm,
-    color: theme.colorScheme === 'dark' ? theme.colors.dark[1] : theme.colors.gray[7],
-    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    borderRadius: theme.radius.sm,
-    fontWeight: 500,
-
-    '&:hover': {
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-      color: theme.colorScheme === 'dark' ? theme.white : theme.black,
-
-      [`& .${getStylesRef('icon')}`]: {
-        color: theme.colorScheme === 'dark' ? theme.white : theme.black,
-      },
-    },
-  },
-
-  linkIcon: {
-    ref: getStylesRef('icon'),
-    color: theme.colorScheme === 'dark' ? theme.colors.dark[2] : theme.colors.gray[6],
-    marginRight: theme.spacing.sm,
-  },
-
-  linkActive: {
-    '&, &:hover': {
-      backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
-      color: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).color,
-      [`& .${getStylesRef('icon')}`]: {
-        color: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).color,
-      },
-    },
-  },
 }));
 
 interface NavbarProps {
@@ -95,9 +58,8 @@ interface NavbarProps {
 }
 
 export default function Navbar({ style, onClose }: NavbarProps) {
-  const { classes, cx } = useStyles();
+  const { classes } = useStyles();
   const [active, setActive] = useState('');
-  const navigate = useNavigate();
   const location = useLocation();
 
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
@@ -110,6 +72,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '账号详情', icon: mdiAccountOutline, to: '/user/profile', enabled: !isLoggedOut },
     { label: '成绩管理', icon: mdiChartBoxOutline, to: '/user/scores', enabled: !isLoggedOut },
     { label: '账号设置', icon: mdiCogOutline, to: '/user/settings', enabled: !isLoggedOut },
+    { label: '申请成为开发者', icon: mdiWrenchCheckOutline, to: '/developer/apply', enabled: !isLoggedOut, divider: true },
   ];
 
   useEffect(() => {
@@ -129,37 +92,19 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       style={style}
     >
       <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
-        {navbarData.map((item) => !item.enabled ? null :
-          <a href={item.to} key={item.label}
-             className={cx(classes.link, { [classes.linkActive]: item.label === active })}
-             onClick={(event) => {
-               event.preventDefault();
-               setActive(item.label);
-               navigate(item.to);
-               onClose();
-             }}
-          >
-            <Icon className={classes.linkIcon} path={item.icon} size={1} />
-            <span>{item.label}</span>
-          </a>
+        {navbarData.map((item) => item.enabled &&
+          <>
+            {item.divider && <Divider mt={10} mb={10} />}
+            <NavbarButton {...item} active={active} onClose={onClose} />
+          </>
         )}
       </MantineNavbar.Section>
 
       <MantineNavbar.Section className={classes.navbarFooter}>
-        <a href="/about" className={classes.link} onClick={(event) => event.preventDefault()}>
-          <Icon className={classes.linkIcon} path={mdiInformationOutline} size={1} />
-          <span>关于 maimai DX 查分器</span>
-        </a>
-
-        <a href="/" className={classes.link} onClick={(event) => {
-          event.preventDefault()
-          localStorage.removeItem("token")
-          navigate("/")
-          onClose()
-        }}>
-          <Icon className={classes.linkIcon} path={mdiLogoutVariant} size={1} />
-          <span>登出</span>
-        </a>
+        <NavbarButton label="关于 maimai DX 查分器" icon={mdiInformationOutline} to="/about" onClose={onClose} />
+        <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
+          localStorage.removeItem("token");
+        }} />
       </MantineNavbar.Section>
     </MantineNavbar>
   );
