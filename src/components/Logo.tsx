@@ -1,15 +1,20 @@
-import { Flex, Image, Badge, Text, Space } from '@mantine/core'
+import {Flex, Image, Badge, Text, Space, rem} from '@mantine/core'
+import {useMediaQuery} from "@mantine/hooks";
 
 export default function Logo() {
+  const small = useMediaQuery(`(max-width: ${rem(400)})`);
+
   return (
     <Flex id="logo" align="center">
       <Image alt="logo" src="/favicon.ico" width={24} height={24} />
       <Space w="xs" />
-      <Text fw={700} fz={18}>
+      <Text fw={700} fz={18} truncate>
         maimai DX 查分器
       </Text>
       <Space w="xs" />
-      <Badge>测试版</Badge>
+      <Badge display={
+        small ? "none" : "flex"
+      }>测试版</Badge>
     </Flex>
   );
 }

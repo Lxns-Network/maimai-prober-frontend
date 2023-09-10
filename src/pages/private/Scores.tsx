@@ -93,6 +93,10 @@ export default function Scores() {
 
     getScores().then((data) => {
       setDefaultScores(data.data);
+      if (data.data === null) {
+        setIsLoaded(true);
+        return;
+      }
       setScores(data.data);
       setDisplayScores(data.data.slice(0, separator));
       setIsLoaded(true);
@@ -100,6 +104,8 @@ export default function Scores() {
   }, []);
 
   useEffect(() => {
+    if (!scores) return;
+
     setTotalPages(Math.ceil(scores.length / separator));
   }, [scores]);
 
@@ -296,13 +302,24 @@ export default function Scores() {
           </Alert>
         ) : (
           <>
-            {scores.length === 0 && (
+            {(scores.length === 0 && defaultScores !== null) ? (
               <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有筛选到任何成绩" color="yellow">
                 <Text size="sm">
                   请修改筛选条件后重试。
                 </Text>
               </Alert>
-            )}
+            ) : (scores.length === 0 && defaultScores === null) ? (
+              <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到任何成绩" color="red">
+                <Text size="sm" mb="md">
+                  请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
+                </Text>
+                <Group>
+                  <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
+                    同步游戏数据
+                  </Button>
+                </Group>
+              </Alert>
+            ) : null}
             <Group position="center">
               <Pagination total={totalPages} value={page} onChange={setPage} />
               <SimpleGrid

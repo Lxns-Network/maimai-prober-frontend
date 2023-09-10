@@ -5,7 +5,9 @@ import {
   ScrollArea,
   createStyles,
   rem,
-  em, Divider,
+  em,
+  Divider,
+  useMantineTheme,
 } from '@mantine/core';
 import {
   mdiAccountCheckOutline,
@@ -61,6 +63,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const { classes } = useStyles();
   const [active, setActive] = useState('');
   const location = useLocation();
+  const theme = useMantineTheme();
 
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
@@ -94,7 +97,9 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
         {navbarData.map((item) => item.enabled &&
           <>
-            {item.divider && <Divider mt={10} mb={10} />}
+            {item.divider && <Divider color={
+              theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
+            } mt={10} mb={10} />}
             <NavbarButton {...item} active={active} onClose={onClose} />
           </>
         )}

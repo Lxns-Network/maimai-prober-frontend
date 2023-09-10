@@ -8,7 +8,7 @@ import AlertModal from '../../components/AlertModal';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiLockOutline} from "@mdi/js";
-import { useInputState } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -46,32 +46,19 @@ export default function Login() {
     }
   }, [])
 
-  const [name, setNameValue] = useInputState('')
-  const [password, setPasswordValue] = useInputState('');
+  const form = useForm({
+    initialValues: {
+      name: '',
+      password: '',
+    },
 
-  const validationRules = {
-    name: "用户名不能为空",
-    password: "密码不能为空",
-  };
+    validate: {
+      name: (value) => (/^[a-zA-Z0-9_]{4,16}$/.test(value) ? null : "用户名格式不正确"),
+      password: (value) => (/^[a-zA-Z0-9_]{6,16}$/.test(value) ? null : "密码格式不正确"),
+    },
+  });
 
-  const validateInputs = (inputs: any) => {
-    for (const [inputName, errorMessage] of Object.entries(validationRules)) {
-      if (!inputs[inputName]) {
-        openAlert("登录失败", errorMessage);
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const submitLogin = async () => {
-    if (!validateInputs({
-      name: name,
-      password: password,
-    })) {
-      return;
-    }
+  const login = async (values: any) => {
     setVisible(true);
     fetch(`${API_URL}/user/login?recaptcha=${await recaptcha.getToken()}`, {
       method: 'POST',
@@ -79,8 +66,8 @@ export default function Login() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        "name": name,
-        "password": password,
+        "name": values.name,
+        "password": values.password,
       }),
     })
       .then((response) => response.json())
@@ -97,7 +84,7 @@ export default function Login() {
         setVisible(false);
         openAlert("登录失败", error);
       });
-  };
+  }
 
   return (
     <Container className={classes.root} size={400}>
@@ -117,38 +104,38 @@ export default function Login() {
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}>
         <LoadingOverlay visible={visible} overlayBlur={2} />
-        <TextInput
-          name="name"
-          label="用户名"
-          variant="filled"
-          placeholder="请输入你的用户名"
-          icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
-          value={name}
-          onChange={setNameValue}
-        />
-        <Group position="apart" mt="md">
-          <Text component="label" htmlFor="password" size="sm" weight={500}>密码</Text>
-          <Anchor<'a'> href="#" onClick={(event) => event.preventDefault()} sx={(theme) => ({
-            paddingTop: 2,
-            color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
-            fontWeight: 500,
-            fontSize: theme.fontSizes.xs,
-          })}>
-            忘记密码？
-          </Anchor>
-        </Group>
-        <PasswordInput
-          name="password"
-          variant="filled"
-          placeholder="请输入你的密码"
-          icon={<Icon path={mdiLockOutline} size={rem(16)} />}
-          value={password}
-          onChange={setPasswordValue}
-        />
-        <Group position="right" mt="xl">
-          <Button size="sm" variant="default" color="gray" onClick={() => navigate("/register")}>注册</Button>
-          <Button size="sm" onClick={submitLogin}>登录</Button>
-        </Group>
+        <form onSubmit={form.onSubmit((values) => login(values))}>
+          <TextInput
+            name="name"
+            label="用户名"
+            variant="filled"
+            placeholder="请输入你的用户名"
+            icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
+            {...form.getInputProps('name')}
+          />
+          <Group position="apart" mt="md">
+            <Text component="label" htmlFor="password" size="sm" weight={500}>密码</Text>
+            <Anchor<'a'> href="#" onClick={(event) => event.preventDefault()} sx={(theme) => ({
+              paddingTop: 2,
+              color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
+              fontWeight: 500,
+              fontSize: theme.fontSizes.xs,
+            })}>
+              忘记密码？
+            </Anchor>
+          </Group>
+          <PasswordInput
+            name="password"
+            variant="filled"
+            placeholder="请输入你的密码"
+            icon={<Icon path={mdiLockOutline} size={rem(16)} />}
+            {...form.getInputProps('password')}
+          />
+          <Group position="right" mt="xl">
+            <Button size="sm" variant="default" color="gray" onClick={() => navigate("/register")}>注册</Button>
+            <Button size="sm" type="submit">登录</Button>
+          </Group>
+        </form>
       </Card>
     </Container>
   );

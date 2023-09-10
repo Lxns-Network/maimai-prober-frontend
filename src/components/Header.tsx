@@ -65,7 +65,7 @@ export default function Header({ navbarOpened, onNavbarToggle }: HeaderProps) {
   return (
     <MantineHeader height={56} className={classes.header} mb={120}>
       <div className={classes.inner}>
-        <Group>
+        <Group noWrap>
           <Burger className={classes.navbarToggle} opened={navbarOpened} onClick={onNavbarToggle} size="sm" />
           <Logo />
         </Group>

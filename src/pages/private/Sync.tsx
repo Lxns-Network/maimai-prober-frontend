@@ -198,15 +198,15 @@ export default function Sync() {
       </Group>
       <Card withBorder radius="md" className={classes.card} mb="md" p="md">
         <Text size="sm" mb="md">
-          请复制下方的微信 OAuth 链接，然后使用微信内置浏览器打开，等待同步结果返回。
+          请复制下方的微信 OAuth 链接，然后在安全的聊天中发送链接并打开，等待同步结果返回。
         </Text>
         <CopyButtonWithIcon
           label="复制微信 OAuth 链接"
           content={`${API_URL}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}
           disabled={!proxyAvailable}
         />
-        <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="请不要泄露该 OAuth 链接！" color="red" mt="md">
-          请不要将该 OAuth 链接分享给他人，否则可能导致你的账号被盗用。
+        <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="请不要泄露或使用未知 OAuth 链接！" color="red" mt="md">
+          请不要将该 OAuth 链接分享给他人，或是使用其他人的链接授权微信，否则可能导致你的账号被盗用。
         </Alert>
       </Card>
       <Group spacing="sm" mb="md">

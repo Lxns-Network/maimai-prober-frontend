@@ -1,7 +1,6 @@
 import {useEffect, useState} from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import { useInputState } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
 import ReCaptcha from '../../utils/reCaptcha';
@@ -9,6 +8,7 @@ import AlertModal from "../../components/AlertModal";
 import {API_URL, RECAPTCHA_SITE_KEY} from "../../main";
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiEmailOutline, mdiLockOutline } from "@mdi/js";
+import { useForm } from "@mantine/form";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -42,47 +42,24 @@ export default function Register() {
     }
   }, [])
 
-  const [name, setNameValue] = useInputState('');
-  const [email, setEmailValue] = useInputState('');
-  const [password, setPasswordValue] = useInputState('');
-  const [confirmPassword, setConfirmPasswordValue] = useInputState('');
+  const form = useForm({
+    initialValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
 
-  const validationRules = {
-    name: "用户名不能为空",
-    email: "邮箱不能为空",
-    password: "密码不能为空",
-    confirmPassword: "确认密码不能为空",
-  };
+    validate: {
+      name: (value) => (/^[a-zA-Z0-9_]{4,16}$/.test(value) ? null : "用户名格式不正确"),
+      email: (value) => (
+        /^([a-zA-Z0-9])(([a-zA-Z0-9])*([._-])?([a-zA-Z0-9]))*@(([a-zA-Z0-9\-])+(\.))+([a-zA-Z]{2,4})+$/.test(value) ? null : "邮箱格式不正确"),
+      password: (value) => (/^.{6,16}$/.test(value) ? null : "密码格式不正确"),
+      confirmPassword: (value, values) => (value === values.password ? null : "两次输入的密码不一致"),
+    },
+  });
 
-  const validateInputs = (inputs: any) => {
-    for (const [inputName, errorMessage] of Object.entries(validationRules)) {
-      if (!inputs[inputName]) {
-        openAlert("注册失败", errorMessage);
-        return false;
-      }
-    }
-
-    if (inputs.password !== inputs.confirmPassword) {
-      openAlert("注册失败", "两次输入的密码不一致");
-      return false;
-    }
-
-    return true;
-  };
-
-  const submitRegister = async () => {
-    if (!validateInputs({
-      name: name,
-      email: email,
-      password: password,
-      confirmPassword: confirmPassword,
-    })) {
-      return;
-    }
-    if (password !== confirmPassword) {
-      openAlert("注册失败", "两次输入的密码不一致");
-      return;
-    }
+  const register = async (values: any) => {
     setVisible(true);
     fetch(`${API_URL}/user/register?recaptcha=${await recaptcha.getToken()}`, {
       method: 'POST',
@@ -90,10 +67,10 @@ export default function Register() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        "name": name,
-        "email": email,
-        "password": password,
-        "confirmPassword": confirmPassword,
+        "name": values.name,
+        "email": values.email,
+        "password": values.password,
+        "confirmPassword": values.confirmPassword,
       }),
     })
       .then((response) => response.json())
@@ -130,58 +107,56 @@ export default function Register() {
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}>
         <LoadingOverlay visible={visible} overlayBlur={2} />
-        <TextInput
-          name="name"
-          label="用户名"
-          variant="filled"
-          placeholder="请输入你的用户名"
-          mb={4}
-          icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
-          value={name}
-          onChange={setNameValue}
-        />
-        <Text color="dimmed" size="xs" align="left" mb="sm">
-          此用户名将会作为你的 maimai DX 查分器账号的唯一标识，且不会用作查分用途。
-        </Text>
-        <TextInput
-          name="email"
-          label="邮箱"
-          variant="filled"
-          placeholder="请输入你的邮箱"
-          mb="sm"
-          icon={<Icon path={mdiEmailOutline} size={rem(16)} />}
-          value={email}
-          onChange={setEmailValue}
-        />
-        <PasswordInput
-          name="password"
-          label="密码"
-          variant="filled"
-          placeholder="请输入你的密码"
-          mb="sm"
-          icon={<Icon path={mdiLockOutline} size={rem(16)} />}
-          value={password}
-          onChange={setPasswordValue}
-        />
-        <PasswordInput
-          name="confirm-password"
-          label="确认密码"
-          variant="filled"
-          placeholder="请再次输入你的密码"
-          mb="sm"
-          icon={<Icon path={mdiLockOutline} size={rem(16)} />}
-          value={confirmPassword}
-          onChange={setConfirmPasswordValue}
-        />
-        <Text color="dimmed" size="xs" align="left" mt="sm">
-          注册即代表你同意我们的服务条款和隐私政策，请在注册后根据指引绑定你的游戏账号。
-        </Text>
-        <Group position="right" mt="sm">
-          <Button size="sm" variant="default" color="gray" onClick={() => navigate("/login")}>
-            登录
-          </Button>
-          <Button size="sm" onClick={submitRegister}>注册</Button>
-        </Group>
+        <form onSubmit={form.onSubmit((values) => register(values))}>
+          <TextInput
+            name="name"
+            label="用户名"
+            variant="filled"
+            placeholder="请输入你的用户名"
+            mb={4}
+            icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
+            {...form.getInputProps('name')}
+          />
+          <Text color="dimmed" size="xs" align="left" mb="sm">
+            此用户名将会作为你的 maimai DX 查分器账号的唯一标识，且不会用作查分用途。
+          </Text>
+          <TextInput
+            name="email"
+            label="邮箱"
+            variant="filled"
+            placeholder="请输入你的邮箱"
+            mb="sm"
+            icon={<Icon path={mdiEmailOutline} size={rem(16)} />}
+            {...form.getInputProps('email')}
+          />
+          <PasswordInput
+            name="password"
+            label="密码"
+            variant="filled"
+            placeholder="请输入你的密码"
+            mb="sm"
+            icon={<Icon path={mdiLockOutline} size={rem(16)} />}
+            {...form.getInputProps('password')}
+          />
+          <PasswordInput
+            name="confirm-password"
+            label="确认密码"
+            variant="filled"
+            placeholder="请再次输入你的密码"
+            mb="sm"
+            icon={<Icon path={mdiLockOutline} size={rem(16)} />}
+            {...form.getInputProps('confirmPassword')}
+          />
+          <Text color="dimmed" size="xs" align="left" mt="sm">
+            注册即代表你同意我们的服务条款和隐私政策，请在注册后根据指引绑定你的游戏账号。
+          </Text>
+          <Group position="right" mt="sm">
+            <Button size="sm" variant="default" color="gray" onClick={() => navigate("/login")}>
+              登录
+            </Button>
+            <Button size="sm" type="submit">注册</Button>
+          </Group>
+        </form>
       </Card>
     </Container>
   );
