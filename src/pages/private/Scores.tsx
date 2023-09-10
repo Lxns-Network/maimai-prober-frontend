@@ -81,7 +81,7 @@ export default function Scores() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "成绩管理 - maimai DX 查分器";
+    document.title = "成绩管理 | maimai DX 查分器";
 
     const getScores = async () => {
       const res = await getPlayerScores();

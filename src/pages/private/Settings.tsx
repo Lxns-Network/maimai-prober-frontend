@@ -1,8 +1,6 @@
-import {Title, Text, Alert, Loader, Group} from '@mantine/core';
+import { Title, Text, Loader, Group } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import SettingsSection from "../../components/Settings/SettingsSection";
-import Icon from "@mdi/react";
-import { mdiCodeTags } from "@mdi/js";
 import { useEffect, useState } from "react";
 import { getUserConfig, updateUserConfig } from "../../utils/api/api";
 import useAlert from "../../utils/useAlert";
@@ -32,7 +30,7 @@ export default function Settings() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    document.title = "账号设置 - maimai DX 查分器";
+    document.title = "账号设置 | maimai DX 查分器";
 
     const getConfig = async () => {
       const res = await getUserConfig();
@@ -81,11 +79,6 @@ export default function Settings() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         设置你的 maimai DX 查分器账号
       </Text>
-      <Alert radius="md" icon={<Icon path={mdiCodeTags} />} title="此页面正在开发中" color="blue" mb="md">
-        <Text size="sm">
-          此页面正在开发中，功能暂不可用。
-        </Text>
-      </Alert>
       {!isLoaded ? (
         <Group position="center" mt="xl">
           <Loader />

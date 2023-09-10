@@ -35,7 +35,7 @@ export default function Login() {
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
 
   useEffect(() => {
-    document.title = "登录 - maimai DX 查分器";
+    document.title = "登录 | maimai DX 查分器";
 
     if (state && state.expired) openAlert("您已登出", "登录会话已过期，请重新登录");
 

@@ -124,7 +124,7 @@ export default function Home() {
   const items = mockdata.map((item) => <Feature {...item} key={item.title} />);
 
   useEffect(() => {
-    document.title = "落雪咖啡屋 maimai DX 查分器";
+    document.title = "maimai DX 查分器";
   });
 
   return (

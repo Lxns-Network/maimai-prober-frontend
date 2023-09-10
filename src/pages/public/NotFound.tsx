@@ -31,7 +31,7 @@ export default function NotFound() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "页面不存在 - maimai DX 查分器";
+    document.title = "页面不存在 | maimai DX 查分器";
   });
 
   return (

@@ -33,7 +33,7 @@ export default function Register() {
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
 
   useEffect(() => {
-    document.title = "注册 - maimai DX 查分器";
+    document.title = "注册 | maimai DX 查分器";
 
     recaptcha.render();
 
