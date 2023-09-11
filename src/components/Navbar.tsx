@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  Navbar as MantineNavbar,
-  ScrollArea,
-  createStyles,
-  rem,
-  em,
-  Divider,
-  useMantineTheme,
-} from '@mantine/core';
+import { createStyles, Divider, Navbar as MantineNavbar, rem, ScrollArea, useMantineTheme } from '@mantine/core';
 import {
   mdiAccountCheckOutline,
+  mdiAccountMultipleOutline,
   mdiAccountOutline,
   mdiAccountPlusOutline,
   mdiChartBoxOutline,
@@ -21,20 +14,15 @@ import {
   mdiLogoutVariant,
   mdiWrenchCheckOutline,
 } from '@mdi/js';
-import { NAVBAR_WIDTH, NAVBAR_BREAKPOINT } from "../App";
+import { NAVBAR_WIDTH } from "../App";
 import { NavbarButton } from "./NavbarButton";
+import { checkPermission, UserPermission } from "../utils/session";
 
 const useStyles = createStyles((theme) => ({
   navbar: {
     position: 'fixed',
     zIndex: 100,
     backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
-
-    [`@media (max-width: ${em(NAVBAR_BREAKPOINT)})`]: {
-      display: 'block',
-      width: '100%',
-      right: 0,
-    },
   },
 
   navbarHeader: {
@@ -75,7 +63,10 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '账号详情', icon: mdiAccountOutline, to: '/user/profile', enabled: !isLoggedOut },
     { label: '成绩管理', icon: mdiChartBoxOutline, to: '/user/scores', enabled: !isLoggedOut },
     { label: '账号设置', icon: mdiCogOutline, to: '/user/settings', enabled: !isLoggedOut },
-    { label: '申请成为开发者', icon: mdiWrenchCheckOutline, to: '/developer/apply', enabled: !isLoggedOut, divider: true },
+    { label: '申请成为开发者', icon: mdiWrenchCheckOutline, to: '/developer/apply',
+      enabled: !(isLoggedOut || checkPermission(UserPermission.Developer)), divider: true },
+    { label: '管理用户', icon: mdiAccountMultipleOutline, to: '/admin/users',
+      enabled: checkPermission(UserPermission.Administrator), divider: true },
   ];
 
   useEffect(() => {

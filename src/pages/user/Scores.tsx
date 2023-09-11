@@ -66,7 +66,7 @@ export default function Scores() {
 
   // 排序相关
   const [sortBy, setSortBy] = useState();
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
   // 筛选相关
   const [search, setSearchValue] = useInputState('');
@@ -151,16 +151,15 @@ export default function Scores() {
   }
 
   const handleSort = (key: any) => {
-    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-    if (sortBy !== key) {
-      setSortBy(key);
-    }
+    const reversed = key === sortBy ? !reverseSortDirection : false;
+    setReverseSortDirection(reversed);
+    setSortBy(key);
 
     const sortedElements = [...scores].sort((a: any, b: any) => {
       if (typeof a[key] === 'string') {
-        return sortOrder === 'desc' ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
+        return reversed ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
       } else {
-        return sortOrder === 'desc' ? a[key] - b[key] : b[key] - a[key];
+        return reversed ? a[key] - b[key] : b[key] - a[key];
       }
     });
 
@@ -172,7 +171,7 @@ export default function Scores() {
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
       return <Icon path={
-        sortOrder === 'asc' ? mdiArrowUp : mdiArrowDown
+        reverseSortDirection ? mdiArrowUp : mdiArrowDown
       } size={0.8} />;
     }
     return null;

@@ -9,6 +9,7 @@ import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiLockOutline} from "@mdi/js";
 import { useForm } from "@mantine/form";
+import { validatePassword, validateUserName } from "../../utils/validator";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -37,7 +38,7 @@ export default function Login() {
   useEffect(() => {
     document.title = "登录 | maimai DX 查分器";
 
-    if (state && state.expired) openAlert("您已登出", "登录会话已过期，请重新登录");
+    if (state && state.expired) openAlert("你已登出", "登录会话已过期，请重新登录");
 
     recaptcha.render();
 
@@ -53,8 +54,8 @@ export default function Login() {
     },
 
     validate: {
-      name: (value) => (/^[a-zA-Z0-9_]{4,16}$/.test(value) ? null : "用户名格式不正确"),
-      password: (value) => (/^[a-zA-Z0-9_]{6,16}$/.test(value) ? null : "密码格式不正确"),
+      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
+      password: (value) => (validatePassword(value) ? null : "密码格式不正确"),
     },
   });
 
@@ -65,10 +66,7 @@ export default function Login() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        "name": values.name,
-        "password": values.password,
-      }),
+      body: JSON.stringify(values),
     })
       .then((response) => response.json())
       .then((data) => {

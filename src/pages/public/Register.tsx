@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import {API_URL, RECAPTCHA_SITE_KEY} from "../../main";
 import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiEmailOutline, mdiLockOutline } from "@mdi/js";
 import { useForm } from "@mantine/form";
+import { validateEmail, validatePassword, validateUserName } from "../../utils/validator";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -51,10 +52,9 @@ export default function Register() {
     },
 
     validate: {
-      name: (value) => (/^[a-zA-Z0-9_]{4,16}$/.test(value) ? null : "用户名格式不正确"),
-      email: (value) => (
-        /^([a-zA-Z0-9])(([a-zA-Z0-9])*([._-])?([a-zA-Z0-9]))*@(([a-zA-Z0-9\-])+(\.))+([a-zA-Z]{2,4})+$/.test(value) ? null : "邮箱格式不正确"),
-      password: (value) => (/^.{6,16}$/.test(value) ? null : "密码格式不正确"),
+      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value) => (validateEmail(value) ? null : "邮箱格式不正确"),
+      password: (value) => (validatePassword(value) ? null : "密码格式不正确"),
       confirmPassword: (value, values) => (value === values.password ? null : "两次输入的密码不一致"),
     },
   });
@@ -66,18 +66,13 @@ export default function Register() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        "name": values.name,
-        "email": values.email,
-        "password": values.password,
-        "confirmPassword": values.confirmPassword,
-      }),
+      body: JSON.stringify(values),
     })
       .then((response) => response.json())
       .then((data) => {
         setVisible(false);
         if (data.success) {
-          openAlert("注册成功", "请登录你的邮箱，根据指引完成账号激活。");
+          openAlert("注册成功", "请登录你的查分器账号，根据指引绑定你的游戏账号。");
         } else {
           openAlert("注册失败", data.message);
         }

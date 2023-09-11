@@ -56,8 +56,8 @@ export default function Settings() {
     updateUserConfig(newConfig)
       .then(res => res?.json())
       .then(data => {
-        if (data?.code !== 200) {
-          openAlert("保存设置失败", data?.message);
+        if (data.code !== 200) {
+          openAlert("保存设置失败", data.message);
         }
       })
       .catch(err => {
@@ -169,7 +169,7 @@ export default function Settings() {
           }, {
             key: "delete_account",
             title: "删除账号",
-            description: "删除你的查分器账号。",
+            description: "删除你的查分器账号，但谱面成绩不会一并删除。",
             placeholder: "删除",
             color: "red",
             optionType: "button",
