@@ -57,3 +57,19 @@ export async function getUserConfig() {
 export async function updateUserConfig(data: any) {
   return fetchAPI("user/config", { method: "POST", body: data });
 }
+
+export async function sendDeveloperApply(data: any, recaptcha: any) {
+  return fetchAPI(`user/developer/apply?recaptcha=${recaptcha}`, { method: "POST", body: data });
+}
+
+export async function getUsers() {
+  return fetchAPI("user/admin/users", { method: "GET" });
+}
+
+export async function updateUser(data: any) {
+  return fetchAPI("user/admin/user", { method: "POST", body: data });
+}
+
+export async function deleteUser(data: any) {
+  return fetchAPI("user/admin/user", { method: "DELETE", body: data });
+}
