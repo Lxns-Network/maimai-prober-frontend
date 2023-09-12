@@ -1,9 +1,8 @@
-import {createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route, useLocation} from "react-router-dom";
-import {lazy} from "react";
+import { lazy } from "react";
+import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route } from "react-router-dom";
+import { checkPermission, isTokenExpired, logout, UserPermission } from "./utils/session";
+import { refreshToken } from "./utils/api/api";
 import App from "./App";
-import {checkPermission, isTokenExpired, logout, UserPermission} from "./utils/session";
-import DeveloperApply from "./pages/developer/Apply";
-import Users from "./pages/admin/Users";
 
 const Home = lazy(() => import('./pages/public/Home'));
 const Login = lazy(() => import('./pages/public/Login'));
@@ -13,18 +12,26 @@ const Sync = lazy(() => import('./pages/user/Sync'));
 const Scores = lazy(() => import('./pages/user/Scores'));
 const Settings = lazy(() => import('./pages/user/Settings'));
 const NotFound = lazy(() => import('./pages/public/NotFound'));
+const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
+const Users = lazy(() => import('./pages/admin/Users'));
 
 const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
-  const location = useLocation();
-
   if (isTokenExpired()) {
-    logout();
-    return <Navigate to="/login" state={{ from: location, expired: true }} replace />;
+    // 如果 token 过期，刷新 token
+    refreshToken().then((result) => {
+      if (!result) {
+        logout();
+        return <Navigate to="/login" state={{ from: location, expired: true }} replace />;
+      } else {
+        window.location.reload();
+      }
+    });
   }
 
   if (extra_validation && !extra_validation()) {
     return <Navigate to="/" replace />;
   }
+
   return <Outlet />
 }
 

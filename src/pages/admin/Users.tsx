@@ -290,7 +290,7 @@ export default function Users() {
         </Group>
       ) : (
         <Card withBorder radius="md" className={classes.card} mb={0} p={0} component={ScrollArea}
-              h="calc(100vh - 140px)" w={window.innerWidth > NAVBAR_BREAKPOINT ? `100%` : "calc(100vw - 30px)"}>
+              h="calc(100vh - 140px)" w={window.innerWidth > NAVBAR_BREAKPOINT ? `100%` : "calc(100vw - 32px)"}>
           <Table horizontalSpacing="md" verticalSpacing="xs" highlightOnHover striped>
             <thead>
             <tr>

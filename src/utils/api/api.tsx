@@ -1,31 +1,26 @@
-import { logout } from "../session";
+import { isTokenExpired, logout } from "../session";
 
 export const API_URL = import.meta.env.VITE_API_URL;
-
-interface RequestOptions {
-  method: string;
-  headers: Record<string, string>;
-  body?: string | null;
-}
 
 export async function fetchAPI(endpoint: string, options: { method: string, body?: any, headers?: any }) {
   const { method = "GET", body, headers } = options;
 
-  const requestOptions: RequestOptions = {
-    method,
-    headers: {
-      "Authorization": `Bearer ${localStorage.getItem("token")}`,
-      "Content-Type": "application/json",
-      ...headers,
-    },
-  };
-
-  if (body) {
-    requestOptions.body = JSON.stringify(body);
+  if (isTokenExpired() && endpoint !== "user/refresh") {
+    // 如果 token 过期则尝试刷新 token
+    await refreshToken();
   }
 
   try {
-    const res = await fetch(`${API_URL}/${endpoint}`, requestOptions)
+    const res = await fetch(`${API_URL}/${endpoint}`, {
+      method,
+      credentials: "include",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+        ...headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
     if (res.status === 401) {
       logout();
@@ -36,6 +31,24 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
   } catch (error) {
     return null;
   }
+}
+
+export function refreshToken() {
+  return new Promise((resolve, reject) => {
+    fetchAPI("user/refresh", { method: "GET" })
+      .then(res => res?.json())
+      .then(data => {
+        if (data?.code === 200) {
+          localStorage.setItem("token", data.data.token);
+          resolve(true);
+        } else {
+          reject(false);
+        }
+      })
+      .catch(() => {
+        reject(false);
+      });
+  });
 }
 
 export async function getProfile() {

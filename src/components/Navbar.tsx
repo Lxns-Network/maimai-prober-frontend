@@ -87,12 +87,12 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     >
       <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
         {navbarData.map((item) => item.enabled &&
-          <>
+          <div key={item.label}>
             {item.divider && <Divider color={
               theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
             } mt={10} mb={10} />}
             <NavbarButton {...item} active={active} onClose={onClose} />
-          </>
+          </div>
         )}
       </MantineNavbar.Section>
 

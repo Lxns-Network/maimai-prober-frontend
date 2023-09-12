@@ -1,4 +1,5 @@
-import { Outlet } from "react-router-dom";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import {
   ScrollArea,
   createStyles,
@@ -11,7 +12,7 @@ import {
   Group
 } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { refreshToken } from "./utils/api/api";
 // Layouts
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
@@ -40,6 +41,7 @@ export const ApiContext = React.createContext({});
 export default function App() {
   const { classes } = useStyles();
   const [opened, setOpened] = useState(window.innerWidth > NAVBAR_BREAKPOINT);
+  const navigate = useNavigate();
 
   const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
     key: THEME_KEY,
@@ -47,10 +49,20 @@ export default function App() {
     getInitialValueInEffect: true,
   });
 
+  const handleResize = () => {
+    setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
+  };
+
   useEffect(() => {
-    const handleResize = () => {
-      setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
-    };
+    if (localStorage.getItem("token")) {
+      // 进入页面时刷新 token
+      refreshToken().then(result => {
+        if (!result) {
+          localStorage.removeItem("token");
+          navigate("/login", { state: { expired: true } })
+        }
+      })
+    }
 
     window.addEventListener('resize', handleResize);
     return () => {
