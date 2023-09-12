@@ -1,13 +1,18 @@
-import { isTokenExpired, logout } from "../session";
+import { isTokenExpired, isTokenUndefined } from "../session";
 
 export const API_URL = import.meta.env.VITE_API_URL;
 
 export async function fetchAPI(endpoint: string, options: { method: string, body?: any, headers?: any }) {
   const { method = "GET", body, headers } = options;
 
-  if (isTokenExpired() && endpoint !== "user/refresh") {
-    // 如果 token 过期则尝试刷新 token
-    await refreshToken();
+  if (!isTokenUndefined() && isTokenExpired() && endpoint !== "user/refresh") {
+    // 如果请求 API 时 token 过期则尝试刷新 token
+    try {
+      await refreshToken();
+    } catch (error) {
+      // 刷新 token 失败则刷新页面，使用 App.tsx 中的 useEffect 刷新 token
+      window.location.reload();
+    }
   }
 
   try {
@@ -21,11 +26,6 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
       },
       body: body ? JSON.stringify(body) : undefined,
     });
-
-    if (res.status === 401) {
-      logout();
-      window.location.reload();
-    }
 
     return res
   } catch (error) {
@@ -45,8 +45,8 @@ export function refreshToken() {
           reject(false);
         }
       })
-      .catch(() => {
-        reject(false);
+      .catch((error) => {
+        reject(error);
       });
   });
 }

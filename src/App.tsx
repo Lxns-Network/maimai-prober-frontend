@@ -17,6 +17,7 @@ import { refreshToken } from "./utils/api/api";
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
 import RouterTransition from "./components/RouterTransition";
+import {logout} from "./utils/session";
 
 export const NAVBAR_WIDTH = 300;
 export const NAVBAR_BREAKPOINT = 800;
@@ -55,13 +56,11 @@ export default function App() {
 
   useEffect(() => {
     if (localStorage.getItem("token")) {
-      // 进入页面时刷新 token
-      refreshToken().then(result => {
-        if (!result) {
-          localStorage.removeItem("token");
-          navigate("/login", { state: { expired: true } })
-        }
-      })
+      // 进入页面时刷新一次 token，不论有效期
+      refreshToken().catch(() => {
+        logout();
+        navigate("/login", { state: { expired: true } });
+      });
     }
 
     window.addEventListener('resize', handleResize);

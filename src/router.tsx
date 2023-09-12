@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route } from "react-router-dom";
-import { checkPermission, isTokenExpired, logout, UserPermission } from "./utils/session";
+import {checkPermission, isTokenExpired, isTokenUndefined, logout, UserPermission} from "./utils/session";
 import { refreshToken } from "./utils/api/api";
 import App from "./App";
 
@@ -16,16 +16,14 @@ const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
 const Users = lazy(() => import('./pages/admin/Users'));
 
 const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
-  if (isTokenExpired()) {
-    // 如果 token 过期，刷新 token
-    refreshToken().then((result) => {
-      if (!result) {
-        logout();
-        return <Navigate to="/login" state={{ from: location, expired: true }} replace />;
-      } else {
-        window.location.reload();
-      }
+  if (!isTokenUndefined() && isTokenExpired()) {
+    // 切换页面时若 token 过期则尝试刷新 token
+    refreshToken().catch(() => {
+      logout();
+      return <Navigate to="/login" state={{ expired: true }} replace />;
     });
+  } else if (isTokenUndefined()) {
+    return <Navigate to="/login" replace />;
   }
 
   if (extra_validation && !extra_validation()) {

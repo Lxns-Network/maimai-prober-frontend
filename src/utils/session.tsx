@@ -19,6 +19,11 @@ export const isTokenExpired = () => {
   }
 };
 
+export const isTokenUndefined = () => {
+  const token = localStorage.getItem('token');
+  return !token;
+}
+
 export const isTokenValid = () => {
   return !isTokenExpired();
 }
