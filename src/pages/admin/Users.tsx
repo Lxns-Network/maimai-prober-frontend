@@ -275,7 +275,6 @@ export default function Users() {
         setSortedData(newUsers);
 
         close();
-        setActiveUser(null);
       }} />
       <TextInput
         placeholder="搜索用户"

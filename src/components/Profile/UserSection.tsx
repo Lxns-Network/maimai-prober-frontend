@@ -1,4 +1,11 @@
-import { Alert, Card, Group, Input, InputBase, Switch, Text } from "@mantine/core";
+import {
+  Alert,
+  Card,
+  Group,
+  Switch,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useStyles } from "./PlayerSection";
@@ -28,7 +35,7 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
       <Group position="apart" noWrap spacing="xl" align="center" mb="md">
         <div>
           <Text fz="lg" fw={700}>
-            查分器账号详情
+            我的账号详情
           </Text>
           <Text fz="xs" c="dimmed" mt={3}>
             查看你的查分器账号的详情
@@ -42,16 +49,19 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
       </Group>
-      <InputBase variant="filled" component="button" label="用户名" mb={5}>
-        <Input.Placeholder>{
-          visible ? userData.name : "已隐藏"
-        }</Input.Placeholder>
-      </InputBase>
-      <InputBase variant="filled" component="button" label="邮箱">
-        <Input.Placeholder>{
-          visible ? userData.email : "已隐藏"
-        }</Input.Placeholder>
-      </InputBase>
+      <TextInput
+        label="用户名"
+        variant="filled"
+        value={visible ? userData.name : userData.name.replace(/./g, '•')}
+        mb={5}
+        readOnly
+      />
+      <TextInput
+        label="邮箱"
+        variant="filled"
+        value={visible ? userData.email : userData.email.replace(/./g, '•')}
+        readOnly
+      />
     </Card>
   )
 }

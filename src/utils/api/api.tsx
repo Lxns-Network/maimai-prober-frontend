@@ -1,4 +1,4 @@
-import { isTokenExpired, isTokenUndefined } from "../session";
+import {isTokenExpired, isTokenUndefined} from "../session";
 
 export const API_URL = import.meta.env.VITE_API_URL;
 
@@ -16,7 +16,7 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
   }
 
   try {
-    const res = await fetch(`${API_URL}/${endpoint}`, {
+    return await fetch(`${API_URL}/${endpoint}`, {
       method,
       credentials: "include",
       headers: {
@@ -25,9 +25,7 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
         ...headers,
       },
       body: body ? JSON.stringify(body) : undefined,
-    });
-
-    return res
+    })
   } catch (error) {
     return null;
   }
@@ -73,6 +71,10 @@ export async function updateUserConfig(data: any) {
 
 export async function sendDeveloperApply(data: any, recaptcha: any) {
   return fetchAPI(`user/developer/apply?recaptcha=${recaptcha}`, { method: "POST", body: data });
+}
+
+export async function getDeveloperApply() {
+  return fetchAPI("user/developer/apply", { method: "GET" });
 }
 
 export async function getUsers() {

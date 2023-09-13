@@ -3,6 +3,7 @@ import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route 
 import {checkPermission, isTokenExpired, isTokenUndefined, logout, UserPermission} from "./utils/session";
 import { refreshToken } from "./utils/api/api";
 import App from "./App";
+import DeveloperInfo from "./pages/developer/Info";
 
 const Home = lazy(() => import('./pages/public/Home'));
 const Login = lazy(() => import('./pages/public/Login'));
@@ -47,6 +48,7 @@ const routesConfig = (
     </Route>
     <Route path="/developer" element={<ProtectedRoute />}>
       <Route path="apply" element={<DeveloperApply />} />
+      <Route path="" element={<DeveloperInfo />} />
     </Route>
     <Route path="/admin" element={<ProtectedRoute extra_validation={
       () => checkPermission(UserPermission.Administrator)}

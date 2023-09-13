@@ -13,6 +13,7 @@ import {
   mdiInformationOutline,
   mdiLogoutVariant,
   mdiWrenchCheckOutline,
+  mdiXml,
 } from '@mdi/js';
 import { NAVBAR_WIDTH } from "../App";
 import { NavbarButton } from "./NavbarButton";
@@ -63,6 +64,8 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '账号详情', icon: mdiAccountOutline, to: '/user/profile', enabled: !isLoggedOut },
     { label: '成绩管理', icon: mdiChartBoxOutline, to: '/user/scores', enabled: !isLoggedOut },
     { label: '账号设置', icon: mdiCogOutline, to: '/user/settings', enabled: !isLoggedOut },
+    { label: '开发者面板', icon: mdiXml, to: '/developer',
+      enabled: (!isLoggedOut && checkPermission(UserPermission.Developer)), divider: true },
     { label: '申请成为开发者', icon: mdiWrenchCheckOutline, to: '/developer/apply',
       enabled: !(isLoggedOut || checkPermission(UserPermission.Developer)), divider: true },
     { label: '管理用户', icon: mdiAccountMultipleOutline, to: '/admin/users',

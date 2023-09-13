@@ -20,7 +20,7 @@ import {
   mdiLink,
 } from "@mdi/js";
 import { useForm } from "@mantine/form";
-import {sendDeveloperApply} from "../../utils/api/api";
+import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/api";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -40,11 +40,24 @@ const useStyles = createStyles((theme) => ({
 export default function DeveloperApply() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
+  const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
 
   useEffect(() => {
     document.title = "申请成为开发者 | maimai DX 查分器";
+
+    getDeveloperApply()
+      .then(res => res?.json())
+      .then(data => {
+        if (data.data != null) {
+          if (data.data.api_key != null) {
+            window.location.href = "/developer";
+          }
+          form.setValues(data.data);
+          setApplied(true);
+        }
+      })
 
     recaptcha.render();
 
@@ -74,6 +87,7 @@ export default function DeveloperApply() {
       .then((data) => {
         setVisible(false);
         if (data.success) {
+          setApplied(true);
           openAlert("提交成功", "申请成功，我们将尽快审核您的申请");
         } else {
           openAlert("提交失败", data.message);
@@ -111,6 +125,7 @@ export default function DeveloperApply() {
             placeholder="请输入你的项目名称"
             mb="sm"
             icon={<Icon path={mdiCodeTags} size={rem(16)} />}
+            disabled={applied}
             {...form.getInputProps('name')}
           />
           <TextInput
@@ -120,6 +135,7 @@ export default function DeveloperApply() {
             placeholder="请输入你的项目地址"
             mb="sm"
             icon={<Icon path={mdiLink} size={rem(16)} />}
+            disabled={applied}
             {...form.getInputProps('url')}
           />
           <Textarea
@@ -128,10 +144,14 @@ export default function DeveloperApply() {
             variant="filled"
             placeholder="请输入你的申请理由"
             mb="sm"
+            disabled={applied}
             {...form.getInputProps('reason')}
           />
-          <Group position="right" mt="xl">
-            <Button size="sm" type="submit">提交申请</Button>
+          <Group position="apart" mt="xl">
+            {applied && (
+              <Text size="xs" color="dimmed">你的申请正在受理中</Text>
+            )}
+            <Button size="sm" type="submit" disabled={applied}>提交申请</Button>
           </Group>
         </form>
       </Card>
