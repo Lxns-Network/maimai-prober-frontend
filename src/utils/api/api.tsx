@@ -53,6 +53,10 @@ export async function getProfile() {
   return fetchAPI("user/profile", { method: "GET" });
 }
 
+export async function getCrawlStatus() {
+  return fetchAPI("user/crawl/status", { method: "GET" });
+}
+
 export async function getPlayerDetail() {
   return fetchAPI("user/player", { method: "GET" });
 }

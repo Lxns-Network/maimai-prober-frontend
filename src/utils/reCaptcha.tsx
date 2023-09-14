@@ -1,5 +1,5 @@
 class ReCaptcha {
-  private siteKey: string;
+  private readonly siteKey: string;
   private action: string;
 
   constructor(siteKey: string, action: string) {

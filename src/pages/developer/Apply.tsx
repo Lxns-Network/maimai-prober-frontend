@@ -148,9 +148,11 @@ export default function DeveloperApply() {
             {...form.getInputProps('reason')}
           />
           <Group position="apart" mt="xl">
-            {applied && (
-              <Text size="xs" color="dimmed">你的申请正在受理中</Text>
-            )}
+            <div>
+              {applied && (
+                <Text size="xs" color="dimmed">你的申请正在受理中</Text>
+              )}
+            </div>
             <Button size="sm" type="submit" disabled={applied}>提交申请</Button>
           </Group>
         </form>
