@@ -2,7 +2,8 @@ import { Title, Text, Loader, Group } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import SettingsSection from "../../components/Settings/SettingsSection";
 import { useEffect, useState } from "react";
-import { getUserConfig, updateUserConfig } from "../../utils/api/api";
+import { deletePlayerScores }  from "../../utils/api/player";
+import { getUserConfig, updateUserConfig } from "../../utils/api/user";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
 import { useSetState } from "@mantine/hooks";
@@ -26,6 +27,7 @@ interface ConfigProps {
 export default function Settings() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
+  const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [config, setConfig] = useSetState({} as ConfigProps);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -72,6 +74,7 @@ export default function Settings() {
         content={alertContent}
         opened={isAlertVisible}
         onClose={closeAlert}
+        onConfirm={confirmAlert}
       />
       <Title order={2} size="h2" weight={900} align="center" mt="xs">
         账号设置
@@ -157,6 +160,7 @@ export default function Settings() {
             placeholder: "重置",
             optionType: "button",
             onClick: () => {
+              setConfirmAlert(() => null);
             },
           }, {
             key: "reset_account",
@@ -165,7 +169,10 @@ export default function Settings() {
             placeholder: "删除",
             color: "red",
             optionType: "button",
-            onClick: () => { },
+            onClick: () => {
+              setConfirmAlert(() => deletePlayerScores);
+              openAlert("删除谱面成绩", "你确定要删除你的查分器账号里所有的谱面成绩吗？");
+            },
           }, {
             key: "delete_account",
             title: "删除账号",
@@ -173,7 +180,9 @@ export default function Settings() {
             placeholder: "删除",
             color: "red",
             optionType: "button",
-            onClick: () => { },
+            onClick: () => {
+              setConfirmAlert(() => null);
+            },
           }]} />
         </>
       )}
