@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
-import { mdiAlertCircleOutline, mdiCheck, mdiContentCopy, mdiPause } from "@mdi/js";
+import { mdiAlertCircleOutline, mdiCheck, mdiContentCopy, mdiPause, mdiReload } from "@mdi/js";
 import { useClipboard, useIdle } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus } from "../../utils/api/user";
@@ -154,20 +154,22 @@ export default function Sync() {
         .then(res => res?.json())
         .then(data => {
           if (data.data != null) {
-            setActive(2);
+            if (data.data.status === "pending") {
+              setActive(2);
+            } else {
+              setActive(3);
+            }
             setCrawlStatus(data.data);
           }
         })
     }
-
-    checkCrawlStatus();
 
     const intervalId = setInterval(checkCrawlStatus, 5000);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [crawlStatus, idle, proxyAvailable]);
+  }, [crawlStatus, proxyAvailable]);
 
   return (
     <Container className={classes.root} size={400}>
@@ -177,7 +179,13 @@ export default function Sync() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         使用 HTTP 代理同步你的 maimai DX 玩家数据与成绩
       </Text>
-      <Stepper active={active} orientation="vertical" allowNextStepsSelect={false}>
+      <Stepper active={
+        proxyAvailable ? (
+          crawlStatus != null ? (
+            crawlStatus.status !== "pending" ? 3 : 2
+          ) : 1
+        ) : 0
+      } orientation="vertical" allowNextStepsSelect={false}>
         <Stepper.Step label="步骤 1" description={
           <Group spacing="md">
             <Text>
@@ -316,12 +324,20 @@ export default function Sync() {
                   }).join("、")}
                 </Text>
               </Group>
-              <Group mt="md">
-                <Button onClick={() => navigate("/user/profile")}>
-                  账号详情
-                </Button>
-                <Button variant="outline" onClick={() => navigate("/user/scores")}>
-                  成绩管理
+              <Group mt="md" position="apart">
+                <Group>
+                  <Button onClick={() => navigate("/user/profile")}>
+                    账号详情
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/user/scores")}>
+                    成绩管理
+                  </Button>
+                </Group>
+                <Button variant="outline" leftIcon={<Icon path={mdiReload} size={0.75} />} onClick={() => {
+                  setCrawlStatus(null);
+                  setActive(1);
+                }}>
+                  重新同步
                 </Button>
               </Group>
             </>
