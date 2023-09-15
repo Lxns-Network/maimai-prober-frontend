@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route } from "react-router-dom";
-import {checkPermission, isTokenExpired, isTokenUndefined, logout, UserPermission} from "./utils/session";
-import { refreshToken } from "./utils/api/api";
+import { checkPermission, isTokenExpired, isTokenUndefined, logout, UserPermission } from "./utils/session";
+import { refreshToken } from "./utils/api/user";
 import App from "./App";
 import DeveloperInfo from "./pages/developer/Info";
 
@@ -15,6 +15,7 @@ const Settings = lazy(() => import('./pages/user/Settings'));
 const NotFound = lazy(() => import('./pages/public/NotFound'));
 const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
 const Users = lazy(() => import('./pages/admin/Users'));
+const Developers = lazy(() => import('./pages/admin/Developers'));
 
 const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
   if (!isTokenUndefined() && isTokenExpired()) {
@@ -54,6 +55,7 @@ const routesConfig = (
       () => checkPermission(UserPermission.Administrator)}
     />}>
       <Route path="users" element={<Users />} />
+      <Route path="developers" element={<Developers />} />
     </Route>
     <Route path="*" element={<NotFound />} />
   </Route>

@@ -1,5 +1,6 @@
 import {
   Alert,
+  Button,
   Card,
   Group,
   Switch,
@@ -62,6 +63,9 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
         value={visible ? userData.email : userData.email.replace(/./g, '•')}
         readOnly
       />
+      <Group position="right" mt="md">
+        <Button color="blue" type="submit" disabled>保存</Button>
+      </Group>
     </Card>
   )
 }

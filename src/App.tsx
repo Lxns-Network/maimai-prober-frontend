@@ -12,7 +12,7 @@ import {
   Group
 } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import { refreshToken } from "./utils/api/api";
+import { refreshToken } from "./utils/api/user";
 // Layouts
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";

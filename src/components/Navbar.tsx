@@ -6,6 +6,7 @@ import {
   mdiAccountMultipleOutline,
   mdiAccountOutline,
   mdiAccountPlusOutline,
+  mdiAccountWrenchOutline,
   mdiChartBoxOutline,
   mdiCloudUploadOutline,
   mdiCogOutline,
@@ -70,6 +71,8 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       enabled: !(isLoggedOut || checkPermission(UserPermission.Developer)), divider: true },
     { label: '管理用户', icon: mdiAccountMultipleOutline, to: '/admin/users',
       enabled: checkPermission(UserPermission.Administrator), divider: true },
+    { label: '管理开发者', icon: mdiAccountWrenchOutline, to: '/admin/developers',
+      enabled: checkPermission(UserPermission.Administrator) },
   ];
 
   useEffect(() => {

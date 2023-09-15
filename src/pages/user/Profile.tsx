@@ -7,7 +7,8 @@ import {
   Title,
   rem, Loader,
 } from '@mantine/core';
-import { getPlayerDetail, getProfile } from "../../utils/api/api";
+import { getPlayerDetail } from '../../utils/api/player';
+import { getProfile } from '../../utils/api/user';
 import { PlayerSection } from '../../components/Profile/PlayerSection';
 import { UserSection } from '../../components/Profile/UserSection';
 

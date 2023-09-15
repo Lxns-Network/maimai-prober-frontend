@@ -21,7 +21,7 @@ import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiCheck, mdiContentCopy, mdiPause } from "@mdi/js";
 import { useClipboard, useIdle } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
-import { getCrawlStatus } from "../../utils/api/api";
+import { getCrawlStatus } from "../../utils/api/user";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -265,7 +265,7 @@ export default function Sync() {
           </Group>
         } loading={proxyAvailable && crawlStatus == null} />
         <Stepper.Step label="步骤 3" description={
-          <Text>上传并同步游戏数据</Text>
+          <Text>同步完成</Text>
         } loading={proxyAvailable && crawlStatus?.status === "pending"} />
       </Stepper>
       <Card withBorder radius="md" className={classes.card} p="md" mt={rem(-12)}>
@@ -273,7 +273,7 @@ export default function Sync() {
           <Text size="xs" color="dimmed">
             数据同步状态
           </Text>
-          <Text fz="lg" fw={700} color={
+          <Text fz="lg" color={
             crawlStatus?.status === "failed" ? "red" : (
               crawlStatus?.status === "finished" ? "teal" : "default"
             )

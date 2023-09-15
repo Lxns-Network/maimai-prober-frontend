@@ -1,12 +1,25 @@
-import {useNavigate} from "react-router-dom";
-import {Accordion, Alert, Avatar, Badge, Button, Card, createStyles, Divider, Group, Image, Text} from "@mantine/core";
+import { useNavigate } from "react-router-dom";
+import {
+  Alert,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  createStyles,
+  Divider,
+  Group,
+  Image,
+  rem,
+  Text
+} from "@mantine/core";
 import Icon from "@mdi/react";
-import {mdiAlertCircleOutline} from "@mdi/js";
-import {getDeluxeRatingGradient, getTrophyColor} from "../../utils/color";
+import { mdiAlertCircleOutline } from "@mdi/js";
+import { getDeluxeRatingGradient, getTrophyColor } from "../../utils/color";
 
 interface PlayerDataProps {
   name: string;
   rating: number;
+  friend_code: number;
   trophy: {
     name: string;
     color: string;
@@ -21,6 +34,13 @@ interface PlayerDataProps {
 export const useStyles = createStyles((theme) => ({
   card: {
     backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
+  },
+
+  section: {
+    borderBottom: `${rem(1)} solid ${
+      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
+    }`,
+    padding: theme.spacing.md,
   },
 }));
 
@@ -44,40 +64,43 @@ export const PlayerSection = ({ playerData }: { playerData: PlayerDataProps | nu
   }
 
   return (
-    <Card withBorder radius="md" className={classes.card} mb="md" p={0}>
-      <Group noWrap m="md">
-        <Avatar src={playerData.icon_url} size={94} radius="md" />
-        <div>
-          <Group spacing="xs" mb={8}>
-            <Badge color={getTrophyColor(playerData.trophy.color)}>{playerData.trophy.name}</Badge>
-            <Badge variant="gradient" gradient={getDeluxeRatingGradient(playerData.rating)}>DX Rating: {playerData.rating}</Badge>
-          </Group>
-          <Text fz="lg" fw={500}>
-            {playerData.name}
-          </Text>
-          <Divider mt={5} mb={10} variant="dashed" />
-          <Group spacing={10}>
-            <Image src={playerData.course_rank_url} height={36} width="auto" />
-            <Image src={playerData.class_rank_url} height={32} width="auto" />
-            <Group spacing={2} ml="xs">
-              <Image src="https://maimai.wahlap.com/maimai-mobile/img/icon_star.png" height={28} width="auto" />
-              <Text>
-                ×{playerData.star}
-              </Text>
+    <Card withBorder radius="md" className={classes.card} mb="md">
+      <Card.Section className={classes.section}>
+        <Group noWrap>
+          <Avatar src={playerData.icon_url} size={94} radius="md" />
+          <div>
+            <Group spacing="xs" mb={8}>
+              <Badge color={getTrophyColor(playerData.trophy.color)}>{playerData.trophy.name}</Badge>
+              <Badge variant="gradient" gradient={getDeluxeRatingGradient(playerData.rating)}>DX Rating: {playerData.rating}</Badge>
             </Group>
-          </Group>
-        </div>
-      </Group>
-      <Accordion variant="filled" chevronPosition="left" defaultValue="detail">
-        <Accordion.Item value="detail">
-          <Accordion.Control>详细信息</Accordion.Control>
-          <Accordion.Panel>
-            <Text size="sm" color="dimmed">
-              上次同步时间：{(new Date(Date.parse(playerData.upload_time))).toLocaleString()}
+            <Text fz="lg" fw={500}>
+              {playerData.name}
             </Text>
-          </Accordion.Panel>
-        </Accordion.Item>
-      </Accordion>
+            <Divider mt={5} mb={10} variant="dashed" />
+            <Group spacing={10}>
+              <Image src={playerData.course_rank_url} height={36} width="auto" />
+              <Image src={playerData.class_rank_url} height={32} width="auto" />
+              <Group spacing={2} ml="xs">
+                <Image src="https://maimai.wahlap.com/maimai-mobile/img/icon_star.png" height={28} width="auto" />
+                <Text>
+                  ×{playerData.star}
+                </Text>
+              </Group>
+            </Group>
+          </div>
+        </Group>
+      </Card.Section>
+
+      <Card.Section className={classes.section}>
+        <Group>
+          <Text fz="xs" c="dimmed">好友码</Text>
+          <Text fz="sm">{playerData.friend_code}</Text>
+        </Group>
+        <Group mt="xs">
+          <Text fz="xs" c="dimmed">上次同步时间</Text>
+          <Text fz="sm">{(new Date(Date.parse(playerData.upload_time))).toLocaleString()}</Text>
+        </Group>
+      </Card.Section>
     </Card>
   )
 }

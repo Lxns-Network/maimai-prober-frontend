@@ -17,12 +17,12 @@ import {
   MultiSelect
 } from '@mantine/core';
 import { keys } from '@mantine/utils';
-import { deleteUser, getUsers, updateUser } from "../../utils/api/api";
+import { deleteUser, getUsers, updateUser } from "../../utils/api/user";
 import Icon from "@mdi/react";
 import {
   mdiAccountSearch,
   mdiChevronDown,
-  mdiChevronUp,
+  mdiChevronUp, mdiTrashCan,
   mdiUnfoldMoreHorizontal
 } from "@mdi/js";
 import { NAVBAR_BREAKPOINT } from '../../App';
@@ -63,7 +63,7 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-interface UsersProps {
+export interface UserProps {
   id: number;
   name: string;
   email: string;
@@ -96,7 +96,7 @@ function Th({ children, reversed, sorted, onSort }: ThProps) {
   );
 }
 
-function filterData(data: UsersProps[], search: string) {
+function filterData(data: UserProps[], search: string) {
   const query = search.toLowerCase().trim();
   return data.filter((item) =>
     keys(item).some((key) => String(item[key]).toLowerCase().includes(query))
@@ -104,8 +104,8 @@ function filterData(data: UsersProps[], search: string) {
 }
 
 function sortData(
-  data: UsersProps[],
-  payload: { sortBy: keyof UsersProps | null; reversed: boolean; search: string }
+  data: UserProps[],
+  payload: { sortBy: keyof UserProps | null; reversed: boolean; search: string }
 ) {
   const { sortBy } = payload;
 
@@ -131,7 +131,7 @@ function sortData(
   );
 }
 
-const EditUserModal = ({ user, opened, close }: { user: UsersProps | null, opened: boolean, close(): void }) => {
+export const EditUserModal = ({ user, opened, close }: { user: UserProps | null, opened: boolean, close(): void }) => {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const form = useForm({
@@ -164,7 +164,7 @@ const EditUserModal = ({ user, opened, close }: { user: UsersProps | null, opene
         if (data?.code !== 200) {
           openAlert("保存设置失败", data?.message);
         } else {
-          (user as UsersProps).permission = values.permission;
+          (user as UserProps).permission = values.permission;
           close();
         }
       })
@@ -177,7 +177,7 @@ const EditUserModal = ({ user, opened, close }: { user: UsersProps | null, opene
         if (data?.code !== 200) {
           openAlert("删除失败", data?.message);
         } else {
-          (user as UsersProps).deleted = true;
+          (user as UserProps).deleted = true;
           close();
         }
       })
@@ -196,10 +196,17 @@ const EditUserModal = ({ user, opened, close }: { user: UsersProps | null, opene
         ]} label="权限" mb="xs" defaultValue={permission} onChange={setPermission} />
         <Group position="apart" mt="lg">
           <Group>
-            <Button variant="outline" color="red" onClick={() => {
-              setConfirmAlert(() => _delete);
-              openAlert("删除账号", "你确定要删除该账号吗？");
-            }}>删除账号</Button>
+            <Button
+              variant="outline"
+              color="red"
+              leftIcon={<Icon path={mdiTrashCan} size={0.75} />}
+              onClick={() => {
+                setConfirmAlert(() => _delete);
+                openAlert("删除账号", "你确定要删除该账号吗？");
+              }}
+            >
+              删除账号
+            </Button>
           </Group>
           <Group>
             <Button variant="default" onClick={close}>取消</Button>
@@ -213,18 +220,18 @@ const EditUserModal = ({ user, opened, close }: { user: UsersProps | null, opene
 
 export default function Users() {
   const { classes } = useStyles();
-  const [users, setUsers] = useState<UsersProps[]>([]);
+  const [users, setUsers] = useState<UserProps[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [search, setSearch] = useState('');
   const [sortedData, setSortedData] = useState(users);
-  const [sortBy, setSortBy] = useState<keyof UsersProps | null>(null);
+  const [sortBy, setSortBy] = useState<keyof UserProps | null>(null);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
   const [opened, { open, close }] = useDisclosure(false);
-  const [activeUser, setActiveUser] = useState<UsersProps | null>(null);
+  const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
-  const setSorting = (field: keyof UsersProps) => {
+  const setSorting = (field: keyof UserProps) => {
     const reversed = field === sortBy ? !reverseSortDirection : false;
     setReverseSortDirection(reversed);
     setSortBy(field);
@@ -237,7 +244,7 @@ export default function Users() {
     setSortedData(sortData(users, { sortBy, reversed: reverseSortDirection, search: value }));
   };
 
-  const rows = sortedData.map((row: UsersProps) => (
+  const rows = sortedData.map((row: UserProps) => (
     <tr key={row.id} onClick={() => {
       setActiveUser(row);
       open();
@@ -264,11 +271,11 @@ export default function Users() {
 
   return (
     <Container className={classes.root}>
-      <EditUserModal user={activeUser as UsersProps} opened={opened} close={() => {
+      <EditUserModal user={activeUser as UserProps} opened={opened} close={() => {
         const index = users.findIndex((user) => user.id === activeUser?.id);
         users.splice(index, 1);
         if (activeUser?.deleted != true) {
-          users.push(activeUser as UsersProps);
+          users.push(activeUser as UserProps);
         }
         const newUsers = users.sort((a, b) => a.id - b.id);
         setUsers(newUsers);

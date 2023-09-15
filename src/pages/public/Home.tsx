@@ -173,7 +173,7 @@ export default function Home() {
         </Container>
       }
 
-      <Container mt={rem(130)} mb={rem(30)} size="lg">
+      <Container mt={rem(130)} mb={rem(30)} size="lg" p={0}>
         <SimpleGrid cols={3} breakpoints={[{ maxWidth: 'sm', cols: 1 }]} spacing={50}>
           {items}
         </SimpleGrid>

@@ -20,7 +20,7 @@ import {
   mdiLink,
 } from "@mdi/js";
 import { useForm } from "@mantine/form";
-import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/api";
+import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/developer";
 
 const useStyles = createStyles((theme) => ({
   root: {

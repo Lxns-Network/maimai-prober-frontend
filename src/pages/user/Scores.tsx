@@ -16,7 +16,7 @@ import {
   Text,
   Title
 } from '@mantine/core';
-import { getPlayerScores } from "../../utils/api/api";
+import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
 import { useInputState } from "@mantine/hooks";
 import Icon from "@mdi/react";
