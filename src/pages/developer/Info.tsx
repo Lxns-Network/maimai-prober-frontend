@@ -5,12 +5,23 @@ import {
   Group,
   Text,
   Title,
-  rem, Loader, Card, Switch, Input, ActionIcon, Tooltip, CopyButton, Anchor, Divider, useMantineTheme,
+  rem,
+  Loader,
+  Card,
+  Switch,
+  Input,
+  ActionIcon,
+  Tooltip,
+  CopyButton,
+  Anchor,
+  Divider,
+  useMantineTheme,
+  Button,
 } from '@mantine/core';
-import { getDeveloperApply } from "../../utils/api/api";
+import { getDeveloperApply, resetDeveloperApiKey } from "../../utils/api/developer";
 import Icon from "@mdi/react";
-import { mdiCheck, mdiContentCopy, mdiEye, mdiEyeOff } from "@mdi/js";
-import { useDisclosure } from "@mantine/hooks";
+import { mdiCheck, mdiContentCopy, mdiEye, mdiEyeOff, mdiReload } from "@mdi/js";
+import { useDisclosure, useSetState } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 
 const useStyles = createStyles((theme) => ({
@@ -26,11 +37,21 @@ const useStyles = createStyles((theme) => ({
 
 export default function DeveloperInfo() {
   const { classes } = useStyles();
-  const [developerData, setDeveloperData] = useState<any>(null);
+  const [developerData, setDeveloperData] = useSetState<any>(null);
   const [visible, visibleHandler] = useDisclosure(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const navigate = useNavigate();
   const theme = useMantineTheme();
+
+  const resetApiKey = () => {
+    resetDeveloperApiKey()
+      .then(res => res?.json())
+      .then(data => {
+        if (data.code === 200) {
+          setDeveloperData({ api_key: data.data.api_key });
+        }
+      });
+  }
 
   useEffect(() => {
     document.title = "开发者面板 | maimai DX 查分器";
@@ -72,23 +93,23 @@ export default function DeveloperInfo() {
               查看你的开发者申请信息
             </Text>
             <Divider mt="md" mb="md" color={theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
-            <Group mt="md">
+            <Group mt="xs">
               <Text fz="xs" c="dimmed">项目名称</Text>
               <Text fz="sm">{developerData.name}</Text>
             </Group>
-            <Group mt="md">
+            <Group mt="xs">
               <Text fz="xs" c="dimmed">项目地址</Text>
               <Text fz="sm">
                 <Anchor href={developerData.url} target="_blank">{developerData.url}</Anchor>
               </Text>
             </Group>
-            <Group mt="md">
+            <Group mt="xs">
               <Text fz="xs" c="dimmed">申请时间</Text>
               <Text fz="sm">
                 {new Date(developerData.apply_time).toLocaleString()}
               </Text>
             </Group>
-            <Group mt="md">
+            <Group mt="xs">
               <Text fz="xs" c="dimmed">申请理由</Text>
               <Text fz="sm">
                 {developerData.reason}
@@ -129,6 +150,16 @@ export default function DeveloperInfo() {
               }
               readOnly
             />
+            <Group position="right" mt="md">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Icon path={mdiReload} size={0.75} />}
+                onClick={resetApiKey}
+              >
+                重置 API 密钥
+              </Button>
+            </Group>
           </Card>
         </>
       )}
