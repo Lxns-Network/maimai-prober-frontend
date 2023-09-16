@@ -1,7 +1,8 @@
-import {Badge, Card, createStyles, Group, rem, Text} from "@mantine/core";
+import {Badge, Card, createStyles, Flex, Group, rem, Text} from "@mantine/core";
 import {difficultyColor, getScoreCardBackgroundColor, getScoreSecondaryColor} from "../../utils/color";
+import {getDifficulty, SongProps} from "../../utils/api/song";
 
-export interface ScoresProps {
+export interface ScoreProps {
   id: number;
   song_name: string;
   level: string;
@@ -19,7 +20,7 @@ export interface ScoresProps {
 const useStyles = createStyles((theme) => ({
   card: {
     backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-    color: theme.colorScheme === 'dark' ? theme.white : theme.colors.gray[9],
+    color: theme.colorScheme === 'dark' ? theme.colors.gray[9] : theme.white,
   },
 
   scoreCard: {
@@ -37,39 +38,48 @@ const useStyles = createStyles((theme) => ({
   }
 }));
 
-export const Score = ({ score }: { score: ScoresProps }) => {
+export const Score = ({ score, song, onClick }: { score: ScoreProps, song: SongProps, onClick: () => void }) => {
   const { classes } = useStyles();
 
   return (
-    <Card shadow="sm" radius="md" p={0} className={[classes.card, classes.scoreCard].join(' ')} style={{
-      border: `2px solid ${getScoreSecondaryColor(score.level_index)}`,
-      backgroundColor: getScoreCardBackgroundColor(score.level_index)
-    }}>
-      <Group position="apart" noWrap pt={5} pb={2} pl="xs" pr="xs" spacing="xs" style={{
-        backgroundColor: difficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 2][score.level_index]
+    <Card
+      shadow="sm"
+      radius="md"
+      p={0}
+      className={[classes.card, classes.scoreCard].join(' ')}
+      style={{
+        border: `2px solid ${getScoreSecondaryColor(score.level_index)}`,
+        backgroundColor: getScoreCardBackgroundColor(score.level_index)
+      }}
+      onClick={onClick}
+    >
+      <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
+        backgroundColor: difficultyColor[localStorage.getItem("theme") === "\"light\"" ? 2 : 1][score.level_index]
       }}>
-        <Text size="sm" weight={500} truncate color="white">{score.song_name}</Text>
+        <Text size="sm" weight={500} truncate style={{ flex: 1 }}>{score.song_name}</Text>
         {score.type === "standard" ? (
           <Badge variant="filled" color="blue" size="sm">标准</Badge>
         ) : (
           <Badge variant="filled" color="orange" size="sm">DX</Badge>
         )}
-      </Group>
+      </Flex>
       <Group position="apart" m={10} mt={5} mb={5}>
         <div>
           <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
             {parseInt(String(score.achievements))}
             <span style={{ fontSize: rem(16) }}>.{
-              String(score.achievements).split(".")[1]
+              (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
             }%</span>
           </Text>
           <Text size="xs">
             DX Rating: {parseInt(String(score.dx_rating))}
           </Text>
         </div>
-        <Card w={30} h={30} shadow="sm" padding={0} radius="md" withBorder>
-          <Text size="md" weight={500} align="center" pt={2}>
-            {score.level}
+        <Card w={40} h={30} p={0} radius="md" withBorder>
+          <Text size="md" weight={500} align="center" style={{
+            lineHeight: rem(28),
+          }}>
+            {song != null ? getDifficulty(song, score.type, score.level)?.level_value.toFixed(1) : score.level}
           </Text>
         </Card>
       </Group>

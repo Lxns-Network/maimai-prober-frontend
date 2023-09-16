@@ -63,5 +63,5 @@ export const getScoreSecondaryColor = (level_index: number) => {
 }
 
 export const getScoreCardBackgroundColor = (level_index: number) => {
-  return difficultyColor[localStorage.getItem("theme") === "\"light\"" ? 0 : 1][level_index]
+  return difficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 0][level_index]
 }

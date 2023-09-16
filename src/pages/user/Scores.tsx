@@ -18,10 +18,12 @@ import {
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
-import { useInputState } from "@mantine/hooks";
+import { useDisclosure, useInputState } from "@mantine/hooks";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
-import { Score, ScoresProps } from '../../components/Scores/Score';
+import { Score, ScoreProps } from '../../components/Scores/Score';
+import { cacheSongList, getDifficulty, getSong } from "../../utils/api/song";
+import { ScoreModal } from '../../components/Scores/ScoreModal';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -46,12 +48,13 @@ const useStyles = createStyles((theme) => ({
       borderRadius: theme.radius.md,
       zIndex: 1,
     }
-  }
+  },
 }));
 
 const sortKeys = [
   { name: 'ID', key: 'id' },
   { name: '曲名', key: 'song_name' },
+  { name: '定数', key: 'level_value' },
   { name: '达成率', key: 'achievements' },
   { name: 'DX Rating', key: 'dx_rating' },
   { name: '上传时间', key: 'upload_time' },
@@ -59,10 +62,11 @@ const sortKeys = [
 
 export default function Scores() {
   const { classes } = useStyles();
-  const [defaultScores, setDefaultScores] = useState<ScoresProps[]>([]);
-  const [scores, setScores] = useState<ScoresProps[]>([]);
-  const [displayScores, setDisplayScores] = useState<ScoresProps[]>([]); // 用于分页显示的成绩列表
+  const [defaultScores, setDefaultScores] = useState<ScoreProps[]>([]);
+  const [scores, setScores] = useState<ScoreProps[]>([]);
+  const [displayScores, setDisplayScores] = useState<ScoreProps[]>([]); // 用于分页显示的成绩列表
   const [isLoaded, setIsLoaded] = useState(false);
+  const navigate = useNavigate();
 
   // 排序相关
   const [sortBy, setSortBy] = useState();
@@ -72,13 +76,16 @@ export default function Scores() {
   const [search, setSearchValue] = useInputState('');
   const [difficulty, setDifficulty] = useState<string[]>([]);
   const [type, setType] = useState<string[]>([]);
+  const [rating, setRating] = useState<number[]>([1, 15]);
 
   // 分页相关
   const separator = 20;
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const navigate = useNavigate();
+  // 成绩详情相关
+  const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
+  const [scoreDetail, setScoreDetail] = useState<ScoreProps | null>(null);
 
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
@@ -90,6 +97,8 @@ export default function Scores() {
       }
       return res.json();
     }
+
+    cacheSongList();
 
     getScores().then((data) => {
       setDefaultScores(data.data);
@@ -115,22 +124,56 @@ export default function Scores() {
     setDisplayScores(scores.slice(start, end));
   }, [page]);
 
-  useEffect(() => {
-    handleFilter();
-  }, [search, difficulty, type]);
-
   const resetFilter = () => {
     setSearchValue('');
     setDifficulty([]);
     setScores(defaultScores);
     setType([]);
+    setRating([1, 15]);
   }
 
-  const handleFilter = () => {
+  const sort = (key: any) => {
+    const reversed = key === sortBy ? !reverseSortDirection : false;
+    setReverseSortDirection(reversed);
+    setSortBy(key);
+
+    let sortedElements;
+    if (key === 'level_value') {
+      sortedElements = [...scores].sort((a: any, b: any) => {
+        const songA = getSong(a.id);
+        const songB = getSong(b.id);
+        if (!songA || !songB) {
+        return 0;
+        }
+        const difficultyA = getDifficulty(songA, a.type, a.level);
+        const difficultyB = getDifficulty(songB, b.type, b.level);
+        if (!difficultyA || !difficultyB) {
+        return 0;
+        }
+        return reversed ? difficultyA.level_value - difficultyB.level_value : difficultyB.level_value - difficultyA.level_value;
+      });
+    } else {
+      sortedElements = [...scores].sort((a: any, b: any) => {
+        if (typeof a[key] === 'string') {
+          return reversed ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
+        } else {
+          return reversed ? a[key] - b[key] : b[key] - a[key];
+        }
+      });
+    }
+
+    setScores(sortedElements);
+    setPage(1);
+    setDisplayScores(sortedElements.slice(0, separator));
+  };
+
+  useEffect(() => {
+    // 过滤搜索
     const searchFilteredData = defaultScores.filter(
       (score) => score.song_name.toLowerCase().includes(search.toLowerCase())
     );
 
+    // 过滤难度
     const difficultyFilteredData = searchFilteredData.filter((score) => {
       if (difficulty?.length === 0) {
         return true;
@@ -138,6 +181,7 @@ export default function Scores() {
       return difficulty?.includes(score.level_index.toString());
     });
 
+    // 过滤谱面类型
     const typeFilteredData = difficultyFilteredData.filter((score) => {
       if (type?.length === 0) {
         return true;
@@ -145,28 +189,23 @@ export default function Scores() {
       return type?.includes(score.type);
     })
 
-    setScores(typeFilteredData);
-    setPage(1);
-    setDisplayScores(typeFilteredData.slice(0, separator));
-  }
-
-  const handleSort = (key: any) => {
-    const reversed = key === sortBy ? !reverseSortDirection : false;
-    setReverseSortDirection(reversed);
-    setSortBy(key);
-
-    const sortedElements = [...scores].sort((a: any, b: any) => {
-      if (typeof a[key] === 'string') {
-        return reversed ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
-      } else {
-        return reversed ? a[key] - b[key] : b[key] - a[key];
+    // 过滤定数
+    const ratingFilteredData = typeFilteredData.filter((score) => {
+      const song = getSong(score.id);
+      if (!song) {
+        return false;
       }
-    });
+      const difficulty = getDifficulty(song, score.type, score.level);
+      if (!difficulty) {
+        return false;
+      }
+      return difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1];
+    })
 
-    setScores(sortedElements);
+    setScores(ratingFilteredData);
     setPage(1);
-    setDisplayScores(sortedElements.slice(0, separator));
-  };
+    setDisplayScores(ratingFilteredData.slice(0, separator));
+  }, [search, difficulty, type, rating]);
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
@@ -179,6 +218,12 @@ export default function Scores() {
 
   return (
     <Container className={classes.root} size={400}>
+      <ScoreModal
+        score={scoreDetail as ScoreProps}
+        song={(scoreDetail ? getSong(scoreDetail.id) : null) as any}
+        opened={scoreAlertOpened}
+        onClose={closeScoreAlert}
+      />
       <Title order={2} size="h2" weight={900} align="center" mt="xs">
         成绩管理
       </Title>
@@ -200,7 +245,7 @@ export default function Scores() {
           {sortKeys.map((item) => (
             <Button
               key={item.key}
-              onClick={() => handleSort(item.key)}
+              onClick={() => sort(item.key)}
               size="xs"
               variant="light"
               radius="xl"
@@ -211,7 +256,7 @@ export default function Scores() {
             </Button>
           ))}
         </Group>
-        <Accordion variant="filled" chevronPosition="left" defaultValue="advanced-filter">
+        <Accordion variant="filled" chevronPosition="left">
           <Accordion.Item value="advanced-filter">
             <Accordion.Control>高级筛选设置</Accordion.Control>
             <Accordion.Panel>
@@ -259,11 +304,12 @@ export default function Scores() {
                     max={15}
                     step={0.1}
                     minRange={0.1}
-                    defaultValue={[1, 15]}
+                    precision={1}
                     marks={Array.from({ length: 15 }, (_, index) => ({
                       value: index + 1,
                       label: String(index + 1),
                     }))}
+                    onChangeEnd={setRating}
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
@@ -327,7 +373,15 @@ export default function Scores() {
                 w="100%"
               >
                 {displayScores.map((score) => (
-                  <Score key={`${score.id}.${score.level_index}`} score={score} />
+                  <Score
+                    key={`${score.id}.${score.level_index}`}
+                    score={score}
+                    song={getSong(score.id) as any}
+                    onClick={() => {
+                      setScoreDetail(score);
+                      openScoreAlert();
+                    }}
+                  />
                 ))}
               </SimpleGrid>
               <Pagination total={totalPages} value={page} onChange={setPage} />
