@@ -15,11 +15,15 @@ import {
   ThemeIcon,
   Alert,
   Stepper,
+  CopyButton,
+  Tooltip,
+  ActionIcon,
+  TextInput,
 } from '@mantine/core';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiCheck, mdiContentCopy, mdiPause, mdiReload } from "@mdi/js";
-import { useClipboard, useIdle } from '@mantine/hooks';
+import { useIdle } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus } from "../../utils/api/user";
 
@@ -68,26 +72,25 @@ async function checkProxySettingStatus() {
 }
 
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
-  const clipboard = useClipboard();
-
   return (
-    <Button
-      variant="light"
-      rightIcon={
-        <Icon path={clipboard.copied ? (mdiCheck) : (mdiContentCopy)} size={0.8} />
+    <TextInput
+      variant="filled"
+      value={content}
+      onFocus={(e) => e.target.select()}
+      rightSection={
+        <CopyButton value={content} timeout={2000}>
+          {({ copied, copy }) => (
+            <Tooltip label={copied ? '已复制' : label} withArrow position="right">
+              <ActionIcon color={copied ? 'teal' : 'gray'} onClick={copy}>
+                <Icon path={copied ? mdiCheck : mdiContentCopy} size={0.75} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </CopyButton>
       }
-      color={clipboard.copied ? 'teal' : 'blue'}
-      radius="xl"
-      size="md"
-      styles={{
-        root: { height: rem(48) },
-        rightIcon: { marginLeft: rem(22) },
-      }}
-      onClick={() => clipboard.copy(content)}
+      readOnly
       {...others}
-    >
-      {label}
-    </Button>
+    />
   )
 }
 
@@ -242,7 +245,7 @@ export default function Sync() {
                 <Accordion.Item value="how-to-set-http-proxy">
                   <Accordion.Control>我该如何设置 HTTP 代理？</Accordion.Control>
                   <Accordion.Panel>
-                    <Text size="sm" color="dimmed"  mb="md">
+                    <Text size="sm" color="dimmed" mb="xs">
                       请将系统的 WLAN 代理设置为 <Code>proxy.maimai.lxns.net:8080</Code>，Android 用户在移动网络下需要设置接入点名称（APN）代理。
                     </Text>
                     <CopyButtonWithIcon label="复制 HTTP 代理" content="proxy.maimai.lxns.net" />
@@ -258,7 +261,7 @@ export default function Sync() {
               使用微信打开 OAuth 链接
             </Text>
             <Card withBorder radius="md" className={classes.card} mb="md" p="md">
-              <Text size="sm" mb="md">
+              <Text size="sm" mb="xs">
                 请复制下方的微信 OAuth 链接，然后在安全的聊天中发送链接并打开，等待同步结果返回。
               </Text>
               <CopyButtonWithIcon

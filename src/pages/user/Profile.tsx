@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import {
   Container,
   createStyles,
-  Group,
   Text,
   Title,
-  rem, Loader,
+  rem,
+  Skeleton,
 } from '@mantine/core';
 import { getPlayerDetail } from '../../utils/api/player';
 import { getProfile } from '../../utils/api/user';
@@ -58,16 +58,10 @@ export default function Profile() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         查看你的 maimai DX 查分器账号的详情与游戏数据
       </Text>
-      {!isLoaded ? (
-        <Group position="center" mt="xl">
-          <Loader />
-        </Group>
-      ) : (
-        <>
+        <Skeleton visible={!isLoaded}>
           <PlayerSection playerData={playerData} />
           <UserSection userData={userData} />
-        </>
-      )}
+        </Skeleton>
     </Container>
   );
 }

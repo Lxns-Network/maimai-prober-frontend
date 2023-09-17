@@ -6,6 +6,7 @@ import App from "./App";
 import DeveloperInfo from "./pages/developer/Info";
 
 const Home = lazy(() => import('./pages/public/Home'));
+const About = lazy(() => import('./pages/public/About'));
 const Login = lazy(() => import('./pages/public/Login'));
 const Register = lazy(() => import('./pages/public/Register'));
 const Profile = lazy(() => import('./pages/user/Profile'));
@@ -38,6 +39,7 @@ const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
 const routesConfig = (
   <Route element={<App />}>
     <Route path="/" element={<Home />} />
+    <Route path="/about" element={<About />} />
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
     <Route path="/user" element={<ProtectedRoute />}>
