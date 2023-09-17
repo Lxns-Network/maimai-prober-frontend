@@ -1,6 +1,7 @@
-import {Badge, Card, createStyles, Flex, Group, rem, Text} from "@mantine/core";
-import {difficultyColor, getScoreCardBackgroundColor, getScoreSecondaryColor} from "../../utils/color";
-import {getDifficulty, SongProps} from "../../utils/api/song";
+import { Badge, Card, createStyles, Flex, Group, rem, Text } from "@mantine/core";
+import { difficultyColor, getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../utils/color";
+import { getDifficulty, SongProps } from "../../utils/api/song";
+import { memo } from "react";
 
 export interface ScoreProps {
   id: number;
@@ -38,7 +39,7 @@ const useStyles = createStyles((theme) => ({
   }
 }));
 
-export const Score = ({ score, song, onClick }: { score: ScoreProps, song: SongProps, onClick: () => void }) => {
+export const Score = memo(({ score, song, onClick }: { score: ScoreProps, song: SongProps, onClick: () => void }) => {
   const { classes } = useStyles();
 
   return (
@@ -85,4 +86,4 @@ export const Score = ({ score, song, onClick }: { score: ScoreProps, song: SongP
       </Group>
     </Card>
   )
-}
+});

@@ -10,20 +10,21 @@ import {
   Group,
   Input,
   Loader,
-  MultiSelect, Pagination, RangeSlider,
+  MultiSelect,
+  Pagination,
+  RangeSlider,
   rem,
-  SimpleGrid,
   Text,
   Title
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
-import { useDisclosure, useInputState } from "@mantine/hooks";
+import { useInputState } from "@mantine/hooks";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
-import { Score, ScoreProps } from '../../components/Scores/Score';
+import { ScoreProps } from '../../components/Scores/Score';
 import { cacheSongList, getDifficulty, getSong } from "../../utils/api/song";
-import { ScoreModal } from '../../components/Scores/ScoreModal';
+import { ScoreList } from '../../components/Scores/ScoreList';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -34,20 +35,6 @@ const useStyles = createStyles((theme) => ({
   card: {
     backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
     color: theme.colorScheme === 'dark' ? theme.white : theme.colors.gray[9],
-  },
-
-  scoreCard: {
-    cursor: 'pointer',
-    transition: 'transform 200ms ease',
-
-    '&:hover': {
-      transform: 'scale(1.03)',
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-      boxShadow: theme.shadows.md,
-      borderColor: theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2],
-      borderRadius: theme.radius.md,
-      zIndex: 1,
-    }
   },
 }));
 
@@ -82,10 +69,6 @@ export default function Scores() {
   const separator = 20;
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  // 成绩详情相关
-  const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
-  const [scoreDetail, setScoreDetail] = useState<ScoreProps | null>(null);
 
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
@@ -137,34 +120,31 @@ export default function Scores() {
     setReverseSortDirection(reversed);
     setSortBy(key);
 
-    let sortedElements;
-    if (key === 'level_value') {
-      sortedElements = [...scores].sort((a: any, b: any) => {
+    const sortedElements = scores.sort((a: any, b: any) => {
+      if (key === 'level_value') {
         const songA = getSong(a.id);
         const songB = getSong(b.id);
         if (!songA || !songB) {
-        return 0;
+          return 0;
         }
         const difficultyA = getDifficulty(songA, a.type, a.level);
         const difficultyB = getDifficulty(songB, b.type, b.level);
         if (!difficultyA || !difficultyB) {
-        return 0;
+          return 0;
         }
-        return reversed ? difficultyA.level_value - difficultyB.level_value : difficultyB.level_value - difficultyA.level_value;
-      });
-    } else {
-      sortedElements = [...scores].sort((a: any, b: any) => {
-        if (typeof a[key] === 'string') {
-          return reversed ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
-        } else {
-          return reversed ? a[key] - b[key] : b[key] - a[key];
-        }
-      });
-    }
+        a = difficultyA;
+        b = difficultyB;
+      }
+      if (typeof a[key] === 'string') {
+        return reversed ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
+      } else {
+        return reversed ? a[key] - b[key] : b[key] - a[key];
+      }
+    });
 
     setScores(sortedElements);
-    setPage(1);
     setDisplayScores(sortedElements.slice(0, separator));
+    setPage(1);
   };
 
   useEffect(() => {
@@ -218,12 +198,6 @@ export default function Scores() {
 
   return (
     <Container className={classes.root} size={400}>
-      <ScoreModal
-        score={scoreDetail as ScoreProps}
-        song={(scoreDetail ? getSong(scoreDetail.id) : null) as any}
-        opened={scoreAlertOpened}
-        onClose={closeScoreAlert}
-      />
       <Title order={2} size="h2" weight={900} align="center" mt="xs">
         成绩管理
       </Title>
@@ -367,23 +341,7 @@ export default function Scores() {
             ) : null}
             <Group position="center">
               <Pagination total={totalPages} value={page} onChange={setPage} />
-              <SimpleGrid
-                cols={2}
-                spacing="xs"
-                w="100%"
-              >
-                {displayScores.map((score) => (
-                  <Score
-                    key={`${score.id}.${score.level_index}`}
-                    score={score}
-                    song={getSong(score.id) as any}
-                    onClick={() => {
-                      setScoreDetail(score);
-                      openScoreAlert();
-                    }}
-                  />
-                ))}
-              </SimpleGrid>
+              <ScoreList scores={displayScores} />
               <Pagination total={totalPages} value={page} onChange={setPage} />
             </Group>
           </>

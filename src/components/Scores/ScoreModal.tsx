@@ -1,13 +1,7 @@
-import {ScoreProps} from "./Score";
-import {Avatar, Badge, Card, createStyles, Group, Image, Loader, Modal, rem, Text} from "@mantine/core";
-import {getScoreCardBackgroundColor, getScoreSecondaryColor} from "../../utils/color";
-import {getDifficulty, SongProps} from "../../utils/api/song";
-
-const useStyles = createStyles((theme) => ({
-  name: {
-    fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-  },
-}));
+import { ScoreProps } from "./Score";
+import { Avatar, Badge, Card, Group, Image, Loader, Modal, rem, Text } from "@mantine/core";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../utils/color";
+import { getDifficulty, SongProps } from "../../utils/api/song";
 
 interface ScoreModalProps {
   score: ScoreProps | null;
@@ -17,8 +11,6 @@ interface ScoreModalProps {
 }
 
 const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps }) => {
-  const { classes } = useStyles();
-
   return (
     <>
       <Group noWrap>
@@ -30,25 +22,17 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
             <Badge variant="filled" color="orange" size="sm">DX</Badge>
           )}
 
-          <Text fz="lg" fw={500} className={classes.name}>
-            {score.song_name}
-          </Text>
-          <Text fz="xs" c="dimmed">
-            谱面 ID：{score.id}
-          </Text>
+          <Text fz="lg" fw={500}>{score.song_name}</Text>
+          <Text fz="xs" c="dimmed">谱面 ID：{score.id}</Text>
           <Group spacing={0} ml={-3}>
             <Image
               src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${score.fc || "back"}.png?ver=1.35`}
               width={rem(30)}
-            >
-              {score?.fc}
-            </Image>
+            />
             <Image
               src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${score.fs || "back"}.png?ver=1.35`}
               width={rem(30)}
-            >
-              {score?.fs}
-            </Image>
+            />
           </Group>
         </div>
         <Card w={54} h={38} p={0} radius="md" withBorder style={{
