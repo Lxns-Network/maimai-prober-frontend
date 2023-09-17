@@ -78,8 +78,11 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   useEffect(() => {
     const currentPath = location.pathname;
     const activeNavItem = navbarData.find(item => item.to.startsWith(currentPath));
+
     if (activeNavItem) {
       setActive(activeNavItem.label);
+    } else {
+      setActive('');
     }
   }, [location.pathname, navbarData]);
 
@@ -104,9 +107,9 @@ export default function Navbar({ style, onClose }: NavbarProps) {
 
       <MantineNavbar.Section className={classes.navbarFooter}>
         <NavbarButton label="关于 maimai DX 查分器" icon={mdiInformationOutline} to="/about" onClose={onClose} />
-        <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
+        {isLoggedOut ? null : <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
           localStorage.removeItem("token");
-        }} />
+        }} />}
       </MantineNavbar.Section>
     </MantineNavbar>
   );
