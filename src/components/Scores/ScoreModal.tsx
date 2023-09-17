@@ -42,7 +42,7 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
           <Text size="xl" weight={500} align="center" color="white" style={{
             lineHeight: rem(34),
           }}>
-            {getDifficulty(song, score.type, score.level)?.level_value.toFixed(1)}
+            {getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1)}
           </Text>
         </Card>
       </Group>

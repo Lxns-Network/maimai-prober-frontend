@@ -80,7 +80,7 @@ export const Score = memo(({ score, song, onClick }: { score: ScoreProps, song: 
           <Text size="md" weight={500} align="center" style={{
             lineHeight: rem(28),
           }}>
-            {song != null ? getDifficulty(song, score.type, score.level)?.level_value.toFixed(1) : score.level}
+            {song != null ? getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1) : score.level}
           </Text>
         </Card>
       </Group>

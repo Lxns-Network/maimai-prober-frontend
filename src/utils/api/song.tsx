@@ -49,10 +49,10 @@ export function getSong(id: number) {
   return songs.find((song: any) => song.id === id);
 }
 
-export function getDifficulty(song: SongProps, type: string, level: string) {
+export function getDifficulty(song: SongProps, type: string, level_index: number) {
   if (type === "standard") {
-    return song.difficulties.standard.find((difficulty) => difficulty.level === level);
+    return song.difficulties.standard[level_index]
   } else {
-    return song.difficulties.dx.find((difficulty) => difficulty.level === level);
+    return song.difficulties.dx[level_index]
   }
 }

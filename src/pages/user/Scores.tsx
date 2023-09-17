@@ -127,8 +127,8 @@ export default function Scores() {
         if (!songA || !songB) {
           return 0;
         }
-        const difficultyA = getDifficulty(songA, a.type, a.level);
-        const difficultyB = getDifficulty(songB, b.type, b.level);
+        const difficultyA = getDifficulty(songA, a.type, a.level_index);
+        const difficultyB = getDifficulty(songB, b.type, b.level_index);
         if (!difficultyA || !difficultyB) {
           return 0;
         }
@@ -175,7 +175,7 @@ export default function Scores() {
       if (!song) {
         return false;
       }
-      const difficulty = getDifficulty(song, score.type, score.level);
+      const difficulty = getDifficulty(song, score.type, score.level_index);
       if (!difficulty) {
         return false;
       }
