@@ -64,6 +64,7 @@ export default function Scores() {
   const [difficulty, setDifficulty] = useState<string[]>([]);
   const [type, setType] = useState<string[]>([]);
   const [rating, setRating] = useState<number[]>([1, 15]);
+  const [version, setVersion] = useState<string[]>([]);
 
   // 分页相关
   const separator = 20;
@@ -169,8 +170,32 @@ export default function Scores() {
       return type?.includes(score.type);
     })
 
+    // 过滤谱面版本
+    const versionFilteredData = typeFilteredData.filter((score) => {
+      if (version?.length === 0 || version?.length === 2) {
+        return true;
+      }
+      const song = getSong(score.id);
+      if (!song) {
+        return false;
+      }
+      const difficulty = getDifficulty(song, score.type, score.level_index);
+      if (!difficulty) {
+        return false;
+      }
+      return version.every((item) => {
+        if (item === "dx") {
+          return difficulty.version >= 23000;
+        }
+        if (item === "standard") {
+          return difficulty.version < 23000;
+        }
+        return true;
+      });
+    })
+
     // 过滤定数
-    const ratingFilteredData = typeFilteredData.filter((score) => {
+    const ratingFilteredData = versionFilteredData.filter((score) => {
       const song = getSong(score.id);
       if (!song) {
         return false;
@@ -185,7 +210,7 @@ export default function Scores() {
     setScores(ratingFilteredData);
     setPage(1);
     setDisplayScores(ratingFilteredData.slice(0, separator));
-  }, [search, difficulty, type, rating]);
+  }, [search, difficulty, type, version, rating]);
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
@@ -292,6 +317,15 @@ export default function Scores() {
                     <Chip.Group multiple value={type} onChange={setType}>
                       <Chip variant="filled" value="standard" color="blue">标准</Chip>
                       <Chip variant="filled" value="dx" color="orange">DX</Chip>
+                    </Chip.Group>
+                  </Group>
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Text fz="xs" c="dimmed" mb={3}>筛选谱面版本</Text>
+                  <Group>
+                    <Chip.Group multiple value={version} onChange={setVersion}>
+                      <Chip variant="filled" value="standard">常规</Chip>
+                      <Chip variant="filled" value="dx">当前</Chip>
                     </Chip.Group>
                   </Group>
                 </Grid.Col>

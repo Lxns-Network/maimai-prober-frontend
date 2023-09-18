@@ -5,7 +5,7 @@ export interface DifficultyProps {
   level: string;
   level_value: number;
   note_designer: string;
-  version: string;
+  version: number;
 }
 
 export interface SongProps {
