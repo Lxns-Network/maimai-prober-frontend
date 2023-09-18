@@ -1,5 +1,5 @@
-import { Badge, Card, createStyles, Flex, Group, rem, Text } from "@mantine/core";
-import { difficultyColor, getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../utils/color";
+import { Badge, Card, createStyles, Flex, Group, rem, Text, useMantineTheme } from "@mantine/core";
+import { difficultyColor } from "../../utils/color";
 import { getDifficulty, SongProps } from "../../utils/api/song";
 import { memo } from "react";
 
@@ -41,6 +41,7 @@ const useStyles = createStyles((theme) => ({
 
 export const Score = memo(({ score, song, onClick }: { score: ScoreProps, song: SongProps, onClick: () => void }) => {
   const { classes } = useStyles();
+  const theme = useMantineTheme();
 
   return (
     <Card
@@ -49,15 +50,16 @@ export const Score = memo(({ score, song, onClick }: { score: ScoreProps, song: 
       p={0}
       className={[classes.card, classes.scoreCard].join(' ')}
       style={{
-        border: `2px solid ${getScoreSecondaryColor(score.level_index)}`,
-        backgroundColor: getScoreCardBackgroundColor(score.level_index)
+        border: `2px solid ${difficultyColor[2][score.level_index]}`,
+        backgroundColor: difficultyColor[1][score.level_index],
+        opacity: theme.colorScheme === 'dark' ? 0.8 : 1,
       }}
       onClick={onClick}
     >
       <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
-        backgroundColor: difficultyColor[localStorage.getItem("theme") === "\"light\"" ? 2 : 1][score.level_index]
+        backgroundColor: difficultyColor[2][score.level_index]
       }}>
-        <Text size="sm" weight={500} truncate style={{ flex: 1 }}>{score.song_name}</Text>
+        <Text size="sm" weight={500} truncate style={{ flex: 1 }} color="white">{score.song_name}</Text>
         {score.type === "standard" ? (
           <Badge variant="filled" color="blue" size="sm">标准</Badge>
         ) : (
@@ -66,13 +68,13 @@ export const Score = memo(({ score, song, onClick }: { score: ScoreProps, song: 
       </Flex>
       <Group position="apart" m={10} mt={5} mb={5}>
         <div>
-          <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
+          <Text fz={rem(24)} style={{ lineHeight: rem(24) }} color="white">
             {parseInt(String(score.achievements))}
             <span style={{ fontSize: rem(16) }}>.{
               (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
             }%</span>
           </Text>
-          <Text size="xs">
+          <Text size="xs" color="white">
             DX Rating: {parseInt(String(score.dx_rating))}
           </Text>
         </div>

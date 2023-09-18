@@ -119,7 +119,7 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
         <UserButton user={developer.user} onClick={userOnClick} />
       </Card.Section>
       <Card.Section className={classes.section}>
-        <Group position="apart" noWrap>
+        <Group position="apart">
           <div>
             <Text fz="xs" c="dimmed">项目名称</Text>
             <Text fz="sm">{developer.name}</Text>
@@ -127,7 +127,7 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
           <div>
             <Text fz="xs" c="dimmed">项目地址</Text>
             <Text fz="sm">
-              <Anchor href={developer.url} target="_blank">{developer.url}</Anchor>
+              <Anchor href={developer.url} target="_blank" truncate>{developer.url}</Anchor>
             </Text>
           </div>
           <div>

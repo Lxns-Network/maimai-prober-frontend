@@ -70,7 +70,15 @@ export const PlayerSection = ({ playerData }: { playerData: PlayerDataProps | nu
           <Avatar src={playerData.icon_url} size={94} radius="md" />
           <div>
             <Group spacing="xs" mb={8}>
-              <Badge color={getTrophyColor(playerData.trophy.color)}>{playerData.trophy.name}</Badge>
+              <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color)} style={{
+                height: "auto",
+              }} children={
+                <Text fz="xs" style={{
+                  whiteSpace: "pre-wrap"
+                }}>
+                  {playerData.trophy.name}
+                </Text>
+              } />
               <Badge variant="gradient" gradient={getDeluxeRatingGradient(playerData.rating)}>DX Rating: {playerData.rating}</Badge>
             </Group>
             <Text fz="lg" fw={500}>
