@@ -18,11 +18,18 @@ import {
   CopyButton,
   Tooltip,
   ActionIcon,
-  TextInput,
+  TextInput, Divider, Space,
 } from '@mantine/core';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
-import { mdiAlertCircleOutline, mdiCheck, mdiContentCopy, mdiPause, mdiReload } from "@mdi/js";
+import {
+  mdiAlertCircleOutline,
+  mdiCheck,
+  mdiContentCopy,
+  mdiOpenInApp,
+  mdiPause,
+  mdiReload
+} from "@mdi/js";
 import { useIdle } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus } from "../../utils/api/user";
@@ -249,6 +256,16 @@ export default function Sync() {
                       请将系统的 WLAN 代理设置为 <Code>proxy.maimai.lxns.net:8080</Code>，Android 用户在移动网络下需要设置接入点名称（APN）代理。
                     </Text>
                     <CopyButtonWithIcon label="复制 HTTP 代理" content="proxy.maimai.lxns.net" />
+                    <Divider my="xs" label="或使用 Clash 代理" labelPosition="center" />
+                    <Flex>
+                      <CopyButtonWithIcon label="复制 HTTP 代理" content="https://maimai.lxns.net/api/v0/proxy-config/clash" style={{
+                        flex: 1,
+                      }} />
+                      <Space w="xs" />
+                      <Button variant="light" rightIcon={<Icon path={mdiOpenInApp} size={0.75} />} onClick={
+                        () => window.location.href = "clash://install-config?url=https://maimai.lxns.net/api/v0/proxy-config/clash"
+                      }>一键导入配置</Button>
+                    </Flex>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>

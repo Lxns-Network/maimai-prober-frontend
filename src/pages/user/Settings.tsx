@@ -171,7 +171,7 @@ export default function Settings() {
             optionType: "button",
             onClick: () => {
               setConfirmAlert(() => deletePlayerScores);
-              openAlert("删除谱面成绩", "你确定要删除你的查分器账号里所有的谱面成绩吗？");
+              openAlert("删除谱面成绩", "你确定要删除你的查分器账号里所有的谱面成绩吗？这将包括所有历史爬取的谱面成绩。");
             },
           }, {
             key: "delete_account",
