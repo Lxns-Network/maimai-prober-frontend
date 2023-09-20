@@ -16,6 +16,10 @@ export async function updateUserConfig(data: any) {
   return fetchAPI("user/config", { method: "POST", body: data });
 }
 
+export async function updateUserBind(data: any) {
+  return fetchAPI("user/bind", { method: "POST", body: data });
+}
+
 export async function getUsers() {
   return fetchAPI("user/admin/users", { method: "GET" });
 }

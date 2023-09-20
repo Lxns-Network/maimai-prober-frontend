@@ -11,10 +11,18 @@ import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useStyles } from "./PlayerSection";
 import { useDisclosure } from "@mantine/hooks";
+import { UserBindProps } from "./UserBindSection";
+import { useForm } from "@mantine/form";
+import { validateEmail, validateUserName } from "../../utils/validator";
+import {useEffect} from "react";
 
-interface UserDataProps {
+export interface UserDataProps {
+  id: number;
   name: string;
   email: string;
+  permission: number;
+  register_time: string;
+  bind: UserBindProps;
 }
 
 export const UserSection = ({ userData }: { userData: UserDataProps | null }) => {
@@ -30,6 +38,32 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
       </Alert>
     )
   }
+
+  useEffect(() => {
+    if (visible) {
+      form.setValues({
+        name: userData.name,
+        email: userData.email,
+      })
+    } else {
+      form.setValues({
+        name: userData.name.replace(/./g, '•'),
+        email: userData.email.replace(/./g, '•'),
+      })
+    }
+  }, [visible])
+
+  const form = useForm({
+    initialValues: {
+      name: userData.name,
+      email: userData.email,
+    },
+
+    validate: {
+      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value) => (validateEmail(value) ? null : "邮箱格式不正确"),
+    },
+  });
 
   return (
     <Card withBorder radius="md" className={classes.card} mb="md">
@@ -50,22 +84,26 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
       </Group>
-      <TextInput
-        label="用户名"
-        variant="filled"
-        value={visible ? userData.name : userData.name.replace(/./g, '•')}
-        mb={5}
-        readOnly
-      />
-      <TextInput
-        label="邮箱"
-        variant="filled"
-        value={visible ? userData.email : userData.email.replace(/./g, '•')}
-        readOnly
-      />
-      <Group position="right" mt="md">
-        <Button color="blue" type="submit" disabled>保存</Button>
-      </Group>
+      <form onSubmit={form.onSubmit(() => {})}>
+        <TextInput
+          label="用户名"
+          variant="filled"
+          mb={5}
+          readOnly={!visible}
+          {...form.getInputProps('name')}
+        />
+        <TextInput
+          label="邮箱"
+          variant="filled"
+          readOnly={!visible}
+          {...form.getInputProps('email')}
+        />
+        <Group position="right" mt="md">
+          <Button color="blue" type="submit" disabled={
+            !visible || !form.isDirty()
+          }>保存</Button>
+        </Group>
+      </form>
     </Card>
   )
 }

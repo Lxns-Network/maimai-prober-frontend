@@ -10,7 +10,8 @@ import {
 import { getPlayerDetail } from '../../utils/api/player';
 import { getProfile } from '../../utils/api/user';
 import { PlayerSection } from '../../components/Profile/PlayerSection';
-import { UserSection } from '../../components/Profile/UserSection';
+import { UserDataProps, UserSection } from '../../components/Profile/UserSection';
+import { UserBindSection } from '../../components/Profile/UserBindSection';
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -26,7 +27,7 @@ const useStyles = createStyles((theme) => ({
 export default function Profile() {
   const { classes } = useStyles();
   const [playerData, setPlayerData] = useState(null);
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<UserDataProps | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -60,7 +61,8 @@ export default function Profile() {
       </Text>
         <Skeleton visible={!isLoaded}>
           <PlayerSection playerData={playerData} />
-          <UserSection userData={userData} />
+          {userData && <UserSection userData={userData} />}
+          {userData?.bind && <UserBindSection userBind={userData.bind} />}
         </Skeleton>
     </Container>
   );
