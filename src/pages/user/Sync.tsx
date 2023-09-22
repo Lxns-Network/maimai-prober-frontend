@@ -20,6 +20,7 @@ import {
   ActionIcon,
   TextInput, Divider, Space,
 } from '@mantine/core';
+import { useIdle, useNetwork } from '@mantine/hooks';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
 import {
@@ -30,7 +31,6 @@ import {
   mdiPause,
   mdiReload
 } from "@mdi/js";
-import { useIdle } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus } from "../../utils/api/user";
 
@@ -67,15 +67,9 @@ async function checkProxySettingStatus() {
     // Try to fetch the external URL
     await fetch(`https://maimai.wahlap.com/maimai-mobile/error/`, { mode: 'no-cors' });
   } catch (error) {
-    try {
-      // Fetch current location's href to detect network issue
-      await fetch(window.location.href, { mode: 'no-cors' });
-      return 2; // If failed, return 2 (proxy)
-    } catch (error) {
-      return 1; // If successful, return 1 (network issue)
-    }
+    return true; // maybe proxy
   }
-  return 0; // If successful, return 0 (no proxy)
+  return false; // no proxy
 }
 
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
@@ -114,6 +108,7 @@ export default function Sync() {
   const [networkError, setNetworkError] = useState(false);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [active, setActive] = useState(0);
+  const networkStatus = useNetwork();
   const navigate = useNavigate();
   const idle = useIdle(60000);
 
@@ -126,14 +121,14 @@ export default function Sync() {
       checkProxySettingStatus().then(r => {
         if (active > 1) return;
 
-        if (r === 0) { // No proxy
-          setActive(0);
-          setProxyAvailable(false);
-          setNetworkError(false);
-        } else if (r === 1) { // Network issue
+        if (!networkStatus.online) {
           setActive(0);
           setProxyAvailable(false);
           setNetworkError(true);
+        } else if (!r) { // No proxy
+          setActive(0);
+          setProxyAvailable(false);
+          setNetworkError(false);
         } else { // Proxy
           setActive(1);
           setProxyAvailable(true);

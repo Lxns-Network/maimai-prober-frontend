@@ -11,13 +11,13 @@ import {
   Loader,
   Group
 } from '@mantine/core';
+import { Notifications } from "@mantine/notifications";
 import { useLocalStorage } from '@mantine/hooks';
 import { refreshToken } from "./utils/api/user";
-// Layouts
+import { logout } from "./utils/session";
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
 import RouterTransition from "./components/RouterTransition";
-import {logout} from "./utils/session";
 
 export const NAVBAR_WIDTH = 300;
 export const NAVBAR_BREAKPOINT = 800;
@@ -86,6 +86,7 @@ export default function App() {
           withNormalizeCSS
           theme={{ colorScheme }}
         >
+          <Notifications />
           <RouterTransition />
           <Transition mounted={opened} transition="slide-right" duration={300} timingFunction="ease">
             {(styles) => <Navbar style={styles} onClose={toggleNavbarOpened} />}

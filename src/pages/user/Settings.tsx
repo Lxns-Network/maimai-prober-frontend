@@ -1,12 +1,13 @@
 import { Title, Text, Loader, Group } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import SettingsSection from "../../components/Settings/SettingsSection";
+import { notifications } from "@mantine/notifications";
+import { useSetState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { deletePlayerScores }  from "../../utils/api/player";
 import { getUserConfig, updateUserConfig } from "../../utils/api/user";
-import useAlert from "../../utils/useAlert";
+import SettingsSection from "../../components/Settings/SettingsSection";
 import AlertModal from "../../components/AlertModal";
-import { useSetState } from "@mantine/hooks";
+import useAlert from "../../utils/useAlert";
 
 const useStyles = createStyles(() => ({
   root: {
@@ -61,6 +62,12 @@ export default function Settings() {
       .then(data => {
         if (data.code !== 200) {
           openAlert("保存设置失败", data.message);
+        } else {
+          notifications.show({
+            title: '自动保存成功',
+            message: '你的设置已自动保存',
+            color: 'teal',
+          })
         }
       })
       .catch(err => {
