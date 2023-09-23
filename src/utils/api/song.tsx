@@ -30,8 +30,8 @@ export function cacheSongList() {
   getSongList()
     .then(res => res?.json())
     .then((data) => {
-      songList.push(...data.data.songs);
-      localStorage.setItem("songs", JSON.stringify(data.data.songs));
+      songList.push(...data.data?.songs || []);
+      localStorage.setItem("songs", JSON.stringify(data.data?.songs || []));
     })
 }
 
@@ -42,6 +42,7 @@ export function getSongListFromCache() {
       songList.push(...JSON.parse(songs));
     }
   }
+  return songList;
 }
 
 export function getSong(id: number) {
