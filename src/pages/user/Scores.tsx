@@ -86,7 +86,7 @@ export default function Scores() {
 
     getScores().then((data) => {
       setDefaultScores(data.data);
-      if (data.data === null) {
+      if (!data.data) {
         setIsLoaded(true);
         return;
       }
@@ -121,7 +121,7 @@ export default function Scores() {
     setReverseSortDirection(reversed);
     setSortBy(key);
 
-    const sortedElements = scores.sort((a: any, b: any) => {
+    const sortedElements = scores?.sort((a: any, b: any) => {
       if (key === 'level_value') {
         const songA = getSong(a.id);
         const songB = getSong(b.id);
@@ -141,7 +141,7 @@ export default function Scores() {
       } else {
         return reversed ? a[key] - b[key] : b[key] - a[key];
       }
-    });
+    }) || [];
 
     setScores(sortedElements);
     setDisplayScores(sortedElements.slice(0, separator));
@@ -149,6 +149,8 @@ export default function Scores() {
   };
 
   useEffect(() => {
+    if (!defaultScores) return;
+
     // 过滤搜索
     const searchFilteredData = defaultScores.filter(
       (score) => score.song_name.toLowerCase().includes(search.toLowerCase())
@@ -355,13 +357,13 @@ export default function Scores() {
           </Alert>
         ) : (
           <>
-            {(scores.length === 0 && defaultScores !== null) ? (
+            {(scores.length === 0 && defaultScores) ? (
               <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有筛选到任何成绩" color="yellow">
                 <Text size="sm">
                   请修改筛选条件后重试。
                 </Text>
               </Alert>
-            ) : (scores.length === 0 && defaultScores === null) ? (
+            ) : (scores.length === 0 && !defaultScores) ? (
               <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到任何成绩" color="red">
                 <Text size="sm" mb="md">
                   请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
