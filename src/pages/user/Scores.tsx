@@ -94,16 +94,21 @@ export default function Scores() {
 
     cacheSongList();
 
-    getScores().then((data) => {
-      setDefaultScores(data.data);
-      if (data.data === null) {
+    getScores()
+      .then((data) => {
+        setDefaultScores(data.data);
+        if (data.data === null) {
+          setIsLoaded(true);
+          return;
+        }
+        setScores(data.data);
+        setDisplayScores(data.data.slice(0, separator));
         setIsLoaded(true);
-        return;
-      }
-      setScores(data.data);
-      setDisplayScores(data.data.slice(0, separator));
-      setIsLoaded(true);
-    });
+      })
+      .catch((err) => {
+        console.error(err);
+        setIsLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
