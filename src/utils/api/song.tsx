@@ -8,19 +8,21 @@ export interface DifficultyProps {
   version: number;
 }
 
+export interface DifficultiesProps {
+  dx: DifficultyProps[];
+  standard: DifficultyProps[];
+}
+
 export interface SongProps {
   id: number;
   title: string;
   artist: string;
   bpm: number;
   version: string;
-  difficulties: {
-    dx: DifficultyProps[];
-    standard: DifficultyProps[];
-  };
+  difficulties: DifficultiesProps;
 }
 
-const songList: SongProps[] = [];
+export const songList: SongProps[] = [];
 
 export async function getSongList() {
   return fetchAPI("song/list", { method: "GET" });
@@ -30,8 +32,8 @@ export function cacheSongList() {
   getSongList()
     .then(res => res?.json())
     .then((data) => {
-      songList.push(...data.data.songs);
-      localStorage.setItem("songs", JSON.stringify(data.data.songs));
+      songList.push(...data.songs);
+      localStorage.setItem("songs", JSON.stringify(data.songs));
     })
 }
 

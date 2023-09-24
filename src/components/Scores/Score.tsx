@@ -66,18 +66,29 @@ export const Score = memo(({ score, song, onClick }: { score: ScoreProps, song: 
           <Badge variant="filled" color="orange" size="sm">DX</Badge>
         )}
       </Flex>
-      <Group position="apart" m={10} mt={5} mb={5}>
-        <div>
-          <Text fz={rem(24)} style={{ lineHeight: rem(24) }} color="white">
-            {parseInt(String(score.achievements))}
-            <span style={{ fontSize: rem(16) }}>.{
-              (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
-            }%</span>
-          </Text>
-          <Text size="xs" color="white">
-            DX Rating: {parseInt(String(score.dx_rating))}
-          </Text>
-        </div>
+      <Group position="apart" m={10} mt={5} mb={5} noWrap>
+        {score.achievements != -1 ? (
+          <div>
+            <Text fz={rem(24)} style={{ lineHeight: rem(24) }} color="white">
+              {parseInt(String(score.achievements))}
+              <span style={{ fontSize: rem(16) }}>.{
+                (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
+              }%</span>
+            </Text>
+            <Text size="xs" color="white">
+              DX Rating: {parseInt(String(score.dx_rating))}
+            </Text>
+          </div>
+        ) : (
+          <div>
+            <Text fz={rem(24)} style={{ lineHeight: rem(24) }} color="white" mb={4}>
+              未游玩
+            </Text>
+            <Text size="xs" color="white">
+              或未上传至查分器
+            </Text>
+          </div>
+        )}
         <Card w={40} h={30} p={0} radius="md" withBorder>
           <Text size="md" weight={500} align="center" style={{
             lineHeight: rem(28),

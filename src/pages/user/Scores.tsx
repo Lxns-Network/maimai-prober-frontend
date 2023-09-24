@@ -14,17 +14,26 @@ import {
   Pagination,
   RangeSlider,
   rem,
+  Switch,
+  Space,
   Text,
   Title
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
-import { useInputState } from "@mantine/hooks";
+import { useDisclosure, useInputState } from "@mantine/hooks";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
 import { ScoreProps } from '../../components/Scores/Score';
-import { cacheSongList, getDifficulty, getSong } from "../../utils/api/song";
+import {
+  cacheSongList,
+  DifficultiesProps,
+  getDifficulty,
+  getSong,
+  songList
+} from "../../utils/api/song";
 import { ScoreList } from '../../components/Scores/ScoreList';
+import {StatisticsSection} from "../../components/Scores/StatisticsSection";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -65,6 +74,7 @@ export default function Scores() {
   const [type, setType] = useState<string[]>([]);
   const [rating, setRating] = useState<number[]>([1, 15]);
   const [version, setVersion] = useState<string[]>([]);
+  const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
 
   // 分页相关
   const separator = 20;
@@ -99,6 +109,7 @@ export default function Scores() {
   useEffect(() => {
     if (!scores) return;
 
+    sort(sortBy, false);
     setTotalPages(Math.ceil(scores.length / separator));
   }, [scores]);
 
@@ -116,9 +127,12 @@ export default function Scores() {
     setRating([1, 15]);
   }
 
-  const sort = (key: any) => {
-    const reversed = key === sortBy ? !reverseSortDirection : false;
-    setReverseSortDirection(reversed);
+  const sort = (key: any, autoChangeReverse = true) => {
+    let reversed = reverseSortDirection;
+    if (autoChangeReverse) {
+      reversed = key === sortBy ? !reverseSortDirection : false;
+      setReverseSortDirection(reversed);
+    }
     setSortBy(key);
 
     const sortedElements = scores.sort((a: any, b: any) => {
@@ -149,8 +163,41 @@ export default function Scores() {
   };
 
   useEffect(() => {
+    const filteredData = [...defaultScores] as ScoreProps[];
+
+    if (showUnplayed) {
+      songList.forEach((song) => {
+        ["dx", "standard"].forEach((type) => {
+          const difficulties = song.difficulties[type as keyof DifficultiesProps];
+
+          difficulties.forEach((difficulty, index) => {
+            const existsInDefaultScores = filteredData.some((item) =>
+              item.id === song.id && item.level_index === index && item.type === type
+            );
+
+            if (!existsInDefaultScores) {
+              filteredData.push({
+                id: song.id,
+                song_name: song.title,
+                level: difficulty.level,
+                level_index: index,
+                achievements: -1,
+                fc: "",
+                fs: "",
+                dx_score: -1,
+                dx_rating: -1,
+                rate: "",
+                type: type,
+                upload_time: ""
+              });
+            }
+          });
+        });
+      });
+    }
+
     // 过滤搜索
-    const searchFilteredData = defaultScores.filter(
+    const searchFilteredData = filteredData.filter(
       (score) => score.song_name.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -208,9 +255,7 @@ export default function Scores() {
     })
 
     setScores(ratingFilteredData);
-    setPage(1);
-    setDisplayScores(ratingFilteredData.slice(0, separator));
-  }, [search, difficulty, type, version, rating]);
+  }, [showUnplayed, search, difficulty, type, version, rating]);
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
@@ -330,9 +375,16 @@ export default function Scores() {
                   </Group>
                 </Grid.Col>
               </Grid>
-              <Button leftIcon={<Icon path={mdiReload} size={0.8} />} variant="light" onClick={resetFilter}>
-                重置筛选条件
-              </Button>
+              <Group position="apart">
+                <Switch
+                  label="显示未游玩曲目"
+                  defaultChecked={showUnplayed}
+                  onChange={toggleShowUnplayed}
+                />
+                <Button leftIcon={<Icon path={mdiReload} size={0.8} />} variant="light" onClick={resetFilter}>
+                  重置筛选条件
+                </Button>
+              </Group>
             </Accordion.Panel>
           </Accordion.Item>
         </Accordion>
@@ -378,6 +430,8 @@ export default function Scores() {
               <ScoreList scores={displayScores} />
               <Pagination total={totalPages} value={page} onChange={setPage} />
             </Group>
+            <Space h="md" />
+            <StatisticsSection scores={scores} />
           </>
         )
       )}

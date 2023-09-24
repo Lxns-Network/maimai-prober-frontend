@@ -24,7 +24,7 @@ export const ScoreList = ({ scores }: { scores: ScoreProps[] }) => {
       >
         {scores.map((score) => (
           <Score
-            key={`score-${score.id}-${score.type}-${score.level_index}-${score.upload_time}`}
+            key={`score-${score.id}-${score.type}-${score.level_index}`}
             score={score}
             song={getSong(score.id) as any}
             onClick={() => {

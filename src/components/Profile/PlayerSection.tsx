@@ -55,7 +55,7 @@ export const PlayerSection = ({ playerData }: { playerData: PlayerDataProps | nu
           请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
         </Text>
         <Group>
-          <Button variant="outline" color="red" onClick={() => navigate("/user/settings")}>
+          <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
             同步游戏数据
           </Button>
         </Group>

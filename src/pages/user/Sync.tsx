@@ -20,7 +20,6 @@ import {
   ActionIcon,
   TextInput, Divider, Space,
 } from '@mantine/core';
-import { useIdle, useNetwork } from '@mantine/hooks';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
 import {
@@ -31,8 +30,11 @@ import {
   mdiPause,
   mdiReload
 } from "@mdi/js";
+import { useIdle, useLocalStorage } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus } from "../../utils/api/user";
+import useAlert from "../../utils/useAlert";
+import AlertModal from "../../components/AlertModal";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -67,9 +69,15 @@ async function checkProxySettingStatus() {
     // Try to fetch the external URL
     await fetch(`https://maimai.wahlap.com/maimai-mobile/error/`, { mode: 'no-cors' });
   } catch (error) {
-    return true; // maybe proxy
+    try {
+      // Fetch current location's href to detect network issue
+      await fetch(window.location.href, { mode: 'no-cors' });
+      return 2; // If failed, return 2 (proxy)
+    } catch (error) {
+      return 1; // If successful, return 1 (network issue)
+    }
   }
-  return false; // no proxy
+  return 0; // If successful, return 0 (no proxy)
 }
 
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
@@ -103,12 +111,14 @@ interface CrawlStatusProps {
 }
 
 export default function Sync() {
+  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
+  const [firstCrawl, setFirstCrawl] = useLocalStorage({ key: 'first-crawl', defaultValue: true });
+  const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [networkError, setNetworkError] = useState(false);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [active, setActive] = useState(0);
-  const networkStatus = useNetwork();
   const navigate = useNavigate();
   const idle = useIdle(60000);
 
@@ -121,14 +131,14 @@ export default function Sync() {
       checkProxySettingStatus().then(r => {
         if (active > 1) return;
 
-        if (!networkStatus.online) {
-          setActive(0);
-          setProxyAvailable(false);
-          setNetworkError(true);
-        } else if (!r) { // No proxy
+        if (r === 0) { // No proxy
           setActive(0);
           setProxyAvailable(false);
           setNetworkError(false);
+        } else if (r === 1) { // Network issue
+          setActive(0);
+          setProxyAvailable(false);
+          setNetworkError(true);
         } else { // Proxy
           setActive(1);
           setProxyAvailable(true);
@@ -162,6 +172,16 @@ export default function Sync() {
             if (data.data.status === "pending") {
               setActive(2);
             } else {
+              if (!firstCrawl) {
+                setConfirmAlert(() => null);
+                openAlert("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
+              } else {
+                setConfirmAlert(() => () => {
+                  navigate("/user/settings");
+                });
+                openAlert("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。在初次同步后，我们推荐你前往账号设置将爬取方式变更为“增量爬取”，这会使之后的爬取更加稳定。");
+                setFirstCrawl(false);
+              }
               setActive(3);
             }
             setCrawlStatus(data.data);
@@ -178,6 +198,13 @@ export default function Sync() {
 
   return (
     <Container className={classes.root} size={400}>
+      <AlertModal
+        title={alertTitle}
+        content={alertContent}
+        opened={isAlertVisible}
+        onClose={closeAlert}
+        onConfirm={confirmAlert}
+      />
       <Title order={2} size="h2" weight={900} align="center" mt="xs">
         同步游戏数据
       </Title>

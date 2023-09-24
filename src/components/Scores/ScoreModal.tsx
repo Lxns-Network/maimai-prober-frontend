@@ -46,37 +46,43 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
           </Text>
         </Card>
       </Group>
-      <Group mt="md" ml={-5}>
-        <Image
-          src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${score?.rate}.png?ver=1.35`}
-          width={rem(64)}
-        >
-          {score?.rate}
-        </Image>
-        <div>
-          <Text fz="xs" c="dimmed">达成率</Text>
-          <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
-            {parseInt(String(score.achievements))}
-            <span style={{ fontSize: rem(16) }}>.{
-              (String(score?.achievements).split(".")[1] || "0").padEnd(4, "0")
-            }%</span>
-          </Text>
-        </div>
-      </Group>
-      <Group mt="md" spacing={22}>
-        <div>
-          <Text fz="xs" c="dimmed">DX Rating</Text>
-          <Text fz="md">
-            {parseInt(String(score.dx_rating))}
-          </Text>
-        </div>
-        <div>
-          <Text fz="xs" c="dimmed">上传时间</Text>
-          <Text fz="md">
-            {new Date(score.upload_time || "").toLocaleString()}
-          </Text>
-        </div>
-      </Group>
+      {score.achievements != -1 ? (
+        <>
+          <Group mt="md" ml={-5}>
+            <Image
+              src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${score?.rate}.png?ver=1.35`}
+              width={rem(64)}
+            />
+            <div>
+              <Text fz="xs" c="dimmed">达成率</Text>
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
+                {parseInt(String(score.achievements))}
+                <span style={{ fontSize: rem(16) }}>.{
+                  (String(score?.achievements).split(".")[1] || "0").padEnd(4, "0")
+                }%</span>
+              </Text>
+            </div>
+          </Group>
+          <Group mt="md" spacing={22}>
+            <div>
+              <Text fz="xs" c="dimmed">DX Rating</Text>
+              <Text fz="md">
+                {parseInt(String(score.dx_rating))}
+              </Text>
+            </div>
+            <div>
+              <Text fz="xs" c="dimmed">上传时间</Text>
+              <Text fz="md">
+                {new Date(score.upload_time || "").toLocaleString()}
+              </Text>
+            </div>
+          </Group>
+        </>
+      ) : (
+        <Text fz="md" mt="md">
+          你还未游玩此谱面，或未上传至查分器。
+        </Text>
+      )}
     </>
   )
 }
