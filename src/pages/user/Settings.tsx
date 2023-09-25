@@ -19,6 +19,7 @@ const useStyles = createStyles(() => ({
 interface ConfigProps {
   allow_crawl_scores: boolean;
   allow_crawl_name_plate: boolean;
+  allow_crawl_frame: boolean;
   crawl_scores_method: string;
   crawl_scores_difficulty: string[];
   allow_third_party_fetch_player: boolean;
@@ -108,6 +109,12 @@ export default function Settings() {
             description: "允许后，每次爬取将会爬取姓名框并显示到玩家信息中。",
             optionType: "switch",
             defaultValue: config.allow_crawl_name_plate ?? false,
+          }, {
+            key: "allow_crawl_frame",
+            title: "允许爬取背景",
+            description: "允许后，每次爬取将会爬取背景并显示到玩家信息中。",
+            optionType: "switch",
+            defaultValue: config.allow_crawl_frame ?? false,
           }, {
             key: "crawl_scores_method",
             title: "爬取谱面成绩的方式",
