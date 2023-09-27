@@ -11,3 +11,11 @@ export async function getPlayerScores() {
 export async function deletePlayerScores() {
   return fetchAPI("user/player/scores", { method: "DELETE" });
 }
+
+export async function getPlayerPlateById(id: number) {
+  return fetchAPI(`user/player/plate/${id}`, { method: "GET" });
+}
+
+export async function getPlateList() {
+  return fetchAPI("plate/list", { method: "GET" });
+}

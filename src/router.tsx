@@ -12,6 +12,7 @@ const Register = lazy(() => import('./pages/public/Register'));
 const Profile = lazy(() => import('./pages/user/Profile'));
 const Sync = lazy(() => import('./pages/user/Sync'));
 const Scores = lazy(() => import('./pages/user/Scores'));
+const Plates = lazy(() => import('./pages/user/Plates'));
 const Settings = lazy(() => import('./pages/user/Settings'));
 const NotFound = lazy(() => import('./pages/public/NotFound'));
 const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
@@ -47,6 +48,7 @@ const routesConfig = (
       <Route path="profile" element={<Profile />} />
       <Route path="sync" element={<Sync />} />
       <Route path="scores" element={<Scores />} />
+      <Route path="plates" element={<Plates />} />
       <Route path="settings" element={<Settings />} />
     </Route>
     <Route path="/developer" element={<ProtectedRoute />}>

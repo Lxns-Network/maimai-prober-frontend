@@ -23,6 +23,7 @@
     "@mdi/react": "^1.6.1",
     "@tabler/icons-react": "^2.32.0",
     "@types/grecaptcha": "^3.0.5",
+    "mantine-datatable": "^2.9.14",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.15.0"

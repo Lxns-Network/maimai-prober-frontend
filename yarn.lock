@@ -432,7 +432,7 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@mantine/core@^6.0.19", "@mantine/core@6.0.19":
+"@mantine/core@^6.0.19", "@mantine/core@>=6 <=6.0.17 || >=6.0.19 < 7", "@mantine/core@6.0.19":
   version "6.0.19"
   resolved "https://registry.npmjs.org/@mantine/core/-/core-6.0.19.tgz"
   integrity sha512-SvMZCOgCc315SIg6hkuLM0ZnBaAac4VFDHZ0BM5LIE4MPJUpe4QOLsg/5RGxOa5s7JRCtu/dawH3/9frvfDrhw==
@@ -466,7 +466,7 @@
     fast-deep-equal "^3.1.3"
     klona "^2.0.5"
 
-"@mantine/hooks@^6.0.19", "@mantine/hooks@6.0.19":
+"@mantine/hooks@^6.0.19", "@mantine/hooks@>=6 <=6.0.17 || >=6.0.19 < 7", "@mantine/hooks@6.0.19":
   version "6.0.19"
   resolved "https://registry.npmjs.org/@mantine/hooks/-/hooks-6.0.19.tgz"
   integrity sha512-YkmuB6kmoenU1PVuE8tLBA+6RJIY9hIsGyIQG1yuPAy6SLWNFT8g2T9YvI/psqsUbVIYGaNEXg8zq42xbxnD8Q==
@@ -1540,6 +1540,11 @@ lru-cache@^6.0.0:
   dependencies:
     yallist "^4.0.0"
 
+mantine-datatable@^2.9.14:
+  version "2.9.14"
+  resolved "https://registry.npmjs.org/mantine-datatable/-/mantine-datatable-2.9.14.tgz"
+  integrity sha512-ujYUwNTqsr7ngKICoMjTIolqGm40jNiD0du+y4lY2Faqt7/3iksUdAAzPrYRM+QlHyyznsX3aHKLEjw19/VASA==
+
 merge2@^1.3.0, merge2@^1.4.1:
   version "1.4.1"
   resolved "https://registry.npmjs.org/merge2/-/merge2-1.4.1.tgz"
@@ -1788,7 +1793,7 @@ react-transition-group@4.4.2:
     loose-envify "^1.4.0"
     prop-types "^15.6.2"
 
-"react@^16.5.1 || ^17.0.0 || ^18.0.0", "react@^16.8 || ^17.0 || ^18.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0", react@^18.2.0, react@>=0.14.9, react@>=16.6.0, react@>=16.8, react@>=16.8.0:
+"react@^16.5.1 || ^17.0.0 || ^18.0.0", "react@^16.8 || ^17.0 || ^18.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0", react@^18.2.0, react@>=0.14.9, react@>=16.6.0, react@>=16.8, react@>=16.8.0, react@>=18:
   version "18.2.0"
   resolved "https://registry.npmjs.org/react/-/react-18.2.0.tgz"
   integrity sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==
