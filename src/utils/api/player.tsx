@@ -16,6 +16,6 @@ export async function getPlayerPlateById(id: number) {
   return fetchAPI(`user/player/plate/${id}`, { method: "GET" });
 }
 
-export async function getPlateList() {
-  return fetchAPI("plate/list", { method: "GET" });
+export async function getPlateList(required: boolean) {
+  return fetchAPI(`plate/list?required=${required}`, { method: "GET" });
 }

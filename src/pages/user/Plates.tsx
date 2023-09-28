@@ -89,20 +89,21 @@ interface PlateDataProps {
   id: number;
   name: string;
   description: string;
-  required: RequiredDataProps[];
+  required?: RequiredDataProps[];
 }
 
 export default function Plates() {
   const { classes } = useStyles();
   const [plates, setPlates] = useState<PlateDataProps[]>([]);
-  const [plate, setPlate] = useState<PlateDataProps | null>(null);
   const [plateId, setPlateId] = useState<number | null>(null);
+  const [plate, setPlate] = useState<PlateDataProps | null>(null);
+  const [fetching, setFetching] = useState<boolean>(false);
 
   useEffect(() => {
     document.title = "姓名框查询 | maimai DX 查分器";
 
     const getPlates = async () => {
-      const res = await getPlateList();
+      const res = await getPlateList(false);
       if (res?.status !== 200) {
         return [];
       }
@@ -116,6 +117,10 @@ export default function Plates() {
   }, []);
 
   useEffect(() => {
+    if (plateId === null) {
+      return;
+    }
+
     const getPlate = async () => {
       const res = await getPlayerPlateById(plateId as number);
       if (res?.status !== 200) {
@@ -124,6 +129,7 @@ export default function Plates() {
       return res.json();
     }
 
+    setFetching(true);
     getPlate().then((data) => {
       setPlate(data.data);
     });
@@ -133,10 +139,17 @@ export default function Plates() {
   const [records, setRecords] = useState<any[]>([]);
 
   useEffect(() => {
-    const mergedDifficulties = plate?.required.map((required) => required.difficulties).flat();
+    setFetching(false);
+    if (plate === null || plate.required === undefined) {
+      setDifficulties([]);
+      setRecords([]);
+      setDisplayRecords([]);
+      return;
+    }
+    const mergedDifficulties = plate.required.map((required) => required.difficulties).flat();
     setDifficulties(mergedDifficulties || []);
 
-    const mergedRequiredSongs = plate?.required.map((required) => required.songs).flat();
+    const mergedRequiredSongs = plate.required.map((required) => required.songs).flat();
     const convertedRecords = [
       ...(mergedRequiredSongs && mergedRequiredSongs.length > 0
         ? mergedRequiredSongs.map((song) => {
@@ -214,7 +227,7 @@ export default function Plates() {
                     {plate ? plate.name : "请选择姓名框"}
                   </Text>
                 </div>
-                {plate && plate.required.length > 0 && plate.required.every((required) => required.completed) && (
+                {plate && plate.required && plate.required.every((required) => required.completed) && (
                   <ThemeIcon variant="light" color="teal" size="xl" radius="xl">
                     <Icon path={mdiCheck} size={10} />
                   </ThemeIcon>
@@ -232,7 +245,6 @@ export default function Plates() {
             withBorder
             borderRadius="md"
             striped
-            highlightOnHover
             verticalSpacing="xs"
             mih={150}
             columns={[
@@ -244,7 +256,7 @@ export default function Plates() {
               },
               ...difficulties.map((difficulty) => ({
                 accessor: `difficulty_${difficulty}`,
-                title: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'RE:MASTER'][difficulty],
+                title: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'][difficulty],
                 width: 100,
                 render: (map: any) => (map[`difficulty_${difficulty}`] && (
                   <Group>
@@ -257,16 +269,15 @@ export default function Plates() {
             totalRecords={records.length}
             recordsPerPage={pageSize}
             paginationText={({ from, to, totalRecords}) => {
-              if (totalRecords === 0) {
-                return '没有要求的曲目';
-              }
-                return `${from}-${to} 首曲目，共 ${totalRecords} 首`;
+              return `${from}-${to} 首曲目，共 ${totalRecords} 首`;
             }}
+            noRecordsText="无要求曲目"
             page={page}
             onPageChange={(p) => setPage(p)}
             recordsPerPageOptions={PAGE_SIZES}
             recordsPerPageLabel="每页显示"
             onRecordsPerPageChange={setPageSize}
+            fetching={fetching}
           />
         </Box>
       </Container>

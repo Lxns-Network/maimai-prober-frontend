@@ -14,7 +14,9 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
   return (
     <>
       <Group noWrap>
-        <Avatar src={`https://lxns.org/maimai/jacket/${score.id}.png`} size={94} radius="md" />
+        <Avatar src={`https://lxns.org/maimai/jacket/${score.id}.png`} size={94} radius="md">
+          <Text align="center" fz="xs">曲绘加载失败</Text>
+        </Avatar>
         <div style={{flex: 1}}>
           {score.type === "standard" ? (
             <Badge variant="filled" color="blue" size="sm">标准</Badge>
