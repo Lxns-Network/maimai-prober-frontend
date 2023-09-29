@@ -4,7 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { useSetState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { deletePlayerScores }  from "../../utils/api/player";
-import { getUserConfig, updateUserConfig } from "../../utils/api/user";
+import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
 import SettingsSection from "../../components/Settings/SettingsSection";
 import AlertModal from "../../components/AlertModal";
 import useAlert from "../../utils/useAlert";
@@ -191,8 +191,20 @@ export default function Settings() {
             color: "red",
             optionType: "button",
             onClick: () => {
-              setConfirmAlert(() => deletePlayerScores);
-              openAlert("删除谱面成绩", "你确定要删除你的查分器账号里所有的谱面成绩吗？这将包括所有历史爬取的谱面成绩。");
+              setConfirmAlert(() => () => {
+                deletePlayerScores()
+                  .then((res) => {
+                    if (res?.status !== 200) {
+                      openAlert("删除失败", "删除谱面成绩失败，请重试。");
+                      return;
+                    }
+                    openAlert("删除成功", "你的查分器账号里所有的谱面成绩已经被删除。");
+                  })
+                  .catch((err) => {
+                    openAlert("删除失败", err);
+                  });
+              });
+              openAlert("删除谱面成绩", "你确定要删除你的查分器账号里所有的谱面成绩吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。");
             },
           }, {
             key: "delete_account",
@@ -202,7 +214,21 @@ export default function Settings() {
             color: "red",
             optionType: "button",
             onClick: () => {
-              setConfirmAlert(() => null);
+              setConfirmAlert(() => () => {
+                deleteSelfUser()
+                  .then((res) => {
+                    if (res?.status !== 200) {
+                      openAlert("删除失败", "删除账号失败，请重试。");
+                      return;
+                    }
+                    localStorage.removeItem("token");
+                    window.location.href = "/";
+                  })
+                  .catch((err) => {
+                    openAlert("删除失败", err);
+                  });
+              });
+              openAlert("删除账号", "你确定要删除你的查分器账号吗？这将会删除你的查分器账号，以及游戏账号的绑定关系，并且不可撤销。");
             },
           }]} />
         </>

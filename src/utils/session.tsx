@@ -1,3 +1,5 @@
+import {logoutUser} from "./api/user";
+
 export const isTokenExpired = () => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -29,7 +31,9 @@ export const isTokenValid = () => {
 }
 
 export const logout = () => {
-  localStorage.removeItem('token');
+  logoutUser().then(() => {
+    localStorage.removeItem('token');
+  });
 }
 
 export enum UserPermission {

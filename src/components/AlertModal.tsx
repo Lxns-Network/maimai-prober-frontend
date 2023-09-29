@@ -12,7 +12,7 @@ export default function AlertModal({ title, content, opened, onClose, onConfirm 
   return (
     <Modal.Root opened={opened} onClose={onClose} size="auto" centered>
       <Modal.Overlay />
-      <Modal.Content miw={300}>
+      <Modal.Content miw={300} maw={500} >
         <Modal.Header>
           <Modal.Title fz="lg">{title}</Modal.Title>
           <Modal.CloseButton />

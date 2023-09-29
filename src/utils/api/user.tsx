@@ -20,6 +20,14 @@ export async function updateUserBind(data: any) {
   return fetchAPI("user/bind", { method: "POST", body: data });
 }
 
+export async function logoutUser() {
+  return fetchAPI("user/logout", { method: "POST" });
+}
+
+export async function deleteSelfUser() {
+  return fetchAPI("user", { method: "DELETE" });
+}
+
 export async function getUsers() {
   return fetchAPI("user/admin/users", { method: "GET" });
 }
