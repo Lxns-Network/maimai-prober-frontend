@@ -14,12 +14,14 @@ import {
   mdiHomeOutline,
   mdiInformationOutline,
   mdiLogoutVariant,
+  mdiQrcode,
   mdiWrenchCheckOutline,
   mdiXml,
 } from '@mdi/js';
 import { NAVBAR_WIDTH } from "../App";
 import { NavbarButton } from "./NavbarButton";
-import { checkPermission, UserPermission } from "../utils/session";
+import { checkPermission, logout, UserPermission } from "../utils/session";
+import { QrcodeModal } from "./QrcodeModal";
 
 const useStyles = createStyles((theme) => ({
   navbar: {
@@ -52,6 +54,7 @@ interface NavbarProps {
 
 export default function Navbar({ style, onClose }: NavbarProps) {
   const { classes } = useStyles();
+  const [qrcodeOpened, setQrcodeOpened] = useState(false);
   const [active, setActive] = useState('');
   const location = useLocation();
   const theme = useMantineTheme();
@@ -109,9 +112,18 @@ export default function Navbar({ style, onClose }: NavbarProps) {
 
       <MantineNavbar.Section className={classes.navbarFooter}>
         <NavbarButton label="关于 maimai DX 查分器" icon={mdiInformationOutline} to="/about" onClose={onClose} />
-        {isLoggedOut ? null : <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
-          localStorage.removeItem("token");
-        }} />}
+        {!isLoggedOut && (
+          <>
+            <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
+            <NavbarButton label="应用登录二维码" icon={mdiQrcode} onClose={() => null} onClick={() => {
+              setQrcodeOpened(true);
+            }} />
+            <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
+              logout();
+              window.location.href = "/";
+            }} />
+          </>
+        )}
       </MantineNavbar.Section>
     </MantineNavbar>
   );

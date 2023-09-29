@@ -44,7 +44,7 @@ const useStyles = createStyles((theme) => ({
 interface NavbarButtonProps {
   label: string;
   icon: string;
-  to: string;
+  to?: string;
   active?: string;
   onClose(): void;
   onClick?(): void;
@@ -60,7 +60,7 @@ export const NavbarButton = ({ label, icon, to, active, onClose, onClick }: Navb
        onClick={(event) => {
          event.preventDefault();
          onClick && onClick();
-         navigate(to);
+         if (to) navigate(to);
          onClose();
        }}
     >
