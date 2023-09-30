@@ -211,6 +211,18 @@ export default function Sync() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         使用 HTTP 代理同步你的 maimai DX 玩家数据与成绩
       </Text>
+      {(new Date()).getHours() >= 18 && (new Date()).getHours() <= 23 &&
+        <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="游玩高峰期警告" color="yellow" mb="xl">
+          <Text size="sm" mb="md">
+            由于现在是游玩高峰期，同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，或者尝试更改爬取设置以增加稳定性。
+          </Text>
+          <Group>
+            <Button variant="outline" color="yellow" onClick={() => navigate("/user/settings")}>
+              更改爬取设置
+            </Button>
+          </Group>
+        </Alert>
+      }
       <Stepper active={
         proxyAvailable ? (
           crawlStatus != null ? (

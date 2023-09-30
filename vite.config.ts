@@ -16,6 +16,8 @@ export default defineConfig({
         chunkFileNames: `assets/[hash].js`,
         assetFileNames: `assets/[hash].[ext]`,
       }
-    }
+    },
+    reportCompressedSize: false,
+    sourcemap: false,
   }
 })
