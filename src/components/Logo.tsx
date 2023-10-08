@@ -6,7 +6,7 @@ export default function Logo() {
 
   return (
     <Flex id="logo" align="center">
-      <Image alt="logo" src="/favicon.ico" width={24} height={24} />
+      <Image alt="logo" src="/favicon.webp" width={32} height={32} />
       <Space w="xs" />
       <Text fw={700} fz={18} truncate>
         maimai DX 查分器

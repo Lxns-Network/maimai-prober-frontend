@@ -74,7 +74,7 @@ export default function About() {
   return (
     <Container className={classes.root} size={400}>
       <Image
-        src="/favicon.ico"
+        src="/favicon.webp"
         alt="落雪咖啡屋 maimai DX 查分器"
         maw={180}
         mx="auto"

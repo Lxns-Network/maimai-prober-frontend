@@ -11,8 +11,8 @@ import {
 const useStyles = createStyles((theme) => ({
   root: {
     position: 'relative',
-    paddingTop: rem(80),
-    paddingBottom: rem(80),
+    paddingTop: rem(50),
+    paddingBottom: rem(50),
   },
 
   title: {
@@ -130,9 +130,9 @@ export default function Home() {
   return (
     <Container className={classes.root}>
       <Image
-        src="/favicon.ico"
+        src="/logo.webp"
         alt="落雪咖啡屋 maimai DX 查分器"
-        maw={240}
+        maw={560}
         mx="auto"
         mb="md"
       />
@@ -173,7 +173,7 @@ export default function Home() {
         </Container>
       }
 
-      <Container mt={rem(130)} mb={rem(30)} size="lg" p={0}>
+      <Container mt={rem(120)} mb={rem(30)} size="lg" p={0} m="xl">
         <SimpleGrid cols={3} breakpoints={[{ maxWidth: 'sm', cols: 1 }]} spacing={50}>
           {items}
         </SimpleGrid>

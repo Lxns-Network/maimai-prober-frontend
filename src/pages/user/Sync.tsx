@@ -350,7 +350,7 @@ export default function Sync() {
         </Card.Section>
 
         <Card.Section className={classes.section}>
-          {crawlStatus?.status !== "finished" ? (
+          {(crawlStatus?.status !== "finished" && crawlStatus?.status !== "failed") ? (
             <Text size="sm">
               你的国服 maimai DX 玩家数据与成绩将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
             </Text>
