@@ -73,7 +73,11 @@ export default function Login() {
         setVisible(false);
         if (data.success) {
           localStorage.setItem("token", data.data.token);
-          navigate("/")
+          if (state && state.redirect) {
+            navigate(state.redirect);
+          } else {
+            navigate("/")
+          }
         } else {
           openAlert("登录失败", data.message);
         }

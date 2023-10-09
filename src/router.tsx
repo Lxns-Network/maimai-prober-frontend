@@ -27,7 +27,9 @@ const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
       return <Navigate to="/login" state={{ expired: true }} replace />;
     });
   } else if (isTokenUndefined()) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{
+      redirect: window.location.pathname + window.location.search
+    }} replace />;
   }
 
   if (extra_validation && !extra_validation()) {

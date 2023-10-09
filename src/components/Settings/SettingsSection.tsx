@@ -1,10 +1,6 @@
-import { createStyles, Card, Group, Switch, Text, rem, Select, MultiSelect, Button } from '@mantine/core';
+import { createStyles, Group, Switch, Text, rem, Select, MultiSelect, Button } from '@mantine/core';
 
 const useStyles = createStyles((theme) => ({
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-
   item: {
     '& + &': {
       paddingTop: theme.spacing.sm,
@@ -19,10 +15,6 @@ const useStyles = createStyles((theme) => ({
     '& *': {
       cursor: 'pointer',
     },
-  },
-
-  title: {
-    lineHeight: 1,
   },
 }));
 
@@ -46,16 +38,14 @@ interface SettingsProps {
 }
 
 interface SettingsCardProps {
-  title: string;
-  description: string;
   data: SettingsProps[];
   onChange?: (key: string, value: any) => void;
 }
 
-export default function SettingsSection({ title, description, data, onChange }: SettingsCardProps) {
+export default function SettingsSection({ data, onChange }: SettingsCardProps) {
   const { classes } = useStyles();
 
-  const settings = data.map((item) => (
+  return data.map((item) => (
     <Group position="apart" className={classes.item} noWrap spacing="xl" key={item.key}>
       <div>
         <Text>{item.title}</Text>
@@ -103,16 +93,4 @@ export default function SettingsSection({ title, description, data, onChange }: 
       )}
     </Group>
   ));
-
-  return (
-    <Card withBorder radius="md" className={classes.card} mb="md">
-      <Text fz="lg" fw={700}>
-        {title}
-      </Text>
-      <Text fz="xs" c="dimmed" mt={3} mb="xl">
-        {description}
-      </Text>
-      {settings}
-    </Card>
-  );
 }

@@ -18,7 +18,7 @@ import {
   CopyButton,
   Tooltip,
   ActionIcon,
-  TextInput, Divider, Space,
+  TextInput, Divider, Space, SegmentedControl,
 } from '@mantine/core';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
@@ -309,9 +309,18 @@ export default function Sync() {
         <Stepper.Step label="步骤 2" description={
           <Group spacing="md">
             <Text>
-              使用微信打开 OAuth 链接
+              选择爬取的游戏并使用微信打开 OAuth 链接
             </Text>
             <Card withBorder radius="md" className={classes.card} mb="md" p="md">
+              <Text size="sm" mb="xs">
+                请选择你要爬取的游戏：
+              </Text>
+              <SegmentedControl size="md" mb="md" color="blue" fullWidth
+                data={[
+                  { label: '舞萌 DX', value: 'maimai-dx' },
+                  { label: '中二节奏', value: 'chunithm', disabled: true },
+                ]}
+              />
               <Text size="sm" mb="xs">
                 请复制下方的微信 OAuth 链接，然后在安全的聊天中发送链接并打开，等待同步结果返回。
               </Text>
@@ -321,13 +330,13 @@ export default function Sync() {
                 disabled={!proxyAvailable}
               />
               <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="请不要泄露或使用未知 OAuth 链接！" color="red" mt="md">
-                请不要将该 OAuth 链接分享给他人，或是使用其他人的链接授权微信，否则可能导致你的账号被盗用。
+                请不要将该 OAuth 链接分享给他人，否则可能导致你的账号被盗用。
               </Alert>
             </Card>
           </Group>
         } loading={proxyAvailable && crawlStatus == null} />
         <Stepper.Step label="步骤 3" description={
-          <Text>同步完成</Text>
+          <Text>等待数据同步完成</Text>
         } loading={proxyAvailable && crawlStatus?.status === "pending"} />
       </Stepper>
       <Card withBorder radius="md" className={classes.card} p="md" mt={rem(-12)}>
