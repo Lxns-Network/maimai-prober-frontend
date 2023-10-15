@@ -98,12 +98,14 @@ export default function Plates() {
   const [plateId, setPlateId] = useState<number | null>(null);
   const [plate, setPlate] = useState<PlateDataProps | null>(null);
   const [fetching, setFetching] = useState<boolean>(false);
+  //const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
+  const game = 'maimai';
 
   useEffect(() => {
     document.title = "姓名框查询 | maimai DX 查分器";
 
     const getPlates = async () => {
-      const res = await getPlateList(false);
+      const res = await getPlateList(game, false);
       if (res?.status !== 200) {
         return [];
       }
@@ -122,7 +124,7 @@ export default function Plates() {
     }
 
     const getPlate = async () => {
-      const res = await getPlayerPlateById(plateId as number);
+      const res = await getPlayerPlateById(game, plateId as number);
       if (res?.status !== 200) {
         return [];
       }

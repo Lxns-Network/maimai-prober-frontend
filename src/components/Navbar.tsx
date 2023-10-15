@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { createStyles, Divider, Navbar as MantineNavbar, rem, ScrollArea, useMantineTheme } from '@mantine/core';
+import {
+  createStyles,
+  Divider,
+  Navbar as MantineNavbar,
+  rem,
+  ScrollArea,
+  SegmentedControl,
+  useMantineTheme
+} from '@mantine/core';
 import {
   mdiAccountCheckOutline,
   mdiAccountMultipleOutline,
@@ -22,6 +30,7 @@ import { NAVBAR_WIDTH } from "../App";
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, logout, UserPermission } from "../utils/session";
 import { QrcodeModal } from "./QrcodeModal";
+import {useLocalStorage} from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   navbar: {
@@ -56,6 +65,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const { classes } = useStyles();
   const [qrcodeOpened, setQrcodeOpened] = useState(false);
   const [active, setActive] = useState('');
+  const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
   const location = useLocation();
   const theme = useMantineTheme();
 
@@ -99,6 +109,13 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       hiddenBreakpoint="sm"
       style={style}
     >
+      <SegmentedControl mb="md" value={game} onChange={setGame}
+                        data={[
+                          { label: '舞萌 DX', value: 'maimai' },
+                          { label: '中二节奏', value: 'chunithm' },
+                        ]}
+      />
+
       <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
         {navbarData.map((item) => item.enabled &&
           <div key={item.label}>

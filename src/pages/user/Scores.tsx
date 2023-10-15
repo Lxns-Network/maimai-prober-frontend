@@ -21,7 +21,7 @@ import {
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
-import { useDisclosure, useInputState } from "@mantine/hooks";
+import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
 import { ScoreProps } from '../../components/Scores/Score';
@@ -62,6 +62,7 @@ export default function Scores() {
   const [scores, setScores] = useState<ScoreProps[]>([]);
   const [displayScores, setDisplayScores] = useState<ScoreProps[]>([]); // 用于分页显示的成绩列表
   const [isLoaded, setIsLoaded] = useState(false);
+    const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
   const navigate = useNavigate();
 
   // 排序相关
@@ -85,14 +86,14 @@ export default function Scores() {
     document.title = "成绩管理 | maimai DX 查分器";
 
     const getScores = async () => {
-      const res = await getPlayerScores();
+      const res = await getPlayerScores(game);
       if (res?.status !== 200) {
         return [];
       }
       return res.json();
     }
 
-    cacheSongList();
+    cacheSongList(game);
 
     getScores()
       .then((data) => {

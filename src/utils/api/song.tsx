@@ -24,12 +24,12 @@ export interface SongProps {
 
 export const songList: SongProps[] = [];
 
-export async function getSongList() {
-  return fetchAPI("song/list", { method: "GET" });
+export async function getSongList(game: string) {
+  return fetchAPI(`${game}/song/list`, { method: "GET" });
 }
 
-export function cacheSongList() {
-  getSongList()
+export function cacheSongList(game: string) {
+  getSongList(game)
     .then(res => res?.json())
     .then((data) => {
       songList.push(...data.songs);

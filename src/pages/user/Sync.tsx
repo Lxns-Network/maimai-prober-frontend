@@ -119,6 +119,7 @@ export default function Sync() {
   const [networkError, setNetworkError] = useState(false);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [active, setActive] = useState(0);
+  const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
   const navigate = useNavigate();
   const idle = useIdle(60000);
 
@@ -209,7 +210,7 @@ export default function Sync() {
         同步游戏数据
       </Title>
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
-        使用 HTTP 代理同步你的 maimai DX 玩家数据与成绩
+        使用 HTTP 代理同步你的玩家数据与成绩
       </Text>
       {(new Date()).getHours() >= 18 && (new Date()).getHours() <= 23 &&
         <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="游玩高峰期警告" color="yellow" mb="xl">
@@ -315,10 +316,10 @@ export default function Sync() {
               <Text size="sm" mb="xs">
                 请选择你要爬取的游戏：
               </Text>
-              <SegmentedControl size="md" mb="md" color="blue" fullWidth
+              <SegmentedControl size="md" mb="md" color="blue" fullWidth value={game} onChange={setGame}
                 data={[
-                  { label: '舞萌 DX', value: 'maimai-dx' },
-                  { label: '中二节奏', value: 'chunithm', disabled: true },
+                  { label: '舞萌 DX', value: 'maimai' },
+                  { label: '中二节奏', value: 'chunithm' },
                 ]}
               />
               <Text size="sm" mb="xs">
@@ -326,7 +327,7 @@ export default function Sync() {
               </Text>
               <CopyButtonWithIcon
                 label="复制微信 OAuth 链接"
-                content={`${API_URL}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}
+                content={`${API_URL}/${game}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}
                 disabled={!proxyAvailable}
               />
               <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="请不要泄露或使用未知 OAuth 链接！" color="red" mt="md">

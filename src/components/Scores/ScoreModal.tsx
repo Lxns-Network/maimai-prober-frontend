@@ -72,6 +72,14 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
                 {parseInt(String(score.dx_rating))}
               </Text>
             </div>
+            {score.play_time && (
+              <div>
+                <Text fz="xs" c="dimmed">游玩时间</Text>
+                <Text fz="md">
+                  {new Date(score.play_time || "").toLocaleString()}
+                </Text>
+              </div>
+            )}
             <div>
               <Text fz="xs" c="dimmed">上传时间</Text>
               <Text fz="md">

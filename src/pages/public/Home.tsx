@@ -153,7 +153,8 @@ export default function Home() {
 
       {Boolean(localStorage.getItem("token")) ?
         <Container className={classes.controls} p={0}>
-          <Button className={classes.control} size="lg" variant="default">
+          <Button className={classes.control} size="lg" variant="default"
+                  onClick={() => window.open("https://github.com/Lxns-Network/maimai-prober-frontend/wiki", "_blank")}>
             查看文档
           </Button>
           <Button className={classes.control} size="lg" variant="default"

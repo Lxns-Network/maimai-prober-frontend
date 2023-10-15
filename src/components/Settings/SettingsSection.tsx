@@ -1,4 +1,5 @@
 import { createStyles, Group, Switch, Text, rem, Select, MultiSelect, Button } from '@mantine/core';
+import {memo} from "react";
 
 const useStyles = createStyles((theme) => ({
   item: {
@@ -39,10 +40,11 @@ interface SettingsProps {
 
 interface SettingsCardProps {
   data: SettingsProps[];
+  value?: any;
   onChange?: (key: string, value: any) => void;
 }
 
-export default function SettingsSection({ data, onChange }: SettingsCardProps) {
+export const SettingsSection = memo(({ data, value, onChange }: SettingsCardProps) => {
   const { classes } = useStyles();
 
   return data.map((item) => (
@@ -59,7 +61,7 @@ export default function SettingsSection({ data, onChange }: SettingsCardProps) {
           offLabel="关"
           className={classes.switch}
           size="lg"
-          defaultChecked={item.defaultValue as boolean}
+          checked={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue}
           onChange={(event) => onChange && onChange(item.key, event.currentTarget.checked)}
         />
       )}
@@ -67,7 +69,7 @@ export default function SettingsSection({ data, onChange }: SettingsCardProps) {
         <Select
           variant="filled"
           data={item.options || []}
-          defaultValue={item.defaultValue as string}
+          value={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue as string}
           transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
           onChange={(value) => onChange && onChange(item.key, value)}
         />
@@ -77,7 +79,7 @@ export default function SettingsSection({ data, onChange }: SettingsCardProps) {
           variant="filled"
           data={item.options || []}
           placeholder={item.placeholder}
-          defaultValue={item.defaultValue as string[]}
+          value={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue as string[]}
           transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
           onChange={(value) => onChange && onChange(item.key, value)}
         />
@@ -93,4 +95,4 @@ export default function SettingsSection({ data, onChange }: SettingsCardProps) {
       )}
     </Group>
   ));
-}
+});

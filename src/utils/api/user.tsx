@@ -8,12 +8,12 @@ export async function getCrawlStatus() {
   return fetchAPI("user/crawl/status", { method: "GET" });
 }
 
-export async function getUserConfig() {
-  return fetchAPI("user/config", { method: "GET" });
+export async function getUserConfig(game: string) {
+  return fetchAPI(`user/${game}/config`, { method: "GET" });
 }
 
-export async function updateUserConfig(data: any) {
-  return fetchAPI("user/config", { method: "POST", body: data });
+export async function updateUserConfig(game: string, data: any) {
+  return fetchAPI(`user/${game}/config`, { method: "POST", body: data });
 }
 
 export async function updateUserBind(data: any) {

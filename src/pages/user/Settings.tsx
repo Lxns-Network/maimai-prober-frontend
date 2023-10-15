@@ -1,13 +1,13 @@
-import { Title, Text, Loader, Group, Card, Tabs } from '@mantine/core';
+import { Title, Text, Loader, Group, Card, LoadingOverlay, SegmentedControl } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { notifications } from "@mantine/notifications";
-import { useSetState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { deletePlayerScores }  from "../../utils/api/player";
 import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
-import SettingsSection from "../../components/Settings/SettingsSection";
 import AlertModal from "../../components/AlertModal";
 import useAlert from "../../utils/useAlert";
+import { SettingsSection } from '../../components/Settings/SettingsSection';
+import {useLocalStorage} from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -21,28 +21,32 @@ const useStyles = createStyles((theme) => ({
 }));
 
 interface ConfigProps {
-  allow_crawl_scores: boolean;
-  allow_crawl_name_plate: boolean;
-  allow_crawl_frame: boolean;
-  crawl_scores_method: string;
-  crawl_scores_difficulty: string[];
-  allow_third_party_fetch_player: boolean;
-  allow_third_party_fetch_scores: boolean;
-  allow_third_party_write_data: boolean;
+  allow_crawl_scores?: boolean;
+  allow_crawl_name_plate?: boolean;
+  allow_crawl_frame?: boolean;
+  crawl_scores_method?: string;
+  crawl_scores_difficulty?: string[];
+  allow_third_party_fetch_player?: boolean;
+  allow_third_party_fetch_scores?: boolean;
+  allow_third_party_write_data?: boolean;
 }
 
 export default function Settings() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
   const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
-  const [config, setConfig] = useSetState({} as ConfigProps);
+  const [config, setConfig] = useState({} as ConfigProps);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
 
   useEffect(() => {
     document.title = "账号设置 | maimai DX 查分器";
+  }, []);
 
+  useEffect(() => {
     const getConfig = async () => {
-      const res = await getUserConfig();
+      const res = await getUserConfig(game);
       if (res?.status !== 200) {
         return {};
       }
@@ -51,9 +55,10 @@ export default function Settings() {
 
     getConfig().then((data) => {
       setConfig(data.data);
+      setFetching(false);
       setIsLoaded(true);
     });
-  }, []);
+  }, [game]);
 
   const handleConfigChange = (key: string, value: any) => {
     const newConfig = {
@@ -62,7 +67,7 @@ export default function Settings() {
     }
     setConfig(newConfig);
 
-    updateUserConfig(newConfig)
+    updateUserConfig(game, newConfig)
       .then(res => res?.json())
       .then(data => {
         if (data.code !== 200) {
@@ -101,114 +106,141 @@ export default function Settings() {
         </Group>
       ) : (
         <>
+          <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
+            setGame(value);
+            setFetching(true);
+          }} data={[
+            { label: '舞萌 DX', value: 'maimai' },
+            { label: '中二节奏', value: 'chunithm' },
+          ]} />
           <Card withBorder radius="md" className={classes.card} mb="md">
+            <LoadingOverlay visible={fetching} overlayBlur={2} />
             <Text fz="lg" fw={700}>
               爬取数据
             </Text>
-            <Text fz="xs" c="dimmed" mt={3} mb="md">
+            <Text fz="xs" c="dimmed" mt={3} mb="lg">
               设置每次爬取的方式与获取的数据
             </Text>
-            <Tabs defaultValue="maimai-dx">
-              <Tabs.List grow>
-                <Tabs.Tab value="maimai-dx">舞萌 DX</Tabs.Tab>
-                <Tabs.Tab value="chunithm" disabled>中二节奏</Tabs.Tab>
-              </Tabs.List>
-              <Tabs.Panel value="maimai-dx" pt="md">
-                <SettingsSection onChange={handleConfigChange} data={[{
-                  key: "allow_crawl_scores",
-                  title: "允许爬取谱面成绩",
-                  description: "关闭后，每次爬取时将不会爬取成绩数据。",
-                  optionType: "switch",
-                  defaultValue: config.allow_crawl_scores ?? true,
+            {game === "maimai" ? (
+              <SettingsSection onChange={handleConfigChange} value={config} data={[{
+                key: "allow_crawl_scores",
+                title: "允许爬取谱面成绩",
+                description: "关闭后，每次爬取时将不会爬取成绩数据。",
+                optionType: "switch",
+                defaultValue: true,
+              }, {
+                key: "allow_crawl_name_plate",
+                title: "允许爬取姓名框",
+                description: "允许后，每次爬取将会爬取姓名框并显示到玩家信息中。",
+                optionType: "switch",
+                defaultValue: false,
+              }, {
+                key: "allow_crawl_frame",
+                title: "允许爬取背景",
+                description: "允许后，每次爬取将会爬取背景并显示到玩家信息中。",
+                optionType: "switch",
+                defaultValue: false,
+              }, {
+                key: "crawl_scores_method",
+                title: "爬取谱面成绩的方式",
+                description: "设置每次爬取时使用的爬取方式，增量爬取依赖最近游玩记录，适合已经完整爬取后频繁爬取，更加稳定。",
+                placeholder: "请选择爬取方式",
+                optionType: "select",
+                defaultValue: "full",
+                options: [{
+                  value: "full",
+                  label: "完整爬取",
                 }, {
-                  key: "allow_crawl_name_plate",
-                  title: "允许爬取姓名框",
-                  description: "允许后，每次爬取将会爬取姓名框并显示到玩家信息中。",
-                  optionType: "switch",
-                  defaultValue: config.allow_crawl_name_plate ?? false,
+                  value: "incremental",
+                  label: "增量爬取",
+                }]
+              }, {
+                key: "crawl_scores_difficulty",
+                title: "爬取谱面成绩的难度",
+                description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
+                placeholder: "请选择难度",
+                optionType: "multi-select",
+                defaultValue: ["basic", "advanced", "expert", "master", "remaster"],
+                options: [{
+                  value: "basic",
+                  label: "🟢 BASIC",
                 }, {
-                  key: "allow_crawl_frame",
-                  title: "允许爬取背景",
-                  description: "允许后，每次爬取将会爬取背景并显示到玩家信息中。",
-                  optionType: "switch",
-                  defaultValue: config.allow_crawl_frame ?? false,
+                  value: "advanced",
+                  label: "🟡 ADVANCED",
                 }, {
-                  key: "crawl_scores_method",
-                  title: "爬取谱面成绩的方式",
-                  description: "设置每次爬取时使用的爬取方式，增量爬取依赖最近游玩记录，适合已经完整爬取后频繁爬取，更加稳定。",
-                  placeholder: "请选择爬取方式",
-                  optionType: "select",
-                  defaultValue: config.crawl_scores_method ?? "full",
-                  options: [{
-                    value: "full",
-                    label: "完整爬取",
-                  }, {
-                    value: "incremental",
-                    label: "增量爬取",
-                  }]
+                  value: "expert",
+                  label: "🔴 EXPERT",
                 }, {
-                  key: "crawl_scores_difficulty",
-                  title: "爬取谱面成绩的难度",
-                  description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
-                  placeholder: "请选择难度",
-                  optionType: "multi-select",
-                  defaultValue: config.crawl_scores_difficulty ?? ["basic", "advanced", "expert", "master", "remaster"],
-                  options: [{
-                    value: "basic",
-                    label: "🟢 BASIC",
-                  }, {
-                    value: "advanced",
-                    label: "🟡 ADVANCED",
-                  }, {
-                    value: "expert",
-                    label: "🔴 EXPERT",
-                  }, {
-                    value: "master",
-                    label: "🟣 MASTER",
-                  }, {
-                    value: "remaster",
-                    label: "⚪ Re:MASTER",
-                  }]
-                }]}
-                />
-              </Tabs.Panel>
-            </Tabs>
+                  value: "master",
+                  label: "🟣 MASTER",
+                }, {
+                  value: "remaster",
+                  label: "⚪ Re:MASTER",
+                }]
+              }]}
+              />
+            ) : (
+              <SettingsSection onChange={handleConfigChange} value={config} data={[{
+                key: "allow_crawl_scores",
+                title: "允许爬取谱面成绩",
+                description: "关闭后，每次爬取时将不会爬取成绩数据。",
+                optionType: "switch",
+                defaultValue: true,
+              }, {
+                key: "crawl_scores_difficulty",
+                title: "爬取谱面成绩的难度",
+                description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
+                placeholder: "请选择难度",
+                optionType: "multi-select",
+                defaultValue: ["basic", "advanced", "expert", "master", "ultima"],
+                options: [{
+                  value: "basic",
+                  label: "🟢 BASIC",
+                }, {
+                  value: "advanced",
+                  label: "🟡 ADVANCED",
+                }, {
+                  value: "expert",
+                  label: "🔴 EXPERT",
+                }, {
+                  value: "master",
+                  label: "🟣 MASTER",
+                }, {
+                  value: "ultima",
+                  label: "⚫ ULTIMA",
+                }]
+              }]}
+              />
+            )}
           </Card>
           <Card withBorder radius="md" className={classes.card} mb="md">
+            <LoadingOverlay visible={fetching} overlayBlur={2} />
             <Text fz="lg" fw={700}>
               隐私设置
             </Text>
-            <Text fz="xs" c="dimmed" mt={3} mb="md">
+            <Text fz="xs" c="dimmed" mt={3} mb="lg">
               将影响第三方开发者通过查分器 API 访问你的数据
             </Text>
-            <Tabs defaultValue="maimai">
-              <Tabs.List grow>
-                <Tabs.Tab value="maimai">舞萌 DX</Tabs.Tab>
-                <Tabs.Tab value="chunithm" disabled>中二节奏</Tabs.Tab>
-              </Tabs.List>
-              <Tabs.Panel value="maimai" pt="md">
-                <SettingsSection onChange={handleConfigChange} data={[{
-                  key: "allow_third_party_fetch_player",
-                  title: "允许读取玩家信息",
-                  description: "关闭后，第三方开发者将无法获取你的玩家信息。",
-                  optionType: "switch",
-                  defaultValue: config.allow_third_party_fetch_player ?? true,
-                }, {
-                  key: "allow_third_party_fetch_scores",
-                  title: "允许读取谱面成绩",
-                  description: "关闭后，第三方开发者将无法获取你的谱面成绩。",
-                  optionType: "switch",
-                  defaultValue: config.allow_third_party_fetch_scores ?? true,
-                }, {
-                  key: "allow_third_party_write_data",
-                  title: "允许写入任何数据",
-                  description: "关闭后，第三方开发者将无法覆盖你的任何数据。",
-                  optionType: "switch",
-                  defaultValue: config.allow_third_party_write_data ?? false,
-                }]}
-                />
-              </Tabs.Panel>
-            </Tabs>
+            <SettingsSection onChange={handleConfigChange} value={config} data={[{
+              key: "allow_third_party_fetch_player",
+              title: "允许读取玩家信息",
+              description: "关闭后，第三方开发者将无法获取你的玩家信息。",
+              optionType: "switch",
+              defaultValue: true,
+            }, {
+              key: "allow_third_party_fetch_scores",
+              title: "允许读取谱面成绩",
+              description: "关闭后，第三方开发者将无法获取你的谱面成绩。",
+              optionType: "switch",
+              defaultValue: true,
+            }, {
+              key: "allow_third_party_write_data",
+              title: "允许写入任何数据",
+              description: "关闭后，第三方开发者将无法覆盖你的任何数据。",
+              optionType: "switch",
+              defaultValue: false,
+            }]}
+            />
           </Card>
           <Card withBorder radius="md" className={classes.card} mb="md">
             <Text fz="lg" fw={700}>
@@ -229,25 +261,26 @@ export default function Settings() {
             }, {
               key: "reset_account",
               title: "删除所有谱面成绩",
-              description: "删除你的查分器账号里所有的谱面成绩。",
+              description: `删除你的查分器账号里所有的${game === "maimai" ? "舞萌 DX " : "中二节奏"}谱面成绩。`,
               placeholder: "删除",
               color: "red",
               optionType: "button",
               onClick: () => {
                 setConfirmAlert(() => () => {
-                  deletePlayerScores()
+                  deletePlayerScores(game)
                     .then((res) => {
                       if (res?.status !== 200) {
                         openAlert("删除失败", "删除谱面成绩失败，请重试。");
                         return;
                       }
-                      openAlert("删除成功", "你的查分器账号里所有的谱面成绩已经被删除。");
+                      openAlert("删除成功", `你的查分器账号里所有的${game === "maimai" ? "舞萌 DX " : "中二节奏"}谱面成绩已经被删除。`);
                     })
                     .catch((err) => {
                       openAlert("删除失败", err);
                     });
                 });
-                openAlert("删除谱面成绩", "你确定要删除你的查分器账号里所有的谱面成绩吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。");
+                openAlert("删除谱面成绩",
+                  `你确定要删除你的查分器账号里所有的${game === "maimai" ? "舞萌 DX " : "中二节奏"}谱面成绩吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。`);
               },
             }, {
               key: "delete_account",

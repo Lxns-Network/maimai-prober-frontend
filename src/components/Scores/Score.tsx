@@ -15,6 +15,7 @@ export interface ScoreProps {
   dx_rating: number;
   rate: string;
   type: string;
+  play_time?: string;
   upload_time: string;
 }
 

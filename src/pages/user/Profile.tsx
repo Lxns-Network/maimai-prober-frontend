@@ -8,7 +8,6 @@ import {
   Group,
   Loader,
 } from '@mantine/core';
-import { getPlayerDetail } from '../../utils/api/player';
 import { getProfile } from '../../utils/api/user';
 import { PlayerSection } from '../../components/Profile/PlayerSection';
 import { UserDataProps, UserSection } from '../../components/Profile/UserSection';
@@ -27,24 +26,15 @@ const useStyles = createStyles((theme) => ({
 
 export default function Profile() {
   const { classes } = useStyles();
-  const [playerData, setPlayerData] = useState(null);
   const [userData, setUserData] = useState<UserDataProps | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     document.title = "账号详情 | maimai DX 查分器";
 
-    Promise.all([getPlayerDetail(), getProfile()]).then((responses) => {
-      const [playerResponse, userResponse] = responses;
-
-      if (playerResponse?.status === 200) {
-        playerResponse.json().then((data) => {
-          setPlayerData(data.data);
-        });
-      }
-
-      if (userResponse?.status === 200) {
-        userResponse.json().then((data) => {
+    getProfile().then((response) => {
+      if (response?.status === 200) {
+        response.json().then((data) => {
           setUserData(data.data);
         });
       }
@@ -66,7 +56,7 @@ export default function Profile() {
           </Group>
         ) : (
           <>
-            <PlayerSection playerData={playerData} />
+            <PlayerSection />
             {userData && <UserSection userData={userData} />}
             {userData?.bind && <UserBindSection userBind={userData.bind} />}
           </>
