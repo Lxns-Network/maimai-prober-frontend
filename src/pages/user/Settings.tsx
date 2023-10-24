@@ -4,10 +4,10 @@ import { notifications } from "@mantine/notifications";
 import { useEffect, useState } from "react";
 import { deletePlayerScores }  from "../../utils/api/player";
 import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
+import { SettingsSection } from '../../components/Settings/SettingsSection';
+import { useLocalStorage } from "@mantine/hooks";
 import AlertModal from "../../components/AlertModal";
 import useAlert from "../../utils/useAlert";
-import { SettingsSection } from '../../components/Settings/SettingsSection';
-import {useLocalStorage} from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -24,6 +24,7 @@ interface ConfigProps {
   allow_crawl_scores?: boolean;
   allow_crawl_name_plate?: boolean;
   allow_crawl_frame?: boolean;
+  allow_crawl_map_icon?: boolean;
   crawl_scores_method?: string;
   crawl_scores_difficulty?: string[];
   allow_third_party_fetch_player?: boolean;
@@ -187,6 +188,18 @@ export default function Settings() {
                 optionType: "switch",
                 defaultValue: true,
               }, {
+                key: "allow_crawl_name_plate",
+                title: "允许爬取名牌版",
+                description: "允许后，每次爬取将会爬取名牌版并显示到玩家信息中。",
+                optionType: "switch",
+                defaultValue: false,
+              }, {
+                key: "allow_crawl_map_icon",
+                title: "允许爬取地图头像",
+                description: "允许后，每次爬取将会爬取地图头像并显示到玩家信息中。",
+                optionType: "switch",
+                defaultValue: false,
+              }, {
                 key: "crawl_scores_difficulty",
                 title: "爬取谱面成绩的难度",
                 description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
@@ -273,6 +286,7 @@ export default function Settings() {
                         openAlert("删除失败", "删除谱面成绩失败，请重试。");
                         return;
                       }
+                      setConfirmAlert(() => null);
                       openAlert("删除成功", `你的查分器账号里所有的${game === "maimai" ? "舞萌 DX " : "中二节奏"}谱面成绩已经被删除。`);
                     })
                     .catch((err) => {
