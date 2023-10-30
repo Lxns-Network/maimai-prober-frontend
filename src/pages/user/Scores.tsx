@@ -26,11 +26,9 @@ import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
 import { ScoreProps } from '../../components/Scores/Score';
 import {
-  cacheSongList,
   DifficultiesProps,
   getDifficulty,
-  getSong,
-  songList
+  SongList,
 } from "../../utils/api/song";
 import { ScoreList } from '../../components/Scores/ScoreList';
 import {StatisticsSection} from "../../components/Scores/StatisticsSection";
@@ -56,13 +54,15 @@ const sortKeys = [
   { name: '上传时间', key: 'upload_time' },
 ];
 
+export const songList = new SongList();
+
 export default function Scores() {
   const { classes } = useStyles();
   const [defaultScores, setDefaultScores] = useState<ScoreProps[]>([]);
   const [scores, setScores] = useState<ScoreProps[]>([]);
   const [displayScores, setDisplayScores] = useState<ScoreProps[]>([]); // 用于分页显示的成绩列表
   const [isLoaded, setIsLoaded] = useState(false);
-    const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
+  const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
   const navigate = useNavigate();
 
   // 排序相关
@@ -85,31 +85,30 @@ export default function Scores() {
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
 
-    const getScores = async () => {
-      const res = await getPlayerScores(game);
-      if (res?.status !== 200) {
-        return [];
-      }
-      return res.json();
-    }
-
-    cacheSongList(game);
-
-    getScores()
-      .then((data) => {
-        setDefaultScores(data.data);
-        if (data.data === null) {
-          setIsLoaded(true);
-          return;
+    const loadData = async () => {
+      try {
+        const res = await getPlayerScores(game);
+        if (res.status !== 200) {
+          return
         }
-        setScores(data.data);
-        setDisplayScores(data.data.slice(0, separator));
+        const data = await res.json();
+        if (data.data === null) {
+          setDefaultScores([]);
+        } else {
+          setDefaultScores(data.data);
+          setScores(data.data);
+          setDisplayScores(data.data.slice(0, separator));
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
         setIsLoaded(true);
-      })
-      .catch((err) => {
-        console.error(err);
-        setIsLoaded(true);
-      });
+      }
+    };
+
+    songList.fetch(game).then(() => {
+      loadData();
+    });
   }, []);
 
   useEffect(() => {
@@ -143,8 +142,8 @@ export default function Scores() {
 
     const sortedElements = scores.sort((a: any, b: any) => {
       if (key === 'level_value') {
-        const songA = getSong(a.id);
-        const songB = getSong(b.id);
+        const songA = songList.find(a.id);
+        const songB = songList.find(b.id);
         if (!songA || !songB) {
           return 0;
         }
@@ -172,7 +171,7 @@ export default function Scores() {
     const filteredData = [...defaultScores] as ScoreProps[];
 
     if (showUnplayed) {
-      songList.forEach((song) => {
+      songList.songs.forEach((song) => {
         ["dx", "standard"].forEach((type) => {
           const difficulties = song.difficulties[type as keyof DifficultiesProps];
 
@@ -228,7 +227,7 @@ export default function Scores() {
       if (version?.length === 0 || version?.length === 2) {
         return true;
       }
-      const song = getSong(score.id);
+      const song = songList.find(score.id);
       if (!song) {
         return false;
       }
@@ -249,7 +248,7 @@ export default function Scores() {
 
     // 过滤定数
     const ratingFilteredData = versionFilteredData.filter((score) => {
-      const song = getSong(score.id);
+      const song = songList.find(score.id);
       if (!song) {
         return false;
       }

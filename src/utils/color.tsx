@@ -1,12 +1,36 @@
 export const getTrophyColor = (color: string) => {
-  if (color == "Bronze") {
+  color = color.toLowerCase();
+  if (color == "bronze") {
     return "orange";
-  } else if (color == "Normal") {
+  } else if (color == "normal") {
     return "gray";
-  } else if (color == "Gold") {
+  } else if (color == "gold") {
     return "yellow";
+  } else if (color == "platinum") {
+    return "lightblue";
   }
   return "grape";
+}
+
+export const getRatingGradient = (rating: number) => {
+  if (rating < 4) {
+    return { from: "green", to: "green" }
+  } else if (rating < 7) {
+    return { from: "orange", to: "orange" }
+  } else if (rating < 10) {
+    return { from: "red", to: "red" }
+  } else if (rating < 12) {
+    return { from: "violet", to: "violet" }
+  } else if (rating < 13.25) {
+    return { from: "brown", to: "orange" }
+  } else if (rating < 14.5) {
+    return { from: "gray", to: "silver" }
+  } else if (rating < 15.25) {
+    return { from: "orange", to: "gold" }
+  } else if (rating < 16) {
+    return { from: "gold", to: "yellow" }
+  }
+  return { from: "red", to: "green" };
 }
 
 export const getDeluxeRatingGradient = (rating: number) => {

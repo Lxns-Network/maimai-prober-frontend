@@ -32,6 +32,107 @@ interface ConfigProps {
   allow_third_party_write_data?: boolean;
 }
 
+const settingsData = {
+  maimai: [{
+    key: "allow_crawl_scores",
+    title: "允许爬取谱面成绩",
+    description: "关闭后，每次爬取时将不会爬取成绩数据。",
+    optionType: "switch",
+    defaultValue: true,
+  }, {
+    key: "allow_crawl_name_plate",
+    title: "允许爬取姓名框",
+    description: "允许后，每次爬取将会爬取姓名框并显示到玩家信息中。",
+    optionType: "switch",
+    defaultValue: false,
+  }, {
+    key: "allow_crawl_frame",
+    title: "允许爬取背景",
+    description: "允许后，每次爬取将会爬取背景并显示到玩家信息中。",
+    optionType: "switch",
+    defaultValue: false,
+  }, {
+    key: "crawl_scores_method",
+    title: "爬取谱面成绩的方式",
+    description: "设置每次爬取时使用的爬取方式，增量爬取依赖最近游玩记录，适合已经完整爬取后频繁爬取，更加稳定。",
+    placeholder: "请选择爬取方式",
+    optionType: "select",
+    defaultValue: "full",
+    options: [{
+      value: "full",
+      label: "完整爬取",
+    }, {
+      value: "incremental",
+      label: "增量爬取",
+    }]
+  }, {
+    key: "crawl_scores_difficulty",
+    title: "爬取谱面成绩的难度",
+    description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
+    placeholder: "请选择难度",
+    optionType: "multi-select",
+    defaultValue: ["basic", "advanced", "expert", "master", "remaster"],
+    options: [{
+      value: "basic",
+      label: "🟢 BASIC",
+    }, {
+      value: "advanced",
+      label: "🟡 ADVANCED",
+    }, {
+      value: "expert",
+      label: "🔴 EXPERT",
+    }, {
+      value: "master",
+      label: "🟣 MASTER",
+    }, {
+      value: "remaster",
+      label: "⚪ Re:MASTER",
+    }]
+  }],
+  chunithm: [{
+    key: "allow_crawl_scores",
+    title: "允许爬取谱面成绩",
+    description: "关闭后，每次爬取时将不会爬取成绩数据。",
+    optionType: "switch",
+    defaultValue: true,
+  }, {
+    key: "allow_crawl_name_plate",
+    title: "允许爬取名牌版",
+    description: "允许后，每次爬取将会爬取名牌版并显示到玩家信息中。",
+    optionType: "switch",
+    defaultValue: false,
+  }, {
+    key: "allow_crawl_map_icon",
+    title: "允许爬取地图头像",
+    description: "允许后，每次爬取将会爬取地图头像并显示到玩家信息中。",
+    optionType: "switch",
+    defaultValue: false,
+  }, {
+    key: "crawl_scores_difficulty",
+    title: "爬取谱面成绩的难度",
+    description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
+    placeholder: "请选择难度",
+    optionType: "multi-select",
+    defaultValue: ["basic", "advanced", "expert", "master", "ultima"],
+    options: [{
+      value: "basic",
+      label: "🟢 BASIC",
+    }, {
+      value: "advanced",
+      label: "🟡 ADVANCED",
+    }, {
+      value: "expert",
+      label: "🔴 EXPERT",
+    }, {
+      value: "master",
+      label: "🟣 MASTER",
+    }, {
+      value: "ultima",
+      label: "⚫ ULTIMA",
+    }]
+  }],
+}
+
 export default function Settings() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
@@ -46,44 +147,57 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    const getConfig = async () => {
-      const res = await getUserConfig(game);
-      if (res?.status !== 200) {
-        return {};
+    const loadConfig = async () => {
+      try {
+        const res = await getUserConfig(game);
+        if (res.status !== 200) {
+          openAlert("获取配置失败", "获取用户配置失败，请重试。");
+          return;
+        }
+        const data = await res.json();
+        setConfig(data.data);
+        setIsLoaded(true);
+      } catch (error) {
+        console.error("Error fetching user config:", error);
+        openAlert("获取配置失败", `${error}`);
+      } finally {
+        setFetching(false);
       }
-      return res.json();
     };
 
-    getConfig().then((data) => {
-      setConfig(data.data);
-      setFetching(false);
-      setIsLoaded(true);
-    });
+    loadConfig();
   }, [game]);
 
-  const handleConfigChange = (key: string, value: any) => {
+  const handleConfigChange = async (key: string, value: any) => {
     const newConfig = {
       ...config,
       [key]: value,
-    }
-    setConfig(newConfig);
+    };
 
-    updateUserConfig(game, newConfig)
-      .then(res => res?.json())
-      .then(data => {
-        if (data.code !== 200) {
-          openAlert("保存设置失败", data.message);
-        } else {
-          notifications.show({
-            title: '自动保存成功',
-            message: '你的设置已自动保存',
-            color: 'teal',
-          })
-        }
-      })
-      .catch(err => {
-        openAlert("保存设置失败", err);
-      });
+    try {
+      const res = await updateUserConfig(game, newConfig);
+
+      if (res.status !== 200) {
+        openAlert("保存设置失败", "保存设置失败，请重试。");
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.code === 200) {
+        notifications.show({
+          title: '自动保存成功',
+          message: '你的设置已自动保存',
+          color: 'teal',
+        });
+      } else {
+        openAlert("保存设置失败", data.message);
+      }
+    } catch (error) {
+      openAlert("保存设置失败", `${error}`);
+    } finally {
+      setConfig(newConfig);
+    }
   }
 
   return (
@@ -122,109 +236,7 @@ export default function Settings() {
             <Text fz="xs" c="dimmed" mt={3} mb="lg">
               设置每次爬取的方式与获取的数据
             </Text>
-            {game === "maimai" ? (
-              <SettingsSection onChange={handleConfigChange} value={config} data={[{
-                key: "allow_crawl_scores",
-                title: "允许爬取谱面成绩",
-                description: "关闭后，每次爬取时将不会爬取成绩数据。",
-                optionType: "switch",
-                defaultValue: true,
-              }, {
-                key: "allow_crawl_name_plate",
-                title: "允许爬取姓名框",
-                description: "允许后，每次爬取将会爬取姓名框并显示到玩家信息中。",
-                optionType: "switch",
-                defaultValue: false,
-              }, {
-                key: "allow_crawl_frame",
-                title: "允许爬取背景",
-                description: "允许后，每次爬取将会爬取背景并显示到玩家信息中。",
-                optionType: "switch",
-                defaultValue: false,
-              }, {
-                key: "crawl_scores_method",
-                title: "爬取谱面成绩的方式",
-                description: "设置每次爬取时使用的爬取方式，增量爬取依赖最近游玩记录，适合已经完整爬取后频繁爬取，更加稳定。",
-                placeholder: "请选择爬取方式",
-                optionType: "select",
-                defaultValue: "full",
-                options: [{
-                  value: "full",
-                  label: "完整爬取",
-                }, {
-                  value: "incremental",
-                  label: "增量爬取",
-                }]
-              }, {
-                key: "crawl_scores_difficulty",
-                title: "爬取谱面成绩的难度",
-                description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
-                placeholder: "请选择难度",
-                optionType: "multi-select",
-                defaultValue: ["basic", "advanced", "expert", "master", "remaster"],
-                options: [{
-                  value: "basic",
-                  label: "🟢 BASIC",
-                }, {
-                  value: "advanced",
-                  label: "🟡 ADVANCED",
-                }, {
-                  value: "expert",
-                  label: "🔴 EXPERT",
-                }, {
-                  value: "master",
-                  label: "🟣 MASTER",
-                }, {
-                  value: "remaster",
-                  label: "⚪ Re:MASTER",
-                }]
-              }]}
-              />
-            ) : (
-              <SettingsSection onChange={handleConfigChange} value={config} data={[{
-                key: "allow_crawl_scores",
-                title: "允许爬取谱面成绩",
-                description: "关闭后，每次爬取时将不会爬取成绩数据。",
-                optionType: "switch",
-                defaultValue: true,
-              }, {
-                key: "allow_crawl_name_plate",
-                title: "允许爬取名牌版",
-                description: "允许后，每次爬取将会爬取名牌版并显示到玩家信息中。",
-                optionType: "switch",
-                defaultValue: false,
-              }, {
-                key: "allow_crawl_map_icon",
-                title: "允许爬取地图头像",
-                description: "允许后，每次爬取将会爬取地图头像并显示到玩家信息中。",
-                optionType: "switch",
-                defaultValue: false,
-              }, {
-                key: "crawl_scores_difficulty",
-                title: "爬取谱面成绩的难度",
-                description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
-                placeholder: "请选择难度",
-                optionType: "multi-select",
-                defaultValue: ["basic", "advanced", "expert", "master", "ultima"],
-                options: [{
-                  value: "basic",
-                  label: "🟢 BASIC",
-                }, {
-                  value: "advanced",
-                  label: "🟡 ADVANCED",
-                }, {
-                  value: "expert",
-                  label: "🔴 EXPERT",
-                }, {
-                  value: "master",
-                  label: "🟣 MASTER",
-                }, {
-                  value: "ultima",
-                  label: "⚫ ULTIMA",
-                }]
-              }]}
-              />
-            )}
+            <SettingsSection onChange={handleConfigChange} value={config} data={(settingsData as any)[game]} />
           </Card>
           <Card withBorder radius="md" className={classes.card} mb="md">
             <LoadingOverlay visible={fetching} overlayBlur={2} />

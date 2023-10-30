@@ -127,7 +127,9 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
           <div>
             <Text fz="xs" c="dimmed">项目地址</Text>
             <Text fz="sm">
-              <Anchor href={developer.url} target="_blank" truncate>{developer.url}</Anchor>
+              <Anchor href={developer.url} target="_blank" style={{
+                wordBreak: "break-all",
+              }}>{developer.url}</Anchor>
             </Text>
           </div>
           <div>

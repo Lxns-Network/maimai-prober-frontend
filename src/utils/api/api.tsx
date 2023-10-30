@@ -16,18 +16,14 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
     }
   }
 
-  try {
-    return await fetch(`${API_URL}/${endpoint}`, {
-      method,
-      credentials: "include",
-      headers: {
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
-        "Content-Type": "application/json",
-        ...headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    })
-  } catch (error) {
-    return null;
-  }
+  return await fetch(`${API_URL}/${endpoint}`, {
+    method,
+    credentials: "include",
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      "Content-Type": "application/json",
+      ...headers,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
 }

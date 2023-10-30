@@ -7,14 +7,17 @@ import {
   Card,
   createStyles,
   Divider,
+  Grid,
   Group,
-  Image, LoadingOverlay,
-  rem, Tabs,
+  Image,
+  rem,
+  Skeleton,
+  Tabs,
   Text
 } from "@mantine/core";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline } from "@mdi/js";
-import { getDeluxeRatingGradient, getTrophyColor } from "../../utils/color";
+import {getDeluxeRatingGradient, getRatingGradient, getTrophyColor} from "../../utils/color";
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { getPlayerDetail } from "../../utils/api/player.tsx";
@@ -65,132 +68,171 @@ const NotFoundModal = () => {
   )
 }
 
+const MaimaiPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null }) => {
+  const { classes } = useStyles();
+
+  if (playerData === null) return <NotFoundModal />;
+
+  return (
+    <>
+      <Group className={classes.section} noWrap>
+        <Avatar src={playerData.icon_url} size={94} radius="md" />
+        <div>
+          <Group spacing="xs" mb={8}>
+            <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color)} style={{
+              height: "auto",
+            }} children={
+              <Text fz="xs" style={{
+                whiteSpace: "pre-wrap"
+              }}>
+                {playerData.trophy.name}
+              </Text>
+            } />
+            <Badge variant="gradient" gradient={getDeluxeRatingGradient(playerData.rating)}>DX Rating: {playerData.rating}</Badge>
+          </Group>
+          <Text fz="lg" fw={500}>
+            {playerData.name}
+          </Text>
+          <Divider mt={5} mb={10} variant="dashed" />
+          <Group spacing={10}>
+            <Image src={playerData.course_rank_url} height={36} width="auto" />
+            <Image src={playerData.class_rank_url} height={32} width="auto" />
+            <Group spacing={2} ml="xs">
+              <Image src="https://maimai.wahlap.com/maimai-mobile/img/icon_star.png" height={28} width="auto" />
+              <Text>
+                ×{playerData.star}
+              </Text>
+            </Group>
+          </Group>
+        </div>
+      </Group>
+      <Divider />
+      <div className={classes.section}>
+        <Group>
+          <Text fz="xs" c="dimmed">好友码</Text>
+          <Text fz="sm">{playerData.friend_code}</Text>
+        </Group>
+        <Group mt="xs">
+          <Text fz="xs" c="dimmed">上次同步时间</Text>
+          <Text fz="sm">{(new Date(Date.parse(playerData.upload_time))).toLocaleString()}</Text>
+        </Group>
+      </div>
+    </>
+  )
+}
+
+const ChunithmPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null }) => {
+  const { classes } = useStyles();
+
+  if (playerData === null) return <NotFoundModal />;
+
+  return (
+    <>
+      <Group className={classes.section} noWrap>
+        <Avatar src={playerData.icon_url} size={94} radius="md" />
+        <div>
+          <Group spacing="xs" mb={8}>
+            <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color)} style={{
+              height: "auto",
+            }} children={
+              <Text fz="xs" style={{
+                whiteSpace: "pre-wrap"
+              }}>
+                {playerData.trophy.name}
+              </Text>
+            } />
+            <Badge variant="gradient" gradient={getRatingGradient(playerData.rating)}>Rating: {playerData.rating}</Badge>
+          </Group>
+          <Text fz="lg" fw={500}>
+            {playerData.name}
+          </Text>
+          <Divider mt={5} mb={10} variant="dashed" />
+          <Group>
+            <Text fz="xs" c="dimmed">Over Power</Text>
+            <Text fz="sm">{playerData.over_power} ({playerData.change_over_power}%)</Text>
+          </Group>
+          <Group>
+            <Text fz="xs" c="dimmed">所持金币</Text>
+            <Text fz="sm">{playerData.currency}</Text>
+          </Group>
+        </div>
+      </Group>
+      <Divider />
+      <div className={classes.section}>
+        <Group>
+          <Text fz="xs" c="dimmed">好友码</Text>
+          <Text fz="sm">{playerData.friend_code}</Text>
+        </Group>
+        <Group mt="xs">
+          <Text fz="xs" c="dimmed">上次同步时间</Text>
+          <Text fz="sm">{(new Date(Date.parse(playerData.upload_time))).toLocaleString()}</Text>
+        </Group>
+      </div>
+    </>
+  )
+}
+
+const PlayerPanelSkeleton = () => {
+  return (
+    <Grid p="md" align="center">
+      <Grid.Col span="content">
+        <Skeleton h={94} w={94} radius="md" />
+      </Grid.Col>
+      <Grid.Col span={6}>
+        <Skeleton h={16} radius={rem(10)} />
+        <Skeleton h={28} mt={12} radius="xl" />
+        <Skeleton h={8} mt={12} radius="xl" />
+        <Skeleton h={8} mt={8} radius="xl" />
+        <Skeleton h={8} mt={8} w="70%" radius="xl" />
+      </Grid.Col>
+    </Grid>
+  )
+}
+
 export const PlayerSection = () => {
   const { classes } = useStyles();
   const [playerData, setPlayerData] = useState<PlayerDataProps | null>(null);
   const [fetching, setFetching] = useState(true);
   const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
 
-  const GetPlayerData = () => {
-    getPlayerDetail(game).then((response) => {
-      if (response?.status === 200) {
-        response.json().then((data) => {
-          setPlayerData(data.data);
-        });
-      } else {
-        setPlayerData(null);
+  useEffect(() => {
+    async function fetchPlayerData() {
+      try {
+        const res = await getPlayerDetail(game);
+        if (res.status !== 200) {
+          return;
+        }
+        const data = await res.json();
+        setPlayerData(data.data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setFetching(false);
       }
-      setFetching(false);
-    });
-  }
+    }
 
-  useEffect(() => {
-    GetPlayerData();
-  }, []);
-
-  useEffect(() => {
-    GetPlayerData();
+    fetchPlayerData();
   }, [game]);
 
   return (
     <Card withBorder radius="md" className={classes.card} mb="md" p={0}>
-      <LoadingOverlay visible={fetching} overlayBlur={2} />
       <Tabs inverted value={game} onTabChange={(value) => {
+        if (value === game) return;
         setFetching(true)
-        setGame(value || "maimai")
+        setGame(value as string)
       }}>
         <Tabs.Panel value="maimai">
-          {playerData === null ? <NotFoundModal /> : (
-            <>
-              <Group className={classes.section} noWrap>
-                <Avatar src={playerData.icon_url} size={94} radius="md" />
-                <div>
-                  <Group spacing="xs" mb={8}>
-                    <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color)} style={{
-                      height: "auto",
-                    }} children={
-                      <Text fz="xs" style={{
-                        whiteSpace: "pre-wrap"
-                      }}>
-                        {playerData.trophy.name}
-                      </Text>
-                    } />
-                    <Badge variant="gradient" gradient={getDeluxeRatingGradient(playerData.rating)}>DX Rating: {playerData.rating}</Badge>
-                  </Group>
-                  <Text fz="lg" fw={500}>
-                    {playerData.name}
-                  </Text>
-                  <Divider mt={5} mb={10} variant="dashed" />
-                  <Group spacing={10}>
-                    <Image src={playerData.course_rank_url} height={36} width="auto" />
-                    <Image src={playerData.class_rank_url} height={32} width="auto" />
-                    <Group spacing={2} ml="xs">
-                      <Image src="https://maimai.wahlap.com/maimai-mobile/img/icon_star.png" height={28} width="auto" />
-                      <Text>
-                        ×{playerData.star}
-                      </Text>
-                    </Group>
-                  </Group>
-                </div>
-              </Group>
-              <Divider />
-              <div className={classes.section}>
-                <Group>
-                  <Text fz="xs" c="dimmed">好友码</Text>
-                  <Text fz="sm">{playerData.friend_code}</Text>
-                </Group>
-                <Group mt="xs">
-                  <Text fz="xs" c="dimmed">上次同步时间</Text>
-                  <Text fz="sm">{(new Date(Date.parse(playerData.upload_time))).toLocaleString()}</Text>
-                </Group>
-              </div>
-            </>
+          {fetching ? (
+            <PlayerPanelSkeleton />
+          ) : (
+            <MaimaiPlayerPanel playerData={playerData} />
           )}
         </Tabs.Panel>
         <Tabs.Panel value="chunithm">
-          {playerData === null ? <NotFoundModal /> : (
-            <>
-              <Group className={classes.section} noWrap>
-                <Avatar src={playerData.icon_url} size={94} radius="md" />
-                <div>
-                  <Group spacing="xs" mb={8}>
-                    <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color)} style={{
-                      height: "auto",
-                    }} children={
-                      <Text fz="xs" style={{
-                        whiteSpace: "pre-wrap"
-                      }}>
-                        {playerData.trophy.name}
-                      </Text>
-                    } />
-                    <Badge variant="gradient" gradient={getDeluxeRatingGradient(playerData.rating)}>DX Rating: {playerData.rating}</Badge>
-                  </Group>
-                  <Text fz="lg" fw={500}>
-                    {playerData.name}
-                  </Text>
-                  <Divider mt={5} mb={10} variant="dashed" />
-                  <Group>
-                    <Text fz="xs" c="dimmed">Over Power</Text>
-                    <Text fz="sm">{playerData.over_power} ({playerData.change_over_power}%)</Text>
-                  </Group>
-                  <Group>
-                    <Text fz="xs" c="dimmed">所持金币</Text>
-                    <Text fz="sm">{playerData.currency}</Text>
-                  </Group>
-                </div>
-              </Group>
-              <Divider />
-              <div className={classes.section}>
-                <Group>
-                  <Text fz="xs" c="dimmed">好友码</Text>
-                  <Text fz="sm">{playerData.friend_code}</Text>
-                </Group>
-                <Group mt="xs">
-                  <Text fz="xs" c="dimmed">上次同步时间</Text>
-                  <Text fz="sm">{(new Date(Date.parse(playerData.upload_time))).toLocaleString()}</Text>
-                </Group>
-              </div>
-            </>
+          {fetching ? (
+            <PlayerPanelSkeleton />
+          ) : (
+            <ChunithmPlayerPanel playerData={playerData} />
           )}
         </Tabs.Panel>
         <Tabs.List grow>

@@ -24,31 +24,34 @@ export interface SongProps {
 
 export const songList: SongProps[] = [];
 
-export async function getSongList(game: string) {
-  return fetchAPI(`${game}/song/list`, { method: "GET" });
-}
+export class SongList {
+  songs: SongProps[] = [];
 
-export function cacheSongList(game: string) {
-  getSongList(game)
-    .then(res => res?.json())
-    .then((data) => {
-      songList.push(...data.songs);
-      localStorage.setItem("songs", JSON.stringify(data.songs));
-    })
-}
-
-export function getSongListFromCache() {
-  if (songList.length === 0) {
-    const songs = localStorage.getItem("songs");
-    if (songs) {
-      songList.push(...JSON.parse(songs));
-    }
+  constructor() {
+    this.songs = [];
   }
-}
 
-export function getSong(id: number) {
-  const songs = songList || getSongListFromCache();
-  return songs.find((song: any) => song.id === id);
+  async fetch(game: string) {
+    if (this.songs.length === 0) {
+      const res = await fetchAPI(`${game}/song/list`, { method: "GET" });
+      const data = await res?.json();
+      this.songs.push(...data.songs);
+    }
+
+    return this.songs;
+  }
+
+  push(...songs: SongProps[]) {
+    this.songs.push(...songs);
+  }
+
+  find(id: number) {
+    return this.songs.find((song: any) => song.id === id);
+  }
+
+  get length() {
+    return this.songs.length;
+  }
 }
 
 export function getDifficulty(song: SongProps, type: string, level_index: number) {

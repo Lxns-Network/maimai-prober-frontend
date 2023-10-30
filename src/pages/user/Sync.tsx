@@ -328,7 +328,6 @@ export default function Sync() {
               <CopyButtonWithIcon
                 label="复制微信 OAuth 链接"
                 content={`${API_URL}/${game}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}
-                disabled={!proxyAvailable}
               />
               <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="请不要泄露或使用未知 OAuth 链接！" color="red" mt="md">
                 请不要将该 OAuth 链接分享给他人，否则可能导致你的账号被盗用。

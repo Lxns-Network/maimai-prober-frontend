@@ -2,8 +2,8 @@ import { Score, ScoreProps } from "./Score";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 import { ScoreModal } from "./ScoreModal";
-import { getSong } from "../../utils/api/song";
 import { SimpleGrid } from "@mantine/core";
+import {songList} from "../../pages/user/Scores.tsx";
 
 export const ScoreList = ({ scores }: { scores: ScoreProps[] }) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
@@ -13,7 +13,7 @@ export const ScoreList = ({ scores }: { scores: ScoreProps[] }) => {
     <>
       <ScoreModal
         score={scoreDetail as ScoreProps}
-        song={(scoreDetail ? getSong(scoreDetail.id) : null) as any}
+        song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
         onClose={closeScoreAlert}
       />
@@ -26,7 +26,7 @@ export const ScoreList = ({ scores }: { scores: ScoreProps[] }) => {
           <Score
             key={`score-${score.id}-${score.type}-${score.level_index}`}
             score={score}
-            song={getSong(score.id) as any}
+            song={songList.find(score.id) as any}
             onClick={() => {
               setScoreDetail(score);
               openScoreAlert();
