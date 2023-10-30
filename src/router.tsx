@@ -9,6 +9,8 @@ const Home = lazy(() => import('./pages/public/Home'));
 const About = lazy(() => import('./pages/public/About'));
 const Login = lazy(() => import('./pages/public/Login'));
 const Register = lazy(() => import('./pages/public/Register'));
+const ForgotPassword = lazy(() => import('./pages/public/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/public/ResetPassword'));
 const Profile = lazy(() => import('./pages/user/Profile'));
 const Sync = lazy(() => import('./pages/user/Sync'));
 const Scores = lazy(() => import('./pages/user/Scores'));
@@ -45,6 +47,8 @@ const routesConfig = (
     <Route path="/about" element={<About />} />
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
+    <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/user" element={<ProtectedRoute />}>
       <Route index element={<Home />} />
       <Route path="profile" element={<Profile />} />

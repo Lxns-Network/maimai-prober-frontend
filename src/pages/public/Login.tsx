@@ -38,7 +38,14 @@ export default function Login() {
   useEffect(() => {
     document.title = "登录 | maimai DX 查分器";
 
-    if (state && state.expired) openAlert("你已登出", "登录会话已过期，请重新登录");
+    if (state) {
+      if (state.expired) {
+        openAlert("你已登出", "登录会话已过期，请重新登录。");
+      }
+      if (state.reset) {
+        openAlert("重置成功", "请使用新密码登录。");
+      }
+    }
 
     recaptcha.render();
 
@@ -61,31 +68,31 @@ export default function Login() {
 
   const login = async (values: any) => {
     setVisible(true);
-    fetch(`${API_URL}/user/login?recaptcha=${await recaptcha.getToken()}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(values),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setVisible(false);
-        if (data.success) {
-          localStorage.setItem("token", data.data.token);
-          if (state && state.redirect) {
-            navigate(state.redirect);
-          } else {
-            navigate("/")
-          }
-        } else {
-          openAlert("登录失败", data.message);
-        }
-      })
-      .catch((error) => {
-        setVisible(false);
-        openAlert("登录失败", error);
+    try {
+      const recaptchaToken = await recaptcha.getToken();
+      const res = await fetch(`${API_URL}/user/login?recaptcha=${recaptchaToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
       });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem("token", data.data.token);
+        if (state && state.redirect) {
+          navigate(state.redirect);
+        } else {
+          navigate("/")
+        }
+      } else {
+        openAlert("登录失败", data.message);
+      }
+    } catch (error) {
+      openAlert("登录失败", `${error}`);
+    } finally {
+      setVisible(false);
+    }
   }
 
   return (
@@ -117,7 +124,7 @@ export default function Login() {
           />
           <Group position="apart" mt="md">
             <Text component="label" htmlFor="password" size="sm" weight={500}>密码</Text>
-            <Anchor<'a'> href="#" onClick={(event) => event.preventDefault()} sx={(theme) => ({
+            <Anchor onClick={() => navigate("/forgot-password")} sx={(theme) => ({
               paddingTop: 2,
               color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
               fontWeight: 500,
