@@ -199,10 +199,10 @@ export const PlayerSection = () => {
     async function fetchPlayerData() {
       try {
         const res = await getPlayerDetail(game);
-        if (res.status !== 200) {
+        const data = await res.json();
+        if (data.code !== 200) {
           return;
         }
-        const data = await res.json();
         setPlayerData(data.data);
       } catch (error) {
         console.error(error);

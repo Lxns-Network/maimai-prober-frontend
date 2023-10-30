@@ -150,15 +150,14 @@ export default function Settings() {
     const loadConfig = async () => {
       try {
         const res = await getUserConfig(game);
-        if (res.status !== 200) {
-          openAlert("获取配置失败", "获取用户配置失败，请重试。");
+        const data = await res.json();
+        if (data.code !== 200) {
+          openAlert("获取配置失败", data.message);
           return;
         }
-        const data = await res.json();
         setConfig(data.data);
         setIsLoaded(true);
       } catch (error) {
-        console.error("Error fetching user config:", error);
         openAlert("获取配置失败", `${error}`);
       } finally {
         setFetching(false);

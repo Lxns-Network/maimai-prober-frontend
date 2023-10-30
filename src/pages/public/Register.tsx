@@ -31,7 +31,7 @@ export default function Register() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
+  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "register");
 
   useEffect(() => {
     document.title = "注册 | maimai DX 查分器";

@@ -109,12 +109,12 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       hiddenBreakpoint="sm"
       style={style}
     >
-      <SegmentedControl mb="md" value={game} onChange={setGame}
-                        data={[
-                          { label: '舞萌 DX', value: 'maimai' },
-                          { label: '中二节奏', value: 'chunithm' },
-                        ]}
-      />
+      {!isLoggedOut && (
+        <SegmentedControl mb="md" value={game} onChange={setGame} data={[
+          { label: '舞萌 DX', value: 'maimai' },
+          { label: '中二节奏', value: 'chunithm' },
+        ]} />
+      )}
 
       <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
         {navbarData.map((item) => item.enabled &&
