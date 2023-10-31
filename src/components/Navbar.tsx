@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
+  Container,
   createStyles,
   Divider,
   Navbar as MantineNavbar,
   rem,
   ScrollArea,
-  SegmentedControl,
+  SegmentedControl, Space,
   useMantineTheme
 } from '@mantine/core';
 import {
@@ -49,7 +50,7 @@ const useStyles = createStyles((theme) => ({
 
   navbarFooter: {
     paddingTop: theme.spacing.md,
-    marginTop: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
     borderTop: `${rem(1)} solid ${
       theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
     }`,
@@ -105,42 +106,43 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     <MantineNavbar
       className={classes.navbar}
       width={{ sm: NAVBAR_WIDTH }}
-      p="md"
       hiddenBreakpoint="sm"
       style={style}
     >
-      {!isLoggedOut && (
-        <SegmentedControl mb="md" value={game} onChange={setGame} data={[
-          { label: '舞萌 DX', value: 'maimai' },
-          { label: '中二节奏', value: 'chunithm' },
-        ]} />
-      )}
-
-      <MantineNavbar.Section grow component={ScrollArea} mx="-xs" px="xs">
+      <MantineNavbar.Section grow component={ScrollArea}>
+        {!isLoggedOut && (
+          <SegmentedControl fullWidth m="md" value={game} onChange={setGame} data={[
+            { label: '舞萌 DX', value: 'maimai' },
+            { label: '中二节奏', value: 'chunithm' },
+          ]} />
+        )}
         {navbarData.map((item) => item.enabled &&
-          <div key={item.label}>
+          <Container key={item.label}>
             {item.divider && <Divider color={
               theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
             } mt={10} mb={10} />}
             <NavbarButton {...item} active={active} onClose={onClose} />
-          </div>
+          </Container>
         )}
+        <Space h="md" />
       </MantineNavbar.Section>
 
       <MantineNavbar.Section className={classes.navbarFooter}>
-        <NavbarButton label="关于 maimai DX 查分器" icon={mdiInformationOutline} to="/about" onClose={onClose} />
-        {!isLoggedOut && (
-          <>
-            <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
-            <NavbarButton label="应用登录二维码" icon={mdiQrcode} onClose={() => null} onClick={() => {
-              setQrcodeOpened(true);
-            }} />
-            <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
-              logout();
-              window.location.href = "/";
-            }} />
-          </>
-        )}
+        <Container>
+          <NavbarButton label="关于 maimai DX 查分器" icon={mdiInformationOutline} to="/about" onClose={onClose} />
+          {!isLoggedOut && (
+            <>
+              <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
+              <NavbarButton label="应用登录二维码" icon={mdiQrcode} onClose={() => null} onClick={() => {
+                setQrcodeOpened(true);
+              }} />
+              <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
+                logout();
+                window.location.href = "/";
+              }} />
+            </>
+          )}
+        </Container>
       </MantineNavbar.Section>
     </MantineNavbar>
   );
