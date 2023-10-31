@@ -8,7 +8,6 @@ import {
   createStyles,
   Grid,
   Group,
-  Input,
   Loader,
   MultiSelect,
   Pagination,
@@ -17,7 +16,8 @@ import {
   Switch,
   Space,
   Text,
-  Title
+  Title,
+  Autocomplete
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
@@ -312,12 +312,15 @@ export default function Scores() {
               <Grid mb="xs">
                 <Grid.Col span={6}>
                   <Text fz="xs" c="dimmed" mb={3}>筛选曲名</Text>
-                  <Input
+                  <Autocomplete
                     variant="filled"
                     icon={<Icon path={mdiMagnify} size={0.8} />}
                     placeholder="请输入曲名"
                     value={search}
                     onChange={setSearchValue}
+                    data={search.trim().length > 0 ? defaultScores.map((score) => ({
+                      value: score.song_name,
+                    })) : []}
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
