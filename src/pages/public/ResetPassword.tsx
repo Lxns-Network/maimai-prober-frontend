@@ -85,6 +85,7 @@ export default function ResetPassword() {
         openAlert("重置失败", data.message);
         return
       }
+
       navigate("/login", { state: { reset: true } })
     } catch (error) {
       openAlert("重置失败", `${error}`);

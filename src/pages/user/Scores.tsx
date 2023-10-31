@@ -82,32 +82,32 @@ export default function Scores() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const getPlayerScoresHandler = async () => {
+    try {
+      const res = await getPlayerScores(game);
+      if (res.status !== 200) {
+        return
+      }
+      const data = await res.json();
+      if (data.data === null) {
+        setDefaultScores([]);
+      } else {
+        setDefaultScores(data.data);
+        setScores(data.data);
+        setDisplayScores(data.data.slice(0, separator));
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
 
-    const loadData = async () => {
-      try {
-        const res = await getPlayerScores(game);
-        if (res.status !== 200) {
-          return
-        }
-        const data = await res.json();
-        if (data.data === null) {
-          setDefaultScores([]);
-        } else {
-          setDefaultScores(data.data);
-          setScores(data.data);
-          setDisplayScores(data.data.slice(0, separator));
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-
     songList.fetch(game).then(() => {
-      loadData();
+      getPlayerScoresHandler();
     });
   }, []);
 

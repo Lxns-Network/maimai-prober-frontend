@@ -146,28 +146,28 @@ export default function Settings() {
     document.title = "账号设置 | maimai DX 查分器";
   }, []);
 
-  useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const res = await getUserConfig(game);
-        const data = await res.json();
-        if (data.code !== 200) {
-          openAlert("获取配置失败", data.message);
-          return;
-        }
-        setConfig(data.data);
-        setIsLoaded(true);
-      } catch (error) {
-        openAlert("获取配置失败", `${error}`);
-      } finally {
-        setFetching(false);
+  const getUserConfigHandler = async () => {
+    try {
+      const res = await getUserConfig(game);
+      const data = await res.json();
+      if (data.code !== 200) {
+        openAlert("获取配置失败", data.message);
+        return;
       }
-    };
+      setConfig(data.data);
+      setIsLoaded(true);
+    } catch (error) {
+      openAlert("获取配置失败", `${error}`);
+    } finally {
+      setFetching(false);
+    }
+  };
 
-    loadConfig();
+  useEffect(() => {
+    getUserConfigHandler();
   }, [game]);
 
-  const handleConfigChange = async (key: string, value: any) => {
+  const updateUserConfigHandler = async (key: string, value: any) => {
     const newConfig = {
       ...config,
       [key]: value,
@@ -235,7 +235,7 @@ export default function Settings() {
             <Text fz="xs" c="dimmed" mt={3} mb="lg">
               设置每次爬取的方式与获取的数据
             </Text>
-            <SettingsSection onChange={handleConfigChange} value={config} data={(settingsData as any)[game]} />
+            <SettingsSection onChange={updateUserConfigHandler} value={config} data={(settingsData as any)[game]} />
           </Card>
           <Card withBorder radius="md" className={classes.card} mb="md">
             <LoadingOverlay visible={fetching} overlayBlur={2} />
@@ -245,7 +245,7 @@ export default function Settings() {
             <Text fz="xs" c="dimmed" mt={3} mb="lg">
               将影响第三方开发者通过查分器 API 访问你的数据
             </Text>
-            <SettingsSection onChange={handleConfigChange} value={config} data={[{
+            <SettingsSection onChange={updateUserConfigHandler} value={config} data={[{
               key: "allow_third_party_fetch_player",
               title: "允许读取玩家信息",
               description: "关闭后，第三方开发者将无法获取你的玩家信息。",

@@ -148,45 +148,56 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
   const [permission, setPermission] = useState<string[]>([]);
 
   useEffect(() => {
-    setPermission(permissionToList(typeof user?.permission === 'number' ? user?.permission : 0).map((permission) => permission.toString()));
-  }, [user])
+    form.reset();
+    setPermission(
+      permissionToList(typeof user?.permission === 'number' ? user?.permission : 0)
+        .map((permission) => permission.toString()));
+  }, [user]);
 
-  const update = (values: any) => {
-    if (values.name == "") values.name = user?.name;
-    if (values.email == "") values.email = user?.email;
+  const updateUserHandler = async (values: any) => {
+    if (!values.name) values.name = user?.name;
+    if (!values.email) values.email = user?.email;
 
     values.id = user?.id;
     values.permission = listToPermission((permission as string[]).map((permission) => parseInt(permission)));
 
-    updateUser(values)
-      .then((res) => res?.json())
-      .then((data) => {
-        if (data?.code !== 200) {
-          openAlert("保存设置失败", data?.message);
-        } else {
-          (user as UserProps).permission = values.permission;
-          close();
-        }
-      })
+    try {
+      const res = await updateUser(values);
+      const data = await res.json();
+      if (data.code !== 200) {
+        openAlert("保存设置失败", data.message);
+        return;
+      }
+
+      (user as UserProps).permission = values.permission;
+    } catch (err) {
+      openAlert("保存设置失败", `${err}`);
+    } finally {
+      close();
+    }
   }
 
-  const _delete = () => {
-    deleteUser({ id: user?.id })
-      .then((res) => res?.json())
-      .then((data) => {
-        if (data?.code !== 200) {
-          openAlert("删除失败", data?.message);
-        } else {
-          (user as UserProps).deleted = true;
-          close();
-        }
-      })
+  const deleteUserHandler = async () => {
+    try {
+      const res = await deleteUser({ id: user?.id });
+      const data = await res.json();
+      if (data.code !== 200) {
+        openAlert("删除失败", data?.message);
+        return;
+      }
+
+      (user as UserProps).deleted = true;
+    } catch (err) {
+      openAlert("删除失败", `${err}`);
+    } finally {
+      close();
+    }
   }
 
   return (
     <Modal opened={opened} onClose={close} title="编辑用户" centered>
       <AlertModal title={alertTitle} content={alertContent} opened={isAlertVisible} onClose={closeAlert} onConfirm={confirmAlert} />
-      <form onSubmit={form.onSubmit((values) => update(values))}>
+      <form onSubmit={form.onSubmit((values) => updateUserHandler(values))}>
         <TextInput label="用户名" placeholder={user?.name} mb="xs" {...form.getInputProps("name")} />
         <TextInput label="邮箱" placeholder={user?.email} mb="xs" {...form.getInputProps("email")} />
         <MultiSelect data={[
@@ -201,7 +212,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
               color="red"
               leftIcon={<Icon path={mdiTrashCan} size={0.75} />}
               onClick={() => {
-                setConfirmAlert(() => _delete);
+                setConfirmAlert(() => deleteUserHandler);
                 openAlert("删除账号", "你确定要删除该账号吗？");
               }}
             >

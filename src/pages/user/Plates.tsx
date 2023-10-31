@@ -101,40 +101,38 @@ export default function Plates() {
   //const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
   const game = 'maimai';
 
+  const getPlateListHandler = async () => {
+    try {
+      const res = await getPlateList(game, false);
+      const data = await res.json();
+      setPlates(data.plates);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const getPlayerPlateByIdHandler = async (plateId: number) => {
+    try {
+      const res = await getPlayerPlateById(game, plateId);
+      const data = await res.json();
+      if (data.code !== 200) {
+        return;
+      }
+
+      setPlate(data.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   useEffect(() => {
     document.title = "姓名框查询 | maimai DX 查分器";
 
-    const getPlates = async () => {
-      const res = await getPlateList(game, false);
-      if (res?.status !== 200) {
-        return [];
-      }
-      return res.json();
-    }
-
-    getPlates()
-      .then((data) => {
-        setPlates(data.plates);
-      });
+    getPlateListHandler();
   }, []);
 
   useEffect(() => {
-    if (plateId === null) {
-      return;
-    }
-
-    const getPlate = async () => {
-      const res = await getPlayerPlateById(game, plateId as number);
-      if (res?.status !== 200) {
-        return [];
-      }
-      return res.json();
-    }
-
-    setFetching(true);
-    getPlate().then((data) => {
-      setPlate(data.data);
-    });
+    plateId && getPlayerPlateByIdHandler(plateId);
   }, [plateId]);
 
   const [difficulties, setDifficulties] = useState<number[]>([]);

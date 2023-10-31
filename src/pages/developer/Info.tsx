@@ -43,14 +43,16 @@ export default function DeveloperInfo() {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
-  const resetApiKey = () => {
-    resetDeveloperApiKey()
-      .then(res => res?.json())
-      .then(data => {
-        if (data.code === 200) {
-          setDeveloperData({ api_key: data.data.api_key });
-        }
-      });
+  const resetDeveloperApiKeyHandler = async () => {
+    try {
+      const res = await resetDeveloperApiKey();
+      const data = await res.json();
+      if (data.code === 200) {
+        setDeveloperData({ api_key: data.data.api_key });
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   useEffect(() => {
@@ -151,12 +153,7 @@ export default function DeveloperInfo() {
               readOnly
             />
             <Group position="right" mt="md">
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<Icon path={mdiReload} size={0.75} />}
-                onClick={resetApiKey}
-              >
+              <Button variant="outline" size="sm" leftIcon={<Icon path={mdiReload} size={0.75} />} onClick={resetDeveloperApiKeyHandler}>
                 重置 API 密钥
               </Button>
             </Group>

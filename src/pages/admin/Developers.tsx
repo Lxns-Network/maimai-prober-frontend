@@ -100,17 +100,21 @@ interface DeveloperCardProps {
 const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...others }: DeveloperCardProps & UnstyledButtonProps) => {
   const { classes } = useStyles();
 
-  const _delete = () => {
-    revokeDeveloper(developer)
-      .then((res) => res?.json())
-      .then((data) => {
-        if (data.code !== 200) {
-          setConfirmAlert?.(() => {});
-          openAlert("删除开发者失败", data.message);
-        } else {
-          window.location.reload();
-        }
-      });
+  const revokeDeveloperHandler = async () => {
+    try {
+      const res = await revokeDeveloper(developer);
+      const data = await res.json();
+      if (data.code !== 200) {
+        openAlert("删除开发者失败", data.message);
+        return;
+      }
+
+      window.location.reload();
+    } catch (error) {
+      openAlert("删除开发者失败", `${error}`);
+    } finally {
+      setConfirmAlert?.(() => {});
+    }
   }
 
   return (
@@ -155,7 +159,7 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
             color="red"
             leftIcon={<Icon path={mdiTrashCan} size={0.75} />}
             onClick={() => {
-              setConfirmAlert?.(() => _delete);
+              setConfirmAlert?.(() => revokeDeveloperHandler);
               openAlert("删除开发者", "确定要删除这个开发者吗？");
             }}
           >

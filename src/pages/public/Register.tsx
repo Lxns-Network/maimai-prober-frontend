@@ -59,28 +59,29 @@ export default function Register() {
     },
   });
 
-  const register = async (values: any) => {
+  const registerHandler = async (values: any) => {
     setVisible(true);
-    fetch(`${API_URL}/user/register?recaptcha=${await recaptcha.getToken()}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(values),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setVisible(false);
-        if (data.success) {
-          openAlert("注册成功", "请登录你的查分器账号，根据指引绑定你的游戏账号。");
-        } else {
-          openAlert("注册失败", data.message);
-        }
-      })
-      .catch((error) => {
-        setVisible(false);
-        openAlert("注册失败", error);
+    try {
+      const recaptchaToken = await recaptcha.getToken();
+      const res = await fetch(`${API_URL}/user/register?recaptcha=${recaptchaToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
       });
+      const data = await res.json();
+      if (!data.success) {
+        openAlert("注册失败", data.message);
+        return;
+      }
+
+      openAlert("注册成功", "请登录你的查分器账号，根据指引绑定你的游戏账号。");
+    } catch (error) {
+      openAlert("注册失败", `${error}`);
+    } finally {
+      setVisible(false);
+    }
   }
 
   return (
@@ -102,7 +103,7 @@ export default function Register() {
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}>
         <LoadingOverlay visible={visible} overlayBlur={2} />
-        <form onSubmit={form.onSubmit((values) => register(values))}>
+        <form onSubmit={form.onSubmit((values) => registerHandler(values))}>
           <TextInput
             name="name"
             label="用户名"

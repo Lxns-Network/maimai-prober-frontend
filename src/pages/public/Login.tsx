@@ -66,7 +66,7 @@ export default function Login() {
     },
   });
 
-  const login = async (values: any) => {
+  const loginHandler = async (values: any) => {
     setVisible(true);
     try {
       const recaptchaToken = await recaptcha.getToken();
@@ -78,15 +78,16 @@ export default function Login() {
         body: JSON.stringify(values),
       });
       const data = await res.json();
-      if (data.success) {
-        localStorage.setItem("token", data.data.token);
-        if (state && state.redirect) {
-          navigate(state.redirect);
-        } else {
-          navigate("/")
-        }
-      } else {
+      if (!data.success) {
         openAlert("登录失败", data.message);
+        return;
+      }
+
+      localStorage.setItem("token", data.data.token);
+      if (state && state.redirect) {
+        navigate(state.redirect);
+      } else {
+        navigate("/")
       }
     } catch (error) {
       openAlert("登录失败", `${error}`);
@@ -113,7 +114,7 @@ export default function Login() {
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}>
         <LoadingOverlay visible={visible} overlayBlur={2} />
-        <form onSubmit={form.onSubmit((values) => login(values))}>
+        <form onSubmit={form.onSubmit((values) => loginHandler(values))}>
           <TextInput
             name="name"
             label="用户名"

@@ -66,13 +66,14 @@ export default function ForgotPassword() {
       });
       if (res.status === 404) {
         openAlert("发送失败", "该邮箱未注册过 maimai DX 查分器账号。");
-        return
+        return;
       }
       const data = await res.json();
       if (!data.success) {
         openAlert("发送失败", data.message);
-        return
+        return;
       }
+
       openAlert("发送成功", "请前往你的邮箱查看重置邮件。");
     } catch (error) {
       openAlert("发送失败", `${error}`);

@@ -29,17 +29,24 @@ export default function Profile() {
   const [userData, setUserData] = useState<UserDataProps | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const getProfileHandler = async () => {
+    try {
+      const res = await getProfile();
+      const data = await res.json();
+      if (data.code === 200) {
+        setUserData(data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoaded(true);
+    }
+  }
+
   useEffect(() => {
     document.title = "账号详情 | maimai DX 查分器";
 
-    getProfile().then((response) => {
-      if (response?.status === 200) {
-        response.json().then((data) => {
-          setUserData(data.data);
-        });
-      }
-      setIsLoaded(true);
-    });
+    getProfileHandler();
   }, []);
 
   return (

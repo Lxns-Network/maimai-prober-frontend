@@ -80,23 +80,24 @@ export default function DeveloperApply() {
     },
   });
 
-  const apply = async (values: any) => {
+  const sendDeveloperApplyHandler = async (values: any) => {
     setVisible(true);
-    sendDeveloperApply(values, await recaptcha.getToken())
-      .then((res) => res?.json())
-      .then((data) => {
-        setVisible(false);
-        if (data.success) {
-          setApplied(true);
-          openAlert("提交成功", "申请成功，我们将尽快审核您的申请");
-        } else {
-          openAlert("提交失败", data.message);
-        }
-      })
-      .catch((error) => {
-        setVisible(false);
-        openAlert("提交失败", error);
-      });
+    try {
+      const recaptchaToken = await recaptcha.getToken();
+      const res = await sendDeveloperApply(values, recaptchaToken);
+      const data = await res.json();
+      if (!data.success) {
+        openAlert("提交失败", data.message);
+        return;
+      }
+
+      setApplied(true);
+      openAlert("提交成功", "申请成功，我们将尽快审核您的申请");
+    } catch (err) {
+      openAlert("提交失败", `${err}`);
+    } finally {
+      setVisible(false);
+    }
   }
 
   return (
@@ -117,7 +118,7 @@ export default function DeveloperApply() {
         backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
       })}>
         <LoadingOverlay visible={visible} overlayBlur={2} />
-        <form onSubmit={form.onSubmit((values) => apply(values))}>
+        <form onSubmit={form.onSubmit((values) => sendDeveloperApplyHandler(values))}>
           <TextInput
             name="name"
             label="项目名称"
