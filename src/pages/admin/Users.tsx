@@ -148,7 +148,6 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
   const [permission, setPermission] = useState<string[]>([]);
 
   useEffect(() => {
-    form.reset();
     setPermission(
       permissionToList(typeof user?.permission === 'number' ? user?.permission : 0)
         .map((permission) => permission.toString()));
@@ -173,6 +172,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     } catch (err) {
       openAlert("保存设置失败", `${err}`);
     } finally {
+      form.reset();
       close();
     }
   }
@@ -190,6 +190,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     } catch (err) {
       openAlert("删除失败", `${err}`);
     } finally {
+      form.reset();
       close();
     }
   }

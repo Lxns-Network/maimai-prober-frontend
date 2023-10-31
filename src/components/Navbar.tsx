@@ -110,9 +110,9 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       style={style}
     >
       <MantineNavbar.Section grow component={ScrollArea}>
-        <Space h="md" />
         {!isLoggedOut && (
           <Container>
+            <Space h="md" />
             <SegmentedControl fullWidth mt={0} value={game} onChange={setGame} data={[
               { label: '舞萌 DX', value: 'maimai' },
               { label: '中二节奏', value: 'chunithm' },
