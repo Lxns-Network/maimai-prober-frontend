@@ -17,7 +17,7 @@ import {
 } from "@mantine/core";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline } from "@mdi/js";
-import {getDeluxeRatingGradient, getRatingGradient, getTrophyColor} from "../../utils/color";
+import { getDeluxeRatingGradient, getRatingGradient, getTrophyColor } from "../../utils/color";
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { getPlayerDetail } from "../../utils/api/player.tsx";
@@ -193,23 +193,25 @@ export const PlayerSection = () => {
   const { classes } = useStyles();
   const [playerData, setPlayerData] = useState<PlayerDataProps | null>(null);
   const [fetching, setFetching] = useState(true);
-  const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
+  const [game, setGame] = useLocalStorage({ key: 'game' })
+
+  const fetchPlayerData = async () => {
+    try {
+      const res = await getPlayerDetail(game);
+      const data = await res.json();
+      if (data.code !== 200) {
+        return;
+      }
+      setPlayerData(data.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setFetching(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchPlayerData() {
-      try {
-        const res = await getPlayerDetail(game);
-        const data = await res.json();
-        if (data.code !== 200) {
-          return;
-        }
-        setPlayerData(data.data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setFetching(false);
-      }
-    }
+    if (!game) return;
 
     fetchPlayerData();
   }, [game]);

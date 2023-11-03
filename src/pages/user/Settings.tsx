@@ -140,7 +140,7 @@ export default function Settings() {
   const [config, setConfig] = useState({} as ConfigProps);
   const [isLoaded, setIsLoaded] = useState(false);
   const [fetching, setFetching] = useState(false);
-  const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
+  const [game, setGame] = useLocalStorage({ key: 'game' });
 
   useEffect(() => {
     document.title = "账号设置 | maimai DX 查分器";
@@ -164,6 +164,8 @@ export default function Settings() {
   };
 
   useEffect(() => {
+    if (!game) return;
+
     getUserConfigHandler();
   }, [game]);
 
