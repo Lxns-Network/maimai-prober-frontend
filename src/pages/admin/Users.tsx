@@ -1,37 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Container,
   createStyles,
   Group,
-  Text,
   rem,
-  Loader,
-  Table,
   TextInput,
-  UnstyledButton,
-  Center,
-  Card,
-  ScrollArea,
   Modal,
   Button,
-  MultiSelect
+  MultiSelect,
+  Box, Title, Text,
 } from '@mantine/core';
 import { keys } from '@mantine/utils';
 import { deleteUser, getUsers, updateUser } from "../../utils/api/user";
 import Icon from "@mdi/react";
 import {
   mdiAccountSearch,
-  mdiChevronDown,
-  mdiChevronUp, mdiTrashCan,
-  mdiUnfoldMoreHorizontal
+  mdiTrashCan,
 } from "@mdi/js";
-import { NAVBAR_BREAKPOINT } from '../../App';
 import { useDisclosure } from '@mantine/hooks';
 import { listToPermission, permissionToList, UserPermission } from "../../utils/session";
 import { useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "../../utils/validator";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
+import { DataTable } from "mantine-datatable";
+import { NAVBAR_BREAKPOINT } from "../../App.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -70,30 +63,6 @@ export interface UserProps {
   permission: number;
   register_time: string;
   deleted?: boolean;
-}
-
-interface ThProps {
-  children: React.ReactNode;
-  reversed: boolean;
-  sorted: boolean;
-  onSort(): void;
-}
-
-function Th({ children, reversed, sorted, onSort }: ThProps) {
-  const { classes } = useStyles();
-  const path = sorted ? (reversed ? mdiChevronUp : mdiChevronDown) : mdiUnfoldMoreHorizontal;
-  return (
-    <th className={classes.th}>
-      <UnstyledButton onClick={onSort} className={classes.control}>
-        <Group position="apart" noWrap>
-          <Text fw={500} fz="sm">{children}</Text>
-          <Center className={classes.icon}>
-            <Icon path={path} size="0.9rem" />
-          </Center>
-        </Group>
-      </UnstyledButton>
-    </th>
-  );
 }
 
 function filterData(data: UserProps[], search: string) {
@@ -148,17 +117,19 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
   const [permission, setPermission] = useState<string[]>([]);
 
   useEffect(() => {
-    setPermission(
-      permissionToList(typeof user?.permission === 'number' ? user?.permission : 0)
-        .map((permission) => permission.toString()));
+    if (!user) return;
+
+    setPermission(permissionToList(user.permission).map((permission) => permission.toString()));
   }, [user]);
 
   const updateUserHandler = async (values: any) => {
-    if (!values.name) values.name = user?.name;
-    if (!values.email) values.email = user?.email;
+    if (!user) return;
 
-    values.id = user?.id;
-    values.permission = listToPermission((permission as string[]).map((permission) => parseInt(permission)));
+    if (!values.name) values.name = user.name;
+    if (!values.email) values.email = user.email;
+
+    values.id = user.id;
+    values.permission = listToPermission(permission.map((permission) => parseInt(permission)));
 
     try {
       const res = await updateUser(values);
@@ -168,7 +139,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
         return;
       }
 
-      (user as UserProps).permission = values.permission;
+      user.permission = values.permission;
     } catch (err) {
       openAlert("保存设置失败", `${err}`);
     } finally {
@@ -178,15 +149,17 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
   }
 
   const deleteUserHandler = async () => {
+    if (!user) return;
+
     try {
-      const res = await deleteUser({ id: user?.id });
+      const res = await deleteUser({ id: user.id });
       const data = await res.json();
       if (data.code !== 200) {
-        openAlert("删除失败", data?.message);
+        openAlert("删除失败", data.message);
         return;
       }
 
-      (user as UserProps).deleted = true;
+      user.deleted = true;
     } catch (err) {
       openAlert("删除失败", `${err}`);
     } finally {
@@ -233,52 +206,67 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
 export default function Users() {
   const { classes } = useStyles();
   const [users, setUsers] = useState<UserProps[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [fetching, setFetching] = useState<boolean>(true);
 
   const [search, setSearch] = useState('');
-  const [sortedData, setSortedData] = useState(users);
-  const [sortBy, setSortBy] = useState<keyof UserProps | null>(null);
-  const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
-  const setSorting = (field: keyof UserProps) => {
-    const reversed = field === sortBy ? !reverseSortDirection : false;
-    setReverseSortDirection(reversed);
-    setSortBy(field);
-    setSortedData(sortData(users, { sortBy: field, reversed, search }));
-  };
+  const PAGE_SIZES = [10, 15, 20];
+  const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
+  const [page, setPage] = useState(1);
+  const [displayUsers, setDisplayUsers] = useState<any[]>([]);
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.currentTarget;
-    setSearch(value);
-    setSortedData(sortData(users, { sortBy, reversed: reverseSortDirection, search: value }));
-  };
+  const [sortedUser, setSortedUser] = useState(users);
+  const [sortStatus, setSortStatus] = useState({
+    columnAccessor: 'id',
+    direction: 'asc' as 'asc' | 'desc',
+  });
 
-  const rows = sortedData.map((row: UserProps) => (
-    <tr key={row.id} onClick={() => {
-      setActiveUser(row);
-      open();
-    }}>
-      <td>{row.id}</td>
-      <td>{row.name}</td>
-      <td>{row.email}</td>
-      <td>{row.permission}</td>
-      <td>{(new Date(Date.parse(row.register_time))).toLocaleString()}</td>
-    </tr>
-  ));
+  useEffect(() => {
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    setDisplayUsers(sortedUser.slice(start, end));
+  }, [page]);
+
+  useEffect(() => {
+    setPage(1);
+    setDisplayUsers(sortedUser.slice(0, pageSize));
+  }, [pageSize]);
+
+  useEffect(() => {
+    setDisplayUsers(sortedUser.slice(0, pageSize));
+  }, [sortedUser]);
+
+  useEffect(() => {
+    setSortedUser(sortData(users, {
+      sortBy: sortStatus.columnAccessor as keyof UserProps,
+      reversed: sortStatus.direction === 'desc',
+      search
+    }));
+  }, [search, sortStatus]);
+
+  const getUserHandler = async () => {
+    try {
+      const res = await getUsers();
+      const data = await res.json();
+      if (data.code !== 200) {
+        return;
+      }
+      setUsers(data.data);
+      setSortedUser(data.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setFetching(false);
+    }
+  }
 
   useEffect(() => {
     document.title = "管理用户 | maimai DX 查分器";
 
-    getUsers()
-      .then((res) => res?.json())
-      .then((data) => {
-        setUsers(data.data);
-        setSortedData(data.data);
-        setIsLoaded(true);
-      });
+    getUserHandler();
   }, []);
 
   return (
@@ -291,58 +279,87 @@ export default function Users() {
         }
         const newUsers = users.sort((a, b) => a.id - b.id);
         setUsers(newUsers);
-        setSortedData(newUsers);
+        setSortedUser(newUsers);
 
         close();
       }} />
+      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+        管理用户
+      </Title>
+      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+        查看并管理 maimai DX 查分器的用户
+      </Text>
       <TextInput
         placeholder="搜索用户"
+        radius="md"
         mb="md"
         icon={<Icon path={mdiAccountSearch} size={rem(16)} />}
         value={search}
-        onChange={handleSearchChange}
+        onChange={(event) => setSearch(event.currentTarget.value)}
       />
-      {!isLoaded ? (
-        <Group position="center" mt="xl">
-          <Loader />
-        </Group>
-      ) : (
-        <Card withBorder radius="md" className={classes.card} mb={0} p={0} component={ScrollArea}
-              h="calc(100vh - 140px)" w={window.innerWidth > NAVBAR_BREAKPOINT ? `100%` : "calc(100vw - 32px)"}>
-          <Table horizontalSpacing="md" verticalSpacing="xs" highlightOnHover striped>
-            <thead>
-            <tr>
-              <Th sorted={sortBy === 'id'} reversed={reverseSortDirection} onSort={() => setSorting('id')}>
-                ID
-              </Th>
-              <Th sorted={sortBy === 'name'} reversed={reverseSortDirection} onSort={() => setSorting('name')}>
-                用户名
-              </Th>
-              <Th sorted={sortBy === 'email'} reversed={reverseSortDirection} onSort={() => setSorting('email')}>
-                邮箱
-              </Th>
-              <Th sorted={sortBy === 'permission'} reversed={reverseSortDirection} onSort={() => setSorting('permission')}>
-                权限
-              </Th>
-              <Th sorted={sortBy === 'register_time'} reversed={reverseSortDirection} onSort={() => setSorting('register_time')}>
-                注册时间
-              </Th>
-            </tr>
-            </thead>
-            <tbody>
-            {rows.length > 0 ? (
-              rows
-            ) : (
-              <tr>
-                <td colSpan={Object.keys(users[0]).length+1}>
-                  <Text weight={500} align="center">没有找到任何用户</Text>
-                </td>
-              </tr>
-            )}
-            </tbody>
-          </Table>
-        </Card>
-      )}
+      <Box w={window.innerWidth > NAVBAR_BREAKPOINT ? `100%` : "calc(100vw - 32px)"}>
+        <DataTable
+          highlightOnHover
+          withBorder
+          borderRadius="md"
+          striped
+          verticalSpacing="xs"
+          mih={150}
+          columns={[
+            {
+              accessor: 'id',
+              title: 'ID',
+              width: 70,
+              sortable: true,
+            },
+            {
+              accessor: 'name',
+              title: '用户名',
+              width: 100,
+              sortable: true,
+            },
+            {
+              accessor: 'email',
+              title: '邮箱',
+              width: 200,
+              ellipsis: true,
+              sortable: true,
+            },
+            {
+              accessor: 'permission',
+              title: '权限',
+              width: 70,
+              sortable: true,
+            },
+            {
+              accessor: 'register_time',
+              title: '注册时间',
+              width: 150,
+              render: ({ register_time }) => new Date(register_time).toLocaleString(),
+              sortable: true,
+            },
+          ]}
+          records={displayUsers}
+          totalRecords={sortedUser.length}
+          sortStatus={sortStatus}
+          onSortStatusChange={setSortStatus}
+          onCellClick={({ record }) => {
+            setActiveUser(record);
+            open();
+          }}
+          recordsPerPage={pageSize}
+          paginationText={({ from, to, totalRecords}) => {
+            return `${from}-${to} 名用户，共 ${totalRecords} 名`;
+          }}
+          noRecordsText="0 名用户"
+          page={page}
+          onPageChange={(p) => setPage(p)}
+          recordsPerPageOptions={PAGE_SIZES}
+          recordsPerPageLabel="每页显示"
+          onRecordsPerPageChange={setPageSize}
+          fetching={fetching}
+        />
+      </Box>
     </Container>
   );
 }
