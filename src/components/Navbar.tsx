@@ -27,7 +27,7 @@ import {
   mdiWrenchCheckOutline,
   mdiXml,
 } from '@mdi/js';
-import { NAVBAR_WIDTH } from "../App";
+import { NAVBAR_BREAKPOINT, NAVBAR_WIDTH } from "../App";
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, logout, UserPermission } from "../utils/session";
 import { QrcodeModal } from "./QrcodeModal";
@@ -106,7 +106,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     <MantineNavbar
       className={classes.navbar}
       width={{ sm: NAVBAR_WIDTH }}
-      hiddenBreakpoint="sm"
+      hiddenBreakpoint={NAVBAR_BREAKPOINT}
       style={style}
     >
       <MantineNavbar.Section grow component={ScrollArea}>

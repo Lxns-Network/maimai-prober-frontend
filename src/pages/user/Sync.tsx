@@ -64,22 +64,6 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-async function checkProxySettingStatus() {
-  try {
-    // Try to fetch the external URL
-    await fetch(`https://maimai.wahlap.com/maimai-mobile/error/`, { mode: 'no-cors' });
-  } catch (error) {
-    try {
-      // Fetch current location's href to detect network issue
-      await fetch(window.location.href, { mode: 'no-cors' });
-      return 2; // If failed, return 2 (proxy)
-    } catch (error) {
-      return 1; // If successful, return 1 (network issue)
-    }
-  }
-  return 0; // If successful, return 0 (no proxy)
-}
-
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
   return (
     <TextInput
@@ -119,34 +103,36 @@ export default function Sync() {
   const [networkError, setNetworkError] = useState(false);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [active, setActive] = useState(0);
-  const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
+  const [game, setGame] = useLocalStorage({ key: 'game' });
   const navigate = useNavigate();
   const idle = useIdle(60000);
 
+  const checkProxy = async () => {
+    if (idle || active > 1) return;
+    try {
+      await fetch(`https://maimai.wahlap.com/maimai-mobile/error/`, { mode: 'no-cors' });
+    } catch (error) {
+      try {
+        await fetch(window.location.href, { mode: 'no-cors' });
+        // Proxy
+        setActive(1);
+        setProxyAvailable(true);
+        setNetworkError(false);
+      } catch (error) {
+        // Network issue
+        setActive(0);
+        setProxyAvailable(false);
+        setNetworkError(true);
+      }
+    }
+    // No proxy
+    setActive(0);
+    setProxyAvailable(false);
+    setNetworkError(false);
+  }
+
   useEffect(() => {
     document.title = "同步游戏数据 | maimai DX 查分器";
-
-    const checkProxy = () => {
-      if (idle) return;
-
-      checkProxySettingStatus().then(r => {
-        if (active > 1) return;
-
-        if (r === 0) { // No proxy
-          setActive(0);
-          setProxyAvailable(false);
-          setNetworkError(false);
-        } else if (r === 1) { // Network issue
-          setActive(0);
-          setProxyAvailable(false);
-          setNetworkError(true);
-        } else { // Proxy
-          setActive(1);
-          setProxyAvailable(true);
-          setNetworkError(false);
-        }
-      })
-    };
 
     const intervalId = setInterval(checkProxy, 5000);
 

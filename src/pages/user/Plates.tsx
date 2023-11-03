@@ -118,7 +118,6 @@ export default function Plates() {
       if (data.code !== 200) {
         return;
       }
-
       setPlate(data.data);
     } catch (err) {
       console.error(err);

@@ -319,6 +319,7 @@ export default function Scores() {
                     value={search}
                     onChange={setSearchValue}
                     data={search.trim().length > 0 ? defaultScores.map((score) => ({
+                      key: `${score.id}-${score.type}-${score.level_index}`,
                       value: score.song_name,
                     })) : []}
                   />
