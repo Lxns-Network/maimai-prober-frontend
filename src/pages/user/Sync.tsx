@@ -97,7 +97,6 @@ interface CrawlStatusProps {
 export default function Sync() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
-  const [firstCrawl, setFirstCrawl] = useLocalStorage({ key: 'first-crawl', defaultValue: true });
   const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [networkError, setNetworkError] = useState(false);
@@ -111,19 +110,20 @@ export default function Sync() {
     if (idle || active > 1) return;
     try {
       await fetch(`https://maimai.wahlap.com/maimai-mobile/error/`, { mode: 'no-cors' });
-    } catch (error) {
+    } catch (err) {
       try {
         await fetch(window.location.href, { mode: 'no-cors' });
         // Proxy
         setActive(1);
         setProxyAvailable(true);
         setNetworkError(false);
-      } catch (error) {
+      } catch (err) {
         // Network issue
         setActive(0);
         setProxyAvailable(false);
         setNetworkError(true);
       }
+      return;
     }
     // No proxy
     setActive(0);
@@ -142,8 +142,8 @@ export default function Sync() {
   });
 
   useEffect(() => {
-    const checkCrawlStatus = () => {
-      if (idle || !proxyAvailable) {
+    const checkCrawlStatus = async () => {
+      if (idle || active === 0) {
         return;
       }
 
@@ -152,28 +152,26 @@ export default function Sync() {
         return;
       }
 
-      getCrawlStatus()
-        .then(res => res?.json())
-        .then(data => {
-          if (data.data != null) {
-            if (data.data.status === "pending") {
-              setActive(2);
-            } else {
-              if (!firstCrawl) {
-                setConfirmAlert(() => null);
-                openAlert("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
-              } else {
-                setConfirmAlert(() => () => {
-                  navigate("/user/settings");
-                });
-                openAlert("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。在初次同步后，我们推荐你前往账号设置将爬取方式变更为“增量爬取”，这会使之后的爬取更加稳定。");
-                setFirstCrawl(false);
-              }
-              setActive(3);
-            }
-            setCrawlStatus(data.data);
+      try {
+        const res = await getCrawlStatus();
+        if (res == null) {
+          return;
+        }
+
+        const data = await res.json();
+        if (data.data != null) {
+          if (data.data.status === "pending") {
+            setActive(2);
+          } else {
+            setActive(3);
+            setConfirmAlert(() => null);
+            openAlert("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
           }
-        })
+          setCrawlStatus(data.data);
+        }
+      } catch (error) {
+        return;
+      }
     }
 
     const intervalId = setInterval(checkCrawlStatus, 5000);
@@ -198,7 +196,7 @@ export default function Sync() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         使用 HTTP 代理同步你的玩家数据与成绩
       </Text>
-      {(new Date()).getHours() >= 18 && (new Date()).getHours() <= 23 &&
+      {(new Date()).getHours() >= 18 &&
         <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="游玩高峰期警告" color="yellow" mb="xl">
           <Text size="sm" mb="md">
             由于现在是游玩高峰期，同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，或者尝试更改爬取设置以增加稳定性。
@@ -210,6 +208,13 @@ export default function Sync() {
           </Group>
         </Alert>
       }
+      {(new Date()).getHours() >= 5 && (new Date()).getHours() < 7 && (
+        <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="NET 维护中" color="red" mb="xl">
+          <Text size="sm">
+            由于现在是 NET 维护时间（凌晨 5 时至早上 7 时），故无法进行同步。
+          </Text>
+        </Alert>
+      )}
       <Stepper active={
         proxyAvailable ? (
           crawlStatus != null ? (
@@ -302,18 +307,16 @@ export default function Sync() {
               <Text size="sm" mb="xs">
                 请选择你要爬取的游戏：
               </Text>
-              <SegmentedControl size="md" mb="md" color="blue" fullWidth value={game} onChange={setGame}
-                data={[
-                  { label: '舞萌 DX', value: 'maimai' },
-                  { label: '中二节奏', value: 'chunithm' },
-                ]}
-              />
+              <SegmentedControl size="md" mb="md" color="blue" fullWidth value={game} onChange={setGame} data={[
+                { label: '舞萌 DX', value: 'maimai' },
+                { label: '中二节奏', value: 'chunithm' },
+              ]} />
               <Text size="sm" mb="xs">
                 请复制下方的微信 OAuth 链接，然后在安全的聊天中发送链接并打开，等待同步结果返回。
               </Text>
               <CopyButtonWithIcon
                 label="复制微信 OAuth 链接"
-                content={`${API_URL}/${game}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}
+                content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}
               />
               <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="请不要泄露或使用未知 OAuth 链接！" color="red" mt="md">
                 请不要将该 OAuth 链接分享给他人，否则可能导致你的账号被盗用。

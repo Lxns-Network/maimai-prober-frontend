@@ -236,6 +236,7 @@ export default function Users() {
   }, [pageSize]);
 
   useEffect(() => {
+    setPage(1);
     setDisplayUsers(sortedUser.slice(0, pageSize));
   }, [sortedUser]);
 
