@@ -147,7 +147,11 @@ export default function Home() {
 
       <Container p={0} size={600}>
         <Text size="lg" color="dimmed" className={classes.description}>
-          一个简单的国服 maimai DX 查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。
+          一个简单的{' '}
+          <Text variant="gradient" component="span" inherit fw={700}>
+            舞萌 DX & 中二节奏
+          </Text>{' '}
+          国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。
         </Text>
       </Container>
 
