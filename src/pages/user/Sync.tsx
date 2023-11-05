@@ -208,10 +208,10 @@ export default function Sync() {
           </Group>
         </Alert>
       }
-      {(new Date()).getHours() >= 5 && (new Date()).getHours() < 7 && (
+      {(new Date()).getHours() >= 4 && (new Date()).getHours() < 7 && (
         <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="NET 维护中" color="red" mb="xl">
           <Text size="sm">
-            由于现在是 NET 维护时间（凌晨 5 时至早上 7 时），故无法进行同步。
+            由于现在是 NET 维护时间（凌晨 4 时至早上 7 时），故无法进行同步。
           </Text>
         </Alert>
       )}
