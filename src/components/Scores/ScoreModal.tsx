@@ -102,13 +102,13 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
   )
 }
 
-const ScoreHistoryPanel = ({ scores }: { scores: ScoreProps[] }) => {
+const ScoreHistory = ({ scores }: { scores: ScoreProps[] }) => {
   return (
     <Accordion.Item value="history">
       <Accordion.Control>上传历史记录</Accordion.Control>
       <Accordion.Panel>
         {scores.length < 2 ? (
-          <Flex gap="xs" align="center" direction="column" mt="xs" c="dimmed">
+          <Flex gap="xs" align="center" direction="column" c="dimmed">
             <Icon path={mdiDatabaseOffOutline} size={rem(64)} />
             <Text fz="sm">历史记录不足，无法生成图表</Text>
           </Flex>
@@ -164,7 +164,7 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
       if (data.code !== 200) {
         return;
       }
-      setScores(data.data);
+      setScores(data.data.sort((a: ScoreProps, b: ScoreProps) => new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime()).reverse());
     } catch (err) {
       console.error(err);
     }
@@ -194,9 +194,9 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
             )}
           </Container>
           <Space h="md" />
-          <Accordion chevronPosition="left">
+          <Accordion chevronPosition="left" variant="filled" radius={0}>
             {scores && scores.length > 0 && (
-              <ScoreHistoryPanel scores={scores} />
+              <ScoreHistory scores={scores} />
             )}
           </Accordion>
         </Modal.Body>
