@@ -43,9 +43,9 @@ export async function deleteUser(data: any) {
 export function refreshToken() {
   return new Promise((resolve, reject) => {
     fetchAPI("user/refresh", { method: "GET" })
-      .then(res => res?.json())
+      .then(res => res.json())
       .then(data => {
-        if (data?.code === 200) {
+        if (data.code === 200) {
           localStorage.setItem("token", data.data.token);
           resolve(true);
         } else {

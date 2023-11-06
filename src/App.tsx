@@ -14,7 +14,7 @@ import {
 import { Notifications } from "@mantine/notifications";
 import { useLocalStorage } from '@mantine/hooks';
 import { refreshToken } from "./utils/api/user";
-import { logout } from "./utils/session";
+import { isTokenUndefined, logout } from "./utils/session";
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
 import RouterTransition from "./components/RouterTransition";
@@ -55,11 +55,13 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (localStorage.getItem("token")) {
+    if (!isTokenUndefined()) {
       // 进入页面时刷新一次 token，不论有效期
       refreshToken().catch(() => {
         logout();
-        navigate("/login", { state: { expired: true } });
+        if (window.location.pathname !== '/login') {
+          navigate("/login", { state: { expired: true } });
+        }
       });
     }
 

@@ -1,4 +1,4 @@
-import {logoutUser} from "./api/user";
+import { logoutUser } from "./api/user";
 
 export const isTokenExpired = () => {
   const token = localStorage.getItem('token');
