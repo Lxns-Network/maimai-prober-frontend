@@ -1,7 +1,12 @@
 import { ScoreProps } from "./Score";
-import { Avatar, Badge, Card, Group, Image, Loader, Modal, rem, Text } from "@mantine/core";
+import { Accordion, Avatar, Badge, Card, Container, Flex, Group, Image, Modal, rem, Space, Text } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../utils/color";
 import { getDifficulty, SongProps } from "../../utils/api/song";
+import { useEffect, useState } from "react";
+import { fetchAPI } from "../../utils/api/api.tsx";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import Icon from "@mdi/react";
+import { mdiDatabaseOffOutline } from "@mdi/js";
 
 interface ScoreModalProps {
   score: ScoreProps | null;
@@ -97,16 +102,105 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
   )
 }
 
-export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
+const ScoreHistoryPanel = ({ scores }: { scores: ScoreProps[] }) => {
   return (
-    <Modal opened={opened} onClose={onClose} title="成绩详情" centered>
-      {(score === null || song === null) ? (
-        <Group position="center" mt="xl">
-          <Loader />
-        </Group>
-      ) : (
-        <ScoreModalContent score={score} song={song} />
-      )}
-    </Modal>
+    <Accordion.Item value="history">
+      <Accordion.Control>上传历史记录</Accordion.Control>
+      <Accordion.Panel>
+        {scores.length < 2 ? (
+          <Flex gap="xs" align="center" direction="column" mt="xs" c="dimmed">
+            <Icon path={mdiDatabaseOffOutline} size={rem(64)} />
+            <Text fz="sm">历史记录不足，无法生成图表</Text>
+          </Flex>
+        ) : (
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={scores} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="dx_rating" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="upload_time" tickFormatter={(value) => new Date(value).toLocaleDateString("zh-CN", {
+                month: "short",
+                day: "numeric",
+              })} />
+              <YAxis width={40} />
+              <CartesianGrid strokeDasharray="3 3" />
+              <Tooltip
+                labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                formatter={(value: string) => [parseInt(value), "DX Rating"]}
+              />
+              <Area type="monotone" dataKey="dx_rating" stroke="#8884d8" fillOpacity={1} fill="url(#dx_rating)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </Accordion.Panel>
+    </Accordion.Item>
+  )
+}
+
+export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
+  // const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
+  const [scores, setScores] = useState<ScoreProps[]>([]);
+  const game = "maimai";
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      onClose();
+    }
+  }
+
+  const getScoreHistory = async (score: ScoreProps) => {
+    if (score === null) {
+      return;
+    }
+
+    try {
+      const res = await fetchAPI(`user/${game}/player/score/history?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {
+        method: "GET",
+      })
+      const data = await res.json();
+      if (data.code !== 200) {
+        return;
+      }
+      setScores(data.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    setScores([]);
+    getScoreHistory(score as ScoreProps);
+  }, [score]);
+
+  return (
+    <Modal.Root opened={opened} onClose={onClose} centered>
+      <Modal.Overlay />
+      <Modal.Content>
+        <Modal.Header>
+          <Modal.Title>成绩详情</Modal.Title>
+          <Modal.CloseButton />
+        </Modal.Header>
+        <Modal.Body p={0}>
+          <Container>
+            {score !== null && song !== null && (
+              <ScoreModalContent score={score} song={song} />
+            )}
+          </Container>
+          <Space h="md" />
+          <Accordion chevronPosition="left">
+            {scores && scores.length > 0 && (
+              <ScoreHistoryPanel scores={scores} />
+            )}
+          </Accordion>
+        </Modal.Body>
+      </Modal.Content>
+    </Modal.Root>
   );
 }
