@@ -235,7 +235,7 @@ export default function Settings() {
               爬取数据
             </Text>
             <Text fz="xs" c="dimmed" mt={3} mb="lg">
-              设置每次爬取的方式与获取的数据
+              设置每次爬取{game === "chunithm" ? "中二节奏" : "舞萌 DX "}的方式与获取的数据
             </Text>
             <SettingsSection onChange={updateUserConfigHandler} value={config} data={(settingsData as any)[game]} />
           </Card>
@@ -245,7 +245,7 @@ export default function Settings() {
               隐私设置
             </Text>
             <Text fz="xs" c="dimmed" mt={3} mb="lg">
-              将影响第三方开发者通过查分器 API 访问你的数据
+              将影响第三方开发者通过查分器 API 访问你的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}数据
             </Text>
             <SettingsSection onChange={updateUserConfigHandler} value={config} data={[{
               key: "allow_third_party_fetch_player",
@@ -287,7 +287,7 @@ export default function Settings() {
             }, {
               key: "reset_account",
               title: "删除所有谱面成绩",
-              description: `删除你的查分器账号里所有的${game === "maimai" ? "舞萌 DX " : "中二节奏"}谱面成绩。`,
+              description: `删除你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩。`,
               placeholder: "删除",
               color: "red",
               optionType: "button",
@@ -300,14 +300,14 @@ export default function Settings() {
                         return;
                       }
                       setConfirmAlert(() => null);
-                      openAlert("删除成功", `你的查分器账号里所有的${game === "maimai" ? "舞萌 DX " : "中二节奏"}谱面成绩已经被删除。`);
+                      openAlert("删除成功", `你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩已经被删除。`);
                     })
                     .catch((err) => {
                       openAlert("删除失败", err);
                     });
                 });
                 openAlert("删除谱面成绩",
-                  `你确定要删除你的查分器账号里所有的${game === "maimai" ? "舞萌 DX " : "中二节奏"}谱面成绩吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。`);
+                  `你确定要删除你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。`);
               },
             }, {
               key: "delete_account",

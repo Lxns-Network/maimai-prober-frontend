@@ -121,11 +121,13 @@ const ScoreHistory = ({ scores }: { scores: ScoreProps[] }) => {
                   <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <XAxis dataKey="upload_time" tickFormatter={(value) => new Date(value).toLocaleDateString("zh-CN", {
-                month: "short",
+              <XAxis dataKey="upload_time" tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', {
+                month: "numeric",
                 day: "numeric",
               })} />
-              <YAxis width={40} />
+              <YAxis width={40} domain={([dataMin, dataMax]) => {
+                return [Math.floor(dataMin) - 10, Math.floor(dataMax) + 10];
+              }} />
               <CartesianGrid strokeDasharray="3 3" />
               <Tooltip
                 labelFormatter={(value) => new Date(value).toLocaleDateString()}
@@ -164,7 +166,7 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
       if (data.code !== 200) {
         return;
       }
-      setScores(data.data.sort((a: ScoreProps, b: ScoreProps) => new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime()).reverse());
+      setScores(data.data.sort((a: ScoreProps, b: ScoreProps) => new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime()));
     } catch (err) {
       console.error(err);
     }
