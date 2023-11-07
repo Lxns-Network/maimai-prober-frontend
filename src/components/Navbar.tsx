@@ -29,9 +29,10 @@ import {
 } from '@mdi/js';
 import { NAVBAR_BREAKPOINT, NAVBAR_WIDTH } from "../App";
 import { NavbarButton } from "./NavbarButton";
-import { checkPermission, logout, UserPermission } from "../utils/session";
+import { checkPermission, UserPermission } from "../utils/session";
 import { QrcodeModal } from "./QrcodeModal";
-import {useLocalStorage} from "@mantine/hooks";
+import { useLocalStorage } from "@mantine/hooks";
+import { logoutUser } from "../utils/api/user.tsx";
 
 const useStyles = createStyles((theme) => ({
   navbar: {
@@ -141,8 +142,11 @@ export default function Navbar({ style, onClose }: NavbarProps) {
                 setQrcodeOpened(true);
               }} />
               <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
-                logout();
-                window.location.href = "/";
+                logoutUser().then(() => {
+                  localStorage.removeItem('token');
+                }).then(() => {
+                  window.location.href = "/";
+                });
               }} />
             </>
           )}
