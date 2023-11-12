@@ -22,8 +22,6 @@ export interface SongProps {
   difficulties: DifficultiesProps;
 }
 
-export const songList: SongProps[] = [];
-
 export class SongList {
   songs: SongProps[] = [];
 
@@ -47,6 +45,10 @@ export class SongList {
 
   find(id: number) {
     return this.songs.find((song: any) => song.id === id);
+  }
+
+  clear() {
+    this.songs = [];
   }
 
   get length() {

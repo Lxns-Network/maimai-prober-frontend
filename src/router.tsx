@@ -17,6 +17,7 @@ const Scores = lazy(() => import('./pages/user/Scores'));
 const Plates = lazy(() => import('./pages/user/Plates'));
 const Settings = lazy(() => import('./pages/user/Settings'));
 const NotFound = lazy(() => import('./pages/public/NotFound'));
+const Vote = lazy(() => import('./pages/alias/Vote'));
 const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
 const Users = lazy(() => import('./pages/admin/Users'));
 const Developers = lazy(() => import('./pages/admin/Developers'));
@@ -56,6 +57,10 @@ const routesConfig = (
       <Route path="scores" element={<Scores />} />
       <Route path="plates" element={<Plates />} />
       <Route path="settings" element={<Settings />} />
+    </Route>
+    <Route path="/alias" element={<ProtectedRoute />}>
+      <Route index element={<Home />} />
+      <Route path="vote" element={<Vote />} />
     </Route>
     <Route path="/developer" element={<ProtectedRoute />}>
       <Route path="apply" element={<DeveloperApply />} />

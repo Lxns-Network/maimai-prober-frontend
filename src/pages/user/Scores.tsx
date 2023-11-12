@@ -299,7 +299,7 @@ export default function Scores() {
               variant="light"
               radius="xl"
               rightIcon={renderSortIndicator(item.key)}
-              style={{display: "flex"}}
+              style={{ display: "flex" }}
             >
               {item.name}
             </Button>

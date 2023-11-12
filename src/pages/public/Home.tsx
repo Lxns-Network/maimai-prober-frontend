@@ -120,6 +120,7 @@ const mockdata = [
 
 export default function Home() {
   const { classes } = useStyles();
+
   const navigate = useNavigate();
   const items = mockdata.map((item) => <Feature {...item} key={item.title} />);
 

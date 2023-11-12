@@ -1,4 +1,22 @@
-import { logoutUser } from "./api/user";
+import {logoutUser} from "./api/user";
+
+const getLoginSessionPayload = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (error) {
+    return null;
+  }
+}
+
+export const getLoginUserId = () => {
+  const payload = getLoginSessionPayload();
+  return payload ? payload.id : null;
+}
 
 export const isTokenExpired = () => {
   const token = localStorage.getItem('token');
