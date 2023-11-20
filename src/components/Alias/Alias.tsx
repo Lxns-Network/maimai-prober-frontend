@@ -1,19 +1,19 @@
 import {
   ActionIcon,
   Card,
-  Center, Container,
+  Container,
   createStyles,
   Flex,
   Group,
   Menu,
   Progress,
-  rem, Space,
+  rem,
   Text, Tooltip
 } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import Icon from "@mdi/react";
 import {
-  mdiAccountOutline, mdiAlertOctagon, mdiCheck, mdiCreation, mdiDotsHorizontal,
+  mdiAccountOutline, mdiAlertOctagon, mdiCheck, mdiDotsHorizontal,
   mdiThumbDown,
   mdiThumbDownOutline,
   mdiThumbUp,
@@ -21,10 +21,11 @@ import {
   mdiTrashCanOutline
 } from "@mdi/js";
 import { approveAlias, deleteAlias, deleteUserAlias, voteAlias } from "../../utils/api/alias.tsx";
-import { useElementSize, useLocalStorage } from "@mantine/hooks";
+import {useElementSize, useLocalStorage, useSetState} from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { checkPermission, getLoginUserId, UserPermission } from "../../utils/session.tsx";
+import { AliasButton } from "./AliasButton.tsx";
 
 const useStyles = createStyles((theme) => ({
   section: {
@@ -34,10 +35,10 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-export const Alias = ({ alias, onDelete }: { alias: AliasProps, onDelete: () => void }) => {
+export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick: () => void, onDelete: () => void }) => {
   const { classes } = useStyles();
   const { ref, width } = useElementSize();
-  const [approved, setApproved] = useState(false);
+  const [displayAlias, setDisplayAlias] = useSetState(alias);
   const [weight, setWeight] = useState(0);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(0);
@@ -118,10 +119,6 @@ export const Alias = ({ alias, onDelete }: { alias: AliasProps, onDelete: () => 
   }
 
   useEffect(() => {
-    setApproved(alias.approved)
-  }, []);
-
-  useEffect(() => {
     if (alias.weight.total === 0) {
       setProgress(0);
     } else {
@@ -134,32 +131,8 @@ export const Alias = ({ alias, onDelete }: { alias: AliasProps, onDelete: () => 
 
   return (
     <Card ref={ref} shadow="xs" p={0} radius="md" withBorder>
-      <Container className={classes.section} pt="xs" pb="xs" pl="sm" pr="sm">
-        <Flex>
-          <Text fz="sm" c="dimmed" style={{ flex: 1 }} truncate>{alias.song.name}</Text>
-          {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (
-            <Center>
-              <Tooltip label="新提交" withinPortal>
-                <ActionIcon color="yellow" size="xs" radius="xl" variant="light">
-                <Icon path={mdiCreation} size={rem(20)} />
-                </ActionIcon>
-              </Tooltip>
-              {approved && (
-                <Space w="xs" />
-              )}
-            </Center>
-          )}
-          {approved && (
-            <Center>
-              <Tooltip label="已批准" withinPortal>
-                <ActionIcon color="teal" size="xs" radius="xl" variant="light">
-                  <Icon path={mdiCheck} size={rem(20)} />
-                </ActionIcon>
-              </Tooltip>
-            </Center>
-          )}
-        </Flex>
-        <Text fz="xl" weight={700} truncate>{alias.alias}</Text>
+      <Container className={classes.section} p={0}>
+        <AliasButton alias={displayAlias} onClick={onClick} pt="xs" pb="xs" pl="sm" pr="sm" />
       </Container>
       <Container pt={5} pb={5} pl="xs" pr="xs">
         <Group position="apart" noWrap>
@@ -206,10 +179,10 @@ export const Alias = ({ alias, onDelete }: { alias: AliasProps, onDelete: () => 
                     }}>{(weight === -1) ? "取消反对" : "反对"}</Menu.Item>
                   </>
                 )}
-                {checkPermission(UserPermission.Administrator) && !approved && (
+                {checkPermission(UserPermission.Administrator) && !alias.approved && (
                   <Menu.Item c="teal" icon={<Icon path={mdiCheck} size={rem(20)} />} onClick={() => {
                     approveAlias(game, alias.alias_id).then(() => {
-                      setApproved(true);
+                      setDisplayAlias({ approved: true })
                       notifications.show({
                         title: '已批准别名',
                         message: `别名 ${alias.alias} 已被批准`,

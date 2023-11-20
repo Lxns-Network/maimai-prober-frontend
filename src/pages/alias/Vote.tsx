@@ -25,7 +25,7 @@ import { getAliasList, getUserVotes } from "../../utils/api/alias.tsx";
 import { AliasList } from "../../components/Alias/AliasList.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { notifications } from "@mantine/notifications";
-import {SongList} from "../../utils/api/song.tsx";
+import { SongList } from "../../utils/api/song.tsx";
 
 export interface AliasProps {
   alias_id: number;
