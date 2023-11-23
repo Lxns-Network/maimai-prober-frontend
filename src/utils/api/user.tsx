@@ -4,6 +4,10 @@ export async function getProfile() {
   return fetchAPI("user/profile", { method: "GET" });
 }
 
+export async function getUserCrawlToken() {
+  return fetchAPI("user/crawl/token", { method: "GET" });
+}
+
 export async function getCrawlStatus() {
   return fetchAPI("user/crawl/status", { method: "GET" });
 }

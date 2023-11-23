@@ -32,7 +32,7 @@ import {
 } from "@mdi/js";
 import { useIdle, useLocalStorage } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
-import { getCrawlStatus } from "../../utils/api/user";
+import {getCrawlStatus, getUserCrawlToken} from "../../utils/api/user";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
 
@@ -100,6 +100,7 @@ export default function Sync() {
   const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const [crawlToken, setCrawlToken] = useState<string | null>(null);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [active, setActive] = useState(0);
   const [game, setGame] = useLocalStorage({ key: 'game' });
@@ -131,49 +132,72 @@ export default function Sync() {
     setNetworkError(false);
   }
 
+  const getUserCrawlTokenHandler = async () => {
+    try {
+      const res = await getUserCrawlToken();
+      if (res == null) {
+        return;
+      }
+
+      const data = await res.json();
+      if (data.code === 200) {
+        setCrawlToken(data.data.token);
+        setActive(1);
+      }
+    } catch (error) {
+      return;
+    }
+  }
+
+  const getCrawlTokenExpireTime = (crawlToken: string) => {
+    return Math.floor(((JSON.parse(atob(crawlToken.split('.')[1])).exp - new Date().getTime() / 1000)) / 60)
+  }
+
   useEffect(() => {
     document.title = "同步游戏数据 | maimai DX 查分器";
 
     const intervalId = setInterval(checkProxy, 5000);
 
+    getUserCrawlTokenHandler();
+
     return () => {
       clearInterval(intervalId);
     };
-  });
+  }, []);
 
-  useEffect(() => {
-    const checkCrawlStatus = async () => {
-      if (idle || active === 0) {
-        return;
-      }
-
-      if (crawlStatus != null && crawlStatus.status != "pending") {
-        setActive(3);
-        return;
-      }
-
-      try {
-        const res = await getCrawlStatus();
-        if (res == null) {
-          return;
-        }
-
-        const data = await res.json();
-        if (data.data != null) {
-          if (data.data.status === "pending") {
-            setActive(2);
-          } else {
-            setActive(3);
-            setConfirmAlert(() => null);
-            openAlert("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
-          }
-          setCrawlStatus(data.data);
-        }
-      } catch (error) {
-        return;
-      }
+  const checkCrawlStatus = async () => {
+    if (idle || active === 0) {
+      return;
     }
 
+    if (crawlStatus != null && crawlStatus.status != "pending") {
+      setActive(3);
+      return;
+    }
+
+    try {
+      const res = await getCrawlStatus();
+      if (res == null) {
+        return;
+      }
+
+      const data = await res.json();
+      if (data.data != null) {
+        if (data.data.status === "pending") {
+          setActive(2);
+        } else {
+          setActive(3);
+          setConfirmAlert(() => null);
+          openAlert("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
+        }
+        setCrawlStatus(data.data);
+      }
+    } catch (error) {
+      return;
+    }
+  }
+
+  useEffect(() => {
     const intervalId = setInterval(checkCrawlStatus, 5000);
 
     return () => {
@@ -201,11 +225,9 @@ export default function Sync() {
           <Text size="sm" mb="md">
             由于现在是游玩高峰期，同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，或者尝试更改爬取设置以增加稳定性。
           </Text>
-          <Group>
-            <Button variant="outline" color="yellow" onClick={() => navigate("/user/settings")}>
-              更改爬取设置
-            </Button>
-          </Group>
+          <Button variant="outline" color="yellow" onClick={() => navigate("/user/settings")}>
+            更改爬取设置
+          </Button>
         </Alert>
       }
       {(new Date()).getHours() >= 4 && (new Date()).getHours() < 7 && (
@@ -304,7 +326,7 @@ export default function Sync() {
               选择爬取的游戏并使用微信打开 OAuth 链接
             </Text>
             <Card withBorder radius="md" className={classes.card} mb="md" p="md">
-              <Text size="sm" mb="xs">
+              <Text size="sm" mb={4}>
                 请选择你要爬取的游戏：
               </Text>
               <SegmentedControl size="md" mb="md" color="blue" fullWidth value={game} onChange={setGame} data={[
@@ -312,14 +334,23 @@ export default function Sync() {
                 { label: '中二节奏', value: 'chunithm' },
               ]} />
               <Text size="sm" mb="xs">
-                请复制下方的微信 OAuth 链接，然后在安全的聊天中发送链接并打开，等待同步结果返回。
+                请复制下方的微信 OAuth 链接，然后在安全的聊天中发送链接并打开，等待同步结果返回：
               </Text>
               <CopyButtonWithIcon
                 label="复制微信 OAuth 链接"
-                content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth?token=${window.btoa(localStorage.getItem("token") as string)}`}
+                content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
               />
-              <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="请不要泄露或使用未知 OAuth 链接！" color="red" mt="md">
-                请不要将该 OAuth 链接分享给他人，否则可能导致你的账号被盗用。
+              <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="链接有效期提示" mt="md">
+                <Text size="sm" mb="md">
+                  {crawlToken ? `该链接${
+                    getCrawlTokenExpireTime(crawlToken) > 0 ? `将在 ${getCrawlTokenExpireTime(crawlToken) + 1} 分钟内失效，逾时` : "已失效，"
+                  }请点击下方按钮刷新 OAuth 链接。` : "链接未生成，请点击下方按钮生成 OAuth 链接。"}
+                </Text>
+                <Button variant="outline" leftIcon={<Icon path={mdiReload} size={0.75} />} onClick={() => {
+                  getUserCrawlTokenHandler();
+                }}>
+                  {crawlToken ? "刷新链接" : "生成链接"}
+                </Button>
               </Alert>
             </Card>
           </Group>
