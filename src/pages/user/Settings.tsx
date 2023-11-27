@@ -2,12 +2,13 @@ import { Title, Text, Loader, Group, Card, LoadingOverlay, SegmentedControl } fr
 import { Container, rem, createStyles } from '@mantine/core';
 import { notifications } from "@mantine/notifications";
 import { useEffect, useState } from "react";
-import { deletePlayerScores }  from "../../utils/api/player";
+import { deletePlayerScores, unbindPlayer } from "../../utils/api/player";
 import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
 import { SettingsSection } from '../../components/Settings/SettingsSection';
 import { useLocalStorage } from "@mantine/hooks";
 import AlertModal from "../../components/AlertModal";
 import useAlert from "../../utils/useAlert";
+import {useNavigate} from "react-router-dom";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -141,6 +142,7 @@ export default function Settings() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [game, setGame] = useLocalStorage({ key: 'game' });
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = "账号设置 | maimai DX 查分器";
@@ -273,7 +275,7 @@ export default function Settings() {
               其它设置
             </Text>
             <Text fz="xs" c="dimmed" mt={3} mb="xl">
-              重置密码等敏感操作
+              重置密码、删除数据等敏感操作
             </Text>
             <SettingsSection data={[{
               key: "reset_password",
@@ -281,8 +283,28 @@ export default function Settings() {
               description: "重置你的查分器账号密码。",
               placeholder: "重置",
               optionType: "button",
+              onClick: () => navigate("/forgot-password"),
+            }, {
+              key: "unbind_account",
+              title: "解绑游戏账号",
+              description: `解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号。`,
+              placeholder: "解绑",
+              optionType: "button",
               onClick: () => {
-                setConfirmAlert(() => null);
+                setConfirmAlert(() => () => {
+                  unbindPlayer(game).then((res) => {
+                    if (res?.status !== 200) {
+                      openAlert("解绑失败", "解绑游戏账号失败，请重试。");
+                      return;
+                    }
+                    setConfirmAlert(() => null);
+                    openAlert("解绑成功", `你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号已经被解绑。`);
+                  }).catch((err) => {
+                    openAlert("解绑失败", err);
+                  });
+                });
+                openAlert("解绑游戏账号",
+                  `你确定要解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号吗？你可以随时重新同步游戏数据，或切换其他查分器账号绑定。`);
               },
             }, {
               key: "reset_account",

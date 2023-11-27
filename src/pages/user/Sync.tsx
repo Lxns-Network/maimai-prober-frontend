@@ -156,14 +156,16 @@ export default function Sync() {
   useEffect(() => {
     document.title = "同步游戏数据 | maimai DX 查分器";
 
-    const intervalId = setInterval(checkProxy, 5000);
-
     getUserCrawlTokenHandler();
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(checkProxy, 5000);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, []);
+  });
 
   const checkCrawlStatus = async () => {
     if (idle || active === 0) {

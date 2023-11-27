@@ -4,6 +4,10 @@ export async function getPlayerDetail(game: string) {
   return fetchAPI(`user/${game}/player`, { method: "GET" });
 }
 
+export async function unbindPlayer(game: string) {
+  return fetchAPI(`user/${game}/player`, { method: "DELETE" });
+}
+
 export async function getPlayerScores(game: string) {
   return fetchAPI(`user/${game}/player/scores`, { method: "GET" });
 }

@@ -14,9 +14,9 @@ import {
   mdiThumbUp,
   mdiThumbUpOutline
 } from "@mdi/js";
-import {useEffect, useState} from "react";
-import {voteAlias} from "../../utils/api/alias.tsx";
-import {notifications} from "@mantine/notifications";
+import { useEffect, useState } from "react";
+import { voteAlias } from "../../utils/api/alias.tsx";
+import { notifications } from "@mantine/notifications";
 
 interface AliasModalProps {
   alias: AliasProps;

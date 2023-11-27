@@ -196,7 +196,7 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
             )}
           </Container>
           <Space h="md" />
-          <Accordion chevronPosition="left" variant="filled" radius={0}>
+          <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
             {scores && scores.length > 0 && (
               <ScoreHistory scores={scores} />
             )}

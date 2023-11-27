@@ -10,6 +10,7 @@ import Icon from "@mdi/react";
 import { mdiAccountOutline, mdiLockOutline} from "@mdi/js";
 import { useForm } from "@mantine/form";
 import { validatePassword, validateUserName } from "../../utils/validator";
+import { useLocalStorage } from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -30,6 +31,7 @@ export default function Login() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
+  const [game, setGame] = useLocalStorage({ key: 'game' });
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state;
@@ -84,6 +86,7 @@ export default function Login() {
       }
 
       localStorage.setItem("token", data.data.token);
+      if (!game) setGame("maimai");
       if (state && state.redirect) {
         navigate(state.redirect);
       } else {
