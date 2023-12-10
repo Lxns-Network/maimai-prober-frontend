@@ -51,9 +51,9 @@ export function refreshToken() {
       .then(data => {
         if (data.code === 200) {
           localStorage.setItem("token", data.data.token);
-          resolve(true);
+          resolve(data);
         } else {
-          reject(false);
+          reject(data);
         }
       })
       .catch((error) => {

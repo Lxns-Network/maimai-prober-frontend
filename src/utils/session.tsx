@@ -49,9 +49,8 @@ export const isTokenValid = () => {
 }
 
 export const logout = () => {
-  logoutUser().then(() => {
-    localStorage.removeItem('token');
-  });
+  localStorage.removeItem('token');
+  logoutUser();
 }
 
 export enum UserPermission {

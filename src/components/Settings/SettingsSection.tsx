@@ -47,6 +47,10 @@ interface SettingsCardProps {
 export const SettingsSection = memo(({ data, value, onChange }: SettingsCardProps) => {
   const { classes } = useStyles();
 
+  if (!data) {
+    return null;
+  }
+
   return data.map((item) => (
     <Group position="apart" className={classes.item} noWrap spacing="xl" key={item.key}>
       <div>

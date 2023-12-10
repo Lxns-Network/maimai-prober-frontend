@@ -1,4 +1,4 @@
-import { Title, Text, Loader, Group, Card, LoadingOverlay, SegmentedControl } from '@mantine/core';
+import { Title, Text, Card, LoadingOverlay, SegmentedControl } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { notifications } from "@mantine/notifications";
 import { useEffect, useState } from "react";
@@ -139,8 +139,7 @@ export default function Settings() {
   const { classes } = useStyles();
   const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [config, setConfig] = useState({} as ConfigProps);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [fetching, setFetching] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [game, setGame] = useLocalStorage({ key: 'game' });
   const navigate = useNavigate();
 
@@ -157,7 +156,6 @@ export default function Settings() {
         return;
       }
       setConfig(data.data);
-      setIsLoaded(true);
     } catch (error) {
       openAlert("获取配置失败", `${error}`);
     } finally {
@@ -218,147 +216,139 @@ export default function Settings() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         设置你的 maimai DX 查分器账号
       </Text>
-      {!isLoaded ? (
-        <Group position="center" mt="xl">
-          <Loader />
-        </Group>
-      ) : (
-        <>
-          <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
-            setGame(value);
-            setFetching(true);
-          }} data={[
-            { label: '舞萌 DX', value: 'maimai' },
-            { label: '中二节奏', value: 'chunithm' },
-          ]} />
-          <Card withBorder radius="md" className={classes.card} mb="md">
-            <LoadingOverlay visible={fetching} overlayBlur={2} />
-            <Text fz="lg" fw={700}>
-              爬取数据
-            </Text>
-            <Text fz="xs" c="dimmed" mt={3} mb="lg">
-              设置每次爬取{game === "chunithm" ? "中二节奏" : "舞萌 DX "}的方式与获取的数据
-            </Text>
-            <SettingsSection onChange={updateUserConfigHandler} value={config} data={(settingsData as any)[game]} />
-          </Card>
-          <Card withBorder radius="md" className={classes.card} mb="md">
-            <LoadingOverlay visible={fetching} overlayBlur={2} />
-            <Text fz="lg" fw={700}>
-              隐私设置
-            </Text>
-            <Text fz="xs" c="dimmed" mt={3} mb="lg">
-              将影响第三方开发者通过查分器 API 访问你的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}数据
-            </Text>
-            <SettingsSection onChange={updateUserConfigHandler} value={config} data={[{
-              key: "allow_third_party_fetch_player",
-              title: "允许读取玩家信息",
-              description: "关闭后，第三方开发者将无法获取你的玩家信息。",
-              optionType: "switch",
-              defaultValue: true,
-            }, {
-              key: "allow_third_party_fetch_scores",
-              title: "允许读取谱面成绩",
-              description: "关闭后，第三方开发者将无法获取你的谱面成绩。",
-              optionType: "switch",
-              defaultValue: true,
-            }, {
-              key: "allow_third_party_write_data",
-              title: "允许写入任何数据",
-              description: "关闭后，第三方开发者将无法覆盖你的任何数据。",
-              optionType: "switch",
-              defaultValue: false,
-            }]}
-            />
-          </Card>
-          <Card withBorder radius="md" className={classes.card} mb="md">
-            <Text fz="lg" fw={700}>
-              其它设置
-            </Text>
-            <Text fz="xs" c="dimmed" mt={3} mb="xl">
-              重置密码、删除数据等敏感操作
-            </Text>
-            <SettingsSection data={[{
-              key: "reset_password",
-              title: "重置密码",
-              description: "重置你的查分器账号密码。",
-              placeholder: "重置",
-              optionType: "button",
-              onClick: () => navigate("/forgot-password"),
-            }, {
-              key: "unbind_account",
-              title: "解绑游戏账号",
-              description: `解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号。`,
-              placeholder: "解绑",
-              optionType: "button",
-              onClick: () => {
-                setConfirmAlert(() => () => {
-                  unbindPlayer(game).then((res) => {
-                    if (res?.status !== 200) {
-                      openAlert("解绑失败", "解绑游戏账号失败，请重试。");
-                      return;
-                    }
-                    setConfirmAlert(() => null);
-                    openAlert("解绑成功", `你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号已经被解绑。`);
-                  }).catch((err) => {
-                    openAlert("解绑失败", err);
-                  });
+      <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
+        setGame(value);
+        setFetching(true);
+      }} data={[
+        { label: '舞萌 DX', value: 'maimai' },
+        { label: '中二节奏', value: 'chunithm' },
+      ]} />
+      <Card withBorder radius="md" className={classes.card} mb="md">
+        <LoadingOverlay visible={fetching} overlayBlur={2} zIndex={1} />
+        <Text fz="lg" fw={700}>
+          爬取数据
+        </Text>
+        <Text fz="xs" c="dimmed" mt={3} mb="lg">
+          设置每次爬取{game === "chunithm" ? "中二节奏" : "舞萌 DX "}的方式与获取的数据
+        </Text>
+        <SettingsSection onChange={updateUserConfigHandler} value={config} data={(settingsData as any)[game ? game : 'maimai']} />
+      </Card>
+      <Card withBorder radius="md" className={classes.card} mb="md">
+        <LoadingOverlay visible={fetching} overlayBlur={2} zIndex={1} />
+        <Text fz="lg" fw={700}>
+          隐私设置
+        </Text>
+        <Text fz="xs" c="dimmed" mt={3} mb="lg">
+          将影响第三方开发者通过查分器 API 访问你的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}数据
+        </Text>
+        <SettingsSection onChange={updateUserConfigHandler} value={config} data={[{
+          key: "allow_third_party_fetch_player",
+          title: "允许读取玩家信息",
+          description: "关闭后，第三方开发者将无法获取你的玩家信息。",
+          optionType: "switch",
+          defaultValue: true,
+        }, {
+          key: "allow_third_party_fetch_scores",
+          title: "允许读取谱面成绩",
+          description: "关闭后，第三方开发者将无法获取你的谱面成绩。",
+          optionType: "switch",
+          defaultValue: true,
+        }, {
+          key: "allow_third_party_write_data",
+          title: "允许写入任何数据",
+          description: "关闭后，第三方开发者将无法覆盖你的任何数据。",
+          optionType: "switch",
+          defaultValue: false,
+        }]}
+        />
+      </Card>
+      <Card withBorder radius="md" className={classes.card} mb="md">
+        <Text fz="lg" fw={700}>
+          其它设置
+        </Text>
+        <Text fz="xs" c="dimmed" mt={3} mb="xl">
+          重置密码、删除数据等敏感操作
+        </Text>
+        <SettingsSection data={[{
+          key: "reset_password",
+          title: "重置密码",
+          description: "重置你的查分器账号密码。",
+          placeholder: "重置",
+          optionType: "button",
+          onClick: () => navigate("/forgot-password"),
+        }, {
+          key: "unbind_account",
+          title: "解绑游戏账号",
+          description: `解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号。`,
+          placeholder: "解绑",
+          optionType: "button",
+          onClick: () => {
+            setConfirmAlert(() => () => {
+              unbindPlayer(game).then((res) => {
+                if (res?.status !== 200) {
+                  openAlert("解绑失败", "解绑游戏账号失败，请重试。");
+                  return;
+                }
+                setConfirmAlert(() => null);
+                openAlert("解绑成功", `你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号已经被解绑。`);
+              }).catch((err) => {
+                openAlert("解绑失败", err);
+              });
+            });
+            openAlert("解绑游戏账号",
+              `你确定要解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号吗？你可以随时重新同步游戏数据，或切换其他查分器账号绑定。`);
+          },
+        }, {
+          key: "reset_account",
+          title: "删除所有谱面成绩",
+          description: `删除你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩。`,
+          placeholder: "删除",
+          color: "red",
+          optionType: "button",
+          onClick: () => {
+            setConfirmAlert(() => () => {
+              deletePlayerScores(game)
+                .then((res) => {
+                  if (res?.status !== 200) {
+                    openAlert("删除失败", "删除谱面成绩失败，请重试。");
+                    return;
+                  }
+                  setConfirmAlert(() => null);
+                  openAlert("删除成功", `你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩已经被删除。`);
+                })
+                .catch((err) => {
+                  openAlert("删除失败", err);
                 });
-                openAlert("解绑游戏账号",
-                  `你确定要解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号吗？你可以随时重新同步游戏数据，或切换其他查分器账号绑定。`);
-              },
-            }, {
-              key: "reset_account",
-              title: "删除所有谱面成绩",
-              description: `删除你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩。`,
-              placeholder: "删除",
-              color: "red",
-              optionType: "button",
-              onClick: () => {
-                setConfirmAlert(() => () => {
-                  deletePlayerScores(game)
-                    .then((res) => {
-                      if (res?.status !== 200) {
-                        openAlert("删除失败", "删除谱面成绩失败，请重试。");
-                        return;
-                      }
-                      setConfirmAlert(() => null);
-                      openAlert("删除成功", `你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩已经被删除。`);
-                    })
-                    .catch((err) => {
-                      openAlert("删除失败", err);
-                    });
+            });
+            openAlert("删除谱面成绩",
+              `你确定要删除你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。`);
+          },
+        }, {
+          key: "delete_account",
+          title: "删除账号",
+          description: "删除你的查分器账号，但谱面成绩不会一并删除。",
+          placeholder: "删除",
+          color: "red",
+          optionType: "button",
+          onClick: () => {
+            setConfirmAlert(() => () => {
+              deleteSelfUser()
+                .then((res) => {
+                  if (res?.status !== 200) {
+                    openAlert("删除失败", "删除账号失败，请重试。");
+                    return;
+                  }
+                  localStorage.removeItem("token");
+                  window.location.href = "/";
+                })
+                .catch((err) => {
+                  openAlert("删除失败", err);
                 });
-                openAlert("删除谱面成绩",
-                  `你确定要删除你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。`);
-              },
-            }, {
-              key: "delete_account",
-              title: "删除账号",
-              description: "删除你的查分器账号，但谱面成绩不会一并删除。",
-              placeholder: "删除",
-              color: "red",
-              optionType: "button",
-              onClick: () => {
-                setConfirmAlert(() => () => {
-                  deleteSelfUser()
-                    .then((res) => {
-                      if (res?.status !== 200) {
-                        openAlert("删除失败", "删除账号失败，请重试。");
-                        return;
-                      }
-                      localStorage.removeItem("token");
-                      window.location.href = "/";
-                    })
-                    .catch((err) => {
-                      openAlert("删除失败", err);
-                    });
-                });
-                openAlert("删除账号", "你确定要删除你的查分器账号吗？这将会删除你的查分器账号，以及游戏账号的绑定关系，并且不可撤销。");
-              },
-            }]} />
-          </Card>
-        </>
-      )}
+            });
+            openAlert("删除账号", "你确定要删除你的查分器账号吗？这将会删除你的查分器账号，以及游戏账号的绑定关系，并且不可撤销。");
+          },
+        }]} />
+      </Card>
     </Container>
   );
 }

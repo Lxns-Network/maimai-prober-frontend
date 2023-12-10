@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useMemo, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import {Outlet, useLocation, useNavigate} from "react-router-dom";
 import {
   ScrollArea,
   createStyles,
@@ -43,6 +43,7 @@ export default function App() {
   const { classes } = useStyles();
   const [opened, setOpened] = useState(window.innerWidth > NAVBAR_BREAKPOINT);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
     key: THEME_KEY,
@@ -59,8 +60,8 @@ export default function App() {
       // 进入页面时刷新一次 token，不论有效期
       refreshToken().catch(() => {
         logout();
-        if (window.location.pathname !== '/login') {
-          navigate("/login", { state: { expired: true } });
+        if (location.pathname !== '/login') {
+          navigate('/login', { state: { expired: true } });
         }
       });
     }
