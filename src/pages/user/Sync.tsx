@@ -18,7 +18,7 @@ import {
   CopyButton,
   Tooltip,
   ActionIcon,
-  TextInput, Divider, Space, SegmentedControl,
+  TextInput, Divider, Space, SegmentedControl, Stack,
 } from '@mantine/core';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
@@ -30,9 +30,9 @@ import {
   mdiPause,
   mdiReload
 } from "@mdi/js";
-import { useIdle, useLocalStorage } from '@mantine/hooks';
+import { useIdle, useLocalStorage, useResizeObserver } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
-import {getCrawlStatus, getUserCrawlToken} from "../../utils/api/user";
+import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
 
@@ -207,6 +207,8 @@ export default function Sync() {
     };
   }, [crawlStatus, proxyAvailable]);
 
+  const [stepper, stepperRect] = useResizeObserver<HTMLDivElement>();
+
   return (
     <Container className={classes.root} size={400}>
       <AlertModal
@@ -242,12 +244,12 @@ export default function Sync() {
       <Stepper active={
         proxyAvailable ? (
           crawlStatus != null ? (
-            crawlStatus.status !== "pending" ? 3 : 2
-          ) : 1
+            crawlStatus.status !== "pending" ? 4 : 3
+          ) : 2
         ) : 0
-      } orientation="vertical" allowNextStepsSelect={false}>
+      } orientation="vertical" allowNextStepsSelect={false} ref={stepper}>
         <Stepper.Step label="步骤 1" description={
-          <Group spacing="md">
+          <Group spacing="md" w={stepperRect.width - 54}>
             <Text>
               配置 HTTP 代理
             </Text>
@@ -323,41 +325,40 @@ export default function Sync() {
           </Group>
         } loading={!proxyAvailable} />
         <Stepper.Step label="步骤 2" description={
-          <Group spacing="md">
+          <Stack spacing="xs" w={stepperRect.width - 54}>
             <Text>
-              选择爬取的游戏并使用微信打开 OAuth 链接
+              选择需要爬取的游戏
             </Text>
-            <Card withBorder radius="md" className={classes.card} mb="md" p="md">
-              <Text size="sm" mb={4}>
-                请选择你要爬取的游戏：
-              </Text>
-              <SegmentedControl size="md" mb="md" color="blue" fullWidth value={game} onChange={setGame} data={[
-                { label: '舞萌 DX', value: 'maimai' },
-                { label: '中二节奏', value: 'chunithm' },
-              ]} />
-              <Text size="sm" mb="xs">
-                请复制下方的微信 OAuth 链接，然后在安全的聊天中发送链接并打开，等待同步结果返回：
-              </Text>
-              <CopyButtonWithIcon
-                label="复制微信 OAuth 链接"
-                content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
-              />
-              <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="链接有效期提示" mt="md">
-                <Text size="sm" mb="md">
-                  {crawlToken ? `该链接${
-                    getCrawlTokenExpireTime(crawlToken) > 0 ? `将在 ${getCrawlTokenExpireTime(crawlToken) + 1} 分钟内失效，逾时` : "已失效，"
-                  }请点击下方按钮刷新 OAuth 链接。` : "链接未生成，请点击下方按钮生成 OAuth 链接。"}
-                </Text>
-                <Button variant="outline" leftIcon={<Icon path={mdiReload} size={0.75} />} onClick={() => {
-                  getUserCrawlTokenHandler();
-                }}>
-                  {crawlToken ? "刷新链接" : "生成链接"}
-                </Button>
-              </Alert>
-            </Card>
-          </Group>
-        } loading={proxyAvailable && crawlStatus == null} />
+            <SegmentedControl size="md" mb="md" color="blue" fullWidth value={game} onChange={setGame} data={[
+              { label: '舞萌 DX', value: 'maimai' },
+              { label: '中二节奏', value: 'chunithm' },
+            ]} />
+          </Stack>
+        } />
         <Stepper.Step label="步骤 3" description={
+          <Stack spacing="xs" w={stepperRect.width - 54}>
+            <Text>
+              复制微信 OAuth 链接，发送至安全的聊天中并打开
+            </Text>
+            <CopyButtonWithIcon
+              label="复制微信 OAuth 链接"
+              content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
+            />
+            <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="链接有效期提示" mb="md">
+              <Text size="sm" mb="md">
+                {crawlToken ? `该链接${
+                  getCrawlTokenExpireTime(crawlToken) > 0 ? `将在 ${getCrawlTokenExpireTime(crawlToken) + 1} 分钟内失效，逾时` : "已失效，"
+                }请点击下方按钮刷新 OAuth 链接。` : "链接未生成，请点击下方按钮生成 OAuth 链接。"}
+              </Text>
+              <Button variant="outline" leftIcon={<Icon path={mdiReload} size={0.75} />} onClick={() => {
+                getUserCrawlTokenHandler();
+              }}>
+                {crawlToken ? "刷新链接" : "生成链接"}
+              </Button>
+            </Alert>
+          </Stack>
+        } loading={proxyAvailable && crawlStatus == null} />
+        <Stepper.Step label="步骤 4" description={
           <Text>等待数据同步完成</Text>
         } loading={proxyAvailable && crawlStatus?.status === "pending"} />
       </Stepper>
