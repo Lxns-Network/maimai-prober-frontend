@@ -307,7 +307,7 @@ export default function Vote() {
           searchable
           style={{ flex: 1 }}
         />
-        <Button variant="gradient" radius="md" leftIcon={<Icon path={mdiPlus} size={rem(20)} />} onClick={() => setOpened(true)}>
+        <Button radius="md" leftIcon={<Icon path={mdiPlus} size={rem(20)} />} onClick={() => setOpened(true)}>
           创建曲目别名
         </Button>
       </Flex>

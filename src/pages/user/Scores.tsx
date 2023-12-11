@@ -24,14 +24,14 @@ import { useNavigate } from "react-router-dom";
 import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
 import Icon from "@mdi/react";
 import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
-import { ScoreProps } from '../../components/Scores/Score';
+import { ScoreProps } from '../../components/Scores/maimai/Score.tsx';
 import {
   DifficultiesProps,
   getDifficulty,
   SongList,
 } from "../../utils/api/song";
-import { ScoreList } from '../../components/Scores/ScoreList';
-import {StatisticsSection} from "../../components/Scores/StatisticsSection";
+import { ScoreList } from '../../components/Scores/maimai/ScoreList.tsx';
+import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -46,7 +46,6 @@ const useStyles = createStyles((theme) => ({
 }));
 
 const sortKeys = [
-  { name: 'ID', key: 'id' },
   { name: '曲名', key: 'song_name' },
   { name: '定数', key: 'level_value' },
   { name: '达成率', key: 'achievements' },

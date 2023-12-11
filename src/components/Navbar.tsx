@@ -23,7 +23,7 @@ import {
   mdiHomeOutline,
   mdiInformationOutline,
   mdiLogoutVariant,
-  mdiQrcode, mdiVoteOutline,
+  mdiVoteOutline,
   mdiWrenchCheckOutline,
   mdiXml,
 } from '@mdi/js';
@@ -111,6 +111,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       hiddenBreakpoint={NAVBAR_BREAKPOINT}
       style={style}
     >
+      <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
       <MantineNavbar.Section grow component={ScrollArea}>
         {!isLoggedOut && (
           <Container>
@@ -138,10 +139,11 @@ export default function Navbar({ style, onClose }: NavbarProps) {
           <NavbarButton label="关于 maimai DX 查分器" icon={mdiInformationOutline} to="/about" onClose={onClose} />
           {!isLoggedOut && (
             <>
-              <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
+              {/*
               <NavbarButton label="应用登录二维码" icon={mdiQrcode} onClose={() => null} onClick={() => {
                 setQrcodeOpened(true);
               }} />
+              */}
               <NavbarButton label="登出" icon={mdiLogoutVariant} to="/" onClose={onClose} onClick={() => {
                 logoutUser().then(() => {
                   localStorage.removeItem('token');

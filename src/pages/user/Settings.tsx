@@ -6,9 +6,9 @@ import { deletePlayerScores, unbindPlayer } from "../../utils/api/player";
 import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
 import { SettingsSection } from '../../components/Settings/SettingsSection';
 import { useLocalStorage } from "@mantine/hooks";
+import { useNavigate } from "react-router-dom";
 import AlertModal from "../../components/AlertModal";
 import useAlert from "../../utils/useAlert";
-import {useNavigate} from "react-router-dom";
 
 const useStyles = createStyles((theme) => ({
   root: {
