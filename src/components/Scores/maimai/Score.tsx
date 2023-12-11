@@ -1,6 +1,6 @@
 import { Badge, Card, createStyles, Flex, Group, rem, Text, useMantineTheme } from "@mantine/core";
-import { difficultyColor } from "../../utils/color";
-import { getDifficulty, SongProps } from "../../utils/api/song";
+import { difficultyColor } from "../../../utils/color.tsx";
+import { getDifficulty, SongProps } from "../../../utils/api/song.tsx";
 import { memo } from "react";
 
 export interface ScoreProps {

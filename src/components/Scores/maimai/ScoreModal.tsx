@@ -1,9 +1,9 @@
-import { ScoreProps } from "./Score";
+import { ScoreProps } from "./Score.tsx";
 import { Accordion, Avatar, Badge, Card, Container, Flex, Group, Image, Modal, rem, Space, Text } from "@mantine/core";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../utils/color";
-import { getDifficulty, SongProps } from "../../utils/api/song";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
+import { getDifficulty, SongProps } from "../../../utils/api/song.tsx";
 import { useEffect, useState } from "react";
-import { fetchAPI } from "../../utils/api/api.tsx";
+import { fetchAPI } from "../../../utils/api/api.tsx";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import Icon from "@mdi/react";
 import { mdiDatabaseOffOutline } from "@mdi/js";

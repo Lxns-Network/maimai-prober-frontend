@@ -1,9 +1,9 @@
-import { Score, ScoreProps } from "./Score";
+import { Score, ScoreProps } from "./Score.tsx";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
-import { ScoreModal } from "./ScoreModal";
+import { ScoreModal } from "./ScoreModal.tsx";
 import { SimpleGrid } from "@mantine/core";
-import { songList } from "../../pages/user/Scores.tsx";
+import { songList } from "../../../pages/user/Scores.tsx";
 
 export const ScoreList = ({ scores }: { scores: ScoreProps[] }) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);

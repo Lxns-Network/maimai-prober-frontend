@@ -1,5 +1,5 @@
 import { Card, createStyles, Grid, Image, rem, Text, Group, Spoiler} from "@mantine/core";
-import { ScoreProps } from "./Score";
+import { ScoreProps } from "./Score.tsx";
 
 const useStyles = createStyles((theme) => ({
   card: {
