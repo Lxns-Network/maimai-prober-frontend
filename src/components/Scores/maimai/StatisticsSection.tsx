@@ -40,8 +40,11 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
       <Spoiler maxHeight={120} showLabel="显示详细统计信息..." hideLabel="隐藏详细统计信息">
         <Grid gutter="xl">
           <Grid.Col span={6}>
-            {rate.map((r) => {
-              const count = calculateCount(scores, r.min, r.max);
+            {rate.map((r, index) => {
+              let count = calculateCount(scores, r.min, r.max);
+              for (let i = 0; i < index; i++) {
+                count += calculateCount(scores, rate[i].min, rate[i].max);
+              }
               return (
                 <Group key={r.id} position="apart" mb="xs">
                   <Image
@@ -60,7 +63,7 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
             })}
           </Grid.Col>
           <Grid.Col span={6} h={30}>
-            {fc.map((r) => (
+            {fc.map((r, index) => (
               <Group key={r} position="apart" mb="xs">
                 <Image
                   src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${r}.png?ver=1.35`}
@@ -68,14 +71,18 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
                   width="auto"
                 />
                 <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
-                  {scores.filter((score) => score.fc === r).length}
+                  {scores.filter((score) => {
+                    for (let i = 0; i < index + 1; i++) {
+                      if (fc[i] === score.fc) return true;
+                    }
+                  }).length}
                   <span style={{ fontSize: rem(16), marginLeft: rem(4) }}>
-                  / {totalCount}
-                </span>
+                    / {totalCount}
+                  </span>
                 </Text>
               </Group>
             ))}
-            {fs.map((r) => (
+            {fs.map((r, index) => (
               <Group key={r} position="apart" mb="xs">
                 <Image
                   src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${r}.png?ver=1.35`}
@@ -83,10 +90,14 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
                   width="auto"
                 />
                 <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
-                  {scores.filter((score) => score.fs === r).length}
+                  {scores.filter((score) => {
+                    for (let i = 0; i < index + 1; i++) {
+                      if (fs[i] === score.fs) return true;
+                    }
+                  }).length}
                   <span style={{ fontSize: rem(16), marginLeft: rem(4) }}>
-                  / {totalCount}
-                </span>
+                    / {totalCount}
+                  </span>
                 </Text>
               </Group>
             ))}
