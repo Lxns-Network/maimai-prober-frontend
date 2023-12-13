@@ -384,7 +384,7 @@ export default function Sync() {
         <Card.Section className={classes.section}>
           {(crawlStatus?.status !== "finished" && crawlStatus?.status !== "failed") ? (
             <Text size="sm">
-              你的国服 maimai DX 玩家数据与成绩将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
+              你的{game === "maimai" ? "舞萌 DX " : "中二节奏"}游戏数据（玩家信息、成绩）将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
             </Text>
           ) : (
             <>

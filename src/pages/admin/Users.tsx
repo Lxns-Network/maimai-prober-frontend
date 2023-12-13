@@ -174,7 +174,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
       <form onSubmit={form.onSubmit((values) => updateUserHandler(values))}>
         <TextInput label="用户名" placeholder={user?.name} mb="xs" {...form.getInputProps("name")} />
         <TextInput label="邮箱" placeholder={user?.email} mb="xs" {...form.getInputProps("email")} />
-        <MultiSelect data={[
+        <MultiSelect withinPortal data={[
           { label: "普通用户", value: UserPermission.User.toString() },
           { label: "开发者", value: UserPermission.Developer.toString() },
           { label: "管理员", value: UserPermission.Administrator.toString() },

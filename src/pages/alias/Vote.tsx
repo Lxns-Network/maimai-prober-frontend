@@ -71,7 +71,6 @@ const useStyles = createStyles((theme) => ({
 
 const sortKeys = [
   { name: '别名', key: 'alias' },
-  { name: '曲目 ID', key: 'song_id' },
   { name: '总权重', key: 'total_weight' },
   { name: '提交时间', key: 'alias_id' },
 ];
@@ -246,7 +245,7 @@ export default function Vote() {
         <Group m="md" position="apart">
           <div>
             <Text fz="lg" fw={700}>
-              筛选曲目别名
+              排序方式
             </Text>
             <Text fz="xs" c="dimmed" mt={3}>
               选择曲目别名的排序方式
