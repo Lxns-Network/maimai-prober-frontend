@@ -73,7 +73,8 @@ export default function Scores() {
   const [difficulty, setDifficulty] = useState<string[]>([]);
   const [type, setType] = useState<string[]>([]);
   const [rating, setRating] = useState<number[]>([1, 15]);
-  const [version, setVersion] = useState<string[]>([]);
+  const [genre, setGenre] = useState<string[]>([]);
+  const [version, setVersion] = useState<number[]>([]);
   const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
 
   // 分页相关
@@ -221,11 +222,18 @@ export default function Scores() {
       return type?.includes(score.type);
     })
 
-    // 过滤谱面版本
-    const versionFilteredData = typeFilteredData.filter((score) => {
-      if (version?.length === 0 || version?.length === 2) {
-        return true;
+    const genreFilteredData = typeFilteredData.filter((score) => {
+      const song = songList.find(score.id);
+      if (!song) {
+        return false;
       }
+      return genre.some((item) => {
+        return songList.genres.find((genre) => genre.genre === item)?.genre === song.genre;
+      }) || genre.length === 0;
+    })
+
+    // 过滤谱面版本
+    const versionFilteredData = genreFilteredData.filter((score) => {
       const song = songList.find(score.id);
       if (!song) {
         return false;
@@ -234,15 +242,9 @@ export default function Scores() {
       if (!difficulty) {
         return false;
       }
-      return version.every((item) => {
-        if (item === "dx") {
-          return difficulty.version >= 23000;
-        }
-        if (item === "standard") {
-          return difficulty.version < 23000;
-        }
-        return true;
-      });
+      return version.some((item) => {
+        return difficulty.version >= item && difficulty.version < item + 1000;
+      }) || version.length === 0;
     })
 
     // 过滤定数
@@ -259,7 +261,7 @@ export default function Scores() {
     })
 
     setScores(ratingFilteredData);
-  }, [showUnplayed, search, difficulty, type, version, rating]);
+  }, [showUnplayed, search, difficulty, type, genre, version, rating]);
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
@@ -321,6 +323,7 @@ export default function Scores() {
                       key: `${score.id}-${score.type}-${score.level_index}`,
                       value: score.song_name,
                     })) : []}
+                    withinPortal
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
@@ -347,6 +350,37 @@ export default function Scores() {
                     value={difficulty}
                     onChange={(value) => setDifficulty(value)}
                     transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+                    withinPortal
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Text fz="xs" c="dimmed" mb={3}>筛选乐曲分类</Text>
+                  <MultiSelect
+                    variant="filled"
+                    data={songList.genres.map((version) => ({
+                      value: version.genre,
+                      label: version.title,
+                    }))}
+                    placeholder="请选择乐曲分类"
+                    value={genre}
+                    onChange={(value) => setGenre(value)}
+                    transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+                    withinPortal
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Text fz="xs" c="dimmed" mb={3}>筛选版本</Text>
+                  <MultiSelect
+                    variant="filled"
+                    data={songList.versions.map((version) => ({
+                      value: version.version.toString(),
+                      label: version.title,
+                    })).reverse()}
+                    placeholder="请选择版本"
+                    value={version.map((item) => item.toString())}
+                    onChange={(value) => setVersion(value.map((item) => parseInt(item)))}
+                    transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+                    withinPortal
                   />
                 </Grid.Col>
                 <Grid.Col span={12} mb="md">
@@ -370,15 +404,6 @@ export default function Scores() {
                     <Chip.Group multiple value={type} onChange={setType}>
                       <Chip variant="filled" value="standard" color="blue">标准</Chip>
                       <Chip variant="filled" value="dx" color="orange">DX</Chip>
-                    </Chip.Group>
-                  </Group>
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <Text fz="xs" c="dimmed" mb={3}>筛选谱面版本</Text>
-                  <Group>
-                    <Chip.Group multiple value={version} onChange={setVersion}>
-                      <Chip variant="filled" value="standard">常规</Chip>
-                      <Chip variant="filled" value="dx">当前</Chip>
                     </Chip.Group>
                   </Group>
                 </Grid.Col>

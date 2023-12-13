@@ -17,16 +17,33 @@ export interface SongProps {
   id: number;
   title: string;
   artist: string;
+  genre: string;
   bpm: number;
   version: string;
   difficulties: DifficultiesProps;
 }
 
+interface GenreProps {
+  id: number;
+  title: string;
+  genre: string;
+}
+
+interface VersionProps {
+  id: number;
+  title: string;
+  version: number;
+}
+
 export class SongList {
   songs: SongProps[] = [];
+  genres: GenreProps[] = [];
+  versions: VersionProps[] = [];
 
   constructor() {
     this.songs = [];
+    this.genres = [];
+    this.versions = [];
   }
 
   async fetch(game: string) {
@@ -34,6 +51,8 @@ export class SongList {
       const res = await fetchAPI(`${game}/song/list`, { method: "GET" });
       const data = await res?.json();
       this.songs.push(...data.songs);
+      this.genres = data.genres;
+      this.versions = data.versions;
     }
 
     return this.songs;
