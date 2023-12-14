@@ -50,7 +50,7 @@ export class SongList {
     if (this.songs.length === 0) {
       const res = await fetchAPI(`${game}/song/list`, { method: "GET" });
       const data = await res?.json();
-      this.songs.push(...data.songs);
+      this.songs = data.songs;
       this.genres = data.genres;
       this.versions = data.versions;
     }

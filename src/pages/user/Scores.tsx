@@ -127,6 +127,8 @@ export default function Scores() {
   const resetFilter = () => {
     setSearchValue('');
     setDifficulty([]);
+    setGenre([]);
+    setVersion([]);
     setScores(defaultScores);
     setType([]);
     setRating([1, 15]);
@@ -168,72 +170,54 @@ export default function Scores() {
   };
 
   useEffect(() => {
-    const filteredData = [...defaultScores] as ScoreProps[];
+    let filteredData = [...defaultScores] as ScoreProps[];
 
     if (showUnplayed) {
+      const scoreKeys = new Set(
+        filteredData.map((item) => `${item.id}-${item.type}-${item.level_index}`));
+
       songList.songs.forEach((song) => {
         ["dx", "standard"].forEach((type) => {
           const difficulties = song.difficulties[type as keyof DifficultiesProps];
 
           difficulties.forEach((difficulty, index) => {
-            const existsInDefaultScores = filteredData.some((item) =>
-              item.id === song.id && item.level_index === index && item.type === type
-            );
-
-            if (!existsInDefaultScores) {
-              filteredData.push({
-                id: song.id,
-                song_name: song.title,
-                level: difficulty.level,
-                level_index: index,
-                achievements: -1,
-                fc: "",
-                fs: "",
-                dx_score: -1,
-                dx_rating: -1,
-                rate: "",
-                type: type,
-                upload_time: ""
-              });
+            if (scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`)) {
+              return;
             }
+
+            filteredData.push({
+              id: song.id,
+              song_name: song.title,
+              level: difficulty.level,
+              level_index: index,
+              achievements: -1,
+              fc: "",
+              fs: "",
+              dx_score: -1,
+              dx_rating: -1,
+              rate: "",
+              type: type,
+              upload_time: ""
+            });
           });
         });
       });
     }
 
-    // 过滤搜索
-    const searchFilteredData = filteredData.filter(
-      (score) => score.song_name.toLowerCase().includes(search.toLowerCase())
-    );
+    // 如果没有任何筛选条件，直接返回
+    if (search.trim().length + difficulty.length + type.length + genre.length + version.length === 0 && rating[0] === 1 && rating[1] === 15) {
+      setScores(filteredData);
+      return;
+    }
 
-    // 过滤难度
-    const difficultyFilteredData = searchFilteredData.filter((score) => {
-      if (difficulty?.length === 0) {
-        return true;
-      }
-      return difficulty?.includes(score.level_index.toString());
-    });
-
-    // 过滤谱面类型
-    const typeFilteredData = difficultyFilteredData.filter((score) => {
-      if (type?.length === 0) {
-        return true;
-      }
-      return type?.includes(score.type);
+    // 不需要 song 和 difficulty 信息，提前过滤掉可以减少后续的计算量
+    filteredData = filteredData.filter((score) => {
+      return score.song_name.toLowerCase().includes(search.toLowerCase()) // 过滤搜索
+        && (difficulty.includes(score.level_index.toString()) || difficulty.length === 0) // 过滤难度
+        && (type.includes(score.type) || type.length === 0); // 过滤谱面类型
     })
 
-    const genreFilteredData = typeFilteredData.filter((score) => {
-      const song = songList.find(score.id);
-      if (!song) {
-        return false;
-      }
-      return genre.some((item) => {
-        return songList.genres.find((genre) => genre.genre === item)?.genre === song.genre;
-      }) || genre.length === 0;
-    })
-
-    // 过滤谱面版本
-    const versionFilteredData = genreFilteredData.filter((score) => {
+    filteredData = filteredData.filter((score) => {
       const song = songList.find(score.id);
       if (!song) {
         return false;
@@ -242,25 +226,12 @@ export default function Scores() {
       if (!difficulty) {
         return false;
       }
-      return version.some((item) => {
-        return difficulty.version >= item && difficulty.version < item + 1000;
-      }) || version.length === 0;
+      return (genre.some((item) => songList.genres.find((genre) => genre.genre === item)?.genre === song.genre) || genre.length === 0) // 过滤乐曲分类
+        && (version.some((item) => difficulty.version >= item && difficulty.version < item + 1000) || version.length === 0) // 过滤版本
+        && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]); // 过滤定数
     })
 
-    // 过滤定数
-    const ratingFilteredData = versionFilteredData.filter((score) => {
-      const song = songList.find(score.id);
-      if (!song) {
-        return false;
-      }
-      const difficulty = getDifficulty(song, score.type, score.level_index);
-      if (!difficulty) {
-        return false;
-      }
-      return difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1];
-    })
-
-    setScores(ratingFilteredData);
+    setScores(filteredData);
   }, [showUnplayed, search, difficulty, type, genre, version, rating]);
 
   const renderSortIndicator = (key: any) => {
