@@ -14,7 +14,7 @@ import { keys } from '@mantine/utils';
 import { deleteUser, getUsers, updateUser } from "../../utils/api/user";
 import Icon from "@mdi/react";
 import {
-  mdiAccountSearch,
+  mdiMagnify,
   mdiTrashCan,
 } from "@mdi/js";
 import { useDisclosure } from '@mantine/hooks';
@@ -294,7 +294,7 @@ export default function Users() {
         placeholder="搜索用户"
         radius="md"
         mb="md"
-        icon={<Icon path={mdiAccountSearch} size={rem(16)} />}
+        icon={<Icon path={mdiMagnify} size={rem(16)} />}
         value={search}
         onChange={(event) => setSearch(event.currentTarget.value)}
       />
