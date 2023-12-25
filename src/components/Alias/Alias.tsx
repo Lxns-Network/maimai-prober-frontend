@@ -78,11 +78,6 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
       } else {
         setProgress((alias.weight.up / alias.weight.total) * 100);
       }
-      notifications.show({
-        title: `已${weight === 0 ? '' : '取消'}${vote ? '支持' : '反对'}别名`,
-        message: `现在有 ${alias.weight.up} 人支持，${alias.weight.down} 人反对该别名`,
-        color: 'teal',
-      });
       setWeight((weight === (vote ? 1 : -1)) ? 0 : (vote ? 1 : -1))
     } catch (err) {
       console.log(err);
@@ -107,11 +102,6 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
         });
         return;
       }
-      notifications.show({
-        title: `已删除别名`,
-        message: `别名 ${alias.alias} 已被删除`,
-        color: 'teal',
-      });
       onDelete();
     } catch (err) {
       console.log(err);
@@ -181,14 +171,7 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
                 )}
                 {checkPermission(UserPermission.Administrator) && !alias.approved && (
                   <Menu.Item c="teal" icon={<Icon path={mdiCheck} size={rem(20)} />} onClick={() => {
-                    approveAlias(game, alias.alias_id).then(() => {
-                      setDisplayAlias({ approved: true })
-                      notifications.show({
-                        title: '已批准别名',
-                        message: `别名 ${alias.alias} 已被批准`,
-                        color: 'teal',
-                      });
-                    });
+                    approveAlias(game, alias.alias_id).then(() => setDisplayAlias({ approved: true }));
                   }}>批准</Menu.Item>
                 )}
                 {alias.uploader.id !== getLoginUserId() && (
