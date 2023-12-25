@@ -30,10 +30,10 @@ interface PlayerDataProps {
     name: string;
     color: string;
   };
+  course_rank: number;
+  class_rank: number;
   star: number;
   icon_url: string;
-  course_rank_url: string;
-  class_rank_url: string;
   upload_time: string;
   // chunithm
   over_power: number;
@@ -93,12 +93,12 @@ const MaimaiPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null 
           <Text fz="lg" fw={500}>
             {playerData.name}
           </Text>
-          <Divider mt={5} mb={10} variant="dashed" />
-          <Group spacing={10}>
-            <Image src={playerData.course_rank_url} height={36} width="auto" />
-            <Image src={playerData.class_rank_url} height={32} width="auto" />
+          <Divider mt={5} mb={5} variant="dashed" />
+          <Group spacing={0} mb={-8}>
+            <Image src={`/assets/maimai/course_rank/${playerData.course_rank}.webp`} height={36} width="auto" />
+            <Image src={`/assets/maimai/class_rank/${playerData.class_rank}.webp`} height={46} mt={-2} width="auto" />
             <Group spacing={2} ml="xs">
-              <Image src="https://maimai.wahlap.com/maimai-mobile/img/icon_star.png" height={28} width="auto" />
+              <Image src="/assets/maimai/icon_star.webp" height={30} width="auto" />
               <Text>
                 ×{playerData.star}
               </Text>
