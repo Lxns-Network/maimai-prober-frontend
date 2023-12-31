@@ -13,7 +13,7 @@ class ReCaptcha {
     if (!document.getElementById(scriptId)) {
       const script = document.createElement('script');
       script.id = scriptId;
-      script.src = `https://www.recaptcha.net/recaptcha/api.js?render=${this.siteKey}`;
+      script.src = `https://recaptcha.google.cn/recaptcha/api.js?render=${this.siteKey}`;
       document.body.appendChild(script);
     }
   }
