@@ -15,17 +15,14 @@ import {
 import { useLocalStorage } from "@mantine/hooks";
 import Icon from "@mdi/react";
 import {
-  mdiArrowDown,
-  mdiArrowUp,
-  mdiDatabaseOffOutline,
-  mdiHelpCircleOutline,
-  mdiMagnify, mdiPlus
+  mdiMagnify,
 } from "@mdi/js";
 import { getAliasList, getUserVotes } from "../../utils/api/alias.tsx";
 import { AliasList } from "../../components/Alias/AliasList.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { notifications } from "@mantine/notifications";
 import { SongList } from "../../utils/api/song.tsx";
+import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus, IconQuestionMark } from "@tabler/icons-react";
 
 export interface AliasProps {
   alias_id: number;
@@ -215,9 +212,9 @@ export default function Vote() {
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
-      return <Icon path={
-        reverseSortDirection ? mdiArrowUp : mdiArrowDown
-      } size={0.8} />;
+      return <>
+        {reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}
+      </>
     }
     return null;
   };
@@ -254,7 +251,7 @@ export default function Vote() {
           <HoverCard shadow="md" withinPortal>
             <HoverCard.Target>
               <ActionIcon>
-                <Icon path={mdiHelpCircleOutline} size={rem(20)} />
+                <IconQuestionMark size={rem(20)} />
               </ActionIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown>
@@ -306,14 +303,14 @@ export default function Vote() {
           searchable
           style={{ flex: 1 }}
         />
-        <Button radius="md" leftIcon={<Icon path={mdiPlus} size={rem(20)} />} onClick={() => setOpened(true)}>
+        <Button radius="md" leftIcon={<IconPlus size={20} />} onClick={() => setOpened(true)}>
           创建曲目别名
         </Button>
       </Flex>
       <Space h="md" />
       {!fetching && pageCount === 0 && (
         <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
-          <Icon path={mdiDatabaseOffOutline} size={rem(64)} />
+          <IconDatabaseOff size={64} />
           <Text fz="sm">暂时没有可投票的曲目别名</Text>
         </Flex>
       )}

@@ -15,13 +15,14 @@ import {
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { SongList } from "../../utils/api/song.tsx";
-import { mdiAlertCircle, mdiCancel, mdiShuffle } from "@mdi/js";
+import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
 import { fetchAPI } from "../../utils/api/api.tsx";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
 import { RECAPTCHA_SITE_KEY } from "../../main.tsx";
+import { IconArrowsShuffle } from "@tabler/icons-react";
 
 interface CreateAliasModalProps {
   opened: boolean;
@@ -129,7 +130,9 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
         <Modal.Body>
           <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
             <Flex align="center" gap="md">
-              <Avatar src={`https://lxns.org/${form.values.game}/jacket/${form.values.songId}.png`} size={94} radius="md">
+              <Avatar size={94} radius="md" src={
+                (form.values.game && form.values.songId) ? `https://lxns.org/${form.values.game}/jacket/${form.values.songId}.png` : null
+              }>
                 <Text align="center" fz="xs">请选择曲目</Text>
               </Avatar>
               <div style={{ flex: 1 }}>
@@ -168,7 +171,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                         songId: song.id.toString() as any,
                       });
                     }} mb={4}>
-                      <Icon path={mdiShuffle} size={rem(20)} />
+                      <IconArrowsShuffle size={rem(20)} />
                     </ActionIcon>
                   </Tooltip>
                 </Flex>

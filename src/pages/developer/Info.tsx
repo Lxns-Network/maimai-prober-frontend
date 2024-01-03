@@ -20,9 +20,10 @@ import {
 } from '@mantine/core';
 import { getDeveloperApply, resetDeveloperApiKey } from "../../utils/api/developer";
 import Icon from "@mdi/react";
-import { mdiCheck, mdiContentCopy, mdiEye, mdiEyeOff, mdiReload } from "@mdi/js";
+import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure, useSetState } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
+import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -144,7 +145,7 @@ export default function DeveloperInfo() {
                   {({ copied, copy }) => (
                     <Tooltip label={copied ? '已复制' : '复制'} withArrow position="right">
                       <ActionIcon color={copied ? 'teal' : 'gray'} onClick={copy}>
-                        <Icon path={copied ? mdiCheck : mdiContentCopy} size={0.75} />
+                        {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
                       </ActionIcon>
                     </Tooltip>
                   )}
@@ -153,7 +154,7 @@ export default function DeveloperInfo() {
               readOnly
             />
             <Group position="right" mt="md">
-              <Button variant="outline" size="sm" leftIcon={<Icon path={mdiReload} size={0.75} />} onClick={resetDeveloperApiKeyHandler}>
+              <Button variant="outline" size="sm" leftIcon={<IconRefresh size={20} />} onClick={resetDeveloperApiKeyHandler}>
                 重置 API 密钥
               </Button>
             </Group>

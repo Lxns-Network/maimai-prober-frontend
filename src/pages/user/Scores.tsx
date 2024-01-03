@@ -22,8 +22,6 @@ import {
 import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
 import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
-import Icon from "@mdi/react";
-import { mdiAlertCircleOutline, mdiArrowDown, mdiArrowUp, mdiMagnify, mdiReload } from "@mdi/js";
 import { ScoreProps } from '../../components/Scores/maimai/Score.tsx';
 import {
   DifficultiesProps,
@@ -32,6 +30,7 @@ import {
 } from "../../utils/api/song";
 import { ScoreList } from '../../components/Scores/maimai/ScoreList.tsx';
 import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
+import { IconAlertCircle, IconArrowDown, IconArrowUp, IconReload, IconSearch } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -236,9 +235,9 @@ export default function Scores() {
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
-      return <Icon path={
-        reverseSortDirection ? mdiArrowUp : mdiArrowDown
-      } size={0.8} />;
+      return <>
+        {reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}
+      </>
     }
     return null;
   };
@@ -286,7 +285,7 @@ export default function Scores() {
                   <Text fz="xs" c="dimmed" mb={3}>筛选曲名</Text>
                   <Autocomplete
                     variant="filled"
-                    icon={<Icon path={mdiMagnify} size={0.8} />}
+                    icon={<IconSearch size={18} />}
                     placeholder="请输入曲名"
                     value={search}
                     onChange={setSearchValue}
@@ -385,7 +384,7 @@ export default function Scores() {
                   defaultChecked={showUnplayed}
                   onChange={toggleShowUnplayed}
                 />
-                <Button leftIcon={<Icon path={mdiReload} size={0.8} />} variant="light" onClick={resetFilter}>
+                <Button leftIcon={<IconReload size={20} />} variant="light" onClick={resetFilter}>
                   重置筛选条件
                 </Button>
               </Group>
@@ -397,48 +396,46 @@ export default function Scores() {
         <Group position="center" mt="xl">
           <Loader />
         </Group>
+      ) : (!scores ? (
+        <Alert radius="md" icon={<IconAlertCircle />} title="没有获取到任何成绩" color="red">
+          <Text size="sm" mb="md">
+            请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
+          </Text>
+          <Group>
+            <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
+              同步游戏数据
+            </Button>
+          </Group>
+        </Alert>
       ) : (
-        !scores ? (
-          <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到任何成绩" color="red">
-            <Text size="sm" mb="md">
-              请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
-            </Text>
-            <Group>
-              <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
-                同步游戏数据
-              </Button>
-            </Group>
-          </Alert>
-        ) : (
-          <>
-            {(scores.length === 0 && defaultScores !== null) ? (
-              <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有筛选到任何成绩" color="yellow">
-                <Text size="sm">
-                  请修改筛选条件后重试。
-                </Text>
-              </Alert>
-            ) : (scores.length === 0 && defaultScores === null) ? (
-              <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到任何成绩" color="red">
-                <Text size="sm" mb="md">
-                  请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
-                </Text>
-                <Group>
-                  <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
-                    同步游戏数据
-                  </Button>
-                </Group>
-              </Alert>
-            ) : null}
-            <Group position="center">
-              <Pagination total={totalPages} value={page} onChange={setPage} />
-              <ScoreList scores={displayScores} />
-              <Pagination total={totalPages} value={page} onChange={setPage} />
-            </Group>
-            <Space h="md" />
-            <StatisticsSection scores={scores} />
-          </>
-        )
-      )}
+        <>
+          {(scores.length === 0 && defaultScores !== null) ? (
+            <Alert radius="md" icon={<IconAlertCircle />} title="没有筛选到任何成绩" color="yellow">
+              <Text size="sm">
+                请修改筛选条件后重试。
+              </Text>
+            </Alert>
+          ) : (scores.length === 0 && defaultScores === null) ? (
+            <Alert radius="md" icon={<IconAlertCircle />} title="没有获取到任何成绩" color="red">
+              <Text size="sm" mb="md">
+                请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
+              </Text>
+              <Group>
+                <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
+                  同步游戏数据
+                </Button>
+              </Group>
+            </Alert>
+          ) : null}
+          <Group position="center">
+            <Pagination total={totalPages} value={page} onChange={setPage} />
+            <ScoreList scores={displayScores} />
+            <Pagination total={totalPages} value={page} onChange={setPage} />
+          </Group>
+          <Space h="md" />
+          <StatisticsSection scores={scores} />
+        </>
+      ))}
     </Container>
   );
 }

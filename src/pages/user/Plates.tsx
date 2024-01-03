@@ -16,9 +16,10 @@ import {
   Box
 } from "@mantine/core";
 import Icon from "@mdi/react";
-import { mdiCheck, mdiMagnify } from "@mdi/js";
+import { mdiCheck } from "@mdi/js";
 import { DataTable } from "mantine-datatable";
 import { NAVBAR_BREAKPOINT } from "../../App";
+import { IconCheck, IconSearch } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -201,7 +202,7 @@ export default function Plates() {
               radius="md"
               placeholder="请选择姓名框"
               itemComponent={SelectItem}
-              icon={<Icon path={mdiMagnify} size={0.8} />}
+              icon={<IconSearch size={18} />}
               searchable
               filter={(query, item: any) =>
                 item.label.toLowerCase().trim().includes(query.toLowerCase().trim()) ||
@@ -259,7 +260,7 @@ export default function Plates() {
                 width: 100,
                 render: (map: any) => (map[`difficulty_${difficulty}`] && (
                   <Group>
-                    <Icon path={mdiCheck} size={0.8} color="#4caf50" />
+                    <IconCheck color="#4caf50" />
                   </Group>
                 )),
               })),

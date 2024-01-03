@@ -5,8 +5,7 @@ import { getDifficulty, SongProps } from "../../../utils/api/song.tsx";
 import { useEffect, useState } from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import Icon from "@mdi/react";
-import { mdiDatabaseOffOutline } from "@mdi/js";
+import { IconDatabaseOff } from "@tabler/icons-react";
 
 interface ScoreModalProps {
   score: ScoreProps | null;
@@ -109,7 +108,7 @@ const ScoreHistory = ({ scores }: { scores: ScoreProps[] }) => {
       <Accordion.Panel>
         {scores.length < 2 ? (
           <Flex gap="xs" align="center" direction="column" c="dimmed">
-            <Icon path={mdiDatabaseOffOutline} size={rem(64)} />
+            <IconDatabaseOff size={64} />
             <Text fz="sm">历史记录不足，无法生成图表</Text>
           </Flex>
         ) : (

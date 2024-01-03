@@ -10,14 +10,13 @@ import {
 } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
-import { mdiLockOutline } from "@mdi/js";
 import { validatePassword } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import useAlert from '../../utils/useAlert';
 import ReCaptcha from "../../utils/reCaptcha";
 import AlertModal from '../../components/AlertModal';
-import Icon from "@mdi/react";
+import { IconLock } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -119,7 +118,7 @@ export default function ResetPassword() {
             variant="filled"
             placeholder="请输入你的密码"
             mb="sm"
-            icon={<Icon path={mdiLockOutline} size={rem(16)} />}
+            icon={<IconLock size={20} />}
             {...form.getInputProps('password')}
           />
           <PasswordInput
@@ -128,7 +127,7 @@ export default function ResetPassword() {
             variant="filled"
             placeholder="请再次输入你的密码"
             mb="sm"
-            icon={<Icon path={mdiLockOutline} size={rem(16)} />}
+            icon={<IconLock size={20} />}
             {...form.getInputProps('confirmPassword')}
           />
           <Group position="right" mt="xl">

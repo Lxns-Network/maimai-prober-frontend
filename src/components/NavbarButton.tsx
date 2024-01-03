@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import Icon from "@mdi/react";
-import { createStyles, getStylesRef } from "@mantine/core";
+import { createStyles, getStylesRef, Group, Text } from "@mantine/core";
+import React from "react";
 
 const useStyles = createStyles((theme) => ({
   link: {
@@ -10,7 +10,7 @@ const useStyles = createStyles((theme) => ({
     textDecoration: 'none',
     fontSize: theme.fontSizes.sm,
     color: theme.colorScheme === 'dark' ? theme.colors.dark[1] : theme.colors.gray[7],
-    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    padding: `8px ${theme.spacing.sm}`,
     borderRadius: theme.radius.sm,
     fontWeight: 500,
     cursor: 'pointer',
@@ -28,7 +28,8 @@ const useStyles = createStyles((theme) => ({
   linkIcon: {
     ref: getStylesRef('icon'),
     color: theme.colorScheme === 'dark' ? theme.colors.dark[2] : theme.colors.gray[6],
-    marginRight: theme.spacing.sm,
+    display: "flex",
+    padding: `2px 0`,
   },
 
   linkActive: {
@@ -44,7 +45,7 @@ const useStyles = createStyles((theme) => ({
 
 interface NavbarButtonProps {
   label: string;
-  icon: string;
+  icon: React.ReactNode;
   to?: string;
   active?: string;
   onClose(): void;
@@ -65,8 +66,10 @@ export const NavbarButton = ({ label, icon, to, active, onClose, onClick }: Navb
          onClose();
        }}
     >
-      <Icon className={classes.linkIcon} path={icon} size={1} />
-      <span>{label}</span>
+      <Group>
+        <div className={classes.linkIcon}>{icon}</div>
+        <Text>{label}</Text>
+      </Group>
     </a>
   )
 }

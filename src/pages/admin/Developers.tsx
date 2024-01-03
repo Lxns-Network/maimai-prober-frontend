@@ -16,13 +16,12 @@ import {
   Flex,
 } from '@mantine/core';
 import { getDevelopers, revokeDeveloper } from "../../utils/api/developer";
-import { mdiChevronRight, mdiReload, mdiTrashCan } from "@mdi/js";
-import Icon from '@mdi/react';
 import { EditUserModal, UserProps } from "./Users";
 import { useDisclosure } from "@mantine/hooks";
 import { permissionToList, UserPermission } from "../../utils/session";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
+import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -84,7 +83,7 @@ export function UserButton({ user, onClick, ...others }: { user: UserProps, onCl
           <Text color="dimmed" size="xs">{user.email}</Text>
         </div>
 
-        <Icon path={mdiChevronRight} size={0.75} color="dimmed" />
+        <IconChevronRight size={16} />
       </Group>
     </UnstyledButton>
   );
@@ -105,13 +104,13 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
       const res = await revokeDeveloper(developer);
       const data = await res.json();
       if (data.code !== 200) {
-        openAlert("删除开发者失败", data.message);
+        openAlert("撤销开发者失败", data.message);
         return;
       }
 
       window.location.reload();
     } catch (error) {
-      openAlert("删除开发者失败", `${error}`);
+      openAlert("撤销开发者失败", `${error}`);
     } finally {
       setConfirmAlert?.(() => {});
     }
@@ -149,7 +148,7 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
       <Card.Section className={classes.section}>
         <Group position="right">
           {permissionToList(developer.user.permission).indexOf(UserPermission.Developer) !== -1 && (
-            <Button variant="outline" size="sm" leftIcon={<Icon path={mdiReload} size={0.75} />}>
+            <Button variant="outline" size="sm" leftIcon={<IconRefresh size={20} />}>
               重置 API 密钥
             </Button>
           )}
@@ -157,13 +156,13 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
             variant="outline"
             size="sm"
             color="red"
-            leftIcon={<Icon path={mdiTrashCan} size={0.75} />}
+            leftIcon={<IconArrowBackUp size={20} />}
             onClick={() => {
               setConfirmAlert?.(() => revokeDeveloperHandler);
-              openAlert("删除开发者", "确定要删除这个开发者吗？");
+              openAlert("撤销开发者", "确定要撤销这个开发者吗？");
             }}
           >
-            删除开发者
+            撤销开发者
           </Button>
         </Group>
       </Card.Section>

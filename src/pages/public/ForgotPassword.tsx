@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { Title, Card, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
-import { mdiArrowLeft, mdiEmailOutline } from "@mdi/js";
 import { validateEmail } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import useAlert from '../../utils/useAlert';
 import ReCaptcha from "../../utils/reCaptcha";
 import AlertModal from '../../components/AlertModal';
-import Icon from "@mdi/react";
+import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -106,13 +105,13 @@ export default function ForgotPassword() {
             label="邮箱"
             variant="filled"
             placeholder="请输入你的邮箱"
-            icon={<Icon path={mdiEmailOutline} size={rem(16)} />}
+            icon={<IconMail size={20} />}
             {...form.getInputProps('email')}
           />
           <Group position="apart" mt="xl">
             <Anchor c="dimmed" size="sm" onClick={() => navigate("/login")}>
               <Center>
-                <Icon path={mdiArrowLeft} size={rem(16)} />
+                <IconArrowLeft size={20} />
                 <Box ml={8}>返回登录页面</Box>
               </Center>
             </Anchor>

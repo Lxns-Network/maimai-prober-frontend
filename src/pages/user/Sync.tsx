@@ -25,8 +25,6 @@ import Icon from "@mdi/react";
 import {
   mdiAlertCircleOutline,
   mdiCheck,
-  mdiContentCopy,
-  mdiOpenInApp,
   mdiPause,
   mdiReload
 } from "@mdi/js";
@@ -35,6 +33,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
+import { IconCheck, IconCopy, IconDownload, IconRefresh } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -75,7 +74,7 @@ const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
           {({ copied, copy }) => (
             <Tooltip label={copied ? '已复制' : label} withArrow position="right">
               <ActionIcon color={copied ? 'teal' : 'gray'} onClick={copy}>
-                <Icon path={copied ? mdiCheck : mdiContentCopy} size={0.75} />
+                {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
               </ActionIcon>
             </Tooltip>
           )}
@@ -314,7 +313,7 @@ export default function Sync() {
                         flex: 1,
                       }} />
                       <Space w="xs" />
-                      <Button variant="light" rightIcon={<Icon path={mdiOpenInApp} size={0.75} />} onClick={
+                      <Button variant="light" rightIcon={<IconDownload size={20} />} onClick={
                         () => window.location.href = "clash://install-config?url=https://maimai.lxns.net/api/v0/proxy-config/clash"
                       }>一键导入配置</Button>
                     </Flex>
@@ -350,7 +349,7 @@ export default function Sync() {
                   getCrawlTokenExpireTime(crawlToken) > 0 ? `将在 ${getCrawlTokenExpireTime(crawlToken) + 1} 分钟内失效，逾时` : "已失效，"
                 }请点击下方按钮刷新 OAuth 链接。` : "链接未生成，请点击下方按钮生成 OAuth 链接。"}
               </Text>
-              <Button variant="outline" leftIcon={<Icon path={mdiReload} size={0.75} />} onClick={() => {
+              <Button variant="outline" leftIcon={<IconRefresh size={20} />} onClick={() => {
                 getUserCrawlTokenHandler();
               }}>
                 {crawlToken ? "刷新链接" : "生成链接"}
@@ -364,21 +363,28 @@ export default function Sync() {
       </Stepper>
       <Card withBorder radius="md" className={classes.card} p="md" mt={rem(-12)}>
         <Card.Section className={classes.section}>
-          <Text size="xs" color="dimmed">
-            数据同步状态
-          </Text>
-          <Text fz="lg" color={
-            crawlStatus?.status === "failed" ? "red" : (
-              crawlStatus?.status === "finished" ? "teal" : "default"
-            )
-          }>
-            {!crawlStatus && "等待前置步骤完成"}
-            {crawlStatus && {
-              "pending": "服务端正在爬取游戏数据",
-              "finished": "游戏数据同步成功",
-              "failed": "成绩同步失败"
-            }[crawlStatus?.status]}
-          </Text>
+          <Group spacing="xl">
+            {(!crawlStatus || crawlStatus?.status === "pending") && (
+              <Loader variant="bars" />
+            )}
+            <div>
+              <Text size="xs" color="dimmed">
+                数据同步状态
+              </Text>
+              <Text fz="lg" color={
+                crawlStatus?.status === "failed" ? "red" : (
+                  crawlStatus?.status === "finished" ? "teal" : "default"
+                )
+              }>
+                {!crawlStatus && "等待前置步骤完成"}
+                {crawlStatus && {
+                  "pending": "服务端正在爬取游戏数据",
+                  "finished": "游戏数据同步成功",
+                  "failed": "成绩同步失败"
+                }[crawlStatus?.status]}
+              </Text>
+            </div>
+          </Group>
         </Card.Section>
 
         <Card.Section className={classes.section}>

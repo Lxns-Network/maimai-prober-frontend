@@ -9,8 +9,9 @@ import {
   UnstyledButtonProps
 } from "@mantine/core";
 import Icon from "@mdi/react";
-import {mdiCheck, mdiChevronRight, mdiCreation} from "@mdi/js";
+import { mdiCheck, mdiCreation } from "@mdi/js";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
+import { IconChevronRight } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   alias: {
@@ -56,7 +57,7 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
       </Flex>
       <Group>
         <Text fz="xl" weight={700} truncate style={{ flex: 1 }}>{alias.alias}</Text>
-        <Icon path={mdiChevronRight} size={rem(18)} />
+        <IconChevronRight size={16} />
       </Group>
     </UnstyledButton>
   );

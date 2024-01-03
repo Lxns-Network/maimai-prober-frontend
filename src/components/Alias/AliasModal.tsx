@@ -9,14 +9,11 @@ import Icon from "@mdi/react";
 import {
   mdiCheck,
   mdiCreation,
-  mdiThumbDown,
-  mdiThumbDownOutline,
-  mdiThumbUp,
-  mdiThumbUpOutline
 } from "@mdi/js";
 import { useEffect, useState } from "react";
 import { voteAlias } from "../../utils/api/alias.tsx";
 import { notifications } from "@mantine/notifications";
+import { IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled } from "@tabler/icons-react";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -140,7 +137,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
       <Group grow>
         <div>
           <Text fz="xs" c="dimmed">提交者</Text>
-          <Text>{alias.uploader.name}</Text>
+          <Text>{alias.uploader ? alias.uploader.name : "未知"}</Text>
         </div>
         <div>
           <Text fz="xs" c="dimmed">提交时间</Text>
@@ -167,14 +164,14 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
             <ActionIcon color="green" size="xl" variant={(weight === 1) ? "filled" : "light"} onClick={() => {
               voteAliasHandler(alias.alias_id, true);
             }} loading={loading === 1}>
-              <Icon path={(weight === 1) ? mdiThumbUp : mdiThumbUpOutline} size={rem(20)} />
+              {(weight === 1) ? <IconThumbUpFilled /> : <IconThumbUp />}
             </ActionIcon>
           </Tooltip>
           <Tooltip label={(weight === -1) ? "取消反对" : "反对"}>
             <ActionIcon color="red" size="xl" variant={(weight === -1) ? "filled" : "light"} onClick={() => {
               voteAliasHandler(alias.alias_id, false);
             }} loading={loading === -1}>
-              <Icon path={(weight === -1) ? mdiThumbDown : mdiThumbDownOutline} size={rem(20)} />
+              {(weight === -1) ? <IconThumbDownFilled /> : <IconThumbDown />}
             </ActionIcon>
           </Tooltip>
         </Group>

@@ -6,10 +6,9 @@ import useAlert from '../../utils/useAlert';
 import ReCaptcha from '../../utils/reCaptcha';
 import AlertModal from "../../components/AlertModal";
 import {API_URL, RECAPTCHA_SITE_KEY} from "../../main";
-import Icon from "@mdi/react";
-import { mdiAccountOutline, mdiEmailOutline, mdiLockOutline } from "@mdi/js";
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "../../utils/validator";
+import { IconLock, IconMail, IconUser } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -110,7 +109,7 @@ export default function Register() {
             variant="filled"
             placeholder="请输入你的用户名"
             mb={4}
-            icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
+            icon={<IconUser size={20} />}
             {...form.getInputProps('name')}
           />
           <Text color="dimmed" size="xs" align="left" mb="sm">
@@ -122,7 +121,7 @@ export default function Register() {
             variant="filled"
             placeholder="请输入你的邮箱"
             mb="sm"
-            icon={<Icon path={mdiEmailOutline} size={rem(16)} />}
+            icon={<IconMail size={20} />}
             {...form.getInputProps('email')}
           />
           <PasswordInput
@@ -131,7 +130,7 @@ export default function Register() {
             variant="filled"
             placeholder="请输入你的密码"
             mb="sm"
-            icon={<Icon path={mdiLockOutline} size={rem(16)} />}
+            icon={<IconLock size={20} />}
             {...form.getInputProps('password')}
           />
           <PasswordInput
@@ -140,7 +139,7 @@ export default function Register() {
             variant="filled"
             placeholder="请再次输入你的密码"
             mb="sm"
-            icon={<Icon path={mdiLockOutline} size={rem(16)} />}
+            icon={<IconLock size={20} />}
             {...form.getInputProps('confirmPassword')}
           />
           <Text color="dimmed" size="xs" align="left" mt="sm">

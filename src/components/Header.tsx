@@ -7,10 +7,9 @@ import {
   useMantineColorScheme,
   rem
 } from '@mantine/core';
-import Icon from "@mdi/react";
-import { mdiWeatherNight, mdiWeatherSunny } from "@mdi/js";
 import { NAVBAR_BREAKPOINT } from "../App";
 import Logo from "./Logo";
+import { IconMoonStars, IconSun } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   header: {
@@ -43,12 +42,11 @@ export function ActionToggle() {
         onClick={() => toggleColorScheme()}
         size="lg"
         sx={(theme) => ({
-          backgroundColor:
-            theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
+          backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
           color: theme.colorScheme === 'dark' ? theme.colors.yellow[4] : theme.colors.blue[6],
         })}
       >
-        <Icon path={colorScheme === 'dark' ? mdiWeatherSunny : mdiWeatherNight} size={1} />
+        {colorScheme === 'dark' ? <IconSun /> : <IconMoonStars />}
       </ActionIcon>
     </Group>
   );
@@ -69,7 +67,6 @@ export default function Header({ navbarOpened, onNavbarToggle }: HeaderProps) {
           <Burger className={classes.navbarToggle} opened={navbarOpened} onClick={onNavbarToggle} size="sm" />
           <Logo />
         </Group>
-
         <Group>
           <ActionToggle />
         </Group>

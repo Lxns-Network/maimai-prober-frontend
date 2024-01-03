@@ -12,11 +12,6 @@ import {
 } from '@mantine/core';
 import { keys } from '@mantine/utils';
 import { deleteUser, getUsers, updateUser } from "../../utils/api/user";
-import Icon from "@mdi/react";
-import {
-  mdiMagnify,
-  mdiTrashCan,
-} from "@mdi/js";
 import { useDisclosure } from '@mantine/hooks';
 import { listToPermission, permissionToList, UserPermission } from "../../utils/session";
 import { useForm } from "@mantine/form";
@@ -25,6 +20,7 @@ import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
 import { DataTable } from "mantine-datatable";
 import { NAVBAR_BREAKPOINT } from "../../App.tsx";
+import { IconSearch, IconTrash } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -184,7 +180,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
             <Button
               variant="outline"
               color="red"
-              leftIcon={<Icon path={mdiTrashCan} size={0.75} />}
+              leftIcon={<IconTrash size={20} />}
               onClick={() => {
                 setConfirmAlert(() => deleteUserHandler);
                 openAlert("删除账号", "你确定要删除该账号吗？");
@@ -294,7 +290,7 @@ export default function Users() {
         placeholder="搜索用户"
         radius="md"
         mb="md"
-        icon={<Icon path={mdiMagnify} size={rem(16)} />}
+        icon={<IconSearch size={18} />}
         value={search}
         onChange={(event) => setSearch(event.currentTarget.value)}
       />

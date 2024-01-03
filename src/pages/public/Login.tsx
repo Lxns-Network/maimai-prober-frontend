@@ -6,11 +6,10 @@ import useAlert from '../../utils/useAlert';
 import ReCaptcha from "../../utils/reCaptcha";
 import AlertModal from '../../components/AlertModal';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
-import Icon from "@mdi/react";
-import { mdiAccountOutline, mdiLockOutline} from "@mdi/js";
 import { useForm } from "@mantine/form";
 import { validatePassword, validateUserName } from "../../utils/validator";
 import { useLocalStorage } from "@mantine/hooks";
+import { IconLock, IconUser } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -123,7 +122,7 @@ export default function Login() {
             label="用户名"
             variant="filled"
             placeholder="请输入你的用户名"
-            icon={<Icon path={mdiAccountOutline} size={rem(16)} />}
+            icon={<IconUser size={20} />}
             {...form.getInputProps('name')}
           />
           <Group position="apart" mt="md">
@@ -141,7 +140,7 @@ export default function Login() {
             name="password"
             variant="filled"
             placeholder="请输入你的密码"
-            icon={<Icon path={mdiLockOutline} size={rem(16)} />}
+            icon={<IconLock size={20} />}
             {...form.getInputProps('password')}
           />
           <Group position="right" mt="xl">

@@ -11,21 +11,18 @@ import {
   Text, Tooltip
 } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
-import Icon from "@mdi/react";
-import {
-  mdiAccountOutline, mdiAlertOctagon, mdiCheck, mdiDotsHorizontal,
-  mdiThumbDown,
-  mdiThumbDownOutline,
-  mdiThumbUp,
-  mdiThumbUpOutline,
-  mdiTrashCanOutline
-} from "@mdi/js";
 import { approveAlias, deleteAlias, deleteUserAlias, voteAlias } from "../../utils/api/alias.tsx";
 import {useElementSize, useLocalStorage, useSetState} from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { notifications } from "@mantine/notifications";
 import { checkPermission, getLoginUserId, UserPermission } from "../../utils/session.tsx";
 import { AliasButton } from "./AliasButton.tsx";
+import {
+  IconCheck, IconDotsVertical,
+  IconFlag2Filled,
+  IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled,
+  IconTrash, IconUser
+} from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   section: {
@@ -126,11 +123,11 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
       </Container>
       <Container pt={5} pb={5} pl="xs" pr="xs">
         <Group position="apart" noWrap>
-          <Flex gap={2} align="center">
-            <Icon color="gray" path={mdiAccountOutline} size={rem(20)} />
+          <Flex gap={4} align="center">
+            <IconUser color="gray" size={20} />
             <Text color="dimmed" fz="sm" truncate style={{
               maxWidth: "70px"
-            }}>{alias.uploader.name}</Text>
+            }}>{alias.uploader ? alias.uploader.name : "未知"}</Text>
           </Flex>
           <Flex gap={5}>
             {width >= 220 && (
@@ -139,14 +136,14 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
                   <ActionIcon onClick={() => {
                     voteAliasHandler(alias.alias_id, true);
                   }} loading={loading === 1}>
-                    <Icon path={(weight === 1) ? mdiThumbUp : mdiThumbUpOutline} size={rem(20)} />
+                    {(weight === 1) ? <IconThumbUpFilled size={20} /> : <IconThumbUp size={20} />}
                   </ActionIcon>
                 </Tooltip>
                 <Tooltip label={(weight === -1) ? "取消反对" : "反对"}>
                   <ActionIcon onClick={() => {
                     voteAliasHandler(alias.alias_id, false);
                   }} loading={loading === -1}>
-                    <Icon path={(weight === -1) ? mdiThumbDown : mdiThumbDownOutline} size={rem(20)} />
+                    {(weight === -1) ? <IconThumbDownFilled size={20} /> : <IconThumbDown size={20} />}
                   </ActionIcon>
                 </Tooltip>
               </>
@@ -154,31 +151,31 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
             <Menu trigger="hover" shadow="md" width={200} withinPortal>
               <Menu.Target>
                 <ActionIcon>
-                  <Icon path={mdiDotsHorizontal} size={rem(20)} />
+                  <IconDotsVertical size={20} />
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Label>更多操作</Menu.Label>
                 {width < 220 && (
                   <>
-                    <Menu.Item icon={<Icon path={(weight === 1) ? mdiThumbUp : mdiThumbUpOutline} size={rem(20)} />} onClick={() => {
+                    <Menu.Item icon={(weight === 1) ? <IconThumbUpFilled size={20} /> : <IconThumbUp size={20} />} onClick={() => {
                       voteAliasHandler(alias.alias_id, true);
                     }}>{(weight === 1) ? "取消支持" : "支持"}</Menu.Item>
-                    <Menu.Item icon={<Icon path={(weight === -1) ? mdiThumbDown : mdiThumbDownOutline} size={rem(20)} />} onClick={() => {
+                    <Menu.Item icon={(weight === -1) ? <IconThumbDownFilled size={20} /> : <IconThumbDown size={20} />} onClick={() => {
                       voteAliasHandler(alias.alias_id, false);
                     }}>{(weight === -1) ? "取消反对" : "反对"}</Menu.Item>
                   </>
                 )}
                 {checkPermission(UserPermission.Administrator) && !alias.approved && (
-                  <Menu.Item c="teal" icon={<Icon path={mdiCheck} size={rem(20)} />} onClick={() => {
+                  <Menu.Item c="teal" icon={<IconCheck size={20} />} onClick={() => {
                     approveAlias(game, alias.alias_id).then(() => setDisplayAlias({ approved: true }));
                   }}>批准</Menu.Item>
                 )}
-                {alias.uploader.id !== getLoginUserId() && (
-                  <Menu.Item c="red" icon={<Icon path={mdiAlertOctagon} size={rem(20)} />} disabled>举报滥用</Menu.Item>
+                {alias.uploader && alias.uploader.id !== getLoginUserId() && (
+                  <Menu.Item c="red" icon={<IconFlag2Filled size={20} />} disabled>举报滥用</Menu.Item>
                 )}
                 {(checkPermission(UserPermission.Administrator) || alias.uploader.id === getLoginUserId()) && (
-                  <Menu.Item c="red" icon={<Icon path={mdiTrashCanOutline} size={rem(20)} />} onClick={() => {
+                  <Menu.Item c="red" icon={<IconTrash size={20} />} onClick={() => {
                     deleteUserAliasHandler();
                   }}>删除</Menu.Item>
                 )}

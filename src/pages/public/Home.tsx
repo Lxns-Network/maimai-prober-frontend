@@ -1,12 +1,7 @@
 import { createStyles, Title, Text, Image, Button, Container, rem, SimpleGrid, ThemeIcon } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import React, { useEffect } from "react";
-import Icon from '@mdi/react';
-import {
-  mdiHandBackRight,
-  mdiPoll,
-  mdiXml
-} from "@mdi/js";
+import { IconChartBar, IconCode, IconHandStop } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -74,18 +69,18 @@ const useStyles = createStyles((theme) => ({
 }));
 
 interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
-  path: any;
+  icon: React.ReactNode;
   title: string;
   description: string;
 }
 
-function Feature({ path, title, description, className, ...others }: FeatureProps) {
+function Feature({ icon, title, description, className, ...others }: FeatureProps) {
   const { classes, cx } = useStyles();
 
   return (
     <div className={cx(classes.feature, className)} {...others}>
-      <ThemeIcon variant="gradient" size={40} radius={40}>
-        <Icon path={path} size={1} />
+      <ThemeIcon variant="light" size={40}>
+        {icon}
       </ThemeIcon>
       <Text mt="sm" mb={7}>
         {title}
@@ -99,19 +94,19 @@ function Feature({ path, title, description, className, ...others }: FeatureProp
 
 const mockdata = [
   {
-    path: mdiHandBackRight,
+    icon: <IconHandStop />,
     title: '易于使用',
     description:
       '摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。',
   },
   {
-    path: mdiPoll,
+    icon: <IconChartBar />,
     title: '高效的成绩管理',
     description:
       'maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。',
   },
   {
-    path: mdiXml,
+    icon: <IconCode />,
     title: '开发者友好',
     description:
       '我们提供了对开发者友好的 API 接口，开发者可以通过 API 接口获取、管理玩家的数据。',
