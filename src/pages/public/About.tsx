@@ -80,7 +80,6 @@ export default function About() {
         mx="auto"
         mb="md"
       />
-
       <Title order={2} size="h2" weight={900} align="center" mt="xs">
         关于 maimai DX 查分器
       </Title>

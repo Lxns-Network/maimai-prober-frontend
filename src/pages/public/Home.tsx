@@ -33,6 +33,14 @@ const useStyles = createStyles((theme) => ({
     },
   },
 
+  highlight: {
+    position: 'relative',
+    backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
+    borderRadius: theme.radius.sm,
+    padding: `${rem(4)} ${rem(8)}`,
+    color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
+  },
+
   controls: {
     marginTop: theme.spacing.lg,
     display: 'flex',
@@ -96,20 +104,17 @@ const mockdata = [
   {
     icon: <IconHandStop />,
     title: '易于使用',
-    description:
-      '摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。',
+    description: '摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。',
   },
   {
     icon: <IconChartBar />,
     title: '高效的成绩管理',
-    description:
-      'maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。',
+    description: 'maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。',
   },
   {
     icon: <IconCode />,
     title: '开发者友好',
-    description:
-      '我们提供了对开发者友好的 API 接口，开发者可以通过 API 接口获取、管理玩家的数据。',
+    description: '我们提供了对开发者友好的 API 接口，开发者可以通过 API 接口获取、管理玩家的数据。',
   },
 ];
 
@@ -144,7 +149,7 @@ export default function Home() {
       <Container p={0} size={600}>
         <Text size="lg" color="dimmed" className={classes.description}>
           一个简单的{' '}
-          <Text variant="gradient" component="span" inherit fw={700}>
+          <Text className={classes.highlight} component="span" inherit fw={700}>
             舞萌 DX & 中二节奏
           </Text>{' '}
           国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。

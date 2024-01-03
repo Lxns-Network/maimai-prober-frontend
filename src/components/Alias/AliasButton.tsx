@@ -1,10 +1,9 @@
 import {
-  ActionIcon,
   Center,
   createStyles,
   Flex, Group,
   rem, Space,
-  Text, Tooltip,
+  Text, ThemeIcon, Tooltip,
   UnstyledButton,
   UnstyledButtonProps
 } from "@mantine/core";
@@ -36,9 +35,9 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
         {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (
           <Center>
             <Tooltip label="新提交" withinPortal>
-              <ActionIcon color="yellow" size="xs" radius="xl" variant="light">
+              <ThemeIcon color="yellow" size="xs" radius="xl" variant="light">
                 <Icon path={mdiCreation} size={rem(20)} />
-              </ActionIcon>
+              </ThemeIcon>
             </Tooltip>
             {alias.approved && (
               <Space w="xs" />
@@ -48,9 +47,9 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
         {alias.approved && (
           <Center>
             <Tooltip label="已批准" withinPortal>
-              <ActionIcon color="teal" size="xs" radius="xl" variant="light">
+              <ThemeIcon color="teal" size="xs" radius="xl" variant="light">
                 <Icon path={mdiCheck} size={rem(20)} />
-              </ActionIcon>
+              </ThemeIcon>
             </Tooltip>
           </Center>
         )}

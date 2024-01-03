@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  ActionIcon,
   Button,
   Card,
   Container,
@@ -9,7 +8,7 @@ import {
   Loader,
   Pagination,
   rem, SegmentedControl, Select, Space,
-  Text,
+  Text, ThemeIcon,
   Title,
 } from '@mantine/core';
 import { useLocalStorage } from "@mantine/hooks";
@@ -250,9 +249,9 @@ export default function Vote() {
           </div>
           <HoverCard shadow="md" withinPortal>
             <HoverCard.Target>
-              <ActionIcon>
+              <ThemeIcon variant="subtle">
                 <IconQuestionMark size={rem(20)} />
-              </ActionIcon>
+              </ThemeIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown>
               <Text size="sm">

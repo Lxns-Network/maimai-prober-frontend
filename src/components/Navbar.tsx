@@ -30,7 +30,7 @@ const useStyles = createStyles((theme) => ({
   navbar: {
     position: 'fixed',
     zIndex: 100,
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
   },
 
   navbarHeader: {

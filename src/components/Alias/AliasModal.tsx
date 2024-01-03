@@ -1,7 +1,7 @@
 import {
   ActionIcon,
-  Avatar,  Flex, Group,
-  Modal, Progress, rem, Space, Text, Tooltip
+  Avatar, Flex, Group,
+  Modal, Progress, rem, Space, Text, ThemeIcon, Tooltip
 } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { useLocalStorage } from "@mantine/hooks";
@@ -119,16 +119,16 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
         <Flex direction="column" gap="xs">
           {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (
             <Tooltip label="新提交" withinPortal>
-              <ActionIcon color="yellow" radius="xl" variant="light">
+              <ThemeIcon color="yellow" radius="xl" variant="light">
                 <Icon path={mdiCreation} size={rem(20)} />
-              </ActionIcon>
+              </ThemeIcon>
             </Tooltip>
           )}
           {alias.approved && (
             <Tooltip label="已批准" withinPortal>
-              <ActionIcon color="teal" radius="xl" variant="light">
+              <ThemeIcon color="teal" radius="xl" variant="light">
                 <Icon path={mdiCheck} size={rem(20)} />
-              </ActionIcon>
+              </ThemeIcon>
             </Tooltip>
           )}
         </Flex>
