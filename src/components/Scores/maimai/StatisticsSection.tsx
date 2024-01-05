@@ -48,7 +48,7 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
               return (
                 <Group key={r.id} position="apart" mb="xs">
                   <Image
-                    src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${r.id}.png?ver=1.35`}
+                    src={`/assets/maimai/music_rank/${r.id}.webp`}
                     height={rem(30)}
                     width="auto"
                   />
@@ -66,7 +66,7 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
             {fc.map((r, index) => (
               <Group key={r} position="apart" mb="xs">
                 <Image
-                  src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${r}.png?ver=1.35`}
+                  src={`/assets/maimai/music_icon/${r}.webp`}
                   height={rem(30)}
                   width="auto"
                 />
@@ -85,7 +85,7 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
             {fs.map((r, index) => (
               <Group key={r} position="apart" mb="xs">
                 <Image
-                  src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${r}.png?ver=1.35`}
+                  src={`/assets/maimai/music_icon/${r}.webp`}
                   height={rem(30)}
                   width="auto"
                 />

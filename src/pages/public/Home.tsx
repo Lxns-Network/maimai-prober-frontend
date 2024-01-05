@@ -10,6 +10,10 @@ const useStyles = createStyles((theme) => ({
     paddingBottom: rem(50),
   },
 
+  logo: {
+    opacity: theme.colorScheme === 'dark' ? 0.8 : 1,
+  },
+
   title: {
     textAlign: 'center',
     fontWeight: 800,
@@ -131,6 +135,7 @@ export default function Home() {
   return (
     <Container className={classes.root}>
       <Image
+        className={classes.logo}
         src="/logo.webp"
         alt="落雪咖啡屋 maimai DX 查分器"
         maw={560}

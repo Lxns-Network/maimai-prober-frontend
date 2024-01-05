@@ -5,7 +5,7 @@ import { getDifficulty, SongProps } from "../../../utils/api/song.tsx";
 import { useEffect, useState } from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { IconDatabaseOff } from "@tabler/icons-react";
+import {IconDatabaseOff, IconPhotoOff} from "@tabler/icons-react";
 
 interface ScoreModalProps {
   score: ScoreProps | null;
@@ -19,7 +19,7 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
     <>
       <Group noWrap>
         <Avatar src={`https://lxns.org/maimai/jacket/${score.id}.png`} size={94} radius="md">
-          <Text align="center" fz="xs">曲绘加载失败</Text>
+          <IconPhotoOff />
         </Avatar>
         <div style={{ flex: 1 }}>
           {score.type === "standard" ? (
@@ -32,11 +32,11 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
           <Text fz="xs" c="dimmed">谱面 ID：{score.id}</Text>
           <Group spacing={0} ml={-3}>
             <Image
-              src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${score.fc || "back"}.png?ver=1.35`}
+              src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`}
               width={rem(30)}
             />
             <Image
-              src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${score.fs || "back"}.png?ver=1.35`}
+              src={`/assets/maimai/music_icon/${score.fs || "blank"}.webp`}
               width={rem(30)}
             />
           </Group>
@@ -54,9 +54,9 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
       </Group>
       {score.achievements != -1 ? (
         <>
-          <Group mt="md" ml={-5}>
+          <Group mt="md">
             <Image
-              src={`https://maimai.wahlap.com/maimai-mobile/img/music_icon_${score?.rate}.png?ver=1.35`}
+              src={`/assets/maimai/music_rank/${score?.rate}.webp`}
               width={rem(64)}
             />
             <div>
@@ -69,7 +69,7 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
               </Text>
             </div>
           </Group>
-          <Group mt="md" spacing={22}>
+          <Group mt="md" spacing={28}>
             <div>
               <Text fz="xs" c="dimmed">DX Rating</Text>
               <Text fz="md">
