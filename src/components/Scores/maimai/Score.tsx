@@ -1,6 +1,6 @@
 import { Badge, Card, createStyles, Flex, Group, rem, Text, useMantineTheme } from "@mantine/core";
 import { difficultyColor } from "../../../utils/color.tsx";
-import { getDifficulty, SongProps } from "../../../utils/api/song.tsx";
+import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { memo } from "react";
 
 export interface ScoreProps {
@@ -40,7 +40,7 @@ const useStyles = createStyles((theme) => ({
   }
 }));
 
-export const Score = memo(({ score, song, onClick }: { score: ScoreProps, song: SongProps, onClick: () => void }) => {
+export const Score = memo(({ score, song, onClick }: { score: ScoreProps, song: MaimaiSongProps, onClick: () => void }) => {
   const { classes } = useStyles();
   const theme = useMantineTheme();
 

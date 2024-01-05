@@ -14,7 +14,6 @@ import {
   TextInput, Tooltip
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { SongList } from "../../utils/api/song.tsx";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
 import { fetchAPI } from "../../utils/api/api.tsx";
@@ -23,6 +22,9 @@ import { notifications } from "@mantine/notifications";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
 import { RECAPTCHA_SITE_KEY } from "../../main.tsx";
 import { IconArrowsShuffle } from "@tabler/icons-react";
+import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
+import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
+import { SongList } from "../../utils/api/song/song.tsx";
 
 interface CreateAliasModalProps {
   opened: boolean;
@@ -105,17 +107,22 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   }, []);
 
   useEffect(() => {
-    if (form.values.game === null) return;
+    setLoading(true);
+    songList.fetch().then(() => {
+      setLoading(false);
+    });
+  }, [songList]);
 
+  useEffect(() => {
+    if (form.values.game === null) return;
+    else if (form.values.game === "maimai") {
+      setSongList(new MaimaiSongList());
+    } else {
+      setSongList(new ChunithmSongList());
+    }
     form.setValues({
       songId: null,
       alias: "",
-    });
-    setLoading(true);
-    songList.clear();
-    songList.fetch(form.values.game).then(() => {
-      setSongList(songList);
-      setLoading(false);
     });
   }, [form.values.game]);
 
@@ -153,7 +160,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                     label="曲目"
                     placeholder="请选择曲目"
                     dropdownPosition="bottom"
-                    data={songList.songs.map((song) => ({
+                    data={songList.songs.map((song: any) => ({
                       value: song.id.toString(),
                       label: song.title,
                     }))}
@@ -164,13 +171,13 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                     style={{ flex: 1 }}
                     {...form.getInputProps('songId')}
                   />
-                  <Tooltip label="随机一首曲目">
+                  <Tooltip label="随机一首曲目" withinPortal>
                     <ActionIcon onClick={() => {
                       const song = songList.songs[Math.floor(Math.random() * songList.songs.length)];
                       form.setValues({
                         songId: song.id.toString() as any,
                       });
-                    }} mb={4}>
+                    }} mb={4} disabled={songList.songs.length === 0}>
                       <IconArrowsShuffle size={rem(20)} />
                     </ActionIcon>
                   </Tooltip>

@@ -1,7 +1,21 @@
 import { ScoreProps } from "./Score.tsx";
-import { Accordion, Avatar, Badge, Card, Container, Flex, Group, Image, Modal, rem, Space, Text } from "@mantine/core";
+import {
+  Accordion,
+  Avatar,
+  Badge,
+  Box,
+  Card,
+  Container,
+  Flex,
+  Group,
+  Image,
+  Modal,
+  rem,
+  Space,
+  Text
+} from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
-import { getDifficulty, SongProps } from "../../../utils/api/song.tsx";
+import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { useEffect, useState } from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -9,12 +23,12 @@ import {IconDatabaseOff, IconPhotoOff} from "@tabler/icons-react";
 
 interface ScoreModalProps {
   score: ScoreProps | null;
-  song: SongProps | null;
+  song: MaimaiSongProps | null;
   opened: boolean;
   onClose: () => void;
 }
 
-const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps }) => {
+const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: MaimaiSongProps }) => {
   return (
     <>
       <Group noWrap>
@@ -27,9 +41,8 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
           ) : (
             <Badge variant="filled" color="orange" size="sm">DX</Badge>
           )}
-
-          <Text fz="lg" fw={500}>{score.song_name}</Text>
-          <Text fz="xs" c="dimmed">谱面 ID：{score.id}</Text>
+          <Text fz="lg" fw={500} mt={2}>{score.song_name}</Text>
+          <Text fz="xs" c="dimmed" mb={2}>谱面 ID：{score.id}</Text>
           <Group spacing={0} ml={-3}>
             <Image
               src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`}
@@ -59,7 +72,7 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
               src={`/assets/maimai/music_rank/${score?.rate}.webp`}
               width={rem(64)}
             />
-            <div>
+            <Box>
               <Text fz="xs" c="dimmed">达成率</Text>
               <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
                 {parseInt(String(score.achievements))}
@@ -67,29 +80,29 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: SongProps
                   (String(score?.achievements).split(".")[1] || "0").padEnd(4, "0")
                 }%</span>
               </Text>
-            </div>
+            </Box>
           </Group>
-          <Group mt="md" spacing={28}>
-            <div>
+          <Group mt="md">
+            <Box mr={12}>
               <Text fz="xs" c="dimmed">DX Rating</Text>
               <Text fz="md">
                 {parseInt(String(score.dx_rating))}
               </Text>
-            </div>
+            </Box>
             {score.play_time && (
-              <div>
+              <Box mr={12}>
                 <Text fz="xs" c="dimmed">游玩时间</Text>
                 <Text fz="md">
                   {new Date(score.play_time || "").toLocaleString()}
                 </Text>
-              </div>
+              </Box>
             )}
-            <div>
+            <Box>
               <Text fz="xs" c="dimmed">上传时间</Text>
               <Text fz="md">
                 {new Date(score.upload_time || "").toLocaleString()}
               </Text>
-            </div>
+            </Box>
           </Group>
         </>
       ) : (

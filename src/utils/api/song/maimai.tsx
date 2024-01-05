@@ -1,4 +1,5 @@
-import { fetchAPI } from "./api";
+import { fetchAPI } from "../api.tsx";
+import { SongList } from "./song.tsx";
 
 export interface DifficultyProps {
   difficulty: string;
@@ -8,47 +9,47 @@ export interface DifficultyProps {
   version: number;
 }
 
-export interface DifficultiesProps {
+export interface MaimaiDifficultiesProps {
   dx: DifficultyProps[];
   standard: DifficultyProps[];
 }
 
-export interface SongProps {
+export interface MaimaiSongProps {
   id: number;
   title: string;
   artist: string;
   genre: string;
   bpm: number;
   version: string;
-  difficulties: DifficultiesProps;
+  difficulties: MaimaiDifficultiesProps;
 }
 
-interface GenreProps {
+interface MaimaiGenreProps {
   id: number;
   title: string;
   genre: string;
 }
 
-interface VersionProps {
+interface MaimaiVersionProps {
   id: number;
   title: string;
   version: number;
 }
 
-export class SongList {
-  songs: SongProps[] = [];
-  genres: GenreProps[] = [];
-  versions: VersionProps[] = [];
+export class MaimaiSongList extends SongList {
+  songs: MaimaiSongProps[] = [];
+  genres: MaimaiGenreProps[] = [];
+  versions: MaimaiVersionProps[] = [];
 
   constructor() {
-    this.songs = [];
+    super();
     this.genres = [];
     this.versions = [];
   }
 
-  async fetch(game: string) {
+  async fetch() {
     if (this.songs.length === 0) {
-      const res = await fetchAPI(`${game}/song/list`, { method: "GET" });
+      const res = await fetchAPI('maimai/song/list', { method: "GET" });
       const data = await res?.json();
       this.songs = data.songs;
       this.genres = data.genres;
@@ -58,24 +59,20 @@ export class SongList {
     return this.songs;
   }
 
-  push(...songs: SongProps[]) {
+  push(...songs: MaimaiSongProps[]) {
     this.songs.push(...songs);
   }
 
-  find(id: number) {
-    return this.songs.find((song: any) => song.id === id);
-  }
-
-  clear() {
-    this.songs = [];
-  }
-
-  get length() {
-    return this.songs.length;
+  getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
+    if (type === "standard") {
+      return song.difficulties.standard[level_index]
+    } else {
+      return song.difficulties.dx[level_index]
+    }
   }
 }
 
-export function getDifficulty(song: SongProps, type: string, level_index: number) {
+export function getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
   if (type === "standard") {
     return song.difficulties.standard[level_index]
   } else {

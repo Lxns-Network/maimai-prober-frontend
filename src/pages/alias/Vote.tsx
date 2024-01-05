@@ -20,8 +20,10 @@ import { getAliasList, getUserVotes } from "../../utils/api/alias.tsx";
 import { AliasList } from "../../components/Alias/AliasList.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { notifications } from "@mantine/notifications";
-import { SongList } from "../../utils/api/song.tsx";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus, IconQuestionMark } from "@tabler/icons-react";
+import { SongList } from "../../utils/api/song/song.tsx";
+import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
+import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 
 export interface AliasProps {
   alias_id: number;
@@ -172,9 +174,13 @@ export default function Vote() {
 
   useEffect(() => {
     if (!game) return;
+    else if (game === "maimai") {
+      setSongList(new MaimaiSongList());
+    } else {
+      setSongList(new ChunithmSongList());
+    }
 
-    songList.clear();
-    songList.fetch(game).then(() => {
+    songList.fetch().then(() => {
       setSongList(songList);
     });
     setSongId(0);

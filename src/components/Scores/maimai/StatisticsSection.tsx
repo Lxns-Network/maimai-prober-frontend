@@ -1,4 +1,4 @@
-import { Card, createStyles, Grid, Image, rem, Text, Group, Spoiler} from "@mantine/core";
+import {Card, createStyles, Grid, Image, rem, Text, Group, Spoiler, Divider} from "@mantine/core";
 import { ScoreProps } from "./Score.tsx";
 
 const useStyles = createStyles((theme) => ({
@@ -46,12 +46,13 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
                 count += calculateCount(scores, rate[i].min, rate[i].max);
               }
               return (
-                <Group key={r.id} position="apart" mb="xs">
+                <Group key={r.id} mb="xs">
                   <Image
                     src={`/assets/maimai/music_rank/${r.id}.webp`}
                     height={rem(30)}
                     width="auto"
                   />
+                  <Divider style={{ flex: 1 }} variant="dashed" />
                   <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
                     {count}
                     <span style={{ fontSize: rem(16), marginLeft: rem(4) }}>
@@ -64,12 +65,13 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
           </Grid.Col>
           <Grid.Col span={6} h={30}>
             {fc.map((r, index) => (
-              <Group key={r} position="apart" mb="xs">
+              <Group key={r} mb="xs">
                 <Image
                   src={`/assets/maimai/music_icon/${r}.webp`}
                   height={rem(30)}
                   width="auto"
                 />
+                <Divider style={{ flex: 1 }} variant="dashed" />
                 <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
                   {scores.filter((score) => {
                     for (let i = 0; i < index + 1; i++) {
@@ -83,12 +85,13 @@ export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
               </Group>
             ))}
             {fs.map((r, index) => (
-              <Group key={r} position="apart" mb="xs">
+              <Group key={r} mb="xs">
                 <Image
                   src={`/assets/maimai/music_icon/${r}.webp`}
                   height={rem(30)}
                   width="auto"
                 />
+                <Divider style={{ flex: 1 }} variant="dashed" />
                 <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
                   {scores.filter((score) => {
                     for (let i = 0; i < index + 1; i++) {
