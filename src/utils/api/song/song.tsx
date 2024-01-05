@@ -24,4 +24,8 @@ export class SongList {
   get length() {
     return this.songs.length;
   }
+
+  getDifficulty(song: any, ...args: any[]) {
+    return song.difficulties[args[0]][args[1]];
+  }
 }

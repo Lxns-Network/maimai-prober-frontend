@@ -58,7 +58,7 @@ export const getDeluxeRatingGradient = (rating: number) => {
   return { from: "red", to: "green" };
 }
 
-export const difficultyColor = [
+export const maimaiDifficultyColor = [
   [
     "rgb(129,217,85)",
     "rgb(248,183,9)",
@@ -82,10 +82,34 @@ export const difficultyColor = [
   ]
 ]
 
+export const chunithmDifficultyColor = [
+  [
+    "rgb(0,171,132)",
+    "rgb(255,125,0)",
+    "rgb(241,41,41)",
+    "rgb(142,26,230)",
+    "rgb(255,40,84)",
+  ],
+  [
+    "rgb(0,166,129)",
+    "rgb(244,121,0)",
+    "rgb(233,40,40)",
+    "rgb(137,26,222)",
+    "rgb(101,101,104)",
+  ],
+  [
+    "rgb(0,146,112)",
+    "rgb(216,106,0)",
+    "rgb(206,34,35)",
+    "rgb(120,22,195)",
+    "rgb(43,48,51)",
+  ]
+]
+
 export const getScoreSecondaryColor = (level_index: number) => {
-  return difficultyColor[2][level_index]
+  return maimaiDifficultyColor[2][level_index]
 }
 
 export const getScoreCardBackgroundColor = (level_index: number) => {
-  return difficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 0][level_index]
+  return maimaiDifficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 0][level_index]
 }

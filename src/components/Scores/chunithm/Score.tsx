@@ -1,20 +1,19 @@
-import { Badge, Card, createStyles, Flex, Group, rem, Text, useMantineTheme } from "@mantine/core";
-import { maimaiDifficultyColor } from "../../../utils/color.tsx";
-import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
+import { Card, createStyles, Flex, Group, rem, Text, useMantineTheme } from "@mantine/core";
+import { chunithmDifficultyColor } from "../../../utils/color.tsx";
+import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
 import { memo } from "react";
 
-export interface MaimaiScoreProps {
+export interface ChunithmScoreProps {
   id: number;
   song_name: string;
   level: string;
   level_index: number;
-  achievements: number;
-  fc: string;
-  fs: string;
-  dx_score: number;
-  dx_rating: number;
-  rate: string;
-  type: string;
+  score: number;
+  rating: number;
+  over_power: number;
+  full_combo: string;
+  full_sync: string;
+  rank: string;
   play_time?: string;
   upload_time: string;
 }
@@ -40,7 +39,7 @@ const useStyles = createStyles((theme) => ({
   }
 }));
 
-export const Score = memo(({ score, song, onClick }: { score: MaimaiScoreProps, song: MaimaiSongProps, onClick: () => void }) => {
+export const Score = memo(({ score, song, onClick }: { score: ChunithmScoreProps, song: ChunithmSongProps, onClick: () => void }) => {
   const { classes } = useStyles();
   const theme = useMantineTheme();
 
@@ -51,33 +50,25 @@ export const Score = memo(({ score, song, onClick }: { score: MaimaiScoreProps, 
       p={0}
       className={[classes.card, classes.scoreCard].join(' ')}
       style={{
-        border: `2px solid ${maimaiDifficultyColor[2][score.level_index]}`,
-        backgroundColor: maimaiDifficultyColor[1][score.level_index],
+        border: `2px solid ${chunithmDifficultyColor[2][score.level_index]}`,
+        backgroundColor: chunithmDifficultyColor[1][score.level_index],
         opacity: theme.colorScheme === 'dark' ? 0.8 : 1,
       }}
       onClick={onClick}
     >
       <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
-        backgroundColor: maimaiDifficultyColor[2][score.level_index]
+        backgroundColor: chunithmDifficultyColor[2][score.level_index]
       }}>
         <Text size="sm" weight={500} truncate style={{ flex: 1 }} color="white">{score.song_name}</Text>
-        {score.type === "standard" ? (
-          <Badge variant="filled" color="blue" size="sm">标准</Badge>
-        ) : (
-          <Badge variant="filled" color="orange" size="sm">DX</Badge>
-        )}
       </Flex>
       <Group position="apart" m={10} mt={5} mb={5} noWrap>
-        {score.achievements != -1 ? (
+        {score.score != -1 ? (
           <div>
-            <Text fz={rem(24)} style={{ lineHeight: rem(24) }} color="white">
-              {parseInt(String(score.achievements))}
-              <span style={{ fontSize: rem(16) }}>.{
-                (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
-              }%</span>
+            <Text fz={rem(24)} style={{ lineHeight: rem(24) }} color="white" mb={4}>
+              {(score.score || 0).toLocaleString('en-US', { useGrouping: true })}
             </Text>
             <Text size="xs" color="white">
-              DX Rating: {parseInt(String(score.dx_rating))}
+              Rating: {parseInt(String(score.rating))}
             </Text>
           </div>
         ) : (
@@ -94,7 +85,7 @@ export const Score = memo(({ score, song, onClick }: { score: MaimaiScoreProps, 
           <Text size="md" weight={500} align="center" style={{
             lineHeight: rem(28),
           }}>
-            {song != null ? getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1) : score.level}
+            {song != null ? getDifficulty(song, score.level_index)?.level_value.toFixed(1) : score.level}
           </Text>
         </Card>
       </Group>

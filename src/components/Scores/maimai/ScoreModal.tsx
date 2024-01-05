@@ -1,4 +1,4 @@
-import { ScoreProps } from "./Score.tsx";
+import { MaimaiScoreProps } from "./Score.tsx";
 import {
   Accordion,
   Avatar,
@@ -22,13 +22,13 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContai
 import {IconDatabaseOff, IconPhotoOff} from "@tabler/icons-react";
 
 interface ScoreModalProps {
-  score: ScoreProps | null;
+  score: MaimaiScoreProps | null;
   song: MaimaiSongProps | null;
   opened: boolean;
   onClose: () => void;
 }
 
-const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: MaimaiSongProps }) => {
+const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
   return (
     <>
       <Group noWrap>
@@ -114,7 +114,7 @@ const ScoreModalContent = ({ score, song }: { score: ScoreProps, song: MaimaiSon
   )
 }
 
-const ScoreHistory = ({ scores }: { scores: ScoreProps[] }) => {
+const ScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   return (
     <Accordion.Item value="history">
       <Accordion.Control>上传历史记录</Accordion.Control>
@@ -156,7 +156,7 @@ const ScoreHistory = ({ scores }: { scores: ScoreProps[] }) => {
 
 export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
   // const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
-  const [scores, setScores] = useState<ScoreProps[]>([]);
+  const [scores, setScores] = useState<MaimaiScoreProps[]>([]);
   const game = "maimai";
 
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -165,7 +165,7 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
     }
   }
 
-  const getScoreHistory = async (score: ScoreProps) => {
+  const getScoreHistory = async (score: MaimaiScoreProps) => {
     if (score === null) {
       return;
     }
@@ -178,7 +178,7 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
       if (data.code !== 200) {
         return;
       }
-      setScores(data.data.sort((a: ScoreProps, b: ScoreProps) => new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime()));
+      setScores(data.data.sort((a: MaimaiScoreProps, b: MaimaiScoreProps) => new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime()));
     } catch (err) {
       console.error(err);
     }
@@ -190,7 +190,7 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
 
   useEffect(() => {
     setScores([]);
-    getScoreHistory(score as ScoreProps);
+    getScoreHistory(score as MaimaiScoreProps);
   }, [score]);
 
   return (

@@ -17,18 +17,20 @@ import {
   Space,
   Text,
   Title,
-  Autocomplete
+  Autocomplete, SegmentedControl
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
 import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
-import { ScoreProps } from '../../components/Scores/maimai/Score.tsx';
-import {
-  MaimaiDifficultiesProps, MaimaiSongList
-} from "../../utils/api/song/maimai.tsx";
-import { ScoreList } from '../../components/Scores/maimai/ScoreList.tsx';
+import { MaimaiScoreProps } from '../../components/Scores/maimai/Score.tsx';
+import { MaimaiScoreList } from '../../components/Scores/maimai/ScoreList.tsx';
 import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
 import { IconAlertCircle, IconArrowDown, IconArrowUp, IconReload, IconSearch } from "@tabler/icons-react";
+import { MaimaiDifficultiesProps, MaimaiSongList } from "../../utils/api/song/maimai.tsx";
+import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
+import { SongList } from "../../utils/api/song/song.tsx";
+import { ChunithmScoreList } from "../../components/Scores/chunithm/ScoreList.tsx";
+import {ChunithmScoreProps} from "../../components/Scores/chunithm/Score.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -42,23 +44,31 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-const sortKeys = [
-  { name: '曲名', key: 'song_name' },
-  { name: '定数', key: 'level_value' },
-  { name: '达成率', key: 'achievements' },
-  { name: 'DX Rating', key: 'dx_rating' },
-  { name: '上传时间', key: 'upload_time' },
-];
-
-export const songList = new MaimaiSongList();
+const sortKeys = {
+  maimai: [
+    { name: '曲名', key: 'song_name' },
+    { name: '定数', key: 'level_value' },
+    { name: '达成率', key: 'achievements' },
+    { name: 'DX Rating', key: 'dx_rating' },
+    { name: '上传时间', key: 'upload_time' },
+  ],
+  chunithm: [
+    { name: '曲名', key: 'song_name' },
+    { name: '定数', key: 'level_value' },
+    { name: '成绩', key: 'score' },
+    { name: 'Rating', key: 'rating' },
+    { name: '上传时间', key: 'upload_time' },
+  ]
+};
 
 export default function Scores() {
   const { classes } = useStyles();
-  const [defaultScores, setDefaultScores] = useState<ScoreProps[]>([]);
-  const [scores, setScores] = useState<ScoreProps[]>([]);
-  const [displayScores, setDisplayScores] = useState<ScoreProps[]>([]); // 用于分页显示的成绩列表
+  const [defaultScores, setDefaultScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]);
+  const [scores, setScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]);
+  const [displayScores, setDisplayScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]); // 用于分页显示的成绩列表
   const [isLoaded, setIsLoaded] = useState(false);
-  const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
+  const [game, setGame] = useLocalStorage({ key: 'game' });
+  const [songList, setSongList] = useState(new SongList());
   const navigate = useNavigate();
 
   // 排序相关
@@ -91,22 +101,34 @@ export default function Scores() {
       } else {
         setDefaultScores(data.data);
         setScores(data.data);
-        setDisplayScores(data.data.slice(0, separator));
       }
     } catch (error) {
       console.error(error);
     } finally {
       setIsLoaded(true);
+      resetFilter();
     }
   };
 
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
+  }, []);
 
+  useEffect(() => {
+    if (!game) return;
     songList.fetch().then(() => {
       getPlayerScoresHandler();
     });
-  }, []);
+  }, [songList]);
+
+  useEffect(() => {
+    if (!game) return;
+    else if (game === "maimai") {
+      setSongList(new MaimaiSongList());
+    } else {
+      setSongList(new ChunithmSongList());
+    }
+  }, [game]);
 
   useEffect(() => {
     if (!scores) return;
@@ -128,7 +150,11 @@ export default function Scores() {
     setVersion([]);
     setScores(defaultScores);
     setType([]);
-    setRating([1, 15]);
+    if (game === "maimai") {
+      setRating([1, 15]);
+    } else {
+      setRating([1, 16]);
+    }
   }
 
   const sort = (key: any, autoChangeReverse = true) => {
@@ -146,8 +172,15 @@ export default function Scores() {
         if (!songA || !songB) {
           return 0;
         }
-        const difficultyA = songList.getDifficulty(songA, a.type, a.level_index);
-        const difficultyB = songList.getDifficulty(songB, b.type, b.level_index);
+        let difficultyA;
+        let difficultyB;
+        if (songList instanceof MaimaiSongList) {
+          difficultyA = songList.getDifficulty(songA, a.type, a.level_index);
+          difficultyB = songList.getDifficulty(songB, b.type, b.level_index);
+        } else {
+            difficultyA = songList.getDifficulty(songA, a.level_index);
+            difficultyB = songList.getDifficulty(songB, b.level_index);
+        }
         if (!difficultyA || !difficultyB) {
           return 0;
         }
@@ -167,18 +200,43 @@ export default function Scores() {
   };
 
   useEffect(() => {
-    let filteredData = [...defaultScores] as ScoreProps[];
+    let filteredData = [...defaultScores];
 
     if (showUnplayed) {
-      const scoreKeys = new Set(
-        filteredData.map((item) => `${item.id}-${item.type}-${item.level_index}`));
+      if (songList instanceof MaimaiSongList) {
+        const scoreKeys = new Set(
+          filteredData.map((item) => `${item.id}-${(item as MaimaiScoreProps).type}-${item.level_index}`));
 
-      songList.songs.forEach((song) => {
-        ["dx", "standard"].forEach((type) => {
-          const difficulties = song.difficulties[type as keyof MaimaiDifficultiesProps];
+        songList.songs.forEach((song) => {
+          ["dx", "standard"].forEach((type) => {
+            const difficulties = song.difficulties[type as keyof MaimaiDifficultiesProps];
 
-          difficulties.forEach((difficulty, index) => {
-            if (scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`)) {
+            difficulties.forEach((difficulty, index) => {
+              if (scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`)) {
+                return;
+              }
+
+              filteredData.push({
+                id: song.id,
+                song_name: song.title,
+                level: difficulty.level,
+                level_index: index,
+                achievements: -1,
+                fc: "",
+                fs: "",
+                dx_score: -1,
+                dx_rating: -1,
+                rate: "",
+                type: type,
+                upload_time: ""
+              });
+            });
+          });
+        });
+      } else if (songList instanceof ChunithmSongList) {
+        songList.songs.forEach((song) => {
+          song.difficulties.forEach((difficulty, index) => {
+            if (filteredData.find((item) => item.id === song.id && item.level_index === index)) {
               return;
             }
 
@@ -187,31 +245,43 @@ export default function Scores() {
               song_name: song.title,
               level: difficulty.level,
               level_index: index,
-              achievements: -1,
-              fc: "",
-              fs: "",
-              dx_score: -1,
-              dx_rating: -1,
-              rate: "",
-              type: type,
+              score: -1,
+              full_combo: "",
+              full_sync: "",
+              over_power: 0,
+              rank: "",
+              rating: 0,
               upload_time: ""
             });
           });
         });
-      });
+      }
     }
 
     // 如果没有任何筛选条件，直接返回
-    if (search.trim().length + difficulty.length + type.length + genre.length + version.length === 0 && rating[0] === 1 && rating[1] === 15) {
-      setScores(filteredData);
-      return;
+    if (search.trim().length + difficulty.length + type.length + genre.length + version.length === 0) {
+      if (game === "maimai") {
+        if (rating[0] === 1 && rating[1] === 15) {
+          setScores(filteredData as any);
+          return;
+        }
+      } else {
+        if (rating[0] === 1 && rating[1] === 16) {
+          setScores(filteredData as any);
+          return;
+        }
+      }
     }
 
     // 不需要 song 和 difficulty 信息，提前过滤掉可以减少后续的计算量
     filteredData = filteredData.filter((score) => {
+      if (songList instanceof MaimaiSongList) {
+        if (type.length > 0 && !type.includes((score as MaimaiScoreProps).type)) { // 过滤谱面类型
+          return false;
+        }
+      }
       return score.song_name.toLowerCase().includes(search.toLowerCase()) // 过滤搜索
         && (difficulty.includes(score.level_index.toString()) || difficulty.length === 0) // 过滤难度
-        && (type.includes(score.type) || type.length === 0); // 过滤谱面类型
     })
 
     filteredData = filteredData.filter((score) => {
@@ -219,16 +289,20 @@ export default function Scores() {
       if (!song) {
         return false;
       }
-      const difficulty = songList.getDifficulty(song, score.type, score.level_index);
-      if (!difficulty) {
-        return false;
+      if (songList instanceof ChunithmSongList) {
+        const difficulty = songList.getDifficulty(song, score.level_index);
+        if (!difficulty) return false;
+        return (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]); // 过滤定数
+      } else if (songList instanceof MaimaiSongList) {
+        const difficulty = songList.getDifficulty(song, (score as MaimaiScoreProps).type, score.level_index);
+        if (!difficulty) return false;
+        return ((genre.some((item) => songList.genres.find((genre) => genre.genre === item)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
+          && (version.some((item) => difficulty.version >= item && difficulty.version < item + 1000) || version.length === 0) // 过滤版本
+          && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]); // 过滤定数
       }
-      return (genre.some((item) => songList.genres.find((genre) => genre.genre === item)?.genre === song.genre) || genre.length === 0) // 过滤乐曲分类
-        && (version.some((item) => difficulty.version >= item && difficulty.version < item + 1000) || version.length === 0) // 过滤版本
-        && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]); // 过滤定数
     })
 
-    setScores(filteredData);
+    setScores(filteredData as any);
   }, [showUnplayed, search, difficulty, type, genre, version, rating]);
 
   const renderSortIndicator = (key: any) => {
@@ -248,6 +322,14 @@ export default function Scores() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         管理你的 maimai DX 查分器账号的成绩
       </Text>
+      <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
+        setIsLoaded(false);
+        setScores([]);
+        setGame(value);
+      }} data={[
+        { label: '舞萌 DX', value: 'maimai' },
+        { label: '中二节奏', value: 'chunithm' },
+      ]} />
       <Card withBorder radius="md" className={classes.card} mb="md" p={0}>
         <Group m="md">
           <div>
@@ -260,7 +342,7 @@ export default function Scores() {
           </div>
         </Group>
         <Group m="md">
-          {sortKeys.map((item) => (
+          {(sortKeys[game as keyof typeof sortKeys] || []).map((item) => (
             <Button
               key={item.key}
               onClick={() => sort(item.key)}
@@ -288,7 +370,7 @@ export default function Scores() {
                     value={search}
                     onChange={setSearchValue}
                     data={search.trim().length > 0 ? defaultScores.map((score) => ({
-                      key: `${score.id}-${score.type}-${score.level_index}`,
+                      key: `${score.id}-${(score as MaimaiScoreProps).type}-${score.level_index}`,
                       value: score.song_name,
                     })) : []}
                     withinPortal
@@ -312,7 +394,7 @@ export default function Scores() {
                       label: "🟣 MASTER",
                     }, {
                       value: "4",
-                      label: "⚪ Re:MASTER",
+                      label: game !== "chunithm" ? "⚪ Re:MASTER" : "⚫ ULTIMA",
                     }]}
                     placeholder="请选择难度"
                     value={difficulty}
@@ -321,60 +403,66 @@ export default function Scores() {
                     withinPortal
                   />
                 </Grid.Col>
-                <Grid.Col span={6}>
-                  <Text fz="xs" c="dimmed" mb={3}>筛选乐曲分类</Text>
-                  <MultiSelect
-                    variant="filled"
-                    data={songList.genres.map((version) => ({
-                      value: version.genre,
-                      label: version.title,
-                    }))}
-                    placeholder="请选择乐曲分类"
-                    value={genre}
-                    onChange={(value) => setGenre(value)}
-                    transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
-                    withinPortal
-                  />
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <Text fz="xs" c="dimmed" mb={3}>筛选版本</Text>
-                  <MultiSelect
-                    variant="filled"
-                    data={songList.versions.map((version) => ({
-                      value: version.version.toString(),
-                      label: version.title,
-                    })).reverse()}
-                    placeholder="请选择版本"
-                    value={version.map((item) => item.toString())}
-                    onChange={(value) => setVersion(value.map((item) => parseInt(item)))}
-                    transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
-                    withinPortal
-                  />
-                </Grid.Col>
+                {songList instanceof MaimaiSongList && (
+                  <>
+                    <Grid.Col span={6}>
+                      <Text fz="xs" c="dimmed" mb={3}>筛选乐曲分类</Text>
+                      <MultiSelect
+                        variant="filled"
+                        data={songList.genres.map((version) => ({
+                          value: version.genre,
+                          label: version.title,
+                        }))}
+                        placeholder="请选择乐曲分类"
+                        value={genre}
+                        onChange={(value) => setGenre(value)}
+                        transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+                        withinPortal
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <Text fz="xs" c="dimmed" mb={3}>筛选版本</Text>
+                      <MultiSelect
+                        variant="filled"
+                        data={songList.versions.map((version) => ({
+                          value: version.version.toString(),
+                          label: version.title,
+                        })).reverse()}
+                        placeholder="请选择版本"
+                        value={version.map((item) => item.toString())}
+                        onChange={(value) => setVersion(value.map((item) => parseInt(item)))}
+                        transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+                        withinPortal
+                      />
+                    </Grid.Col>
+                  </>
+                )}
                 <Grid.Col span={12} mb="md">
                   <Text fz="xs" c="dimmed" mb={3}>筛选谱面定数</Text>
                   <RangeSlider
                     min={1}
-                    max={15}
+                    max={game !== "chunithm" ? 15 : 16}
                     step={0.1}
                     minRange={0.1}
                     precision={1}
-                    marks={Array.from({ length: 15 }, (_, index) => ({
+                    marks={Array.from({ length: game !== "chunithm" ? 15 : 16 }, (_, index) => ({
                       value: index + 1,
                       label: String(index + 1),
                     }))}
                     onChangeEnd={setRating}
                   />
                 </Grid.Col>
-                <Grid.Col span={6}>
-                  <Text fz="xs" c="dimmed" mb={3}>筛选谱面类型</Text>
-                  <Group>
-                    <Chip.Group multiple value={type} onChange={setType}>
-                      <Chip variant="filled" value="standard" color="blue">标准</Chip>
-                      <Chip variant="filled" value="dx" color="orange">DX</Chip>
-                    </Chip.Group>
-                  </Group>
-                </Grid.Col>
+                {songList instanceof MaimaiSongList && (
+                  <Grid.Col span={6}>
+                    <Text fz="xs" c="dimmed" mb={3}>筛选谱面类型</Text>
+                    <Group>
+                      <Chip.Group multiple value={type} onChange={setType}>
+                        <Chip variant="filled" value="standard" color="blue">标准</Chip>
+                        <Chip variant="filled" value="dx" color="orange">DX</Chip>
+                      </Chip.Group>
+                    </Group>
+                  </Grid.Col>
+                )}
               </Grid>
               <Group position="apart">
                 <Switch
@@ -427,11 +515,18 @@ export default function Scores() {
           ) : null}
           <Group position="center">
             <Pagination total={totalPages} value={page} onChange={setPage} />
-            <ScoreList scores={displayScores} />
+            {songList instanceof MaimaiSongList && (
+              <MaimaiScoreList scores={displayScores as MaimaiScoreProps[]} songList={songList} />
+            )}
+            {songList instanceof ChunithmSongList && (
+              <ChunithmScoreList scores={displayScores as ChunithmScoreProps[]} songList={songList} />
+            )}
             <Pagination total={totalPages} value={page} onChange={setPage} />
           </Group>
           <Space h="md" />
-          <StatisticsSection scores={scores} />
+          {songList instanceof MaimaiSongList && (
+            <StatisticsSection scores={scores as MaimaiScoreProps[]} />
+          )}
         </>
       ))}
     </Container>

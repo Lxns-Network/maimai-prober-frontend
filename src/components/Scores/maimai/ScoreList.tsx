@@ -1,18 +1,18 @@
-import { Score, ScoreProps } from "./Score.tsx";
+import { Score, MaimaiScoreProps } from "./Score.tsx";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 import { ScoreModal } from "./ScoreModal.tsx";
 import { SimpleGrid } from "@mantine/core";
-import { songList } from "../../../pages/user/Scores.tsx";
+import { MaimaiSongList } from "../../../utils/api/song/maimai.tsx";
 
-export const ScoreList = ({ scores }: { scores: ScoreProps[] }) => {
+export const MaimaiScoreList = ({ scores, songList }: { scores: MaimaiScoreProps[], songList: MaimaiSongList }) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
-  const [scoreDetail, setScoreDetail] = useState<ScoreProps | null>(null);
+  const [scoreDetail, setScoreDetail] = useState<MaimaiScoreProps | null>(null);
 
   return (
     <>
       <ScoreModal
-        score={scoreDetail as ScoreProps}
+        score={scoreDetail as MaimaiScoreProps}
         song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
         onClose={closeScoreAlert}

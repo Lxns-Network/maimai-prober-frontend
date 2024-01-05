@@ -1,5 +1,5 @@
-import {Card, createStyles, Grid, Image, rem, Text, Group, Spoiler, Divider} from "@mantine/core";
-import { ScoreProps } from "./Score.tsx";
+import { Card, createStyles, Grid, Image, rem, Text, Group, Spoiler, Divider } from "@mantine/core";
+import { MaimaiScoreProps } from "./Score.tsx";
 
 const useStyles = createStyles((theme) => ({
   card: {
@@ -7,10 +7,10 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-function calculateCount(scores: ScoreProps[], minAchievements: number, maxAchievements: number) {
+function calculateCount(scores: MaimaiScoreProps[], minAchievements: number, maxAchievements: number) {
   return scores.filter((score) => score.achievements >= minAchievements && score.achievements < maxAchievements).length;
 }
-export const StatisticsSection = ({ scores }: { scores: ScoreProps[] }) => {
+export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   const { classes } = useStyles();
 
   const totalCount = scores.length;
