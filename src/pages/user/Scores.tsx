@@ -24,10 +24,8 @@ import { useNavigate } from "react-router-dom";
 import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
 import { ScoreProps } from '../../components/Scores/maimai/Score.tsx';
 import {
-  DifficultiesProps,
-  getDifficulty,
-  SongList,
-} from "../../utils/api/song";
+  MaimaiDifficultiesProps, MaimaiSongList
+} from "../../utils/api/song/maimai.tsx";
 import { ScoreList } from '../../components/Scores/maimai/ScoreList.tsx';
 import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
 import { IconAlertCircle, IconArrowDown, IconArrowUp, IconReload, IconSearch } from "@tabler/icons-react";
@@ -52,7 +50,7 @@ const sortKeys = [
   { name: '上传时间', key: 'upload_time' },
 ];
 
-export const songList = new SongList();
+export const songList = new MaimaiSongList();
 
 export default function Scores() {
   const { classes } = useStyles();
@@ -105,7 +103,7 @@ export default function Scores() {
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
 
-    songList.fetch(game).then(() => {
+    songList.fetch().then(() => {
       getPlayerScoresHandler();
     });
   }, []);
@@ -148,8 +146,8 @@ export default function Scores() {
         if (!songA || !songB) {
           return 0;
         }
-        const difficultyA = getDifficulty(songA, a.type, a.level_index);
-        const difficultyB = getDifficulty(songB, b.type, b.level_index);
+        const difficultyA = songList.getDifficulty(songA, a.type, a.level_index);
+        const difficultyB = songList.getDifficulty(songB, b.type, b.level_index);
         if (!difficultyA || !difficultyB) {
           return 0;
         }
@@ -177,7 +175,7 @@ export default function Scores() {
 
       songList.songs.forEach((song) => {
         ["dx", "standard"].forEach((type) => {
-          const difficulties = song.difficulties[type as keyof DifficultiesProps];
+          const difficulties = song.difficulties[type as keyof MaimaiDifficultiesProps];
 
           difficulties.forEach((difficulty, index) => {
             if (scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`)) {
@@ -221,7 +219,7 @@ export default function Scores() {
       if (!song) {
         return false;
       }
-      const difficulty = getDifficulty(song, score.type, score.level_index);
+      const difficulty = songList.getDifficulty(song, score.type, score.level_index);
       if (!difficulty) {
         return false;
       }
