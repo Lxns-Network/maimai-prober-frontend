@@ -106,10 +106,18 @@ export const chunithmDifficultyColor = [
   ]
 ]
 
-export const getScoreSecondaryColor = (level_index: number) => {
+export const getMaimaiScoreSecondaryColor = (level_index: number) => {
   return maimaiDifficultyColor[2][level_index]
 }
 
-export const getScoreCardBackgroundColor = (level_index: number) => {
+export const getMaimaiScoreCardBackgroundColor = (level_index: number) => {
   return maimaiDifficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 0][level_index]
+}
+
+export const getChunithmScoreSecondaryColor = (level_index: number) => {
+  return chunithmDifficultyColor[2][level_index]
+}
+
+export const getChunithmScoreCardBackgroundColor = (level_index: number) => {
+  return chunithmDifficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 0][level_index]
 }

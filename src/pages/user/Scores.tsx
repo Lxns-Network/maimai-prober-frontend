@@ -22,15 +22,17 @@ import {
 import { getPlayerScores } from "../../utils/api/player";
 import { useNavigate } from "react-router-dom";
 import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
-import { MaimaiScoreProps } from '../../components/Scores/maimai/Score.tsx';
-import { MaimaiScoreList } from '../../components/Scores/maimai/ScoreList.tsx';
 import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
 import { IconAlertCircle, IconArrowDown, IconArrowUp, IconReload, IconSearch } from "@tabler/icons-react";
-import { MaimaiDifficultiesProps, MaimaiSongList } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import { SongList } from "../../utils/api/song/song.tsx";
+
+import { MaimaiScoreProps } from '../../components/Scores/maimai/Score.tsx';
+import { MaimaiScoreList } from '../../components/Scores/maimai/ScoreList.tsx';
+import { MaimaiDifficultiesProps, MaimaiSongList } from "../../utils/api/song/maimai.tsx";
+
+import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import { ChunithmScoreList } from "../../components/Scores/chunithm/ScoreList.tsx";
-import {ChunithmScoreProps} from "../../components/Scores/chunithm/Score.tsx";
+import { ChunithmScoreProps } from "../../components/Scores/chunithm/Score.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -63,10 +65,10 @@ const sortKeys = {
 
 export default function Scores() {
   const { classes } = useStyles();
-  const [defaultScores, setDefaultScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]);
-  const [scores, setScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]);
+  const [defaultScores, setDefaultScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[] | null>(null);
+  const [scores, setScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[] | null>(null);
   const [displayScores, setDisplayScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]); // 用于分页显示的成绩列表
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [game, setGame] = useLocalStorage({ key: 'game' });
   const [songList, setSongList] = useState(new SongList());
   const navigate = useNavigate();
@@ -79,7 +81,7 @@ export default function Scores() {
   const [search, setSearchValue] = useInputState('');
   const [difficulty, setDifficulty] = useState<string[]>([]);
   const [type, setType] = useState<string[]>([]);
-  const [rating, setRating] = useState<number[]>([1, 15]);
+  const [rating, setRating] = useState<[number, number]>([1, 16]);
   const [genre, setGenre] = useState<string[]>([]);
   const [version, setVersion] = useState<number[]>([]);
   const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
@@ -100,12 +102,10 @@ export default function Scores() {
         setDefaultScores([]);
       } else {
         setDefaultScores(data.data);
-        setScores(data.data);
       }
     } catch (error) {
       console.error(error);
     } finally {
-      setIsLoaded(true);
       resetFilter();
     }
   };
@@ -117,7 +117,7 @@ export default function Scores() {
   useEffect(() => {
     if (!game) return;
     songList.fetch().then(() => {
-      getPlayerScoresHandler();
+      getPlayerScoresHandler()
     });
   }, [songList]);
 
@@ -135,12 +135,13 @@ export default function Scores() {
 
     sort(sortBy, false);
     setTotalPages(Math.ceil(scores.length / separator));
+    setFetching(false);
   }, [scores]);
 
   useEffect(() => {
     const start = (page - 1) * separator;
     const end = start + separator;
-    setDisplayScores(scores.slice(start, end));
+    if (scores) setDisplayScores(scores.slice(start, end));
   }, [page]);
 
   const resetFilter = () => {
@@ -150,11 +151,7 @@ export default function Scores() {
     setVersion([]);
     setScores(defaultScores);
     setType([]);
-    if (game === "maimai") {
-      setRating([1, 15]);
-    } else {
-      setRating([1, 16]);
-    }
+    setRating([1, 16]);
   }
 
   const sort = (key: any, autoChangeReverse = true) => {
@@ -164,6 +161,8 @@ export default function Scores() {
       setReverseSortDirection(reversed);
     }
     setSortBy(key);
+
+    if (!scores) return;
 
     const sortedElements = scores.sort((a: any, b: any) => {
       if (key === 'level_value') {
@@ -200,6 +199,8 @@ export default function Scores() {
   };
 
   useEffect(() => {
+    if (!defaultScores) return;
+
     let filteredData = [...defaultScores];
 
     if (showUnplayed) {
@@ -259,18 +260,9 @@ export default function Scores() {
     }
 
     // 如果没有任何筛选条件，直接返回
-    if (search.trim().length + difficulty.length + type.length + genre.length + version.length === 0) {
-      if (game === "maimai") {
-        if (rating[0] === 1 && rating[1] === 15) {
-          setScores(filteredData as any);
-          return;
-        }
-      } else {
-        if (rating[0] === 1 && rating[1] === 16) {
-          setScores(filteredData as any);
-          return;
-        }
-      }
+    if (search.trim().length + difficulty.length + type.length + genre.length + version.length === 0 && rating[0] === 1 && rating[1] === 16) {
+      setScores(filteredData as any);
+      return;
     }
 
     // 不需要 song 和 difficulty 信息，提前过滤掉可以减少后续的计算量
@@ -323,8 +315,9 @@ export default function Scores() {
         管理你的 maimai DX 查分器账号的成绩
       </Text>
       <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
-        setIsLoaded(false);
-        setScores([]);
+        setFetching(true);
+        setDefaultScores([]);
+        setDisplayScores([]);
         setGame(value);
       }} data={[
         { label: '舞萌 DX', value: 'maimai' },
@@ -342,7 +335,7 @@ export default function Scores() {
           </div>
         </Group>
         <Group m="md">
-          {(sortKeys[game as keyof typeof sortKeys] || []).map((item) => (
+          {(sortKeys[game as keyof typeof sortKeys] || sortKeys.maimai).map((item) => (
             <Button
               key={item.key}
               onClick={() => sort(item.key)}
@@ -369,7 +362,7 @@ export default function Scores() {
                     placeholder="请输入曲名"
                     value={search}
                     onChange={setSearchValue}
-                    data={search.trim().length > 0 ? defaultScores.map((score) => ({
+                    data={search.trim().length > 0 ? (defaultScores || []).map((score) => ({
                       key: `${score.id}-${(score as MaimaiScoreProps).type}-${score.level_index}`,
                       value: score.song_name,
                     })) : []}
@@ -441,11 +434,12 @@ export default function Scores() {
                   <Text fz="xs" c="dimmed" mb={3}>筛选谱面定数</Text>
                   <RangeSlider
                     min={1}
-                    max={game !== "chunithm" ? 15 : 16}
+                    max={16}
                     step={0.1}
                     minRange={0.1}
                     precision={1}
-                    marks={Array.from({ length: game !== "chunithm" ? 15 : 16 }, (_, index) => ({
+                    defaultValue={rating}
+                    marks={Array.from({ length: 16 }, (_, index) => ({
                       value: index + 1,
                       label: String(index + 1),
                     }))}
@@ -478,14 +472,14 @@ export default function Scores() {
           </Accordion.Item>
         </Accordion>
       </Card>
-      {!isLoaded ? (
-        <Group position="center" mt="xl">
+      {fetching ? (
+        <Group position="center">
           <Loader />
         </Group>
-      ) : (!scores ? (
+      ) : ((!scores || scores.length === 0 && !defaultScores) ? (
         <Alert radius="md" icon={<IconAlertCircle />} title="没有获取到任何成绩" color="red">
           <Text size="sm" mb="md">
-            请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
+            请检查你的查分器账号是否已经绑定{game === "maimai" ? "舞萌 DX " : "中二节奏"}游戏账号。
           </Text>
           <Group>
             <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
@@ -495,24 +489,13 @@ export default function Scores() {
         </Alert>
       ) : (
         <>
-          {(scores.length === 0 && defaultScores !== null) ? (
+          {scores.length === 0 && defaultScores && (
             <Alert radius="md" icon={<IconAlertCircle />} title="没有筛选到任何成绩" color="yellow">
               <Text size="sm">
                 请修改筛选条件后重试。
               </Text>
             </Alert>
-          ) : (scores.length === 0 && defaultScores === null) ? (
-            <Alert radius="md" icon={<IconAlertCircle />} title="没有获取到任何成绩" color="red">
-              <Text size="sm" mb="md">
-                请检查你的查分器账号是否已经绑定 maimai DX 游戏账号。
-              </Text>
-              <Group>
-                <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
-                  同步游戏数据
-                </Button>
-              </Group>
-            </Alert>
-          ) : null}
+          )}
           <Group position="center">
             <Pagination total={totalPages} value={page} onChange={setPage} />
             {songList instanceof MaimaiSongList && (

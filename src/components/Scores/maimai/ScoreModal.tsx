@@ -14,12 +14,12 @@ import {
   Space,
   Text
 } from "@mantine/core";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
+import { getMaimaiScoreCardBackgroundColor, getMaimaiScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { useEffect, useState } from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import {IconDatabaseOff, IconPhotoOff} from "@tabler/icons-react";
+import { IconDatabaseOff, IconPhotoOff } from "@tabler/icons-react";
 
 interface ScoreModalProps {
   score: MaimaiScoreProps | null;
@@ -55,13 +55,13 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
           </Group>
         </div>
         <Card w={54} h={38} p={0} radius="md" withBorder style={{
-          border: `2px solid ${getScoreSecondaryColor(score.level_index || 0)}`,
-          backgroundColor: getScoreCardBackgroundColor(score.level_index || 0)
+          border: `2px solid ${getMaimaiScoreSecondaryColor(score.level_index || 0)}`,
+          backgroundColor: getMaimaiScoreCardBackgroundColor(score.level_index || 0)
         }}>
           <Text size="xl" weight={500} align="center" color="white" style={{
             lineHeight: rem(34),
           }}>
-            {getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1)}
+            {getDifficulty(song, score.type, score.level_index).level_value.toFixed(1)}
           </Text>
         </Card>
       </Group>
