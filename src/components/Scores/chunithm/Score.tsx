@@ -11,6 +11,7 @@ export interface ChunithmScoreProps {
   score: number;
   rating: number;
   over_power: number;
+  clear: string;
   full_combo: string;
   full_sync: string;
   rank: string;
@@ -68,7 +69,7 @@ export const Score = memo(({ score, song, onClick }: { score: ChunithmScoreProps
               {(score.score || 0).toLocaleString('en-US', { useGrouping: true })}
             </Text>
             <Text size="xs" color="white">
-              Rating: {parseInt(String(score.rating))}
+              Rating: {Math.floor(score.rating * 100) / 100}
             </Text>
           </div>
         ) : (

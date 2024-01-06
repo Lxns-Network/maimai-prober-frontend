@@ -36,10 +36,24 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
           <Text fz="lg" fw={500} mt={2}>{score.song_name}</Text>
           <Text fz="xs" c="dimmed" mb={8}>谱面 ID：{score.id}</Text>
           <Group spacing="xs">
-            <Image
-              src={`/assets/chunithm/music_icon/${score.full_combo || "failed"}.webp`}
-              width={rem(94)}
-            />
+            {score.clear === "failed" && (
+              <Image
+                src={`/assets/chunithm/music_icon/failed.webp`}
+                width={rem(94)}
+              />
+            )}
+            {score.clear === "clear" && !score.full_combo && (
+              <Image
+                src={`/assets/chunithm/music_icon/failed.webp`}
+                width={rem(94)}
+              />
+            )}
+            {score.full_combo && (
+              <Image
+                src={`/assets/chunithm/music_icon/${score.full_combo}.webp`}
+                width={rem(94)}
+              />
+            )}
             {score.full_sync && (
               <Image
                 src={`/assets/chunithm/music_icon/${score.full_sync}.webp`}
@@ -77,7 +91,7 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
             <Box mr={12}>
               <Text fz="xs" c="dimmed">Rating</Text>
               <Text fz="md">
-                {score.rating}
+                {Math.floor(score.rating * 100) / 100}
               </Text>
             </Box>
             {score.play_time && (

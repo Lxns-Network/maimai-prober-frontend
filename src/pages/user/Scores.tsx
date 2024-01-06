@@ -247,6 +247,7 @@ export default function Scores() {
               level: difficulty.level,
               level_index: index,
               score: -1,
+              clear: "",
               full_combo: "",
               full_sync: "",
               over_power: 0,
