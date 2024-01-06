@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
-import ReCaptcha from '../../utils/reCaptcha';
 import AlertModal from "../../components/AlertModal";
-import {API_URL, RECAPTCHA_SITE_KEY} from "../../main";
+import { API_URL, TURNSTILE_SITE_KEY } from "../../main";
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "../../utils/validator";
 import { IconLock, IconMail, IconUser } from "@tabler/icons-react";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -30,16 +30,10 @@ export default function Register() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "register");
+  const turnstileRef = useRef<any>()
 
   useEffect(() => {
     document.title = "注册 | maimai DX 查分器";
-
-    recaptcha.render();
-
-    return () => {
-      recaptcha.destroy();
-    }
   }, [])
 
   const form = useForm({
@@ -61,8 +55,7 @@ export default function Register() {
   const registerHandler = async (values: any) => {
     setVisible(true);
     try {
-      const recaptchaToken = await recaptcha.getToken();
-      const res = await fetch(`${API_URL}/user/register?recaptcha=${recaptchaToken}`, {
+      const res = await fetch(`${API_URL}/user/register?captcha=${turnstileRef.current?.getResponse()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,6 +65,7 @@ export default function Register() {
       const data = await res.json();
       if (!data.success) {
         openAlert("注册失败", data.message);
+        turnstileRef.current?.reset();
         return;
       }
 
@@ -80,11 +74,20 @@ export default function Register() {
       openAlert("注册失败", `${error}`);
     } finally {
       setVisible(false);
+      turnstileRef.current?.reset();
     }
   }
 
   return (
     <Container className={classes.root} size={400}>
+      <Turnstile
+        ref={turnstileRef}
+        options={{
+          action: 'register',
+          size: 'invisible',
+        }}
+        siteKey={TURNSTILE_SITE_KEY}
+      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

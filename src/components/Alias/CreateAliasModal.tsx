@@ -13,18 +13,18 @@ import {
   Space, Text,
   TextInput, Tooltip
 } from "@mantine/core";
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
 import { fetchAPI } from "../../utils/api/api.tsx";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import ReCaptcha from "../../utils/reCaptcha.tsx";
-import { RECAPTCHA_SITE_KEY } from "../../main.tsx";
+import { TURNSTILE_SITE_KEY } from "../../main.tsx";
 import { IconArrowsShuffle } from "@tabler/icons-react";
 import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import { SongList } from "../../utils/api/song/song.tsx";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 interface CreateAliasModalProps {
   opened: boolean;
@@ -35,7 +35,8 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [songList, setSongList] = useState(new SongList());
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "createalias");
+  const turnstileRef = useRef<any>()
+
   const form = useForm({
     initialValues: {
       game: null,
@@ -59,8 +60,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   const createAliasHandler = async (values: any) => {
     setUploading(true);
     try {
-      const recaptchaToken = await recaptcha.getToken();
-      const res = await fetchAPI(`user/${values.game}/alias?recaptcha=${recaptchaToken}`, {
+      const res = await fetchAPI(`user/${values.game}/alias?captcha=${turnstileRef.current?.getResponse()}`, {
         method: "POST",
         body: {
           song_id: parseInt(values.songId),
@@ -73,9 +73,11 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
           message: '请换一个别名',
           color: 'red',
         });
+        turnstileRef.current?.reset();
         setUploading(false);
         return
       } else if (res.status !== 200) {
+        turnstileRef.current?.reset();
         setUploading(false);
         return
       }
@@ -94,17 +96,10 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
     } catch (error) {
       console.error(error);
     } finally {
+      turnstileRef.current?.reset();
       setUploading(false);
     }
   }
-
-  useEffect(() => {
-    recaptcha.render();
-
-    return () => {
-      recaptcha.destroy();
-    }
-  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -128,6 +123,14 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
+      <Turnstile
+        ref={turnstileRef}
+        options={{
+          action: 'create-alias',
+          size: 'invisible',
+        }}
+        siteKey={TURNSTILE_SITE_KEY}
+      />
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>

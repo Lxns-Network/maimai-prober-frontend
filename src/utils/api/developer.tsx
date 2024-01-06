@@ -1,7 +1,7 @@
 import { fetchAPI } from "./api";
 
-export async function sendDeveloperApply(data: any, recaptcha: any) {
-  return fetchAPI(`user/developer/apply?recaptcha=${recaptcha}`, { method: "POST", body: data });
+export async function sendDeveloperApply(data: any, captcha: any) {
+  return fetchAPI(`user/developer/apply?captcha=${captcha}`, { method: "POST", body: data });
 }
 
 export async function getDeveloperApply() {

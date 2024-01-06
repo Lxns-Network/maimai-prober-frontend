@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import {
   Title,
   Card,
@@ -11,9 +11,8 @@ import {
 } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import useAlert from '../../utils/useAlert';
-import ReCaptcha from "../../utils/reCaptcha";
 import AlertModal from '../../components/AlertModal';
-import { RECAPTCHA_SITE_KEY } from '../../main';
+import { TURNSTILE_SITE_KEY } from '../../main';
 import Icon from "@mdi/react";
 import {
   mdiCodeTags,
@@ -21,6 +20,7 @@ import {
 } from "@mdi/js";
 import { useForm } from "@mantine/form";
 import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/developer";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -42,7 +42,7 @@ export default function DeveloperApply() {
   const { classes } = useStyles();
   const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
+  const turnstileRef = useRef<any>()
 
   useEffect(() => {
     document.title = "申请成为开发者 | maimai DX 查分器";
@@ -58,12 +58,6 @@ export default function DeveloperApply() {
           setApplied(true);
         }
       })
-
-    recaptcha.render();
-
-    return () => {
-      recaptcha.destroy();
-    }
   }, [])
 
   const form = useForm({
@@ -83,11 +77,11 @@ export default function DeveloperApply() {
   const sendDeveloperApplyHandler = async (values: any) => {
     setVisible(true);
     try {
-      const recaptchaToken = await recaptcha.getToken();
-      const res = await sendDeveloperApply(values, recaptchaToken);
+      const res = await sendDeveloperApply(values, turnstileRef.current?.getResponse());
       const data = await res.json();
       if (!data.success) {
         openAlert("提交失败", data.message);
+        turnstileRef.current?.reset();
         return;
       }
 
@@ -97,11 +91,20 @@ export default function DeveloperApply() {
       openAlert("提交失败", `${err}`);
     } finally {
       setVisible(false);
+      turnstileRef.current?.reset();
     }
   }
 
   return (
     <Container className={classes.root} size={400}>
+      <Turnstile
+        ref={turnstileRef}
+        options={{
+          action: 'apply-developer',
+          size: 'invisible',
+        }}
+        siteKey={TURNSTILE_SITE_KEY}
+      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

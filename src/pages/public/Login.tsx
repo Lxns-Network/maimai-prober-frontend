@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useLocation, useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
-import ReCaptcha from "../../utils/reCaptcha";
 import AlertModal from '../../components/AlertModal';
-import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
+import { API_URL, TURNSTILE_SITE_KEY } from '../../main';
 import { useForm } from "@mantine/form";
 import { validatePassword, validateUserName } from "../../utils/validator";
 import { useLocalStorage } from "@mantine/hooks";
 import { IconLock, IconUser } from "@tabler/icons-react";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -34,7 +34,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state;
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
+  const turnstileRef = useRef<any>()
 
   useEffect(() => {
     document.title = "登录 | maimai DX 查分器";
@@ -46,12 +46,6 @@ export default function Login() {
       if (state.reset) {
         openAlert("重置成功", "请使用新密码登录。");
       }
-    }
-
-    recaptcha.render();
-
-    return () => {
-      recaptcha.destroy();
     }
   }, [])
 
@@ -70,8 +64,7 @@ export default function Login() {
   const loginHandler = async (values: any) => {
     setVisible(true);
     try {
-      const recaptchaToken = await recaptcha.getToken();
-      const res = await fetch(`${API_URL}/user/login?recaptcha=${recaptchaToken}`, {
+      const res = await fetch(`${API_URL}/user/login?captcha=${turnstileRef.current?.getResponse()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,6 +74,7 @@ export default function Login() {
       const data = await res.json();
       if (!data.success) {
         openAlert("登录失败", data.message);
+        turnstileRef.current?.reset();
         return;
       }
 
@@ -95,11 +89,20 @@ export default function Login() {
       openAlert("登录失败", `${error}`);
     } finally {
       setVisible(false);
+      turnstileRef.current?.reset();
     }
   }
 
   return (
     <Container className={classes.root} size={400}>
+      <Turnstile
+        ref={turnstileRef}
+        options={{
+          action: 'login',
+          size: 'invisible',
+        }}
+        siteKey={TURNSTILE_SITE_KEY}
+      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

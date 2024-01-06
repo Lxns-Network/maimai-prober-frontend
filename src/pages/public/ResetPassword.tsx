@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import {
   Title,
   Card,
@@ -9,14 +9,14 @@ import {
   PasswordInput
 } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
+import { API_URL, TURNSTILE_SITE_KEY } from '../../main';
 import { validatePassword } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import useAlert from '../../utils/useAlert';
-import ReCaptcha from "../../utils/reCaptcha";
 import AlertModal from '../../components/AlertModal';
 import { IconLock } from "@tabler/icons-react";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -38,19 +38,13 @@ export default function ResetPassword() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "reset");
+  const turnstileRef = useRef<any>()
 
   useEffect(() => {
     document.title = "重置密码 | maimai DX 查分器";
 
     if (!new URLSearchParams(window.location.search).get("token")) {
       navigate("/login");
-    }
-
-    recaptcha.render();
-
-    return () => {
-      recaptcha.destroy();
     }
   }, [])
 
@@ -69,8 +63,7 @@ export default function ResetPassword() {
   const forgotPassword = async (values: any) => {
     setVisible(true);
     try {
-      const recaptchaToken = await recaptcha.getToken();
-      const res = await fetch(`${API_URL}/user/reset-password?recaptcha=${recaptchaToken}&token=${
+      const res = await fetch(`${API_URL}/user/reset-password?captcha=${turnstileRef.current?.getResponse()}&token=${
         new URLSearchParams(window.location.search).get("token")
       }`, {
         method: 'POST',
@@ -82,6 +75,7 @@ export default function ResetPassword() {
       const data = await res.json();
       if (!data.success) {
         openAlert("重置失败", data.message);
+        turnstileRef.current?.reset();
         return
       }
 
@@ -90,11 +84,20 @@ export default function ResetPassword() {
       openAlert("重置失败", `${error}`);
     } finally {
       setVisible(false);
+      turnstileRef.current?.reset();
     }
   }
 
   return (
     <Container className={classes.root} size={400}>
+      <Turnstile
+        ref={turnstileRef}
+        options={{
+          action: 'reset-password',
+          size: 'invisible',
+        }}
+        siteKey={TURNSTILE_SITE_KEY}
+      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

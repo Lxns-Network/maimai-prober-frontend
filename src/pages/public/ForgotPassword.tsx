@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import { Title, Card, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
+import { API_URL, TURNSTILE_SITE_KEY } from '../../main';
 import { validateEmail } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import useAlert from '../../utils/useAlert';
-import ReCaptcha from "../../utils/reCaptcha";
 import AlertModal from '../../components/AlertModal';
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -30,16 +30,10 @@ export default function ForgotPassword() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "forgot");
+  const turnstileRef = useRef<any>()
 
   useEffect(() => {
     document.title = "忘记密码 | maimai DX 查分器";
-
-    recaptcha.render();
-
-    return () => {
-      recaptcha.destroy();
-    }
   }, [])
 
   const form = useForm({
@@ -55,8 +49,7 @@ export default function ForgotPassword() {
   const forgotPassword = async (values: any) => {
     setVisible(true);
     try {
-      const recaptchaToken = await recaptcha.getToken();
-      const res = await fetch(`${API_URL}/user/forgot-password?recaptcha=${recaptchaToken}`, {
+      const res = await fetch(`${API_URL}/user/forgot-password?captcha=${turnstileRef.current?.getResponse()}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,6 +63,7 @@ export default function ForgotPassword() {
       const data = await res.json();
       if (!data.success) {
         openAlert("发送失败", data.message);
+        turnstileRef.current?.reset();
         return;
       }
 
@@ -78,11 +72,20 @@ export default function ForgotPassword() {
       openAlert("发送失败", `${error}`);
     } finally {
       setVisible(false);
+      turnstileRef.current?.reset();
     }
   }
 
   return (
     <Container className={classes.root} size={400}>
+      <Turnstile
+        ref={turnstileRef}
+        options={{
+          action: 'forgot-password',
+          size: 'invisible',
+        }}
+        siteKey={TURNSTILE_SITE_KEY}
+      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

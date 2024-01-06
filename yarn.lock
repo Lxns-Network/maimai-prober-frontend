@@ -514,6 +514,11 @@
   resolved "https://registry.npmjs.org/@mantine/utils/-/utils-6.0.19.tgz"
   integrity sha512-duvtnaW1gDR2gnvUqnWhl6DMW7sN0HEWqS8Z/BbwaMi75U+Xp17Q72R9JtiIrxQbzsq+KvH9L9B/pxMVwbLirg==
 
+"@marsidev/react-turnstile@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.npmjs.org/@marsidev/react-turnstile/-/react-turnstile-0.4.0.tgz"
+  integrity sha512-U0lwTWQhP04AnIdWEbLpF/phpqtblNbrnE4yJMdvGyeOZOTmuHW3wB+V8X+BO55pTXZitp2GgJsrGkbUjwJIeQ==
+
 "@mdi/js@^7.2.96":
   version "7.2.96"
   resolved "https://registry.npmjs.org/@mdi/js/-/js-7.2.96.tgz"
@@ -705,11 +710,6 @@
   version "3.0.1"
   resolved "https://registry.npmjs.org/@types/d3-timer/-/d3-timer-3.0.1.tgz"
   integrity sha512-GGTvzKccVEhxmRfJEB6zhY9ieT4UhGVUIQaBzFpUO9OXy2ycAlnPCSJLzmGGgqt3KVjqN3QCQB4g1rsZnHsWhg==
-
-"@types/grecaptcha@^3.0.5":
-  version "3.0.5"
-  resolved "https://registry.npmjs.org/@types/grecaptcha/-/grecaptcha-3.0.5.tgz"
-  integrity sha512-FyrF9WpBz34ZIqLu49kK+wL2NXgBOqeiWOinx7VW5AS01o0F1uejhfpQ6RHlm5sOyEbR7viIC7mSUzUC09NAIQ==
 
 "@types/json-schema@^7.0.12":
   version "7.0.12"
