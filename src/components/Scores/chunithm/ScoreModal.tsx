@@ -44,7 +44,7 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
             )}
             {score.clear === "clear" && !score.full_combo && (
               <Image
-                src={`/assets/chunithm/music_icon/failed.webp`}
+                src={`/assets/chunithm/music_icon/clear.webp`}
                 width={rem(94)}
               />
             )}
