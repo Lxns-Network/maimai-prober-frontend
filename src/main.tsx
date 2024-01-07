@@ -5,7 +5,7 @@ import { RouterProvider } from "react-router-dom";
 import { router } from './router';
 
 export const API_URL = import.meta.env.VITE_API_URL;
-export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+export const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

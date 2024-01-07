@@ -19,12 +19,10 @@ import Icon from "@mdi/react";
 import { fetchAPI } from "../../utils/api/api.tsx";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { TURNSTILE_SITE_KEY } from "../../main.tsx";
 import { IconArrowsShuffle } from "@tabler/icons-react";
 import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import { SongList } from "../../utils/api/song/song.tsx";
-import { Turnstile } from "@marsidev/react-turnstile";
 
 interface CreateAliasModalProps {
   opened: boolean;
@@ -60,7 +58,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   const createAliasHandler = async (values: any) => {
     setUploading(true);
     try {
-      const res = await fetchAPI(`user/${values.game}/alias?captcha=${turnstileRef.current?.getResponse()}`, {
+      const res = await fetchAPI(`user/${values.game}/alias}`, {
         method: "POST",
         body: {
           song_id: parseInt(values.songId),
@@ -123,14 +121,6 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
-      <Turnstile
-        ref={turnstileRef}
-        options={{
-          action: 'create-alias',
-          size: 'invisible',
-        }}
-        siteKey={TURNSTILE_SITE_KEY}
-      />
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>

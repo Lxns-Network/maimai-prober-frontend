@@ -9,14 +9,14 @@ import {
   PasswordInput
 } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import { API_URL, TURNSTILE_SITE_KEY } from '../../main';
+import { API_URL, HCAPTCHA_SITE_KEY } from '../../main';
 import { validatePassword } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
 import { IconLock } from "@tabler/icons-react";
-import { Turnstile } from "@marsidev/react-turnstile";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -38,7 +38,7 @@ export default function ResetPassword() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const turnstileRef = useRef<any>()
+  const captchaRef = useRef<any>()
 
   useEffect(() => {
     document.title = "重置密码 | maimai DX 查分器";
@@ -63,7 +63,8 @@ export default function ResetPassword() {
   const forgotPassword = async (values: any) => {
     setVisible(true);
     try {
-      const res = await fetch(`${API_URL}/user/reset-password?captcha=${turnstileRef.current?.getResponse()}&token=${
+      const captchaResponse = await captchaRef.current.execute({ async: true })
+      const res = await fetch(`${API_URL}/user/reset-password?captcha=${captchaResponse.response}&token=${
         new URLSearchParams(window.location.search).get("token")
       }`, {
         method: 'POST',
@@ -75,7 +76,6 @@ export default function ResetPassword() {
       const data = await res.json();
       if (!data.success) {
         openAlert("重置失败", data.message);
-        turnstileRef.current?.reset();
         return
       }
 
@@ -84,19 +84,15 @@ export default function ResetPassword() {
       openAlert("重置失败", `${error}`);
     } finally {
       setVisible(false);
-      turnstileRef.current?.reset();
     }
   }
 
   return (
     <Container className={classes.root} size={400}>
-      <Turnstile
-        ref={turnstileRef}
-        options={{
-          action: 'reset-password',
-          size: 'invisible',
-        }}
-        siteKey={TURNSTILE_SITE_KEY}
+      <HCaptcha
+        sitekey={HCAPTCHA_SITE_KEY}
+        size="invisible"
+        ref={captchaRef}
       />
       <AlertModal
         title={alertTitle}

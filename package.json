@@ -4,13 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host=0.0.0.0",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
+    "@hcaptcha/react-hcaptcha": "^1.9.2",
     "@mantine/core": "^6.0.19",
     "@mantine/dates": "^6.0.19",
     "@mantine/ds": "^6.0.19",

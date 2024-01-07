@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Title,
   Card,
@@ -12,7 +12,7 @@ import {
 import { Container, rem, createStyles } from '@mantine/core';
 import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
-import { TURNSTILE_SITE_KEY } from '../../main';
+import { HCAPTCHA_SITE_KEY } from '../../main';
 import Icon from "@mdi/react";
 import {
   mdiCodeTags,
@@ -20,7 +20,7 @@ import {
 } from "@mdi/js";
 import { useForm } from "@mantine/form";
 import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/developer";
-import { Turnstile } from "@marsidev/react-turnstile";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -42,7 +42,7 @@ export default function DeveloperApply() {
   const { classes } = useStyles();
   const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
-  const turnstileRef = useRef<any>()
+  const captchaRef = useRef<any>()
 
   useEffect(() => {
     document.title = "申请成为开发者 | maimai DX 查分器";
@@ -77,11 +77,11 @@ export default function DeveloperApply() {
   const sendDeveloperApplyHandler = async (values: any) => {
     setVisible(true);
     try {
-      const res = await sendDeveloperApply(values, turnstileRef.current?.getResponse());
+      const captchaResponse = await captchaRef.current.execute({ async: true })
+      const res = await sendDeveloperApply(values, captchaResponse.response);
       const data = await res.json();
       if (!data.success) {
         openAlert("提交失败", data.message);
-        turnstileRef.current?.reset();
         return;
       }
 
@@ -91,19 +91,15 @@ export default function DeveloperApply() {
       openAlert("提交失败", `${err}`);
     } finally {
       setVisible(false);
-      turnstileRef.current?.reset();
     }
   }
 
   return (
     <Container className={classes.root} size={400}>
-      <Turnstile
-        ref={turnstileRef}
-        options={{
-          action: 'apply-developer',
-          size: 'invisible',
-        }}
-        siteKey={TURNSTILE_SITE_KEY}
+      <HCaptcha
+        sitekey={HCAPTCHA_SITE_KEY}
+        size="invisible"
+        ref={captchaRef}
       />
       <AlertModal
         title={alertTitle}

@@ -289,8 +289,10 @@ export default function Scores() {
       } else if (songList instanceof MaimaiSongList) {
         const difficulty = songList.getDifficulty(song, (score as MaimaiScoreProps).type, score.level_index);
         if (!difficulty) return false;
-        return ((genre.some((item) => songList.genres.find((genre) => genre.genre === item)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
-          && (version.some((item) => difficulty.version >= item && difficulty.version < item + 1000) || version.length === 0) // 过滤版本
+
+        return ((genre.some((selected) => songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
+          && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
+            songList.versions[songList.versions.findIndex((value) => value.version === selected)+1]?.version || selected+1000)) || version.length === 0) // 过滤版本
           && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]); // 过滤定数
       }
     })
