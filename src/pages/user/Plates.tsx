@@ -13,13 +13,14 @@ import {
   Image,
   Space,
   ThemeIcon,
-  Box
+  Box, Checkbox
 } from "@mantine/core";
 import Icon from "@mdi/react";
 import { mdiCheck } from "@mdi/js";
 import { DataTable } from "mantine-datatable";
 import { NAVBAR_BREAKPOINT } from "../../App";
 import { IconCheck, IconSearch } from "@tabler/icons-react";
+import { useToggle } from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -95,17 +96,20 @@ interface PlateDataProps {
 
 export default function Plates() {
   const { classes } = useStyles();
+  const [defaultPlates, setDefaultPlates] = useState<PlateDataProps[]>([]);
   const [plates, setPlates] = useState<PlateDataProps[]>([]);
   const [plateId, setPlateId] = useState<number | null>(null);
   const [plate, setPlate] = useState<PlateDataProps | null>(null);
   const [fetching, setFetching] = useState<boolean>(false);
-  //const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
+  const [onlySongRequired, toggleOnlySongRequired] = useToggle();
+  // const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
   const game = 'maimai';
 
   const getPlateListHandler = async () => {
     try {
       const res = await getPlateList(game, false);
       const data = await res.json();
+      setDefaultPlates(data.plates);
       setPlates(data.plates);
     } catch (err) {
       console.error(err);
@@ -183,6 +187,14 @@ export default function Plates() {
     setDisplayRecords(records.slice(0, pageSize));
   }, [pageSize]);
 
+  useEffect(() => {
+    setPlates(defaultPlates.filter((plate) => {
+      // return !((!plate.required || plate.required.length === 0) && onlySongRequired);
+      if (onlySongRequired) return plate.description.search("全曲") !== -1;
+      return true;
+    }))
+  }, [onlySongRequired]);
+
   return (
     <>
       <Container className={classes.root} size={500}>
@@ -190,9 +202,9 @@ export default function Plates() {
           姓名框查询
         </Title>
         <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
-          查询 maimai DX 姓名框与你的牌子获取进度
+          查询 maimai DX 姓名框与你的姓名框获取进度
         </Text>
-        {plates === null ? (
+        {!plates ? (
           <Group position="center" mt="xl">
             <Loader />
           </Group>
@@ -216,6 +228,11 @@ export default function Plates() {
               onChange={(value) => {
                 setPlateId(parseInt(value || ''));
               }}
+            />
+            <Space h="xs" />
+            <Checkbox
+              label="仅显示要求曲目的姓名框"
+              onChange={() => toggleOnlySongRequired()}
             />
             <Card mt="md" radius="md" p="md" withBorder className={classes.card}>
               <Group position="apart">
