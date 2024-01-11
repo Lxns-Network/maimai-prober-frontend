@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Title, Card, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import { API_URL, HCAPTCHA_SITE_KEY } from '../../main';
+import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import { validateEmail } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+import ReCaptcha from "../../utils/reCaptcha.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -30,10 +30,16 @@ export default function ForgotPassword() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const captchaRef = useRef<any>()
+  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "forgot");
 
   useEffect(() => {
     document.title = "忘记密码 | maimai DX 查分器";
+
+    recaptcha.render();
+
+    return () => {
+      recaptcha.destroy();
+    }
   }, [])
 
   const form = useForm({
@@ -49,8 +55,8 @@ export default function ForgotPassword() {
   const forgotPassword = async (values: any) => {
     setVisible(true);
     try {
-      const captchaResponse = await captchaRef.current.execute({ async: true })
-      const res = await fetch(`${API_URL}/user/forgot-password?captcha=${captchaResponse.response}`, {
+      const recaptchaToken = await recaptcha.getToken();
+      const res = await fetch(`${API_URL}/user/forgot-password?captcha=${recaptchaToken}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,11 +83,6 @@ export default function ForgotPassword() {
 
   return (
     <Container className={classes.root} size={400}>
-      <HCaptcha
-        sitekey={HCAPTCHA_SITE_KEY}
-        size="invisible"
-        ref={captchaRef}
-      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

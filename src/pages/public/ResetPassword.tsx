@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import { useEffect, useState } from "react";
 import {
   Title,
   Card,
@@ -9,14 +9,13 @@ import {
   PasswordInput
 } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import { API_URL, HCAPTCHA_SITE_KEY } from '../../main';
+import { API_URL } from '../../main';
 import { validatePassword } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
 import { IconLock } from "@tabler/icons-react";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -38,7 +37,6 @@ export default function ResetPassword() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const captchaRef = useRef<any>()
 
   useEffect(() => {
     document.title = "重置密码 | maimai DX 查分器";
@@ -63,8 +61,7 @@ export default function ResetPassword() {
   const forgotPassword = async (values: any) => {
     setVisible(true);
     try {
-      const captchaResponse = await captchaRef.current.execute({ async: true })
-      const res = await fetch(`${API_URL}/user/reset-password?captcha=${captchaResponse.response}&token=${
+      const res = await fetch(`${API_URL}/user/reset-password?token=${
         new URLSearchParams(window.location.search).get("token")
       }`, {
         method: 'POST',
@@ -89,11 +86,6 @@ export default function ResetPassword() {
 
   return (
     <Container className={classes.root} size={400}>
-      <HCaptcha
-        sitekey={HCAPTCHA_SITE_KEY}
-        size="invisible"
-        ref={captchaRef}
-      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

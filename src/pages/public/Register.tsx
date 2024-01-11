@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Title, Card, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
 import AlertModal from "../../components/AlertModal";
-import { API_URL, HCAPTCHA_SITE_KEY } from "../../main";
+import { API_URL, RECAPTCHA_SITE_KEY } from "../../main";
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "../../utils/validator";
 import { IconLock, IconMail, IconUser } from "@tabler/icons-react";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+import ReCaptcha from "../../utils/reCaptcha.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -30,10 +30,16 @@ export default function Register() {
   const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-  const captchaRef = useRef<any>()
+  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "register");
 
   useEffect(() => {
     document.title = "注册 | maimai DX 查分器";
+
+    recaptcha.render();
+
+    return () => {
+      recaptcha.destroy();
+    }
   }, [])
 
   const form = useForm({
@@ -55,8 +61,8 @@ export default function Register() {
   const registerHandler = async (values: any) => {
     setVisible(true);
     try {
-      const captchaResponse = await captchaRef.current.execute({ async: true })
-      const res = await fetch(`${API_URL}/user/register?captcha=${captchaResponse.response}`, {
+      const recaptchaToken = await recaptcha.getToken();
+      const res = await fetch(`${API_URL}/user/register?captcha=${recaptchaToken}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,11 +85,6 @@ export default function Register() {
 
   return (
     <Container className={classes.root} size={400}>
-      <HCaptcha
-        sitekey={HCAPTCHA_SITE_KEY}
-        size="invisible"
-        ref={captchaRef}
-      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

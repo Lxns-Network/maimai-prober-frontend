@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Title,
   Card,
@@ -12,7 +12,6 @@ import {
 import { Container, rem, createStyles } from '@mantine/core';
 import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
-import { HCAPTCHA_SITE_KEY } from '../../main';
 import Icon from "@mdi/react";
 import {
   mdiCodeTags,
@@ -20,7 +19,6 @@ import {
 } from "@mdi/js";
 import { useForm } from "@mantine/form";
 import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/developer";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -42,7 +40,6 @@ export default function DeveloperApply() {
   const { classes } = useStyles();
   const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
-  const captchaRef = useRef<any>()
 
   useEffect(() => {
     document.title = "申请成为开发者 | maimai DX 查分器";
@@ -77,8 +74,7 @@ export default function DeveloperApply() {
   const sendDeveloperApplyHandler = async (values: any) => {
     setVisible(true);
     try {
-      const captchaResponse = await captchaRef.current.execute({ async: true })
-      const res = await sendDeveloperApply(values, captchaResponse.response);
+      const res = await sendDeveloperApply(values);
       const data = await res.json();
       if (!data.success) {
         openAlert("提交失败", data.message);
@@ -96,11 +92,6 @@ export default function DeveloperApply() {
 
   return (
     <Container className={classes.root} size={400}>
-      <HCaptcha
-        sitekey={HCAPTCHA_SITE_KEY}
-        size="invisible"
-        ref={captchaRef}
-      />
       <AlertModal
         title={alertTitle}
         content={alertContent}

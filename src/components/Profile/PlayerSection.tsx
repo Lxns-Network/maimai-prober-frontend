@@ -79,7 +79,7 @@ const MaimaiPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null 
         <Avatar src={playerData.icon_url} size={94} radius="md" />
         <div>
           <Group spacing="xs" mb={8}>
-            <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color)} style={{
+            <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color || "normal")} style={{
               height: "auto",
             }} children={
               <Text fz="xs" style={{

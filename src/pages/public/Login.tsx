@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Title,
   Card,
@@ -14,12 +14,12 @@ import { Container, rem, createStyles } from '@mantine/core';
 import { useLocation, useNavigate } from "react-router-dom";
 import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
-import { API_URL, HCAPTCHA_SITE_KEY } from '../../main';
+import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import { useForm } from "@mantine/form";
 import { validatePassword, validateUserName } from "../../utils/validator";
 import { useLocalStorage } from "@mantine/hooks";
 import { IconLock, IconUser } from "@tabler/icons-react";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+import ReCaptcha from "../../utils/reCaptcha.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -44,7 +44,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state;
-  const captchaRef = useRef<any>()
+  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
 
   useEffect(() => {
     document.title = "登录 | maimai DX 查分器";
@@ -56,6 +56,12 @@ export default function Login() {
       if (state.reset) {
         openAlert("重置成功", "请使用新密码登录。");
       }
+    }
+
+    recaptcha.render();
+
+    return () => {
+      recaptcha.destroy();
     }
   }, [])
 
@@ -74,8 +80,8 @@ export default function Login() {
   const loginHandler = async (values: any) => {
     setVisible(true);
     try {
-      const captchaResponse = await captchaRef.current.execute({ async: true })
-      const res = await fetch(`${API_URL}/user/login?captcha=${captchaResponse.response}`, {
+      const recaptchaToken = await recaptcha.getToken();
+      const res = await fetch(`${API_URL}/user/login?captcha=${recaptchaToken}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,11 +110,6 @@ export default function Login() {
 
   return (
     <Container className={classes.root} size={400}>
-      <HCaptcha
-        sitekey={HCAPTCHA_SITE_KEY}
-        size="invisible"
-        ref={captchaRef}
-      />
       <AlertModal
         title={alertTitle}
         content={alertContent}
