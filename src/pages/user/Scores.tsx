@@ -33,6 +33,7 @@ import { MaimaiDifficultiesProps, MaimaiSongList } from "../../utils/api/song/ma
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import { ChunithmScoreList } from "../../components/Scores/chunithm/ScoreList.tsx";
 import { ChunithmScoreProps } from "../../components/Scores/chunithm/Score.tsx";
+import { AliasList } from "../../utils/api/alias.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -48,6 +49,7 @@ const useStyles = createStyles((theme) => ({
 
 const sortKeys = {
   maimai: [
+    { name: '曲目 ID', key: 'id' },
     { name: '曲名', key: 'song_name' },
     { name: '定数', key: 'level_value' },
     { name: '达成率', key: 'achievements' },
@@ -55,6 +57,7 @@ const sortKeys = {
     { name: '上传时间', key: 'upload_time' },
   ],
   chunithm: [
+    { name: '曲目 ID', key: 'id' },
     { name: '曲名', key: 'song_name' },
     { name: '定数', key: 'level_value' },
     { name: '成绩', key: 'score' },
@@ -71,6 +74,7 @@ export default function Scores() {
   const [fetching, setFetching] = useState(true);
   const [game, setGame] = useLocalStorage({ key: 'game' });
   const [songList, setSongList] = useState(new SongList());
+  const [aliasList] = useState(new AliasList());
   const navigate = useNavigate();
 
   // 排序相关
@@ -98,7 +102,7 @@ export default function Scores() {
         return
       }
       const data = await res.json();
-      if (data.data === null) {
+      if (!data.data) {
         setDefaultScores([]);
       } else {
         setDefaultScores(data.data);
@@ -117,7 +121,7 @@ export default function Scores() {
   useEffect(() => {
     if (!game) return;
     songList.fetch().then(() => {
-      getPlayerScoresHandler()
+      getPlayerScoresHandler();
     });
   }, [songList]);
 
@@ -128,6 +132,7 @@ export default function Scores() {
     } else {
       setSongList(new ChunithmSongList());
     }
+    aliasList.fetch(game);
   }, [game]);
 
   useEffect(() => {
@@ -145,6 +150,7 @@ export default function Scores() {
   }, [page]);
 
   const resetFilter = () => {
+    setSortBy(undefined);
     setSearchValue('');
     setDifficulty([]);
     setGenre([]);
@@ -273,7 +279,8 @@ export default function Scores() {
           return false;
         }
       }
-      return score.song_name.toLowerCase().includes(search.toLowerCase()) // 过滤搜索
+      return (score.song_name.toLowerCase().includes(search.toLowerCase()) || // 过滤搜索
+          (aliasList.searchMap[search.toLowerCase()] || []).includes(score.id)) // 过滤搜索别名
         && (difficulty.includes(score.level_index.toString()) || difficulty.length === 0) // 过滤难度
     })
 

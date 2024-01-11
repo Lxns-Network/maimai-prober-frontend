@@ -261,7 +261,7 @@ export default function Vote() {
             </HoverCard.Target>
             <HoverCard.Dropdown>
               <Text size="sm">
-                暂时不支持在其他页面使用曲目别名
+                可以在成绩管理页使用别名进行查询
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>
