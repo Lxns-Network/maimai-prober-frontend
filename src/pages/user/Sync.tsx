@@ -86,6 +86,28 @@ const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
   )
 }
 
+const CrawlTokenAlert = ({ token, resetHandler }: any) => {
+  const getExpireTime = (crawlToken: string) => {
+    return Math.floor(((JSON.parse(atob(crawlToken.split('.')[1])).exp - new Date().getTime() / 1000)) / 60)
+  }
+
+  const isTokenExpired = token && getExpireTime(token) < 0;
+  const alertColor = isTokenExpired ? 'yellow' : 'blue';
+
+  return (
+    <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="链接有效期提示" mb="md" color={alertColor}>
+      <Text size="sm" mb="md">
+        {token ? `该链接${
+          isTokenExpired ? "已失效，" : `将在 ${getExpireTime(token) + 1} 分钟内失效，逾时`
+        }请点击下方按钮刷新 OAuth 链接。` : "链接未生成，请点击下方按钮生成 OAuth 链接。"}
+      </Text>
+      <Button variant="outline" leftIcon={<IconRefresh size={20} />} onClick={resetHandler} color={alertColor}>
+        {token ? "刷新链接" : "生成链接"}
+      </Button>
+    </Alert>
+  );
+};
+
 interface CrawlStatusProps {
   status: string;
   friend_code: number;
@@ -146,10 +168,6 @@ export default function Sync() {
     } catch (error) {
       return;
     }
-  }
-
-  const getCrawlTokenExpireTime = (crawlToken: string) => {
-    return Math.floor(((JSON.parse(atob(crawlToken.split('.')[1])).exp - new Date().getTime() / 1000)) / 60)
   }
 
   useEffect(() => {
@@ -248,7 +266,7 @@ export default function Sync() {
         ) : 0
       } orientation="vertical" allowNextStepsSelect={false} ref={stepper}>
         <Stepper.Step label="步骤 1" description={
-          <Group spacing="md" w={stepperRect.width - 54}>
+          <Group spacing="xs" w={stepperRect.width - 54}>
             <Text>
               配置 HTTP 代理
             </Text>
@@ -343,18 +361,7 @@ export default function Sync() {
               label="复制微信 OAuth 链接"
               content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
             />
-            <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="链接有效期提示" mb="md">
-              <Text size="sm" mb="md">
-                {crawlToken ? `该链接${
-                  getCrawlTokenExpireTime(crawlToken) > 0 ? `将在 ${getCrawlTokenExpireTime(crawlToken) + 1} 分钟内失效，逾时` : "已失效，"
-                }请点击下方按钮刷新 OAuth 链接。` : "链接未生成，请点击下方按钮生成 OAuth 链接。"}
-              </Text>
-              <Button variant="outline" leftIcon={<IconRefresh size={20} />} onClick={() => {
-                getUserCrawlTokenHandler();
-              }}>
-                {crawlToken ? "刷新链接" : "生成链接"}
-              </Button>
-            </Alert>
+            <CrawlTokenAlert token={crawlToken} resetHandler={getUserCrawlTokenHandler} />
           </Stack>
         } loading={proxyAvailable && crawlStatus == null} />
         <Stepper.Step label="步骤 4" description={
@@ -363,28 +370,21 @@ export default function Sync() {
       </Stepper>
       <Card withBorder radius="md" className={classes.card} p="md" mt={rem(-12)}>
         <Card.Section className={classes.section}>
-          <Group spacing="xl">
-            {(!crawlStatus || crawlStatus?.status === "pending") && (
-              <Loader variant="bars" />
-            )}
-            <div>
-              <Text size="xs" color="dimmed">
-                数据同步状态
-              </Text>
-              <Text fz="lg" color={
-                crawlStatus?.status === "failed" ? "red" : (
-                  crawlStatus?.status === "finished" ? "teal" : "default"
-                )
-              }>
-                {!crawlStatus && "等待前置步骤完成"}
-                {crawlStatus && {
-                  "pending": "服务端正在爬取游戏数据",
-                  "finished": "游戏数据同步成功",
-                  "failed": "成绩同步失败"
-                }[crawlStatus?.status]}
-              </Text>
-            </div>
-          </Group>
+          <Text size="xs" color="dimmed">
+            数据同步状态
+          </Text>
+          <Text fz="lg" color={
+            crawlStatus?.status === "failed" ? "red" : (
+              crawlStatus?.status === "finished" ? "teal" : "default"
+            )
+          }>
+            {!crawlStatus && "等待前置步骤完成"}
+            {crawlStatus && {
+              "pending": "服务端正在爬取游戏数据",
+              "finished": "游戏数据同步成功",
+              "failed": "成绩同步失败"
+            }[crawlStatus?.status]}
+          </Text>
         </Card.Section>
 
         <Card.Section className={classes.section}>
