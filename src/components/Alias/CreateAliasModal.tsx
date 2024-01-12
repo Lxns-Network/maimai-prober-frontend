@@ -13,16 +13,18 @@ import {
   Space, Text,
   TextInput, Tooltip
 } from "@mantine/core";
-import {useEffect, useRef, useState} from "react";
+import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
-import { fetchAPI } from "../../utils/api/api.tsx";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { IconArrowsShuffle } from "@tabler/icons-react";
 import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import { SongList } from "../../utils/api/song/song.tsx";
+import AlertModal from "../AlertModal.tsx";
+import useAlert from "../../utils/useAlert.tsx";
+import { createAlias } from "../../utils/api/alias.tsx";
 
 interface CreateAliasModalProps {
   opened: boolean;
@@ -30,10 +32,10 @@ interface CreateAliasModalProps {
 }
 
 export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => {
+  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [songList, setSongList] = useState(new SongList());
-  const turnstileRef = useRef<any>()
 
   const form = useForm({
     initialValues: {
@@ -58,24 +60,15 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   const createAliasHandler = async (values: any) => {
     setUploading(true);
     try {
-      const res = await fetchAPI(`user/${values.game}/alias}`, {
-        method: "POST",
-        body: {
-          song_id: parseInt(values.songId),
-          alias: values.alias,
-        }
+      const res = await createAlias(values.game, {
+        song_id: parseInt(values.songId),
+        alias: values.alias,
       });
       if (res.status === 409) {
-        notifications.show({
-          title: '别名已存在',
-          message: '请换一个别名',
-          color: 'red',
-        });
-        turnstileRef.current?.reset();
+        openAlert("别名创建失败", "别名已存在，请输入其它曲目别名");
         setUploading(false);
         return
       } else if (res.status !== 200) {
-        turnstileRef.current?.reset();
         setUploading(false);
         return
       }
@@ -92,9 +85,8 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
         onClose();
       }
     } catch (error) {
-      console.error(error);
+      openAlert("别名创建失败", `${error}`);
     } finally {
-      turnstileRef.current?.reset();
       setUploading(false);
     }
   }
@@ -107,8 +99,9 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   }, [songList]);
 
   useEffect(() => {
-    if (form.values.game === null) return;
-    else if (form.values.game === "maimai") {
+    if (!form.values.game) return;
+
+    if (form.values.game === "maimai") {
       setSongList(new MaimaiSongList());
     } else {
       setSongList(new ChunithmSongList());
@@ -121,6 +114,12 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
+      <AlertModal
+        title={alertTitle}
+        content={alertContent}
+        opened={isAlertVisible}
+        onClose={closeAlert}
+      />
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>
@@ -132,7 +131,11 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
             <Flex align="center" gap="md">
               <Avatar size={94} radius="md" src={
                 (form.values.game && form.values.songId) ? `https://lxns.org/${form.values.game}/jacket/${form.values.songId}.png` : null
-              }>
+              } styles={(theme) => ({
+                root: {
+                  backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
+                }
+              })}>
                 <Text align="center" fz="xs">请选择曲目</Text>
               </Avatar>
               <div style={{ flex: 1 }}>
@@ -188,7 +191,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
               label="我已阅读并理解曲目别名命名规则"
               {...form.getInputProps("agree", { type: 'checkbox' })}
             />
-            <Space h="md" />
+            <Space h="xs" />
             <Paper p="md" withBorder>
               <Text fz="sm" fw={700} mb="sm">曲目别名命名规则</Text>
               <List size="xs" icon={

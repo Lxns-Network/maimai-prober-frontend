@@ -18,7 +18,7 @@ import { updateUserProfile } from "../../utils/api/user.tsx";
 import AlertModal from "../AlertModal.tsx";
 import useAlert from "../../utils/useAlert.tsx";
 
-export interface UserDataProps {
+export interface UserProps {
   id: number;
   name: string;
   email: string;
@@ -27,12 +27,12 @@ export interface UserDataProps {
   bind: UserBindProps;
 }
 
-export const UserSection = ({ userData }: { userData: UserDataProps | null }) => {
+export const UserSection = ({ user }: { user: UserProps | null }) => {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
   const [visible, visibleHandler] = useDisclosure(false)
 
-  if (!userData) {
+  if (!user) {
     return (
       <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red">
         <Text size="sm">
@@ -60,8 +60,8 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
       const data = await res.json()
       if (data.code === 200) {
         openAlert("保存成功", "你的账号详情保存成功");
-        userData.name = form.values.name || userData.name;
-        userData.email = form.values.email || userData.email;
+        user.name = form.values.name || user.name;
+        user.email = form.values.email || user.email;
       } else {
         openAlert("保存失败", data.message);
       }
@@ -102,13 +102,13 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
           label="用户名"
           variant="filled"
           mb={5}
-          placeholder={visible ? userData.name : userData.name.replace(/./g, '•')}
+          placeholder={visible ? user.name : user.name.replace(/./g, '•')}
           {...form.getInputProps('name')}
         />
         <TextInput
           label="邮箱"
           variant="filled"
-          placeholder={visible ? userData.email : userData.email.replace(/./g, '•')}
+          placeholder={visible ? user.email : user.email.replace(/./g, '•')}
           {...form.getInputProps('email')}
         />
         <Group position="right" mt="md">

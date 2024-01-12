@@ -10,7 +10,7 @@ import {
 } from '@mantine/core';
 import { getProfile } from '../../utils/api/user';
 import { PlayerSection } from '../../components/Profile/PlayerSection';
-import { UserDataProps, UserSection } from '../../components/Profile/UserSection';
+import { UserProps, UserSection } from '../../components/Profile/UserSection';
 import { UserBindSection } from '../../components/Profile/UserBindSection';
 
 const useStyles = createStyles((theme) => ({
@@ -26,7 +26,7 @@ const useStyles = createStyles((theme) => ({
 
 export default function Profile() {
   const { classes } = useStyles();
-  const [userData, setUserData] = useState<UserDataProps | null>(null);
+  const [user, setUser] = useState<UserProps | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const getProfileHandler = async () => {
@@ -34,7 +34,7 @@ export default function Profile() {
       const res = await getProfile();
       const data = await res.json();
       if (data.code === 200) {
-        setUserData(data.data);
+        setUser(data.data);
       }
     } catch (err) {
       console.error(err);
@@ -55,7 +55,7 @@ export default function Profile() {
         账号详情
       </Title>
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
-        查看你的 maimai DX 查分器账号的详情与游戏数据
+        查看你的 maimai DX 查分器账号详情与游戏数据
       </Text>
         {!isLoaded ? (
           <Group position="center" mt="xl">
@@ -64,8 +64,8 @@ export default function Profile() {
         ) : (
           <>
             <PlayerSection />
-            {userData && <UserSection userData={userData} />}
-            {userData?.bind && <UserBindSection userBind={userData.bind} />}
+            <UserSection user={user} />
+            <UserBindSection userBind={user && user.bind} />
           </>
         )}
     </Container>

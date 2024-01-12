@@ -12,6 +12,10 @@ export async function getUserVotes(game: string) {
   return fetchAPI(`user/${game}/alias/votes`, { method: "GET" });
 }
 
+export async function createAlias(game: string, data: any) {
+  return fetchAPI(`user/${game}/alias`, { method: "POST", body: data });
+}
+
 export async function voteAlias(game: string, aliasId: number, vote: boolean) {
   return fetchAPI(`user/${game}/alias/${aliasId}/vote/${vote ? 'up' : 'down'}`, { method: "POST" });
 }

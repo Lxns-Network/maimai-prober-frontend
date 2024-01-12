@@ -1,16 +1,18 @@
 import {
   Button,
   Card,
-  Group, LoadingOverlay,
+  Group, Switch,
   Text,
   TextInput,
 } from "@mantine/core";
 import { useStyles } from "./PlayerSection";
 import { useForm } from "@mantine/form";
 import { updateUserBind } from "../../utils/api/user";
-import { useState } from "react";
 import AlertModal from "../AlertModal";
 import useAlert from "../../utils/useAlert";
+import Icon from "@mdi/react";
+import { mdiEye, mdiEyeOff } from "@mdi/js";
+import { useDisclosure } from "@mantine/hooks";
 
 export interface UserBindProps {
   qq?: number;
@@ -19,11 +21,11 @@ export interface UserBindProps {
 export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }) => {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
-  const [visible, setVisible] = useState(false);
+  const [visible, visibleHandler] = useDisclosure(false)
 
   const form = useForm({
     initialValues: {
-      qq: (userBind?.qq || '').toString(),
+      qq: '',
     },
 
     validate: {
@@ -36,25 +38,25 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
   });
 
   const updateUserBindHandler = async () => {
-    setVisible(true);
-
     try {
       const res = await updateUserBind(form.getTransformedValues())
       const data = await res.json()
       if (data.code === 200) {
         openAlert("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据");
+        userBind = userBind || {}
+        userBind.qq = parseInt(form.values.qq)
       } else {
         openAlert("绑定失败", data.message);
       }
     } catch (error) {
       openAlert("绑定失败", `${error}`);
     } finally {
-      setVisible(false);
+      form.reset();
     }
   }
 
   return (
-    <Card withBorder radius="md" className={classes.card} mb="md">
+    <Card withBorder radius="md" className={classes.card}>
       <AlertModal
         title={alertTitle}
         content={alertContent}
@@ -70,12 +72,19 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
             绑定第三方账号，第三方开发者将可以通过绑定信息获取你的游戏数据
           </Text>
         </div>
+        <Switch
+          size="lg"
+          value={visible ? "visible" : "hidden"}
+          onClick={visibleHandler.toggle}
+          onLabel={<Icon path={mdiEye} size={0.8} />}
+          offLabel={<Icon path={mdiEyeOff} size={0.8} />}
+        />
       </Group>
       <form onSubmit={form.onSubmit(() => {updateUserBindHandler()})}>
-        <LoadingOverlay visible={visible} overlayBlur={2} />
         <TextInput
           label="QQ"
-          placeholder="请输入你的 QQ 号"
+          placeholder={(userBind && userBind.qq && (visible ? userBind.qq.toString() :
+            userBind.qq.toString().replace(/./g, '•'))) || "请输入你的 QQ 号"}
           variant="filled"
           mb={5}
           {...form.getInputProps('qq')}
