@@ -21,6 +21,7 @@ import { getDeluxeRatingGradient, getRatingGradient, getTrophyColor } from "../.
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { getPlayerDetail } from "../../utils/api/player.tsx";
+import {IconPhotoOff} from "@tabler/icons-react";
 
 interface PlayerDataProps {
   name: string;
@@ -39,6 +40,7 @@ interface PlayerDataProps {
   over_power: number;
   change_over_power: number;
   currency: number;
+  total_currency: number;
 }
 
 export const useStyles = createStyles((theme) => ({
@@ -71,12 +73,14 @@ const NotFoundModal = () => {
 const MaimaiPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null }) => {
   const { classes } = useStyles();
 
-  if (playerData === null) return <NotFoundModal />;
+  if (!playerData) return <NotFoundModal />;
 
   return (
     <>
       <Group className={classes.section} noWrap>
-        <Avatar src={playerData.icon_url} size={94} radius="md" />
+        <Avatar src={playerData.icon_url} size={94} radius="md">
+          <IconPhotoOff />
+        </Avatar>
         <div>
           <Group spacing="xs" mb={8}>
             <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color || "normal")} style={{
@@ -95,8 +99,8 @@ const MaimaiPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null 
           </Text>
           <Divider mt={5} mb={5} variant="dashed" />
           <Group spacing={0} mb={-8}>
-            <Image src={`/assets/maimai/course_rank/${playerData.course_rank}.webp`} height={36} width="auto" />
-            <Image src={`/assets/maimai/class_rank/${playerData.class_rank}.webp`} height={46} mt={-2} width="auto" />
+            <Image src={`/assets/maimai/course_rank/${playerData.course_rank || 0}.webp`} height={36} width="auto" />
+            <Image src={`/assets/maimai/class_rank/${playerData.class_rank || 0}.webp`} height={46} mt={-2} width="auto" />
             <Group spacing={2} ml="xs">
               <Image src="/assets/maimai/icon_star.webp" height={30} width="auto" />
               <Text>
@@ -124,12 +128,14 @@ const MaimaiPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null 
 const ChunithmPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null }) => {
   const { classes } = useStyles();
 
-  if (playerData === null) return <NotFoundModal />;
+  if (!playerData) return <NotFoundModal />;
 
   return (
     <>
       <Group className={classes.section} noWrap>
-        <Avatar src={playerData.icon_url} size={94} radius="md" />
+        <Avatar src={playerData.icon_url} size={94} radius="md">
+          <IconPhotoOff />
+        </Avatar>
         <div>
           <Group spacing="xs" mb={8}>
             <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color)} style={{
@@ -148,12 +154,19 @@ const ChunithmPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | nul
           </Text>
           <Divider mt={5} mb={10} variant="dashed" />
           <Group>
-            <Text fz="xs" c="dimmed">Over Power</Text>
-            <Text fz="sm">{playerData.over_power} ({playerData.change_over_power}%)</Text>
-          </Group>
-          <Group>
-            <Text fz="xs" c="dimmed">所持金币</Text>
-            <Text fz="sm">{playerData.currency}</Text>
+            <div>
+              <Text fz="xs" c="dimmed">Over Power</Text>
+              <Text fz="sm">{(playerData.over_power || 0).toFixed(2)}
+                <Text fz="xs" component="span" ml={4}>({(playerData.change_over_power || 0).toFixed(2)}%)</Text></Text>
+            </div>
+            <div>
+              <Text fz="xs" c="dimmed">所持金币</Text>
+              <Text fz="sm">{(playerData.currency || 0).toLocaleString('en-US', { useGrouping: true })}</Text>
+            </div>
+            <div>
+              <Text fz="xs" c="dimmed">全部金币</Text>
+              <Text fz="sm">{(playerData.total_currency || 0).toLocaleString('en-US', { useGrouping: true })}</Text>
+            </div>
           </Group>
         </div>
       </Group>
@@ -218,11 +231,33 @@ export const PlayerSection = () => {
 
   return (
     <Card withBorder radius="md" className={classes.card} mb="md" p={0}>
-      <Tabs inverted value={game} onTabChange={(value) => {
+      <Tabs unstyled value={game} onTabChange={(value) => {
         if (value === game) return;
-        setFetching(true)
-        setGame(value as string)
-      }}>
+        setFetching(true);
+        setGame(value as string);
+      }} styles={(theme) => ({
+        tab: {
+          ...theme.fn.focusStyles(),
+          backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
+          color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.colors.gray[9],
+          border: 0,
+          borderTop: `${rem(1)} solid ${theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[4]}`,
+          padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+          cursor: 'pointer',
+          fontSize: theme.fontSizes.sm,
+          flex: 1,
+
+          '&[data-active]': {
+            backgroundColor: theme.colors.blue[7],
+            borderColor: theme.colors.blue[7],
+            color: theme.white,
+          },
+        },
+
+        tabsList: {
+          display: 'flex',
+        },
+      })}>
         <Tabs.Panel value="maimai">
           {fetching ? (
             <PlayerPanelSkeleton />
