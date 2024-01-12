@@ -3,7 +3,6 @@ import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route 
 import { checkPermission, isTokenExpired, isTokenUndefined, logout, UserPermission } from "./utils/session";
 import { refreshToken } from "./utils/api/user";
 import App from "./App";
-import DeveloperInfo from "./pages/developer/Info";
 
 const Home = lazy(() => import('./pages/public/Home'));
 const About = lazy(() => import('./pages/public/About'));
@@ -19,6 +18,7 @@ const Settings = lazy(() => import('./pages/user/Settings'));
 const NotFound = lazy(() => import('./pages/public/NotFound'));
 const Vote = lazy(() => import('./pages/alias/Vote'));
 const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
+const DeveloperInfo = lazy(() => import('./pages/developer/Info'));
 const Users = lazy(() => import('./pages/admin/Users'));
 const Developers = lazy(() => import('./pages/admin/Developers'));
 
@@ -34,11 +34,9 @@ const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
       redirect: window.location.pathname + window.location.search
     }} replace />;
   }
-
   if (extra_validation && !extra_validation()) {
     return <Navigate to="/" replace />;
   }
-
   return <Outlet />
 }
 
