@@ -1,47 +1,15 @@
-import { useNavigate } from "react-router-dom";
 import {
-  Alert,
-  Avatar,
-  Badge,
-  Button,
   Card,
   createStyles,
-  Divider,
-  Grid,
-  Group,
-  Image,
   rem,
-  Skeleton,
   Tabs,
-  Text
 } from "@mantine/core";
-import Icon from "@mdi/react";
-import { mdiAlertCircleOutline } from "@mdi/js";
-import { getDeluxeRatingGradient, getRatingGradient, getTrophyColor } from "../../utils/color";
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { getPlayerDetail } from "../../utils/api/player.tsx";
-import { IconPhotoOff } from "@tabler/icons-react";
-
-interface PlayerDataProps {
-  name: string;
-  rating: number;
-  friend_code: number;
-  trophy: {
-    name: string;
-    color: string;
-  };
-  course_rank: number;
-  class_rank: number;
-  star: number;
-  icon_url: string;
-  upload_time: string;
-  // chunithm
-  over_power: number;
-  change_over_power: number;
-  currency: number;
-  total_currency: number;
-}
+import { MaimaiPlayerPanel } from "./PlayerPanel/MaimaiPlayerPanel.tsx";
+import { ChunithmPlayerPanel } from "./PlayerPanel/ChunithmPlayerPanel.tsx";
+import { PlayerPanelSkeleton } from "./PlayerPanel/Skeleton.tsx";
 
 export const useStyles = createStyles((theme) => ({
   card: {
@@ -53,158 +21,9 @@ export const useStyles = createStyles((theme) => ({
   },
 }));
 
-const NotFoundModal = () => {
-  const navigate = useNavigate();
-
-  return (
-    <Alert radius={0} icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到游戏数据" color="red">
-      <Text size="sm" mb="md">
-        请检查你的查分器账号是否已经绑定游戏账号。
-      </Text>
-      <Group>
-        <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
-          同步游戏数据
-        </Button>
-      </Group>
-    </Alert>
-  )
-}
-
-const MaimaiPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null }) => {
-  const { classes } = useStyles();
-
-  if (!playerData) return <NotFoundModal />;
-
-  return (
-    <>
-      <Group className={classes.section} noWrap>
-        <Avatar src={playerData.icon_url} size={94} radius="md">
-          <IconPhotoOff />
-        </Avatar>
-        <div>
-          <Group spacing="xs" mb={8}>
-            <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color || "normal")} style={{
-              height: "auto",
-            }} children={
-              <Text fz="xs" style={{
-                whiteSpace: "pre-wrap"
-              }}>
-                {playerData.trophy.name}
-              </Text>
-            } />
-            <Badge variant="gradient" gradient={getDeluxeRatingGradient(playerData.rating)}>DX Rating: {playerData.rating}</Badge>
-          </Group>
-          <Text fz="lg" fw={500}>
-            {playerData.name}
-          </Text>
-          <Divider mt={5} mb={5} variant="dashed" />
-          <Group spacing={0} mb={-8}>
-            <Image src={`/assets/maimai/course_rank/${playerData.course_rank || 0}.webp`} height={36} width="auto" />
-            <Image src={`/assets/maimai/class_rank/${playerData.class_rank || 0}.webp`} height={46} mt={-2} width="auto" />
-            <Group spacing={2} ml="xs">
-              <Image src="/assets/maimai/icon_star.webp" height={30} width="auto" />
-              <Text>
-                ×{playerData.star}
-              </Text>
-            </Group>
-          </Group>
-        </div>
-      </Group>
-      <Divider />
-      <div className={classes.section}>
-        <Group>
-          <Text fz="xs" c="dimmed">好友码</Text>
-          <Text fz="sm">{playerData.friend_code}</Text>
-        </Group>
-        <Group mt="xs">
-          <Text fz="xs" c="dimmed">上次同步时间</Text>
-          <Text fz="sm">{(new Date(Date.parse(playerData.upload_time))).toLocaleString()}</Text>
-        </Group>
-      </div>
-    </>
-  )
-}
-
-const ChunithmPlayerPanel = ({ playerData }: { playerData: PlayerDataProps | null }) => {
-  const { classes } = useStyles();
-
-  if (!playerData) return <NotFoundModal />;
-
-  return (
-    <>
-      <Group className={classes.section} noWrap>
-        <Avatar src={playerData.icon_url} size={94} radius="md">
-          <IconPhotoOff />
-        </Avatar>
-        <div>
-          <Group spacing="xs" mb={8}>
-            <Badge radius={rem(10)} color={getTrophyColor(playerData.trophy.color)} style={{
-              height: "auto",
-            }} children={
-              <Text fz="xs" style={{
-                whiteSpace: "pre-wrap"
-              }}>
-                {playerData.trophy.name}
-              </Text>
-            } />
-            <Badge variant="gradient" gradient={getRatingGradient(playerData.rating)}>Rating: {playerData.rating}</Badge>
-          </Group>
-          <Text fz="lg" fw={500}>
-            {playerData.name}
-          </Text>
-          <Divider mt={5} mb={10} variant="dashed" />
-          <Group>
-            <div>
-              <Text fz="xs" c="dimmed">Over Power</Text>
-              <Text fz="sm">{(playerData.over_power || 0).toFixed(2)}
-                <Text fz="xs" component="span" ml={4}>({(playerData.change_over_power || 0).toFixed(2)}%)</Text></Text>
-            </div>
-            <div>
-              <Text fz="xs" c="dimmed">所持金币</Text>
-              <Text fz="sm">{(playerData.currency || 0).toLocaleString('en-US', { useGrouping: true })}</Text>
-            </div>
-            <div>
-              <Text fz="xs" c="dimmed">全部金币</Text>
-              <Text fz="sm">{(playerData.total_currency || 0).toLocaleString('en-US', { useGrouping: true })}</Text>
-            </div>
-          </Group>
-        </div>
-      </Group>
-      <Divider />
-      <div className={classes.section}>
-        <Group>
-          <Text fz="xs" c="dimmed">好友码</Text>
-          <Text fz="sm">{playerData.friend_code}</Text>
-        </Group>
-        <Group mt="xs">
-          <Text fz="xs" c="dimmed">上次同步时间</Text>
-          <Text fz="sm">{(new Date(Date.parse(playerData.upload_time))).toLocaleString()}</Text>
-        </Group>
-      </div>
-    </>
-  )
-}
-
-const PlayerPanelSkeleton = () => {
-  return (
-    <Grid p="md" align="center">
-      <Grid.Col span="content">
-        <Skeleton h={94} w={94} radius="md" />
-      </Grid.Col>
-      <Grid.Col span={6}>
-        <Skeleton h={16} radius={rem(10)} />
-        <Skeleton h={28} mt={12} radius="xl" />
-        <Skeleton h={8} mt={12} radius="xl" />
-        <Skeleton h={8} mt={8} radius="xl" />
-        <Skeleton h={8} mt={8} w="70%" radius="xl" />
-      </Grid.Col>
-    </Grid>
-  )
-}
-
 export const PlayerSection = () => {
   const { classes } = useStyles();
-  const [playerData, setPlayerData] = useState<PlayerDataProps | null>(null);
+  const [player, setPlayer] = useState<any>(null);
   const [fetching, setFetching] = useState(true);
   const [game, setGame] = useLocalStorage({ key: 'game' })
 
@@ -215,7 +34,7 @@ export const PlayerSection = () => {
       if (data.code !== 200) {
         return;
       }
-      setPlayerData(data.data);
+      setPlayer(data.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -233,6 +52,7 @@ export const PlayerSection = () => {
     <Card withBorder radius="md" className={classes.card} mb="md" p={0}>
       <Tabs unstyled value={game} onTabChange={(value) => {
         if (value === game) return;
+
         setFetching(true);
         setGame(value as string);
       }} styles={(theme) => ({
@@ -265,17 +85,17 @@ export const PlayerSection = () => {
           {fetching ? (
             <PlayerPanelSkeleton />
           ) : (
-            <MaimaiPlayerPanel playerData={playerData} />
+            <MaimaiPlayerPanel player={player} />
           )}
         </Tabs.Panel>
         <Tabs.Panel value="chunithm">
           {fetching ? (
             <PlayerPanelSkeleton />
           ) : (
-            <ChunithmPlayerPanel playerData={playerData} />
+            <ChunithmPlayerPanel player={player} />
           )}
         </Tabs.Panel>
-        <Tabs.List grow>
+        <Tabs.List>
           <Tabs.Tab value="maimai">舞萌 DX</Tabs.Tab>
           <Tabs.Tab value="chunithm">中二节奏</Tabs.Tab>
         </Tabs.List>
