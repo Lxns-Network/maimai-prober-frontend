@@ -1,4 +1,16 @@
-import { createStyles, Title, Text, Image, Button, Container, rem, SimpleGrid, ThemeIcon } from '@mantine/core';
+import {
+  createStyles,
+  Title,
+  Text,
+  Image,
+  Button,
+  Container,
+  rem,
+  SimpleGrid,
+  ThemeIcon,
+  Flex,
+  Avatar, Group
+} from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import React, { useEffect } from "react";
 import { IconChartBar, IconCode, IconHandStop } from "@tabler/icons-react";
@@ -7,7 +19,13 @@ const useStyles = createStyles((theme) => ({
   root: {
     position: 'relative',
     paddingTop: rem(50),
-    paddingBottom: rem(50),
+    paddingBottom: rem(120),
+  },
+
+  section: {
+    [theme.fn.smallerThan('xs')]: {
+      padding: 0,
+    },
   },
 
   logo: {
@@ -78,6 +96,26 @@ const useStyles = createStyles((theme) => ({
   featureTitle: {
     color: theme.colorScheme === 'dark' ? theme.white : theme.black,
   },
+
+  footer: {
+    padding: `${theme.spacing.xs} ${theme.spacing.xl}`,
+    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
+    borderTop: `${rem(1)} solid ${
+      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
+    }`,
+  },
+
+  inner: {
+    display: "flex",
+    justifyContent: "spaceBetween",
+    gap: theme.spacing.xs,
+    alignItems: "center",
+    padding: theme.spacing.md,
+
+    [theme.fn.smallerThan('xs')]: {
+      flexDirection: "column",
+    },
+  },
 }));
 
 interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -104,7 +142,7 @@ function Feature({ icon, title, description, className, ...others }: FeatureProp
   );
 }
 
-const mockdata = [
+const features = [
   {
     icon: <IconHandStop />,
     title: '易于使用',
@@ -126,69 +164,110 @@ export default function Home() {
   const { classes } = useStyles();
 
   const navigate = useNavigate();
-  const items = mockdata.map((item) => <Feature {...item} key={item.title} />);
+  const items = features.map((item) => <Feature {...item} key={item.title} />);
 
   useEffect(() => {
     document.title = "maimai DX 查分器";
   });
 
   return (
-    <Container className={classes.root}>
-      <Image
-        className={classes.logo}
-        src="/logo.webp"
-        alt="落雪咖啡屋 maimai DX 查分器"
-        maw={560}
-        mx="auto"
-        mb="md"
-      />
+    <>
+      <Container className={classes.root}>
+        <Image
+          className={classes.logo}
+          src="/logo.webp"
+          alt="落雪咖啡屋 maimai DX 查分器"
+          maw={560}
+          mx="auto"
+          mb="md"
+        />
 
-      <Title className={classes.title}>
-        落雪咖啡屋{' '}
-        <Text variant="gradient" component="span" inherit>
-          maimai
-        </Text>{' '}
-        DX 查分器
-      </Title>
-
-      <Container p={0} size={600}>
-        <Text size="lg" color="dimmed" className={classes.description}>
-          一个简单的{' '}
-          <Text className={classes.highlight} component="span" inherit fw={700}>
-            舞萌 DX & 中二节奏
+        <Title className={classes.title}>
+          落雪咖啡屋{' '}
+          <Text variant="gradient" component="span" inherit>
+            maimai
           </Text>{' '}
-          国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。
-        </Text>
-      </Container>
+          DX 查分器
+        </Title>
 
-      {Boolean(localStorage.getItem("token")) ?
-        <Container className={classes.controls} p={0}>
-          <Button className={classes.control} size="lg" variant="default"
-                  onClick={() => window.open("https://github.com/Lxns-Network/maimai-prober-frontend/wiki", "_blank")}>
-            查看文档
-          </Button>
-          <Button className={classes.control} size="lg" variant="default"
-                  onClick={() => navigate("/user/profile")}>
-            管理我的查分器账号
-          </Button>
-        </Container> :
-        <Container className={classes.controls} p={0}>
-          <Button className={classes.control} size="lg" variant="default"
-                  onClick={() => navigate("/login")}>
-            登录
-          </Button>
-          <Button className={classes.control} size="lg" variant="gradient"
-                  onClick={() => navigate("/register")}>
-            注册 maimai DX 查分器账号
-          </Button>
+        <Container p={0} size={600}>
+          <Text size="lg" color="dimmed" className={classes.description}>
+            一个简单的{' '}
+            <Text className={classes.highlight} component="span" inherit fw={700}>
+              舞萌 DX & 中二节奏
+            </Text>{' '}
+            国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。
+          </Text>
         </Container>
-      }
 
-      <Container mt={rem(120)} mb={rem(30)} size="lg" p={0} m="xl">
-        <SimpleGrid cols={3} breakpoints={[{ maxWidth: 'sm', cols: 1 }]} spacing={50}>
-          {items}
-        </SimpleGrid>
+        {Boolean(localStorage.getItem("token")) ?
+          <Container className={classes.controls} p={0}>
+            <Button className={classes.control} size="lg" variant="default"
+                    onClick={() => window.open("https://github.com/Lxns-Network/maimai-prober-frontend/wiki", "_blank")}>
+              查看文档
+            </Button>
+            <Button className={classes.control} size="lg" variant="default"
+                    onClick={() => navigate("/user/profile")}>
+              管理我的查分器账号
+            </Button>
+          </Container> :
+          <Container className={classes.controls} p={0}>
+            <Button className={classes.control} size="lg" variant="default"
+                    onClick={() => navigate("/login")}>
+              登录
+            </Button>
+            <Button className={classes.control} size="lg" variant="gradient"
+                    onClick={() => navigate("/register")}>
+              注册 maimai DX 查分器账号
+            </Button>
+          </Container>
+        }
+
+        <Container className={classes.section} mt={rem(120)} size="lg">
+          <SimpleGrid cols={3} breakpoints={[{ maxWidth: 'sm', cols: 1 }]} spacing={50}>
+            {items}
+          </SimpleGrid>
+        </Container>
+
+        <Container className={classes.section} mt={rem(60)}>
+          <Flex align="center" gap="md">
+            <div style={{ flex: 1 }}>
+              <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
+              <Text size="sm" color="dimmed" sx={{ lineHeight: 1.6 }}>
+                你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
+                <Text className={classes.highlight} component="span" inherit fw={700} style={{ whiteSpace: "nowrap" }}>
+                  舞萌 DX & 中二节奏
+                </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
+              </Text>
+              <Button className={classes.control} size="lg" mt="md" onClick={
+                () => window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
+              }>
+                添加
+              </Button>
+            </div>
+            <Avatar className={classes.logo} src="./lxbot.webp" h="auto" w={96} />
+          </Flex>
+        </Container>
       </Container>
-    </Container>
+      <div className={classes.footer}>
+        <div className={classes.inner}>
+          <Group style={{ flex: 1 }}>
+            <Image src="/favicon.webp" width={32} height={32} />
+            <Text fw={700} fz={18}>
+              maimai DX 查分器
+            </Text>
+          </Group>
+          <Text size="sm" color="dimmed">Copyright © {new Date().getFullYear() + ' '}
+            <Text<'a'>
+              component="a"
+              href="https://lxns.net"
+              onClick={(event) => event.preventDefault()}
+            >
+              Lxns Network
+            </Text>
+          </Text>
+        </div>
+      </div>
+    </>
   );
 }
