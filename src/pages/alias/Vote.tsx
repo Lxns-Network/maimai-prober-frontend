@@ -20,7 +20,13 @@ import { getAliasList, getUserVotes } from "../../utils/api/alias.tsx";
 import { AliasList } from "../../components/Alias/AliasList.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { notifications } from "@mantine/notifications";
-import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus, IconQuestionMark } from "@tabler/icons-react";
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconDatabaseOff,
+  IconHelp,
+  IconPlus,
+} from "@tabler/icons-react";
 import { SongList } from "../../utils/api/song/song.tsx";
 import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
@@ -256,12 +262,12 @@ export default function Vote() {
           <HoverCard shadow="md" withinPortal>
             <HoverCard.Target>
               <ThemeIcon variant="subtle">
-                <IconQuestionMark size={rem(20)} />
+                <IconHelp size={rem(20)} />
               </ThemeIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown>
               <Text size="sm">
-                可以在成绩管理页使用别名进行查询
+                可以在成绩管理页使用曲目别名进行查询
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>

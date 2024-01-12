@@ -21,7 +21,7 @@ import { getDeluxeRatingGradient, getRatingGradient, getTrophyColor } from "../.
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { getPlayerDetail } from "../../utils/api/player.tsx";
-import {IconPhotoOff} from "@tabler/icons-react";
+import { IconPhotoOff } from "@tabler/icons-react";
 
 interface PlayerDataProps {
   name: string;
@@ -238,7 +238,7 @@ export const PlayerSection = () => {
       }} styles={(theme) => ({
         tab: {
           ...theme.fn.focusStyles(),
-          backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
+          backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
           color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.colors.gray[9],
           border: 0,
           borderTop: `${rem(1)} solid ${theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[4]}`,
@@ -247,10 +247,13 @@ export const PlayerSection = () => {
           fontSize: theme.fontSizes.sm,
           flex: 1,
 
+          '&:hover': {
+            backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[1],
+          },
+
           '&[data-active]': {
-            backgroundColor: theme.colors.blue[7],
-            borderColor: theme.colors.blue[7],
-            color: theme.white,
+            backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
+            color: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).color,
           },
         },
 

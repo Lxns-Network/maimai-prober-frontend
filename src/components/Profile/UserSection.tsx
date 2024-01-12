@@ -14,7 +14,9 @@ import { useDisclosure } from "@mantine/hooks";
 import { UserBindProps } from "./UserBindSection";
 import { useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "../../utils/validator";
-import {useEffect} from "react";
+import { updateUserProfile } from "../../utils/api/user.tsx";
+import AlertModal from "../AlertModal.tsx";
+import useAlert from "../../utils/useAlert.tsx";
 
 export interface UserDataProps {
   id: number;
@@ -26,10 +28,11 @@ export interface UserDataProps {
 }
 
 export const UserSection = ({ userData }: { userData: UserDataProps | null }) => {
+  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const { classes } = useStyles();
   const [visible, visibleHandler] = useDisclosure(false)
 
-  if (userData === null) {
+  if (!userData) {
     return (
       <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red">
         <Text size="sm">
@@ -39,34 +42,44 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
     )
   }
 
-  useEffect(() => {
-    if (visible) {
-      form.setValues({
-        name: userData.name,
-        email: userData.email,
-      })
-    } else {
-      form.setValues({
-        name: userData.name.replace(/./g, '•'),
-        email: userData.email.replace(/./g, '•'),
-      })
-    }
-  }, [visible])
-
   const form = useForm({
     initialValues: {
-      name: userData.name,
-      email: userData.email,
+      name: "",
+      email: "",
     },
 
     validate: {
-      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value) => (validateEmail(value) ? null : "邮箱格式不正确"),
+      name: (value) => (value.length === 0 || validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value) => (value.length === 0 || validateEmail(value) ? null : "邮箱格式不正确"),
     },
   });
 
+  const updateUserProfileHandler = async () => {
+    try {
+      const res = await updateUserProfile(form.getTransformedValues())
+      const data = await res.json()
+      if (data.code === 200) {
+        openAlert("保存成功", "你的账号详情保存成功");
+        userData.name = form.values.name || userData.name;
+        userData.email = form.values.email || userData.email;
+      } else {
+        openAlert("保存失败", data.message);
+      }
+    } catch (error) {
+      openAlert("保存失败", `${error}`);
+    } finally {
+      form.reset();
+    }
+  }
+
   return (
     <Card withBorder radius="md" className={classes.card} mb="md">
+      <AlertModal
+        title={alertTitle}
+        content={alertContent}
+        opened={isAlertVisible}
+        onClose={closeAlert}
+      />
       <Group position="apart" noWrap spacing="xl" align="center" mb="md">
         <div>
           <Text fz="lg" fw={700}>
@@ -84,24 +97,22 @@ export const UserSection = ({ userData }: { userData: UserDataProps | null }) =>
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
       </Group>
-      <form onSubmit={form.onSubmit(() => {})}>
+      <form onSubmit={form.onSubmit(() => updateUserProfileHandler())}>
         <TextInput
           label="用户名"
           variant="filled"
           mb={5}
-          readOnly={!visible}
+          placeholder={visible ? userData.name : userData.name.replace(/./g, '•')}
           {...form.getInputProps('name')}
         />
         <TextInput
           label="邮箱"
           variant="filled"
-          readOnly={!visible}
+          placeholder={visible ? userData.email : userData.email.replace(/./g, '•')}
           {...form.getInputProps('email')}
         />
         <Group position="right" mt="md">
-          <Button color="blue" type="submit" disabled={
-            !visible || !form.isDirty()
-          }>保存</Button>
+          <Button color="blue" type="submit" disabled={!form.isDirty()}>保存</Button>
         </Group>
       </form>
     </Card>

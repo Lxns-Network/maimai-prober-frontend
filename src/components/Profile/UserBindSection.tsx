@@ -35,23 +35,22 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
     })
   });
 
-  const updateUserBindHandler = () => {
+  const updateUserBindHandler = async () => {
     setVisible(true);
 
-    updateUserBind(form.getTransformedValues())
-      .then(res => res?.json())
-      .then(data => {
-        setVisible(false);
-        if (data.code === 200) {
-          openAlert("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据");
-        } else {
-          openAlert("绑定失败", data.message);
-        }
-      })
-      .catch(error => {
-        setVisible(false);
-        openAlert("绑定失败", error);
-      })
+    try {
+      const res = await updateUserBind(form.getTransformedValues())
+      const data = await res.json()
+      if (data.code === 200) {
+        openAlert("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据");
+      } else {
+        openAlert("绑定失败", data.message);
+      }
+    } catch (error) {
+      openAlert("绑定失败", `${error}`);
+    } finally {
+      setVisible(false);
+    }
   }
 
   return (
