@@ -9,17 +9,18 @@ import {
   SimpleGrid,
   ThemeIcon,
   Flex,
-  Avatar, Group
+  Avatar, Card
 } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import React, { useEffect } from "react";
 import { IconChartBar, IconCode, IconHandStop } from "@tabler/icons-react";
+import { Footer } from "../../components/Footer.tsx";
 
 const useStyles = createStyles((theme) => ({
   root: {
     position: 'relative',
     paddingTop: rem(50),
-    paddingBottom: rem(120),
+    paddingBottom: rem(100),
   },
 
   section: {
@@ -89,32 +90,8 @@ const useStyles = createStyles((theme) => ({
     },
   },
 
-  feature: {
-    position: 'relative',
-  },
-
   featureTitle: {
     color: theme.colorScheme === 'dark' ? theme.white : theme.black,
-  },
-
-  footer: {
-    padding: `${theme.spacing.xs} ${theme.spacing.xl}`,
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
-    borderTop: `${rem(1)} solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
-    }`,
-  },
-
-  inner: {
-    display: "flex",
-    justifyContent: "spaceBetween",
-    gap: theme.spacing.xs,
-    alignItems: "center",
-    padding: theme.spacing.md,
-
-    [theme.fn.smallerThan('xs')]: {
-      flexDirection: "column",
-    },
   },
 }));
 
@@ -124,11 +101,9 @@ interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
   description: string;
 }
 
-function Feature({ icon, title, description, className, ...others }: FeatureProps) {
-  const { classes, cx } = useStyles();
-
+function Feature({ icon, title, description, ...others }: FeatureProps) {
   return (
-    <div className={cx(classes.feature, className)} {...others}>
+    <div {...others}>
       <ThemeIcon variant="light" size={40}>
         {icon}
       </ThemeIcon>
@@ -162,9 +137,7 @@ const features = [
 
 export default function Home() {
   const { classes } = useStyles();
-
   const navigate = useNavigate();
-  const items = features.map((item) => <Feature {...item} key={item.title} />);
 
   useEffect(() => {
     document.title = "maimai DX 查分器";
@@ -223,51 +196,43 @@ export default function Home() {
           </Container>
         }
 
-        <Container className={classes.section} mt={rem(120)} size="lg">
+        <Container className={classes.section} mt={rem(100)} size="lg">
           <SimpleGrid cols={3} breakpoints={[{ maxWidth: 'sm', cols: 1 }]} spacing={50}>
-            {items}
+            {features.map((feature) => <Feature {...feature} key={feature.title} />)}
           </SimpleGrid>
         </Container>
 
-        <Container className={classes.section} mt={rem(60)}>
-          <Flex align="center" gap="md">
-            <div style={{ flex: 1 }}>
-              <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
-              <Text size="sm" color="dimmed" sx={{ lineHeight: 1.6 }}>
-                你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
-                <Text className={classes.highlight} component="span" inherit fw={700} style={{ whiteSpace: "nowrap" }}>
-                  舞萌 DX & 中二节奏
-                </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
-              </Text>
-              <Button className={classes.control} size="lg" mt="md" onClick={
-                () => window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
-              }>
-                添加
-              </Button>
-            </div>
-            <Avatar className={classes.logo} src="./lxbot.webp" h="auto" w={96} />
-          </Flex>
+        <Container className={classes.section} mt={rem(100)}>
+          <Card withBorder sx={(theme) => ({
+            backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
+            borderRadius: theme.radius.md,
+          })} p="xl">
+            <Flex align="center" gap="md" sx={(theme) => ({
+              [theme.fn.smallerThan('xs')]: {
+                flexDirection: "column-reverse",
+                alignItems: "flex-start",
+              },
+            })}>
+              <div style={{ flex: 1 }}>
+                <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
+                <Text size="sm" color="dimmed" sx={{ lineHeight: 1.6 }}>
+                  你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
+                  <Text className={classes.highlight} component="span" inherit fw={700} style={{ whiteSpace: "nowrap" }}>
+                    舞萌 DX & 中二节奏
+                  </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
+                </Text>
+                <Button className={classes.control} size="lg" mt="md" onClick={
+                  () => window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
+                }>
+                  添加
+                </Button>
+              </div>
+              <Avatar className={classes.logo} src="./lxbot.webp" h="auto" w={96} />
+            </Flex>
+          </Card>
         </Container>
       </Container>
-      <div className={classes.footer}>
-        <div className={classes.inner}>
-          <Group style={{ flex: 1 }}>
-            <Image src="/favicon.webp" width={32} height={32} />
-            <Text fw={700} fz={18}>
-              maimai DX 查分器
-            </Text>
-          </Group>
-          <Text size="sm" color="dimmed">Copyright © {new Date().getFullYear() + ' '}
-            <Text<'a'>
-              component="a"
-              href="https://lxns.net"
-              onClick={(event) => event.preventDefault()}
-            >
-              Lxns Network
-            </Text>
-          </Text>
-        </div>
-      </div>
+      <Footer />
     </>
   );
 }

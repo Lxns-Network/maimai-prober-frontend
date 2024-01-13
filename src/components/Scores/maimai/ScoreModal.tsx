@@ -141,10 +141,17 @@ const ScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
                 return [Math.floor(dataMin) - 10, Math.floor(dataMax) + 10];
               }} />
               <CartesianGrid strokeDasharray="3 3" />
-              <Tooltip
-                labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                formatter={(value: string) => [parseInt(value), "DX Rating"]}
-              />
+              <Tooltip content={(props) => {
+                if (!props.active || !props.payload || props.payload.length < 1) return null;
+                const payload = props.payload[0].payload;
+                return (
+                  <Card p="xs" withBorder fz="sm">
+                    <Text>{new Date(payload.upload_time).toLocaleDateString()}</Text>
+                    <Text color="#8884d8">DX Rating: {parseInt(payload.dx_rating)}</Text>
+                    <Text>{payload.achievements}%</Text>
+                  </Card>
+                )
+              }} />
               <Area type="monotone" dataKey="dx_rating" stroke="#8884d8" fillOpacity={1} fill="url(#dx_rating)" />
             </AreaChart>
           </ResponsiveContainer>
