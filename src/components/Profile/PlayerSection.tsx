@@ -7,8 +7,8 @@ import {
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { getPlayerDetail } from "../../utils/api/player.tsx";
-import { MaimaiPlayerPanel } from "./PlayerPanel/MaimaiPlayerPanel.tsx";
-import { ChunithmPlayerPanel } from "./PlayerPanel/ChunithmPlayerPanel.tsx";
+import { MaimaiPlayerPanel } from "./PlayerPanel/maimai/PlayerPanel.tsx";
+import { ChunithmPlayerPanel } from "./PlayerPanel/chunithm/PlayerPanel.tsx";
 import { PlayerPanelSkeleton } from "./PlayerPanel/Skeleton.tsx";
 
 export const useStyles = createStyles((theme) => ({
