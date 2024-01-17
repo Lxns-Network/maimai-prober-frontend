@@ -26,14 +26,13 @@ import {
   mdiAlertCircleOutline,
   mdiCheck,
   mdiPause,
-  mdiReload
 } from "@mdi/js";
 import { useIdle, useLocalStorage, useResizeObserver } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
-import { IconCheck, IconCopy, IconDownload, IconRefresh } from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconDownload, IconRefresh, IconRepeat } from "@tabler/icons-react";
 
 const useStyles = createStyles((theme) => ({
   root: {
@@ -109,8 +108,11 @@ const CrawlTokenAlert = ({ token, resetHandler }: any) => {
 };
 
 interface CrawlStatusProps {
-  status: string;
+  game: string;
   friend_code: number;
+  status: string;
+  create_time: string;
+  complete_time: string;
   crawled_score_count: number;
   failed_difficulties: number[];
 }
@@ -387,36 +389,44 @@ export default function Sync() {
           </Text>
         </Card.Section>
 
-        <Card.Section className={classes.section}>
-          {(crawlStatus?.status !== "finished" && crawlStatus?.status !== "failed") ? (
+        {(crawlStatus?.status !== "finished" && crawlStatus?.status !== "failed") ? (
+          <Card.Section className={classes.section}>
             <Text size="sm">
               你的{game === "maimai" ? "舞萌 DX " : "中二节奏"}游戏数据（玩家信息、成绩）将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
             </Text>
-          ) : (
-            <>
-              <Group>
-                <Text fz="xs" c="dimmed">好友码</Text>
-                <Text fz="sm">{crawlStatus.friend_code}</Text>
+          </Card.Section>
+        ) : (
+          <>
+            <Card.Section className={classes.section}>
+              <Text fz="xs" c="dimmed">好友码</Text>
+              <Text fz="sm">{crawlStatus.friend_code}</Text>
+              <Group mt="md">
+                <div>
+                  <Text fz="xs" c="dimmed">爬取耗时</Text>
+                  <Text fz="sm">{Math.floor((new Date(crawlStatus.complete_time).getTime() - new Date(crawlStatus.create_time).getTime()) / 1000)} 秒</Text>
+                </div>
+                <div>
+                  <Text fz="xs" c="dimmed">爬取的成绩数</Text>
+                  <Text fz="sm">{crawlStatus.crawled_score_count}</Text>
+                </div>
+                <div>
+                  <Text fz="xs" c="dimmed">爬取失败的难度</Text>
+                  <Text fz="sm">
+                    {(!crawlStatus.failed_difficulties || crawlStatus.failed_difficulties.length === 0) ? "无" : crawlStatus.failed_difficulties.map((difficulty) => {
+                      return {
+                        0: "BASIC",
+                        1: "ADVANCED",
+                        2: "EXPERT",
+                        3: "MASTER",
+                        4: crawlStatus.game === "maimai" ? "Re:MASTER" : "ULTIMA",
+                      }[difficulty];
+                    }).join("、")}
+                  </Text>
+                </div>
               </Group>
-              <Group mt="xs">
-                <Text fz="xs" c="dimmed">爬取的成绩数</Text>
-                <Text fz="sm">{crawlStatus.crawled_score_count}</Text>
-              </Group>
-              <Group mt="xs">
-                <Text fz="xs" c="dimmed">爬取失败的难度</Text>
-                <Text fz="sm">
-                  {(crawlStatus.failed_difficulties == undefined || crawlStatus.failed_difficulties.length === 0) ? "无" : crawlStatus.failed_difficulties.map((difficulty) => {
-                    return {
-                      0: "BASIC",
-                      1: "ADVANCED",
-                      2: "EXPERT",
-                      3: "MASTER",
-                      4: "REMASTER",
-                    }[difficulty];
-                  }).join("、")}
-                </Text>
-              </Group>
-              <Group mt="md" position="apart">
+            </Card.Section>
+            <Card.Section p="md" pb={0}>
+              <Group position="apart">
                 <Group>
                   <Button onClick={() => navigate("/user/profile")}>
                     账号详情
@@ -425,16 +435,16 @@ export default function Sync() {
                     成绩管理
                   </Button>
                 </Group>
-                <Button variant="outline" leftIcon={<Icon path={mdiReload} size={0.75} />} onClick={() => {
+                <Button variant="outline" leftIcon={<IconRepeat size={rem(18)} />} onClick={() => {
                   setCrawlStatus(null);
                   setActive(1);
                 }}>
                   重新同步
                 </Button>
               </Group>
-            </>
-          )}
-        </Card.Section>
+            </Card.Section>
+          </>
+        )}
       </Card>
     </Container>
   );

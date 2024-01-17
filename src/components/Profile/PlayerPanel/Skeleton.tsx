@@ -14,7 +14,7 @@ export const PlayerPanelSkeleton = () => {
         <Skeleton h={8} mt={8} w="70%" radius="xl" />
       </Grid.Col>
       <Grid.Col span={6}>
-        <Skeleton h={8} mt={12} radius="xl" />
+        <Skeleton h={8} mt={18} radius="xl" />
         <Skeleton h={8} mt={8} radius="xl" />
         <Skeleton h={8} mt={8} radius="xl" />
         <Skeleton h={8} mt={8} w="70%" radius="xl" />

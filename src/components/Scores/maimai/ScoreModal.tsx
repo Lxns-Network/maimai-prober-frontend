@@ -173,9 +173,7 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
   }
 
   const getScoreHistory = async (score: MaimaiScoreProps) => {
-    if (score === null) {
-      return;
-    }
+    if (!score) return;
 
     try {
       const res = await fetchAPI(`user/${game}/player/score/history?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {

@@ -1,6 +1,5 @@
 import { Title, Text, Card, LoadingOverlay, SegmentedControl } from '@mantine/core';
 import { Container, rem, createStyles } from '@mantine/core';
-import { notifications } from "@mantine/notifications";
 import { useEffect, useState } from "react";
 import { deletePlayerScores, unbindPlayer } from "../../utils/api/player";
 import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
@@ -177,21 +176,12 @@ export default function Settings() {
 
     try {
       const res = await updateUserConfig(game, newConfig);
-
       if (res.status !== 200) {
         openAlert("保存设置失败", "保存设置失败，请重试。");
         return;
       }
-
       const data = await res.json();
-
-      if (data.code === 200) {
-        notifications.show({
-          title: '自动保存成功',
-          message: '你的设置已自动保存',
-          color: 'teal',
-        });
-      } else {
+      if (data.code !== 200) {
         openAlert("保存设置失败", data.message);
       }
     } catch (error) {
@@ -262,7 +252,7 @@ export default function Settings() {
         }]}
         />
       </Card>
-      <Card withBorder radius="md" className={classes.card} mb="md">
+      <Card withBorder radius="md" className={classes.card}>
         <Text fz="lg" fw={700}>
           其它设置
         </Text>

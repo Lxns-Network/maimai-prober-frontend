@@ -41,50 +41,54 @@ const RatingTrend = ({ trend }: { trend: RatingTrendProps[] }) => {
             <Text fz="sm">历史记录不足，无法生成图表</Text>
           </Flex>
         ) : (
-          <ResponsiveContainer width="100%" height={250}>
-            <ComposedChart data={trend} margin={{ top: 10, right: 20, left: 12, bottom: 0 }}>
-              <defs>
-                <linearGradient id="dx_rating" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="date" tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', {
-                month: "numeric",
-                day: "numeric",
-              })} />
-              <YAxis width={40} domain={([dataMin, dataMax]) => {
-                return [Math.floor(dataMin), Math.floor(dataMax)];
-              }} />
-              <CartesianGrid strokeDasharray="3 3" />
-              <Tooltip content={(props) => {
-                if (!props.active || !props.payload || props.payload.length < 1) return null;
-                const payload = props.payload[0].payload;
-                return (
-                  <Card p="xs" withBorder fz="sm">
-                    <Text>{new Date(payload.date).toLocaleDateString()}</Text>
-                    <Text color="#8884d8">DX Rating: {payload.total}</Text>
-                    <Group spacing="xs">
-                      <Text color="#FD7E14">B35: {payload.standard_total}</Text>
-                      <Text color="#228BE6">B15: {payload.dx_total}</Text>
-                    </Group>
-                  </Card>
-                )
-              }} />
-              <Area dataKey="total" stroke="#8884d8" fillOpacity={1} fill="url(#dx_rating)" />
-            </ComposedChart>
-          </ResponsiveContainer>
+          <>
+            <ResponsiveContainer width="100%" height={250}>
+              <ComposedChart data={trend} margin={{ top: 10, right: 20, left: 14, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="dx_rating" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', {
+                  month: "numeric",
+                  day: "numeric",
+                })} />
+                <YAxis width={40} domain={([dataMin, dataMax]) => {
+                  return [Math.floor(dataMin), Math.floor(dataMax)];
+                }} />
+                <CartesianGrid strokeDasharray="3 3" />
+                <Tooltip content={(props) => {
+                  if (!props.active || !props.payload || props.payload.length < 1) return null;
+                  const payload = props.payload[0].payload;
+                  return (
+                    <Card p="xs" withBorder fz="sm">
+                      <Text>{new Date(payload.date).toLocaleDateString()}</Text>
+                      <Text color="#8884d8">DX Rating: {payload.total}</Text>
+                      <Group spacing="xs">
+                        <Text color="#FD7E14">B35: {payload.standard_total}</Text>
+                        <Text color="#228BE6">B15: {payload.dx_total}</Text>
+                      </Group>
+                    </Card>
+                  )
+                }} />
+                <Area dataKey="total" stroke="#8884d8" fillOpacity={1} fill="url(#dx_rating)" />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <Text fz="xs" c="dimmed" mt="xs">※ 该数据由历史同步成绩推出，而非玩家的历史 DX Rating，结果仅供参考。</Text>
+          </>
         )}
-        <Text fz="xs" c="dimmed" mt="xs">※ 该数据由历史同步成绩推出，而非玩家的历史 DX Rating，结果仅供参考。</Text>
       </Accordion.Panel>
     </Accordion.Item>
   )
 }
 
 export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
-  const [trend, setTrend] = useState<RatingTrendProps[]>([]);
+  const [trend, setTrend] = useState<RatingTrendProps[] | null>(null);
 
   const getPlayerRatingTrendHandler = async () => {
+    if (!opened || trend) return;
+
     try {
       const res = await getPlayerRatingTrend('maimai');
       const data = await res.json();
@@ -99,7 +103,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
 
   useEffect(() => {
     getPlayerRatingTrendHandler();
-  }, []);
+  }, [opened]);
 
   return (
     <Modal.Root opened={opened} onClose={() => onClose()} centered>
@@ -136,7 +140,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
             </Group>
           </Container>
           <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
-            {trend && trend.length > 0 && (
+            {trend && (
               <RatingTrend trend={trend} />
             )}
           </Accordion>

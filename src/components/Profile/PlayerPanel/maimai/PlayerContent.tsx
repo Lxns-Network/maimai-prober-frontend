@@ -15,13 +15,13 @@ export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
       </Avatar>
       <div>
         <Group spacing="xs" mb={8}>
-          <Badge radius={rem(10)} color={getTrophyColor(player.trophy.color || "normal")} style={{
+          <Badge radius={rem(10)} color={getTrophyColor((player.trophy && player.trophy.color) || "normal")} style={{
             height: "auto",
           }} children={
             <Text fz="xs" style={{
               whiteSpace: "pre-wrap"
             }}>
-              {player.trophy.name}
+              {player.trophy && player.trophy.name}
             </Text>
           } />
           <Badge variant="gradient" gradient={getDeluxeRatingGradient(player.rating)}>DX Rating: {player.rating}</Badge>

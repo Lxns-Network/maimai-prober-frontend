@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   Accordion,
-  Alert,
   Button,
   Card, Chip,
   Container,
@@ -17,13 +16,18 @@ import {
   Space,
   Text,
   Title,
-  Autocomplete, SegmentedControl
+  Autocomplete, SegmentedControl, Flex
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
-import { useNavigate } from "react-router-dom";
 import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
 import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
-import { IconAlertCircle, IconArrowDown, IconArrowUp, IconReload, IconSearch } from "@tabler/icons-react";
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconDatabaseOff,
+  IconReload,
+  IconSearch
+} from "@tabler/icons-react";
 import { SongList } from "../../utils/api/song/song.tsx";
 
 import { MaimaiScoreProps } from '../../components/Scores/maimai/Score.tsx';
@@ -75,7 +79,6 @@ export default function Scores() {
   const [game, setGame] = useLocalStorage({ key: 'game' });
   const [songList, setSongList] = useState(new SongList());
   const [aliasList] = useState(new AliasList());
-  const navigate = useNavigate();
 
   // 排序相关
   const [sortBy, setSortBy] = useState();
@@ -98,11 +101,8 @@ export default function Scores() {
   const getPlayerScoresHandler = async () => {
     try {
       const res = await getPlayerScores(game);
-      if (res.status !== 200) {
-        return
-      }
       const data = await res.json();
-      if (!data.data) {
+      if (data.code !== 200) {
         setDefaultScores([]);
       } else {
         setDefaultScores(data.data);
@@ -333,7 +333,7 @@ export default function Scores() {
         { label: '舞萌 DX', value: 'maimai' },
         { label: '中二节奏', value: 'chunithm' },
       ]} />
-      <Card withBorder radius="md" className={classes.card} mb="md" p={0}>
+      <Card withBorder radius="md" className={classes.card} p={0}>
         <Group m="md">
           <div>
             <Text fz="lg" fw={700}>
@@ -482,30 +482,18 @@ export default function Scores() {
           </Accordion.Item>
         </Accordion>
       </Card>
+      <Space h="md" />
       {fetching ? (
-        <Group position="center">
+        <Group position="center" p="xl">
           <Loader />
         </Group>
-      ) : ((!scores || scores.length === 0 && !defaultScores) ? (
-        <Alert radius="md" icon={<IconAlertCircle />} title="没有获取到任何成绩" color="red">
-          <Text size="sm" mb="md">
-            请检查你的查分器账号是否已经绑定{game === "maimai" ? "舞萌 DX " : "中二节奏"}游戏账号。
-          </Text>
-          <Group>
-            <Button variant="outline" color="red" onClick={() => navigate("/user/sync")}>
-              同步游戏数据
-            </Button>
-          </Group>
-        </Alert>
+      ) : ((scores && scores.length === 0 && defaultScores) ? (
+        <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
+          <IconDatabaseOff size={64} />
+          <Text fz="sm">没有获取或筛选到任何成绩</Text>
+        </Flex>
       ) : (
         <>
-          {scores.length === 0 && defaultScores && (
-            <Alert radius="md" icon={<IconAlertCircle />} title="没有筛选到任何成绩" color="yellow">
-              <Text size="sm">
-                请修改筛选条件后重试。
-              </Text>
-            </Alert>
-          )}
           <Group position="center">
             <Pagination total={totalPages} value={page} onChange={setPage} />
             {songList instanceof MaimaiSongList && (

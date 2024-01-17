@@ -41,20 +41,28 @@ export default function DeveloperApply() {
   const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  useEffect(() => {
-    document.title = "申请成为开发者 | maimai DX 查分器";
-
-    getDeveloperApply()
-      .then(res => res?.json())
-      .then(data => {
-        if (data.data != null) {
+  const getDeveloperApplyHandler = async () => {
+    try {
+      const res = await getDeveloperApply();
+      const data = await res.json();
+      if (data.code === 200) {
+        if (data.data) {
           if (data.data.api_key != null) {
             window.location.href = "/developer";
           }
           form.setValues(data.data);
           setApplied(true);
         }
-      })
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  useEffect(() => {
+    document.title = "申请成为开发者 | maimai DX 查分器";
+
+    getDeveloperApplyHandler();
   }, [])
 
   const form = useForm({

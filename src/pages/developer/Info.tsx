@@ -56,22 +56,27 @@ export default function DeveloperInfo() {
     }
   }
 
+  const getDeveloperApplyHandler = async () => {
+    try {
+      const res = await getDeveloperApply();
+      const data = await res.json();
+      if (data.code === 200) {
+        if (!data.data || !data.data.api_key) {
+          navigate("/developer/apply");
+        }
+        setDeveloperData(data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoaded(true);
+    }
+  }
+
   useEffect(() => {
     document.title = "开发者面板 | maimai DX 查分器";
 
-    getDeveloperApply()
-      .then(res => res?.json())
-      .then(data => {
-        if (data.data != null) {
-          if (data.data.api_key == null) {
-            navigate("/developer/apply");
-          }
-          setDeveloperData(data.data);
-        } else {
-          navigate("/developer/apply");
-        }
-        setIsLoaded(true);
-      });
+    getDeveloperApplyHandler();
   }, []);
 
   return (
@@ -119,7 +124,7 @@ export default function DeveloperInfo() {
               </Text>
             </Group>
           </Card>
-          <Card withBorder radius="md" className={classes.card} mb="md">
+          <Card withBorder radius="md" className={classes.card}>
             <Group position="apart" noWrap spacing="xl" align="center" mb="md">
               <div>
                 <Text fz="lg" fw={700}>

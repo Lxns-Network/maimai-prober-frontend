@@ -1,7 +1,7 @@
 import { fetchAPI } from "./api.tsx";
 
-export async function getAliasList(game: string, page: number, sort: string = "alias_id", order: string = "desc", songId: number = 0) {
-  let url = `user/${game}/alias/list?page=${page}&sort=${sort}+${order}`;
+export async function getAliasList(game: string, page: number, approved: boolean = false, sort: string = "alias_id", order: string = "desc", songId: number = 0) {
+  let url = `user/${game}/alias/list?page=${page}&sort=${sort}+${order}&approved=${approved}`;
   if (songId !== 0) {
     url += `&song_id=${songId}`;
   }

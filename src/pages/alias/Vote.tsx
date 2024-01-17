@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Button,
-  Card,
+  Card, Checkbox,
   Container,
   createStyles, Flex,
   Group, HoverCard,
@@ -11,7 +11,7 @@ import {
   Text, ThemeIcon,
   Title,
 } from '@mantine/core';
-import { useLocalStorage } from "@mantine/hooks";
+import {useLocalStorage, useToggle} from "@mantine/hooks";
 import Icon from "@mdi/react";
 import {
   mdiMagnify,
@@ -88,6 +88,7 @@ export default function Vote() {
   const [fetching, setFetching] = useState(false);
   const [game, setGame] = useLocalStorage({ key: 'game' });
   const [songList, setSongList] = useState(new SongList());
+  const [onlyNotApproved, toggleOnlyNotApproved] = useToggle();
 
   // 排序相关
   const [sortBy, setSortBy] = useState();
@@ -137,7 +138,7 @@ export default function Vote() {
 
   const getAliasListHandler = async () => {
     try {
-      const res = await getAliasList(game, page, sortBy, reverseSortDirection ? 'asc' : 'desc', songId);
+      const res = await getAliasList(game, page, onlyNotApproved, sortBy, reverseSortDirection ? 'asc' : 'desc', songId);
       if (res.status === 429) {
         notifications.show({
           title: '请求过于频繁',
@@ -152,7 +153,7 @@ export default function Vote() {
         return
       }
       const data = await res.json();
-      if (data.data.aliases !== null) {
+      if (data.data.aliases) {
         setPageCount(data.data.page_count);
         setAliases(data.data.aliases);
       } else {
@@ -168,6 +169,7 @@ export default function Vote() {
   };
 
   const fetchHandler = async () => {
+    if (!game) return;
     setFetching(true);
     getAliasListHandler().then(() => {
       getUserVotesHandler();
@@ -180,17 +182,16 @@ export default function Vote() {
 
   useEffect(() => {
     if (!game) return;
-    else if (game === "maimai") {
-      setSongList(new MaimaiSongList());
+    let newSongList: any;
+    if (game === "maimai") {
+      newSongList = new MaimaiSongList();
     } else {
-      setSongList(new ChunithmSongList());
+      newSongList = new ChunithmSongList();
     }
-
-    songList.fetch().then(() => {
-      setSongList(songList);
+    newSongList.fetch().then(() => {
+      setSongId(0);
+      setSongList(newSongList);
     });
-    setSongId(0);
-
     if (page !== 1) {
       setPage(1);
     } else {
@@ -204,22 +205,13 @@ export default function Vote() {
       if (vote) alias.vote = vote;
       aliases[i] = alias;
     })
-
     setFetching(false);
     setDisplayAliases(aliases);
   }, [votes]);
 
   useEffect(() => {
-    if (!game) return;
-
     fetchHandler();
-  }, [page]);
-
-  useEffect(() => {
-    if (!game) return;
-
-    fetchHandler();
-  }, [songId, sortBy, reverseSortDirection]);
+  }, [onlyNotApproved, page, songId, sortBy, reverseSortDirection]);
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
@@ -242,7 +234,7 @@ export default function Vote() {
       <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
         提交曲目别名，或为你喜欢的曲目别名投票
       </Text>
-      <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
+      <SegmentedControl mb="md" color="blue" fullWidth value={game} onChange={(value) => {
         setGame(value);
         setFetching(true);
       }} data={[
@@ -291,7 +283,6 @@ export default function Vote() {
       <Space h="md" />
       <Flex align="center" justify="space-between" gap="xs">
         <Select
-          variant="filled"
           placeholder="请选择曲目"
           icon={<Icon path={mdiMagnify} size={0.8} />}
           radius="md"
@@ -302,11 +293,10 @@ export default function Vote() {
           }))}
           value={songId === 0 ? null : songId.toString()}
           onChange={(value) => {
-            if (value === null) {
+            if (!value) {
               setSongId(0);
               return;
             }
-
             setSongId(parseInt(value));
           }}
           disabled={songList.songs.length === 0}
@@ -318,26 +308,31 @@ export default function Vote() {
           创建曲目别名
         </Button>
       </Flex>
+      <Space h="xs" />
+      <Checkbox
+        label="仅显示未被批准的曲目别名"
+        defaultChecked={true}
+        onChange={() => toggleOnlyNotApproved()}
+      />
       <Space h="md" />
-      {!fetching && pageCount === 0 && (
+      {fetching ? (
+        <Group position="center" p="xl">
+          <Loader />
+        </Group>
+      ) : (pageCount === 0 ? (
         <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
           <IconDatabaseOff size={64} />
           <Text fz="sm">暂时没有可投票的曲目别名</Text>
         </Flex>
-      )}
-      <Group position="center">
-        <Pagination total={pageCount} value={page} onChange={setPage} />
-          {fetching ? (
-            <Group position="center" w="100%">
-              <Loader />
-            </Group>
-          ) : (
-            <AliasList aliases={displayAliases} onDelete={() => {
-              fetchHandler();
-            }} />
-          )}
-        <Pagination total={pageCount} value={page} onChange={setPage} />
-      </Group>
+      ) : (
+        <Group position="center">
+          <Pagination total={pageCount} value={page} onChange={setPage} />
+          <AliasList aliases={displayAliases} onDelete={() => {
+            fetchHandler();
+          }} />
+          <Pagination total={pageCount} value={page} onChange={setPage} />
+        </Group>
+      ))}
     </Container>
   );
 }
