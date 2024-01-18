@@ -1,51 +1,19 @@
 import {
-  Header as MantineHeader,
   Group,
   Burger,
   ActionIcon,
-  createStyles,
   useMantineColorScheme,
-  rem
 } from '@mantine/core';
-import { NAVBAR_BREAKPOINT } from "../App";
 import Logo from "./Logo";
 import { IconMoonStars, IconSun } from "@tabler/icons-react";
-
-const useStyles = createStyles((theme) => ({
-  header: {
-    position: 'fixed',
-    zIndex: 100,
-    paddingLeft: theme.spacing.md,
-    paddingRight: theme.spacing.md,
-  },
-
-  inner: {
-    height: rem(56),
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  navbarToggle: {
-    [theme.fn.largerThan(NAVBAR_BREAKPOINT+1)]: {
-      display: 'none',
-    }
-  },
-}));
+import classes from './Header.module.css';
 
 export function ActionToggle() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
   return (
-    <Group position="center">
-      <ActionIcon
-        onClick={() => toggleColorScheme()}
-        size="lg"
-        sx={(theme) => ({
-          backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-          color: theme.colorScheme === 'dark' ? theme.colors.yellow[4] : theme.colors.blue[6],
-        })}
-      >
+    <Group justify="center">
+      <ActionIcon className={classes.actionIcon} variant="light" size="lg" onClick={() => toggleColorScheme()}>
         {colorScheme === 'dark' ? <IconSun /> : <IconMoonStars />}
       </ActionIcon>
     </Group>
@@ -58,12 +26,10 @@ interface HeaderProps {
 }
 
 export default function Header({ navbarOpened, onNavbarToggle }: HeaderProps) {
-  const { classes } = useStyles();
-
   return (
-    <MantineHeader height={56} className={classes.header} mb={120}>
-      <div className={classes.inner}>
-        <Group noWrap>
+    <div className={classes.header}>
+      <div className={classes.headerInner}>
+        <Group wrap="nowrap">
           <Burger className={classes.navbarToggle} opened={navbarOpened} onClick={onNavbarToggle} size="sm" />
           <Logo />
         </Group>
@@ -71,6 +37,6 @@ export default function Header({ navbarOpened, onNavbarToggle }: HeaderProps) {
           <ActionToggle />
         </Group>
       </div>
-    </MantineHeader>
+    </div>
   );
 }

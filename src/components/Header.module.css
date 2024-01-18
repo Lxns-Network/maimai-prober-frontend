@@ -1,0 +1,30 @@
+.header {
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    height: 56px;
+    width: 100%;
+    margin-bottom: 120px;
+    padding-left: var(--mantine-spacing-md);
+    padding-right: var(--mantine-spacing-md);
+    background-color: var(--mantine-color-body);
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.headerInner {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbarToggle {
+    @mixin larger-than $mantine-breakpoint-md {
+        display: none;
+    }
+}
+
+.actionIcon {
+    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+    color: light-dark(var(--mantine-color-blue-6), var(--mantine-color-yellow-4));
+}

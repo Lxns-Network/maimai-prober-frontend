@@ -1,9 +1,9 @@
 import { SimpleGrid } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { Alias } from "./Alias.tsx";
-import {useLocalStorage, useSetState} from "@mantine/hooks";
-import {AliasModal} from "./AliasModal.tsx";
-import {useEffect, useState} from "react";
+import { useLocalStorage, useSetState } from "@mantine/hooks";
+import { AliasModal } from "./AliasModal.tsx";
+import { useEffect, useState } from "react";
 
 export const AliasList = ({ aliases, onDelete }: { aliases: AliasProps[], onDelete: () => void }) => {
   const [game] = useLocalStorage({ key: 'game' });

@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
   Container,
-  createStyles,
   Group,
   Text,
   Title,
-  rem,
   Loader,
   Card,
   Switch,
@@ -16,7 +14,7 @@ import {
   Anchor,
   Divider,
   useMantineTheme,
-  Button,
+  Button, useMantineColorScheme,
 } from '@mantine/core';
 import { getDeveloperApply, resetDeveloperApiKey } from "../../utils/api/developer";
 import Icon from "@mdi/react";
@@ -24,20 +22,10 @@ import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure, useSetState } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: rem(600),
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-}));
+import classes from "../Page.module.css";
 
 export default function DeveloperInfo() {
-  const { classes } = useStyles();
+  const { colorScheme } = useMantineColorScheme();
   const [developerData, setDeveloperData] = useSetState<any>(null);
   const [visible, visibleHandler] = useDisclosure(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -81,14 +69,14 @@ export default function DeveloperInfo() {
 
   return (
     <Container className={classes.root} size={400}>
-      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         开发者面板
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         查看你的 maimai DX 查分器开发者信息
       </Text>
       {!isLoaded ? (
-        <Group position="center" mt="xl">
+        <Group justify="center" mt="xl">
           <Loader />
         </Group>
       ) : (
@@ -100,7 +88,7 @@ export default function DeveloperInfo() {
             <Text fz="xs" c="dimmed" mt={3}>
               查看你的开发者申请信息
             </Text>
-            <Divider mt="md" mb="md" color={theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
+            <Divider mt="md" mb="md" color={colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
             <Group mt="xs">
               <Text fz="xs" c="dimmed">项目名称</Text>
               <Text fz="sm">{developerData.name}</Text>
@@ -125,7 +113,7 @@ export default function DeveloperInfo() {
             </Group>
           </Card>
           <Card withBorder radius="md" className={classes.card}>
-            <Group position="apart" noWrap spacing="xl" align="center" mb="md">
+            <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
               <div>
                 <Text fz="lg" fw={700}>
                   API 密钥
@@ -149,7 +137,7 @@ export default function DeveloperInfo() {
                 <CopyButton value={developerData.api_key} timeout={2000}>
                   {({ copied, copy }) => (
                     <Tooltip label={copied ? '已复制' : '复制'} withArrow position="right">
-                      <ActionIcon color={copied ? 'teal' : 'gray'} onClick={copy}>
+                      <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
                         {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
                       </ActionIcon>
                     </Tooltip>
@@ -158,8 +146,8 @@ export default function DeveloperInfo() {
               }
               readOnly
             />
-            <Group position="right" mt="md">
-              <Button variant="outline" size="sm" leftIcon={<IconRefresh size={20} />} onClick={resetDeveloperApiKeyHandler}>
+            <Group justify="flex-end" mt="md">
+              <Button variant="outline" size="sm" leftSection={<IconRefresh size={20} />} onClick={resetDeveloperApiKeyHandler}>
                 重置 API 密钥
               </Button>
             </Group>

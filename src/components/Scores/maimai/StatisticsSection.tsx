@@ -1,18 +1,12 @@
-import { Card, createStyles, Grid, Image, rem, Text, Group, Spoiler, Divider } from "@mantine/core";
+import { Card, Grid, Image, rem, Text, Group, Spoiler, Divider } from "@mantine/core";
 import { MaimaiScoreProps } from "./Score.tsx";
-
-const useStyles = createStyles((theme) => ({
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-}));
+import classes from "../Scores.module.css"
 
 function calculateCount(scores: MaimaiScoreProps[], minAchievements: number, maxAchievements: number) {
   return scores.filter((score) => score.achievements >= minAchievements && score.achievements < maxAchievements).length;
 }
-export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) => {
-  const { classes } = useStyles();
 
+export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   const totalCount = scores.length;
 
   const rate = [
@@ -49,8 +43,8 @@ export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) =>
                 <Group key={r.id} mb="xs">
                   <Image
                     src={`/assets/maimai/music_rank/${r.id}.webp`}
-                    height={rem(30)}
-                    width="auto"
+                    h={rem(30)}
+                    w="auto"
                   />
                   <Divider style={{ flex: 1 }} variant="dashed" />
                   <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
@@ -68,8 +62,8 @@ export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) =>
               <Group key={r} mb="xs">
                 <Image
                   src={`/assets/maimai/music_icon/${r}.webp`}
-                  height={rem(30)}
-                  width="auto"
+                  h={rem(30)}
+                  w="auto"
                 />
                 <Divider style={{ flex: 1 }} variant="dashed" />
                 <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
@@ -88,8 +82,8 @@ export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) =>
               <Group key={r} mb="xs">
                 <Image
                   src={`/assets/maimai/music_icon/${r}.webp`}
-                  height={rem(30)}
-                  width="auto"
+                  h={rem(30)}
+                  w="auto"
                 />
                 <Divider style={{ flex: 1 }} variant="dashed" />
                 <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>

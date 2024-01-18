@@ -9,7 +9,6 @@ import {
 } from "@mantine/core";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
-import { useStyles } from "./PlayerSection";
 import { useDisclosure } from "@mantine/hooks";
 import { UserBindProps } from "./UserBindSection";
 import { useForm } from "@mantine/form";
@@ -17,6 +16,7 @@ import { validateEmail, validateUserName } from "../../utils/validator";
 import { updateUserProfile } from "../../utils/api/user.tsx";
 import AlertModal from "../AlertModal.tsx";
 import useAlert from "../../utils/useAlert.tsx";
+import classes from "./Profile.module.css";
 
 export interface UserProps {
   id: number;
@@ -29,7 +29,6 @@ export interface UserProps {
 
 export const UserSection = ({ user }: { user: UserProps | null }) => {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const { classes } = useStyles();
   const [visible, visibleHandler] = useDisclosure(false)
 
   if (!user) {
@@ -80,7 +79,7 @@ export const UserSection = ({ user }: { user: UserProps | null }) => {
         opened={isAlertVisible}
         onClose={closeAlert}
       />
-      <Group position="apart" noWrap spacing="xl" align="center" mb="md">
+      <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
         <div>
           <Text fz="lg" fw={700}>
             我的账号详情
@@ -111,7 +110,7 @@ export const UserSection = ({ user }: { user: UserProps | null }) => {
           placeholder={visible ? user.email : user.email.replace(/./g, '•')}
           {...form.getInputProps('email')}
         />
-        <Group position="right" mt="md">
+        <Group justify="flex-end" mt="md">
           <Button color="blue" type="submit" disabled={!form.isDirty()}>保存</Button>
         </Group>
       </form>

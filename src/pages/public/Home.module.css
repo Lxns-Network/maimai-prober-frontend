@@ -1,0 +1,89 @@
+.root {
+    position: relative;
+    padding-top: 50px;
+    padding-bottom: 100px;
+}
+
+.section {
+    @mixin smaller-than $mantine-breakpoint-xs {
+        padding: 0;
+    }
+}
+
+.logo {
+    opacity: light-dark(1, 0.8);
+}
+
+.title {
+    text-align: center;
+    font-weight: 800;
+    font-size: 40px;
+    letter-spacing: -1px;
+    margin-bottom: var(--mantine-spacing-xs);
+    color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        font-size: 28px;
+        text-align: left;
+    }
+}
+
+.description {
+    text-align: center;
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        text-align: left;
+        font-size: var(--mantine-font-size-md);
+    }
+}
+
+.highlight {
+    position: relative;
+    background-color: var(--mantine-primary-color-light);
+    border-radius: var(--mantine-radius-sm);
+    padding: 4px 8px;
+    color: light-dark(var(--mantine-primary-color-6), var(--mantine-primary-color-4));
+}
+
+.controls {
+    margin-top: var(--mantine-spacing-lg);
+    display: flex;
+    justify-content: center;
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        flex-direction: column;
+    }
+}
+
+.control {
+    &:not(:first-of-type) {
+        margin-left: var(--mantine-spacing-md);
+
+        @mixin smaller-than $mantine-breakpoint-xs {
+            margin-left: 0;
+            margin-top: var(--mantine-spacing-md);
+        }
+    }
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        height: 42px;
+        font-size: var(--mantine-font-size-md);
+    }
+}
+
+.featureTitle {
+    color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+}
+
+.botCard {
+    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.botCardInner {
+    align-items: center;
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+    }
+}

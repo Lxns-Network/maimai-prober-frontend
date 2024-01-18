@@ -1,0 +1,17 @@
+.card {
+    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+}
+
+.scoreCard {
+    cursor: pointer;
+    transition: transform 200ms ease;
+
+    &:hover {
+        transform: scale(1.03);
+        background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+        box-shadow: var(--mantine-shadow-md);
+        border-color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+        border-radius: var(--mantine-radius-md);
+        z-index: 1;
+    }
+}

@@ -1,7 +1,8 @@
-import { Badge, Card, createStyles, Flex, Group, rem, Text, useMantineTheme } from "@mantine/core";
+import { Badge, Card, Flex, Group, rem, Text, useMantineColorScheme } from "@mantine/core";
 import { maimaiDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { memo } from "react";
+import classes from "../Scores.module.css";
 
 export interface MaimaiScoreProps {
   id: number;
@@ -19,30 +20,8 @@ export interface MaimaiScoreProps {
   upload_time: string;
 }
 
-const useStyles = createStyles((theme) => ({
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-    color: theme.colorScheme === 'dark' ? theme.colors.gray[9] : theme.white,
-  },
-
-  scoreCard: {
-    cursor: 'pointer',
-    transition: 'transform 200ms ease',
-
-    '&:hover': {
-      transform: 'scale(1.03)',
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-      boxShadow: theme.shadows.md,
-      borderColor: theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2],
-      borderRadius: theme.radius.md,
-      zIndex: 1,
-    }
-  }
-}));
-
 export const Score = memo(({ score, song, onClick }: { score: MaimaiScoreProps, song: MaimaiSongProps, onClick: () => void }) => {
-  const { classes } = useStyles();
-  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
 
   return (
     <Card
@@ -53,45 +32,45 @@ export const Score = memo(({ score, song, onClick }: { score: MaimaiScoreProps, 
       style={{
         border: `2px solid ${maimaiDifficultyColor[2][score.level_index]}`,
         backgroundColor: maimaiDifficultyColor[1][score.level_index],
-        opacity: theme.colorScheme === 'dark' ? 0.8 : 1,
+        opacity: colorScheme === 'dark' ? 0.8 : 1,
       }}
       onClick={onClick}
     >
       <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
         backgroundColor: maimaiDifficultyColor[2][score.level_index]
       }}>
-        <Text size="sm" weight={500} truncate style={{ flex: 1 }} color="white">{score.song_name}</Text>
+        <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">{score.song_name}</Text>
         {score.type === "standard" ? (
           <Badge variant="filled" color="blue" size="sm">标准</Badge>
         ) : (
           <Badge variant="filled" color="orange" size="sm">DX</Badge>
         )}
       </Flex>
-      <Group position="apart" m={10} mt={5} mb={5} noWrap>
+      <Group justify="space-between" m={10} mt={5} mb={5} wrap="nowrap">
         {score.achievements != -1 ? (
           <div>
-            <Text fz={rem(24)} style={{ lineHeight: rem(24) }} color="white">
+            <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white">
               {parseInt(String(score.achievements))}
               <span style={{ fontSize: rem(16) }}>.{
                 (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
               }%</span>
             </Text>
-            <Text size="xs" color="white">
+            <Text size="xs" c="white">
               DX Rating: {parseInt(String(score.dx_rating))}
             </Text>
           </div>
         ) : (
           <div>
-            <Text fz={rem(24)} style={{ lineHeight: rem(24) }} color="white" mb={4}>
+            <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
               未游玩
             </Text>
-            <Text size="xs" color="white">
+            <Text size="xs" c="white">
               或未上传至查分器
             </Text>
           </div>
         )}
         <Card w={40} h={30} p={0} radius="md" withBorder>
-          <Text size="md" weight={500} align="center" style={{
+          <Text size="md" fw={500} ta="center" style={{
             lineHeight: rem(28),
           }}>
             {song != null ? getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1) : score.level}

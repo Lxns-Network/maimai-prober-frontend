@@ -1,5 +1,4 @@
 import {
-  createStyles,
   Title,
   Text,
   Image,
@@ -15,85 +14,7 @@ import { useNavigate } from "react-router-dom";
 import React, { useEffect } from "react";
 import { IconChartBar, IconCode, IconHandStop } from "@tabler/icons-react";
 import { Footer } from "../../components/Footer.tsx";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    position: 'relative',
-    paddingTop: rem(50),
-    paddingBottom: rem(100),
-  },
-
-  section: {
-    [theme.fn.smallerThan('xs')]: {
-      padding: 0,
-    },
-  },
-
-  logo: {
-    opacity: theme.colorScheme === 'dark' ? 0.8 : 1,
-  },
-
-  title: {
-    textAlign: 'center',
-    fontWeight: 800,
-    fontSize: rem(40),
-    letterSpacing: -1,
-    color: theme.colorScheme === 'dark' ? theme.white : theme.black,
-    marginBottom: theme.spacing.xs,
-
-    [theme.fn.smallerThan('xs')]: {
-      fontSize: rem(28),
-      textAlign: 'left',
-    },
-  },
-
-  description: {
-    textAlign: 'center',
-
-    [theme.fn.smallerThan('xs')]: {
-      textAlign: 'left',
-      fontSize: theme.fontSizes.md,
-    },
-  },
-
-  highlight: {
-    position: 'relative',
-    backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
-    borderRadius: theme.radius.sm,
-    padding: `${rem(4)} ${rem(8)}`,
-    color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
-  },
-
-  controls: {
-    marginTop: theme.spacing.lg,
-    display: 'flex',
-    justifyContent: 'center',
-
-    [theme.fn.smallerThan('xs')]: {
-      flexDirection: 'column',
-    },
-  },
-
-  control: {
-    '&:not(:first-of-type)': {
-      marginLeft: theme.spacing.md,
-    },
-
-    [theme.fn.smallerThan('xs')]: {
-      height: rem(42),
-      fontSize: theme.fontSizes.md,
-
-      '&:not(:first-of-type)': {
-        marginTop: theme.spacing.md,
-        marginLeft: 0,
-      },
-    },
-  },
-
-  featureTitle: {
-    color: theme.colorScheme === 'dark' ? theme.white : theme.black,
-  },
-}));
+import classes from './Home.module.css';
 
 interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
   icon: React.ReactNode;
@@ -110,7 +31,7 @@ function Feature({ icon, title, description, ...others }: FeatureProps) {
       <Text mt="sm" mb={7}>
         {title}
       </Text>
-      <Text size="sm" color="dimmed" sx={{ lineHeight: 1.6 }}>
+      <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
         {description}
       </Text>
     </div>
@@ -136,7 +57,6 @@ const features = [
 ];
 
 export default function Home() {
-  const { classes } = useStyles();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -164,7 +84,7 @@ export default function Home() {
         </Title>
 
         <Container p={0} size={600}>
-          <Text size="lg" color="dimmed" className={classes.description}>
+          <Text size="lg" c="dimmed" className={classes.description}>
             一个简单的{' '}
             <Text className={classes.highlight} component="span" inherit fw={700}>
               舞萌 DX & 中二节奏
@@ -197,25 +117,17 @@ export default function Home() {
         }
 
         <Container className={classes.section} mt={rem(100)} size="lg">
-          <SimpleGrid cols={3} breakpoints={[{ maxWidth: 'sm', cols: 1 }]} spacing={50}>
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={50}>
             {features.map((feature) => <Feature {...feature} key={feature.title} />)}
           </SimpleGrid>
         </Container>
 
         <Container className={classes.section} mt={rem(100)}>
-          <Card withBorder sx={(theme) => ({
-            backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-            borderRadius: theme.radius.md,
-          })} p="xl">
-            <Flex align="center" gap="md" sx={(theme) => ({
-              [theme.fn.smallerThan('xs')]: {
-                flexDirection: "column-reverse",
-                alignItems: "flex-start",
-              },
-            })}>
+          <Card className={classes.botCard} withBorder radius="md" p="xl">
+            <Flex className={classes.botCardInner} gap="md">
               <div style={{ flex: 1 }}>
                 <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
-                <Text size="sm" color="dimmed" sx={{ lineHeight: 1.6 }}>
+                <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
                   你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
                   <Text className={classes.highlight} component="span" inherit fw={700} style={{ whiteSpace: "nowrap" }}>
                     舞萌 DX & 中二节奏
@@ -227,7 +139,7 @@ export default function Home() {
                   添加
                 </Button>
               </div>
-              <Avatar className={classes.logo} src="./lxbot.webp" h="auto" w={96} />
+              <Avatar className={classes.logo} src="./lxbot.webp" h="auto" w={96} radius="md" />
             </Flex>
           </Card>
         </Container>

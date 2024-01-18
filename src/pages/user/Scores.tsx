@@ -4,19 +4,17 @@ import {
   Button,
   Card, Chip,
   Container,
-  createStyles,
   Grid,
   Group,
   Loader,
   MultiSelect,
   Pagination,
   RangeSlider,
-  rem,
   Switch,
   Space,
   Text,
   Title,
-  Autocomplete, SegmentedControl, Flex
+  Autocomplete, SegmentedControl, Flex, ComboboxStringData
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
@@ -38,18 +36,7 @@ import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import { ChunithmScoreList } from "../../components/Scores/chunithm/ScoreList.tsx";
 import { ChunithmScoreProps } from "../../components/Scores/chunithm/Score.tsx";
 import { AliasList } from "../../utils/api/alias.tsx";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: rem(600),
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-    color: theme.colorScheme === 'dark' ? theme.white : theme.colors.gray[9],
-  },
-}));
+import classes from "../Page.module.css"
 
 const sortKeys = {
   maimai: [
@@ -71,7 +58,6 @@ const sortKeys = {
 };
 
 export default function Scores() {
-  const { classes } = useStyles();
   const [defaultScores, setDefaultScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[] | null>(null);
   const [scores, setScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[] | null>(null);
   const [displayScores, setDisplayScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]); // 用于分页显示的成绩列表
@@ -307,6 +293,15 @@ export default function Scores() {
     setScores(filteredData as any);
   }, [showUnplayed, search, difficulty, type, genre, version, rating]);
 
+  const [searchResult, setSearchResult] = useState<{ key: string, value: string }[]>([]);
+
+  useEffect(() => {
+    setSearchResult(search.trim().length > 0 ? (defaultScores || []).map((score) => ({
+      key: `${score.id}-${(score as MaimaiScoreProps).type}-${score.level_index}`,
+      value: score.song_name,
+    })) : [])
+  }, [search]);
+
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
       return <>
@@ -318,10 +313,10 @@ export default function Scores() {
 
   return (
     <Container className={classes.root} size={400}>
-      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         成绩管理
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         管理你的 maimai DX 查分器账号的成绩
       </Text>
       <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
@@ -352,7 +347,7 @@ export default function Scores() {
               size="xs"
               variant="light"
               radius="xl"
-              rightIcon={renderSortIndicator(item.key)}
+              rightSection={renderSortIndicator(item.key)}
               style={{ display: "flex" }}
             >
               {item.name}
@@ -368,15 +363,12 @@ export default function Scores() {
                   <Text fz="xs" c="dimmed" mb={3}>筛选曲名</Text>
                   <Autocomplete
                     variant="filled"
-                    icon={<IconSearch size={18} />}
+                    leftSection={<IconSearch size={18} />}
                     placeholder="请输入曲名"
                     value={search}
                     onChange={setSearchValue}
-                    data={search.trim().length > 0 ? (defaultScores || []).map((score) => ({
-                      key: `${score.id}-${(score as MaimaiScoreProps).type}-${score.level_index}`,
-                      value: score.song_name,
-                    })) : []}
-                    withinPortal
+                    data={Array.from(new Set(searchResult.map(result => result.value)))
+                      .map(value => searchResult.find(result => result.value === value)) as ComboboxStringData}
                   />
                 </Grid.Col>
                 <Grid.Col span={6}>
@@ -402,8 +394,7 @@ export default function Scores() {
                     placeholder="请选择难度"
                     value={difficulty}
                     onChange={(value) => setDifficulty(value)}
-                    transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
-                    withinPortal
+                    comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   />
                 </Grid.Col>
                 {songList instanceof MaimaiSongList && (
@@ -419,8 +410,7 @@ export default function Scores() {
                         placeholder="请选择乐曲分类"
                         value={genre}
                         onChange={(value) => setGenre(value)}
-                        transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
-                        withinPortal
+                        comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                       />
                     </Grid.Col>
                     <Grid.Col span={6}>
@@ -434,8 +424,7 @@ export default function Scores() {
                         placeholder="请选择版本"
                         value={version.map((item) => item.toString())}
                         onChange={(value) => setVersion(value.map((item) => parseInt(item)))}
-                        transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
-                        withinPortal
+                        comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                       />
                     </Grid.Col>
                   </>
@@ -468,13 +457,13 @@ export default function Scores() {
                   </Grid.Col>
                 )}
               </Grid>
-              <Group position="apart">
+              <Group justify="space-between">
                 <Switch
                   label="显示未游玩曲目"
                   defaultChecked={showUnplayed}
                   onChange={toggleShowUnplayed}
                 />
-                <Button leftIcon={<IconReload size={20} />} variant="light" onClick={resetFilter}>
+                <Button leftSection={<IconReload size={20} />} variant="light" onClick={resetFilter}>
                   重置筛选条件
                 </Button>
               </Group>
@@ -484,7 +473,7 @@ export default function Scores() {
       </Card>
       <Space h="md" />
       {fetching ? (
-        <Group position="center" p="xl">
+        <Group justify="center" p="xl">
           <Loader />
         </Group>
       ) : ((scores && scores.length === 0 && defaultScores) ? (
@@ -494,7 +483,7 @@ export default function Scores() {
         </Flex>
       ) : (
         <>
-          <Group position="center">
+          <Group justify="center">
             <Pagination total={totalPages} value={page} onChange={setPage} />
             {songList instanceof MaimaiSongList && (
               <MaimaiScoreList scores={displayScores as MaimaiScoreProps[]} songList={songList} />

@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
   Container,
-  createStyles,
   Text,
   Title,
-  rem,
   Group,
   Loader,
 } from '@mantine/core';
@@ -12,20 +10,9 @@ import { getProfile } from '../../utils/api/user';
 import { PlayerSection } from '../../components/Profile/PlayerSection';
 import { UserProps, UserSection } from '../../components/Profile/UserSection';
 import { UserBindSection } from '../../components/Profile/UserBindSection';
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: rem(600),
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-}));
+import classes from "../Page.module.css";
 
 export default function Profile() {
-  const { classes } = useStyles();
   const [user, setUser] = useState<UserProps | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -51,14 +38,14 @@ export default function Profile() {
 
   return (
     <Container className={classes.root} size={400}>
-      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         账号详情
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         查看你的 maimai DX 查分器账号详情与游戏数据
       </Text>
         {!isLoaded ? (
-          <Group position="center" mt="xl">
+          <Group justify="center" mt="xl">
             <Loader />
           </Group>
         ) : (

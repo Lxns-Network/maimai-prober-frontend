@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   Container,
-  createStyles,
-  rem,
   Card,
   Title,
   Text,
@@ -22,35 +20,7 @@ import { permissionToList, UserPermission } from "../../utils/session";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
 import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-react";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: rem(600),
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-
-  section: {
-    borderBottom: `${rem(1)} solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
-    }`,
-    padding: theme.spacing.md,
-  },
-
-  user: {
-    display: 'block',
-    width: '100%',
-    padding: theme.spacing.md,
-    color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
-
-    '&:hover': {
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
-    },
-  },
-}));
+import classes from "./Developers.module.css";
 
 interface DeveloperProps {
   id: number;
@@ -63,14 +33,12 @@ interface DeveloperProps {
 }
 
 export function UserButton({ user, onClick, ...others }: { user: UserProps, onClick?: () => void } & UnstyledButtonProps) {
-  const { classes } = useStyles();
-
   return (
     <UnstyledButton className={classes.user} onClick={onClick} {...others}>
       <Group>
         <div style={{ flex: 1 }}>
           <Flex align="center">
-            <Text size="sm" weight={500} mr="xs">
+            <Text size="sm" fw={500} mr="xs">
               {user.name}
             </Text>
             {permissionToList(user.permission).indexOf(UserPermission.Developer) !== -1 ? (
@@ -80,7 +48,7 @@ export function UserButton({ user, onClick, ...others }: { user: UserProps, onCl
             )}
           </Flex>
 
-          <Text color="dimmed" size="xs">{user.email}</Text>
+          <Text c="dimmed" size="xs">{user.email}</Text>
         </div>
 
         <IconChevronRight size={16} />
@@ -96,9 +64,7 @@ interface DeveloperCardProps {
   setConfirmAlert?: (confirm: () => void) => void;
 }
 
-const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...others }: DeveloperCardProps & UnstyledButtonProps) => {
-  const { classes } = useStyles();
-
+const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...others }: DeveloperCardProps) => {
   const revokeDeveloperHandler = async () => {
     try {
       const res = await revokeDeveloper(developer);
@@ -107,7 +73,6 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
         openAlert("撤销开发者失败", data.message);
         return;
       }
-
       window.location.reload();
     } catch (error) {
       openAlert("撤销开发者失败", `${error}`);
@@ -117,12 +82,12 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
   }
 
   return (
-    <Card withBorder radius="md" className={classes.card} {...others}>
+    <Card className={classes.card} withBorder radius="md" mb="md" {...others}>
       <Card.Section className={classes.section} p={0}>
         <UserButton user={developer.user} onClick={userOnClick} />
       </Card.Section>
       <Card.Section className={classes.section}>
-        <Group position="apart">
+        <Group justify="space-between">
           <div>
             <Text fz="xs" c="dimmed">项目名称</Text>
             <Text fz="sm">{developer.name}</Text>
@@ -145,10 +110,10 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
         <Text fz="xs" c="dimmed" mt="md">申请理由</Text>
         <Text fz="sm">{developer.reason}</Text>
       </Card.Section>
-      <Card.Section className={classes.section}>
-        <Group position="right">
+      <Card.Section p="md">
+        <Group justify="flex-end">
           {permissionToList(developer.user.permission).indexOf(UserPermission.Developer) !== -1 && (
-            <Button variant="outline" size="sm" leftIcon={<IconRefresh size={20} />}>
+            <Button variant="outline" size="sm" leftSection={<IconRefresh size={20} />}>
               重置 API 密钥
             </Button>
           )}
@@ -156,7 +121,7 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
             variant="outline"
             size="sm"
             color="red"
-            leftIcon={<IconArrowBackUp size={20} />}
+            leftSection={<IconArrowBackUp size={20} />}
             onClick={() => {
               setConfirmAlert?.(() => revokeDeveloperHandler);
               openAlert("撤销开发者", "确定要撤销这个开发者吗？");
@@ -172,7 +137,6 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
 
 export default function Developers() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const { classes } = useStyles();
   const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [developers, setDevelopers] = useState<DeveloperProps[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -203,14 +167,14 @@ export default function Developers() {
         onConfirm={confirmAlert}
       />
       <EditUserModal user={activeUser as UserProps} opened={opened} close={() => close()} />
-      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         管理开发者
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         查看并管理 maimai DX 查分器的开发者
       </Text>
       {!isLoaded ? (
-        <Group position="center" mt="xl">
+        <Group justify="center" mt="xl">
           <Loader />
         </Group>
       ) : (
@@ -226,7 +190,6 @@ export default function Developers() {
             }
             openAlert={openAlert}
             setConfirmAlert={setConfirmAlert}
-            mb="md"
           />
         ))
       )}

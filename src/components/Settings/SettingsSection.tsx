@@ -1,23 +1,6 @@
-import { createStyles, Group, Switch, Text, rem, Select, MultiSelect, Button } from '@mantine/core';
-import {memo} from "react";
-
-const useStyles = createStyles((theme) => ({
-  item: {
-    '& + &': {
-      paddingTop: theme.spacing.sm,
-      marginTop: theme.spacing.sm,
-      borderTop: `${rem(1)} solid ${
-        theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
-      }`,
-    },
-  },
-
-  switch: {
-    '& *': {
-      cursor: 'pointer',
-    },
-  },
-}));
+import { Group, Switch, Text, Select, MultiSelect, Button } from '@mantine/core';
+import { memo } from "react";
+import classes from "./Settings.module.css";
 
 interface OptionsProps {
   value: string;
@@ -45,17 +28,15 @@ interface SettingsCardProps {
 }
 
 export const SettingsSection = memo(({ data, value, onChange }: SettingsCardProps) => {
-  const { classes } = useStyles();
-
   if (!data) {
     return null;
   }
 
   return data.map((item) => (
-    <Group position="apart" className={classes.item} noWrap spacing="xl" key={item.key}>
+    <Group justify="space-between" className={classes.item} wrap="nowrap" gap="xl" key={item.key}>
       <div>
         <Text>{item.title}</Text>
-        <Text size="xs" color="dimmed">
+        <Text size="xs" c="dimmed">
           {item.description}
         </Text>
       </div>
@@ -74,7 +55,7 @@ export const SettingsSection = memo(({ data, value, onChange }: SettingsCardProp
           variant="filled"
           data={item.options || []}
           value={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue as string}
-          transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+          comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
           onChange={(value) => onChange && onChange(item.key, value)}
         />
       )}
@@ -84,14 +65,14 @@ export const SettingsSection = memo(({ data, value, onChange }: SettingsCardProp
           data={item.options || []}
           placeholder={item.placeholder}
           value={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue as string[]}
-          transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+          comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
           onChange={(value) => onChange && onChange(item.key, value)}
         />
       )}
       {item.optionType === 'button' && (
         <Button
           variant="outline"
-          color={item.color || 'default'}
+          color={item.color || 'blue'}
           onClick={item.onClick}
         >
           {item.placeholder}

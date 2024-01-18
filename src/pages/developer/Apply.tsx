@@ -9,7 +9,7 @@ import {
   LoadingOverlay,
   Textarea
 } from '@mantine/core';
-import { Container, rem, createStyles } from '@mantine/core';
+import { Container, rem } from '@mantine/core';
 import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
 import Icon from "@mdi/react";
@@ -19,25 +19,10 @@ import {
 } from "@mdi/js";
 import { useForm } from "@mantine/form";
 import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/developer";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    paddingTop: rem(80),
-    paddingBottom: rem(80),
-  },
-
-  highlight: {
-    position: 'relative',
-    backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
-    borderRadius: theme.radius.sm,
-    padding: `${rem(4)} ${rem(8)}`,
-    color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
-  },
-}));
+import classes from "../Form.module.css";
 
 export default function DeveloperApply() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const { classes } = useStyles();
   const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
 
@@ -106,16 +91,14 @@ export default function DeveloperApply() {
         opened={isAlertVisible}
         onClose={closeAlert}
       />
-      <Title order={2} size="h2" weight={900} align="center">
+      <Title order={2} size="h2" fw={900} ta="center">
         申请成为开发者
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         提交申请，通过审核后即可获取 API 访问权限
       </Text>
-      <Card radius="md" shadow="md" p="xl" withBorder sx={(theme) => ({
-        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
-      })}>
-        <LoadingOverlay visible={visible} overlayBlur={2} />
+      <Card className={classes.card} radius="md" shadow="md" p="xl" withBorder>
+        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => sendDeveloperApplyHandler(values))}>
           <TextInput
             name="name"
@@ -123,7 +106,7 @@ export default function DeveloperApply() {
             variant="filled"
             placeholder="请输入你的项目名称"
             mb="sm"
-            icon={<Icon path={mdiCodeTags} size={rem(16)} />}
+            leftSection={<Icon path={mdiCodeTags} size={rem(16)} />}
             disabled={applied}
             {...form.getInputProps('name')}
           />
@@ -133,7 +116,7 @@ export default function DeveloperApply() {
             variant="filled"
             placeholder="请输入你的项目地址"
             mb="sm"
-            icon={<Icon path={mdiLink} size={rem(16)} />}
+            leftSection={<Icon path={mdiLink} size={rem(16)} />}
             disabled={applied}
             {...form.getInputProps('url')}
           />
@@ -146,10 +129,10 @@ export default function DeveloperApply() {
             disabled={applied}
             {...form.getInputProps('reason')}
           />
-          <Group position="apart" mt="xl">
+          <Group justify="space-between" mt="xl">
             <div>
               {applied && (
-                <Text size="xs" color="dimmed">你的申请正在受理中</Text>
+                <Text size="xs" c="dimmed">你的申请正在受理中</Text>
               )}
             </div>
             <Button size="sm" type="submit" disabled={applied}>提交申请</Button>

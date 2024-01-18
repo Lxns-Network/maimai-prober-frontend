@@ -3,7 +3,7 @@ import {
   Button,
   Card, Checkbox,
   Container,
-  createStyles, Flex,
+  Flex,
   Group, HoverCard,
   Loader,
   Pagination,
@@ -30,6 +30,7 @@ import {
 import { SongList } from "../../utils/api/song/song.tsx";
 import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
+import classes from "../Page.module.css"
 
 export interface AliasProps {
   alias_id: number;
@@ -61,18 +62,6 @@ interface VoteProps {
   weight: number;
 }
 
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: rem(600),
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-    color: theme.colorScheme === 'dark' ? theme.white : theme.colors.gray[9],
-  },
-}));
-
 const sortKeys = [
   { name: '别名', key: 'alias' },
   { name: '总权重', key: 'total_weight' },
@@ -80,7 +69,6 @@ const sortKeys = [
 ];
 
 export default function Vote() {
-  const { classes } = useStyles();
   const [displayAliases, setDisplayAliases] = useState<AliasProps[]>([]);
   const [aliases, setAliases] = useState<AliasProps[]>([]);
   const [votes, setVotes] = useState<VoteProps[]>([]);
@@ -228,10 +216,10 @@ export default function Vote() {
         fetchHandler();
         setOpened(false);
       }} />
-      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         曲目别名投票
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         提交曲目别名，或为你喜欢的曲目别名投票
       </Text>
       <SegmentedControl mb="md" color="blue" fullWidth value={game} onChange={(value) => {
@@ -242,7 +230,7 @@ export default function Vote() {
         { label: '中二节奏', value: 'chunithm' },
       ]} />
       <Card withBorder radius="md" className={classes.card} p={0}>
-        <Group m="md" position="apart">
+        <Group m="md" justify="space-between">
           <div>
             <Text fz="lg" fw={700}>
               排序方式
@@ -253,8 +241,8 @@ export default function Vote() {
           </div>
           <HoverCard shadow="md" withinPortal>
             <HoverCard.Target>
-              <ThemeIcon variant="subtle">
-                <IconHelp size={rem(20)} />
+              <ThemeIcon variant="subtle" color="default" size={rem(24)}>
+                <IconHelp />
               </ThemeIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown>
@@ -272,7 +260,7 @@ export default function Vote() {
               size="xs"
               variant="light"
               radius="xl"
-              rightIcon={renderSortIndicator(item.key)}
+              rightSection={renderSortIndicator(item.key)}
               style={{ display: "flex" }}
             >
               {item.name}
@@ -284,9 +272,9 @@ export default function Vote() {
       <Flex align="center" justify="space-between" gap="xs">
         <Select
           placeholder="请选择曲目"
-          icon={<Icon path={mdiMagnify} size={0.8} />}
+          leftSection={<Icon path={mdiMagnify} size={0.8} />}
           radius="md"
-          dropdownPosition="bottom"
+          comboboxProps={{ position: 'bottom' }}
           data={songList.songs.map((song) => ({
             value: song.id.toString(),
             label: song.title,
@@ -304,7 +292,7 @@ export default function Vote() {
           searchable
           style={{ flex: 1 }}
         />
-        <Button radius="md" leftIcon={<IconPlus size={20} />} onClick={() => setOpened(true)}>
+        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => setOpened(true)}>
           创建曲目别名
         </Button>
       </Flex>
@@ -316,7 +304,7 @@ export default function Vote() {
       />
       <Space h="md" />
       {fetching ? (
-        <Group position="center" p="xl">
+        <Group justify="center" p="xl">
           <Loader />
         </Group>
       ) : (pageCount === 0 ? (
@@ -325,7 +313,7 @@ export default function Vote() {
           <Text fz="sm">暂时没有可投票的曲目别名</Text>
         </Flex>
       ) : (
-        <Group position="center">
+        <Group justify="center">
           <Pagination total={pageCount} value={page} onChange={setPage} />
           <AliasList aliases={displayAliases} onDelete={() => {
             fetchHandler();

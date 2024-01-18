@@ -64,10 +64,10 @@ const RatingTrend = ({ trend }: { trend: RatingTrendProps[] }) => {
                   return (
                     <Card p="xs" withBorder fz="sm">
                       <Text>{new Date(payload.date).toLocaleDateString()}</Text>
-                      <Text color="#8884d8">DX Rating: {payload.total}</Text>
-                      <Group spacing="xs">
-                        <Text color="#FD7E14">B35: {payload.standard_total}</Text>
-                        <Text color="#228BE6">B15: {payload.dx_total}</Text>
+                      <Text c="#8884d8">DX Rating: {payload.total}</Text>
+                      <Group gap="xs">
+                        <Text c="#FD7E14">B35: {payload.standard_total}</Text>
+                        <Text c="#228BE6">B15: {payload.dx_total}</Text>
                       </Group>
                     </Card>
                   )

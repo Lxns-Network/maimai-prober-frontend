@@ -1,38 +1,10 @@
-import { createStyles, Divider, Flex, Group, Image, rem, Text } from "@mantine/core";
-
-const useStyles = createStyles((theme) => ({
-  link: {
-    color: "dimmed",
-    fontSize: theme.fontSizes.sm,
-
-    '&:hover': {
-      textDecoration: "underline",
-    },
-  },
-
-  footer: {
-    padding: `${theme.spacing.xs} ${theme.spacing.xl}`,
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-    borderTop: `${rem(1)} solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
-    }`,
-
-    [theme.fn.smallerThan('xs')]: {
-      padding: `${theme.spacing.xs} 0`,
-    },
-  },
-}));
+import { Divider, Flex, Group, Image, Text } from "@mantine/core";
+import classes from './Footer.module.css';
 
 export const Footer = () => {
-  const { classes } = useStyles();
-
   return (
     <div className={classes.footer}>
-      <Flex align="center" p="md" gap="xs" justify="space-between" sx={(theme) => ({
-        [theme.fn.smallerThan('xs')]: {
-          flexDirection: "column",
-        },
-      })}>
+      <Flex className={classes.footerInner} align="center" p="md" gap="xs" justify="space-between">
         <Group style={{ flex: 1 }}>
           <Image src="/favicon.webp" width={32} height={32} />
           <Text fw={700} fz={18}>
@@ -55,7 +27,7 @@ export const Footer = () => {
             component="a"
             className={classes.link}
             size="sm"
-            color="dimmed"
+            c="dimmed"
             href="https://beian.miit.gov.cn/"
             target="_blank"
           >

@@ -5,7 +5,7 @@ import { getRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 
 export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
   return (
-    <Group noWrap>
+    <Group wrap="nowrap">
       <Avatar src={player.icon_url} size={94} radius="md" style={{
         backgroundSize: "5px 5px",
         backgroundImage: "linear-gradient(-45deg, transparent 45%, rgba(0, 0, 0, 0.2) 45%, rgba(0, 0, 0, 0.2) 55%, transparent 55%)",
@@ -13,7 +13,7 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
         <IconPhotoOff />
       </Avatar>
       <div>
-        <Group spacing="xs" mb={8}>
+        <Group gap="xs" mb={8}>
           <Badge radius={rem(10)} color={getTrophyColor(player.trophy.color)} style={{
             height: "auto",
           }} children={
@@ -29,7 +29,7 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
           {player.name}
         </Text>
         <Divider mt={5} mb={10} variant="dashed" />
-        <Group noWrap>
+        <Group wrap="nowrap">
           <div>
             <Text fz="xs" c="dimmed">Over Power</Text>
             <Text fz="sm">{(player.over_power || 0).toFixed(2)}

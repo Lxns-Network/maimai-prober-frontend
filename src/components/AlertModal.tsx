@@ -19,7 +19,7 @@ export default function AlertModal({ title, content, opened, onClose, onConfirm 
         </Modal.Header>
         <Modal.Body>
           <Text fz="sm">{content}</Text>
-          <Group position="right" mt="lg">
+          <Group justify="flex-end" mt="lg">
             <Button size="sm" variant="default" onClick={onClose}>
               取消
             </Button>

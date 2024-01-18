@@ -1,9 +1,9 @@
 import { Divider, Group, ScrollArea, Text } from "@mantine/core";
-import { useStyles } from "../../PlayerSection.tsx";
 import { PlayerButton } from "./PlayerButton.tsx";
 import { PlayerModal } from "./PlayerModal.tsx";
 import { useState } from "react";
 import { useViewportSize } from "@mantine/hooks";
+import classes from "../PlayerPanel.module.css"
 
 interface CollectionProps {
   id: number;
@@ -43,7 +43,6 @@ const examplePlayer: MaimaiPlayerProps = {
 };
 
 export const MaimaiPlayerPanel = ({ player }: { player: MaimaiPlayerProps }) => {
-  const { classes } = useStyles();
   const { width } = useViewportSize();
   const [opened, setOpened] = useState(false);
 

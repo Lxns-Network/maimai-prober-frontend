@@ -102,7 +102,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
       <Group>
         {game && (
           <Avatar src={`https://lxns.org/${game}/jacket/${alias.song.id}.png`} size={94} radius="md">
-            <Text align="center" fz="xs">曲绘加载失败</Text>
+            <Text ta="center" fz="xs">曲绘加载失败</Text>
           </Avatar>
         )}
         <div style={{ flex: 1 }}>
@@ -113,7 +113,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
           <Space h="xs" />
           <div>
             <Text fz="xs" c="dimmed">曲目别名</Text>
-            <Text fz="xl" weight={700} truncate>{alias.alias}</Text>
+            <Text fz="xl" fw={700} truncate>{alias.alias}</Text>
           </div>
         </div>
         <Flex direction="column" gap="xs">
@@ -147,14 +147,18 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
       <Space h="md" />
       <div>
         <Text fz="xs" c="dimmed">投票占比</Text>
-        <Progress
-          mt={4}
-          size={20}
-          sections={[
-            { value: progress, color: 'blue', label: '支持', tooltip: `共 ${alias.weight.up} 人` },
-            { value: 100 - progress, color: 'gray', label: alias.weight.total === 0 ? '暂无投票' : '反对', tooltip: `共 ${alias.weight.down} 人` },
-          ]}
-        />
+        <Progress.Root size="xl" mt={4}>
+          <Tooltip label={`共 ${alias.weight.up} 人`}>
+            <Progress.Section value={progress} color="blue">
+              <Progress.Label>支持</Progress.Label>
+            </Progress.Section>
+          </Tooltip>
+          <Tooltip label={`共 ${alias.weight.down} 人`}>
+            <Progress.Section value={100 - progress} color="gray">
+              <Progress.Label>{alias.weight.total === 0 ? '暂无投票' : '反对'}</Progress.Label>
+            </Progress.Section>
+          </Tooltip>
+        </Progress.Root>
       </div>
       <Space h="xl" />
       <Flex align="center" direction="column" gap="xs">

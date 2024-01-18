@@ -8,7 +8,7 @@ import {
   LoadingOverlay,
   PasswordInput
 } from '@mantine/core';
-import { Container, rem, createStyles } from '@mantine/core';
+import { Container } from '@mantine/core';
 import { API_URL } from '../../main';
 import { validatePassword } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
@@ -16,25 +16,10 @@ import { useForm } from "@mantine/form";
 import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
 import { IconLock } from "@tabler/icons-react";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    paddingTop: rem(80),
-    paddingBottom: rem(80),
-  },
-
-  highlight: {
-    position: 'relative',
-    backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
-    borderRadius: theme.radius.sm,
-    padding: `${rem(4)} ${rem(8)}`,
-    color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
-  },
-}));
+import classes from "../Form.module.css";
 
 export default function ResetPassword() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
 
@@ -92,16 +77,14 @@ export default function ResetPassword() {
         opened={isAlertVisible}
         onClose={closeAlert}
       />
-      <Title order={2} size="h2" weight={900} align="center">
+      <Title order={2} size="h2" fw={900} ta="center">
         重置 maimai DX 查分器密码
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         重置你的 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号密码
       </Text>
-      <Card radius="md" shadow="md" p="xl" withBorder sx={(theme) => ({
-        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
-      })}>
-        <LoadingOverlay visible={visible} overlayBlur={2} />
+      <Card className={classes.card} radius="md" shadow="md" p="xl" withBorder>
+        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => forgotPassword(values))}>
           <PasswordInput
             name="password"
@@ -109,7 +92,7 @@ export default function ResetPassword() {
             variant="filled"
             placeholder="请输入你的密码"
             mb="sm"
-            icon={<IconLock size={20} />}
+            leftSection={<IconLock size={20} />}
             {...form.getInputProps('password')}
           />
           <PasswordInput
@@ -118,10 +101,10 @@ export default function ResetPassword() {
             variant="filled"
             placeholder="请再次输入你的密码"
             mb="sm"
-            icon={<IconLock size={20} />}
+            leftSection={<IconLock size={20} />}
             {...form.getInputProps('confirmPassword')}
           />
-          <Group position="right" mt="xl">
+          <Group justify="flex-end" mt="xl">
             <Button size="sm" type="submit">重置密码</Button>
           </Group>
         </form>

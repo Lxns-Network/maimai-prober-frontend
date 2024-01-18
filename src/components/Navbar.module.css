@@ -1,0 +1,71 @@
+.navbar {
+    position: fixed;
+    z-index: 200;
+    height: calc(100vh - 56px);
+    width: var(--navbar-width);
+    background-color: var(--mantine-color-body);
+    border-right: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+
+    display: flex;
+    flex-direction: column;
+
+    @mixin smaller-than $mantine-breakpoint-md {
+        width: var(--navbar-width);
+    }
+}
+
+.navbarHeader {
+    padding-bottom: var(--mantine-spacing-md);
+    margin-bottom: calc(var(--mantine-spacing-md) * 1.5);
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
+.navbarMain {
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+.navbarFooter {
+    padding-top: var(--mantine-spacing-md);
+    padding-bottom: var(--mantine-spacing-md);
+    border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
+.navbarLink {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    font-size: var(--mantine-font-size-sm);
+    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+    padding: 8px var(--mantine-spacing-sm);
+    border-radius: var(--mantine-radius-sm);
+    font-weight: 500;
+    cursor: pointer;
+
+    @mixin hover {
+        background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+        color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+
+        .navbarLinkIcon {
+            color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+        }
+    }
+
+    &[data-active] {
+        &,
+        &:hover {
+            background-color: var(--mantine-primary-color-light);
+            color: var(--mantine-primary-color-light-color);
+
+            .navbarLinkIcon {
+                color: var(--mantine-primary-color-light-color);
+            }
+        }
+    }
+}
+
+.navbarLinkIcon {
+    color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
+    display: flex;
+    padding: 2px 0;
+}

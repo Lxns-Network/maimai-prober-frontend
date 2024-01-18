@@ -1,0 +1,17 @@
+@import "../Page.module.css";
+
+.section {
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+    padding: var(--mantine-spacing-md);
+}
+
+.user {
+    display: block;
+    width: 100%;
+    padding: var(--mantine-spacing-md);
+    color: light-dark(var(--mantine-color-black), var(--mantine-color-dark-0));
+
+    &:hover {
+        background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+    }
+}

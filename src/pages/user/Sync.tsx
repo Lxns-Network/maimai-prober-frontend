@@ -5,7 +5,6 @@ import {
   Code,
   Card,
   Container,
-  createStyles,
   Flex,
   Group,
   Loader,
@@ -33,34 +32,7 @@ import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
 import { IconCheck, IconCopy, IconDownload, IconRefresh, IconRepeat } from "@tabler/icons-react";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: rem(600),
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-
-  section: {
-    borderBottom: `${rem(1)} solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
-    }`,
-    padding: theme.spacing.md,
-  },
-
-  loaderText: {
-    '& + &': {
-      paddingTop: theme.spacing.sm,
-      marginTop: theme.spacing.sm,
-      borderTop: `${rem(1)} solid ${
-        theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
-      }`,
-    },
-  },
-}));
+import classes from './Sync.module.css';
 
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
   return (
@@ -72,7 +44,7 @@ const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
         <CopyButton value={content} timeout={2000}>
           {({ copied, copy }) => (
             <Tooltip label={copied ? '已复制' : label} withArrow position="right">
-              <ActionIcon color={copied ? 'teal' : 'gray'} onClick={copy}>
+              <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
                 {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
               </ActionIcon>
             </Tooltip>
@@ -100,7 +72,7 @@ const CrawlTokenAlert = ({ token, resetHandler }: any) => {
           isTokenExpired ? "已失效，" : `将在 ${getExpireTime(token) + 1} 分钟内失效，逾时`
         }请点击下方按钮刷新 OAuth 链接。` : "链接未生成，请点击下方按钮生成 OAuth 链接。"}
       </Text>
-      <Button variant="outline" leftIcon={<IconRefresh size={20} />} onClick={resetHandler} color={alertColor}>
+      <Button variant="outline" leftSection={<IconRefresh size={20} />} onClick={resetHandler} color={alertColor}>
         {token ? "刷新链接" : "生成链接"}
       </Button>
     </Alert>
@@ -119,7 +91,6 @@ interface CrawlStatusProps {
 
 export default function Sync() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const { classes } = useStyles();
   const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [networkError, setNetworkError] = useState(false);
@@ -237,10 +208,10 @@ export default function Sync() {
         onClose={closeAlert}
         onConfirm={confirmAlert}
       />
-      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         同步游戏数据
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         使用 HTTP 代理同步你的玩家数据与成绩
       </Text>
       {(new Date()).getHours() >= 18 &&
@@ -268,40 +239,40 @@ export default function Sync() {
         ) : 0
       } orientation="vertical" allowNextStepsSelect={false} ref={stepper}>
         <Stepper.Step label="步骤 1" description={
-          <Group spacing="xs" w={stepperRect.width - 54}>
+          <Group gap="xs" w={stepperRect.width - 54}>
             <Text>
               配置 HTTP 代理
             </Text>
             <Card withBorder radius="md" className={classes.card} mb="md" p={0} w="100%">
               <Flex align="center" justify="space-between" m="md">
-                <Group className={classes.loaderText} noWrap>
+                <Group className={classes.loaderText} wrap="nowrap">
                   {proxyAvailable ? (
                     <div>
-                      <Text size="lg" color="tal">
+                      <Text size="lg" c="tal">
                         HTTP 代理已配置
                       </Text>
-                      <Text size="xs" color="dimmed">
+                      <Text size="xs" c="dimmed">
                         请继续执行下一步操作
                       </Text>
                     </div>
                   ) : (networkError ? (
                     <div>
-                      <Text size="lg" color="red">网络连接已断开</Text>
-                      <Text size="xs" color="dimmed">
+                      <Text size="lg" c="red">网络连接已断开</Text>
+                      <Text size="xs" c="dimmed">
                         请检查你的 HTTP 代理设置是否正确
                       </Text>
                     </div>
                   ) : (idle ? (
                     <div>
                       <Text size="lg">已暂停检测 HTTP 代理</Text>
-                      <Text size="xs" color="dimmed">
+                      <Text size="xs" c="dimmed">
                         请移动鼠标或触摸屏幕以继续检测
                       </Text>
                     </div>
                   ) : (
                     <div>
                       <Text size="lg">正在检测 HTTP 代理</Text>
-                      <Text size="xs" color="dimmed">
+                      <Text size="xs" c="dimmed">
                         正在检测 HTTP 代理是否正确配置
                       </Text>
                     </div>
@@ -323,7 +294,7 @@ export default function Sync() {
                 <Accordion.Item value="how-to-set-http-proxy">
                   <Accordion.Control>我该如何设置 HTTP 代理？</Accordion.Control>
                   <Accordion.Panel>
-                    <Text size="sm" color="dimmed" mb="xs">
+                    <Text size="sm" c="dimmed" mb="xs">
                       请将系统的 WLAN 代理设置为 <Code>proxy.maimai.lxns.net:8080</Code>，Android 用户在移动网络下需要设置接入点名称（APN）代理。
                     </Text>
                     <CopyButtonWithIcon label="复制 HTTP 代理" content="proxy.maimai.lxns.net" />
@@ -333,7 +304,7 @@ export default function Sync() {
                         flex: 1,
                       }} />
                       <Space w="xs" />
-                      <Button variant="light" rightIcon={<IconDownload size={20} />} onClick={
+                      <Button variant="light" rightSection={<IconDownload size={20} />} onClick={
                         () => window.location.href = "clash://install-config?url=https://maimai.lxns.net/api/v0/proxy-config/clash"
                       }>一键导入配置</Button>
                     </Flex>
@@ -344,7 +315,7 @@ export default function Sync() {
           </Group>
         } loading={!proxyAvailable} />
         <Stepper.Step label="步骤 2" description={
-          <Stack spacing="xs" w={stepperRect.width - 54}>
+          <Stack gap="xs" w={stepperRect.width - 54}>
             <Text>
               选择需要爬取的游戏
             </Text>
@@ -355,7 +326,7 @@ export default function Sync() {
           </Stack>
         } />
         <Stepper.Step label="步骤 3" description={
-          <Stack spacing="xs" w={stepperRect.width - 54}>
+          <Stack gap="xs" w={stepperRect.width - 54}>
             <Text>
               复制微信 OAuth 链接，发送至安全的聊天中并打开
             </Text>
@@ -372,10 +343,10 @@ export default function Sync() {
       </Stepper>
       <Card withBorder radius="md" className={classes.card} p="md" mt={rem(-12)}>
         <Card.Section className={classes.section}>
-          <Text size="xs" color="dimmed">
+          <Text size="xs" c="dimmed">
             数据同步状态
           </Text>
-          <Text fz="lg" color={
+          <Text fz="lg" c={
             crawlStatus?.status === "failed" ? "red" : (
               crawlStatus?.status === "finished" ? "teal" : "default"
             )
@@ -426,7 +397,7 @@ export default function Sync() {
               </Group>
             </Card.Section>
             <Card.Section p="md" pb={0}>
-              <Group position="apart">
+              <Group justify="space-between">
                 <Group>
                   <Button onClick={() => navigate("/user/profile")}>
                     账号详情
@@ -435,7 +406,7 @@ export default function Sync() {
                     成绩管理
                   </Button>
                 </Group>
-                <Button variant="outline" leftIcon={<IconRepeat size={rem(18)} />} onClick={() => {
+                <Button variant="outline" leftSection={<IconRepeat size={18} />} onClick={() => {
                   setCrawlStatus(null);
                   setActive(1);
                 }}>

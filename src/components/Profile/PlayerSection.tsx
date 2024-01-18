@@ -1,9 +1,9 @@
 import {
   Button,
   Card,
-  createStyles, Overlay,
-  rem, Stack,
-  Tabs, Text, useMantineTheme,
+  Overlay,
+  Stack,
+  Tabs, Text, useMantineColorScheme
 } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
@@ -11,25 +11,15 @@ import { getPlayerDetail } from "../../utils/api/player.tsx";
 import { MaimaiPlayerPanel } from "./PlayerPanel/maimai/PlayerPanel.tsx";
 import { ChunithmPlayerPanel } from "./PlayerPanel/chunithm/PlayerPanel.tsx";
 import { PlayerPanelSkeleton } from "./PlayerPanel/Skeleton.tsx";
-import {useNavigate} from "react-router-dom";
-
-export const useStyles = createStyles((theme) => ({
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-
-  section: {
-    padding: theme.spacing.md,
-  },
-}));
+import { useNavigate } from "react-router-dom";
+import classes from "./Profile.module.css";
 
 export const PlayerSection = () => {
-  const { classes } = useStyles();
+  const { colorScheme } = useMantineColorScheme();
   const [player, setPlayer] = useState<any>(null);
   const [fetching, setFetching] = useState(true);
   const [game, setGame] = useLocalStorage({ key: 'game' })
   const navigate = useNavigate();
-  const theme = useMantineTheme();
 
   const fetchPlayerData = async () => {
     try {
@@ -54,46 +44,19 @@ export const PlayerSection = () => {
   }, [game]);
 
   return (
-    <Card withBorder radius="md" className={classes.card} mb="md" p={0}>
-      <Tabs unstyled value={game} onTabChange={(value) => {
-        if (value === game) return;
-
+    <Card className={classes.card} withBorder radius="md" mb="md" p={0}>
+      <Tabs unstyled value={game} onChange={(value) => {
         setFetching(true);
         setGame(value as string);
-      }} styles={(theme) => ({
-        tab: {
-          ...theme.fn.focusStyles(),
-          backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-          color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.colors.gray[9],
-          border: 0,
-          borderTop: `${rem(1)} solid ${theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[4]}`,
-          padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-          cursor: 'pointer',
-          fontSize: theme.fontSizes.sm,
-          flex: 1,
-
-          '&:hover': {
-            backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[1],
-          },
-
-          '&[data-active]': {
-            backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
-            color: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).color,
-          },
-        },
-
-        tabsList: {
-          display: 'flex',
-        },
-      })}>
+      }} classNames={classes}>
         <Tabs.Panel value="maimai">
           {fetching ? (
             <PlayerPanelSkeleton />
           ) : (
-            <Card p={0} radius={0}>
+            <Card className={classes.card} p={0} radius={0}>
               {!player && (
                 <Overlay color={
-                  theme.colorScheme === 'dark' ? "#000" : "#FFF"
+                  colorScheme === 'dark' ? "#000" : "#FFF"
                 } blur={5} center zIndex={1}>
                   <Stack>
                     <Text>尚未同步游戏数据</Text>
@@ -111,10 +74,10 @@ export const PlayerSection = () => {
           {fetching ? (
             <PlayerPanelSkeleton />
           ) : (
-            <Card p={0} radius={0}>
+            <Card className={classes.card} p={0} radius={0}>
               {!player && (
                 <Overlay color={
-                  theme.colorScheme === 'dark' ? "#000" : "#FFF"
+                  colorScheme === 'dark' ? "#000" : "#FFF"
                 } blur={5} center zIndex={1}>
                   <Stack>
                     <Text>尚未同步游戏数据</Text>

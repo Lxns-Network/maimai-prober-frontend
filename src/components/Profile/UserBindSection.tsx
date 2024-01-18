@@ -5,7 +5,6 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import { useStyles } from "./PlayerSection";
 import { useForm } from "@mantine/form";
 import { updateUserBind } from "../../utils/api/user";
 import AlertModal from "../AlertModal";
@@ -13,6 +12,7 @@ import useAlert from "../../utils/useAlert";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
+import classes from "./Profile.module.css";
 
 export interface UserBindProps {
   qq?: number;
@@ -20,7 +20,6 @@ export interface UserBindProps {
 
 export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }) => {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const { classes } = useStyles();
   const [visible, visibleHandler] = useDisclosure(false)
 
   const form = useForm({
@@ -63,7 +62,7 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
         opened={isAlertVisible}
         onClose={closeAlert}
       />
-      <Group position="apart" noWrap spacing="xl" align="center" mb="md">
+      <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
         <div>
           <Text fz="lg" fw={700}>
             第三方账号绑定
@@ -89,7 +88,7 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
           mb={5}
           {...form.getInputProps('qq')}
         />
-        <Group position="right" mt="md">
+        <Group justify="flex-end" mt="md">
           <Button color="blue" type="submit" disabled={!form.isDirty()}>保存</Button>
         </Group>
       </form>

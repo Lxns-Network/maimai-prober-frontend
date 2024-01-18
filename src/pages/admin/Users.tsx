@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
   Container,
-  createStyles,
   Group,
-  rem,
   TextInput,
   Modal,
   Button,
   MultiSelect,
-  Box, Title, Text,
+  Box, Title, Text, keys,
 } from '@mantine/core';
-import { keys } from '@mantine/utils';
 import { deleteUser, getUsers, updateUser } from "../../utils/api/user";
 import { useDisclosure } from '@mantine/hooks';
 import { listToPermission, permissionToList, UserPermission } from "../../utils/session";
@@ -18,39 +15,10 @@ import { useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "../../utils/validator";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
-import { DataTable } from "mantine-datatable";
+import {DataTable, DataTableSortStatus} from "mantine-datatable";
 import { NAVBAR_BREAKPOINT } from "../../App.tsx";
 import { IconSearch, IconTrash } from "@tabler/icons-react";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: "100%"
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-
-  th: {
-    padding: '0 !important',
-  },
-
-  control: {
-    width: '100%',
-    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-
-    '&:hover': {
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-    },
-  },
-
-  icon: {
-    width: rem(21),
-    height: rem(21),
-    borderRadius: rem(21),
-  },
-}));
+import classes from "../Page.module.css";
 
 export interface UserProps {
   id: number;
@@ -170,17 +138,17 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
       <form onSubmit={form.onSubmit((values) => updateUserHandler(values))}>
         <TextInput label="用户名" placeholder={user?.name} mb="xs" {...form.getInputProps("name")} />
         <TextInput label="邮箱" placeholder={user?.email} mb="xs" {...form.getInputProps("email")} />
-        <MultiSelect withinPortal data={[
+        <MultiSelect data={[
           { label: "普通用户", value: UserPermission.User.toString() },
           { label: "开发者", value: UserPermission.Developer.toString() },
           { label: "管理员", value: UserPermission.Administrator.toString() },
         ]} label="权限" mb="xs" defaultValue={permission} onChange={setPermission} />
-        <Group position="apart" mt="lg">
+        <Group justify="space-between" mt="lg">
           <Group>
             <Button
               variant="outline"
               color="red"
-              leftIcon={<IconTrash size={20} />}
+              leftSection={<IconTrash size={20} />}
               onClick={() => {
                 setConfirmAlert(() => deleteUserHandler);
                 openAlert("删除账号", "你确定要删除该账号吗？");
@@ -200,7 +168,6 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
 }
 
 export default function Users() {
-  const { classes } = useStyles();
   const [users, setUsers] = useState<UserProps[]>([]);
   const [fetching, setFetching] = useState<boolean>(true);
 
@@ -215,9 +182,9 @@ export default function Users() {
   const [displayUsers, setDisplayUsers] = useState<any[]>([]);
 
   const [sortedUser, setSortedUser] = useState(users);
-  const [sortStatus, setSortStatus] = useState({
+  const [sortStatus, setSortStatus] = useState<DataTableSortStatus<UserProps>>({
     columnAccessor: 'id',
-    direction: 'asc' as 'asc' | 'desc',
+    direction: 'asc',
   });
 
   useEffect(() => {
@@ -280,24 +247,24 @@ export default function Users() {
 
         close();
       }} />
-      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         管理用户
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         查看并管理 maimai DX 查分器的用户
       </Text>
       <TextInput
         placeholder="搜索用户"
         radius="md"
         mb="md"
-        icon={<IconSearch size={18} />}
+        leftSection={<IconSearch size={18} />}
         value={search}
         onChange={(event) => setSearch(event.currentTarget.value)}
       />
       <Box w={window.innerWidth > NAVBAR_BREAKPOINT ? `100%` : "calc(100vw - 32px)"}>
         <DataTable
+          withTableBorder
           highlightOnHover
-          withBorder
           borderRadius="md"
           striped
           verticalSpacing="xs"

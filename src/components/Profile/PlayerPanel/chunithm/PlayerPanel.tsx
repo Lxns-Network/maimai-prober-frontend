@@ -1,9 +1,9 @@
 import { Divider, Group, ScrollArea, Text } from "@mantine/core";
-import { useStyles } from "../../PlayerSection.tsx";
 import { PlayerButton } from "./PlayerButton.tsx";
 import { useViewportSize } from "@mantine/hooks";
 import { useState } from "react";
 import { PlayerModal } from "./PlayerModal.tsx";
+import classes from "../PlayerPanel.module.css"
 
 interface CollectionProps {
   id: number;
@@ -45,7 +45,6 @@ const examplePlayer: ChunithmPlayerProps = {
 };
 
 export const ChunithmPlayerPanel = ({ player }: { player: ChunithmPlayerProps }) => {
-  const { classes } = useStyles();
   const { width } = useViewportSize();
   const [opened, setOpened] = useState(false);
 

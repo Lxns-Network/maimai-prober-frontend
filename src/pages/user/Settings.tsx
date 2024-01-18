@@ -1,5 +1,5 @@
 import { Title, Text, Card, LoadingOverlay, SegmentedControl } from '@mantine/core';
-import { Container, rem, createStyles } from '@mantine/core';
+import { Container } from '@mantine/core';
 import { useEffect, useState } from "react";
 import { deletePlayerScores, unbindPlayer } from "../../utils/api/player";
 import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
@@ -8,17 +8,7 @@ import { useLocalStorage } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 import AlertModal from "../../components/AlertModal";
 import useAlert from "../../utils/useAlert";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: rem(600),
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-}));
+import classes from "../Page.module.css"
 
 interface ConfigProps {
   allow_crawl_scores?: boolean;
@@ -135,7 +125,6 @@ const settingsData = {
 
 export default function Settings() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const { classes } = useStyles();
   const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [config, setConfig] = useState({} as ConfigProps);
   const [fetching, setFetching] = useState(true);
@@ -200,10 +189,10 @@ export default function Settings() {
         onClose={closeAlert}
         onConfirm={confirmAlert}
       />
-      <Title order={2} size="h2" weight={900} align="center" mt="xs">
+      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         账号设置
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         设置你的 maimai DX 查分器账号
       </Text>
       <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
@@ -214,7 +203,7 @@ export default function Settings() {
         { label: '中二节奏', value: 'chunithm' },
       ]} />
       <Card withBorder radius="md" className={classes.card} mb="md">
-        <LoadingOverlay visible={fetching} overlayBlur={2} zIndex={1} />
+        <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
           爬取数据
         </Text>
@@ -224,7 +213,7 @@ export default function Settings() {
         <SettingsSection onChange={updateUserConfigHandler} value={config} data={(settingsData as any)[game ? game : 'maimai']} />
       </Card>
       <Card withBorder radius="md" className={classes.card} mb="md">
-        <LoadingOverlay visible={fetching} overlayBlur={2} zIndex={1} />
+        <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
           隐私设置
         </Text>

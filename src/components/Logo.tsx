@@ -10,7 +10,7 @@ export default function Logo() {
       <Text fw={700} fz={18} truncate>
         maimai DX 查分器
       </Text>
-      <Badge display={
+      <Badge variant="light" display={
         small ? "none" : "flex"
       }>测试版</Badge>
     </Flex>

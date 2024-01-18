@@ -31,7 +31,7 @@ interface ScoreModalProps {
 const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
   return (
     <>
-      <Group noWrap>
+      <Group wrap="nowrap">
         <Avatar src={`https://lxns.org/maimai/jacket/${score.id}.png`} size={94} radius="md">
           <IconPhotoOff />
         </Avatar>
@@ -43,14 +43,14 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
           )}
           <Text fz="lg" fw={500} mt={2}>{score.song_name}</Text>
           <Text fz="xs" c="dimmed" mb={2}>谱面 ID：{score.id}</Text>
-          <Group spacing={0} ml={-3}>
+          <Group gap={0} ml={-3}>
             <Image
               src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`}
-              width={rem(30)}
+              w={rem(30)}
             />
             <Image
               src={`/assets/maimai/music_icon/${score.fs || "blank"}.webp`}
-              width={rem(30)}
+              w={rem(30)}
             />
           </Group>
         </div>
@@ -58,7 +58,7 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
           border: `2px solid ${getMaimaiScoreSecondaryColor(score.level_index || 0)}`,
           backgroundColor: getMaimaiScoreCardBackgroundColor(score.level_index || 0)
         }}>
-          <Text size="xl" weight={500} align="center" color="white" style={{
+          <Text size="xl" fw={500} ta="center" c="white" style={{
             lineHeight: rem(34),
           }}>
             {getDifficulty(song, score.type, score.level_index).level_value.toFixed(1)}
@@ -70,7 +70,7 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
           <Group mt="md">
             <Image
               src={`/assets/maimai/music_rank/${score?.rate}.webp`}
-              width={rem(64)}
+              w={rem(64)}
             />
             <Box>
               <Text fz="xs" c="dimmed">达成率</Text>
@@ -147,7 +147,7 @@ const ScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
                 return (
                   <Card p="xs" withBorder fz="sm">
                     <Text>{new Date(payload.upload_time).toLocaleDateString()}</Text>
-                    <Text color="#8884d8">DX Rating: {parseInt(payload.dx_rating)}</Text>
+                    <Text c="#8884d8">DX Rating: {parseInt(payload.dx_rating)}</Text>
                     <Text>{payload.achievements}%</Text>
                   </Card>
                 )

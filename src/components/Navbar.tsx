@@ -2,15 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   Container,
-  createStyles,
   Divider,
-  Navbar as MantineNavbar,
-  rem,
   ScrollArea,
-  SegmentedControl, Space,
+  SegmentedControl, Space, useMantineColorScheme,
   useMantineTheme
 } from '@mantine/core';
-import { NAVBAR_BREAKPOINT, NAVBAR_WIDTH } from "../App";
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "../utils/session";
 import { QrcodeModal } from "./QrcodeModal";
@@ -25,30 +21,7 @@ import {
   IconSettings2, IconTable, IconTableOptions, IconTransferIn,
   IconUserCircle
 } from "@tabler/icons-react";
-
-const useStyles = createStyles((theme) => ({
-  navbar: {
-    position: 'fixed',
-    zIndex: 100,
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-  },
-
-  navbarHeader: {
-    paddingBottom: theme.spacing.md,
-    marginBottom: `calc(${theme.spacing.md} * 1.5)`,
-    borderBottom: `${rem(1)} solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
-    }`,
-  },
-
-  navbarFooter: {
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
-    borderTop: `${rem(1)} solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
-    }`,
-  },
-}));
+import classes from './Navbar.module.css';
 
 interface NavbarProps {
   style?: React.CSSProperties;
@@ -56,7 +29,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ style, onClose }: NavbarProps) {
-  const { classes } = useStyles();
+  const { colorScheme } = useMantineColorScheme();
   const [qrcodeOpened, setQrcodeOpened] = useState(false);
   const [active, setActive] = useState('');
   const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
@@ -97,36 +70,30 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   }, [location.pathname, navbarData]);
 
   return (
-    <MantineNavbar
-      className={classes.navbar}
-      width={{ sm: NAVBAR_WIDTH }}
-      hiddenBreakpoint={NAVBAR_BREAKPOINT}
-      style={style}
-    >
+    <nav className={classes.navbar} style={style}>
       <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
-      <MantineNavbar.Section grow component={ScrollArea}>
-        {!isLoggedOut && (
-          <Container>
-            <Space h="md" />
-            <SegmentedControl fullWidth mt={0} value={game} onChange={setGame} data={[
-              { label: '舞萌 DX', value: 'maimai' },
-              { label: '中二节奏', value: 'chunithm' },
-            ]} />
-          </Container>
-        )}
-        <Space h="md" />
-        {navbarData.map((item) => item.enabled &&
-          <Container key={item.label}>
-            {item.divider && <Divider color={
-              theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
-            } mt={10} mb={10} />}
-            <NavbarButton {...item} active={active} onClose={onClose} />
-          </Container>
-        )}
-        <Space h="md" />
-      </MantineNavbar.Section>
-
-      <MantineNavbar.Section className={classes.navbarFooter}>
+      <ScrollArea className={classes.navbarMain}>
+          {!isLoggedOut && (
+            <Container>
+              <Space h="md" />
+              <SegmentedControl fullWidth mt={0} value={game} onChange={setGame} data={[
+                { label: '舞萌 DX', value: 'maimai' },
+                { label: '中二节奏', value: 'chunithm' },
+              ]} />
+            </Container>
+          )}
+          <Space h="md" />
+          {navbarData.map((item) => item.enabled &&
+            <Container key={item.label}>
+              {item.divider && <Divider color={
+                colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
+              } mt={10} mb={10} />}
+              <NavbarButton {...item} active={active} onClose={onClose} />
+            </Container>
+          )}
+          <Space h="md" />
+      </ScrollArea>
+      <div className={classes.navbarFooter}>
         <Container>
           <NavbarButton label="关于 maimai DX 查分器" icon={<IconInfoCircle size={24} />} to="/about" onClose={onClose} />
           {!isLoggedOut && (
@@ -146,7 +113,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
             </>
           )}
         </Container>
-      </MantineNavbar.Section>
-    </MantineNavbar>
+      </div>
+    </nav>
   );
 }

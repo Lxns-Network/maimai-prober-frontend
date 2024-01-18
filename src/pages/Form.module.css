@@ -1,0 +1,16 @@
+.root {
+    padding-top: 80px;
+    padding-bottom: 80px;
+}
+
+.card {
+    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-8));
+}
+
+.highlight {
+    position: relative;
+    background-color: var(--mantine-primary-color-light);
+    border-radius: var(--mantine-radius-sm);
+    padding: 4px 8px;
+    color: light-dark(var(--mantine-primary-color-6), var(--mantine-primary-color-4));
+}

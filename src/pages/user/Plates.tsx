@@ -1,74 +1,24 @@
-import React, { forwardRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getPlateList, getPlayerPlateById } from "../../utils/api/player";
 import {
   Container,
-  createStyles,
   Group,
   Loader,
   Text,
   Title,
-  rem,
-  Select,
   Card,
   Image,
   Space,
   ThemeIcon,
-  Box, Checkbox
+  Box, Checkbox, Combobox, InputBase, Input, useCombobox, ScrollArea
 } from "@mantine/core";
 import Icon from "@mdi/react";
 import { mdiCheck } from "@mdi/js";
 import { DataTable } from "mantine-datatable";
 import { NAVBAR_BREAKPOINT } from "../../App";
-import { IconCheck, IconSearch } from "@tabler/icons-react";
+import { IconCheck } from "@tabler/icons-react";
 import { useToggle } from "@mantine/hooks";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    padding: rem(16),
-    maxWidth: rem(600),
-  },
-
-  card: {
-    backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-    color: theme.colorScheme === 'dark' ? theme.white : theme.colors.gray[9],
-  },
-
-  th: {
-    padding: '0 !important',
-  },
-
-  control: {
-    width: '100%',
-    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-
-    '&:hover': {
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-    },
-  },
-
-  icon: {
-    width: rem(21),
-    height: rem(21),
-    borderRadius: rem(21),
-  },
-}));
-
-interface ItemProps extends React.ComponentPropsWithoutRef<'div'> {
-  image: string;
-  label: string;
-  description: string;
-}
-
-const SelectItem = forwardRef<HTMLDivElement, ItemProps>(
-  ({ image, label, description, ...others }: ItemProps, ref) => (
-    <div ref={ref} {...others}>
-      <Text size="sm">{label}</Text>
-      <Text size="xs" opacity={0.65}>
-        {description}
-      </Text>
-    </div>
-  )
-);
+import classes from "../Page.module.css"
 
 interface RequiredSongDataProps {
   id: number;
@@ -95,7 +45,6 @@ interface PlateDataProps {
 }
 
 export default function Plates() {
-  const { classes } = useStyles();
   const [defaultPlates, setDefaultPlates] = useState<PlateDataProps[]>([]);
   const [plates, setPlates] = useState<PlateDataProps[]>([]);
   const [plateId, setPlateId] = useState<number | null>(null);
@@ -121,6 +70,7 @@ export default function Plates() {
       const res = await getPlayerPlateById(game, plateId);
       const data = await res.json();
       if (data.code !== 200) {
+        setPlate(plates.find((plate) => plate.id === plateId) || null);
         return;
       }
       setPlate(data.data);
@@ -195,47 +145,77 @@ export default function Plates() {
     }))
   }, [onlySongRequired]);
 
+  const combobox = useCombobox({
+    onDropdownClose: () => combobox.resetSelectedOption(),
+  });
+
   return (
     <>
       <Container className={classes.root} size={500}>
-        <Title order={2} size="h2" weight={900} align="center" mt="xs">
+        <Title order={2} size="h2" fw={900} ta="center" mt="xs">
           姓名框查询
         </Title>
-        <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+        <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
           查询 maimai DX 姓名框与你的姓名框获取进度
         </Text>
         {!plates ? (
-          <Group position="center" mt="xl">
+          <Group justify="center" mt="xl">
             <Loader />
           </Group>
         ) : (
           <>
-            <Select
-              radius="md"
-              placeholder="请选择姓名框"
-              itemComponent={SelectItem}
-              icon={<IconSearch size={18} />}
-              searchable
-              filter={(query, item: any) =>
-                item.label.toLowerCase().trim().includes(query.toLowerCase().trim()) ||
-                item.description.toLowerCase().trim().includes(query.toLowerCase().trim())
-              }
-              data={plates ? plates.map((plate) => ({
-                value: `${plate.id}`,
-                label: plate.name,
-                description: plate.description,
-              })) : []}
-              onChange={(value) => {
+            <Combobox
+              store={combobox}
+              onOptionSubmit={(value) => {
                 setPlateId(parseInt(value || ''));
+                combobox.closeDropdown();
               }}
-            />
+            >
+              <Combobox.Target>
+                <InputBase
+                  component="button"
+                  type="button"
+                  pointer
+                  rightSection={<Combobox.Chevron />}
+                  onClick={() => combobox.toggleDropdown()}
+                  rightSectionPointerEvents="none"
+                  radius="md"
+                  multiline
+                >
+                  {plate ? (
+                    <Text>
+                      {plate.name}
+                    </Text>
+                  ) : (
+                    <Input.Placeholder>请选择姓名框</Input.Placeholder>
+                  )}
+                </InputBase>
+              </Combobox.Target>
+
+              <Combobox.Dropdown>
+                <Combobox.Options>
+                  <ScrollArea.Autosize mah={200} type="scroll">
+                    {plates.map((plate) => (
+                      <Combobox.Option value={plate.id.toString()} key={plate.id}>
+                        <Text fz="sm" fw={500}>
+                          {plate.name}
+                        </Text>
+                        <Text fz="xs" opacity={0.6}>
+                          {plate.description}
+                        </Text>
+                      </Combobox.Option>
+                    ))}
+                  </ScrollArea.Autosize>
+                </Combobox.Options>
+              </Combobox.Dropdown>
+            </Combobox>
             <Space h="xs" />
             <Checkbox
               label="仅显示要求曲目的姓名框"
               onChange={() => toggleOnlySongRequired()}
             />
             <Card mt="md" radius="md" p="md" withBorder className={classes.card}>
-              <Group position="apart">
+              <Group justify="space-between">
                 <div>
                   <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
                     {plate ? plate.description : "请选择姓名框"}
@@ -259,7 +239,7 @@ export default function Plates() {
       <Container mb="md">
         <Box w={window.innerWidth > NAVBAR_BREAKPOINT ? `100%` : "calc(100vw - 32px)"}>
           <DataTable
-            withBorder
+            withTableBorder
             borderRadius="md"
             striped
             verticalSpacing="xs"

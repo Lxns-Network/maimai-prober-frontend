@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
-import { Title, Card, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box } from '@mantine/core';
-import { Container, rem, createStyles } from '@mantine/core';
+import {
+  Title,
+  Card,
+  TextInput,
+  Text,
+  Group,
+  Anchor,
+  Button,
+  LoadingOverlay,
+  Center,
+  Box
+} from '@mantine/core';
+import { Container } from '@mantine/core';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import { validateEmail } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
@@ -9,25 +20,10 @@ import useAlert from '../../utils/useAlert';
 import AlertModal from '../../components/AlertModal';
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    paddingTop: rem(80),
-    paddingBottom: rem(80),
-  },
-
-  highlight: {
-    position: 'relative',
-    backgroundColor: theme.fn.variant({ variant: 'light', color: theme.primaryColor }).background,
-    borderRadius: theme.radius.sm,
-    padding: `${rem(4)} ${rem(8)}`,
-    color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
-  },
-}));
+import classes from "../Form.module.css";
 
 export default function ForgotPassword() {
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const { classes } = useStyles();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "forgot");
@@ -89,26 +85,24 @@ export default function ForgotPassword() {
         opened={isAlertVisible}
         onClose={closeAlert}
       />
-      <Title order={2} size="h2" weight={900} align="center">
+      <Title order={2} size="h2" fw={900} ta="center">
         重置 maimai DX 查分器密码
       </Title>
-      <Text color="dimmed" size="sm" align="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
         重置你的 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号密码
       </Text>
-      <Card radius="md" shadow="md" p="xl" withBorder sx={(theme) => ({
-        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
-      })}>
-        <LoadingOverlay visible={visible} overlayBlur={2} />
+      <Card className={classes.card} radius="md" shadow="md" p="xl" withBorder>
+        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => forgotPassword(values))}>
           <TextInput
             name="email"
             label="邮箱"
             variant="filled"
             placeholder="请输入你的邮箱"
-            icon={<IconMail size={20} />}
+            leftSection={<IconMail size={20} />}
             {...form.getInputProps('email')}
           />
-          <Group position="apart" mt="xl">
+          <Group justify="space-between" mt="xl">
             <Anchor c="dimmed" size="sm" onClick={() => navigate("/login")}>
               <Center>
                 <IconArrowLeft size={20} />

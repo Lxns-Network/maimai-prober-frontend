@@ -12,5 +12,5 @@ export default function RouterTransition() {
     };
   }, [location.pathname])
 
-  return <NavigationProgress autoReset={true} />;
+  return <NavigationProgress />;
 }

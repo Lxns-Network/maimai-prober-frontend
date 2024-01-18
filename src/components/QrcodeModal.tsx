@@ -6,8 +6,7 @@ import {
   LoadingOverlay,
   Modal,
   Stack,
-  Text,
-  useMantineTheme
+  Text, useMantineColorScheme, useMantineTheme,
 } from "@mantine/core";
 import QRCode from "react-qr-code";
 import Icon from "@mdi/react";
@@ -22,11 +21,12 @@ interface QrcodeModalProps {
 }
 
 const QrcodeModalContent = () => {
-  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
+  const { start, clear } = useTimeout(() => setExpired(true), 60000);
   const [loading, setLoading] = useState(false);
   const [expired, setExpired] = useState(false);
   const [token, setToken] = useState(localStorage.getItem('token') || '');
-  const { start, clear } = useTimeout(() => setExpired(true), 60000);
+  const theme = useMantineTheme();
 
   const refresh = () => {
     refreshToken().then((result) => {
@@ -48,7 +48,7 @@ const QrcodeModalContent = () => {
     <Stack align="center" m="xs">
       <Text fz="lg" fw={500}>请使用手机扫描二维码</Text>
       <Box pos="relative" h={138} p={5}>
-        <LoadingOverlay visible={expired} overlayBlur={2} loader={(
+        <LoadingOverlay visible={expired} overlayProps={{ radius: "sm", blur: 2 }} loaderProps={{ children: (
           <Stack align="center">
             <ActionIcon
               variant="default"
@@ -63,13 +63,13 @@ const QrcodeModalContent = () => {
             >
               <Icon path={mdiRefresh} size={10} />
             </ActionIcon>
-            <Text align="center" fz="xs">二维码已过期<br />请点击刷新</Text>
+            <Text ta="center" fz="xs">二维码已过期<br />请点击刷新</Text>
           </Stack>
-        )} />
+        )}} />
         <QRCode
           value={`maimai-prober://login?token=${token}`}
-          bgColor={theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white}
-          fgColor={theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black}
+          bgColor={colorScheme === 'dark' ? theme.colors.dark[7] : theme.white}
+          fgColor={colorScheme === 'dark' ? theme.colors.dark[0] : theme.black}
           size={128}
         />
       </Box>
@@ -77,7 +77,7 @@ const QrcodeModalContent = () => {
         你的查分器账号将会登录到应用
       </Text>
       <Divider mt="md" w="100%" label="已在同设备安装？" labelPosition="center" />
-      <Button variant="outline" leftIcon={
+      <Button variant="outline" leftSection={
         <Icon path={mdiOpenInNew} size={0.8} />
       } onClick={
         () => window.location.href = `maimai-prober://login?token=${token}`

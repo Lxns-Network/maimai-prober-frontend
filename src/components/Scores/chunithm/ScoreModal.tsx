@@ -28,36 +28,36 @@ interface ScoreModalProps {
 const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
   return (
     <>
-      <Group noWrap>
+      <Group wrap="nowrap">
         <Avatar src={`https://lxns.org/chunithm/jacket/${score.id}.png`} size={94} radius="md">
           <IconPhotoOff />
         </Avatar>
         <div style={{ flex: 1 }}>
           <Text fz="lg" fw={500} mt={2}>{score.song_name}</Text>
           <Text fz="xs" c="dimmed" mb={8}>谱面 ID：{score.id}</Text>
-          <Group spacing="xs">
+          <Group gap="xs">
             {score.clear === "failed" && (
               <Image
                 src={`/assets/chunithm/music_icon/failed.webp`}
-                width={rem(94)}
+                w={rem(94)}
               />
             )}
             {score.clear === "clear" && !score.full_combo && (
               <Image
                 src={`/assets/chunithm/music_icon/clear.webp`}
-                width={rem(94)}
+                w={rem(94)}
               />
             )}
             {score.full_combo && (
               <Image
                 src={`/assets/chunithm/music_icon/${score.full_combo}.webp`}
-                width={rem(94)}
+                w={rem(94)}
               />
             )}
             {score.full_sync && (
               <Image
                 src={`/assets/chunithm/music_icon/${score.full_sync}.webp`}
-                width={rem(94)}
+                w={rem(94)}
               />
             )}
           </Group>
@@ -66,7 +66,7 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
           border: `2px solid ${getChunithmScoreSecondaryColor(score.level_index || 0)}`,
           backgroundColor: getChunithmScoreCardBackgroundColor(score.level_index || 0)
         }}>
-          <Text size="xl" weight={500} align="center" color="white" style={{
+          <Text size="xl" fw={500} ta="center" c="white" style={{
             lineHeight: rem(34),
           }}>
             {getDifficulty(song, score.level_index).level_value.toFixed(1)}
@@ -78,7 +78,7 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
           <Group mt="md">
             <Image
               src={`/assets/chunithm/music_rank/${score.rank}.webp`}
-              width={rem(94)}
+              w={rem(94)}
             />
             <Box>
               <Text fz="xs" c="dimmed">成绩</Text>

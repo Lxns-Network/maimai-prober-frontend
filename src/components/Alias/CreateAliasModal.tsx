@@ -11,7 +11,7 @@ import {
   rem,
   Select,
   Space, Text,
-  TextInput, Tooltip
+  TextInput, Tooltip, useMantineColorScheme
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
@@ -32,6 +32,7 @@ interface CreateAliasModalProps {
 }
 
 export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => {
+  const { colorScheme } = useMantineColorScheme();
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -133,16 +134,16 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                 (form.values.game && form.values.songId) ? `https://lxns.org/${form.values.game}/jacket/${form.values.songId}.png` : null
               } styles={(theme) => ({
                 root: {
-                  backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
+                  backgroundColor: colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
                 }
               })}>
-                <Text align="center" fz="xs">请选择曲目</Text>
+                <Text ta="center" fz="xs">请选择曲目</Text>
               </Avatar>
               <div style={{ flex: 1 }}>
                 <Select
                   label="曲目所属游戏"
                   placeholder="请选择曲目所属游戏"
-                  dropdownPosition="bottom"
+                  comboboxProps={{ position: 'bottom' }}
                   mb="xs"
                   data={[
                     { value: 'maimai', label: '舞萌 DX' },
@@ -155,12 +156,12 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                   <Select
                     label="曲目"
                     placeholder="请选择曲目"
-                    dropdownPosition="bottom"
+                    comboboxProps={{ position: 'bottom' }}
                     data={songList.songs.map((song: any) => ({
                       value: song.id.toString(),
                       label: song.title,
                     }))}
-                    icon={loading ? <Loader size={rem(16)} /> : undefined}
+                    leftSection={loading ? <Loader size={rem(16)} /> : undefined}
                     disabled={songList.songs.length === 0}
                     searchable
                     withAsterisk
@@ -168,13 +169,13 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                     {...form.getInputProps('songId')}
                   />
                   <Tooltip label="随机一首曲目" withinPortal>
-                    <ActionIcon onClick={() => {
+                    <ActionIcon variant="subtle" color="default" size={rem(24)} onClick={() => {
                       const song = songList.songs[Math.floor(Math.random() * songList.songs.length)];
                       form.setValues({
                         songId: song.id.toString() as any,
                       });
-                    }} mb={4} disabled={songList.songs.length === 0}>
-                      <IconArrowsShuffle size={rem(20)} />
+                    }} mb={6} disabled={songList.songs.length === 0}>
+                      <IconArrowsShuffle />
                     </ActionIcon>
                   </Tooltip>
                 </Flex>
@@ -209,7 +210,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
               </List>
             </Paper>
             <Space h="xl" />
-            <Group position="right">
+            <Group justify="flex-end">
               <Button variant="default" onClick={onClose}>取消</Button>
               <Button type="submit" loading={uploading}>提交</Button>
             </Group>

@@ -1,6 +1,5 @@
 import {
   Center,
-  createStyles,
   Flex, Group,
   rem, Space,
   Text, ThemeIcon, Tooltip,
@@ -11,23 +10,9 @@ import Icon from "@mdi/react";
 import { mdiCheck, mdiCreation } from "@mdi/js";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { IconChevronRight } from "@tabler/icons-react";
-
-const useStyles = createStyles((theme) => ({
-  alias: {
-    display: 'block',
-    width: '100%',
-    padding: theme.spacing.md,
-    color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
-
-    '&:hover': {
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
-    },
-  },
-}));
+import classes from "./Alias.module.css";
 
 export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
-  const { classes } = useStyles();
-
   return (
     <UnstyledButton className={classes.alias} onClick={onClick} {...others}>
       <Flex>
@@ -47,7 +32,7 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
         {alias.approved && (
           <Center>
             <Tooltip label="已批准" withinPortal>
-              <ThemeIcon color="teal" size="xs" radius="xl" variant="light">
+              <ThemeIcon variant="light" color="teal" size="xs" radius="xl">
                 <Icon path={mdiCheck} size={rem(20)} />
               </ThemeIcon>
             </Tooltip>
@@ -55,7 +40,7 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
         )}
       </Flex>
       <Group>
-        <Text fz="xl" weight={700} truncate style={{ flex: 1 }}>{alias.alias}</Text>
+        <Text fz="xl" fw={700} truncate style={{ flex: 1 }}>{alias.alias}</Text>
         <IconChevronRight size={16} />
       </Group>
     </UnstyledButton>
