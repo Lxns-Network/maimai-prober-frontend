@@ -1,4 +1,4 @@
-import { Card, Flex, Group, rem, Text, useMantineColorScheme } from "@mantine/core";
+import {Card, Flex, Group, NumberFormatter, rem, Text, useMantineColorScheme} from "@mantine/core";
 import { chunithmDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
 import { memo } from "react";
@@ -45,7 +45,7 @@ export const Score = memo(({ score, song, onClick }: { score: ChunithmScoreProps
         {score.score != -1 ? (
           <div>
             <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
-              {(score.score || 0).toLocaleString('en-US', { useGrouping: true })}
+              <NumberFormatter value={score.score || 0} thousandSeparator />
             </Text>
             <Text size="xs" c="white">
               Rating: {Math.floor(score.rating * 100) / 100}

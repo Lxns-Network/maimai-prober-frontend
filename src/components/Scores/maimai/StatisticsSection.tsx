@@ -1,4 +1,4 @@
-import { Card, Grid, Image, rem, Text, Group, Spoiler, Divider } from "@mantine/core";
+import {Card, Grid, Image, rem, Text, Group, Spoiler, Divider, NumberFormatter} from "@mantine/core";
 import { MaimaiScoreProps } from "./Score.tsx";
 import classes from "../Scores.module.css"
 
@@ -48,9 +48,9 @@ export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) =>
                   />
                   <Divider style={{ flex: 1 }} variant="dashed" />
                   <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
-                    {count}
+                    <NumberFormatter value={count} thousandSeparator />
                     <span style={{ fontSize: rem(16), marginLeft: rem(4) }}>
-                    / {totalCount}
+                    / <NumberFormatter value={totalCount} thousandSeparator />
                   </span>
                   </Text>
                 </Group>
@@ -67,13 +67,13 @@ export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) =>
                 />
                 <Divider style={{ flex: 1 }} variant="dashed" />
                 <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
-                  {scores.filter((score) => {
+                  <NumberFormatter value={scores.filter((score) => {
                     for (let i = 0; i < index + 1; i++) {
                       if (fc[i] === score.fc) return true;
                     }
-                  }).length}
+                  }).length} thousandSeparator />
                   <span style={{ fontSize: rem(16), marginLeft: rem(4) }}>
-                    / {totalCount}
+                    / <NumberFormatter value={totalCount} thousandSeparator />
                   </span>
                 </Text>
               </Group>
@@ -87,13 +87,13 @@ export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) =>
                 />
                 <Divider style={{ flex: 1 }} variant="dashed" />
                 <Text fz={rem(20)} style={{ lineHeight: rem(20) }}>
-                  {scores.filter((score) => {
+                  <NumberFormatter value={scores.filter((score) => {
                     for (let i = 0; i < index + 1; i++) {
                       if (fs[i] === score.fs) return true;
                     }
-                  }).length}
+                  }).length} thousandSeparator />
                   <span style={{ fontSize: rem(16), marginLeft: rem(4) }}>
-                    / {totalCount}
+                    / <NumberFormatter value={totalCount} thousandSeparator />
                   </span>
                 </Text>
               </Group>

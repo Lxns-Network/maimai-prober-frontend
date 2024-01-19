@@ -252,7 +252,7 @@ export default function Vote() {
             </HoverCard.Dropdown>
           </HoverCard>
         </Group>
-        <Group m="md">
+        <Group m="md" mt={0}>
           {sortKeys.map((item) => (
             <Button
               key={item.key}

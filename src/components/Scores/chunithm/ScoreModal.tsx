@@ -6,7 +6,7 @@ import {
   Container,
   Group,
   Image,
-  Modal,
+  Modal, NumberFormatter,
   rem, Space,
   Text
 } from "@mantine/core";
@@ -73,7 +73,11 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
           </Text>
         </Card>
       </Group>
-      {score.score != -1 ? (
+      {score.score < 0 ? (
+        <Text fz="md" mt="md">
+          你还未游玩此谱面，或未上传至查分器。
+        </Text>
+      ) : (
         <>
           <Group mt="md">
             <Image
@@ -83,7 +87,7 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
             <Box>
               <Text fz="xs" c="dimmed">成绩</Text>
               <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
-                {(score.score || 0).toLocaleString('en-US', { useGrouping: true })}
+                <NumberFormatter value={score.score || 0} thousandSeparator />
               </Text>
             </Box>
           </Group>
@@ -110,10 +114,6 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
             </Box>
           </Group>
         </>
-      ) : (
-        <Text fz="md" mt="md">
-          你还未游玩此谱面，或未上传至查分器。
-        </Text>
       )}
     </>
   )

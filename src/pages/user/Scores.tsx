@@ -75,6 +75,7 @@ export default function Scores() {
   const [difficulty, setDifficulty] = useState<string[]>([]);
   const [type, setType] = useState<string[]>([]);
   const [rating, setRating] = useState<[number, number]>([1, 16]);
+  const [endRating, setEndRating] = useState<[number, number]>([1, 16]);
   const [genre, setGenre] = useState<string[]>([]);
   const [version, setVersion] = useState<number[]>([]);
   const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
@@ -291,7 +292,7 @@ export default function Scores() {
     })
 
     setScores(filteredData as any);
-  }, [showUnplayed, search, difficulty, type, genre, version, rating]);
+  }, [showUnplayed, search, difficulty, type, genre, version, endRating]);
 
   const [searchResult, setSearchResult] = useState<{ key: string, value: string }[]>([]);
 
@@ -339,7 +340,7 @@ export default function Scores() {
             </Text>
           </div>
         </Group>
-        <Group m="md">
+        <Group m="md" mt={0}>
           {(sortKeys[game as keyof typeof sortKeys] || sortKeys.maimai).map((item) => (
             <Button
               key={item.key}
@@ -437,12 +438,13 @@ export default function Scores() {
                     step={0.1}
                     minRange={0.1}
                     precision={1}
-                    defaultValue={rating}
+                    value={rating}
                     marks={Array.from({ length: 16 }, (_, index) => ({
                       value: index + 1,
                       label: String(index + 1),
                     }))}
-                    onChangeEnd={setRating}
+                    onChange={setRating}
+                    onChangeEnd={setEndRating}
                   />
                 </Grid.Col>
                 {songList instanceof MaimaiSongList && (

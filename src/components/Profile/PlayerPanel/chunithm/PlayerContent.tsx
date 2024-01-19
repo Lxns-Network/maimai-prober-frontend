@@ -1,5 +1,5 @@
 import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
-import { Avatar, Badge, Divider, Group, rem, Text } from "@mantine/core";
+import {Avatar, Badge, Divider, Group, NumberFormatter, rem, Text} from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 
@@ -14,7 +14,7 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
       </Avatar>
       <div>
         <Group gap="xs" mb={8}>
-          <Badge radius={rem(10)} color={getTrophyColor(player.trophy.color)} style={{
+          <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color)} style={{
             height: "auto",
           }} children={
             <Text fz="xs" style={{
@@ -37,11 +37,15 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
           </div>
           <div>
             <Text fz="xs" c="dimmed">所持金币</Text>
-            <Text fz="sm">{(player.currency || 0).toLocaleString('en-US', { useGrouping: true })}</Text>
+            <Text fz="sm">
+              <NumberFormatter value={player.currency || 0} thousandSeparator />
+            </Text>
           </div>
           <div>
             <Text fz="xs" c="dimmed">全部金币</Text>
-            <Text fz="sm">{(player.total_currency || 0).toLocaleString('en-US', { useGrouping: true })}</Text>
+            <Text fz="sm">
+              <NumberFormatter value={player.total_currency || 0} thousandSeparator />
+            </Text>
           </div>
         </Group>
       </div>

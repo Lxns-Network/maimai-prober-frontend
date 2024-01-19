@@ -17,7 +17,7 @@ export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
       </Avatar>
       <div>
         <Group gap="xs" mb={8}>
-          <Badge radius={rem(10)} color={getTrophyColor((player.trophy && player.trophy.color) || "normal")} style={{
+          <Badge variant="light" radius={rem(10)} color={getTrophyColor((player.trophy && player.trophy.color) || "normal")} style={{
             height: "auto",
           }} children={
             <Text fz="xs" style={{

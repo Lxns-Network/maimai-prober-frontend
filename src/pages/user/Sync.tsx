@@ -8,7 +8,6 @@ import {
   Flex,
   Group,
   Loader,
-  rem,
   Text,
   Title,
   ThemeIcon,
@@ -21,17 +20,13 @@ import {
 } from '@mantine/core';
 import { API_URL } from '../../main';
 import Icon from "@mdi/react";
-import {
-  mdiAlertCircleOutline,
-  mdiCheck,
-  mdiPause,
-} from "@mdi/js";
+import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useLocalStorage, useResizeObserver } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
 import useAlert from "../../utils/useAlert";
 import AlertModal from "../../components/AlertModal";
-import { IconCheck, IconCopy, IconDownload, IconRefresh, IconRepeat } from "@tabler/icons-react";
+import {IconAlertCircle, IconCheck, IconCopy, IconDownload, IconRefresh, IconRepeat} from "@tabler/icons-react";
 import classes from './Sync.module.css';
 
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
@@ -66,7 +61,7 @@ const CrawlTokenAlert = ({ token, resetHandler }: any) => {
   const alertColor = isTokenExpired ? 'yellow' : 'blue';
 
   return (
-    <Alert icon={<Icon path={mdiAlertCircleOutline} />} title="链接有效期提示" mb="md" color={alertColor}>
+    <Alert variant="light" icon={<IconAlertCircle />} title="链接有效期提示" color={alertColor} mb="md">
       <Text size="sm" mb="md">
         {token ? `该链接${
           isTokenExpired ? "已失效，" : `将在 ${getExpireTime(token) + 1} 分钟内失效，逾时`
@@ -215,7 +210,7 @@ export default function Sync() {
         使用 HTTP 代理同步你的玩家数据与成绩
       </Text>
       {(new Date()).getHours() >= 18 &&
-        <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="游玩高峰期警告" color="yellow" mb="xl">
+        <Alert radius="md" icon={<IconAlertCircle />} title="游玩高峰期警告" color="yellow" mb="xl">
           <Text size="sm" mb="md">
             由于现在是游玩高峰期，同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，或者尝试更改爬取设置以增加稳定性。
           </Text>
@@ -225,7 +220,7 @@ export default function Sync() {
         </Alert>
       }
       {(new Date()).getHours() >= 4 && (new Date()).getHours() < 7 && (
-        <Alert radius="md" icon={<Icon path={mdiAlertCircleOutline} />} title="NET 维护中" color="red" mb="xl">
+        <Alert radius="md" icon={<IconAlertCircle />} title="NET 维护中" color="red" mb="xl">
           <Text size="sm">
             由于现在是 NET 维护时间，故无法进行同步，请于 7:00 后重试。
           </Text>
@@ -240,7 +235,7 @@ export default function Sync() {
       } orientation="vertical" allowNextStepsSelect={false} ref={stepper}>
         <Stepper.Step label="步骤 1" description={
           <Group gap="xs" w={stepperRect.width - 54}>
-            <Text>
+            <Text fz="sm">
               配置 HTTP 代理
             </Text>
             <Card withBorder radius="md" className={classes.card} mb="md" p={0} w="100%">
@@ -290,33 +285,35 @@ export default function Sync() {
                   <Loader size="md" />
                 ))}
               </Flex>
-              <Accordion variant="filled" chevronPosition="left" defaultValue="how-to-set-http-proxy">
-                <Accordion.Item value="how-to-set-http-proxy">
-                  <Accordion.Control>我该如何设置 HTTP 代理？</Accordion.Control>
-                  <Accordion.Panel>
-                    <Text size="sm" c="dimmed" mb="xs">
-                      请将系统的 WLAN 代理设置为 <Code>proxy.maimai.lxns.net:8080</Code>，Android 用户在移动网络下需要设置接入点名称（APN）代理。
-                    </Text>
-                    <CopyButtonWithIcon label="复制 HTTP 代理" content="proxy.maimai.lxns.net" />
-                    <Divider my="xs" label="或使用 Clash 代理" labelPosition="center" />
-                    <Flex>
-                      <CopyButtonWithIcon label="复制 HTTP 代理" content="https://maimai.lxns.net/api/v0/proxy-config/clash" style={{
-                        flex: 1,
-                      }} />
-                      <Space w="xs" />
-                      <Button variant="light" rightSection={<IconDownload size={20} />} onClick={
-                        () => window.location.href = "clash://install-config?url=https://maimai.lxns.net/api/v0/proxy-config/clash"
-                      }>一键导入配置</Button>
-                    </Flex>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
+              <Text>
+                <Accordion variant="filled" chevronPosition="left" defaultValue="how-to-set-http-proxy">
+                  <Accordion.Item value="how-to-set-http-proxy">
+                    <Accordion.Control>我该如何设置 HTTP 代理？</Accordion.Control>
+                    <Accordion.Panel>
+                      <Text size="sm" c="dimmed" mb="xs">
+                        请将系统的 WLAN 代理设置为 <Code>proxy.maimai.lxns.net:8080</Code>，Android 用户在移动网络下需要设置接入点名称（APN）代理。
+                      </Text>
+                      <CopyButtonWithIcon label="复制 HTTP 代理" content="proxy.maimai.lxns.net" />
+                      <Divider my="xs" label="或使用 Clash 代理" labelPosition="center" />
+                      <Flex>
+                        <CopyButtonWithIcon label="复制 Clash 订阅链接" content="https://maimai.lxns.net/api/v0/proxy-config/clash" style={{
+                          flex: 1,
+                        }} />
+                        <Space w="xs" />
+                        <Button variant="light" rightSection={<IconDownload size={20} />} onClick={
+                          () => window.location.href = "clash://install-config?url=https://maimai.lxns.net/api/v0/proxy-config/clash"
+                        }>一键导入配置</Button>
+                      </Flex>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </Accordion>
+              </Text>
             </Card>
           </Group>
         } loading={!proxyAvailable} />
         <Stepper.Step label="步骤 2" description={
           <Stack gap="xs" w={stepperRect.width - 54}>
-            <Text>
+            <Text fz="sm">
               选择需要爬取的游戏
             </Text>
             <SegmentedControl size="md" mb="md" color="blue" fullWidth value={game} onChange={setGame} data={[
@@ -327,21 +324,25 @@ export default function Sync() {
         } />
         <Stepper.Step label="步骤 3" description={
           <Stack gap="xs" w={stepperRect.width - 54}>
-            <Text>
+            <Text fz="sm">
               复制微信 OAuth 链接，发送至安全的聊天中并打开
             </Text>
             <CopyButtonWithIcon
               label="复制微信 OAuth 链接"
               content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
             />
-            <CrawlTokenAlert token={crawlToken} resetHandler={getUserCrawlTokenHandler} />
+            <Text>
+              <CrawlTokenAlert token={crawlToken} resetHandler={getUserCrawlTokenHandler} />
+            </Text>
           </Stack>
         } loading={proxyAvailable && crawlStatus == null} />
         <Stepper.Step label="步骤 4" description={
-          <Text>等待数据同步完成</Text>
+          <Text fz="sm">
+            等待数据同步完成
+          </Text>
         } loading={proxyAvailable && crawlStatus?.status === "pending"} />
       </Stepper>
-      <Card withBorder radius="md" className={classes.card} p="md" mt={rem(-12)}>
+      <Card withBorder radius="md" className={classes.card} p="md" mt="-lg">
         <Card.Section className={classes.section}>
           <Text size="xs" c="dimmed">
             数据同步状态
@@ -361,7 +362,7 @@ export default function Sync() {
         </Card.Section>
 
         {(crawlStatus?.status !== "finished" && crawlStatus?.status !== "failed") ? (
-          <Card.Section className={classes.section}>
+          <Card.Section p="md">
             <Text size="sm">
               你的{game === "maimai" ? "舞萌 DX " : "中二节奏"}游戏数据（玩家信息、成绩）将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
             </Text>

@@ -170,6 +170,7 @@ export default function Plates() {
                 setPlateId(parseInt(value || ''));
                 combobox.closeDropdown();
               }}
+              transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
             >
               <Combobox.Target>
                 <InputBase
