@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import {
   Title,
-  Card,
   PasswordInput,
   TextInput,
   Text,
   Group,
   Button,
   LoadingOverlay,
-  useMantineColorScheme
+  Paper
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
@@ -22,7 +21,6 @@ import ReCaptcha from "../../utils/reCaptcha.tsx";
 import classes from "../Form.module.css";
 
 export default function Register() {
-  const { colorScheme } = useMantineColorScheme();
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
@@ -80,7 +78,7 @@ export default function Register() {
   }
 
   return (
-    <Container className={classes.root} size={400}>
+    <Container className={classes.root} size={420}>
       <AlertModal
         title={alertTitle}
         content={alertContent}
@@ -91,12 +89,10 @@ export default function Register() {
       <Title order={2} size="h2" fw={900} ta="center">
         注册到 maimai DX 查分器
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm">
         创建你的 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号
       </Text>
-      <Card radius="md" shadow="md" p="xl" withBorder style={(theme) => ({
-        backgroundColor: colorScheme === 'dark' ? theme.colors.dark[8] : theme.white,
-      })}>
+      <Paper className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => registerHandler(values))}>
           <TextInput
@@ -148,7 +144,7 @@ export default function Register() {
             <Button size="sm" type="submit">注册</Button>
           </Group>
         </form>
-      </Card>
+      </Paper>
     </Container>
   );
 }

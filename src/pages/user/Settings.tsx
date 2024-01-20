@@ -192,7 +192,7 @@ export default function Settings() {
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         账号设置
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         设置你的 maimai DX 查分器账号
       </Text>
       <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {

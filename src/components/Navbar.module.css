@@ -1,10 +1,10 @@
 .navbar {
     position: fixed;
-    z-index: 200;
+    z-index: var(--mantine-z-index-modal);
     height: calc(100vh - 56px);
     width: var(--navbar-width);
     background-color: var(--mantine-color-body);
-    border-right: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+    border-right: rem(1px) solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
 
     display: flex;
     flex-direction: column;
@@ -41,6 +41,7 @@
     border-radius: var(--mantine-radius-sm);
     font-weight: 500;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 
     @mixin hover {
         background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));

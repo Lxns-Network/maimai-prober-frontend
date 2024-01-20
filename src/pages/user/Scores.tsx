@@ -317,7 +317,7 @@ export default function Scores() {
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         成绩管理
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         管理你的 maimai DX 查分器账号的成绩
       </Text>
       <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {

@@ -155,7 +155,7 @@ export default function Plates() {
         <Title order={2} size="h2" fw={900} ta="center" mt="xs">
           姓名框查询
         </Title>
-        <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+        <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
           查询 maimai DX 姓名框与你的姓名框获取进度
         </Text>
         {!plates ? (

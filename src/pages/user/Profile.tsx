@@ -41,7 +41,7 @@ export default function Profile() {
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         账号详情
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         查看你的 maimai DX 查分器账号详情与游戏数据
       </Text>
         {!isLoaded ? (

@@ -17,7 +17,7 @@
 .description {
     text-align: center;
     max-width: 540px;
-    margin: var(--mantine-spacing-xl) auto calc(var(--mantine-spacing-xl) * 1.5);
+    margin: var(--mantine-spacing-xs) auto calc(var(--mantine-spacing-lg));
 
     @mixin smaller-than $mantine-breakpoint-sm {
         text-align: left;

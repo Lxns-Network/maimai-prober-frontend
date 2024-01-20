@@ -206,7 +206,7 @@ export default function Sync() {
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         同步游戏数据
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         使用 HTTP 代理同步你的玩家数据与成绩
       </Text>
       {(new Date()).getHours() >= 18 &&

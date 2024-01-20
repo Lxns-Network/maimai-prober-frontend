@@ -170,7 +170,7 @@ export default function Developers() {
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         管理开发者
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         查看并管理 maimai DX 查分器的开发者
       </Text>
       {!isLoaded ? (

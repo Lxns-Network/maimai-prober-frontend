@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   Title,
-  Card,
   TextInput,
   Text,
   Group,
   Button,
   LoadingOverlay,
-  Textarea
+  Textarea, Paper
 } from '@mantine/core';
 import { Container, rem } from '@mantine/core';
 import useAlert from '../../utils/useAlert';
@@ -84,7 +83,7 @@ export default function DeveloperApply() {
   }
 
   return (
-    <Container className={classes.root} size={400}>
+    <Container className={classes.root} size={420}>
       <AlertModal
         title={alertTitle}
         content={alertContent}
@@ -94,10 +93,10 @@ export default function DeveloperApply() {
       <Title order={2} size="h2" fw={900} ta="center">
         申请成为开发者
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm">
         提交申请，通过审核后即可获取 API 访问权限
       </Text>
-      <Card className={classes.card} radius="md" shadow="md" p="xl" withBorder>
+      <Paper className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => sendDeveloperApplyHandler(values))}>
           <TextInput
@@ -138,7 +137,7 @@ export default function DeveloperApply() {
             <Button size="sm" type="submit" disabled={applied}>提交申请</Button>
           </Group>
         </form>
-      </Card>
+      </Paper>
     </Container>
   );
 }

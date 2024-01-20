@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import {
   Title,
-  Card,
   Text,
   Group,
   Button,
   LoadingOverlay,
-  PasswordInput
+  PasswordInput, Paper
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { API_URL } from '../../main';
@@ -70,7 +69,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <Container className={classes.root} size={400}>
+    <Container className={classes.root} size={420}>
       <AlertModal
         title={alertTitle}
         content={alertContent}
@@ -80,10 +79,10 @@ export default function ResetPassword() {
       <Title order={2} size="h2" fw={900} ta="center">
         重置 maimai DX 查分器密码
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm">
         重置你的 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号密码
       </Text>
-      <Card className={classes.card} radius="md" shadow="md" p="xl" withBorder>
+      <Paper className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => forgotPassword(values))}>
           <PasswordInput
@@ -108,7 +107,7 @@ export default function ResetPassword() {
             <Button size="sm" type="submit">重置密码</Button>
           </Group>
         </form>
-      </Card>
+      </Paper>
     </Container>
   );
 }

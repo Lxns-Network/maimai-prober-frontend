@@ -219,7 +219,7 @@ export default function Vote() {
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         曲目别名投票
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         提交曲目别名，或为你喜欢的曲目别名投票
       </Text>
       <SegmentedControl mb="md" color="blue" fullWidth value={game} onChange={(value) => {

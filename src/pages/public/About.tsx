@@ -55,8 +55,8 @@ export default function About() {
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         关于 maimai DX 查分器
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
-        关于 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
+        获取 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器相关信息
       </Text>
       <Card radius="md" p="md" withBorder className={classes.card}>
         <Group justify="space-between" wrap="nowrap">
