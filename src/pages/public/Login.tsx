@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import {
   Title,
-  Card,
   PasswordInput,
   TextInput,
   Text,
   Group,
   Anchor,
   Button,
-  LoadingOverlay, useMantineColorScheme,
+  LoadingOverlay, Paper, Alert, useComputedColorScheme,
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useLocation, useNavigate } from "react-router-dom";
@@ -18,15 +17,16 @@ import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import { useForm } from "@mantine/form";
 import { validatePassword, validateUserName } from "../../utils/validator";
 import { useLocalStorage } from "@mantine/hooks";
-import { IconLock, IconUser } from "@tabler/icons-react";
+import { IconInfoCircle, IconLock, IconUser } from "@tabler/icons-react";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
 import classes from "../Form.module.css";
+import { isTokenExpired, isTokenUndefined } from "../../utils/session.tsx";
 
 export default function Login() {
-  const { colorScheme } = useMantineColorScheme();
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [visible, setVisible] = useState(false);
   const [game, setGame] = useLocalStorage({ key: 'game' });
+  const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state;
@@ -95,7 +95,7 @@ export default function Login() {
   }
 
   return (
-    <Container className={classes.root} size={400}>
+    <Container className={classes.root} size={420}>
       <AlertModal
         title={alertTitle}
         content={alertContent}
@@ -105,10 +105,15 @@ export default function Login() {
       <Title order={2} size="h2" fw={900} ta="center">
         登录到 maimai DX 查分器
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm">
         请使用 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号
       </Text>
-      <Card className={classes.card} radius="md" shadow="md" p="xl" withBorder>
+      {!isTokenUndefined() && !isTokenExpired() &&
+        <Alert variant="light" color="blue" icon={<IconInfoCircle />} mt="xl">
+          你已登录，如果想要切换账号，请先登出。
+        </Alert>
+      }
+      <Paper className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => loginHandler(values))}>
           <TextInput
@@ -123,7 +128,7 @@ export default function Login() {
             <Text component="label" htmlFor="password" size="sm" fw={500}>密码</Text>
             <Anchor onClick={() => navigate("/forgot-password")} style={(theme) => ({
               paddingTop: 2,
-              color: theme.colors[theme.primaryColor][colorScheme === 'dark' ? 4 : 6],
+              color: theme.colors[theme.primaryColor][computedColorScheme === 'dark' ? 4 : 6],
               fontWeight: 500,
               fontSize: theme.fontSizes.xs,
             })}>
@@ -142,7 +147,7 @@ export default function Login() {
             <Button size="sm" type="submit">登录</Button>
           </Group>
         </form>
-      </Card>
+      </Paper>
     </Container>
   );
 }

@@ -1,4 +1,4 @@
-import { Badge, Card, Flex, Group, rem, Text, useMantineColorScheme } from "@mantine/core";
+import { Badge, Card, Flex, Group, rem, Text, useComputedColorScheme } from "@mantine/core";
 import { maimaiDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { memo } from "react";
@@ -21,7 +21,7 @@ export interface MaimaiScoreProps {
 }
 
 export const Score = memo(({ score, song, onClick }: { score: MaimaiScoreProps, song: MaimaiSongProps, onClick: () => void }) => {
-  const { colorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light');
 
   return (
     <Card
@@ -32,7 +32,7 @@ export const Score = memo(({ score, song, onClick }: { score: MaimaiScoreProps, 
       style={{
         border: `2px solid ${maimaiDifficultyColor[2][score.level_index]}`,
         backgroundColor: maimaiDifficultyColor[1][score.level_index],
-        opacity: colorScheme === 'dark' ? 0.8 : 1,
+        opacity: computedColorScheme === 'dark' ? 0.8 : 1,
       }}
       onClick={onClick}
     >

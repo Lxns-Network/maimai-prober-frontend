@@ -59,7 +59,7 @@ export default function App() {
 
   return (
     <ApiContext.Provider value={value}>
-      <MantineProvider theme={theme}>
+      <MantineProvider theme={theme} defaultColorScheme="auto">
         <Notifications />
         <RouterTransition />
         <Transition mounted={opened} transition="slide-right" duration={300} timingFunction="ease">

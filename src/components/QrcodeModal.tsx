@@ -6,7 +6,7 @@ import {
   LoadingOverlay,
   Modal,
   Stack,
-  Text, useMantineColorScheme, useMantineTheme,
+  Text, useComputedColorScheme, useMantineTheme,
 } from "@mantine/core";
 import QRCode from "react-qr-code";
 import Icon from "@mdi/react";
@@ -21,11 +21,11 @@ interface QrcodeModalProps {
 }
 
 const QrcodeModalContent = () => {
-  const { colorScheme } = useMantineColorScheme();
   const { start, clear } = useTimeout(() => setExpired(true), 60000);
   const [loading, setLoading] = useState(false);
   const [expired, setExpired] = useState(false);
   const [token, setToken] = useState(localStorage.getItem('token') || '');
+  const computedColorScheme = useComputedColorScheme('light');
   const theme = useMantineTheme();
 
   const refresh = () => {
@@ -68,8 +68,8 @@ const QrcodeModalContent = () => {
         )}} />
         <QRCode
           value={`maimai-prober://login?token=${token}`}
-          bgColor={colorScheme === 'dark' ? theme.colors.dark[7] : theme.white}
-          fgColor={colorScheme === 'dark' ? theme.colors.dark[0] : theme.black}
+          bgColor={computedColorScheme === 'dark' ? theme.colors.dark[7] : theme.white}
+          fgColor={computedColorScheme === 'dark' ? theme.colors.dark[0] : theme.black}
           size={128}
         />
       </Box>

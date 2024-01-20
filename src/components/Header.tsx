@@ -2,20 +2,37 @@ import {
   Group,
   Burger,
   ActionIcon,
-  useMantineColorScheme,
+  useMantineColorScheme, Tooltip, useMantineTheme, useComputedColorScheme,
 } from '@mantine/core';
 import Logo from "./Logo";
-import { IconMoonStars, IconSun } from "@tabler/icons-react";
+import { IconMoonStars, IconSun, IconSunMoon } from "@tabler/icons-react";
 import classes from './Header.module.css';
+import { useEffect } from "react";
+import { useToggle } from "@mantine/hooks";
 
 export function ActionToggle() {
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const [colorSchemeState, toggleColorSchemeState] = useToggle(['auto', 'dark', 'light'] as const);
+  const computedColorScheme = useComputedColorScheme('light');
+  const theme = useMantineTheme();
+
+  useEffect(() => {
+    toggleColorSchemeState(colorScheme);
+  }, []);
+
+  useEffect(() => {
+    setColorScheme(colorSchemeState);
+  }, [colorSchemeState]);
 
   return (
     <Group justify="center">
-      <ActionIcon className={classes.actionIcon} variant="light" size="lg" onClick={() => toggleColorScheme()}>
-        {colorScheme === 'dark' ? <IconSun /> : <IconMoonStars />}
-      </ActionIcon>
+      <Tooltip label={colorSchemeState === 'auto' ? '跟随系统' : colorSchemeState === 'dark' ? '深色模式' : '浅色模式'} position="left">
+        <ActionIcon variant="light" size="lg" onClick={() => toggleColorSchemeState()} color={
+          colorSchemeState === 'auto' ? undefined : computedColorScheme === 'dark' ? theme.colors.blue[4] : theme.colors.yellow[6]
+        }>
+          {colorSchemeState === 'auto' ? <IconSunMoon /> : colorSchemeState === 'dark' ? <IconMoonStars /> : <IconSun />}
+        </ActionIcon>
+      </Tooltip>
     </Group>
   );
 }

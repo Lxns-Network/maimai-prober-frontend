@@ -3,7 +3,7 @@ import {
   Card,
   Overlay,
   Stack,
-  Tabs, Text, useMantineColorScheme
+  Tabs, Text, useComputedColorScheme
 } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
@@ -15,10 +15,10 @@ import { useNavigate } from "react-router-dom";
 import classes from "./Profile.module.css";
 
 export const PlayerSection = () => {
-  const { colorScheme } = useMantineColorScheme();
   const [player, setPlayer] = useState<any>(null);
   const [fetching, setFetching] = useState(true);
   const [game, setGame] = useLocalStorage({ key: 'game' })
+  const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();
 
   const fetchPlayerData = async () => {
@@ -56,7 +56,7 @@ export const PlayerSection = () => {
             <Card className={classes.card} p={0} radius={0}>
               {!player && (
                 <Overlay color={
-                  colorScheme === 'dark' ? "#000" : "#FFF"
+                  computedColorScheme === 'dark' ? "#000" : "#FFF"
                 } blur={5} center zIndex={1}>
                   <Stack>
                     <Text>尚未同步游戏数据</Text>
@@ -77,7 +77,7 @@ export const PlayerSection = () => {
             <Card className={classes.card} p={0} radius={0}>
               {!player && (
                 <Overlay color={
-                  colorScheme === 'dark' ? "#000" : "#FFF"
+                  computedColorScheme === 'dark' ? "#000" : "#FFF"
                 } blur={5} center zIndex={1}>
                   <Stack>
                     <Text>尚未同步游戏数据</Text>

@@ -4,7 +4,7 @@ import {
   Container,
   Divider,
   ScrollArea,
-  SegmentedControl, Space, useMantineColorScheme,
+  SegmentedControl, Space, useComputedColorScheme,
   useMantineTheme
 } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
@@ -29,10 +29,10 @@ interface NavbarProps {
 }
 
 export default function Navbar({ style, onClose }: NavbarProps) {
-  const { colorScheme } = useMantineColorScheme();
   const [qrcodeOpened, setQrcodeOpened] = useState(false);
   const [active, setActive] = useState('');
   const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
+  const computedColorScheme = useComputedColorScheme('light');
   const location = useLocation();
   const theme = useMantineTheme();
 
@@ -72,7 +72,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   return (
     <nav className={classes.navbar} style={style}>
       <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
-      <ScrollArea className={classes.navbarMain}>
+      <ScrollArea className={classes.navbarMain} type="scroll">
           {!isLoggedOut && (
             <Container>
               <Space h="md" />
@@ -86,7 +86,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
           {navbarData.map((item) => item.enabled &&
             <Container key={item.label}>
               {item.divider && <Divider color={
-                colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
+                computedColorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
               } mt={10} mb={10} />}
               <NavbarButton {...item} active={active} onClose={onClose} />
             </Container>

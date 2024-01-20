@@ -1,16 +1,25 @@
 import { MaimaiPlayerProps } from "./PlayerPanel.tsx";
-import { Avatar, Badge, Divider, Group, Image, rem, Text, useMantineColorScheme } from "@mantine/core";
+import {
+  Avatar,
+  Badge,
+  Divider,
+  Group,
+  Image,
+  rem,
+  Text,
+  useComputedColorScheme,
+} from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getDeluxeRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 
 export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
-  const { colorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light');
 
   return (
     <Group wrap="nowrap">
       <Avatar src={player.icon_url} size={94} radius="md" styles={(theme) => ({
         root: {
-          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
+          backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
         }
       })}>
         <IconPhotoOff />

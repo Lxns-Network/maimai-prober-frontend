@@ -1,8 +1,9 @@
-import {Card, Flex, Group, NumberFormatter, rem, Text, useMantineColorScheme} from "@mantine/core";
+import { Card, Flex, Group, NumberFormatter, rem, Text } from "@mantine/core";
 import { chunithmDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
 import { memo } from "react";
 import classes from "../Scores.module.css"
+import { useComputedColorScheme } from "@mantine/core";
 
 export interface ChunithmScoreProps {
   id: number;
@@ -21,7 +22,7 @@ export interface ChunithmScoreProps {
 }
 
 export const Score = memo(({ score, song, onClick }: { score: ChunithmScoreProps, song: ChunithmSongProps, onClick: () => void }) => {
-  const { colorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light');
 
   return (
     <Card
@@ -32,7 +33,7 @@ export const Score = memo(({ score, song, onClick }: { score: ChunithmScoreProps
       style={{
         border: `2px solid ${chunithmDifficultyColor[2][score.level_index]}`,
         backgroundColor: chunithmDifficultyColor[1][score.level_index],
-        opacity: colorScheme === 'dark' ? 0.8 : 1,
+        opacity: computedColorScheme === 'dark' ? 0.8 : 1,
       }}
       onClick={onClick}
     >

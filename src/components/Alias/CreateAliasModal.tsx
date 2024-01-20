@@ -11,7 +11,7 @@ import {
   rem,
   Select,
   Space, Text,
-  TextInput, Tooltip, useMantineColorScheme
+  TextInput, Tooltip
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
@@ -25,6 +25,7 @@ import { SongList } from "../../utils/api/song/song.tsx";
 import AlertModal from "../AlertModal.tsx";
 import useAlert from "../../utils/useAlert.tsx";
 import { createAlias } from "../../utils/api/alias.tsx";
+import { useComputedColorScheme } from "@mantine/core";
 
 interface CreateAliasModalProps {
   opened: boolean;
@@ -32,11 +33,11 @@ interface CreateAliasModalProps {
 }
 
 export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => {
-  const { colorScheme } = useMantineColorScheme();
   const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [songList, setSongList] = useState(new SongList());
+  const computedColorScheme = useComputedColorScheme('light');
 
   const form = useForm({
     initialValues: {
@@ -134,7 +135,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                 (form.values.game && form.values.songId) ? `https://lxns.org/${form.values.game}/jacket/${form.values.songId}.png` : null
               } styles={(theme) => ({
                 root: {
-                  backgroundColor: colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
+                  backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
                 }
               })}>
                 <Text ta="center" fz="xs">请选择曲目</Text>

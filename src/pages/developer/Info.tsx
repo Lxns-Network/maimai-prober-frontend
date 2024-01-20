@@ -14,7 +14,7 @@ import {
   Anchor,
   Divider,
   useMantineTheme,
-  Button, useMantineColorScheme,
+  Button,
 } from '@mantine/core';
 import { getDeveloperApply, resetDeveloperApiKey } from "../../utils/api/developer";
 import Icon from "@mdi/react";
@@ -23,12 +23,13 @@ import { useDisclosure, useSetState } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 import classes from "../Page.module.css";
+import { useComputedColorScheme } from "@mantine/core";
 
 export default function DeveloperInfo() {
-  const { colorScheme } = useMantineColorScheme();
   const [developerData, setDeveloperData] = useSetState<any>(null);
   const [visible, visibleHandler] = useDisclosure(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
@@ -72,7 +73,7 @@ export default function DeveloperInfo() {
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         开发者面板
       </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb="xl">
+      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         查看你的 maimai DX 查分器开发者信息
       </Text>
       {!isLoaded ? (
@@ -88,7 +89,7 @@ export default function DeveloperInfo() {
             <Text fz="xs" c="dimmed" mt={3}>
               查看你的开发者申请信息
             </Text>
-            <Divider mt="md" mb="md" color={colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
+            <Divider mt="md" mb="md" color={computedColorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
             <Group mt="xs">
               <Text fz="xs" c="dimmed">项目名称</Text>
               <Text fz="sm">{developerData.name}</Text>
