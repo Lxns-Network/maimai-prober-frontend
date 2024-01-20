@@ -10,8 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.1",
-    "@mantine/code-highlight": "^7.4.2",
     "@mantine/core": "^7.4.2",
     "@mantine/dates": "^7.4.2",
     "@mantine/form": "^6.0.19",
@@ -19,7 +17,6 @@
     "@mantine/modals": "^7.4.2",
     "@mantine/notifications": "^7.4.2",
     "@mantine/nprogress": "^7.4.2",
-    "@marsidev/react-turnstile": "^0.4.0",
     "@mdi/js": "^7.2.96",
     "@mdi/react": "^1.6.1",
     "@tabler/icons-react": "^2.32.0",
