@@ -37,6 +37,7 @@ import { ChunithmScoreList } from "../../components/Scores/chunithm/ScoreList.ts
 import { ChunithmScoreProps } from "../../components/Scores/chunithm/Score.tsx";
 import { AliasList } from "../../utils/api/alias.tsx";
 import classes from "../Page.module.css"
+import { openRetryModal } from "../../utils/modal.tsx";
 
 const sortKeys = {
   maimai: [
@@ -78,6 +79,8 @@ export default function Scores() {
   const [endRating, setEndRating] = useState<[number, number]>([1, 16]);
   const [genre, setGenre] = useState<string[]>([]);
   const [version, setVersion] = useState<number[]>([]);
+  const [fullCombo, setFullCombo] = useState<string[]>([]);
+  const [fullSync, setFullSync] = useState<string[]>([]);
   const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
 
   // 分页相关
@@ -89,17 +92,30 @@ export default function Scores() {
     try {
       const res = await getPlayerScores(game);
       const data = await res.json();
-      if (data.code !== 200) {
-        setDefaultScores([]);
-      } else {
-        setDefaultScores(data.data);
+      if (!data.success) {
+        throw new Error(data.message);
       }
+      setDefaultScores(data.data);
     } catch (error) {
-      console.error(error);
+      openRetryModal("成绩列表获取失败", `${error}`, getPlayerScoresHandler);
+      setDefaultScores([]);
     } finally {
       resetFilter();
     }
   };
+
+  const songListFetchHandler = async () => {
+    try {
+      await songList.fetch();
+    } catch (error) {
+      openRetryModal("曲目列表获取失败", `${error}`, songListFetchHandler);
+    }
+  }
+
+  const fetchHandler = async () => {
+    await songListFetchHandler();
+    await getPlayerScoresHandler();
+  }
 
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
@@ -107,9 +123,8 @@ export default function Scores() {
 
   useEffect(() => {
     if (!game) return;
-    songList.fetch().then(() => {
-      getPlayerScoresHandler();
-    });
+
+    fetchHandler();
   }, [songList]);
 
   useEffect(() => {
@@ -143,8 +158,10 @@ export default function Scores() {
     setGenre([]);
     setVersion([]);
     setScores(defaultScores);
-    setType([]);
     setRating([1, 16]);
+    setFullCombo([]);
+    setFullSync([]);
+    setType([]);
   }
 
   const sort = (key: any, autoChangeReverse = true) => {
@@ -254,7 +271,7 @@ export default function Scores() {
     }
 
     // 如果没有任何筛选条件，直接返回
-    if (search.trim().length + difficulty.length + type.length + genre.length + version.length === 0 && rating[0] === 1 && rating[1] === 16) {
+    if (search.trim().length + difficulty.length + type.length + fullCombo.length + fullSync.length + genre.length + version.length === 0 && rating[0] === 1 && rating[1] === 16) {
       setScores(filteredData as any);
       return;
     }
@@ -262,8 +279,25 @@ export default function Scores() {
     // 不需要 song 和 difficulty 信息，提前过滤掉可以减少后续的计算量
     filteredData = filteredData.filter((score) => {
       if (songList instanceof MaimaiSongList) {
-        if (type.length > 0 && !type.includes((score as MaimaiScoreProps).type)) { // 过滤谱面类型
+        score = score as MaimaiScoreProps;
+        if (type.length > 0 && !type.includes(score.type)) { // 过滤谱面类型
           return false;
+        }
+        if (fullCombo.length > 0 && !fullCombo.includes(score.fc)) { // 过滤 Full Combo
+          return false;
+        }
+        if (fullSync.length > 0 && !fullSync.includes(score.fs)) { // 过滤 Full Sync
+          return false;
+        }
+      } else if (songList instanceof ChunithmSongList) {
+        score = score as ChunithmScoreProps;
+        if (fullCombo.length > 0 && !fullCombo.includes(score.full_combo)) { // 过滤 Full Combo
+          return false;
+        }
+        if (fullSync.length > 0 && !fullSync.includes(score.full_sync)) { // 过滤 Full Chain
+          if (!fullSync.includes("ajc") || score.score !== 1010000) {
+            return false;
+          }
         }
       }
       return (score.song_name.toLowerCase().includes(search.toLowerCase()) || // 过滤搜索
@@ -292,7 +326,7 @@ export default function Scores() {
     })
 
     setScores(filteredData as any);
-  }, [showUnplayed, search, difficulty, type, genre, version, endRating]);
+  }, [showUnplayed, search, difficulty, type, genre, version, endRating, fullCombo, fullSync]);
 
   const [searchResult, setSearchResult] = useState<{ key: string, value: string }[]>([]);
 
@@ -365,7 +399,7 @@ export default function Scores() {
                   <Autocomplete
                     variant="filled"
                     leftSection={<IconSearch size={18} />}
-                    placeholder="请输入曲名"
+                    placeholder="请输入曲名或曲目别名"
                     value={search}
                     onChange={setSearchValue}
                     data={Array.from(new Set(searchResult.map(result => result.value)))
@@ -448,15 +482,62 @@ export default function Scores() {
                   />
                 </Grid.Col>
                 {songList instanceof MaimaiSongList && (
-                  <Grid.Col span={6}>
-                    <Text fz="xs" c="dimmed" mb={3}>筛选谱面类型</Text>
-                    <Group>
-                      <Chip.Group multiple value={type} onChange={setType}>
-                        <Chip variant="filled" value="standard" color="blue">标准</Chip>
-                        <Chip variant="filled" value="dx" color="orange">DX</Chip>
-                      </Chip.Group>
-                    </Group>
-                  </Grid.Col>
+                  <>
+                    <Grid.Col span={12}>
+                      <Text fz="xs" c="dimmed" mb={3}>筛选 Full Combo</Text>
+                      <Group>
+                        <Chip.Group multiple value={fullCombo} onChange={setFullCombo}>
+                          <Chip variant="filled" value="fc">FC</Chip>
+                          <Chip variant="filled" value="fcp">FC+</Chip>
+                          <Chip variant="filled" value="ap">AP</Chip>
+                          <Chip variant="filled" value="app">AP+</Chip>
+                        </Chip.Group>
+                      </Group>
+                    </Grid.Col>
+                    <Grid.Col span={12}>
+                      <Text fz="xs" c="dimmed" mb={3}>筛选 Full Sync</Text>
+                      <Group>
+                        <Chip.Group multiple value={fullSync} onChange={setFullSync}>
+                          <Chip variant="filled" value="fs">FS</Chip>
+                          <Chip variant="filled" value="fsp">FS+</Chip>
+                          <Chip variant="filled" value="fsd">FSD</Chip>
+                          <Chip variant="filled" value="fsdp">FSD+</Chip>
+                        </Chip.Group>
+                      </Group>
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <Text fz="xs" c="dimmed" mb={3}>筛选谱面类型</Text>
+                      <Group>
+                        <Chip.Group multiple value={type} onChange={setType}>
+                          <Chip variant="filled" value="standard" color="blue">标准</Chip>
+                          <Chip variant="filled" value="dx" color="orange">DX</Chip>
+                        </Chip.Group>
+                      </Group>
+                    </Grid.Col>
+                  </>
+                )}
+                {songList instanceof ChunithmSongList && (
+                  <>
+                    <Grid.Col span={6}>
+                      <Text fz="xs" c="dimmed" mb={3}>筛选 Full Combo</Text>
+                      <Group>
+                        <Chip.Group multiple value={fullCombo} onChange={setFullCombo}>
+                          <Chip variant="filled" value="fullcombo">FC</Chip>
+                          <Chip variant="filled" value="alljustice">AJ</Chip>
+                          <Chip variant="filled" value="ajc">AJC</Chip>
+                        </Chip.Group>
+                      </Group>
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <Text fz="xs" c="dimmed" mb={3}>筛选 Full Chain</Text>
+                      <Group>
+                        <Chip.Group multiple value={fullSync} onChange={setFullSync}>
+                          <Chip variant="filled" value="fullchain">铂 FC</Chip>
+                          <Chip variant="filled" value="fullchain2">金 FC</Chip>
+                        </Chip.Group>
+                      </Group>
+                    </Grid.Col>
+                  </>
                 )}
               </Grid>
               <Group justify="space-between">
