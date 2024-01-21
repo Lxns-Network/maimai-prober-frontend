@@ -53,12 +53,11 @@ export function refreshToken() {
     fetchAPI("user/refresh", { method: "GET" })
       .then(res => res.json())
       .then(data => {
-        if (data.code === 200) {
-          localStorage.setItem("token", data.data.token);
-          resolve(data);
-        } else {
-          reject(data);
+        if (!data.success) {
+          reject(data.message);
         }
+        localStorage.setItem("token", data.data.token);
+        resolve(data.data);
       })
       .catch((error) => {
         reject(error);

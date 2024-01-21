@@ -20,9 +20,10 @@ export default function Profile() {
     try {
       const res = await getProfile();
       const data = await res.json();
-      if (data.code === 200) {
-        setUser(data.data);
+      if (!data.success) {
+        throw new Error(data.message);
       }
+      setUser(data.data);
     } catch (err) {
       console.error(err);
     } finally {

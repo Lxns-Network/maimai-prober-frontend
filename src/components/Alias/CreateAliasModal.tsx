@@ -27,7 +27,7 @@ import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 interface CreateAliasModalProps {
   opened: boolean;
-  onClose: () => void;
+  onClose: (alias?: any) => void;
 }
 
 export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => {
@@ -59,27 +59,25 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   const createAliasHandler = async (values: any) => {
     setUploading(true);
     try {
-      const res = await createAlias(values.game, {
+      const alias = {
         song_id: parseInt(values.songId),
         alias: values.alias,
-      });
+      }
+      const res = await createAlias(values.game, alias);
       if (res.status === 409) {
         openAlertModal("别名创建失败", "别名已存在，请输入其它曲目别名。");
         setUploading(false);
         return
-      } else if (res.status !== 200) {
-        setUploading(false);
-        return
       }
       const data = await res.json();
-      if (data.code !== 200) {
+      if (!data.success) {
         throw new Error(data.message);
       }
       openAlertModal("别名创建成功", "快去邀请你的小伙伴投票吧。")
       form.setValues({
         alias: "",
       });
-      onClose();
+      onClose(alias);
     } catch (error) {
       openRetryModal("别名创建失败", `${error}`, () => createAliasHandler(values));
     } finally {
@@ -120,7 +118,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
           <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
             <Flex align="center" gap="md">
               <Avatar size={94} radius="md" src={
-                (form.values.game && form.values.songId) ? `https://lxns.org/${form.values.game}/jacket/${form.values.songId}.png` : null
+                (form.values.game && form.values.songId) ? `https://assets.lxns.net/${form.values.game}/jacket/${form.values.songId}.png` : null
               } styles={(theme) => ({
                 root: {
                   backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],

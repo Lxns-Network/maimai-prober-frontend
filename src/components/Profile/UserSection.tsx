@@ -55,7 +55,7 @@ export const UserSection = ({ user }: { user: UserProps | null }) => {
     try {
       const res = await updateUserProfile(form.getTransformedValues())
       const data = await res.json()
-      if (data.code !== 200) {
+      if (!data.success) {
         throw new Error(data.message)
       }
       openAlertModal("保存成功", "你的账号详情保存成功。");

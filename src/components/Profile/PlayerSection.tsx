@@ -25,12 +25,12 @@ export const PlayerSection = () => {
     try {
       const res = await getPlayerDetail(game);
       const data = await res.json();
-      if (data.code !== 200) {
-        setPlayer(null);
-      } else {
-        setPlayer(data.data);
+      if (!data.success) {
+        throw new Error(data.message);
       }
+      setPlayer(data.data);
     } catch (error) {
+      setPlayer(null);
       console.error(error);
     } finally {
       setFetching(false);

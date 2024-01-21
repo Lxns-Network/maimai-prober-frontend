@@ -4,11 +4,10 @@ import {
   Avatar,
   Badge,
   Box,
-  Card,
+  Card, Center,
   Container,
-  Flex,
   Group,
-  Image,
+  Image, Loader,
   Modal,
   rem,
   Space,
@@ -18,8 +17,8 @@ import { getMaimaiScoreCardBackgroundColor, getMaimaiScoreSecondaryColor } from 
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { useEffect, useState } from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { IconDatabaseOff, IconPhotoOff } from "@tabler/icons-react";
+import { IconPhotoOff } from "@tabler/icons-react";
+import { ScoreHistory } from "./ScoreHistory.tsx";
 
 interface ScoreModalProps {
   score: MaimaiScoreProps | null;
@@ -32,7 +31,7 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
   return (
     <>
       <Group wrap="nowrap">
-        <Avatar src={`https://lxns.org/maimai/jacket/${score.id}.png`} size={94} radius="md">
+        <Avatar src={`https://assets.lxns.net/maimai/jacket/${score.id}.png`} size={94} radius="md">
           <IconPhotoOff />
         </Avatar>
         <div style={{ flex: 1 }}>
@@ -114,57 +113,9 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
   )
 }
 
-const ScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
-  return (
-    <Accordion.Item value="history">
-      <Accordion.Control>上传历史记录</Accordion.Control>
-      <Accordion.Panel>
-        {scores.length < 2 ? (
-          <Flex gap="xs" align="center" direction="column" c="dimmed">
-            <IconDatabaseOff size={64} />
-            <Text fz="sm">历史记录不足，无法生成图表</Text>
-          </Flex>
-        ) : (
-          <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={scores} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="dx_rating" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="upload_time" tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', {
-                month: "numeric",
-                day: "numeric",
-              })} />
-              <YAxis width={40} domain={([dataMin, dataMax]) => {
-                return [Math.floor(dataMin) - 10, Math.floor(dataMax) + 10];
-              }} />
-              <CartesianGrid strokeDasharray="3 3" />
-              <Tooltip content={(props) => {
-                if (!props.active || !props.payload || props.payload.length < 1) return null;
-                const payload = props.payload[0].payload;
-                return (
-                  <Card p="xs" withBorder fz="sm">
-                    <Text>{new Date(payload.upload_time).toLocaleDateString()}</Text>
-                    <Text c="#8884d8">DX Rating: {parseInt(payload.dx_rating)}</Text>
-                    <Text>{payload.achievements}%</Text>
-                  </Card>
-                )
-              }} />
-              <Area type="monotone" dataKey="dx_rating" stroke="#8884d8" fillOpacity={1} fill="url(#dx_rating)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
-      </Accordion.Panel>
-    </Accordion.Item>
-  )
-}
-
 export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
-  // const [game] = useLocalStorage({ key: 'game', defaultValue: 'maimai' })
   const [scores, setScores] = useState<MaimaiScoreProps[]>([]);
-  const game = "maimai";
+  const [fetching, setFetching] = useState(true);
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -172,20 +123,29 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
     }
   }
 
-  const getScoreHistory = async (score: MaimaiScoreProps) => {
-    if (!score) return;
-
+  const getPlayerScoreHistory = async (score: MaimaiScoreProps) => {
+    setFetching(true);
     try {
-      const res = await fetchAPI(`user/${game}/player/score/history?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {
+      const res = await fetchAPI(`user/maimai/player/score/history?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {
         method: "GET",
       })
       const data = await res.json();
-      if (data.code !== 200) {
-        return;
+      if (!data.success) {
+        throw new Error(data.message);
       }
-      setScores(data.data.sort((a: MaimaiScoreProps, b: MaimaiScoreProps) => new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime()));
+      setScores(data.data.sort((a: MaimaiScoreProps, b: MaimaiScoreProps) => {
+        const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
+
+        if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
+          return new Date(a.play_time).getTime() - new Date(b.play_time).getTime();
+        }
+
+        return uploadTimeDiff;
+      }));
     } catch (err) {
       console.error(err);
+    } finally {
+      setFetching(false);
     }
   }
 
@@ -194,8 +154,10 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
   }, []);
 
   useEffect(() => {
+    if (!score) return;
+
     setScores([]);
-    getScoreHistory(score as MaimaiScoreProps);
+    getPlayerScoreHistory(score);
   }, [score]);
 
   return (
@@ -214,9 +176,18 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
           </Container>
           <Space h="md" />
           <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
-            {scores && scores.length > 0 && (
-              <ScoreHistory scores={scores} />
-            )}
+            <Accordion.Item value="history">
+              <Accordion.Control>上传历史记录</Accordion.Control>
+              <Accordion.Panel>
+                {fetching ? (
+                  <Center>
+                    <Loader />
+                  </Center>
+                ) : (
+                  <ScoreHistory scores={scores} />
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
           </Accordion>
         </Modal.Body>
       </Modal.Content>

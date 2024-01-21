@@ -12,7 +12,6 @@ import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { approveAlias, deleteAlias, deleteUserAlias, voteAlias } from "../../utils/api/alias.tsx";
 import { useElementSize, useLocalStorage, useSetState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
-import { notifications } from "@mantine/notifications";
 import { checkPermission, getLoginUserId, UserPermission } from "../../utils/session.tsx";
 import { AliasButton } from "./AliasButton.tsx";
 import {
@@ -22,6 +21,7 @@ import {
   IconTrash, IconUser
 } from "@tabler/icons-react";
 import classes from "./Alias.module.css"
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick: () => void, onDelete: () => void }) => {
   const { ref, width } = useElementSize();
@@ -32,20 +32,16 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
   const [game] = useLocalStorage({ key: 'game' });
 
   const voteAliasHandler = async (alias_id: number, vote: boolean) => {
-    if (!game) return;
-
     setLoading(vote ? 1 : -1);
     try {
       const res = await voteAlias(game, alias_id, vote);
       if (res.status === 429) {
-        notifications.show({
-          title: '请求过于频繁',
-          message: '请稍后再试',
-          color: 'red',
-        });
+        openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
         return
-      } else if (res.status !== 200) {
-        return
+      }
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
       }
       if (weight === 0) { // 没有投票
         alias.weight.up += vote ? 1 : 0;
@@ -67,7 +63,7 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
       }
       setWeight((weight === (vote ? 1 : -1)) ? 0 : (vote ? 1 : -1))
     } catch (err) {
-      console.log(err);
+      openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote))
     } finally {
       setLoading(0);
     }
@@ -81,17 +77,13 @@ export const Alias = ({ alias, onClick, onDelete }: { alias: AliasProps, onClick
       } else {
         res = await deleteUserAlias(game, alias.alias_id);
       }
-      if (res.status !== 200) {
-        notifications.show({
-          title: `删除别名失败`,
-          message: `别名 ${alias.alias} 删除失败`,
-          color: 'red',
-        });
-        return;
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
       }
       onDelete();
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      openRetryModal("曲目别名删除失败", `${error}`, deleteUserAliasHandler)
     }
   }
 

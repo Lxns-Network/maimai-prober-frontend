@@ -29,7 +29,7 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
   return (
     <>
       <Group wrap="nowrap">
-        <Avatar src={`https://lxns.org/chunithm/jacket/${score.id}.png`} size={94} radius="md">
+        <Avatar src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png`} size={94} radius="md">
           <IconPhotoOff />
         </Avatar>
         <div style={{ flex: 1 }}>

@@ -11,7 +11,7 @@ import {
   Text, ThemeIcon,
   Title,
 } from '@mantine/core';
-import {useLocalStorage, useToggle} from "@mantine/hooks";
+import { useLocalStorage, useToggle } from "@mantine/hooks";
 import Icon from "@mdi/react";
 import {
   mdiMagnify,
@@ -19,7 +19,6 @@ import {
 import { getAliasList, getUserVotes } from "../../utils/api/alias.tsx";
 import { AliasList } from "../../components/Alias/AliasList.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
-import { notifications } from "@mantine/notifications";
 import {
   IconArrowDown,
   IconArrowUp,
@@ -31,6 +30,7 @@ import { SongList } from "../../utils/api/song/song.tsx";
 import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import classes from "../Page.module.css"
+import { openAlertModal } from "../../utils/modal.tsx";
 
 export interface AliasProps {
   alias_id: number;
@@ -104,21 +104,14 @@ export default function Vote() {
     try {
       const res = await getUserVotes(game);
       if (res.status === 429) {
-        notifications.show({
-          title: '请求过于频繁',
-          message: '请稍后再试',
-          color: 'red',
-        });
-        return
-      } else if (res.status !== 200) {
+        openAlertModal("投票获取失败", "请求过于频繁，请稍后再试。")
         return
       }
       const data = await res.json();
-      if (data.data !== null) {
-        setVotes(data.data)
-      } else {
-        setVotes([])
+      if (!data.success) {
+        throw new Error(data.message);
       }
+      setVotes(data.data || []);
     } catch (error) {
       console.error(error);
     }
@@ -128,27 +121,21 @@ export default function Vote() {
     try {
       const res = await getAliasList(game, page, onlyNotApproved, sortBy, reverseSortDirection ? 'asc' : 'desc', songId);
       if (res.status === 429) {
-        notifications.show({
-          title: '请求过于频繁',
-          message: '请稍后再试',
-          color: 'red',
-        });
-        return
-      } else if (res.status !== 200) {
-        setFetching(false);
-        setPageCount(0);
-        setAliases([]);
+        openAlertModal("曲目别名获取失败", "请求过于频繁，请稍后再试。")
         return
       }
       const data = await res.json();
-      if (data.data.aliases) {
-        setPageCount(data.data.page_count);
-        setAliases(data.data.aliases);
-      } else {
+      if (!data.success || !data.data || !data.data.aliases) {
         setFetching(false);
         setPageCount(0);
         setAliases([]);
+        if (data.message) {
+          throw new Error(data.message);
+        }
+        return;
       }
+      setPageCount(data.data.page_count);
+      setAliases(data.data.aliases);
     } catch (error) {
       console.error(error);
     } finally {
@@ -158,6 +145,7 @@ export default function Vote() {
 
   const fetchHandler = async () => {
     if (!game) return;
+
     setFetching(true);
     getAliasListHandler().then(() => {
       getUserVotesHandler();
@@ -170,6 +158,7 @@ export default function Vote() {
 
   useEffect(() => {
     if (!game) return;
+
     let newSongList: any;
     if (game === "maimai") {
       newSongList = new MaimaiSongList();
@@ -180,11 +169,8 @@ export default function Vote() {
       setSongId(0);
       setSongList(newSongList);
     });
-    if (page !== 1) {
-      setPage(1);
-    } else {
-      fetchHandler();
-    }
+    fetchHandler();
+    setPage(1);
   }, [game]);
 
   useEffect(() => {
@@ -192,7 +178,7 @@ export default function Vote() {
       const vote = votes.find((vote) => vote.alias_id === alias.alias_id);
       if (vote) alias.vote = vote;
       aliases[i] = alias;
-    })
+    });
     setFetching(false);
     setDisplayAliases(aliases);
   }, [votes]);
@@ -212,8 +198,8 @@ export default function Vote() {
 
   return (
     <Container className={classes.root} size={400}>
-      <CreateAliasModal opened={opened} onClose={() => {
-        fetchHandler();
+      <CreateAliasModal opened={opened} onClose={(alias) => {
+        if (alias) fetchHandler();
         setOpened(false);
       }} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">

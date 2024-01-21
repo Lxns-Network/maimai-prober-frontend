@@ -38,7 +38,7 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
     try {
       const res = await updateUserBind(form.getTransformedValues())
       const data = await res.json()
-      if (data.code !== 200) {
+      if (!data.success) {
         throw new Error(data.message)
       }
       openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");

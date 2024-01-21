@@ -36,9 +36,10 @@ export default function DeveloperInfo() {
     try {
       const res = await resetDeveloperApiKey();
       const data = await res.json();
-      if (data.code === 200) {
-        setDeveloperData({ api_key: data.data.api_key });
+      if (!data.success) {
+        throw new Error(data.message);
       }
+      setDeveloperData({ api_key: data.data.api_key });
     } catch (err) {
       console.error(err);
     }
@@ -48,12 +49,13 @@ export default function DeveloperInfo() {
     try {
       const res = await getDeveloperApply();
       const data = await res.json();
-      if (data.code === 200) {
-        if (!data.data || !data.data.api_key) {
-          navigate("/developer/apply");
-        }
-        setDeveloperData(data.data);
+      if (!data.success) {
+        throw new Error(data.message);
       }
+      if (!data.data || !data.data.api_key) {
+        navigate("/developer/apply");
+      }
+      setDeveloperData(data.data);
     } catch (err) {
       console.error(err);
     } finally {

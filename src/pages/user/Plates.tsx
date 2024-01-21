@@ -65,13 +65,13 @@ export default function Plates() {
     }
   }
 
-  const getPlayerPlateByIdHandler = async (plateId: number) => {
+  const getPlayerPlateByIdHandler = async (id: number) => {
     try {
-      const res = await getPlayerPlateById(game, plateId);
+      const res = await getPlayerPlateById(game, id);
       const data = await res.json();
-      if (data.code !== 200) {
-        setPlate(plates.find((plate) => plate.id === plateId) || null);
-        return;
+      if (!data.success) {
+        setPlate(plates.find((plate) => plate.id === id) || null);
+        throw new Error(data.message);
       }
       setPlate(data.data);
     } catch (err) {
@@ -232,7 +232,7 @@ export default function Plates() {
                 )}
               </Group>
               <Space h="md" />
-              <Image src={`https://lxns.org/maimai/plate/${plate ? plate.id : 0}.png`} />
+              <Image src={`https://assets.lxns.net/maimai/plate/${plate ? plate.id : 0}.png`} />
             </Card>
           </>
         )}

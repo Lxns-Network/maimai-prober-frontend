@@ -66,7 +66,7 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
     try {
       const res = await revokeDeveloper(developer);
       const data = await res.json();
-      if (data.code !== 200) {
+      if (!data.success) {
         throw new Error(data.message);
       }
       window.location.reload();
@@ -139,7 +139,7 @@ export default function Developers() {
     try {
       const res = await getDevelopers();
       const data = await res.json();
-      if (data.code !== 200) {
+      if (!data.success) {
         throw new Error(data.message);
       }
       setDevelopers(data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
@@ -147,7 +147,7 @@ export default function Developers() {
       }));
       setIsLoaded(true);
     } catch (error) {
-      openRetryModal("获取失败", `${error}`, getDevelopersHandler);
+      openRetryModal("开发者列表获取失败", `${error}`, getDevelopersHandler);
     }
   }
 

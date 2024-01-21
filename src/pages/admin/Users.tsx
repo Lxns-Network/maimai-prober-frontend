@@ -95,7 +95,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     try {
       const res = await updateUser(values);
       const data = await res.json();
-      if (data.code !== 200) {
+      if (!data.success) {
         throw new Error(data.message);
       }
       user.name = values.name;
@@ -115,7 +115,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     try {
       const res = await deleteUser({ id: user.id });
       const data = await res.json();
-      if (data.code !== 200) {
+      if (!data.success) {
         throw new Error(data.message);
       }
       user.deleted = true;
@@ -210,13 +210,13 @@ export default function Users() {
     try {
       const res = await getUsers();
       const data = await res.json();
-      if (data.code !== 200) {
-        return;
+      if (!data.success) {
+        throw new Error(data.message);
       }
       setUsers(data.data);
       setSortedUser(data.data);
     } catch (error) {
-      console.error(error);
+      openRetryModal("用户列表获取失败", `${error}`, getUserHandler)
     } finally {
       setFetching(false);
     }

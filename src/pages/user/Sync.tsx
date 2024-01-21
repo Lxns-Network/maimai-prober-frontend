@@ -121,17 +121,14 @@ export default function Sync() {
   const getUserCrawlTokenHandler = async () => {
     try {
       const res = await getUserCrawlToken();
-      if (res == null) {
-        return;
-      }
-
       const data = await res.json();
-      if (data.code === 200) {
-        setCrawlToken(data.data.token);
-        setActive(1);
+      if (!data.success) {
+        throw new Error(data.message);
       }
+      setCrawlToken(data.data.token);
+      setActive(1);
     } catch (error) {
-      return;
+      console.log(error);
     }
   }
 

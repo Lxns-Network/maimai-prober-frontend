@@ -106,7 +106,6 @@ export default function Navbar({ style, onClose }: NavbarProps) {
               <NavbarButton label="登出" icon={<IconLogout size={24} />} to="/" onClose={onClose} onClick={() => {
                 logoutUser().then(() => {
                   localStorage.removeItem('token');
-                }).then(() => {
                   window.location.href = "/";
                 });
               }} />
