@@ -1,19 +1,21 @@
 import {
   ActionIcon,
   Avatar, Flex, Group,
-  Modal, Progress, rem, Space, Text, ThemeIcon, Tooltip
+  Modal, Progress, Space, Text, ThemeIcon, Tooltip
 } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { useLocalStorage } from "@mantine/hooks";
-import Icon from "@mdi/react";
-import {
-  mdiCheck,
-  mdiCreation,
-} from "@mdi/js";
 import { useEffect, useState } from "react";
 import { voteAlias } from "../../utils/api/alias.tsx";
-import { notifications } from "@mantine/notifications";
-import { IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconNorthStar,
+  IconThumbDown,
+  IconThumbDownFilled,
+  IconThumbUp,
+  IconThumbUpFilled
+} from "@tabler/icons-react";
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -47,20 +49,16 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
   }, [alias]);
 
   const voteAliasHandler = async (alias_id: number, vote: boolean) => {
-    if (!game) return;
-
     setLoading(vote ? 1 : -1);
     try {
       const res = await voteAlias(game, alias_id, vote);
       if (res.status === 429) {
-        notifications.show({
-          title: '请求过于频繁',
-          message: '请稍后再试',
-          color: 'red',
-        });
+        openAlertModal("投票失败", "请求过于频繁，请稍后再试。")
         return
-      } else if (res.status !== 200) {
-        return
+      }
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
       }
       let weightProps;
       if (weight === 0) { // 没有投票
@@ -91,7 +89,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
       } as AliasProps);
       setWeight((weight === (vote ? 1 : -1)) ? 0 : (vote ? 1 : -1))
     } catch (err) {
-      console.log(err);
+      openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote))
     } finally {
       setLoading(0);
     }
@@ -101,7 +99,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
     <>
       <Group>
         {game && (
-          <Avatar src={`https://lxns.org/${game}/jacket/${alias.song.id}.png`} size={94} radius="md">
+          <Avatar src={`https://assets.lxns.net/${game}/jacket/${alias.song.id}.png`} size={94} radius="md">
             <Text ta="center" fz="xs">曲绘加载失败</Text>
           </Avatar>
         )}
@@ -120,14 +118,14 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
           {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (
             <Tooltip label="新提交" withinPortal>
               <ThemeIcon color="yellow" radius="xl" variant="light">
-                <Icon path={mdiCreation} size={rem(20)} />
+                <IconNorthStar />
               </ThemeIcon>
             </Tooltip>
           )}
           {alias.approved && (
             <Tooltip label="已批准" withinPortal>
               <ThemeIcon color="teal" radius="xl" variant="light">
-                <Icon path={mdiCheck} size={rem(20)} />
+                <IconCheck />
               </ThemeIcon>
             </Tooltip>
           )}

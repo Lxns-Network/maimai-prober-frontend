@@ -1,15 +1,13 @@
 import {
   Center,
   Flex, Group,
-  rem, Space,
+  Space,
   Text, ThemeIcon, Tooltip,
   UnstyledButton,
   UnstyledButtonProps
 } from "@mantine/core";
-import Icon from "@mdi/react";
-import { mdiCheck, mdiCreation } from "@mdi/js";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
-import { IconChevronRight } from "@tabler/icons-react";
+import { IconCheck, IconChevronRight, IconNorthStar } from "@tabler/icons-react";
 import classes from "./Alias.module.css";
 
 export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
@@ -21,7 +19,7 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
           <Center>
             <Tooltip label="新提交" withinPortal>
               <ThemeIcon color="yellow" size="xs" radius="xl" variant="light">
-                <Icon path={mdiCreation} size={rem(20)} />
+                <IconNorthStar />
               </ThemeIcon>
             </Tooltip>
             {alias.approved && (
@@ -33,7 +31,7 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
           <Center>
             <Tooltip label="已批准" withinPortal>
               <ThemeIcon variant="light" color="teal" size="xs" radius="xl">
-                <Icon path={mdiCheck} size={rem(20)} />
+                <IconCheck />
               </ThemeIcon>
             </Tooltip>
           </Center>
