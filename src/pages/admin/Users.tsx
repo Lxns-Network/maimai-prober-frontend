@@ -13,12 +13,11 @@ import { useDisclosure } from '@mantine/hooks';
 import { listToPermission, permissionToList, UserPermission } from "../../utils/session";
 import { useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "../../utils/validator";
-import useAlert from "../../utils/useAlert";
-import AlertModal from "../../components/AlertModal";
-import {DataTable, DataTableSortStatus} from "mantine-datatable";
+import { DataTable, DataTableSortStatus } from "mantine-datatable";
 import { NAVBAR_BREAKPOINT } from "../../App.tsx";
 import { IconSearch, IconTrash } from "@tabler/icons-react";
 import classes from "../Page.module.css";
+import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 
 export interface UserProps {
   id: number;
@@ -65,8 +64,6 @@ function sortData(
 }
 
 export const EditUserModal = ({ user, opened, close }: { user: UserProps | null, opened: boolean, close(): void }) => {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const form = useForm({
     initialValues: {
       name: '',
@@ -99,13 +96,13 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
       const res = await updateUser(values);
       const data = await res.json();
       if (data.code !== 200) {
-        openAlert("保存设置失败", data.message);
-        return;
+        throw new Error(data.message);
       }
-
+      user.name = values.name;
+      user.email = values.email;
       user.permission = values.permission;
     } catch (err) {
-      openAlert("保存设置失败", `${err}`);
+      openRetryModal("保存失败", `${err}`, () => updateUserHandler(values));
     } finally {
       form.reset();
       close();
@@ -119,13 +116,11 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
       const res = await deleteUser({ id: user.id });
       const data = await res.json();
       if (data.code !== 200) {
-        openAlert("删除失败", data.message);
-        return;
+        throw new Error(data.message);
       }
-
       user.deleted = true;
     } catch (err) {
-      openAlert("删除失败", `${err}`);
+      openRetryModal("删除失败", `${err}`, deleteUserHandler);
     } finally {
       form.reset();
       close();
@@ -134,7 +129,6 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
 
   return (
     <Modal opened={opened} onClose={close} title="编辑用户" centered>
-      <AlertModal title={alertTitle} content={alertContent} opened={isAlertVisible} onClose={closeAlert} onConfirm={confirmAlert} />
       <form onSubmit={form.onSubmit((values) => updateUserHandler(values))}>
         <TextInput label="用户名" placeholder={user?.name} mb="xs" {...form.getInputProps("name")} />
         <TextInput label="邮箱" placeholder={user?.email} mb="xs" {...form.getInputProps("email")} />
@@ -150,8 +144,9 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
               color="red"
               leftSection={<IconTrash size={20} />}
               onClick={() => {
-                setConfirmAlert(() => deleteUserHandler);
-                openAlert("删除账号", "你确定要删除该账号吗？");
+                openConfirmModal("删除账号", "你确定要删除该账号吗？", deleteUserHandler, {
+                  confirmProps: { color: 'red' }
+                });
               }}
             >
               删除账号
@@ -280,6 +275,7 @@ export default function Users() {
               accessor: 'name',
               title: '用户名',
               width: 100,
+              ellipsis: true,
               sortable: true,
             },
             {

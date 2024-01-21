@@ -15,6 +15,7 @@ import Navbar from "./components/Navbar";
 import Header from "./components/Header";
 import RouterTransition from "./components/RouterTransition";
 import classes from "./App.module.css";
+import { ModalsProvider } from "@mantine/modals";
 
 const theme = createTheme({
   focusRing: 'never',
@@ -60,27 +61,29 @@ export default function App() {
   return (
     <ApiContext.Provider value={value}>
       <MantineProvider theme={theme} defaultColorScheme="auto">
-        <Notifications />
-        <RouterTransition />
-        <Transition mounted={opened} transition="slide-right" duration={300} timingFunction="ease">
-          {(styles) => <Navbar style={styles} onClose={toggleNavbarOpened} />}
-        </Transition>
-        <Header navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} />
-        <ScrollArea className={classes.routesWrapper} style={{
-          height: 'calc(100vh - 56px)',
-          paddingLeft: window.innerWidth > NAVBAR_BREAKPOINT ? rem(300) : 0,
-        }} type="scroll">
-          <Transition mounted={opened && window.innerWidth <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
-            {(styles) => <Overlay color="#000" style={styles} onClick={toggleNavbarOpened} zIndex={100} />}
+        <ModalsProvider labels={{ confirm: '确定', cancel: '取消' }}>
+          <Notifications />
+          <RouterTransition />
+          <Transition mounted={opened} transition="slide-right" duration={300} timingFunction="ease">
+            {(styles) => <Navbar style={styles} onClose={toggleNavbarOpened} />}
           </Transition>
-          <Suspense fallback={(
-            <Group justify="center" p={rem(80)}>
-              <Loader type="dots" size="xl" />
-            </Group>
-          )}>
-            <Outlet />
-          </Suspense>
-        </ScrollArea>
+          <Header navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} />
+          <ScrollArea className={classes.routesWrapper} style={{
+            height: 'calc(100vh - 56px)',
+            paddingLeft: window.innerWidth > NAVBAR_BREAKPOINT ? rem(300) : 0,
+          }} type="scroll">
+            <Transition mounted={opened && window.innerWidth <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
+              {(styles) => <Overlay color="#000" style={styles} onClick={toggleNavbarOpened} zIndex={100} />}
+            </Transition>
+            <Suspense fallback={(
+              <Group justify="center" p={rem(80)}>
+                <Loader type="dots" size="xl" />
+              </Group>
+            )}>
+              <Outlet />
+            </Suspense>
+          </ScrollArea>
+        </ModalsProvider>
       </MantineProvider>
     </ApiContext.Provider>
   );

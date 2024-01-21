@@ -12,13 +12,11 @@ import { API_URL } from '../../main';
 import { validatePassword } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
-import useAlert from '../../utils/useAlert';
-import AlertModal from '../../components/AlertModal';
 import { IconLock } from "@tabler/icons-react";
 import classes from "../Form.module.css";
+import { openRetryModal } from "../../utils/modal.tsx";
 
 export default function ResetPassword() {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
 
@@ -56,13 +54,11 @@ export default function ResetPassword() {
       });
       const data = await res.json();
       if (!data.success) {
-        openAlert("重置失败", data.message);
-        return
+        throw new Error(data.message);
       }
-
       navigate("/login", { state: { reset: true } })
     } catch (error) {
-      openAlert("重置失败", `${error}`);
+      openRetryModal("重置失败", `${error}`, () => forgotPassword(values));
     } finally {
       setVisible(false);
     }
@@ -70,12 +66,6 @@ export default function ResetPassword() {
 
   return (
     <Container className={classes.root} size={420}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-      />
       <Title order={2} size="h2" fw={900} ta="center">
         重置 maimai DX 查分器密码
       </Title>

@@ -13,9 +13,9 @@
 }
 
 .footerInner {
-    max-width: 896px;
+    max-width: calc(896px + var(--mantine-spacing-xl) * 2);
     margin: 0 auto;
-    padding: var(--mantine-spacing-md) 0;
+    padding: var(--mantine-spacing-md) var(--mantine-spacing-xl);
 
     @mixin smaller-than $mantine-breakpoint-xs {
         flex-direction: column;

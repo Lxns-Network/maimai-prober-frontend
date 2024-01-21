@@ -9,8 +9,6 @@ import {
   Textarea, Paper
 } from '@mantine/core';
 import { Container, rem } from '@mantine/core';
-import useAlert from '../../utils/useAlert';
-import AlertModal from '../../components/AlertModal';
 import Icon from "@mdi/react";
 import {
   mdiCodeTags,
@@ -19,9 +17,9 @@ import {
 import { useForm } from "@mantine/form";
 import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/developer";
 import classes from "../Form.module.css";
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 export default function DeveloperApply() {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
 
@@ -69,14 +67,12 @@ export default function DeveloperApply() {
       const res = await sendDeveloperApply(values);
       const data = await res.json();
       if (!data.success) {
-        openAlert("提交失败", data.message);
-        return;
+        throw new Error(data.message);
       }
-
       setApplied(true);
-      openAlert("提交成功", "申请成功，我们将尽快审核您的申请");
-    } catch (err) {
-      openAlert("提交失败", `${err}`);
+      openAlertModal("提交成功", "申请成功，我们将尽快审核您的申请。")
+    } catch (error) {
+      openRetryModal("提交失败", `${error}`, () => sendDeveloperApplyHandler(values));
     } finally {
       setVisible(false);
     }
@@ -84,12 +80,6 @@ export default function DeveloperApply() {
 
   return (
     <Container className={classes.root} size={420}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-      />
       <Title order={2} size="h2" fw={900} ta="center">
         申请成为开发者
       </Title>

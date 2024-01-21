@@ -14,9 +14,8 @@ import { UserBindProps } from "./UserBindSection";
 import { useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "../../utils/validator";
 import { updateUserProfile } from "../../utils/api/user.tsx";
-import AlertModal from "../AlertModal.tsx";
-import useAlert from "../../utils/useAlert.tsx";
 import classes from "./Profile.module.css";
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 export interface UserProps {
   id: number;
@@ -28,7 +27,6 @@ export interface UserProps {
 }
 
 export const UserSection = ({ user }: { user: UserProps | null }) => {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [visible, visibleHandler] = useDisclosure(false)
 
   if (!user) {
@@ -57,15 +55,14 @@ export const UserSection = ({ user }: { user: UserProps | null }) => {
     try {
       const res = await updateUserProfile(form.getTransformedValues())
       const data = await res.json()
-      if (data.code === 200) {
-        openAlert("保存成功", "你的账号详情保存成功");
-        user.name = form.values.name || user.name;
-        user.email = form.values.email || user.email;
-      } else {
-        openAlert("保存失败", data.message);
+      if (data.code !== 200) {
+        throw new Error(data.message)
       }
+      openAlertModal("保存成功", "你的账号详情保存成功。");
+      user.name = form.values.name || user.name;
+      user.email = form.values.email || user.email;
     } catch (error) {
-      openAlert("保存失败", `${error}`);
+      openRetryModal("保存失败", `${error}`, updateUserProfileHandler)
     } finally {
       form.reset();
     }
@@ -73,12 +70,6 @@ export const UserSection = ({ user }: { user: UserProps | null }) => {
 
   return (
     <Card withBorder radius="md" className={classes.card} mb="md">
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-      />
       <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
         <div>
           <Text fz="lg" fw={700}>

@@ -11,17 +11,15 @@ import {
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
-import useAlert from '../../utils/useAlert';
-import AlertModal from "../../components/AlertModal";
 import { API_URL, RECAPTCHA_SITE_KEY } from "../../main";
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "../../utils/validator";
 import { IconLock, IconMail, IconUser } from "@tabler/icons-react";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
 import classes from "../Form.module.css";
+import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 
 export default function Register() {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "register");
@@ -65,13 +63,11 @@ export default function Register() {
       });
       const data = await res.json();
       if (!data.success) {
-        openAlert("注册失败", data.message);
-        return;
+        throw new Error(data.message);
       }
-
-      openAlert("注册成功", "请登录你的查分器账号，根据指引绑定你的游戏账号。");
+      openConfirmModal("注册成功", "请登录你的查分器账号，根据指引绑定你的游戏账号。", () => navigate("/login"));
     } catch (error) {
-      openAlert("注册失败", `${error}`);
+      openRetryModal("注册失败", `${error}`, () => registerHandler(values));
     } finally {
       setVisible(false);
     }
@@ -79,13 +75,6 @@ export default function Register() {
 
   return (
     <Container className={classes.root} size={420}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-        onConfirm={() => { if (alertTitle === "注册成功") navigate("/login") }}
-      />
       <Title order={2} size="h2" fw={900} ta="center">
         注册到 maimai DX 查分器
       </Title>

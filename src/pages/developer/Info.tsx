@@ -7,14 +7,13 @@ import {
   Loader,
   Card,
   Switch,
-  Input,
   ActionIcon,
   Tooltip,
   CopyButton,
   Anchor,
   Divider,
   useMantineTheme,
-  Button,
+  Button, TextInput,
 } from '@mantine/core';
 import { getDeveloperApply, resetDeveloperApiKey } from "../../utils/api/developer";
 import Icon from "@mdi/react";
@@ -97,7 +96,7 @@ export default function DeveloperInfo() {
             <Group mt="xs">
               <Text fz="xs" c="dimmed">项目地址</Text>
               <Text fz="sm">
-                <Anchor href={developerData.url} target="_blank">{developerData.url}</Anchor>
+                <Anchor href={developerData.url} target="_blank" fz="sm">{developerData.url.replace(/(^\w+:|^)\/\//, '')}</Anchor>
               </Text>
             </Group>
             <Group mt="xs">
@@ -131,7 +130,7 @@ export default function DeveloperInfo() {
                 offLabel={<Icon path={mdiEyeOff} size={0.8} />}
               />
             </Group>
-            <Input
+            <TextInput
               variant="filled"
               value={visible ? developerData.api_key : developerData.api_key.replace(/./g, '•')}
               rightSection={

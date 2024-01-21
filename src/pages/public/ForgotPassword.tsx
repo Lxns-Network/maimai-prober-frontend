@@ -15,14 +15,12 @@ import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import { validateEmail } from "../../utils/validator";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@mantine/form";
-import useAlert from '../../utils/useAlert';
-import AlertModal from '../../components/AlertModal';
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
 import classes from "../Form.module.css";
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 export default function ForgotPassword() {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "forgot");
@@ -59,18 +57,16 @@ export default function ForgotPassword() {
         body: JSON.stringify(values),
       });
       if (res.status === 404) {
-        openAlert("发送失败", "该邮箱未注册过 maimai DX 查分器账号。");
+        openAlertModal("发送失败", "该邮箱未注册过 maimai DX 查分器账号。");
         return;
       }
       const data = await res.json();
       if (!data.success) {
-        openAlert("发送失败", data.message);
-        return;
+        throw new Error(data.message);
       }
-
-      openAlert("发送成功", "请前往你的邮箱查看重置邮件。");
+      openAlertModal("发送成功", "请前往你的邮箱查看重置邮件。");
     } catch (error) {
-      openAlert("发送失败", `${error}`);
+      openRetryModal("发送失败", `${error}`, () => forgotPassword(values));
     } finally {
       setVisible(false);
     }
@@ -78,12 +74,6 @@ export default function ForgotPassword() {
 
   return (
     <Container className={classes.root} size={420}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-      />
       <Title order={2} size="h2" fw={900} ta="center">
         重置 maimai DX 查分器密码
       </Title>

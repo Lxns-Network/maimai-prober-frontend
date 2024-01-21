@@ -24,10 +24,9 @@ import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useLocalStorage, useResizeObserver } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
-import useAlert from "../../utils/useAlert";
-import AlertModal from "../../components/AlertModal";
-import {IconAlertCircle, IconCheck, IconCopy, IconDownload, IconRefresh, IconRepeat} from "@tabler/icons-react";
+import { IconAlertCircle, IconCheck, IconCopy, IconDownload, IconRefresh, IconRepeat } from "@tabler/icons-react";
 import classes from './Sync.module.css';
+import { openAlertModal } from "../../utils/modal.tsx";
 
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
   return (
@@ -85,8 +84,6 @@ interface CrawlStatusProps {
 }
 
 export default function Sync() {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [networkError, setNetworkError] = useState(false);
   const [crawlToken, setCrawlToken] = useState<string | null>(null);
@@ -174,8 +171,7 @@ export default function Sync() {
           setActive(2);
         } else {
           setActive(3);
-          setConfirmAlert(() => null);
-          openAlert("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
+          openAlertModal("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。")
         }
         setCrawlStatus(data.data);
       }
@@ -196,13 +192,6 @@ export default function Sync() {
 
   return (
     <Container className={classes.root} size={400}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-        onConfirm={confirmAlert}
-      />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         同步游戏数据
       </Title>

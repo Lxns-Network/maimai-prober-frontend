@@ -11,16 +11,15 @@ import {
   UnstyledButtonProps,
   Badge,
   Button,
-  Flex,
+  Flex, Pagination, Stack,
 } from '@mantine/core';
 import { getDevelopers, revokeDeveloper } from "../../utils/api/developer";
 import { EditUserModal, UserProps } from "./Users";
 import { useDisclosure } from "@mantine/hooks";
 import { permissionToList, UserPermission } from "../../utils/session";
-import useAlert from "../../utils/useAlert";
-import AlertModal from "../../components/AlertModal";
 import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import classes from "./Developers.module.css";
+import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 
 interface DeveloperProps {
   id: number;
@@ -60,29 +59,24 @@ export function UserButton({ user, onClick, ...others }: { user: UserProps, onCl
 interface DeveloperCardProps {
   developer: DeveloperProps;
   userOnClick?: () => void;
-  openAlert: (title: string, content: string) => void;
-  setConfirmAlert?: (confirm: () => void) => void;
 }
 
-const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...others }: DeveloperCardProps) => {
+const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps) => {
   const revokeDeveloperHandler = async () => {
     try {
       const res = await revokeDeveloper(developer);
       const data = await res.json();
       if (data.code !== 200) {
-        openAlert("撤销开发者失败", data.message);
-        return;
+        throw new Error(data.message);
       }
       window.location.reload();
     } catch (error) {
-      openAlert("撤销开发者失败", `${error}`);
-    } finally {
-      setConfirmAlert?.(() => {});
+      openRetryModal("撤销失败", `${error}`, revokeDeveloperHandler);
     }
   }
 
   return (
-    <Card className={classes.card} withBorder radius="md" mb="md" {...others}>
+    <Card className={classes.card} withBorder radius="md" w="100%" {...others}>
       <Card.Section className={classes.section} p={0}>
         <UserButton user={developer.user} onClick={userOnClick} />
       </Card.Section>
@@ -97,7 +91,7 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
             <Text fz="sm">
               <Anchor href={developer.url} target="_blank" fz="sm" style={{
                 wordBreak: "break-all",
-              }}>{developer.url.replace(/https?:\/\//, "")}</Anchor>
+              }}>{developer.url.replace(/(^\w+:|^)\/\//, '')}</Anchor>
             </Text>
           </div>
           <div>
@@ -122,10 +116,9 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
             size="sm"
             color="red"
             leftSection={<IconArrowBackUp size={20} />}
-            onClick={() => {
-              setConfirmAlert?.(() => revokeDeveloperHandler);
-              openAlert("撤销开发者", "确定要撤销这个开发者吗？");
-            }}
+            onClick={() => openConfirmModal("撤销开发者", "确定要撤销这个开发者吗？", revokeDeveloperHandler, {
+              confirmProps: { color: 'red' }
+            })}
           >
             撤销开发者
           </Button>
@@ -136,36 +129,51 @@ const DeveloperCard = ({ developer, userOnClick, openAlert, setConfirmAlert, ...
 }
 
 export default function Developers() {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [developers, setDevelopers] = useState<DeveloperProps[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
+  const getDevelopersHandler = async () => {
+    try {
+      const res = await getDevelopers();
+      const data = await res.json();
+      if (data.code !== 200) {
+        throw new Error(data.message);
+      }
+      setDevelopers(data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
+        return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
+      }));
+      setIsLoaded(true);
+    } catch (error) {
+      openRetryModal("获取失败", `${error}`, getDevelopersHandler);
+    }
+  }
+
   useEffect(() => {
     document.title = "管理开发者 | maimai DX 查分器";
 
-    getDevelopers()
-      .then((res) => res?.json())
-      .then((data) => {
-        setDevelopers(data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
-          return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
-        }));
-        setIsLoaded(true);
-      });
+    getDevelopersHandler();
   }, []);
+
+  const [activePage, setPage] = useState(1);
+  const PAGE_SIZE = 5;
+  const displayDevelopers = developers.slice((activePage - 1) * PAGE_SIZE, activePage * PAGE_SIZE).map((developer) => (
+    <DeveloperCard
+      key={developer.id}
+      developer={developer}
+      userOnClick={
+        () => {
+          setActiveUser(developer.user);
+          open();
+        }
+      }
+    />
+  ));
 
   return (
     <Container className={classes.root}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-        onConfirm={confirmAlert}
-      />
       <EditUserModal user={activeUser as UserProps} opened={opened} close={() => close()} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         管理开发者
@@ -178,20 +186,11 @@ export default function Developers() {
           <Loader />
         </Group>
       ) : (
-        developers.map((developer) => (
-          <DeveloperCard
-            key={developer.id}
-            developer={developer}
-            userOnClick={
-              () => {
-                setActiveUser(developer.user);
-                open();
-              }
-            }
-            openAlert={openAlert}
-            setConfirmAlert={setConfirmAlert}
-          />
-        ))
+        <Stack align="center">
+          <Pagination total={Math.ceil(developers.length / PAGE_SIZE)} value={activePage} onChange={setPage} />
+          {displayDevelopers}
+          <Pagination total={Math.ceil(developers.length / PAGE_SIZE)} value={activePage} onChange={setPage} />
+        </Stack>
       )}
     </Container>
   );

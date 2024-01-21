@@ -11,8 +11,6 @@ import {
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useLocation, useNavigate } from "react-router-dom";
-import useAlert from '../../utils/useAlert';
-import AlertModal from '../../components/AlertModal';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import { useForm } from "@mantine/form";
 import { validatePassword, validateUserName } from "../../utils/validator";
@@ -21,9 +19,9 @@ import { IconInfoCircle, IconLock, IconUser } from "@tabler/icons-react";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
 import classes from "../Form.module.css";
 import { isTokenExpired, isTokenUndefined } from "../../utils/session.tsx";
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 export default function Login() {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [visible, setVisible] = useState(false);
   const [game, setGame] = useLocalStorage({ key: 'game' });
   const computedColorScheme = useComputedColorScheme('light');
@@ -37,10 +35,10 @@ export default function Login() {
 
     if (state) {
       if (state.expired) {
-        openAlert("你已登出", "登录会话已过期，请重新登录。");
+        openAlertModal("你已登出", "登录会话已过期，请重新登录。")
       }
       if (state.reset) {
-        openAlert("重置成功", "请使用新密码登录。");
+        openAlertModal("重置成功", "请使用新密码登录。");
       }
     }
 
@@ -76,10 +74,8 @@ export default function Login() {
       });
       const data = await res.json();
       if (!data.success) {
-        openAlert("登录失败", data.message);
-        return;
+        throw new Error(data.message);
       }
-
       localStorage.setItem("token", data.data.token);
       if (!game) setGame("maimai");
       if (state && state.redirect) {
@@ -88,7 +84,7 @@ export default function Login() {
         navigate("/")
       }
     } catch (error) {
-      openAlert("登录失败", `${error}`);
+      openRetryModal("登录失败", `${error}`, () => loginHandler(values));
     } finally {
       setVisible(false);
     }
@@ -96,12 +92,6 @@ export default function Login() {
 
   return (
     <Container className={classes.root} size={420}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-      />
       <Title order={2} size="h2" fw={900} ta="center">
         登录到 maimai DX 查分器
       </Title>

@@ -17,15 +17,13 @@ import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useForm } from "@mantine/form";
-import { notifications } from "@mantine/notifications";
 import { IconArrowsShuffle } from "@tabler/icons-react";
 import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import { SongList } from "../../utils/api/song/song.tsx";
-import AlertModal from "../AlertModal.tsx";
-import useAlert from "../../utils/useAlert.tsx";
 import { createAlias } from "../../utils/api/alias.tsx";
 import { useComputedColorScheme } from "@mantine/core";
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 interface CreateAliasModalProps {
   opened: boolean;
@@ -33,7 +31,6 @@ interface CreateAliasModalProps {
 }
 
 export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [songList, setSongList] = useState(new SongList());
@@ -67,7 +64,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
         alias: values.alias,
       });
       if (res.status === 409) {
-        openAlert("别名创建失败", "别名已存在，请输入其它曲目别名");
+        openAlertModal("别名创建失败", "别名已存在，请输入其它曲目别名。");
         setUploading(false);
         return
       } else if (res.status !== 200) {
@@ -75,19 +72,16 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
         return
       }
       const data = await res.json();
-      if (data.code === 200) {
-        notifications.show({
-          title: '别名创建成功',
-          message: '快去邀请你的小伙伴投票吧',
-          color: 'teal',
-        });
-        form.setValues({
-          alias: "",
-        });
-        onClose();
+      if (data.code !== 200) {
+        throw new Error(data.message);
       }
+      openAlertModal("别名创建成功", "快去邀请你的小伙伴投票吧。")
+      form.setValues({
+        alias: "",
+      });
+      onClose();
     } catch (error) {
-      openAlert("别名创建失败", `${error}`);
+      openRetryModal("别名创建失败", `${error}`, () => createAliasHandler(values));
     } finally {
       setUploading(false);
     }
@@ -116,12 +110,6 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-      />
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>

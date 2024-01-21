@@ -7,19 +7,17 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { updateUserBind } from "../../utils/api/user";
-import AlertModal from "../AlertModal";
-import useAlert from "../../utils/useAlert";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 export interface UserBindProps {
   qq?: number;
 }
 
 export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }) => {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
   const [visible, visibleHandler] = useDisclosure(false)
 
   const form = useForm({
@@ -40,15 +38,14 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
     try {
       const res = await updateUserBind(form.getTransformedValues())
       const data = await res.json()
-      if (data.code === 200) {
-        openAlert("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据");
-        userBind = userBind || {}
-        userBind.qq = parseInt(form.values.qq)
-      } else {
-        openAlert("绑定失败", data.message);
+      if (data.code !== 200) {
+        throw new Error(data.message)
       }
+      openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");
+      userBind = userBind || {}
+      userBind.qq = parseInt(form.values.qq)
     } catch (error) {
-      openAlert("绑定失败", `${error}`);
+      openRetryModal("绑定失败", `${error}`, updateUserBindHandler);
     } finally {
       form.reset();
     }
@@ -56,12 +53,6 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
 
   return (
     <Card withBorder radius="md" className={classes.card}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-      />
       <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
         <div>
           <Text fz="lg" fw={700}>

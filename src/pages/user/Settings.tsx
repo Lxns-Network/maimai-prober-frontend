@@ -1,4 +1,4 @@
-import { Title, Text, Card, LoadingOverlay, SegmentedControl } from '@mantine/core';
+import {Title, Text, Card, LoadingOverlay, SegmentedControl, Mark} from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useEffect, useState } from "react";
 import { deletePlayerScores, unbindPlayer } from "../../utils/api/player";
@@ -6,9 +6,9 @@ import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api
 import { SettingsSection } from '../../components/Settings/SettingsSection';
 import { useLocalStorage } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
-import AlertModal from "../../components/AlertModal";
-import useAlert from "../../utils/useAlert";
 import classes from "../Page.module.css"
+import { modals } from "@mantine/modals";
+import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 
 interface ConfigProps {
   allow_crawl_scores?: boolean;
@@ -124,8 +124,6 @@ const settingsData = {
 }
 
 export default function Settings() {
-  const { isAlertVisible, alertTitle, alertContent, openAlert, closeAlert } = useAlert();
-  const [confirmAlert, setConfirmAlert] = useState<() => void>(() => {});
   const [config, setConfig] = useState({} as ConfigProps);
   const [fetching, setFetching] = useState(true);
   const [game, setGame] = useLocalStorage({ key: 'game' });
@@ -140,12 +138,11 @@ export default function Settings() {
       const res = await getUserConfig(game);
       const data = await res.json();
       if (data.code !== 200) {
-        openAlert("获取配置失败", data.message);
-        return;
+        throw new Error(data.message);
       }
       setConfig(data.data);
     } catch (error) {
-      openAlert("获取配置失败", `${error}`);
+      openRetryModal("获取配置失败", `${error}`, getUserConfigHandler)
     } finally {
       setFetching(false);
     }
@@ -165,30 +162,77 @@ export default function Settings() {
 
     try {
       const res = await updateUserConfig(game, newConfig);
-      if (res.status !== 200) {
-        openAlert("保存设置失败", "保存设置失败，请重试。");
-        return;
-      }
       const data = await res.json();
       if (data.code !== 200) {
-        openAlert("保存设置失败", data.message);
+        throw new Error(data.message);
       }
     } catch (error) {
-      openAlert("保存设置失败", `${error}`);
+      openRetryModal("保存设置失败", `${error}`, () => updateUserConfigHandler(key, value));
     } finally {
       setConfig(newConfig);
     }
   }
 
+  const unbindPlayerHandler = async () => {
+    try {
+      const res = await unbindPlayer(game);
+      const data = await res.json();
+      if (data.code !== 200) {
+        throw new Error(data.message);
+      }
+      modals.openConfirmModal({
+        title: '解绑成功',
+        centered: true,
+        withCloseButton: false,
+        children: (
+          <Text size="sm">
+            你的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号已经被解绑。
+          </Text>
+        ),
+      });
+    } catch (error) {
+      openRetryModal("解绑失败", `${error}`, unbindPlayerHandler);
+    }
+  }
+
+  const deletePlayerScoresHandler = async () => {
+    try {
+      const res = await deletePlayerScores(game);
+      const data = await res.json();
+      if (data.code !== 200) {
+        throw new Error(data.message);
+      }
+      modals.openConfirmModal({
+        title: '删除成功',
+        centered: true,
+        withCloseButton: false,
+        children: (
+          <Text size="sm">
+            你的查分器账号里所有的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩已经被删除。
+          </Text>
+        ),
+      });
+    } catch (error) {
+      openRetryModal("删除失败", `${error}`, deletePlayerScoresHandler);
+    }
+  }
+
+  const deleteSelfUserHandler = async () => {
+    try {
+      const res = await deleteSelfUser();
+      const data = await res.json();
+      if (data.code !== 200) {
+        throw new Error(data.message);
+      }
+      localStorage.removeItem("token");
+      window.location.href = "/";
+    } catch (error) {
+      openRetryModal("删除失败", `${error}`, deleteSelfUserHandler);
+    }
+  }
+
   return (
     <Container className={classes.root} size={400}>
-      <AlertModal
-        title={alertTitle}
-        content={alertContent}
-        opened={isAlertVisible}
-        onClose={closeAlert}
-        onConfirm={confirmAlert}
-      />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         账号设置
       </Title>
@@ -261,22 +305,11 @@ export default function Settings() {
           description: `解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号。`,
           placeholder: "解绑",
           optionType: "button",
-          onClick: () => {
-            setConfirmAlert(() => () => {
-              unbindPlayer(game).then((res) => {
-                if (res?.status !== 200) {
-                  openAlert("解绑失败", "解绑游戏账号失败，请重试。");
-                  return;
-                }
-                setConfirmAlert(() => null);
-                openAlert("解绑成功", `你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号已经被解绑。`);
-              }).catch((err) => {
-                openAlert("解绑失败", err);
-              });
-            });
-            openAlert("解绑游戏账号",
-              `你确定要解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号吗？你可以随时重新同步游戏数据，或切换其他查分器账号绑定。`);
-          },
+          onClick: () => openConfirmModal("解绑游戏账号", <>
+            你确定要解绑你的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号吗？你可以随时重新同步游戏数据，或切换其他查分器账号绑定。
+          </>, unbindPlayerHandler, {
+            confirmProps: { color: 'red' },
+          }),
         }, {
           key: "reset_account",
           title: "删除所有谱面成绩",
@@ -284,24 +317,11 @@ export default function Settings() {
           placeholder: "删除",
           color: "red",
           optionType: "button",
-          onClick: () => {
-            setConfirmAlert(() => () => {
-              deletePlayerScores(game)
-                .then((res) => {
-                  if (res?.status !== 200) {
-                    openAlert("删除失败", "删除谱面成绩失败，请重试。");
-                    return;
-                  }
-                  setConfirmAlert(() => null);
-                  openAlert("删除成功", `你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩已经被删除。`);
-                })
-                .catch((err) => {
-                  openAlert("删除失败", err);
-                });
-            });
-            openAlert("删除谱面成绩",
-              `你确定要删除你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。`);
-          },
+          onClick: () => openConfirmModal("删除谱面成绩", <>
+            你确定要删除你的查分器账号里<Mark>所有的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩</Mark>吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。
+          </>, deletePlayerScoresHandler, {
+            confirmProps: { color: 'red' },
+          }),
         }, {
           key: "delete_account",
           title: "删除账号",
@@ -309,23 +329,9 @@ export default function Settings() {
           placeholder: "删除",
           color: "red",
           optionType: "button",
-          onClick: () => {
-            setConfirmAlert(() => () => {
-              deleteSelfUser()
-                .then((res) => {
-                  if (res?.status !== 200) {
-                    openAlert("删除失败", "删除账号失败，请重试。");
-                    return;
-                  }
-                  localStorage.removeItem("token");
-                  window.location.href = "/";
-                })
-                .catch((err) => {
-                  openAlert("删除失败", err);
-                });
-            });
-            openAlert("删除账号", "你确定要删除你的查分器账号吗？这将会删除你的查分器账号，以及游戏账号的绑定关系，并且不可撤销。");
-          },
+          onClick: () => openConfirmModal("删除账号", "你确定要删除你的查分器账号吗？这将会删除你的查分器账号，以及游戏账号的绑定关系，并且不可撤销。", deleteSelfUserHandler, {
+            confirmProps: { color: 'red' },
+          }),
         }]} />
       </Card>
     </Container>
