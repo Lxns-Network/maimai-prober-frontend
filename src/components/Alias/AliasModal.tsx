@@ -99,7 +99,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
     <>
       <Group>
         {game && (
-          <Avatar src={`https://assets.lxns.net/${game}/jacket/${alias.song.id}.png`} size={94} radius="md">
+          <Avatar src={`https://assets.lxns.net/${game}/jacket/${alias.song.id}.png!webp`} size={94} radius="md">
             <Text ta="center" fz="xs">曲绘加载失败</Text>
           </Avatar>
         )}

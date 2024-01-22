@@ -1,15 +1,17 @@
 export const getTrophyColor = (color: string) => {
   color = color.toLowerCase();
-  if (color == "bronze") {
-    return "orange";
+  if (color == "bronze" || color == "copper") {
+    return "#F06418";
   } else if (color == "normal") {
-    return "gray";
+    return "#656A7E";
   } else if (color == "gold") {
-    return "yellow";
-  } else if (color == "platinum") {
-    return "lightblue";
+    return "#FFAB09";
+  } else if (color == "platina") {
+    return "#D9D02F";
+  } else if (color == "silver") {
+    return "#09B8FF";
   }
-  return "grape";
+  return "#8931B2";
 }
 
 export const getRatingGradient = (rating: number) => {
@@ -111,7 +113,7 @@ export const getMaimaiScoreSecondaryColor = (level_index: number) => {
 }
 
 export const getMaimaiScoreCardBackgroundColor = (level_index: number) => {
-  return maimaiDifficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 0][level_index]
+  return maimaiDifficultyColor[1][level_index]
 }
 
 export const getChunithmScoreSecondaryColor = (level_index: number) => {

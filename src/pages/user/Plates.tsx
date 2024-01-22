@@ -232,7 +232,7 @@ export default function Plates() {
                 )}
               </Group>
               <Space h="md" />
-              <Image src={`https://assets.lxns.net/maimai/plate/${plate ? plate.id : 0}.png`} />
+              <Image src={`https://assets.lxns.net/maimai/plate/${plate ? plate.id : 0}.png!webp`} />
             </Card>
           </>
         )}

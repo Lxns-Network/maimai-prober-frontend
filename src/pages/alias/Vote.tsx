@@ -290,7 +290,7 @@ export default function Vote() {
       />
       <Space h="md" />
       {fetching ? (
-        <Group justify="center" p="xl">
+        <Group justify="center">
           <Loader />
         </Group>
       ) : (pageCount === 0 ? (

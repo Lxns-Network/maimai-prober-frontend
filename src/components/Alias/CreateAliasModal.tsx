@@ -118,7 +118,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
           <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
             <Flex align="center" gap="md">
               <Avatar size={94} radius="md" src={
-                (form.values.game && form.values.songId) ? `https://assets.lxns.net/${form.values.game}/jacket/${form.values.songId}.png` : null
+                (form.values.game && form.values.songId) ? `https://assets.lxns.net/${form.values.game}/jacket/${form.values.songId}.png!webp` : null
               } styles={(theme) => ({
                 root: {
                   backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
@@ -156,13 +156,13 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                     {...form.getInputProps('songId')}
                   />
                   <Tooltip label="随机一首曲目" withinPortal>
-                    <ActionIcon variant="subtle" color="default" size={rem(24)} onClick={() => {
+                    <ActionIcon variant="default" size={24} onClick={() => {
                       const song = songList.songs[Math.floor(Math.random() * songList.songs.length)];
                       form.setValues({
-                        songId: song.id.toString() as any,
+                        songId: song.id.toString(),
                       });
                     }} mb={6} disabled={songList.songs.length === 0}>
-                      <IconArrowsShuffle />
+                      <IconArrowsShuffle size={16} />
                     </ActionIcon>
                   </Tooltip>
                 </Flex>

@@ -29,7 +29,7 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
   return (
     <>
       <Group wrap="nowrap">
-        <Avatar src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png`} size={94} radius="md">
+        <Avatar src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png!webp`} size={94} radius="md">
           <IconPhotoOff />
         </Avatar>
         <div style={{ flex: 1 }}>
@@ -54,9 +54,9 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
                 w={rem(94)}
               />
             )}
-            {score.full_sync && (
+            {score.full_chain && (
               <Image
-                src={`/assets/chunithm/music_icon/${score.full_sync}.webp`}
+                src={`/assets/chunithm/music_icon/${score.full_chain}.webp`}
                 w={rem(94)}
               />
             )}

@@ -11,7 +11,7 @@ import {
   Modal,
   rem,
   Space,
-  Text
+  Text,
 } from "@mantine/core";
 import { getMaimaiScoreCardBackgroundColor, getMaimaiScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
@@ -31,7 +31,7 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
   return (
     <>
       <Group wrap="nowrap">
-        <Avatar src={`https://assets.lxns.net/maimai/jacket/${score.id}.png`} size={94} radius="md">
+        <Avatar src={`https://assets.lxns.net/maimai/jacket/${score.id}.png!webp`} size={94} radius="md">
           <IconPhotoOff />
         </Avatar>
         <div style={{ flex: 1 }}>
@@ -54,8 +54,8 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
           </Group>
         </div>
         <Card w={54} h={38} p={0} radius="md" withBorder style={{
-          border: `2px solid ${getMaimaiScoreSecondaryColor(score.level_index || 0)}`,
-          backgroundColor: getMaimaiScoreCardBackgroundColor(score.level_index || 0)
+          border: `2px solid ${getMaimaiScoreSecondaryColor(score.level_index)}`,
+          backgroundColor: getMaimaiScoreCardBackgroundColor(score.level_index),
         }}>
           <Text size="xl" fw={500} ta="center" c="white" style={{
             lineHeight: rem(34),
@@ -124,6 +124,11 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
   }
 
   const getPlayerScoreHistory = async (score: MaimaiScoreProps) => {
+    if (score.achievements < 0) {
+      setScores([]);
+      setFetching(false);
+      return;
+    }
     setFetching(true);
     try {
       const res = await fetchAPI(`user/maimai/player/score/history?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {
@@ -133,15 +138,17 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
       if (!data.success) {
         throw new Error(data.message);
       }
-      setScores(data.data.sort((a: MaimaiScoreProps, b: MaimaiScoreProps) => {
-        const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
+      if (data.data) {
+        setScores(data.data.sort((a: MaimaiScoreProps, b: MaimaiScoreProps) => {
+          const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
 
-        if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
-          return new Date(a.play_time).getTime() - new Date(b.play_time).getTime();
-        }
+          if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
+            return new Date(a.play_time).getTime() - new Date(b.play_time).getTime();
+          }
 
-        return uploadTimeDiff;
-      }));
+          return uploadTimeDiff;
+        }));
+      }
     } catch (err) {
       console.error(err);
     } finally {

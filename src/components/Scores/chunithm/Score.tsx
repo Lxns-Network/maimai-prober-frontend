@@ -15,7 +15,7 @@ export interface ChunithmScoreProps {
   over_power: number;
   clear: string;
   full_combo: string;
-  full_sync: string;
+  full_chain: string;
   rank: string;
   play_time?: string;
   upload_time: string;

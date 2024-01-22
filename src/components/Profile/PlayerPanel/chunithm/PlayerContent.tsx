@@ -1,5 +1,5 @@
 import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
-import {Avatar, Badge, Divider, Group, NumberFormatter, rem, Text} from "@mantine/core";
+import { Avatar, Badge, Divider, Group, NumberFormatter, rem, Text } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 
