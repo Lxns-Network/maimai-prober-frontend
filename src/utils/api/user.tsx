@@ -40,6 +40,14 @@ export async function getUsers() {
   return fetchAPI("user/admin/users", { method: "GET" });
 }
 
+export async function deleteUsers(data: any) {
+  return fetchAPI("user/admin/users", { method: "DELETE", body: data });
+}
+
+export async function sendBatchEmail(data: any) {
+  return fetchAPI("user/admin/email", { method: "POST", body: data });
+}
+
 export async function updateUser(data: any) {
   return fetchAPI("user/admin/user", { method: "POST", body: data });
 }
