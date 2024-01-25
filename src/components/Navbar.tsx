@@ -42,7 +42,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '首页', icon: <IconHome size={24} />, to: '/', enabled: true },
     { label: '登录', icon: <IconDoorEnter size={24} />, to: '/login', enabled: isLoggedOut },
     { label: '注册', icon: <IconTransferIn size={24} />, to: '/register', enabled: isLoggedOut },
-    { label: '同步游戏数据', icon: <IconCloudUpload size={24} />, to: '/user/sync', enabled: !isLoggedOut },
+    { label: '同步游戏数据', icon: <IconCloudUpload size={24} />, to: '/user/sync', enabled: true },
     { label: '账号详情', icon: <IconUserCircle size={24} />, to: '/user/profile', enabled: !isLoggedOut },
     { label: '成绩管理', icon: <IconChartBar size={24} />, to: '/user/scores', enabled: !isLoggedOut },
     { label: '姓名框查询', icon: <IconCards size={24} />, to: '/user/plates', enabled: !isLoggedOut },
@@ -73,15 +73,13 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     <nav className={classes.navbar} style={style}>
       <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
       <ScrollArea className={classes.navbarMain} type="scroll">
-          {!isLoggedOut && (
-            <Container>
-              <Space h="md" />
-              <SegmentedControl fullWidth mt={0} value={game} onChange={setGame} data={[
-                { label: '舞萌 DX', value: 'maimai' },
-                { label: '中二节奏', value: 'chunithm' },
-              ]} />
-            </Container>
-          )}
+          <Container>
+            <Space h="md" />
+            <SegmentedControl fullWidth mt={0} value={game} onChange={setGame} data={[
+              { label: '舞萌 DX', value: 'maimai' },
+              { label: '中二节奏', value: 'chunithm' },
+            ]} />
+          </Container>
           <Space h="md" />
           {navbarData.map((item) => item.enabled &&
             <Container key={item.label}>
