@@ -24,9 +24,17 @@ import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useLocalStorage, useResizeObserver } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
-import { IconAlertCircle, IconCheck, IconCopy, IconDownload, IconRefresh, IconRepeat } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconCheck,
+  IconCopy,
+  IconDownload,
+  IconRefresh,
+  IconRepeat
+} from "@tabler/icons-react";
 import classes from './Sync.module.css';
 import { openAlertModal } from "../../utils/modal.tsx";
+import { checkProxy } from "../../utils/checkProxy.tsx";
 
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
   return (
@@ -60,7 +68,7 @@ const CrawlTokenAlert = ({ token, resetHandler }: any) => {
   const alertColor = isTokenExpired ? 'yellow' : 'blue';
 
   return (
-    <Alert variant="light" icon={<IconAlertCircle />} title="链接有效期提示" color={alertColor} mb="md">
+    <Alert variant="light" icon={<IconAlertCircle />} title="链接有效期提示" color={alertColor}>
       <Text size="sm" mb="md">
         {token ? `该链接${
           isTokenExpired ? "已失效，" : `将在 ${getExpireTime(token) + 1} 分钟内失效，逾时`
@@ -88,35 +96,12 @@ export default function Sync() {
   const [networkError, setNetworkError] = useState(false);
   const [crawlToken, setCrawlToken] = useState<string | null>(null);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
-  const [active, setActive] = useState(0);
+  const [step, setStep] = useState(0);
   const [game, setGame] = useLocalStorage({ key: 'game' });
   const navigate = useNavigate();
   const idle = useIdle(60000);
 
-  const checkProxy = async () => {
-    if (idle || active > 1) return;
-    try {
-      await fetch(`https://maimai.wahlap.com/maimai-mobile/error/`, { mode: 'no-cors' });
-    } catch (err) {
-      try {
-        await fetch(window.location.href, { mode: 'no-cors' });
-        // Proxy
-        setActive(1);
-        setProxyAvailable(true);
-        setNetworkError(false);
-      } catch (err) {
-        // Network issue
-        setActive(0);
-        setProxyAvailable(false);
-        setNetworkError(true);
-      }
-      return;
-    }
-    // No proxy
-    setActive(0);
-    setProxyAvailable(false);
-    setNetworkError(false);
-  }
+  const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
   const getUserCrawlTokenHandler = async () => {
     try {
@@ -126,7 +111,7 @@ export default function Sync() {
         throw new Error(data.message);
       }
       setCrawlToken(data.data.token);
-      setActive(1);
+      setStep(1);
     } catch (error) {
       console.log(error);
     }
@@ -135,11 +120,23 @@ export default function Sync() {
   useEffect(() => {
     document.title = "同步游戏数据 | maimai DX 查分器";
 
-    getUserCrawlTokenHandler();
+    if (!isLoggedOut) getUserCrawlTokenHandler();
   }, []);
 
   useEffect(() => {
-    const intervalId = setInterval(checkProxy, 5000);
+    const intervalId = setInterval(() => {
+      if (idle || step > 1) return;
+
+      checkProxy().then((result) => {
+        if (result.proxyAvailable && !result.networkError) {
+          setStep(1);
+        } else {
+          setStep(0);
+        }
+        setProxyAvailable(result.proxyAvailable);
+        setNetworkError(result.networkError);
+      });
+    }, 5000);
 
     return () => {
       clearInterval(intervalId);
@@ -147,37 +144,36 @@ export default function Sync() {
   });
 
   const checkCrawlStatus = async () => {
-    if (idle || active === 0) {
-      return;
-    }
+    if (idle || step === 0) return;
 
     if (crawlStatus != null && crawlStatus.status != "pending") {
-      setActive(3);
+      setStep(3);
       return;
     }
 
     try {
       const res = await getCrawlStatus();
-      if (res == null) {
-        return;
-      }
-
       const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
       if (data.data != null) {
         if (data.data.status === "pending") {
-          setActive(2);
+          setStep(2);
         } else {
-          setActive(3);
+          setStep(3);
           openAlertModal("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。")
         }
         setCrawlStatus(data.data);
       }
     } catch (error) {
-      return;
+      console.log(error);
     }
   }
 
   useEffect(() => {
+    if (isLoggedOut) return;
+
     const intervalId = setInterval(checkCrawlStatus, 5000);
 
     return () => {
@@ -317,93 +313,114 @@ export default function Sync() {
               label="复制微信 OAuth 链接"
               content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
             />
-            <Text>
-              <CrawlTokenAlert token={crawlToken} resetHandler={getUserCrawlTokenHandler} />
-            </Text>
+            {!isLoggedOut && (
+              <Text>
+                <CrawlTokenAlert token={crawlToken} resetHandler={getUserCrawlTokenHandler} />
+              </Text>
+            )}
+            <Space h="sm" />
           </Stack>
-        } loading={proxyAvailable && crawlStatus == null} />
+        } loading={proxyAvailable && !crawlStatus} />
         <Stepper.Step label="步骤 4" description={
           <Text fz="sm">
             等待数据同步完成
           </Text>
         } loading={proxyAvailable && crawlStatus?.status === "pending"} />
       </Stepper>
-      <Card withBorder radius="md" className={classes.card} p="md" mt="-lg">
-        <Card.Section className={classes.section}>
-          <Text size="xs" c="dimmed">
-            数据同步状态
+      {isLoggedOut ? (
+        <Alert variant="light" icon={<IconAlertCircle />} title="登录提示" mt="-lg">
+          <Text size="sm" mb="md">
+            你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。
           </Text>
-          <Text fz="lg" c={
-            crawlStatus?.status === "failed" ? "red" : (
-              crawlStatus?.status === "finished" ? "teal" : "default"
-            )
-          }>
-            {!crawlStatus && "等待前置步骤完成"}
-            {crawlStatus && {
-              "pending": "服务端正在爬取游戏数据",
-              "finished": "游戏数据同步成功",
-              "failed": "成绩同步失败"
-            }[crawlStatus?.status]}
-          </Text>
-        </Card.Section>
-
-        {(crawlStatus?.status !== "finished" && crawlStatus?.status !== "failed") ? (
-          <Card.Section p="md">
-            <Text size="sm">
-              你的{game === "maimai" ? "舞萌 DX " : "中二节奏"}游戏数据（玩家信息、成绩）将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
+          <Group>
+            <Button variant="filled" onClick={() => navigate("/login")}>
+              登录
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/register")}>
+              注册
+            </Button>
+          </Group>
+        </Alert>
+      ) : (
+        <Card withBorder radius="md" className={classes.card} p="md" mt="-lg">
+          <Card.Section className={classes.section}>
+            <Text size="xs" c="dimmed">
+              数据同步状态
+            </Text>
+            <Text fz="lg" c={
+              crawlStatus ? (
+                  crawlStatus.status === "failed" ? "red" : (
+                    crawlStatus.status === "finished" ? "teal" : "default"
+                  )
+              ) : "default"
+            }>
+              {!crawlStatus && "等待前置步骤完成"}
+              {crawlStatus && {
+                "pending": "服务端正在爬取游戏数据",
+                "finished": "游戏数据同步成功",
+                "failed": "成绩同步失败"
+              }[crawlStatus.status]}
             </Text>
           </Card.Section>
-        ) : (
-          <>
-            <Card.Section className={classes.section}>
-              <Text fz="xs" c="dimmed">好友码</Text>
-              <Text fz="sm">{crawlStatus.friend_code}</Text>
-              <Group mt="md">
-                <div>
-                  <Text fz="xs" c="dimmed">爬取耗时</Text>
-                  <Text fz="sm">{Math.floor((new Date(crawlStatus.complete_time).getTime() - new Date(crawlStatus.create_time).getTime()) / 1000)} 秒</Text>
-                </div>
-                <div>
-                  <Text fz="xs" c="dimmed">爬取的成绩数</Text>
-                  <Text fz="sm">{crawlStatus.crawled_score_count}</Text>
-                </div>
-                <div>
-                  <Text fz="xs" c="dimmed">爬取失败的难度</Text>
-                  <Text fz="sm">
-                    {(!crawlStatus.failed_difficulties || crawlStatus.failed_difficulties.length === 0) ? "无" : crawlStatus.failed_difficulties.map((difficulty) => {
-                      return {
-                        0: "BASIC",
-                        1: "ADVANCED",
-                        2: "EXPERT",
-                        3: "MASTER",
-                        4: crawlStatus.game === "maimai" ? "Re:MASTER" : "ULTIMA",
-                      }[difficulty];
-                    }).join("、")}
-                  </Text>
-                </div>
-              </Group>
+
+          {(!crawlStatus || (crawlStatus.status !== "finished" && crawlStatus.status !== "failed")) ? (
+            <Card.Section p="md">
+              <Text size="sm">
+                你的{game === "maimai" ? "舞萌 DX " : "中二节奏"}游戏数据（玩家信息、成绩）将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
+              </Text>
             </Card.Section>
-            <Card.Section p="md" pb={0}>
-              <Group justify="space-between">
-                <Group>
-                  <Button onClick={() => navigate("/user/profile")}>
-                    账号详情
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate("/user/scores")}>
-                    成绩管理
+          ) : (
+            <>
+              <Card.Section className={classes.section}>
+                <Text fz="xs" c="dimmed">好友码</Text>
+                <Text fz="sm">{crawlStatus.friend_code}</Text>
+                <Group mt="md">
+                  <div>
+                    <Text fz="xs" c="dimmed">爬取耗时</Text>
+                    <Text fz="sm">{Math.floor((new Date(crawlStatus.complete_time).getTime() - new Date(crawlStatus.create_time).getTime()) / 1000)} 秒</Text>
+                  </div>
+                  <div>
+                    <Text fz="xs" c="dimmed">爬取的成绩数</Text>
+                    <Text fz="sm">{crawlStatus.crawled_score_count || 0}</Text>
+                  </div>
+                  <div>
+                    <Text fz="xs" c="dimmed">爬取失败的难度</Text>
+                    <Text fz="sm">
+                      {(!crawlStatus.failed_difficulties || crawlStatus.failed_difficulties.length === 0) ? "无" : crawlStatus.failed_difficulties.map((difficulty) => {
+                        return [
+                          "BASIC",
+                          "ADVANCED",
+                          "EXPERT",
+                          "MASTER",
+                          crawlStatus.game === "maimai" ? "Re:MASTER" : "ULTIMA",
+                        ][difficulty];
+                      }).join("、")}
+                    </Text>
+                  </div>
+                </Group>
+              </Card.Section>
+              <Card.Section p="md" pb={0}>
+                <Group justify="space-between">
+                  <Group>
+                    <Button onClick={() => navigate("/user/profile")}>
+                      账号详情
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate("/user/scores")}>
+                      成绩管理
+                    </Button>
+                  </Group>
+                  <Button variant="outline" leftSection={<IconRepeat size={18} />} onClick={() => {
+                    setCrawlStatus(null);
+                    setStep(1);
+                  }}>
+                    重新同步
                   </Button>
                 </Group>
-                <Button variant="outline" leftSection={<IconRepeat size={18} />} onClick={() => {
-                  setCrawlStatus(null);
-                  setActive(1);
-                }}>
-                  重新同步
-                </Button>
-              </Group>
-            </Card.Section>
-          </>
-        )}
-      </Card>
+              </Card.Section>
+            </>
+          )}
+        </Card>
+      )}
     </Container>
   );
 }

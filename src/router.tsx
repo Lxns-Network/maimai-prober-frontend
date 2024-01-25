@@ -48,10 +48,10 @@ const routesConfig = (
     <Route path="/register" element={<Register />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/user/sync" element={<Sync />} />
     <Route path="/user" element={<ProtectedRoute />}>
       <Route index element={<Home />} />
       <Route path="profile" element={<Profile />} />
-      <Route path="sync" element={<Sync />} />
       <Route path="scores" element={<Scores />} />
       <Route path="plates" element={<Plates />} />
       <Route path="settings" element={<Settings />} />
