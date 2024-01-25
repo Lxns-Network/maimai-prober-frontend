@@ -6,7 +6,7 @@ import {
   Group,
   Button,
   LoadingOverlay,
-  Textarea, Paper
+  Textarea, Card
 } from '@mantine/core';
 import { Container, rem } from '@mantine/core';
 import Icon from "@mdi/react";
@@ -87,7 +87,7 @@ export default function DeveloperApply() {
       <Text c="dimmed" size="sm" ta="center" mt="sm">
         提交申请，通过审核后即可获取 API 访问权限
       </Text>
-      <Paper className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
+      <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => sendDeveloperApplyHandler(values))}>
           <TextInput
@@ -128,7 +128,7 @@ export default function DeveloperApply() {
             <Button size="sm" type="submit" disabled={applied}>提交申请</Button>
           </Group>
         </form>
-      </Paper>
+      </Card>
     </Container>
   );
 }

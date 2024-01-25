@@ -23,6 +23,10 @@
     &[data-active] {
         background-color: var(--mantine-primary-color-light);
         color: var(--mantine-primary-color-light-color);
+
+        @mixin hover {
+            background-color: var(--mantine-primary-color-light-hover);
+        }
     }
 }
 

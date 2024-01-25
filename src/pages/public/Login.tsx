@@ -7,7 +7,7 @@ import {
   Group,
   Anchor,
   Button,
-  LoadingOverlay, Paper, Alert, useComputedColorScheme,
+  LoadingOverlay, Alert, useComputedColorScheme, Card,
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useLocation, useNavigate } from "react-router-dom";
@@ -103,7 +103,7 @@ export default function Login() {
           你已登录，如果想要切换账号，请先登出。
         </Alert>
       }
-      <Paper className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
+      <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => loginHandler(values))}>
           <TextInput
@@ -137,7 +137,7 @@ export default function Login() {
             <Button size="sm" type="submit">登录</Button>
           </Group>
         </form>
-      </Paper>
+      </Card>
     </Container>
   );
 }

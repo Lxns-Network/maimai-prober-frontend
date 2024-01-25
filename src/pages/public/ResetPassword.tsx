@@ -5,7 +5,7 @@ import {
   Group,
   Button,
   LoadingOverlay,
-  PasswordInput, Paper
+  PasswordInput, Card
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { API_URL } from '../../main';
@@ -72,7 +72,7 @@ export default function ResetPassword() {
       <Text c="dimmed" size="sm" ta="center" mt="sm">
         重置你的 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号密码
       </Text>
-      <Paper className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
+      <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => forgotPassword(values))}>
           <PasswordInput
@@ -97,7 +97,7 @@ export default function ResetPassword() {
             <Button size="sm" type="submit">重置密码</Button>
           </Group>
         </form>
-      </Paper>
+      </Card>
     </Container>
   );
 }

@@ -106,12 +106,12 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
         <div style={{ flex: 1 }}>
           <div>
             <Text fz="xs" c="dimmed">曲名</Text>
-            <Text truncate>{alias.song.name}</Text>
+            <Text>{alias.song.name}</Text>
           </div>
           <Space h="xs" />
           <div>
             <Text fz="xs" c="dimmed">曲目别名</Text>
-            <Text fz="xl" fw={700} truncate>{alias.alias}</Text>
+            <Text fz="xl" fw={700}>{alias.alias}</Text>
           </div>
         </div>
         <Flex direction="column" gap="xs">
@@ -162,20 +162,16 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
       <Flex align="center" direction="column" gap="xs">
         <Text fz="xs" c="dimmed">你的投票</Text>
         <Group>
-          <Tooltip label={(weight === 1) ? "取消支持" : "支持"}>
-            <ActionIcon color="green" size="xl" variant={(weight === 1) ? "filled" : "light"} onClick={() => {
-              voteAliasHandler(alias.alias_id, true);
-            }} loading={loading === 1}>
-              {(weight === 1) ? <IconThumbUpFilled /> : <IconThumbUp />}
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={(weight === -1) ? "取消反对" : "反对"}>
-            <ActionIcon color="red" size="xl" variant={(weight === -1) ? "filled" : "light"} onClick={() => {
-              voteAliasHandler(alias.alias_id, false);
-            }} loading={loading === -1}>
-              {(weight === -1) ? <IconThumbDownFilled /> : <IconThumbDown />}
-            </ActionIcon>
-          </Tooltip>
+          <ActionIcon color="teal" size="xl" variant={(weight === 1) ? "filled" : "light"} onClick={() => {
+            voteAliasHandler(alias.alias_id, true);
+          }} loading={loading === 1}>
+            {(weight === 1) ? <IconThumbUpFilled /> : <IconThumbUp />}
+          </ActionIcon>
+          <ActionIcon color="pink" size="xl" variant={(weight === -1) ? "filled" : "light"} onClick={() => {
+            voteAliasHandler(alias.alias_id, false);
+          }} loading={loading === -1}>
+            {(weight === -1) ? <IconThumbDownFilled /> : <IconThumbDown />}
+          </ActionIcon>
         </Group>
         <Text fz="xs" c="dimmed">共 {alias.weight.total} 人投票</Text>
       </Flex>

@@ -6,8 +6,7 @@ import {
   Text,
   Group,
   Button,
-  LoadingOverlay,
-  Paper
+  LoadingOverlay, Card,
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
@@ -81,7 +80,7 @@ export default function Register() {
       <Text c="dimmed" size="sm" ta="center" mt="sm">
         创建你的 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号
       </Text>
-      <Paper className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
+      <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={form.onSubmit((values) => registerHandler(values))}>
           <TextInput
@@ -133,7 +132,7 @@ export default function Register() {
             <Button size="sm" type="submit">注册</Button>
           </Group>
         </form>
-      </Paper>
+      </Card>
     </Container>
   );
 }

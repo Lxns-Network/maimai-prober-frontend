@@ -10,13 +10,13 @@ import {
   Image,
   Space,
   ThemeIcon,
-  Box, Checkbox, Combobox, InputBase, Input, useCombobox, ScrollArea
+  Box, Checkbox, Combobox, InputBase, Input, useCombobox, ScrollArea, Flex
 } from "@mantine/core";
 import Icon from "@mdi/react";
 import { mdiCheck } from "@mdi/js";
 import { DataTable } from "mantine-datatable";
 import { NAVBAR_BREAKPOINT } from "../../App";
-import { IconCheck } from "@tabler/icons-react";
+import { IconCheck, IconDatabaseOff } from "@tabler/icons-react";
 import { useToggle } from "@mantine/hooks";
 import classes from "../Page.module.css"
 
@@ -239,12 +239,17 @@ export default function Plates() {
       </Container>
       <Container mb="md">
         <Box w={window.innerWidth > NAVBAR_BREAKPOINT ? `100%` : "calc(100vw - 32px)"}>
-          <DataTable
-            withTableBorder
+          <DataTable withTableBorder striped
             borderRadius="md"
-            striped
             verticalSpacing="xs"
-            mih={150}
+            mih={records.length === 0 ? 150 : 0}
+            emptyState={
+              <Flex gap="xs" align="center" direction="column" c="dimmed">
+                <IconDatabaseOff size={48} />
+                <Text fz="sm">无要求曲目</Text>
+              </Flex>
+            }
+            // 数据
             columns={[
               {
                 accessor: 'title',
@@ -265,16 +270,18 @@ export default function Plates() {
             ]}
             records={displayRecords}
             totalRecords={records.length}
+            noRecordsText="无要求曲目"
+            // 分页
             recordsPerPage={pageSize}
             paginationText={({ from, to, totalRecords}) => {
               return `${from}-${to} 首曲目，共 ${totalRecords} 首`;
             }}
-            noRecordsText="无要求曲目"
             page={page}
             onPageChange={(p) => setPage(p)}
             recordsPerPageOptions={PAGE_SIZES}
             recordsPerPageLabel="每页显示"
             onRecordsPerPageChange={setPageSize}
+            // 其它
             fetching={fetching}
           />
         </Box>
