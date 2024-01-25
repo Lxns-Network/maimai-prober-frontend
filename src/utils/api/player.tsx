@@ -20,6 +20,10 @@ export async function deletePlayerScores(game: string) {
   return fetchAPI(`user/${game}/player/scores`, { method: "DELETE" });
 }
 
+export async function createPlayerScore(game: string, score: any) {
+  return fetchAPI(`user/${game}/player/score`, { method: "POST", body: score });
+}
+
 export async function getPlayerPlateById(game: string, id: number) {
   return fetchAPI(`user/${game}/player/plate/${id}`, { method: "GET" });
 }

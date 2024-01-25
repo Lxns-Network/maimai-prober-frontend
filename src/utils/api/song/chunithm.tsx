@@ -2,7 +2,7 @@ import { fetchAPI } from "../api.tsx";
 import { SongList } from "./song.tsx";
 
 export interface DifficultyProps {
-  difficulty: string;
+  difficulty: number;
   level: string;
   level_value: number;
   note_designer: string;

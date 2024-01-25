@@ -5,7 +5,14 @@ import { ScoreModal } from "./ScoreModal.tsx";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 
-export const ChunithmScoreList = ({ scores, songList }: { scores: ChunithmScoreProps[], songList: ChunithmSongList }) => {
+interface ScoreListProps {
+  scores: ChunithmScoreProps[];
+  songList: ChunithmSongList;
+  onScoreChange?: (score: ChunithmScoreProps) => void;
+  onCreateScore?: (score: ChunithmScoreProps) => void;
+}
+
+export const ChunithmScoreList = ({ scores, songList, onScoreChange, onCreateScore }: ScoreListProps) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [scoreDetail, setScoreDetail] = useState<ChunithmScoreProps | null>(null);
 
@@ -15,7 +22,14 @@ export const ChunithmScoreList = ({ scores, songList }: { scores: ChunithmScoreP
         score={scoreDetail as ChunithmScoreProps}
         song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
-        onClose={closeScoreAlert}
+        onClose={(score) => {
+          closeScoreAlert();
+          if (score) onScoreChange && onScoreChange(score);
+        }}
+        onCreateScore={(score) => {
+          closeScoreAlert();
+          onCreateScore && onCreateScore(score);
+        }}
       />
       <SimpleGrid
         cols={2}

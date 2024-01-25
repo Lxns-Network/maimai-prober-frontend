@@ -5,7 +5,14 @@ import { ScoreModal } from "./ScoreModal.tsx";
 import { SimpleGrid } from "@mantine/core";
 import { MaimaiSongList } from "../../../utils/api/song/maimai.tsx";
 
-export const MaimaiScoreList = ({ scores, songList }: { scores: MaimaiScoreProps[], songList: MaimaiSongList }) => {
+interface ScoreListProps {
+  scores: MaimaiScoreProps[];
+  songList: MaimaiSongList;
+  onScoreChange?: (score: MaimaiScoreProps) => void;
+  onCreateScore?: (score: MaimaiScoreProps) => void;
+}
+
+export const MaimaiScoreList = ({ scores, songList, onScoreChange, onCreateScore }: ScoreListProps) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [scoreDetail, setScoreDetail] = useState<MaimaiScoreProps | null>(null);
 
@@ -15,13 +22,16 @@ export const MaimaiScoreList = ({ scores, songList }: { scores: MaimaiScoreProps
         score={scoreDetail as MaimaiScoreProps}
         song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
-        onClose={closeScoreAlert}
+        onClose={(score) => {
+          closeScoreAlert();
+          if (score) onScoreChange && onScoreChange(score);
+        }}
+        onCreateScore={(score) => {
+          closeScoreAlert();
+          onCreateScore && onCreateScore(score);
+        }}
       />
-      <SimpleGrid
-        cols={2}
-        spacing="xs"
-        w="100%"
-      >
+      <SimpleGrid cols={2} spacing="xs" w="100%">
         {scores.map((score) => (
           <Score
             key={`score-${score.id}-${score.type}-${score.level_index}`}
