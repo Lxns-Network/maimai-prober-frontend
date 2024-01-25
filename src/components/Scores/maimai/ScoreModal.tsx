@@ -19,12 +19,14 @@ import { useEffect, useState } from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { ScoreHistory } from "./ScoreHistory.tsx";
+import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 
 interface ScoreModalProps {
   score: MaimaiScoreProps | null;
   song: MaimaiSongProps | null;
   opened: boolean;
-  onClose: () => void;
+  onClose: (score?: MaimaiScoreProps) => void;
+  onCreateScore?: (score: MaimaiScoreProps) => void;
 }
 
 const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
@@ -113,15 +115,9 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
   )
 }
 
-export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
+export const ScoreModal = ({ score, song, opened, onClose, onCreateScore }: ScoreModalProps) => {
   const [scores, setScores] = useState<MaimaiScoreProps[]>([]);
   const [fetching, setFetching] = useState(true);
-
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      onClose();
-    }
-  }
 
   const getPlayerScoreHistory = async (score: MaimaiScoreProps) => {
     if (score.achievements < 0) {
@@ -157,10 +153,6 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
   }
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-  }, []);
-
-  useEffect(() => {
     if (!score) return;
 
     setScores([]);
@@ -173,7 +165,12 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
       <Modal.Content>
         <Modal.Header>
           <Modal.Title>成绩详情</Modal.Title>
-          <Modal.CloseButton />
+          <Group gap="xs">
+            {score !== null && (
+              <ScoreModalMenu score={score} onClose={onClose} onCreateScore={onCreateScore} />
+            )}
+            <Modal.CloseButton />
+          </Group>
         </Modal.Header>
         <Modal.Body p={0}>
           <Container>
