@@ -121,5 +121,5 @@ export const getChunithmScoreSecondaryColor = (level_index: number) => {
 }
 
 export const getChunithmScoreCardBackgroundColor = (level_index: number) => {
-  return chunithmDifficultyColor[localStorage.getItem("theme") === "\"light\"" ? 1 : 0][level_index]
+  return chunithmDifficultyColor[1][level_index]
 }
