@@ -14,12 +14,13 @@ import {
   Flex, Pagination, Stack,
 } from '@mantine/core';
 import { getDevelopers, revokeDeveloper } from "../../utils/api/developer";
-import { EditUserModal, UserProps } from "./Users";
+import { UserProps } from "./Users";
 import { useDisclosure } from "@mantine/hooks";
 import { permissionToList, UserPermission } from "../../utils/session";
 import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import classes from "./Developers.module.css";
 import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
+import { EditUserModal } from "../../components/Users/EditUserModal.tsx";
 
 interface DeveloperProps {
   id: number;
@@ -158,7 +159,7 @@ export default function Developers() {
   }, []);
 
   const [activePage, setPage] = useState(1);
-  const PAGE_SIZE = 5;
+  const PAGE_SIZE = 10;
   const displayDevelopers = developers.slice((activePage - 1) * PAGE_SIZE, activePage * PAGE_SIZE).map((developer) => (
     <DeveloperCard
       key={developer.id}
