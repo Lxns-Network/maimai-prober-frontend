@@ -7,6 +7,7 @@
     "dev": "vite --host=0.0.0.0",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "stylelint": "stylelint ./src/**/*.css --cache",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "@mdi/react": "^1.6.1",
     "@tabler/icons-react": "^2.32.0",
     "@types/grecaptcha": "^3.0.7",
+    "dayjs": "^1.11.10",
     "mantine-datatable": "^7.4.4",
     "postcss-mixins": "^9.0.4",
     "postcss-nested": "^6.0.1",
@@ -28,7 +30,9 @@
     "react-dom": "^18.2.0",
     "react-qr-code": "^2.0.12",
     "react-router-dom": "^6.15.0",
-    "recharts": "^2.9.2"
+    "recharts": "^2.9.2",
+    "stylelint": "^16.2.0",
+    "stylelint-config-standard-scss": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.5.9",
