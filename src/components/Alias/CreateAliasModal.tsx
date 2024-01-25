@@ -5,7 +5,6 @@ import {
   Checkbox, Flex,
   Group,
   List,
-  Loader,
   Mark,
   Modal, Paper,
   rem,
@@ -24,6 +23,7 @@ import { SongList } from "../../utils/api/song/song.tsx";
 import { createAlias } from "../../utils/api/alias.tsx";
 import { useComputedColorScheme } from "@mantine/core";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { SongCombobox } from "../SongCombobox.tsx";
 
 interface CreateAliasModalProps {
   opened: boolean;
@@ -31,15 +31,15 @@ interface CreateAliasModalProps {
 }
 
 export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => {
-  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [songList, setSongList] = useState(new SongList());
+  const [songs, setSongs] = useState([] as any[]);
   const computedColorScheme = useComputedColorScheme('light');
 
   const form = useForm({
     initialValues: {
       game: null,
-      songId: null,
+      songId: null as number | null,
       alias: "",
       agree: false,
     },
@@ -50,7 +50,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
       alias: (value, values) => {
         if (value === "") return "请输入曲目别名";
         if (!/^.{1,32}$/.test(value)) return "别名长度不符合要求";
-        if (values.songId && songList.find(parseInt(values.songId))?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
+        if (values.songId && songList.find(values.songId)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
       },
       agree: (value) => value ? null : "请阅读并同意曲目别名命名规则",
     },
@@ -86,9 +86,8 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   }
 
   useEffect(() => {
-    setLoading(true);
     songList.fetch().then(() => {
-      setLoading(false);
+      setSongs(songList.songs);
     });
   }, [songList]);
 
@@ -139,29 +138,26 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                   withAsterisk
                   {...form.getInputProps('game')}
                 />
-                <Flex align="end" mb="xs" gap="xs">
-                  <Select
+                <Flex align="center" gap="xs">
+                  <SongCombobox
+                    songs={songs}
+                    value={form.values.songId || 0}
+                    onOptionSubmit={(value) => {
+                      form.setValues({ songId: value });
+                    }}
                     label="曲目"
-                    placeholder="请选择曲目"
-                    comboboxProps={{ position: 'bottom' }}
-                    data={songList.songs.map((song: any) => ({
-                      value: song.id.toString(),
-                      label: song.title,
-                    }))}
-                    leftSection={loading ? <Loader size={rem(16)} /> : undefined}
-                    disabled={songList.songs.length === 0}
-                    searchable
+                    mb="sm"
                     withAsterisk
+                    error={form.errors.id}
                     style={{ flex: 1 }}
-                    {...form.getInputProps('songId')}
                   />
                   <Tooltip label="随机一首曲目" withinPortal>
                     <ActionIcon variant="default" size={24} onClick={() => {
                       const song = songList.songs[Math.floor(Math.random() * songList.songs.length)];
                       form.setValues({
-                        songId: song.id.toString(),
+                        songId: song.id,
                       });
-                    }} mb={6} disabled={songList.songs.length === 0}>
+                    }} mt={14} disabled={songList.songs.length === 0}>
                       <IconArrowsShuffle size={16} />
                     </ActionIcon>
                   </Tooltip>
@@ -196,7 +192,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                 }>不允许使用容易跟随版本变化而失效的别名</List.Item>
               </List>
             </Paper>
-            <Space h="xl" />
+            <Space h="lg" />
             <Group justify="flex-end">
               <Button variant="default" onClick={onClose}>取消</Button>
               <Button type="submit" loading={uploading}>提交</Button>

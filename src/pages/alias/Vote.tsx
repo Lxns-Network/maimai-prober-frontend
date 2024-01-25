@@ -7,15 +7,11 @@ import {
   Group, HoverCard,
   Loader,
   Pagination,
-  rem, SegmentedControl, Select, Space,
+  SegmentedControl, Space,
   Text, ThemeIcon,
   Title,
 } from '@mantine/core';
 import { useLocalStorage, useToggle } from "@mantine/hooks";
-import Icon from "@mdi/react";
-import {
-  mdiMagnify,
-} from "@mdi/js";
 import { getAliasList, getUserVotes } from "../../utils/api/alias.tsx";
 import { AliasList } from "../../components/Alias/AliasList.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
@@ -31,6 +27,7 @@ import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import classes from "../Page.module.css"
 import { openAlertModal } from "../../utils/modal.tsx";
+import { SongCombobox } from "../../components/SongCombobox.tsx";
 
 export interface AliasProps {
   alias_id: number;
@@ -227,8 +224,8 @@ export default function Vote() {
           </div>
           <HoverCard shadow="md" withinPortal>
             <HoverCard.Target>
-              <ThemeIcon variant="subtle" color="default" size={rem(24)}>
-                <IconHelp />
+              <ThemeIcon variant="subtle" color="default">
+                <IconHelp size={20} stroke={1.5} />
               </ThemeIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown>
@@ -238,7 +235,7 @@ export default function Vote() {
             </HoverCard.Dropdown>
           </HoverCard>
         </Group>
-        <Group m="md" mt={0}>
+        <Flex gap="md" m="md" mt={0} wrap="wrap">
           {sortKeys.map((item) => (
             <Button
               key={item.key}
@@ -252,31 +249,17 @@ export default function Vote() {
               {item.name}
             </Button>
           ))}
-        </Group>
+        </Flex>
       </Card>
       <Space h="md" />
+
       <Flex align="center" justify="space-between" gap="xs">
-        <Select
-          placeholder="请选择曲目"
-          leftSection={<Icon path={mdiMagnify} size={0.8} />}
-          radius="md"
-          comboboxProps={{ position: 'bottom' }}
-          data={songList.songs.map((song) => ({
-            value: song.id.toString(),
-            label: song.title,
-          }))}
-          value={songId === 0 ? null : songId.toString()}
-          onChange={(value) => {
-            if (!value) {
-              setSongId(0);
-              return;
-            }
-            setSongId(parseInt(value));
-          }}
-          disabled={songList.songs.length === 0}
-          clearable
-          searchable
+        <SongCombobox
+          songs={songList.songs}
+          value={songId}
+          onOptionSubmit={(value) => setSongId(value)}
           style={{ flex: 1 }}
+          radius="md"
         />
         <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => setOpened(true)}>
           创建曲目别名
@@ -290,7 +273,7 @@ export default function Vote() {
       />
       <Space h="md" />
       {fetching ? (
-        <Group justify="center">
+        <Group justify="center" mt="md">
           <Loader />
         </Group>
       ) : (pageCount === 0 ? (
