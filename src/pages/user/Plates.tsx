@@ -245,7 +245,7 @@ export default function Plates() {
             mih={records.length === 0 ? 150 : 0}
             emptyState={
               <Flex gap="xs" align="center" direction="column" c="dimmed">
-                <IconDatabaseOff size={48} />
+                <IconDatabaseOff size={48} stroke={1.5} />
                 <Text fz="sm">无要求曲目</Text>
               </Flex>
             }

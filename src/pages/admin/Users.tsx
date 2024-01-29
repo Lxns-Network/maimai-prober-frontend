@@ -4,10 +4,10 @@ import {
   Group,
   TextInput,
   Button,
-  Title, Text, keys, Flex, Card
+  Title, Text, keys, Flex, Card, Badge
 } from '@mantine/core';
 import { deleteUsers, getUsers } from "../../utils/api/user";
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
 import { NAVBAR_BREAKPOINT } from "../../App.tsx";
 import { IconDatabaseOff, IconSearch, IconSend, IconTrash } from "@tabler/icons-react";
@@ -15,6 +15,7 @@ import classes from "../Page.module.css";
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { EditUserModal } from "../../components/Users/EditUserModal.tsx";
 import { SendBatchEmailModal } from "../../components/Users/SendBatchEmailModal.tsx";
+import { permissionToList, UserPermission } from "../../utils/session.tsx";
 
 export interface UserProps {
   id: number;
@@ -155,6 +156,8 @@ export default function Users() {
     getUserHandler();
   }, []);
 
+  const { width } = useViewportSize();
+
   return (
     <>
       <EditUserModal user={activeUser as UserProps} opened={editUserModalOpened} close={() => {
@@ -188,7 +191,7 @@ export default function Users() {
         />
       </Container>
       <Container mb="md">
-        <Card withBorder radius="md" w={window.innerWidth > NAVBAR_BREAKPOINT ? `100%` : "calc(100vw - 32px)"} p={0}>
+        <Card withBorder radius="md" w={width > NAVBAR_BREAKPOINT ? `100%` : width - 32} p={0}>
           <Card.Section className={classes.section} m={0}>
             <Text size="sm" mb="xs">对所选的 {selectedUsers.length} 名用户进行操作：</Text>
             <Group>
@@ -209,7 +212,7 @@ export default function Users() {
             mih={users.length === 0 ? 150 : 0}
             emptyState={
               <Flex gap="xs" align="center" direction="column" c="dimmed">
-                <IconDatabaseOff size={48} />
+                <IconDatabaseOff size={48} stroke={1.5} />
                 <Text fz="sm">没有记录</Text>
               </Flex>
             }
@@ -218,7 +221,7 @@ export default function Users() {
               {
                 accessor: 'id',
                 title: 'ID',
-                width: 70,
+                width: 50,
                 sortable: true,
               },
               {
@@ -238,7 +241,18 @@ export default function Users() {
               {
                 accessor: 'permission',
                 title: '权限',
-                width: 70,
+                width: 150,
+                render: ({ permission }) => {
+                  return <Group gap="xs">
+                    {permissionToList(permission-UserPermission.User).map((permission) => (
+                      <Badge variant="default" key={permission}>{{
+                        1: '普通用户',
+                        2: '开发者',
+                        4: '管理员',
+                      }[permission]}</Badge>
+                    ))}
+                  </Group>;
+                },
                 sortable: true,
               },
               {

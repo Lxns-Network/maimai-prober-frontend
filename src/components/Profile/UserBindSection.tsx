@@ -70,7 +70,7 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
       </Group>
-      <form onSubmit={form.onSubmit(() => {updateUserBindHandler()})}>
+      <form onSubmit={form.onSubmit(() => updateUserBindHandler())}>
         <TextInput
           label="QQ"
           placeholder={(userBind && userBind.qq && (visible ? userBind.qq.toString() :

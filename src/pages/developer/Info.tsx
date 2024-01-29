@@ -91,7 +91,7 @@ export default function DeveloperInfo() {
               查看你的开发者申请信息
             </Text>
             <Divider mt="md" mb="md" color={computedColorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
-            <Group mt="xs">
+            <Group>
               <Text fz="xs" c="dimmed">项目名称</Text>
               <Text fz="sm">{developerData.name}</Text>
             </Group>

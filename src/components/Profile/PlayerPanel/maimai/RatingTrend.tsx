@@ -12,7 +12,7 @@ export interface RatingTrendProps {
 const RatingTrendChart = ({ trend }: { trend: RatingTrendProps[] }) => {
   return (
     <ResponsiveContainer width="100%" height={250}>
-      <ComposedChart data={trend} margin={{ top: 10, right: 20, left: 14, bottom: 0 }}>
+      <ComposedChart data={trend}>
         <defs>
           <linearGradient id="dx_rating" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
@@ -22,10 +22,10 @@ const RatingTrendChart = ({ trend }: { trend: RatingTrendProps[] }) => {
         <XAxis dataKey="date" tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', {
           month: "numeric",
           day: "numeric",
-        })} />
+        })} fontSize={14} />
         <YAxis width={40} domain={([dataMin, dataMax]) => {
           return [Math.floor(dataMin), Math.floor(dataMax)];
-        }} />
+        }} fontSize={14} />
         <CartesianGrid strokeDasharray="3 3" />
         <Tooltip content={(props) => {
           if (!props.active || !props.payload || props.payload.length < 1) return null;
@@ -51,13 +51,13 @@ export const RatingTrend = ({ trend }: { trend: RatingTrendProps[] | null }) => 
   if (!trend || trend.length < 2) {
     return (
       <Flex gap="xs" align="center" direction="column" c="dimmed">
-        <IconDatabaseOff size={64} />
+        <IconDatabaseOff size={64} stroke={1.5} />
         <Text fz="sm">历史记录不足，无法生成图表</Text>
       </Flex>
     )
   }
   return <>
     <RatingTrendChart trend={trend} />
-    <Text fz="xs" c="dimmed" mt="xs">※ 该数据由历史同步成绩推出，而非玩家的历史 DX Rating，结果仅供参考。</Text>
+    <Text fz="xs" c="dimmed">※ 该数据由历史同步成绩推出，而非玩家的历史 DX Rating，结果仅供参考。</Text>
   </>
 }

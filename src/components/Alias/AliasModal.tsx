@@ -167,7 +167,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
           }} loading={loading === 1}>
             {(weight === 1) ? <IconThumbUpFilled /> : <IconThumbUp />}
           </ActionIcon>
-          <ActionIcon color="pink" size="xl" variant={(weight === -1) ? "filled" : "light"} onClick={() => {
+          <ActionIcon color="red" size="xl" variant={(weight === -1) ? "filled" : "light"} onClick={() => {
             voteAliasHandler(alias.alias_id, false);
           }} loading={loading === -1}>
             {(weight === -1) ? <IconThumbDownFilled /> : <IconThumbDown />}

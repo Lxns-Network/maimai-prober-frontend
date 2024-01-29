@@ -129,7 +129,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                 <Select
                   label="曲目所属游戏"
                   placeholder="请选择曲目所属游戏"
-                  comboboxProps={{ position: 'bottom' }}
+                  comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   mb="xs"
                   data={[
                     { value: 'maimai', label: '舞萌 DX' },

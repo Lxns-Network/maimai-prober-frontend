@@ -6,7 +6,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   return (
     <ResponsiveContainer width="100%" height={250}>
-      <AreaChart data={scores} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+      <AreaChart data={scores}>
         <defs>
           <linearGradient id="dx_rating" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
@@ -16,10 +16,10 @@ const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
         <XAxis dataKey="upload_time" tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', {
           month: "numeric",
           day: "numeric",
-        })} />
+        })} fontSize={14} />
         <YAxis width={40} domain={([dataMin, dataMax]) => {
-          return [Math.floor(dataMin) - 10, Math.floor(dataMax) + 10];
-        }} />
+          return [Math.max(Math.floor(dataMin) - 10, 0), Math.floor(dataMax) + 10]
+        }} fontSize={14} />
         <CartesianGrid strokeDasharray="3 3" />
         <Tooltip content={(props) => {
           if (!props.active || !props.payload || props.payload.length < 1) return null;
@@ -42,7 +42,7 @@ export const ScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   if (!scores || scores.length < 2) {
     return (
       <Flex gap="xs" align="center" direction="column" c="dimmed">
-        <IconDatabaseOff size={64} />
+        <IconDatabaseOff size={64} stroke={1.5} />
         <Text fz="sm">历史记录不足，无法生成图表</Text>
       </Flex>
     )

@@ -30,7 +30,8 @@ export function ActionToggle() {
         <ActionIcon variant="light" size="lg" onClick={() => toggleColorSchemeState()} color={
           colorSchemeState === 'auto' ? undefined : computedColorScheme === 'dark' ? theme.colors.blue[4] : theme.colors.yellow[6]
         }>
-          {colorSchemeState === 'auto' ? <IconSunMoon /> : colorSchemeState === 'dark' ? <IconMoonStars /> : <IconSun />}
+          {colorSchemeState === 'auto' ?
+            <IconSunMoon stroke={1.5} /> : colorSchemeState === 'dark' ? <IconMoonStars stroke={1.5} /> : <IconSun stroke={1.5} />}
         </ActionIcon>
       </Tooltip>
     </Group>

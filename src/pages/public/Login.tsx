@@ -15,7 +15,7 @@ import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import { useForm } from "@mantine/form";
 import { validatePassword, validateUserName } from "../../utils/validator";
 import { useLocalStorage } from "@mantine/hooks";
-import { IconInfoCircle, IconLock, IconUser } from "@tabler/icons-react";
+import { IconAlertCircle, IconLock, IconUser } from "@tabler/icons-react";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
 import classes from "../Form.module.css";
 import { isTokenExpired, isTokenUndefined } from "../../utils/session.tsx";
@@ -99,7 +99,7 @@ export default function Login() {
         请使用 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号
       </Text>
       {!isTokenUndefined() && !isTokenExpired() &&
-        <Alert variant="light" color="blue" icon={<IconInfoCircle />} mt="xl">
+        <Alert variant="light" color="blue" icon={<IconAlertCircle />} mt="xl">
           你已登录，如果想要切换账号，请先登出。
         </Alert>
       }
@@ -111,7 +111,7 @@ export default function Login() {
             label="用户名"
             variant="filled"
             placeholder="请输入你的用户名"
-            leftSection={<IconUser size={20} />}
+            leftSection={<IconUser size={20} stroke={1.5} />}
             {...form.getInputProps('name')}
           />
           <Group justify="space-between" mt="md">
@@ -129,7 +129,7 @@ export default function Login() {
             name="password"
             variant="filled"
             placeholder="请输入你的密码"
-            leftSection={<IconLock size={20} />}
+            leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps('password')}
           />
           <Group justify="flex-end" mt="xl">

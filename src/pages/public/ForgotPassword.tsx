@@ -88,7 +88,7 @@ export default function ForgotPassword() {
             label="邮箱"
             variant="filled"
             placeholder="请输入你的邮箱"
-            leftSection={<IconMail size={20} />}
+            leftSection={<IconMail size={20} stroke={1.5} />}
             {...form.getInputProps('email')}
           />
           <Group justify="space-between" mt="xl">

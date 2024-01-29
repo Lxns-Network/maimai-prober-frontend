@@ -81,7 +81,7 @@ export default function ResetPassword() {
             variant="filled"
             placeholder="请输入你的密码"
             mb="sm"
-            leftSection={<IconLock size={20} />}
+            leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps('password')}
           />
           <PasswordInput
@@ -90,7 +90,7 @@ export default function ResetPassword() {
             variant="filled"
             placeholder="请再次输入你的密码"
             mb="sm"
-            leftSection={<IconLock size={20} />}
+            leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps('confirmPassword')}
           />
           <Group justify="flex-end" mt="xl">

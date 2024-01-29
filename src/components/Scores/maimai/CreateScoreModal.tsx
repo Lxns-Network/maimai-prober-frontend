@@ -184,6 +184,7 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
                     value: difficulty.difficulty.toString(),
                   })) : []}
                   disabled={!difficulties || difficulties.length === 0}
+                  comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   {...form.getInputProps("difficulty")}
                 />
               </Grid.Col>
@@ -239,6 +240,7 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
                     label="游玩时间"
                     placeholder="请选择游玩时间"
                     valueFormat="YYYY-MM-DD HH:mm:ss"
+                    excludeDate={(date) => date > new Date()}
                     clearable
                     {...form.getInputProps("play_time")}
                   />

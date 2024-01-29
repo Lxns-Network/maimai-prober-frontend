@@ -83,9 +83,9 @@ export default function Vote() {
   const [songId, setSongId] = useState<number>(0);
 
   // 分页相关
-  // const pageSize = 20;
+  // const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
-  const [pageCount, setPageCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const sort = (key: any, autoChangeReverse = true) => {
     let reversed = reverseSortDirection;
@@ -124,14 +124,14 @@ export default function Vote() {
       const data = await res.json();
       if (!data.success || !data.data || !data.data.aliases) {
         setFetching(false);
-        setPageCount(0);
+        setTotalPages(0);
         setAliases([]);
         if (data.message) {
           throw new Error(data.message);
         }
         return;
       }
-      setPageCount(data.data.page_count);
+      setTotalPages(data.data.page_count);
       setAliases(data.data.aliases);
     } catch (error) {
       console.error(error);
@@ -252,7 +252,6 @@ export default function Vote() {
         </Flex>
       </Card>
       <Space h="md" />
-
       <Flex align="center" justify="space-between" gap="xs">
         <SongCombobox
           songs={songList.songs}
@@ -276,18 +275,22 @@ export default function Vote() {
         <Group justify="center" mt="md">
           <Loader />
         </Group>
-      ) : (pageCount === 0 ? (
+      ) : (totalPages === 0 ? (
         <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
-          <IconDatabaseOff size={64} />
+          <IconDatabaseOff size={64} stroke={1.5} />
           <Text fz="sm">暂时没有可投票的曲目别名</Text>
         </Flex>
       ) : (
         <Group justify="center">
-          <Pagination total={pageCount} value={page} onChange={setPage} />
+          {totalPages > 1 && (
+            <Pagination total={totalPages} value={page} onChange={setPage} />
+          )}
           <AliasList aliases={displayAliases} onDelete={() => {
             fetchHandler();
           }} />
-          <Pagination total={pageCount} value={page} onChange={setPage} />
+          {totalPages > 1 && (
+            <Pagination total={totalPages} value={page} onChange={setPage} />
+          )}
         </Group>
       ))}
     </Container>

@@ -164,6 +164,7 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
                     value: difficulty.difficulty.toString(),
                   })) : []}
                   disabled={!difficulties || difficulties.length === 0}
+                  comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   {...form.getInputProps("difficulty")}
                 />
               </div>
@@ -216,6 +217,7 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
                     label="游玩时间"
                     placeholder="请选择游玩时间"
                     valueFormat="YYYY-MM-DD HH:mm:ss"
+                    excludeDate={(date) => date > new Date()}
                     clearable
                     {...form.getInputProps("play_time")}
                   />
