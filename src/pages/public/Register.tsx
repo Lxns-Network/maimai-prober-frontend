@@ -6,7 +6,7 @@ import {
   Text,
   Group,
   Button,
-  LoadingOverlay, Card,
+  LoadingOverlay, Card, Anchor,
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
@@ -89,7 +89,7 @@ export default function Register() {
             variant="filled"
             placeholder="请输入你的用户名"
             mb={4}
-            leftSection={<IconUser size={20} />}
+            leftSection={<IconUser size={20} stroke={1.5} />}
             {...form.getInputProps('name')}
           />
           <Text c="dimmed" size="xs" ta="left" mb="sm">
@@ -101,7 +101,7 @@ export default function Register() {
             variant="filled"
             placeholder="请输入你的邮箱"
             mb="sm"
-            leftSection={<IconMail size={20} />}
+            leftSection={<IconMail size={20} stroke={1.5} />}
             {...form.getInputProps('email')}
           />
           <PasswordInput
@@ -110,7 +110,7 @@ export default function Register() {
             variant="filled"
             placeholder="请输入你的密码"
             mb="sm"
-            leftSection={<IconLock size={20} />}
+            leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps('password')}
           />
           <PasswordInput
@@ -119,11 +119,11 @@ export default function Register() {
             variant="filled"
             placeholder="请再次输入你的密码"
             mb="sm"
-            leftSection={<IconLock size={20} />}
+            leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps('confirmPassword')}
           />
           <Text c="dimmed" size="xs" ta="left" mt="sm">
-            注册即代表你同意我们的服务条款和隐私政策，请在注册后根据指引绑定你的游戏账号。
+            注册即代表你同意我们的<Anchor href="/docs/terms-of-use">服务条款</Anchor>和<Anchor href="/docs/privacy-policy">隐私政策</Anchor>，请在注册后根据指引绑定你的游戏账号。
           </Text>
           <Group justify="flex-end" mt="sm">
             <Button size="sm" variant="default" color="gray" onClick={() => navigate("/login")}>
