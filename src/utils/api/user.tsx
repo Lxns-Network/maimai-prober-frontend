@@ -48,12 +48,12 @@ export async function sendBatchEmail(data: any) {
   return fetchAPI("user/admin/email", { method: "POST", body: data });
 }
 
-export async function updateUser(data: any) {
-  return fetchAPI("user/admin/user", { method: "POST", body: data });
+export async function updateUser(userId: number, data: any) {
+  return fetchAPI(`user/admin/user/${userId}`, { method: "POST", body: data });
 }
 
-export async function deleteUser(data: any) {
-  return fetchAPI("user/admin/user", { method: "DELETE", body: data });
+export async function deleteUser(userId: number) {
+  return fetchAPI(`user/admin/user/${userId}`, { method: "DELETE" });
 }
 
 export function refreshToken() {
