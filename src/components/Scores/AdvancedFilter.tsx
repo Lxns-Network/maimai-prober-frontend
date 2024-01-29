@@ -1,9 +1,8 @@
 import { MaimaiScoreProps } from "./maimai/Score.tsx";
 import { ChunithmScoreProps } from "./chunithm/Score.tsx";
 import {
-  Autocomplete, Button,
+  Button,
   Chip,
-  ComboboxStringData,
   Grid,
   Group,
   MultiSelect,
@@ -11,25 +10,24 @@ import {
   Space, Switch,
   Text
 } from "@mantine/core";
-import { IconReload, IconSearch } from "@tabler/icons-react";
+import { IconReload } from "@tabler/icons-react";
 import { MaimaiDifficultiesProps, MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
-import { useDisclosure, useInputState, useLocalStorage } from "@mantine/hooks";
+import { useDisclosure, useLocalStorage } from "@mantine/hooks";
 import { useEffect, useState } from "react";
+import { DatePickerInput, DatesProvider } from "@mantine/dates";
+import "dayjs/locale/zh-cn";
 
 interface AdvancedFilterProps {
-  scores: MaimaiScoreProps[] | ChunithmScoreProps[];
+  scores: (MaimaiScoreProps | ChunithmScoreProps)[];
   songList: MaimaiSongList | ChunithmSongList;
-  aliasList: any;
-  onChange: (filteredScores: MaimaiScoreProps[] | ChunithmScoreProps[]) => void;
+  onChange: (filteredScores: (MaimaiScoreProps | ChunithmScoreProps)[]) => void;
 }
 
-export const AdvancedFilter = ({ scores, songList, aliasList, onChange }: AdvancedFilterProps) => {
+export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterProps) => {
   const [game] = useLocalStorage({ key: 'game' });
   const [filteredScores, setFilteredScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]);
 
-  const [search, setSearchValue] = useInputState('');
-  const [searchResult, setSearchResult] = useState<{ key: string, value: string }[]>([]);
   const [difficulty, setDifficulty] = useState<string[]>([]);
   const [type, setType] = useState<string[]>([]);
   const [rating, setRating] = useState<[number, number]>([1, 16]);
@@ -39,9 +37,9 @@ export const AdvancedFilter = ({ scores, songList, aliasList, onChange }: Advanc
   const [fullCombo, setFullCombo] = useState<string[]>([]);
   const [fullSync, setFullSync] = useState<string[]>([]);
   const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
+  const [uploadTime, setUploadTime] = useState<[Date | null, Date | null]>([null, null]);
 
   const resetFilter = () => {
-    setSearchValue('');
     setDifficulty([]);
     setGenre([]);
     setVersion([]);
@@ -49,6 +47,7 @@ export const AdvancedFilter = ({ scores, songList, aliasList, onChange }: Advanc
     setFullCombo([]);
     setFullSync([]);
     setType([]);
+    setUploadTime([null, null]);
   }
 
   useEffect(() => {
@@ -58,13 +57,6 @@ export const AdvancedFilter = ({ scores, songList, aliasList, onChange }: Advanc
   useEffect(() => {
     onChange(filteredScores);
   }, [filteredScores]);
-
-  useEffect(() => {
-    setSearchResult(search.trim().length > 0 ? (scores || []).map((score) => ({
-      key: `${score.id}-${(score as MaimaiScoreProps).type}-${score.level_index}`,
-      value: score.song_name,
-    })) : [])
-  }, [search]);
 
   useEffect(() => {
     if (!scores) return;
@@ -129,7 +121,7 @@ export const AdvancedFilter = ({ scores, songList, aliasList, onChange }: Advanc
     }
 
     // 如果没有任何筛选条件，直接返回
-    if (search.trim().length + difficulty.length + type.length + fullCombo.length + fullSync.length + genre.length + version.length === 0 && rating[0] === 1 && rating[1] === 16) {
+    if (difficulty.length + type.length + fullCombo.length + fullSync.length + genre.length + version.length === 0 && rating[0] === 1 && rating[1] === 16 && uploadTime[0] === null && uploadTime[1] === null) {
       setFilteredScores(filteredData as any);
       return;
     }
@@ -168,9 +160,7 @@ export const AdvancedFilter = ({ scores, songList, aliasList, onChange }: Advanc
           }
         }
       }
-      return (score.song_name.toLowerCase().includes(search.toLowerCase()) || // 过滤搜索
-          (aliasList.searchMap[search.toLowerCase()] || []).includes(score.id)) // 过滤搜索别名
-        && (difficulty.includes(score.level_index.toString()) || difficulty.length === 0) // 过滤难度
+      return difficulty.includes(score.level_index.toString()) || difficulty.length === 0 // 过滤难度
     })
 
     filteredData = filteredData.filter((score) => {
@@ -194,23 +184,25 @@ export const AdvancedFilter = ({ scores, songList, aliasList, onChange }: Advanc
       }
     })
 
+    if (uploadTime[0] !== null) {
+      filteredData = filteredData.filter((score) => {
+        return new Date(score.upload_time) >= uploadTime[0]!;
+      });
+    }
+    if (uploadTime[1] !== null) {
+      const endDate = new Date(uploadTime[1]!);
+      endDate.setDate(endDate.getDate() + 1);
+
+      filteredData = filteredData.filter((score) => {
+        return new Date(score.upload_time) < endDate;
+      });
+    }
+
     setFilteredScores(filteredData as any);
-  }, [showUnplayed, search, difficulty, type, genre, version, endRating, fullCombo, fullSync]);
+  }, [showUnplayed, difficulty, type, genre, version, endRating, fullCombo, fullSync, uploadTime]);
 
   return <>
     <Grid mb="xs">
-      <Grid.Col span={6}>
-        <Text fz="xs" c="dimmed" mb={3}>筛选曲名</Text>
-        <Autocomplete
-          variant="filled"
-          leftSection={<IconSearch size={18} />}
-          placeholder="请输入曲名或曲目别名"
-          value={search}
-          onChange={setSearchValue}
-          data={Array.from(new Set(searchResult.map(result => result.value)))
-            .map(value => searchResult.find(result => result.value === value)) as ComboboxStringData}
-        />
-      </Grid.Col>
       <Grid.Col span={6}>
         <Text fz="xs" c="dimmed" mb={3}>筛选难度</Text>
         <MultiSelect
@@ -269,6 +261,23 @@ export const AdvancedFilter = ({ scores, songList, aliasList, onChange }: Advanc
           </Grid.Col>
         </>
       )}
+      <Grid.Col span={6}>
+        <Text fz="xs" c="dimmed" mb={3}>筛选上传时间</Text>
+        <DatesProvider settings={{ locale: 'zh-cn', firstDayOfWeek: 0, weekendDays: [0, 6], timezone: 'Asia/Shanghai' }}>
+          <DatePickerInput
+            type="range"
+            allowSingleDateInRange={true}
+            excludeDate={(date) => date > new Date()}
+            variant="filled"
+            placeholder="请选择上传时间范围"
+            labelSeparator=" ~ "
+            valueFormat="YYYY/M/D"
+            value={uploadTime}
+            onChange={setUploadTime}
+            clearable
+          />
+        </DatesProvider>
+      </Grid.Col>
       <Grid.Col span={12} mb="md">
         <Text fz="xs" c="dimmed" mb={3}>筛选谱面定数</Text>
         <RangeSlider
