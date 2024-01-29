@@ -1,46 +1,81 @@
 import { useEffect, useState } from "react";
-import { CloseButton, Combobox, InputBase, ScrollArea, Text, useCombobox, InputBaseProps } from "@mantine/core";
-import Icon from "@mdi/react";
-import { mdiMagnify } from "@mdi/js";
+import {
+  CloseButton,
+  Combobox,
+  InputBase,
+  ScrollArea,
+  Text,
+  useCombobox,
+  InputBaseProps,
+  ElementProps
+} from "@mantine/core";
 import { MaimaiSongProps } from "../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../utils/api/song/chunithm.tsx";
-import { AliasProps } from "../pages/alias/Vote.tsx";
+import { IconSearch } from "@tabler/icons-react";
 
-interface SongComboboxProps extends InputBaseProps {
+interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   songs: (MaimaiSongProps | ChunithmSongProps)[];
-  aliases?: AliasProps[];
-  value: number;
-  onSearchChange?: (value: string) => void;
+  aliases?: {
+    song_id: number;
+    aliases: string[];
+  }[];
+  value?: number;
+  onSearchChange?: (search: string) => void;
+  onSongsChange?: (songs: (MaimaiSongProps | ChunithmSongProps)[]) => void;
   onOptionSubmit?: (value: number) => void;
 }
 
-function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search: string, limit: number) {
+function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search: string, aliases?: SongComboboxProps["aliases"]) {
   const result: (MaimaiSongProps | ChunithmSongProps)[] = [];
 
   for (let i = 0; i < songs.length; i += 1) {
-    if (result.length === limit) {
-      break;
+    const song = songs[i];
+    const titleMatch = song.title.toLowerCase().includes(search.toLowerCase());
+    const artistMatch = song.artist.toLowerCase().includes(search.toLowerCase());
+
+    if ((titleMatch || artistMatch) && !result.includes(song)) {
+      result.push(song);
     }
 
-    if (songs[i].title.toLowerCase().includes(search.toLowerCase()) || songs[i].artist.toLowerCase().includes(search.toLowerCase())) {
-      result.push(songs[i]);
+    if (aliases) {
+      for (let j = 0; j < aliases.length; j += 1) {
+        const alias = aliases[j];
+        const aliasMatch = alias.aliases.some((aliasText) => aliasText.toLowerCase().includes(search.toLowerCase()));
+
+        if (aliasMatch && alias.song_id === song.id && !result.includes(song)) {
+          result.push(song);
+        }
+      }
     }
   }
 
-  return result;
+  return result
 }
 
-export const SongCombobox = ({ songs, aliases, value, onSearchChange, onOptionSubmit, ...others }: SongComboboxProps) => {
+export const SongCombobox = ({ songs, aliases, value, onSearchChange, onSongsChange, onOptionSubmit, ...others }: SongComboboxProps) => {
   const [search, setSearch] = useState('');
+  const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
 
-  const filteredSongs = getFilteredSongs(songs, search, 100)
+  const MAX_SONGS = 100;
+
+  useEffect(() => {
+    setSearch('');
+  }, [songs, aliases]);
+
+  useEffect(() => {
+    setFilteredSongs(getFilteredSongs(songs, search, aliases));
+  }, [songs, search, aliases]);
 
   useEffect(() => {
     onSearchChange && onSearchChange(search);
   }, [search]);
+
+  useEffect(() => {
+    onSongsChange && onSongsChange(search.length === 0 ? songs : filteredSongs);
+  }, [filteredSongs]);
 
   useEffect(() => {
     const song = songs.find((song) => song.id === value);
@@ -60,7 +95,7 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onOptionSu
       <Combobox.Target>
         <InputBase
           placeholder="请选择曲目"
-          leftSection={<Icon path={mdiMagnify} size={0.8} />}
+          leftSection={<IconSearch size={18} />}
           rightSection={
             search.length !== 0 ? (
               <CloseButton
@@ -75,7 +110,7 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onOptionSu
               <Combobox.Chevron />
             )
           }
-          rightSectionPointerEvents={value === null ? 'none' : 'auto'}
+          rightSectionPointerEvents={search.length !== 0 ? 'auto' : 'none'}
           value={search}
           disabled={songs.length === 0}
           onChange={(event) => {
@@ -99,7 +134,7 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onOptionSu
             {filteredSongs.length === 0 && (
               <Combobox.Empty>没有找到符合条件的曲目</Combobox.Empty>
             )}
-            {filteredSongs.map((song) => (
+            {filteredSongs.slice(0, MAX_SONGS).map((song) => (
               <Combobox.Option value={song.id.toString()} key={song.id}>
                 <Text fz="sm" fw={500}>
                   {song.title}
@@ -113,7 +148,7 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onOptionSu
         </Combobox.Options>
         <Combobox.Footer>
           <Text fz="xs" c="dimmed">
-            最多显示 100 条结果
+            最多显示 {MAX_SONGS} 条结果
           </Text>
         </Combobox.Footer>
       </Combobox.Dropdown>

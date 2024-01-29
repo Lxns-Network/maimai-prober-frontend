@@ -10,7 +10,7 @@ import {
   Space,
   Text,
   Title,
-  SegmentedControl, Flex, ActionIcon,
+  SegmentedControl, Flex,
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useDisclosure, useLocalStorage } from "@mantine/hooks";
@@ -24,9 +24,9 @@ import { SongList } from "../../utils/api/song/song.tsx";
 
 import { MaimaiScoreProps } from '../../components/Scores/maimai/Score.tsx';
 import { MaimaiScoreList } from '../../components/Scores/maimai/ScoreList.tsx';
-import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
+import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 
-import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
+import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { ChunithmScoreList } from "../../components/Scores/chunithm/ScoreList.tsx";
 import { ChunithmScoreProps } from "../../components/Scores/chunithm/Score.tsx";
 import { AliasList } from "../../utils/api/alias.tsx";
@@ -34,7 +34,8 @@ import classes from "../Page.module.css"
 import { openRetryModal } from "../../utils/modal.tsx";
 import { AdvancedFilter } from "../../components/Scores/AdvancedFilter.tsx";
 import { MaimaiCreateScoreModal } from "../../components/Scores/maimai/CreateScoreModal.tsx";
-import {ChunithmCreateScoreModal} from "../../components/Scores/chunithm/CreateScoreModal.tsx";
+import { ChunithmCreateScoreModal } from "../../components/Scores/chunithm/CreateScoreModal.tsx";
+import { SongCombobox } from "../../components/SongCombobox.tsx";
 
 const sortKeys = {
   maimai: [
@@ -63,17 +64,22 @@ export default function Scores() {
   const [createScoreOpened, { open: openCreateScore, close: closeCreateScore }] = useDisclosure(false);
   const [createScore, setCreateScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
 
-  const [scores, setScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]);
-  const [filteredScores, setFilteredScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]);
-  const [displayScores, setDisplayScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]); // 用于分页显示的成绩列表
+  const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
+  const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
+  const [displayScores, setDisplayScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]); // 用于分页显示的成绩列表
   const [fetching, setFetching] = useState(true);
+
+  const [songs, setSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>();
+  const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>();
+  const [searchedScores, setSearchedScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
+  const [songId, setSongId] = useState<number>(0);
 
   const [sortBy, setSortBy] = useState();
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
+  const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const PAGE_SIZE = 20;
 
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
@@ -81,6 +87,7 @@ export default function Scores() {
 
   const resetState = () => {
     setScores([]);
+    setSongId(0);
     setFilteredScores([]);
     setDisplayScores([]);
     setSongList(new SongList());
@@ -110,6 +117,7 @@ export default function Scores() {
     try {
       await songList.fetch();
       setSongList(songList);
+      setSongs(songList.songs);
     } catch (error) {
       openRetryModal("曲目列表获取失败", `${error}`, () => songListFetchHandler(songList));
     }
@@ -121,7 +129,7 @@ export default function Scores() {
     setFetching(true);
     resetState();
 
-    let songList;
+    let songList: MaimaiSongList | ChunithmSongList;
     if (game === "maimai") {
       songList = new MaimaiSongList();
     } else {
@@ -131,23 +139,37 @@ export default function Scores() {
       getPlayerScoresHandler().then(() => {
         setFetching(false);
       });
-      aliasList.fetch(game);
+      aliasList.fetch(game).then(() => {
+        setAliasList(aliasList);
+      });
     });
   }, [game]);
 
   useEffect(() => {
     if (!filteredScores) return;
 
+    if (!filteredSongs) {
+      setSearchedScores(filteredScores);
+      return;
+    }
+    setSearchedScores(filteredScores.filter((score) => {
+      return filteredSongs.find((song) => song.id === score.id);
+    }));
+  }, [filteredScores, filteredSongs]);
+
+  useEffect(() => {
+    if (!searchedScores) return;
+
     sort(sortBy, false);
-    setTotalPages(Math.ceil(filteredScores.length / PAGE_SIZE));
-  }, [filteredScores]);
+    setTotalPages(Math.ceil(searchedScores.length / PAGE_SIZE));
+  }, [searchedScores]);
 
   useEffect(() => {
     const start = (page - 1) * PAGE_SIZE;
     const end = start + PAGE_SIZE;
 
-    if (filteredScores) {
-      setDisplayScores(filteredScores.slice(start, end));
+    if (searchedScores) {
+      setDisplayScores(searchedScores.slice(start, end));
     }
   }, [page]);
 
@@ -159,9 +181,9 @@ export default function Scores() {
     }
     setSortBy(key);
 
-    if (!filteredScores) return;
+    if (!searchedScores) return;
 
-    const sortedElements = filteredScores.sort((a: any, b: any) => {
+    const sortedElements = searchedScores.sort((a: any, b: any) => {
       if (key === 'level_value') {
         const songA = songList.find(a.id);
         const songB = songList.find(b.id);
@@ -189,7 +211,7 @@ export default function Scores() {
       }
     });
 
-    setFilteredScores(sortedElements);
+    // setFilteredScores(sortedElements);
     setDisplayScores(sortedElements.slice(0, PAGE_SIZE));
     setPage(1);
   };
@@ -239,9 +261,6 @@ export default function Scores() {
               选择成绩的排序方式
             </Text>
           </div>
-          <ActionIcon variant="subtle" color="default" onClick={() => openCreateScore()}>
-            <IconPlus size={18} stroke={1.5} />
-          </ActionIcon>
         </Group>
         <Flex m="md" mt={0} gap="md" wrap="wrap">
           {(sortKeys[game as keyof typeof sortKeys] || sortKeys.maimai).map((item) => (
@@ -261,7 +280,7 @@ export default function Scores() {
           <Accordion.Item value="advanced-filter">
             <Accordion.Control>高级筛选设置</Accordion.Control>
             <Accordion.Panel>
-              <AdvancedFilter scores={scores} songList={songList} aliasList={aliasList} onChange={(result) => {
+              <AdvancedFilter scores={scores} songList={songList} onChange={(result) => {
                 setFilteredScores(result);
               }} />
             </Accordion.Panel>
@@ -269,19 +288,38 @@ export default function Scores() {
         </Accordion>
       </Card>
       <Space h="md" />
+      <Flex align="center" justify="space-between" gap="xs">
+        <SongCombobox
+          songs={songs || []}
+          aliases={aliasList.aliases}
+          value={songId}
+          onSongsChange={(filteredSongs) => {
+            setFilteredSongs(filteredSongs);
+          }}
+          placeholder="请输入曲名或曲目别名"
+          radius="md"
+          style={{ flex: 1 }}
+        />
+        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => openCreateScore()}>
+          创建成绩
+        </Button>
+      </Flex>
+      <Space h="md" />
       {fetching ? (
         <Group justify="center" mt="md">
           <Loader />
         </Group>
-      ) : ((filteredScores && filteredScores.length === 0 && scores) ? (
+      ) : ((displayScores && displayScores.length === 0 && scores) ? (
         <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
-          <IconDatabaseOff size={64} />
+          <IconDatabaseOff size={64} stroke={1.5} />
           <Text fz="sm">没有获取或筛选到任何成绩</Text>
         </Flex>
       ) : (
         <>
           <Group justify="center">
-            <Pagination total={totalPages} value={page} onChange={setPage} />
+            {totalPages > 1 && (
+              <Pagination total={totalPages} value={page} onChange={setPage} />
+            )}
             {songList instanceof MaimaiSongList && (
               <MaimaiScoreList
                 scores={displayScores as MaimaiScoreProps[]}
@@ -308,11 +346,13 @@ export default function Scores() {
                 }}
               />
             )}
-            <Pagination total={totalPages} value={page} onChange={setPage} />
+            {totalPages > 1 && (
+              <Pagination total={totalPages} value={page} onChange={setPage} />
+            )}
           </Group>
           <Space h="md" />
           {songList instanceof MaimaiSongList && (
-            <StatisticsSection scores={filteredScores as MaimaiScoreProps[]} />
+            <StatisticsSection scores={searchedScores as MaimaiScoreProps[]} />
           )}
         </>
       ))}
