@@ -49,7 +49,7 @@ const routesConfig = (
     <Route path="/register" element={<Register />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/docs/:page" element={<Docs />} />
+    <Route path="/docs/*" element={<Docs />} />
     <Route path="/user/sync" element={<Sync />} />
     <Route path="/user" element={<ProtectedRoute />}>
       <Route index element={<Home />} />

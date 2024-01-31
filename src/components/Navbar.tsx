@@ -16,8 +16,8 @@ import {
   IconCards,
   IconChartBar,
   IconCloudUpload, IconCode, IconDoorEnter,
-  IconGavel,
-  IconHome, IconInfoCircle, IconLogout,
+  IconGavel, IconHelp,
+  IconHome, IconLogout,
   IconSettings2, IconTable, IconTableOptions, IconTransferIn,
   IconUserCircle
 } from "@tabler/icons-react";
@@ -93,7 +93,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       </ScrollArea>
       <div className={classes.navbarFooter}>
         <Container>
-          <NavbarButton label="关于 maimai DX 查分器" icon={<IconInfoCircle stroke={1.5} />} to="/about" onClose={onClose} />
+          <NavbarButton label="帮助文档" icon={<IconHelp stroke={1.5} />} to="/docs" onClose={onClose} />
           {!isLoggedOut && (
             <>
               {/*

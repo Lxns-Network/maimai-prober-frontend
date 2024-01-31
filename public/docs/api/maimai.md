@@ -1,0 +1,462 @@
+# 舞萌 DX API 文档
+
+---
+
+以下所有请求均需要在请求头加入 API 密钥，如果你没有，请参考申请成为开发者获取。
+
+请求头示例：
+```
+Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
+```
+
+在本查分器中，同一首曲目的**标准、DX 谱面的曲目 ID 一致**，不存在大于 10000 的曲目 ID（如有，均会对 10000 取余处理）。
+
+API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:00:00Z`，代表北京时间上午 8 时。
+
+## 响应结构
+
+结果将会以 JSON 格式响应：
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `success` | `bool` | 请求是否成功处理 |
+| `code` | `int` | HTTP 状态码，通常为 `200` |
+| `message` | `string` | 值可空，请求失败理由 |
+| `data` | `dict` 或 `list` | 值可空，请求结果 |
+
+## POST `/api/v0/maimai/player`
+
+创建或修改玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_write_data` 权限。
+
+#### 请求体
+
+[Player](#player)
+
+## GET `/api/v0/maimai/player/{friend_code}`
+
+通过好友码获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 响应体
+
+[Player](#player)
+
+## GET `/api/v0/maimai/player/qq/{qq}`
+
+通过 QQ 号获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `qq` | `int` | 查分器用户绑定的 QQ 号 |
+
+#### 响应体
+
+[Player](#player)
+
+## GET `/api/v0/maimai/player/{friend_code}/best`
+
+获取玩家缓存谱面的最佳成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `song_id` | `int` | 曲目 ID，与 `song_name` 冲突 |
+| `song_name` | `string` | 曲名，与 `song_id` 冲突 |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度 |
+| `song_type` | [`SongType`](#songtype) | 谱面类型 |
+
+## GET `/api/v0/maimai/player/{friend_code}/bests`
+
+获取玩家缓存的 Best 50。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `standard_total` | `int` | 标准谱面 Best 35 总分 |
+| `dx_total` | `int` | DX 谱面 Best 15 总分 |
+| `standard` | [`Score[]`](#score) | 标准谱面 Best 35 列表 |
+| `dx` | [`Score[]`](#score) | DX 谱面 Best 15 列表 |
+
+## GET `/api/v0/maimai/player/{friend_code}/bests`
+
+获取玩家缓存单曲所有谱面的成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `song_id` | `int` | 曲目 ID，与 `song_name` 冲突 |
+| `song_name` | `string` | 曲名，与 `song_id` 冲突 |
+| `song_type` | [`SongType`](#songtype) | 谱面类型 |
+
+## POST `/api/v0/maimai/player/{friend_code}/scores`
+
+上传玩家成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_write_data` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 请求体
+
+JSON 格式的玩家成绩：
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `scores` | [`Score[]`](#score) | 玩家成绩 |
+
+#### 请求示例
+
+```json
+{
+    "scores": [
+        {
+            "id": 834,
+            "type": "standard",
+            "level_index": 4,
+            "achievements": 101,
+            "fc": null,
+            "fs": null,
+            "dx_score": 0,
+            "play_time": "2023-12-31T16:00:00Z"
+        }
+    ]
+}
+```
+
+## GET `/api/v0/maimai/player/{friend_code}/recents`
+
+获取玩家缓存的 Recent 50（仅增量爬取可用），按照 `play_time` 排序。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 响应体
+
+[Score[]](#score)
+
+## GET `/api/v0/maimai/player/{friend_code}/plate/{plate_id}`
+
+获取玩家姓名框进度。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+| `plate_id` | `int` | 姓名框 ID |
+
+#### 响应体
+
+[Plate](#collection)
+
+## GET `/api/v0/maimai/song/list`
+
+获取曲目列表。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `notes` | `bool` | 值可空，是否包含谱面物量，默认值为 `false` |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `songs` | [Song[]](#song) | 曲目列表 |
+| `genres` | [Genre[]](#genre) | 乐曲分类列表 |
+| `versions` | [Version[]](#version) | 曲目版本列表 |
+
+## GET `/api/v0/maimai/alias/list`
+
+获取曲目别名列表。
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `aliases` | [Alias[]](#alias) | 曲目别名列表 |
+
+## GET `/api/v0/maimai/plate/list`
+
+获取姓名框列表。
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `plates` | [Plate[]](#collection) | 姓名框列表 |
+
+## GET `/api/v0/maimai/frame/list`
+
+获取背景列表。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `frames` | [Frame[]](#collection) | 背景列表 |
+
+## 结构体
+
+### Player
+
+玩家
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `name` | `string` | 游戏内名称 |
+| `rating` | `int` | 玩家 DX Rating |
+| `friend_code` | `int` | 好友码 |
+| `trophy` | [`Trophy`](#collection) | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，称号 |
+| `trophy_name` | `string` | 仅[创建玩家信息](#post-apiv0maimaiplayer)必选，称号 |
+| `course_rank` | `int` | 段位 ID |
+| `class_rank` | `int` | 阶级 ID |
+| `star` | `int` | 搭档觉醒数 |
+| `icon_url` | `string` | 头像 URL |
+| `name_plate` | [`NamePlate`](#collection) | 姓名框 |
+| `frame` | [`Frame`](#collection) | 背景 |
+| `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
+
+> `icon_url` 与 `trophy_name` 参数可能会在后续变更，请开发者注意。
+
+### Score
+
+游玩成绩
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 曲目 ID |
+| `song_name` | `string` | 仅获取 `Score` 时返回，曲名 |
+| `level` | `string` | 仅获取 `Score` 时返回，难度标级，如 `14+` |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度 |
+| `achievements` | `float` | 达成率 |
+| `fc` | [`FCType`](#fctype) | 值可空，FULL COMBO 类型 |
+| `fs` | [`FSType`](#fstype) | 值可空，FULL SYNC 类型 |
+| `dx_score` | `int` | DX 分数 |
+| `dx_rating` | `float` | 仅获取 `Score` 时返回，DX Rating，计算时需要向下取整 |
+| `rate` | [`RateType`](#ratetype) | 仅获取 `Score` 时返回，评级类型 |
+| `type` | [`SongType`](#songtype) | 谱面类型 |
+| `play_time` | `string` | 值可空，游玩的 UTC 时间，精确到分钟 |
+| `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |
+
+### Song
+
+曲目
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 曲目 ID |
+| `title` | `string` | 曲名 |
+| `artist` | `string` | 艺术家 |
+| `genre` | `string` | 曲目分类 |
+| `bpm` | `int` | 曲目 BPM |
+| `version` | `int` | 曲目首次出现版本 |
+| `difficulties` | [`SongDifficulties`](#songdifficulties) | 谱面难度 |
+
+### SongDifficulties
+
+谱面难度
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `standard` | [`SongDifficulty[]`](#songdifficulty) | 曲目标准谱面难度列表 |
+| `dx` | [`SongDifficulty[]`](#songdifficulty) | 曲目 DX 谱面难度列表 |
+
+### SongDifficulty
+
+谱面难度
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `type` | [`SongType`](#songtype) | 谱面类型 |
+| `difficulty` | [`LevelIndex`](#levelindex) | 难度 |
+| `level` | `string` | 难度标级 |
+| `level_value` | `float` | 谱面定数 |
+| `note_designer` | `string` | 谱师 |
+| `version` | `int` | 谱面首次出现版本 |
+| `notes` | [`Notes`](#notes) | 值可空，谱面物量 |
+
+### Notes
+
+谱面物量
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `total` | `int` | 总物量 |
+| `tap` | `int` | TAP 物量 |
+| `hold` | `int` | HOLD 物量 |
+| `slide` | `int` | SLIDE 物量 |
+| `touch` | `int` | TOUCH 物量 |
+| `break` | `int` | BREAK 物量 |
+
+### Genre
+
+乐曲分类
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 内部 ID |
+| `title` | `string` | 分类标题 |
+| `genre` | `string` | 分类标题（日文） |
+
+### Version
+
+曲目版本
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 内部 ID |
+| `title` | `string` | 版本标题 |
+| `version` | `int` | 主要版本 ID |
+
+### Alias
+
+曲目别名
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `song_id` | `int` | 曲目 ID |
+| `aliases` | `string[]` | 曲目所有别名 |
+
+### Collection
+
+收藏品
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 收藏品 ID |
+| `name` | `string` | 收藏品名称 |
+| `color` | `string` | 值可空，仅玩家称号，称号颜色 |
+| `description` | `string` | 值可空，收藏品说明 |
+| `required` | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求 |
+
+### CollectionRequired
+
+收藏品要求
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `difficulties` | `int[]` | 值可空，要求的谱面难度 |
+| `rate` | [`RateType`](#ratetype) | 值可空，要求的评级类型 |
+| `fc` | [`FCType`](#fctype) | 值可空，要求的 FULL COMBO 类型 |
+| `fs` | [`FSType`](#fstype) | 值可空，要求的 FULL SYNC 类型 |
+| `songs` | [`CollectionRequiredSong[]`](#collectionrequiredsong) | 值可空，要求的曲目 |
+| `completed` | `bool` | 值可空，要求是否全部完成 |
+
+### CollectionRequiredSong
+
+收藏品要求曲目
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 曲目 ID |
+| `title` | `string` | 曲名 |
+| `type` | [`SongType`](#songtype) | 谱面类型 |
+| `completed` | `bool` | 值可空，要求的曲目是否完成 |
+| `completed_difficulties` | `int[]` | 值可空，已完成的难度 |
+
+## 枚举类型
+
+### LevelIndex
+
+难度
+
+| 值 | 类型 | 说明 |
+|-|-|-|
+| `0` | `int` | BASIC |
+| `1` | `int` | ADVANCED |
+| `2` | `int` | EXPERT |
+| `3` | `int` | MASTER |
+| `4` | `int` | Re:MASTER |
+
+### FCType
+
+FULL COMBO 类型
+
+| 值 | 类型 | 说明 |
+|-|-|-|
+| `app` | `string` | AP+ |
+| `ap` | `string` | AP |
+| `fcp` | `string` | FC+ |
+| `fc` | `string` | FC |
+
+### FSType
+
+FULL SYNC 类型
+
+| 值 | 类型 | 说明 |
+|-|-|-|
+| `fsdp` | `string` | FSD+ |
+| `fsd` | `string` | FSD |
+| `fsp` | `string` | FS+ |
+| `fs` | `string` | FS |
+
+### RateType
+
+评级类型
+
+| 值 | 类型 | 说明 |
+|-|-|-|
+| `sssp` | `string` | SSS+ |
+| `sss` | `string` | SSS |
+| `ssp` | `string` | SS+ |
+| `ss` | `string` | SS |
+| `sp` | `string` | S+ |
+| `s` | `string` | S |
+| `aaa` | `string` | AAA |
+| `aa` | `string` | AA |
+| `a` | `string` | A |
+| `bbb` | `string` | BBB |
+| `bb` | `string` | BB |
+| `b` | `string` | B |
+| `c` | `string` | C |
+| `d` | `string` | D |
+
+### SongType
+
+谱面类型
+
+| 值 | 类型 | 说明 |
+|-|-|-|
+| `standard` | `string` | 标准谱面 |
+| `dx` | `string` | DX 谱面 |

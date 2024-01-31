@@ -12,11 +12,11 @@ export default function NotFound() {
 
   return (
     <Container className={classes.root}>
-      <Title className={classes.title}>页面不存在</Title>
-      <Text c="dimmed" size="lg" ta="center" className={classes.description}>
+      <Title ta="center">页面不存在</Title>
+      <Text c="dimmed" ta="center" mt="md">
         你访问的页面不存在，可能已经被删除或者地址错误。
       </Text>
-      <Group justify="center">
+      <Group justify="center" mt="lg">
         <Button size="md" onClick={() => navigate("/")}>返回首页</Button>
       </Group>
     </Container>
