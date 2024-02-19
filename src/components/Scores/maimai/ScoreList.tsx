@@ -9,10 +9,9 @@ interface ScoreListProps {
   scores: MaimaiScoreProps[];
   songList: MaimaiSongList;
   onScoreChange?: (score: MaimaiScoreProps) => void;
-  onCreateScore?: (score: MaimaiScoreProps) => void;
 }
 
-export const MaimaiScoreList = ({ scores, songList, onScoreChange, onCreateScore }: ScoreListProps) => {
+export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListProps) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [scoreDetail, setScoreDetail] = useState<MaimaiScoreProps | null>(null);
 
@@ -25,10 +24,6 @@ export const MaimaiScoreList = ({ scores, songList, onScoreChange, onCreateScore
         onClose={(score) => {
           closeScoreAlert();
           if (score) onScoreChange && onScoreChange(score);
-        }}
-        onCreateScore={(score) => {
-          closeScoreAlert();
-          onCreateScore && onCreateScore(score);
         }}
       />
       <SimpleGrid cols={2} spacing="xs" w="100%">

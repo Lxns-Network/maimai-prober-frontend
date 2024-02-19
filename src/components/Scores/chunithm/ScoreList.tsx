@@ -9,10 +9,9 @@ interface ScoreListProps {
   scores: ChunithmScoreProps[];
   songList: ChunithmSongList;
   onScoreChange?: (score: ChunithmScoreProps) => void;
-  onCreateScore?: (score: ChunithmScoreProps) => void;
 }
 
-export const ChunithmScoreList = ({ scores, songList, onScoreChange, onCreateScore }: ScoreListProps) => {
+export const ChunithmScoreList = ({ scores, songList, onScoreChange }: ScoreListProps) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [scoreDetail, setScoreDetail] = useState<ChunithmScoreProps | null>(null);
 
@@ -25,10 +24,6 @@ export const ChunithmScoreList = ({ scores, songList, onScoreChange, onCreateSco
         onClose={(score) => {
           closeScoreAlert();
           if (score) onScoreChange && onScoreChange(score);
-        }}
-        onCreateScore={(score) => {
-          closeScoreAlert();
-          onCreateScore && onCreateScore(score);
         }}
       />
       <SimpleGrid

@@ -4,14 +4,17 @@ import { openAlertModal, openConfirmModal, openRetryModal } from "../../../utils
 import { ActionIcon, Menu } from "@mantine/core";
 import classes from "../ScoreModalMenu.module.css";
 import { IconClearAll, IconDots, IconPlus, IconTrash } from "@tabler/icons-react";
+import { useContext } from "react";
+import ScoreContext from "../../../utils/context.tsx";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps;
-  onClose?: (score: MaimaiScoreProps) => void;
-  onCreateScore?: (score: MaimaiScoreProps) => void;
+  onClose?: (score?: MaimaiScoreProps) => void;
 }
 
-export const ScoreModalMenu = ({ score, onClose, onCreateScore }: ScoreModalActionMenuProps) => {
+export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
+  const context = useContext(ScoreContext);
+
   const DeletePlayerScoreHandler = async () => {
     try {
       const res = await fetchAPI(`user/maimai/player/score?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {
@@ -47,7 +50,7 @@ export const ScoreModalMenu = ({ score, onClose, onCreateScore }: ScoreModalActi
   return (
     <Menu shadow="md" width={200} position="bottom-end">
       <Menu.Target>
-        <ActionIcon className={classes.actionIcon} variant="subtle" color="default" aria-label="Settings">
+        <ActionIcon className={classes.actionIcon} variant="subtle">
           <IconDots size={18} stroke={1.5} />
         </ActionIcon>
       </Menu.Target>
@@ -55,7 +58,8 @@ export const ScoreModalMenu = ({ score, onClose, onCreateScore }: ScoreModalActi
       <Menu.Dropdown>
         <Menu.Label>更多操作</Menu.Label>
         <Menu.Item leftSection={<IconPlus size={20} stroke={1.5} />} onClick={() => {
-          onCreateScore && onCreateScore(score);
+          onClose && onClose();
+          context.setCreateScoreOpened(true);
         }}>
           创建新成绩
         </Menu.Item>

@@ -15,16 +15,16 @@ import {
   getChunithmScoreSecondaryColor,
 } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
-import { useEffect } from "react";
+import {useContext, useEffect} from "react";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
+import ScoreContext from "../../../utils/context.tsx";
 
 interface ScoreModalProps {
   score: ChunithmScoreProps | null;
   song: ChunithmSongProps | null;
   opened: boolean;
   onClose: (score?: ChunithmScoreProps) => void;
-  onCreateScore?: (score: ChunithmScoreProps) => void;
 }
 
 const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
@@ -121,16 +121,12 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
   )
 }
 
-export const ScoreModal = ({ score, song, opened, onClose, onCreateScore }: ScoreModalProps) => {
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      onClose();
-    }
-  }
+export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
+  const context = useContext(ScoreContext);
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-  }, []);
+    context.setScore(score);
+  }, [score]);
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
@@ -140,7 +136,7 @@ export const ScoreModal = ({ score, song, opened, onClose, onCreateScore }: Scor
           <Modal.Title>成绩详情</Modal.Title>
           <Group gap="xs">
             {score !== null && (
-              <ScoreModalMenu score={score} onClose={onClose} onCreateScore={onCreateScore} />
+              <ScoreModalMenu score={score} onClose={onClose} />
             )}
             <Modal.CloseButton />
           </Group>

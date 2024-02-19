@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import {
   Accordion,
   Button,
@@ -13,7 +13,7 @@ import {
   SegmentedControl, Flex,
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
-import { useDisclosure, useLocalStorage } from "@mantine/hooks";
+import { useLocalStorage } from "@mantine/hooks";
 import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
 import {
   IconArrowDown,
@@ -37,6 +37,8 @@ import { MaimaiCreateScoreModal } from "../../components/Scores/maimai/CreateSco
 import { ChunithmCreateScoreModal } from "../../components/Scores/chunithm/CreateScoreModal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
 
+import ScoreContext from "../../utils/context.tsx";
+
 const sortKeys = {
   maimai: [
     { name: '曲目 ID', key: 'id' },
@@ -56,13 +58,10 @@ const sortKeys = {
   ]
 };
 
-export default function Scores() {
+const ScoresContent = () => {
   const [game, setGame] = useLocalStorage({ key: 'game' });
   const [songList, setSongList] = useState(new SongList());
   const [aliasList, setAliasList] = useState(new AliasList());
-
-  const [createScoreOpened, { open: openCreateScore, close: closeCreateScore }] = useDisclosure(false);
-  const [createScore, setCreateScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
 
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
@@ -225,20 +224,20 @@ export default function Scores() {
     return null;
   };
 
+  const context = useContext(ScoreContext);
+
   return (
     <Container className={classes.root} size={400}>
       {songList instanceof MaimaiSongList && (
-        <MaimaiCreateScoreModal songList={songList} score={createScore as MaimaiScoreProps} opened={createScoreOpened} onClose={(score) => {
+        <MaimaiCreateScoreModal songList={songList} score={context.score} opened={context.createScoreOpened} onClose={(score) => {
           if (score) getPlayerScoresHandler();
-          setCreateScore(null);
-          closeCreateScore();
+          context.setCreateScoreOpened(false);
         }} />
       )}
       {songList instanceof ChunithmSongList && (
-        <ChunithmCreateScoreModal songList={songList} score={createScore as ChunithmScoreProps} opened={createScoreOpened} onClose={(score) => {
+        <ChunithmCreateScoreModal songList={songList} score={context.score} opened={context.createScoreOpened} onClose={(score) => {
           if (score) getPlayerScoresHandler();
-          setCreateScore(null);
-          closeCreateScore();
+          context.setCreateScoreOpened(false);
         }} />
       )}
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
@@ -247,7 +246,7 @@ export default function Scores() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         管理你的 maimai DX 查分器账号的成绩
       </Text>
-      <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => setGame(value)} data={[
+      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value)} data={[
         { label: '舞萌 DX', value: 'maimai' },
         { label: '中二节奏', value: 'chunithm' },
       ]} />
@@ -290,6 +289,7 @@ export default function Scores() {
       <Space h="md" />
       <Flex align="center" justify="space-between" gap="xs">
         <SongCombobox
+          variant="filled"
           songs={songs || []}
           aliases={aliasList.aliases}
           value={songId}
@@ -300,7 +300,7 @@ export default function Scores() {
           radius="md"
           style={{ flex: 1 }}
         />
-        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => openCreateScore()}>
+        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => context.setCreateScoreOpened(true)}>
           创建成绩
         </Button>
       </Flex>
@@ -327,10 +327,6 @@ export default function Scores() {
                 onScoreChange={(score) => {
                   if (score) getPlayerScoresHandler();
                 }}
-                onCreateScore={(score) => {
-                  setCreateScore(score);
-                  openCreateScore();
-                }}
               />
             )}
             {songList instanceof ChunithmSongList && (
@@ -339,10 +335,6 @@ export default function Scores() {
                 songList={songList}
                 onScoreChange={(score) => {
                   if (score) getPlayerScoresHandler();
-                }}
-                onCreateScore={(score) => {
-                  setCreateScore(score);
-                  openCreateScore();
                 }}
               />
             )}
@@ -357,5 +349,16 @@ export default function Scores() {
         </>
       ))}
     </Container>
+  );
+}
+
+export default function Scores() {
+  const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
+  const [createScoreOpened, setCreateScoreOpened] = useState(false);
+
+  return (
+    <ScoreContext.Provider value={{ score, setScore, createScoreOpened, setCreateScoreOpened }}>
+      <ScoresContent />
+    </ScoreContext.Provider>
   );
 }

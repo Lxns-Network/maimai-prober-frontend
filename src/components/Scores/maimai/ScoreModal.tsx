@@ -15,18 +15,18 @@ import {
 } from "@mantine/core";
 import { getMaimaiScoreCardBackgroundColor, getMaimaiScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
-import { useEffect, useState } from "react";
+import {useContext, useEffect, useState} from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { ScoreHistory } from "./ScoreHistory.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
+import ScoreContext from "../../../utils/context.tsx";
 
 interface ScoreModalProps {
   score: MaimaiScoreProps | null;
   song: MaimaiSongProps | null;
   opened: boolean;
   onClose: (score?: MaimaiScoreProps) => void;
-  onCreateScore?: (score: MaimaiScoreProps) => void;
 }
 
 const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
@@ -115,13 +115,14 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
   )
 }
 
-export const ScoreModal = ({ score, song, opened, onClose, onCreateScore }: ScoreModalProps) => {
-  const [scores, setScores] = useState<MaimaiScoreProps[]>([]);
+export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
+  const [historyScores, setHistoryScores] = useState<MaimaiScoreProps[]>([]);
   const [fetching, setFetching] = useState(true);
+  const context = useContext(ScoreContext);
 
   const getPlayerScoreHistory = async (score: MaimaiScoreProps) => {
     if (score.achievements < 0) {
-      setScores([]);
+      setHistoryScores([]);
       setFetching(false);
       return;
     }
@@ -135,7 +136,7 @@ export const ScoreModal = ({ score, song, opened, onClose, onCreateScore }: Scor
         throw new Error(data.message);
       }
       if (data.data) {
-        setScores(data.data.sort((a: MaimaiScoreProps, b: MaimaiScoreProps) => {
+        setHistoryScores(data.data.sort((a: MaimaiScoreProps, b: MaimaiScoreProps) => {
           const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
 
           if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
@@ -155,7 +156,8 @@ export const ScoreModal = ({ score, song, opened, onClose, onCreateScore }: Scor
   useEffect(() => {
     if (!score) return;
 
-    setScores([]);
+    context.setScore(score);
+    setHistoryScores([]);
     getPlayerScoreHistory(score);
   }, [score]);
 
@@ -167,7 +169,7 @@ export const ScoreModal = ({ score, song, opened, onClose, onCreateScore }: Scor
           <Modal.Title>成绩详情</Modal.Title>
           <Group gap="xs">
             {score !== null && (
-              <ScoreModalMenu score={score} onClose={onClose} onCreateScore={onCreateScore} />
+              <ScoreModalMenu score={score} onClose={onClose} />
             )}
             <Modal.CloseButton />
           </Group>
@@ -188,7 +190,7 @@ export const ScoreModal = ({ score, song, opened, onClose, onCreateScore }: Scor
                     <Loader />
                   </Center>
                 ) : (
-                  <ScoreHistory scores={scores} />
+                  <ScoreHistory scores={historyScores} />
                 )}
               </Accordion.Panel>
             </Accordion.Item>
