@@ -93,10 +93,10 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `standard_total` | `int` | 标准谱面 Best 35 总分 |
-| `dx_total` | `int` | DX 谱面 Best 15 总分 |
-| `standard` | [`Score[]`](#score) | 标准谱面 Best 35 列表 |
-| `dx` | [`Score[]`](#score) | DX 谱面 Best 15 列表 |
+| `standard_total` | `int` | 旧版本谱面 Best 35 总分 |
+| `dx_total` | `int` | 现版本谱面 Best 15 总分 |
+| `standard` | [`Score[]`](#score) | 旧版本谱面 Best 35 列表 |
+| `dx` | [`Score[]`](#score) | 现版本谱面 Best 15 列表 |
 
 ## GET `/api/v0/maimai/player/{friend_code}/bests`
 

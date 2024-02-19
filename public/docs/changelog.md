@@ -2,29 +2,35 @@
 
 ---
 
+## 2024/2/19
+
+- 新增爬取数据配置项**允许覆盖最佳成绩**：`allow_overwrite_best_score`
+  > 允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。
+
 ## 2024/1/30
 
+- 将文档迁移至查分器
 - 新增服务条款与隐私政策
 
 ## 2024/1/28
 
-- 优化中二节奏[获取曲目列表](https://github.com/Lxns-Network/maimai-prober-frontend/wiki/%E4%B8%AD%E4%BA%8C%E8%8A%82%E5%A5%8F-API-%E5%88%97%E8%A1%A8#get-apiv0chunithmsonglist)接口，现在更加类似舞萌 DX 的曲目列表：
-    - 单曲 `genres` 字段现在更改为 `genre`，类型由 `Genre[]` 变更为 `string`
-    - 单曲新增 `bpm`、`version` 字段
-    - 难度新增 `note_designer`、`version` 字段
-    - 难度新增 `notes` 字段，用于获取谱面不同 Note 的物量
-    - 新增 `versions`、`genres` 字段
-- 中二节奏[获取曲目列表](https://github.com/Lxns-Network/maimai-prober-frontend/wiki/%E4%B8%AD%E4%BA%8C%E8%8A%82%E5%A5%8F-API-%E5%88%97%E8%A1%A8#get-apiv0chunithmsonglist)接口现在支持 `notes` 查询参数，控制是否包含谱面物量
+- 优化中二节奏[获取曲目列表](/docs/api/chunithm#get-apiv0chunithmsonglist)接口，现在更加类似舞萌 DX 的曲目列表：
+  - 单曲 `genres` 字段现在更改为 `genre`，类型由 `Genre[]` 变更为 `string`
+  - 单曲新增 `bpm`、`version` 字段
+  - 难度新增 `note_designer`、`version` 字段
+  - 难度新增 `notes` 字段，用于获取谱面不同 Note 的物量
+  - 新增 `versions`、`genres` 字段
+- 中二节奏[获取曲目列表](/docs/api/chunithm#get-apiv0chunithmsonglist)接口现在支持 `notes` 查询参数，控制是否包含谱面物量
 
 ## 2024/1/27
 
 - 成绩管理现在支持筛选上传时间
 - 优化成绩管理的曲目搜索体验
 - 优化关于相同成绩冲突时，判断的成绩更新逻辑：
-    - 增量爬取（判断游玩时间先后）：
-        1. 若旧成绩没有游玩时间，则更新旧成绩的游玩时间，**不会插入新成绩**
-        2. 若新成绩游玩时间与旧成绩不一致，才**会插入新成绩**
-    - 完整爬取（不判断游玩时间先后）：若旧成绩有游玩时间，则**不会插入新成绩**
+  - 增量爬取（判断游玩时间先后）：
+    1. 若旧成绩没有游玩时间，则更新旧成绩的游玩时间，**不会插入新成绩**
+    2. 若新成绩游玩时间与旧成绩不一致，才**会插入新成绩**
+  - 完整爬取（不判断游玩时间先后）：若旧成绩有游玩时间，则**不会插入新成绩**
 - 修复爬取时多次保存重复成绩的问题
 
 ## 2024/1/25
@@ -62,12 +68,14 @@
 ## 2024/1/6
 
 - 成绩管理页面现在支持查询中二节奏成绩
-- ~~人机验证由 ReCaptcha 变更为 HCaptcha~~
 
 ## 2023/12/20
 
-- 舞萌 DX `Player` 结构体中删除 `rating_base_url`、`course_rank_url` 与 `class_rank_url` 字段
+- 舞萌 DX `Player` 结构体中删除字段：
+  - `rating_base_url`
+  - `course_rank_url`
+  - `class_rank_url`
 
 ## 2023/12/19
 
-- 舞萌 DX、中二节奏新增获取曲目别名列表接口
+- 新增**获取曲目别名列表**接口
