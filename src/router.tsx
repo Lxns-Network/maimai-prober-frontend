@@ -5,7 +5,6 @@ import { refreshToken } from "./utils/api/user";
 import App from "./App";
 
 const Home = lazy(() => import('./pages/public/Home'));
-const About = lazy(() => import('./pages/public/About'));
 const Login = lazy(() => import('./pages/public/Login'));
 const Register = lazy(() => import('./pages/public/Register'));
 const ForgotPassword = lazy(() => import('./pages/public/ForgotPassword'));
@@ -44,7 +43,6 @@ const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
 const routesConfig = (
   <Route element={<App />}>
     <Route path="/" element={<Home />} />
-    <Route path="/about" element={<About />} />
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />

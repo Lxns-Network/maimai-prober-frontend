@@ -1,9 +1,0 @@
-@import "../Page.module.css";
-
-.highlight {
-    position: relative;
-    background-color: var(--mantine-primary-color-light);
-    border-radius: var(--mantine-radius-sm);
-    padding: 4px 8px;
-    color: light-dark(var(--mantine-primary-color-6), var(--mantine-primary-color-4));
-}
