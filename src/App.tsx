@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, {Suspense, useEffect, useMemo, useRef, useState} from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   ScrollArea,
@@ -29,9 +29,14 @@ export default function App() {
   const [opened, setOpened] = useState(window.innerWidth > NAVBAR_BREAKPOINT);
   const navigate = useNavigate();
   const location = useLocation();
+  const viewport = useRef<HTMLDivElement>(null);
 
   const handleResize = () => {
     setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
+  };
+
+  const toggleNavbarOpened = () => {
+    if (window.innerWidth <= NAVBAR_BREAKPOINT) setOpened(!opened);
   };
 
   useEffect(() => {
@@ -52,9 +57,11 @@ export default function App() {
     };
   }, []);
 
-  const toggleNavbarOpened = () => {
-    if (window.innerWidth <= NAVBAR_BREAKPOINT) setOpened(!opened);
-  };
+  useEffect(() => {
+    if (viewport.current) {
+      viewport.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [location.pathname]);
 
   const value = useMemo(() => ({}), []);
 
@@ -71,7 +78,7 @@ export default function App() {
           <ScrollArea className={classes.routesWrapper} style={{
             height: 'calc(100vh - 56px)',
             paddingLeft: window.innerWidth > NAVBAR_BREAKPOINT ? rem(300) : 0,
-          }} type="scroll">
+          }} type="scroll" viewportRef={viewport}>
             <Transition mounted={opened && window.innerWidth <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
               {(styles) => <Overlay color="#000" style={styles} onClick={toggleNavbarOpened} zIndex={100} />}
             </Transition>
