@@ -96,8 +96,8 @@ export default function Home() {
         {Boolean(localStorage.getItem("token")) ?
           <Container className={classes.controls} p={0}>
             <Button className={classes.control} size="lg" variant="default"
-                    onClick={() => window.open("https://github.com/Lxns-Network/maimai-prober-frontend/wiki", "_blank")}>
-              查看文档
+                    onClick={() => navigate("/docs")}>
+              帮助文档
             </Button>
             <Button className={classes.control} size="lg" variant="default"
                     onClick={() => navigate("/user/profile")}>
@@ -109,7 +109,7 @@ export default function Home() {
                     onClick={() => navigate("/login")}>
               登录
             </Button>
-            <Button className={classes.control} size="lg" variant="gradient"
+            <Button className={classes.control} size="lg"
                     onClick={() => navigate("/register")}>
               注册 maimai DX 查分器账号
             </Button>

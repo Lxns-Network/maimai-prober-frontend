@@ -1,6 +1,6 @@
 import { Container, Flex, Group, NavLink, ScrollArea, Space, Text, TypographyStylesProvider } from "@mantine/core";
 import classes from "./Docs.module.css"
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { remark } from "remark";
@@ -37,7 +37,7 @@ const TableOfContents = ({ headings }: any) => {
       </Group>
       {headings.map((heading: any) => (
         heading.depth !== 1 && <NavLink
-          className={classes.link}
+          className={classes.tableOfContentsLink}
           data-heading={heading.depth}
           key={heading.data.id}
           href={`#${heading.data.id}`}
@@ -59,6 +59,7 @@ export default function Docs() {
   const [markdown, setMarkdown] = useState("");
   const [headings, handlers] = useListState([]);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     let route = "/docs";
@@ -91,6 +92,10 @@ export default function Docs() {
     scrollTo(decodeURIComponent(location.hash.slice(1)));
   }, [markdown]);
 
+  useEffect(() => {
+    scrollTo(decodeURIComponent(location.hash.slice(1)));
+  }, [location]);
+
   return (
     <Flex>
       <Container mr={0} className={classes.content}>
@@ -109,6 +114,33 @@ export default function Docs() {
             components={{
               p({ children }) {
                 return <Text className={classes.paragraph}>{children}</Text>;
+              },
+              a({ children, href, ...props }) {
+                if (href && href.startsWith("http")) {
+                  return <a className={classes.externalLink} href={href} target="_blank" rel="noreferrer" {...props}>{children}</a>;
+                }
+                return <a href={href} onClick={(event) => {
+                  event.preventDefault();
+                  if (href) navigate(href);
+                }} {...props}>{children}</a>;
+              },
+              h1({ children, ...props }) {
+                return <h1 className={classes.heading1} {...props}>{children}</h1>;
+              },
+              h2({ children, ...props }) {
+                return <h2 className={classes.heading2} {...props}>{children}</h2>;
+              },
+              h3({ children, ...props }) {
+                  return <h3 className={classes.heading3} {...props}>{children}</h3>;
+              },
+              h4({ children, ...props }) {
+                return <h4 className={classes.heading4} {...props}>{children}</h4>;
+              },
+              h5({ children, ...props }) {
+                  return <h5 className={classes.heading5} {...props}>{children}</h5>;
+              },
+              h6({ children, ...props }) {
+                  return <h6 className={classes.heading6} {...props}>{children}</h6>;
               },
               ul({ children }) {
                 return <ul className={classes.list}>{children}</ul>;

@@ -181,7 +181,7 @@ export default function Sync() {
     };
   }, [crawlStatus, proxyAvailable]);
 
-  const [stepper, stepperRect] = useResizeObserver<HTMLDivElement>();
+  const [stepper, stepperRect] = useResizeObserver();
 
   return (
     <Container className={classes.root} size={400}>

@@ -205,7 +205,7 @@ export default function Vote() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         提交曲目别名，或为你喜欢的曲目别名投票
       </Text>
-      <SegmentedControl mb="md" color="blue" fullWidth value={game} onChange={(value) => {
+      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => {
         setGame(value);
         setFetching(true);
       }} data={[
@@ -254,6 +254,7 @@ export default function Vote() {
       <Space h="md" />
       <Flex align="center" justify="space-between" gap="xs">
         <SongCombobox
+          variant="filled"
           songs={songList.songs}
           value={songId}
           onOptionSubmit={(value) => setSongId(value)}
