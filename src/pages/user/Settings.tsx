@@ -21,7 +21,7 @@ interface ConfigProps {
   allow_third_party_write_data?: boolean;
 }
 
-const settingsData = {
+const crawlConfigData = {
   maimai: [{
     key: "allow_crawl_scores",
     title: "允许爬取谱面成绩",
@@ -57,7 +57,7 @@ const settingsData = {
   }, {
     key: "crawl_scores_difficulty",
     title: "爬取谱面成绩的难度",
-    description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
+    description: "设置每次“完整爬取”时爬取的难度页面，难度越少爬取越稳定。",
     placeholder: "请选择难度",
     optionType: "multi-select",
     defaultValue: ["basic", "advanced", "expert", "master", "remaster"],
@@ -77,6 +77,12 @@ const settingsData = {
       value: "remaster",
       label: "⚪ Re:MASTER",
     }]
+  }, {
+    key: "allow_overwrite_best_score",
+    title: "允许覆盖最佳成绩（实验性）",
+    description: "允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。",
+    optionType: "switch",
+    defaultValue: false,
   }],
   chunithm: [{
     key: "allow_crawl_scores",
@@ -99,7 +105,7 @@ const settingsData = {
   }, {
     key: "crawl_scores_difficulty",
     title: "爬取谱面成绩的难度",
-    description: "设置每次完整爬取时爬取的难度页面，难度越少爬取越稳定。",
+    description: "设置每次“完整爬取”时爬取的难度页面，难度越少爬取越稳定。",
     placeholder: "请选择难度",
     optionType: "multi-select",
     defaultValue: ["basic", "advanced", "expert", "master", "ultima"],
@@ -119,6 +125,12 @@ const settingsData = {
       value: "ultima",
       label: "⚫ ULTIMA",
     }]
+  }, {
+    key: "allow_overwrite_best_score",
+    title: "允许覆盖最佳成绩（实验性）",
+    description: "允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。",
+    optionType: "switch",
+    defaultValue: false,
   }],
 }
 
@@ -220,7 +232,7 @@ export default function Settings() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         设置你的 maimai DX 查分器账号
       </Text>
-      <SegmentedControl size="sm" mb="md" color="blue" fullWidth value={game} onChange={(value) => {
+      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => {
         setGame(value);
         setFetching(true);
       }} data={[
@@ -235,7 +247,7 @@ export default function Settings() {
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
           设置每次爬取{game === "chunithm" ? "中二节奏" : "舞萌 DX "}的方式与获取的数据
         </Text>
-        <SettingsSection onChange={updateUserConfigHandler} value={config} data={(settingsData as any)[game ? game : 'maimai']} />
+        <SettingsSection onChange={updateUserConfigHandler} value={config} data={(crawlConfigData as any)[game ? game : 'maimai']} />
       </Card>
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
