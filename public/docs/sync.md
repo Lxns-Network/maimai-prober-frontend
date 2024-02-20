@@ -28,7 +28,7 @@
 
 ## 通用同步步骤
 
-### 配置 HTTP 代理
+### 一、配置 HTTP 代理
 
 #### Windows 11
 
@@ -53,7 +53,7 @@ proxy.maimai.lxns.net:8080
 
 暂无教程。
 
-### 使用微信打开 OAuth 链接
+### 二、使用微信打开 OAuth 链接
 
 #### 在线同步获取
 
@@ -79,7 +79,7 @@ https://maimai.lxns.net/api/v0/chunithm/wechat/auth
 
 ![](https://image.lxns.net/i/2024/02/19/102330.png)
 
-### 等待数据同步完成（仅在线同步）
+### 三、等待数据同步完成（仅在线同步）
 
 > 离线同步不支持查询数据同步状态。
 

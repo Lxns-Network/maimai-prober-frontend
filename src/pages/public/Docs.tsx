@@ -1,4 +1,4 @@
-import { Container, Flex, Group, NavLink, ScrollArea, Space, Text, TypographyStylesProvider } from "@mantine/core";
+import { Container, Flex, Group, NavLink, ScrollArea, Space, Text, Title, TypographyStylesProvider } from "@mantine/core";
 import classes from "./Docs.module.css"
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -61,17 +61,26 @@ export default function Docs() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    let route = "/docs";
-    page?.split("/").forEach((part) => {
-      route += `/${part || "index"}`;
-    });
-    route += ".md";
-    fetch(route).then(response => response.text()).then(text => {
-      setMarkdown(text);
-    }).catch(() => {
+  const pageHandler = async (page: string) => {
+    const fetchPage = async (path: string) => {
+      const response = await fetch(path);
+      if (response.ok) {
+        return await response.text();
+      }
+      return null;
+    };
+
+    const text = await fetchPage(`/docs/${page}.md`) || await fetchPage(`/docs/${page}/index.md`);
+    if (!text) {
       navigate("/404");
-    });
+      return;
+    }
+
+    setMarkdown(text);
+  }
+
+  useEffect(() => {
+    pageHandler(page || "index");
   }, [page]);
 
   useEffect(() => {
@@ -124,23 +133,23 @@ export default function Docs() {
                   if (href) navigate(href);
                 }} {...props}>{children}</a>;
               },
-              h1({ children, ...props }) {
-                return <h1 className={classes.heading1} {...props}>{children}</h1>;
+              h1({ children }) {
+                return <Title className={classes.heading1}>{children}</Title>;
               },
-              h2({ children, ...props }) {
-                return <h2 className={classes.heading2} {...props}>{children}</h2>;
+              h2({ children }) {
+                return <Title order={2} className={classes.heading2}>{children}</Title>;
               },
-              h3({ children, ...props }) {
-                  return <h3 className={classes.heading3} {...props}>{children}</h3>;
+              h3({ children }) {
+                return <Title order={3} className={classes.heading3}>{children}</Title>;
               },
-              h4({ children, ...props }) {
-                return <h4 className={classes.heading4} {...props}>{children}</h4>;
+              h4({ children }) {
+                return <Title order={4} className={classes.heading4}>{children}</Title>;
               },
-              h5({ children, ...props }) {
-                  return <h5 className={classes.heading5} {...props}>{children}</h5>;
+              h5({ children }) {
+                return <Title order={5} className={classes.heading5}>{children}</Title>;
               },
-              h6({ children, ...props }) {
-                  return <h6 className={classes.heading6} {...props}>{children}</h6>;
+              h6({ children }) {
+                return <Title order={6} className={classes.heading6}>{children}</Title>;
               },
               ul({ children }) {
                 return <ul className={classes.list}>{children}</ul>;
