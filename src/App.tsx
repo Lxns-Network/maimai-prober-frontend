@@ -1,4 +1,4 @@
-import React, {Suspense, useEffect, useMemo, useRef, useState} from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   ScrollArea,
@@ -8,14 +8,17 @@ import {
   Loader,
   Group, createTheme, Overlay
 } from '@mantine/core';
+import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
-import { refreshToken } from "./utils/api/user";
 import { isTokenUndefined, logout } from "./utils/session";
+import { refreshToken } from "./utils/api/user";
+import RouterTransition from "./components/RouterTransition";
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
-import RouterTransition from "./components/RouterTransition";
 import classes from "./App.module.css";
-import { ModalsProvider } from "@mantine/modals";
+
+import { ErrorBoundary } from "react-error-boundary";
+import { Fallback } from "./pages/public/Fallback.tsx";
 
 const theme = createTheme({
   focusRing: 'never',
@@ -68,29 +71,33 @@ export default function App() {
   return (
     <ApiContext.Provider value={value}>
       <MantineProvider theme={theme} defaultColorScheme="auto">
-        <ModalsProvider labels={{ confirm: '确定', cancel: '取消' }}>
-          <Notifications />
-          <RouterTransition />
-          <Transition mounted={opened} transition="slide-right" duration={300} timingFunction="ease">
-            {(styles) => <Navbar style={styles} onClose={toggleNavbarOpened} />}
-          </Transition>
-          <Header navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} />
-          <ScrollArea className={classes.routesWrapper} style={{
-            height: 'calc(100vh - 56px)',
-            paddingLeft: window.innerWidth > NAVBAR_BREAKPOINT ? rem(300) : 0,
-          }} type="scroll" viewportRef={viewport}>
-            <Transition mounted={opened && window.innerWidth <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
-              {(styles) => <Overlay color="#000" style={styles} onClick={toggleNavbarOpened} zIndex={100} />}
+        <ErrorBoundary FallbackComponent={Fallback}>
+          <ModalsProvider labels={{ confirm: '确定', cancel: '取消' }}>
+            <Notifications />
+            <RouterTransition />
+            <Transition mounted={opened} transition="slide-right" duration={300} timingFunction="ease">
+              {(styles) => <Navbar style={styles} onClose={toggleNavbarOpened} />}
             </Transition>
-            <Suspense fallback={(
-              <Group justify="center" p={rem(80)}>
-                <Loader type="dots" size="xl" />
-              </Group>
-            )}>
-              <Outlet />
-            </Suspense>
-          </ScrollArea>
-        </ModalsProvider>
+            <Header navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} />
+            <ScrollArea className={classes.routesWrapper} style={{
+              height: 'calc(100vh - 56px)',
+              paddingLeft: window.innerWidth > NAVBAR_BREAKPOINT ? rem(300) : 0,
+            }} type="scroll" viewportRef={viewport}>
+              <Transition mounted={opened && window.innerWidth <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
+                {(styles) => <Overlay color="#000" style={styles} onClick={toggleNavbarOpened} zIndex={100} />}
+              </Transition>
+              <Suspense fallback={(
+                <Group justify="center" p={rem(80)}>
+                  <Loader type="dots" size="xl" />
+                </Group>
+              )}>
+                <ErrorBoundary FallbackComponent={Fallback}>
+                  <Outlet />
+                </ErrorBoundary>
+              </Suspense>
+            </ScrollArea>
+          </ModalsProvider>
+        </ErrorBoundary>
       </MantineProvider>
     </ApiContext.Provider>
   );
