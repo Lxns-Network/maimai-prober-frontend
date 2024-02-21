@@ -1,0 +1,30 @@
+.logo {
+    opacity: light-dark(1, 0.8);
+}
+
+.title {
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: var(--mantine-spacing-xs);
+    color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        font-size: 28px !important;
+    }
+}
+
+.description {
+    text-align: center;
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        font-size: var(--mantine-font-size-md) !important;
+    }
+}
+
+.control {
+    @mixin smaller-than $mantine-breakpoint-xs {
+        height: 42px !important;
+        font-size: var(--mantine-font-size-md) !important;
+    }
+}
