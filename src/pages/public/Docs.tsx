@@ -1,4 +1,18 @@
-import { Container, Flex, Group, NavLink, ScrollArea, Space, Text, Title, TypographyStylesProvider } from "@mantine/core";
+import {
+  ActionIcon,
+  Container,
+  CopyButton,
+  Flex,
+  Group, Loader,
+  NavLink,
+  ScrollArea,
+  Space,
+  Text,
+  Title,
+  Tooltip,
+  TypographyStylesProvider,
+  Image
+} from "@mantine/core";
 import classes from "./Docs.module.css"
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -12,9 +26,14 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import remarkSlug from "remark-slug";
 import remarkFlexibleContainers from "remark-flexible-containers";
 import { useListState } from "@mantine/hooks";
-import { IconListSearch } from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconListSearch } from "@tabler/icons-react";
+import LazyLoad from 'react-lazyload';
 
 const scrollTo = (id: string) => {
+  if (!id) return;
+
+  window.history.pushState(null, "", `${window.location.pathname}#${id}`);
+
   const target = document.getElementById(id);
   const scrollArea = document.querySelector("#root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport");
 
@@ -52,6 +71,111 @@ const TableOfContents = ({ headings }: any) => {
       <Space h="md" />
     </ScrollArea>
   );
+}
+
+const Content = ({ markdown }: { markdown: string }) => {
+  const navigate = useNavigate();
+
+  return (
+    <Markdown
+      remarkPlugins={[remarkGfm, remarkFlexibleContainers]}
+      rehypePlugins={[
+        rehypeSlug,
+        [rehypeAutolinkHeadings, {
+          behavior: 'wrap',
+          properties: {
+            className: classes.sectionHeading,
+          },
+        }]
+      ]}
+      components={{
+        p({ children }) {
+          return <Text className={classes.paragraph}>{children}</Text>;
+        },
+        a({ children, href, ...props }) {
+          if (href && href.startsWith("http")) {
+            return <a className={classes.externalLink} href={href} target="_blank" rel="noreferrer" {...props}>
+              {children}
+            </a>;
+          }
+          return <a href={href} onClick={(event) => {
+            event.preventDefault();
+            if (href && href.startsWith("#")) {
+              scrollTo(href.slice(1));
+              return;
+            }
+            href && navigate(href);
+          }} {...props}>
+            {children}
+          </a>;
+        },
+        h1({ children, ...props }: any) {
+          return <Title className={classes.heading1} {...props}>{children}</Title>;
+        },
+        h2({ children, ...props }: any) {
+          return <Title order={2} className={classes.heading2} {...props}>{children}</Title>;
+        },
+        h3({ children, ...props }: any) {
+          return <Title order={3} className={classes.heading3} {...props}>{children}</Title>;
+        },
+        h4({ children, ...props }: any) {
+          return <Title order={4} className={classes.heading4} {...props}>{children}</Title>;
+        },
+        h5({ children, ...props }: any) {
+          return <Title order={5} className={classes.heading5} {...props}>{children}</Title>;
+        },
+        h6({ children, ...props }: any) {
+          return <Title order={6} className={classes.heading6} {...props}>{children}</Title>;
+        },
+        img({ src, ...props }: any) {
+          return <LazyLoad overflow debounce={300} placeholder={<Loader />}>
+            <Image radius="md" mih={42} w="auto" src={src} {...props} />
+          </LazyLoad>
+        },
+        ul({ children }) {
+          return <ul className={classes.list}>{children}</ul>;
+        },
+        ol({ children }) {
+          return <ol className={classes.list}>{children}</ol>;
+        },
+        div({ className, children, ...props }) {
+          return <div className={className} {...props}>{children}</div>;
+        },
+        th({ children, ...props }) {
+          return <th className={classes.tableCell} {...props}>{children}</th>;
+        },
+        td({ children, ...props }) {
+          return <td className={classes.tableCell} {...props}>{children}</td>;
+        },
+        pre({ children }: any) {
+          return <div className={classes.codeBlock}>
+            <CopyButton value={children.props.children} timeout={2000}>
+              {({ copied, copy }) => (
+                <Tooltip label={copied ? '已复制' : '复制代码块'} withArrow>
+                  <ActionIcon className={classes.codeBlockCopyButton} color={copied ? 'teal' : 'gray'} variant="subtle" onClick={copy}>
+                    {copied ? (
+                      <IconCheck width={16} />
+                    ) : (
+                      <IconCopy width={16} />
+                    )}
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </CopyButton>
+            {children}
+          </div>
+        },
+        code({ children }) {
+          return <span className={classes.code}>{children}</span>
+        },
+        blockquote({ children }) {
+          return <Text className={classes.blockQuote}>{children}</Text>
+        }
+      }}
+    >
+      {markdown}
+    </Markdown>
+  )
 }
 
 export default function Docs() {
@@ -101,84 +225,11 @@ export default function Docs() {
     scrollTo(decodeURIComponent(location.hash.slice(1)));
   }, [markdown]);
 
-  useEffect(() => {
-    scrollTo(decodeURIComponent(location.hash.slice(1)));
-  }, [location]);
-
   return (
     <Flex>
       <Container mr={0} className={classes.content}>
         <TypographyStylesProvider p={0}>
-          <Markdown
-            remarkPlugins={[remarkGfm, remarkFlexibleContainers]}
-            rehypePlugins={[
-              rehypeSlug,
-              [rehypeAutolinkHeadings, {
-                behavior: 'wrap',
-                properties: {
-                  className: classes.sectionHeading,
-                },
-              }]
-            ]}
-            components={{
-              p({ children }) {
-                return <Text className={classes.paragraph}>{children}</Text>;
-              },
-              a({ children, href, ...props }) {
-                if (href && href.startsWith("http")) {
-                  return <a className={classes.externalLink} href={href} target="_blank" rel="noreferrer" {...props}>{children}</a>;
-                }
-                return <a href={href} onClick={(event) => {
-                  event.preventDefault();
-                  if (href) navigate(href);
-                }} {...props}>{children}</a>;
-              },
-              h1({ children }) {
-                return <Title className={classes.heading1}>{children}</Title>;
-              },
-              h2({ children }) {
-                return <Title order={2} className={classes.heading2}>{children}</Title>;
-              },
-              h3({ children }) {
-                return <Title order={3} className={classes.heading3}>{children}</Title>;
-              },
-              h4({ children }) {
-                return <Title order={4} className={classes.heading4}>{children}</Title>;
-              },
-              h5({ children }) {
-                return <Title order={5} className={classes.heading5}>{children}</Title>;
-              },
-              h6({ children }) {
-                return <Title order={6} className={classes.heading6}>{children}</Title>;
-              },
-              ul({ children }) {
-                return <ul className={classes.list}>{children}</ul>;
-              },
-              ol({ children }) {
-                return <ol className={classes.list}>{children}</ol>;
-              },
-              div({ className, children, ...props }) {
-                return <div className={className} {...props}>{children}</div>;
-              },
-              th({ children, ...props }) {
-                return <th className={classes.tableCell} {...props}>{children}</th>;
-              },
-              td({ children, ...props }) {
-                return <td className={classes.tableCell} {...props}>{children}</td>;
-              },
-              pre({ children }) {
-                return <div className={classes.codeBlock}>{children}</div>
-              },
-              code({ children }) {
-                return <span className={classes.code}>{children}</span>
-              },
-              blockquote({ children }) {
-                return <Text className={classes.blockQuote}>{children}</Text>
-              }
-            }}
-          >
-            {markdown}
-          </Markdown>
+          <Content markdown={markdown} />
         </TypographyStylesProvider>
       </Container>
       <Container ml={0} className={classes.tableOfContents}>
