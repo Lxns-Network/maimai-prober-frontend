@@ -6,7 +6,7 @@
 
 ### 在线同步（查分器网页）
 
-在线同步需要注册并登录查分器账号，在[同步游戏数据](/user/sync)跟随页面内指引，正确配置 HTTP 代理并获取 OAuth 链接（链接中通常带 `token` 参数）。
+在线同步需要注册并登录查分器账号，在[同步游戏数据页](/user/sync)跟随页面内指引，正确配置 HTTP 代理并获取 OAuth 链接（链接中通常带 `token` 参数）。
 
 适用于用户初次同步，将玩家数据绑定到查分器账号。
 
@@ -26,9 +26,15 @@
 | OAuth 链接固定不变 | ❌ | ✔️ |
 | OAuth 链接有效期 | 15 分钟 | 长期有效 |
 
-## 通用同步步骤
+## 同步步骤
 
 ### 一、配置 HTTP 代理
+
+配置需要的代理服务器地址为：
+
+```
+proxy.maimai.lxns.net:8080
+```
 
 #### Windows 11
 
@@ -36,48 +42,67 @@
 
 ![](https://image.lxns.net/i/2024/02/19/102207.png)
 
-编辑代理服务器为以下 IP 和端口，并启用代理：
-
-```
-proxy.maimai.lxns.net:8080
-```
+编辑代理服务器为上面的代理服务器地址，并启用代理：
 
 ![](https://image.lxns.net/i/2024/02/19/102250.png)
 
+#### iOS 或 iPadOS
 
-#### Android
+##### 通过无线局域网配置
 
-暂无教程。
+在无线局域网设置中查看当前连接 WLAN 的详情：
 
-#### iOS & iPadOS
+![](https://image.lxns.net/i/2024/02/21/130347.png)
 
-暂无教程。
+在二级页面找到 HTTP 代理：
+
+![](https://image.lxns.net/i/2024/02/21/130749.png)
+
+编辑代理配置为手动，输入上面的代理服务器地址，并存储：
+
+![](https://image.lxns.net/i/2024/02/21/131148.png)
+
+#### Clash 或 Shadowrocket
+
+通过 URL 导入订阅：
+
+```
+https://maimai.lxns.net/api/v0/proxy-config/clash
+```
+
+代理选中“maimai DX 查分器代理”，并启用系统代理。
 
 ### 二、使用微信打开 OAuth 链接
 
 #### 在线同步获取
 
-在同步游戏数据页正确配置代理后，选择爬取的游戏并直接复制 OAuth 链接（带 `token`）。
+正确配置代理后，在[同步游戏数据页](/user/sync)选择爬取的游戏并直接复制 OAuth 链接（带 `token`）。
 
 #### 离线同步获取
 
 根据需要选择对应游戏的 OAuth 链接：
 
-- OAuth 链接（舞萌 DX）：
+- 舞萌 DX：
 ```
 https://maimai.lxns.net/api/v0/maimai/wechat/auth
 ```
 
-- OAuth 链接（中二节奏）：
+- 中二节奏：
 ```
 https://maimai.lxns.net/api/v0/chunithm/wechat/auth
 ```
 
 在聊天中输入 OAuth 链接并发送至安全的聊天（如文件传输助手），直接点击链接打开网页。
 
+#### 确认同步
+
 若页面显示为如下内容，则代表你的玩家数据已经被上传至服务器进行处理：
 
 ![](https://image.lxns.net/i/2024/02/19/102330.png)
+
+若页面提示网络出错，请检查代理配置是否正确：
+
+![](https://image.lxns.net/i/2024/02/21/130131.png)
 
 ### 三、等待数据同步完成（仅在线同步）
 
