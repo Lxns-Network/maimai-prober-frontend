@@ -23,8 +23,10 @@ import { Fallback } from "./pages/public/Fallback.tsx";
 const theme = createTheme({
   focusRing: 'never',
   cursorType: 'pointer',
+  activeClassName: classes.active,
 });
 
+export const HEADER_HEIGHT = 56;
 export const NAVBAR_BREAKPOINT = 992;
 export const ApiContext = React.createContext({});
 
@@ -80,7 +82,6 @@ export default function App() {
             </Transition>
             <Header navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} />
             <ScrollArea className={classes.routesWrapper} style={{
-              height: 'calc(100vh - 56px)',
               paddingLeft: window.innerWidth > NAVBAR_BREAKPOINT ? rem(300) : 0,
             }} type="scroll" viewportRef={viewport}>
               <Transition mounted={opened && window.innerWidth <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
