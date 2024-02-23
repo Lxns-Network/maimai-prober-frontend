@@ -107,22 +107,34 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
       </Card.Section>
       <Card.Section p="md">
         <Group justify="flex-end">
-          {permissionToList(developer.user.permission).indexOf(UserPermission.Developer) !== -1 && (
+          {permissionToList(developer.user.permission).indexOf(UserPermission.Developer) !== -1 ? <>
             <Button variant="outline" size="sm" leftSection={<IconRefresh size={20} />}>
               重置 API 密钥
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              color="red"
+              leftSection={<IconArrowBackUp size={20} />}
+              onClick={() => openConfirmModal("撤销开发者", "确定要撤销这个开发者吗？", revokeDeveloperHandler, {
+                confirmProps: { color: 'red' }
+              })}
+            >
+              撤销开发者
+            </Button>
+          </> : (
+            <Button
+              variant="outline"
+              size="sm"
+              color="red"
+              leftSection={<IconArrowBackUp size={20} />}
+              onClick={() => openConfirmModal("撤销开发者申请", "确定要撤销这个开发者申请吗？", revokeDeveloperHandler, {
+                confirmProps: { color: 'red' }
+              })}
+            >
+              撤销开发者申请
+            </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            color="red"
-            leftSection={<IconArrowBackUp size={20} />}
-            onClick={() => openConfirmModal("撤销开发者", "确定要撤销这个开发者吗？", revokeDeveloperHandler, {
-              confirmProps: { color: 'red' }
-            })}
-          >
-            撤销开发者
-          </Button>
         </Group>
       </Card.Section>
     </Card>

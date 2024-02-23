@@ -20,7 +20,6 @@
     font-size: 40px;
     letter-spacing: -1px;
     margin-bottom: var(--mantine-spacing-xs);
-    color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
 
     @mixin smaller-than $mantine-breakpoint-xs {
         font-size: 28px;
@@ -56,6 +55,8 @@
 }
 
 .control {
+    color: var(--mantine-color-text);
+
     &:not(:first-of-type) {
         margin-left: var(--mantine-spacing-md);
 
@@ -76,7 +77,7 @@
 }
 
 .botCard {
-    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
 }
 
 .botCardInner {

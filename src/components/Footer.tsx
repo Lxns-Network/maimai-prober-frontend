@@ -1,16 +1,13 @@
-import { Divider, Flex, Group, Image, Text } from "@mantine/core";
+import { Divider, Flex, Group, Text } from "@mantine/core";
 import classes from './Footer.module.css';
 
 export const Footer = () => {
   return (
     <div className={classes.footer}>
       <Flex className={classes.footerInner} align="center" gap="xs" justify="space-between">
-        <Group style={{ flex: 1 }}>
-          <Image src="/favicon.webp" width={32} height={32} />
-          <Text fw={700} fz={18}>
-            maimai DX 查分器
-          </Text>
-        </Group>
+        <Text fw="bold" fz="lg">
+          maimai DX 查分器
+        </Text>
         <Group>
           <Text size="sm" c="dimmed">&copy; {new Date().getFullYear() + ' '}
             <Text<'a'>

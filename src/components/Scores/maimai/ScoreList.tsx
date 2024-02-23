@@ -1,5 +1,5 @@
 import { Score, MaimaiScoreProps } from "./Score.tsx";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useState } from "react";
 import { ScoreModal } from "./ScoreModal.tsx";
 import { SimpleGrid } from "@mantine/core";
@@ -14,6 +14,7 @@ interface ScoreListProps {
 export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListProps) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [scoreDetail, setScoreDetail] = useState<MaimaiScoreProps | null>(null);
+  const small = useMediaQuery('(max-width: 25rem)');
 
   return (
     <>
@@ -26,7 +27,7 @@ export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListPr
           if (score) onScoreChange && onScoreChange(score);
         }}
       />
-      <SimpleGrid cols={2} spacing="xs" w="100%">
+      <SimpleGrid cols={small ? 1 : 2} spacing="xs" w="100%">
         {scores.map((score) => (
           <Score
             key={`score-${score.id}-${score.type}-${score.level_index}`}

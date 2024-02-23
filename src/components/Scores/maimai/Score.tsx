@@ -20,7 +20,13 @@ export interface MaimaiScoreProps {
   upload_time: string;
 }
 
-export const Score = memo(({ score, song, onClick }: { score: MaimaiScoreProps, song: MaimaiSongProps, onClick: () => void }) => {
+interface ScoreProps {
+  score: MaimaiScoreProps;
+  song: MaimaiSongProps;
+  onClick: () => void;
+}
+
+export const Score = memo(({ score, song, onClick }: ScoreProps) => {
   const computedColorScheme = useComputedColorScheme('light');
 
   return (

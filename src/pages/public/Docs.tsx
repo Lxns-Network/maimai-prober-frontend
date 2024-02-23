@@ -11,10 +11,10 @@ import {
   Title,
   Tooltip,
   TypographyStylesProvider,
-  Image
+  Image, Box, Center, Anchor
 } from "@mantine/core";
 import classes from "./Docs.module.css"
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { remark } from "remark";
@@ -26,13 +26,13 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import remarkSlug from "remark-slug";
 import remarkFlexibleContainers from "remark-flexible-containers";
 import { useListState } from "@mantine/hooks";
-import { IconCheck, IconCopy, IconListSearch } from "@tabler/icons-react";
+import { IconArrowLeft, IconCheck, IconCopy, IconListSearch } from "@tabler/icons-react";
 import LazyLoad from 'react-lazyload';
 
 const scrollTo = (id: string) => {
   if (!id) return;
 
-  window.history.pushState(null, "", `${window.location.pathname}#${id}`);
+  window.history.pushState(null, "", `${window.location.pathname}#${encodeURIComponent(id)}`);
 
   const target = document.getElementById(id);
   const scrollArea = document.querySelector("#root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport");
@@ -50,7 +50,7 @@ const scrollTo = (id: string) => {
 const TableOfContents = ({ headings }: any) => {
   return (
     <ScrollArea h="100%" type="never">
-      <Group mb="md" mt={49.6}>
+      <Group mb="md" mt="2rem">
         <IconListSearch size={18} stroke={1.5} />
         <Text mb={0}>目录</Text>
       </Group>
@@ -68,7 +68,7 @@ const TableOfContents = ({ headings }: any) => {
           }}
         />
       ))}
-      <Space h="md" />
+      <Space h="2rem" />
     </ScrollArea>
   );
 }
@@ -128,8 +128,8 @@ const Content = ({ markdown }: { markdown: string }) => {
           return <Title order={6} className={classes.heading6} {...props}>{children}</Title>;
         },
         img({ src, ...props }: any) {
-          return <LazyLoad overflow debounce={300} placeholder={<Loader />}>
-            <Image radius="md" mih={42} w="auto" src={src} {...props} />
+          return <LazyLoad overflow debounce={100} placeholder={<Loader />}>
+            <Image className={classes.image} radius="md" w="auto" src={src} {...props} />
           </LazyLoad>
         },
         ul({ children }) {
@@ -204,6 +204,7 @@ export default function Docs() {
   }
 
   useEffect(() => {
+    setMarkdown("");
     pageHandler(page || "index");
   }, [page]);
 
@@ -228,9 +229,25 @@ export default function Docs() {
   return (
     <Flex>
       <Container mr={0} className={classes.content}>
-        <TypographyStylesProvider p={0}>
-          <Content markdown={markdown} />
-        </TypographyStylesProvider>
+        {markdown && page && (
+          <Anchor component={Link} to="/docs">
+            <Center inline mt="xs">
+              <IconArrowLeft size={18} />
+              <Box component="span" ml={5}>
+                返回文档首页
+              </Box>
+            </Center>
+          </Anchor>
+        )}
+        {!markdown ? (
+          <Group justify="center" mt="xs">
+            <Loader type="dots" size="xl" />
+          </Group>
+        ) : (
+          <TypographyStylesProvider p={0}>
+            <Content markdown={markdown} />
+          </TypographyStylesProvider>
+        )}
       </Container>
       <Container ml={0} className={classes.tableOfContents}>
         <TableOfContents headings={headings} />

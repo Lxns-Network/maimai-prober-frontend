@@ -13,7 +13,7 @@ import {
   SegmentedControl, Flex,
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
-import { useLocalStorage } from "@mantine/hooks";
+import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
 import {
   IconArrowDown,
@@ -79,6 +79,8 @@ const ScoresContent = () => {
   const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const small = useMediaQuery('(max-width: 30rem)');
 
   useEffect(() => {
     document.title = "成绩管理 | maimai DX 查分器";
@@ -289,7 +291,6 @@ const ScoresContent = () => {
       <Space h="md" />
       <Flex align="center" justify="space-between" gap="xs">
         <SongCombobox
-          variant="filled"
           songs={songs || []}
           aliases={aliasList.aliases}
           value={songId}
@@ -318,7 +319,7 @@ const ScoresContent = () => {
         <>
           <Group justify="center">
             {totalPages > 1 && (
-              <Pagination total={totalPages} value={page} onChange={setPage} />
+              <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
             )}
             {songList instanceof MaimaiSongList && (
               <MaimaiScoreList
@@ -339,7 +340,7 @@ const ScoresContent = () => {
               />
             )}
             {totalPages > 1 && (
-              <Pagination total={totalPages} value={page} onChange={setPage} />
+              <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
             )}
           </Group>
           <Space h="md" />

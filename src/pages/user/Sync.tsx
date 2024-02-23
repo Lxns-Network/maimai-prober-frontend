@@ -47,7 +47,7 @@ const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
           {({ copied, copy }) => (
             <Tooltip label={copied ? '已复制' : label} withArrow position="right">
               <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
-                {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
+                {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
               </ActionIcon>
             </Tooltip>
           )}
@@ -399,7 +399,7 @@ export default function Sync() {
                   </div>
                 </Group>
               </Card.Section>
-              <Card.Section p="md" pb={0}>
+              <Card.Section p="md">
                 <Group justify="space-between">
                   <Group>
                     <Button onClick={() => navigate("/user/profile")}>

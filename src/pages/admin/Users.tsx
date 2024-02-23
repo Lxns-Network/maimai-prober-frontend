@@ -191,7 +191,7 @@ export default function Users() {
         />
       </Container>
       <Container mb="md">
-        <Card withBorder radius="md" w={width > NAVBAR_BREAKPOINT ? `100%` : width - 32} p={0}>
+        <Card className={classes.card} withBorder radius="md" w={width > NAVBAR_BREAKPOINT ? `100%` : width - 32} p={0}>
           <Card.Section className={classes.section} m={0}>
             <Text size="sm" mb="xs">对所选的 {selectedUsers.length} 名用户进行操作：</Text>
             <Group>

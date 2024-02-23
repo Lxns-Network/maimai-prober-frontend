@@ -1,10 +1,10 @@
 .content {
-    padding: 0 var(--mantine-spacing-xl) var(--mantine-spacing-xl);
+    padding: 3rem var(--mantine-spacing-xl);
     width: 100%;
     max-width: 820px;
 
     @mixin smaller-than $mantine-breakpoint-xs {
-        padding: var(--mantine-spacing-lg);
+        padding: 3rem var(--mantine-spacing-lg);
     }
 }
 
@@ -12,7 +12,7 @@
     position: sticky;
     top: 0;
     flex: 0 0 280px;
-    max-height: calc(100vh - 56px);
+    max-height: calc(100vh - var(--header-height));
 
     @mixin smaller-than $mantine-breakpoint-sm {
         display: none;
@@ -69,8 +69,7 @@
 }
 
 .heading1 {
-    margin-bottom: var(--mantine-spacing-xs);
-    margin-top: calc(var(--mantine-spacing-xl)*1.55) !important;
+    margin-top: var(--mantine-spacing-xs) !important;
 }
 
 .heading2, .heading3, .heading4, .heading5, .heading6 {
@@ -78,9 +77,13 @@
     padding-top: 4.6rem;
 }
 
+.image {
+    opacity: light-dark(1, 0.8);
+}
+
 .list {
     margin: var(--mantine-spacing-md) 0 !important;
-    padding-left: calc(1rem*var(--mantine-scale)) !important;
+    padding-left: calc(2em*var(--mantine-scale)) !important;
 }
 
 .tableCell {

@@ -9,13 +9,12 @@
 
 .footer {
     border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
-    padding: var(--mantine-spacing-xs) 0;
 }
 
 .footerInner {
     max-width: calc(896px + var(--mantine-spacing-xl) * 2);
     margin: 0 auto;
-    padding: var(--mantine-spacing-md) var(--mantine-spacing-xl);
+    padding: var(--mantine-spacing-xl);
 
     @mixin smaller-than $mantine-breakpoint-xs {
         flex-direction: column;

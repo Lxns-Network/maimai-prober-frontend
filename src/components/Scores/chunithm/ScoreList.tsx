@@ -2,7 +2,7 @@ import { Score, ChunithmScoreProps } from "./Score.tsx";
 import { SimpleGrid } from "@mantine/core";
 import { ChunithmSongList } from "../../../utils/api/song/chunithm.tsx";
 import { ScoreModal } from "./ScoreModal.tsx";
-import { useDisclosure } from "@mantine/hooks";
+import { useMediaQuery, useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 
 interface ScoreListProps {
@@ -14,6 +14,7 @@ interface ScoreListProps {
 export const ChunithmScoreList = ({ scores, songList, onScoreChange }: ScoreListProps) => {
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [scoreDetail, setScoreDetail] = useState<ChunithmScoreProps | null>(null);
+  const small = useMediaQuery('(max-width: 25rem)');
 
   return (
     <>
@@ -26,11 +27,7 @@ export const ChunithmScoreList = ({ scores, songList, onScoreChange }: ScoreList
           if (score) onScoreChange && onScoreChange(score);
         }}
       />
-      <SimpleGrid
-        cols={2}
-        spacing="xs"
-        w="100%"
-      >
+      <SimpleGrid cols={small ? 1 : 2} spacing="xs" w="100%">
         {scores.map((score) => (
           <Score
             key={`score-${score.id}-${score.level_index}`}

@@ -1,7 +1,7 @@
 .navbar {
     position: fixed;
     z-index: var(--mantine-z-index-modal);
-    height: calc(100vh - 56px);
+    height: calc(100vh - var(--header-height));
     width: var(--navbar-width);
     background-color: var(--mantine-color-body);
     border-right: rem(1px) solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
@@ -31,6 +31,10 @@
     border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
 }
 
+.divider {
+    color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
 .navbarLink {
     display: flex;
     align-items: center;
@@ -38,10 +42,12 @@
     font-size: var(--mantine-font-size-sm);
     color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
     padding: 8px var(--mantine-spacing-sm);
-    border-radius: var(--mantine-radius-sm);
+    padding-left: calc(var(--mantine-spacing-md)*1.75);
+    border-radius: 0 var(--mantine-radius-md) var(--mantine-radius-md) 0;
     font-weight: 500;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    transition: background-color 50ms ease-in-out, color 50ms ease-in-out;
 
     @mixin hover {
         background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
@@ -73,4 +79,5 @@
     color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
     display: flex;
     padding: 2px 0;
+    transition: color 50ms ease-in-out;
 }

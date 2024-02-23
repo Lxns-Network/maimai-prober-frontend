@@ -4,8 +4,7 @@ import {
   Container,
   Divider,
   ScrollArea,
-  SegmentedControl, Space, useComputedColorScheme,
-  useMantineTheme
+  SegmentedControl, Space
 } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "../utils/session";
@@ -32,9 +31,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const [qrcodeOpened, setQrcodeOpened] = useState(false);
   const [active, setActive] = useState('');
   const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
-  const computedColorScheme = useComputedColorScheme('light');
   const location = useLocation();
-  const theme = useMantineTheme();
 
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
@@ -73,26 +70,23 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     <nav className={classes.navbar} style={style}>
       <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
       <ScrollArea className={classes.navbarMain} type="scroll">
-          <Container>
-            <Space h="md" />
-            <SegmentedControl fullWidth mt={0} value={game} onChange={setGame} data={[
-              { label: '舞萌 DX', value: 'maimai' },
-              { label: '中二节奏', value: 'chunithm' },
-            ]} />
+        <Container>
+          <SegmentedControl fullWidth radius="md" mt="md" value={game} onChange={setGame} data={[
+            { label: '舞萌 DX', value: 'maimai' },
+            { label: '中二节奏', value: 'chunithm' },
+          ]} />
+        </Container>
+        <Space h="md" />
+        {navbarData.map((item) => item.enabled &&
+          <Container key={item.label} pl={0}>
+            {item.divider && <Divider className={classes.divider} ml="md" mt={10} mb={10} />}
+            <NavbarButton {...item} active={active} onClose={onClose} />
           </Container>
-          <Space h="md" />
-          {navbarData.map((item) => item.enabled &&
-            <Container key={item.label}>
-              {item.divider && <Divider color={
-                computedColorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
-              } mt={10} mb={10} />}
-              <NavbarButton {...item} active={active} onClose={onClose} />
-            </Container>
-          )}
-          <Space h="md" />
+        )}
+        <Space h="md" />
       </ScrollArea>
       <div className={classes.navbarFooter}>
-        <Container>
+        <Container pl={0}>
           <NavbarButton label="帮助文档" icon={<IconHelp stroke={1.5} />} to="/docs" onClose={onClose} />
           {!isLoggedOut && (
             <>

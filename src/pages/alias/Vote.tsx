@@ -254,7 +254,6 @@ export default function Vote() {
       <Space h="md" />
       <Flex align="center" justify="space-between" gap="xs">
         <SongCombobox
-          variant="filled"
           songs={songList.songs}
           value={songId}
           onOptionSubmit={(value) => setSongId(value)}

@@ -13,7 +13,7 @@ import {
 import { Container } from '@mantine/core';
 import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
 import { validateEmail } from "../../utils/validator";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 import ReCaptcha from "../../utils/reCaptcha.tsx";
@@ -22,7 +22,6 @@ import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 
 export default function ForgotPassword() {
   const [visible, setVisible] = useState(false);
-  const navigate = useNavigate();
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "forgot");
 
   useEffect(() => {
@@ -92,10 +91,12 @@ export default function ForgotPassword() {
             {...form.getInputProps('email')}
           />
           <Group justify="space-between" mt="xl">
-            <Anchor c="dimmed" size="sm" onClick={() => navigate("/login")}>
-              <Center>
-                <IconArrowLeft size={20} />
-                <Box ml={8}>返回登录页面</Box>
+            <Anchor c="dimmed" size="sm" component={Link} to="/login">
+              <Center inline>
+                <IconArrowLeft size={18} />
+                <Box component="span" ml={5}>
+                  返回登录页面
+                </Box>
               </Center>
             </Anchor>
             <Button size="sm" type="submit">发送重置邮件</Button>

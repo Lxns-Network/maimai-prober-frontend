@@ -21,7 +21,13 @@ export interface ChunithmScoreProps {
   upload_time: string;
 }
 
-export const Score = memo(({ score, song, onClick }: { score: ChunithmScoreProps, song: ChunithmSongProps, onClick: () => void }) => {
+interface ScoreProps {
+  score: ChunithmScoreProps;
+  song: ChunithmSongProps;
+  onClick: () => void;
+}
+
+export const Score = memo(({ score, song, onClick }: ScoreProps) => {
   const computedColorScheme = useComputedColorScheme('light');
 
   return (

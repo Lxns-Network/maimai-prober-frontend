@@ -47,7 +47,7 @@ const features = [
   {
     icon: <IconChartBar stroke={1.5} />,
     title: '高效的成绩管理',
-    description: 'maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。',
+    description: 'maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现并管理他们自己的所有成绩。',
   },
   {
     icon: <IconCode stroke={1.5} />,
@@ -93,8 +93,8 @@ export default function Home() {
           </Text>
         </Container>
 
-        {Boolean(localStorage.getItem("token")) ?
-          <Container className={classes.controls} p={0}>
+        <Container className={classes.controls} p={0}>
+          {Boolean(localStorage.getItem("token")) ? <>
             <Button className={classes.control} size="lg" variant="default"
                     onClick={() => navigate("/docs")}>
               帮助文档
@@ -103,8 +103,7 @@ export default function Home() {
                     onClick={() => navigate("/user/profile")}>
               管理我的查分器账号
             </Button>
-          </Container> :
-          <Container className={classes.controls} p={0}>
+          </> : <>
             <Button className={classes.control} size="lg" variant="default"
                     onClick={() => navigate("/login")}>
               登录
@@ -113,8 +112,8 @@ export default function Home() {
                     onClick={() => navigate("/register")}>
               注册 maimai DX 查分器账号
             </Button>
-          </Container>
-        }
+          </>}
+        </Container>
 
         <Container className={classes.section} mt={rem(100)} size="lg">
           <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={50}>
@@ -129,8 +128,9 @@ export default function Home() {
                 <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
                 <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
                   你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
-                  <Text span fw={700} c="blue" inherit>舞萌 DX & 中二节奏</Text>
-                  {' '}游戏数据，使用我们精心设计的图片查询样式。
+                  <Text className={classes.highlight} component="span" inherit fw={700}>
+                    舞萌 DX & 中二节奏
+                  </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
                 </Text>
                 <Button className={classes.control} variant="default" size="lg" mt="md" onClick={
                   () => window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
