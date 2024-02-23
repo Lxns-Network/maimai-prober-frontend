@@ -2,36 +2,41 @@ import {
   Group,
   Burger,
   ActionIcon,
-  useMantineColorScheme, Tooltip, useMantineTheme, useComputedColorScheme,
+  useMantineColorScheme, Tooltip
 } from '@mantine/core';
 import Logo from "./Logo";
 import { IconMoonStars, IconSun, IconSunMoon } from "@tabler/icons-react";
 import classes from './Header.module.css';
-import { useEffect } from "react";
-import { useToggle } from "@mantine/hooks";
+import { HEADER_HEIGHT } from "../App.tsx";
 
-export function ActionToggle() {
+const colorSchemes = {
+  auto: {
+    icon: <IconSunMoon stroke={1.5} />,
+    label: '跟随系统',
+    color: 'blue'
+  },
+  dark: {
+    icon: <IconMoonStars stroke={1.5} />,
+    label: '深色模式',
+    color: 'blue'
+  },
+  light: {
+    icon: <IconSun stroke={1.5} />,
+    label: '浅色模式',
+    color: 'yellow'
+  }
+}
+
+const ColorSchemeToggle = () => {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
-  const [colorSchemeState, toggleColorSchemeState] = useToggle(['auto', 'dark', 'light'] as const);
-  const computedColorScheme = useComputedColorScheme('light');
-  const theme = useMantineTheme();
-
-  useEffect(() => {
-    toggleColorSchemeState(colorScheme);
-  }, []);
-
-  useEffect(() => {
-    setColorScheme(colorSchemeState);
-  }, [colorSchemeState]);
 
   return (
     <Group justify="center">
-      <Tooltip label={colorSchemeState === 'auto' ? '跟随系统' : colorSchemeState === 'dark' ? '深色模式' : '浅色模式'} position="left">
-        <ActionIcon variant="light" size="lg" onClick={() => toggleColorSchemeState()} color={
-          colorSchemeState === 'auto' ? undefined : computedColorScheme === 'dark' ? theme.colors.blue[4] : theme.colors.yellow[6]
-        }>
-          {colorSchemeState === 'auto' ?
-            <IconSunMoon stroke={1.5} /> : colorSchemeState === 'dark' ? <IconMoonStars stroke={1.5} /> : <IconSun stroke={1.5} />}
+      <Tooltip label={colorSchemes[colorScheme].label} position="left">
+        <ActionIcon variant="light" size="lg" onClick={() => setColorScheme(
+          colorScheme === 'auto' ? 'dark' : colorScheme === 'dark' ? 'light' : 'auto'
+        )} color={colorSchemes[colorScheme].color}>
+          {colorSchemes[colorScheme].icon}
         </ActionIcon>
       </Tooltip>
     </Group>
@@ -46,15 +51,13 @@ interface HeaderProps {
 export default function Header({ navbarOpened, onNavbarToggle }: HeaderProps) {
   return (
     <div className={classes.header}>
-      <div className={classes.headerInner}>
-        <Group wrap="nowrap">
-          <Burger className={classes.navbarToggle} opened={navbarOpened} onClick={onNavbarToggle} size="sm" />
+      <Group wrap="nowrap" h={HEADER_HEIGHT}>
+        <Burger className={classes.navbarToggle} opened={navbarOpened} onClick={onNavbarToggle} size="sm" />
+        <div style={{ flex: 1 }}>
           <Logo />
-        </Group>
-        <Group>
-          <ActionToggle />
-        </Group>
-      </div>
+        </div>
+        <ColorSchemeToggle />
+      </Group>
     </div>
   );
 }
