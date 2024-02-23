@@ -9,6 +9,7 @@
 ## 用户使用手册
 
 - [同步游戏数据](/docs/sync)
+- [账号设置](/docs/settings)
 - [使用 LxBot 查询成绩](/docs/lxbot)
 - [常见问题](/docs/faq)
 
