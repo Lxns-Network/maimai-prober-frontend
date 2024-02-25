@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMediaQuery } from "@mantine/hooks";
+import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   Badge,
   Box,
@@ -23,6 +23,7 @@ import { PlateDataProps } from "../../pages/user/Plates.tsx";
 export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , records: any[] }) => {
   const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
   const [difficulty, setDifficulty] = useState<number | null>(null);
+  const { height, ref } = useElementSize();
   const small = useMediaQuery(`(max-width: 450px)`);
 
   const pageSize = 20;
@@ -61,8 +62,8 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
         )}
       </Group>
       <Space h="md" />
-      <Group grow align="flex-start" h={40}>
-        <div>
+      <Group grow align="flex-start" h={height}>
+        <div ref={ref}>
           <Text fz="xs" c="dimmed">曲目范围</Text>
           <Text fz="sm">{((plate && plate.description) || "").split("/")[0]}</Text>
         </div>
@@ -103,10 +104,10 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
               <LoadingOverlay overlayProps={{ radius: "sm", backgroundOpacity: 0.9 }} visible={
                 record.completed_difficulties.includes(difficulty || 0)
               } loaderProps={{ children: (
-                  <ThemeIcon variant="light" color="teal" size={40}>
-                    <IconCheck />
-                  </ThemeIcon>
-                )}} />
+                <ThemeIcon variant="light" color="teal" size={40}>
+                  <IconCheck />
+                </ThemeIcon>
+              )}} zIndex={1} />
               <Image h={40} w={40} radius="sm" src={`https://assets.lxns.net/maimai/jacket/${record.id}.png!webp`} />
             </Box>
             <div>

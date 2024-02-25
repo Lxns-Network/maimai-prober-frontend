@@ -77,10 +77,6 @@
     padding-top: 4.6rem;
 }
 
-.image {
-    opacity: light-dark(1, 0.8);
-}
-
 .list {
     margin: var(--mantine-spacing-md) 0 !important;
     padding-left: calc(2em*var(--mantine-scale)) !important;

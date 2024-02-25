@@ -129,7 +129,7 @@ const Content = ({ markdown }: { markdown: string }) => {
         },
         img({ src, ...props }: any) {
           return <LazyLoad overflow debounce={100} placeholder={<Loader />}>
-            <Image className={classes.image} radius="md" w="auto" src={src} {...props} />
+            <Image radius="md" w="auto" src={src} {...props} />
           </LazyLoad>
         },
         ul({ children }) {

@@ -9,7 +9,7 @@ export function Fallback({ error, resetErrorBoundary }: { error: Error, resetErr
   return (
     <Container pt={80} pb={80}>
       <Center>
-        <Image className={classes.logo} src="/error.webp" w={200} h={200} />
+        <Image src="/error.webp" w={200} h={200} />
       </Center>
       <Title className={classes.title}>发生意料之外的错误</Title>
       <Text className={classes.description} size="lg" c="dimmed" mt="md">

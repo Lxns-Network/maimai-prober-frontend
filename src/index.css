@@ -19,3 +19,7 @@ button:focus,
 button:focus-visible {
   outline: none;
 }
+
+img {
+  opacity: light-dark(1, 0.8);
+}

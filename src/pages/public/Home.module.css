@@ -10,10 +10,6 @@
     }
 }
 
-.logo {
-    opacity: light-dark(1, 0.8);
-}
-
 .title {
     text-align: center;
     font-weight: 800;
@@ -42,6 +38,7 @@
     border-radius: var(--mantine-radius-sm);
     padding: 4px 8px;
     color: light-dark(var(--mantine-primary-color-6), var(--mantine-primary-color-4));
+    text-wrap: nowrap;
 }
 
 .controls {
@@ -55,8 +52,6 @@
 }
 
 .control {
-    color: var(--mantine-color-text);
-
     &:not(:first-of-type) {
         margin-left: var(--mantine-spacing-md);
 

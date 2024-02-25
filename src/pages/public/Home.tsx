@@ -77,7 +77,6 @@ export default function Home() {
     <>
       <Container className={classes.root}>
         <Image
-          className={classes.logo}
           src="/logo.webp"
           alt="落雪咖啡屋 maimai DX 查分器"
           maw={560}
@@ -105,16 +104,16 @@ export default function Home() {
 
         <Container className={classes.controls} p={0}>
           {Boolean(localStorage.getItem("token")) ? <>
-            <Button className={classes.control} size="lg" variant="default"
+            <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
                     onClick={() => navigate("/docs")}>
               帮助文档
             </Button>
-            <Button className={classes.control} size="lg" variant="default"
+            <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
                     onClick={() => navigate("/user/profile")}>
               管理我的查分器账号
             </Button>
           </> : <>
-            <Button className={classes.control} size="lg" variant="default"
+            <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
                     onClick={() => navigate("/login")}>
               登录
             </Button>
@@ -150,13 +149,13 @@ export default function Home() {
                     舞萌 DX & 中二节奏
                   </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
                 </Text>
-                <Button className={classes.control} variant="default" size="lg" mt="md" onClick={
-                  () => window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
+                <Button className={classes.control} variant="default" size="lg" mt="md" onClick={() =>
+                  window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
                 }>
                   添加
                 </Button>
               </div>
-              <Avatar className={classes.logo} src="./lxbot.webp" h="auto" w={96} radius="md" />
+              <Avatar src="./lxbot.webp" h="auto" w={96} radius="md" />
             </Flex>
           </Card>
         </Container>
