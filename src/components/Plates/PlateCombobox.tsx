@@ -10,7 +10,7 @@ import {
   ElementProps, Loader
 } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
-import { PlateDataProps } from "../pages/user/Plates.tsx";
+import { PlateDataProps } from "../../pages/user/Plates.tsx";
 
 interface PlateComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   plates: PlateDataProps[];
