@@ -42,8 +42,7 @@
     font-size: var(--mantine-font-size-sm);
     color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
     padding: 8px var(--mantine-spacing-sm);
-    padding-left: calc(var(--mantine-spacing-md)*1.75);
-    border-radius: 0 var(--mantine-radius-md) var(--mantine-radius-md) 0;
+    border-radius: var(--mantine-radius-md);
     font-weight: 500;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;

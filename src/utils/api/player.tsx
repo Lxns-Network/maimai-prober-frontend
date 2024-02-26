@@ -31,3 +31,7 @@ export async function getPlayerPlateById(game: string, id: number) {
 export async function getPlateList(game: string, required: boolean) {
   return fetchAPI(`${game}/plate/list?required=${required}`, { method: "GET" });
 }
+
+export async function getPlateById(game: string, id: number) {
+  return fetchAPI(`${game}/plate/${id}`, { method: "GET" });
+}

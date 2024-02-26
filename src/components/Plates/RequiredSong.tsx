@@ -102,7 +102,7 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
           <Group key={record.id} wrap="nowrap" gap="xs">
             <Box pos="relative" h={40}>
               <LoadingOverlay overlayProps={{ radius: "sm", backgroundOpacity: 0.9 }} visible={
-                record.completed_difficulties.includes(difficulty || 0)
+                record.completed_difficulties && record.completed_difficulties.includes(difficulty || 0)
               } loaderProps={{ children: (
                 <ThemeIcon variant="light" color="teal" size={40}>
                   <IconCheck />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getPlateList, getPlayerPlateById } from "../../utils/api/player";
+import {getPlateById, getPlateList, getPlayerPlateById} from "../../utils/api/player";
 import {
   Container,
   Text,
@@ -7,12 +7,14 @@ import {
   Card,
   Image,
   Space,
-  Checkbox,
+  Checkbox, Alert, Button, Group
 } from "@mantine/core";
 import { useToggle } from "@mantine/hooks";
 import classes from "../Page.module.css"
 import { RequiredSong } from "../../components/Plates/RequiredSong";
 import { PlateCombobox } from "../../components/Plates/PlateCombobox";
+import {IconAlertCircle} from "@tabler/icons-react";
+import {useNavigate} from "react-router-dom";
 
 interface RequiredSongDataProps {
   id: number;
@@ -45,6 +47,8 @@ export default function Plates() {
   const [plate, setPlate] = useState<PlateDataProps | null>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [onlyRequired, toggleOnlyRequired] = useToggle();
+  const isLoggedOut = !Boolean(localStorage.getItem("token"));
+  const navigate = useNavigate();
   const game = 'maimai';
 
   const getPlateListHandler = async () => {
@@ -53,6 +57,17 @@ export default function Plates() {
       const data = await res.json();
       setDefaultPlates(data.plates);
       setPlates(data.plates);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const getPlateHandler = async (id: number) => {
+    try {
+      const res = await getPlateById(game, id);
+      const data = await res.json();
+      console.log(data)
+      setPlate(data);
     } catch (err) {
       console.error(err);
     }
@@ -79,11 +94,17 @@ export default function Plates() {
   }, []);
 
   useEffect(() => {
-    plateId && getPlayerPlateHandler(plateId);
+    if (!plateId) return;
+
+    if (!isLoggedOut) {
+      getPlayerPlateHandler(plateId);
+    } else {
+      getPlateHandler(plateId);
+    }
   }, [plateId]);
 
   useEffect(() => {
-    if (!plate || plate.required === undefined) {
+    if (!plate || !plate.required) {
       setRecords([]);
       return;
     }
@@ -92,6 +113,8 @@ export default function Plates() {
     const convertedRecords = [
       ...(mergedRequiredSongs && mergedRequiredSongs.length > 0
         ? mergedRequiredSongs.map((song) => {
+          if (!song.completed_difficulties) return song;
+
           const record = { ...song };
           song.completed_difficulties.forEach((difficulty) => {
             // @ts-ignore
@@ -141,6 +164,21 @@ export default function Plates() {
         <Space h="md" />
         <Image src={`https://assets.lxns.net/maimai/plate/${plate ? plate.id : 0}.png!webp`} />
       </Card>
+      {isLoggedOut && (
+        <Alert variant="light" icon={<IconAlertCircle />} title="登录提示" mt="md" mb="md">
+          <Text size="sm" mb="md">
+            你需要登录查分器账号才能查看你的姓名框获取进度。
+          </Text>
+          <Group>
+            <Button variant="filled" onClick={() => navigate("/login")}>
+              登录
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/register")}>
+              注册
+            </Button>
+          </Group>
+        </Alert>
+      )}
       {plate && plate.required && (
         <RequiredSong plate={plate} records={records} />
       )}

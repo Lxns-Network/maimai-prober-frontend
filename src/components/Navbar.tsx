@@ -42,7 +42,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '同步游戏数据', icon: <IconCloudUpload stroke={1.5} />, to: '/user/sync', enabled: true },
     { label: '账号详情', icon: <IconUserCircle stroke={1.5} />, to: '/user/profile', enabled: !isLoggedOut },
     { label: '成绩管理', icon: <IconChartBar stroke={1.5} />, to: '/user/scores', enabled: !isLoggedOut },
-    { label: '姓名框查询', icon: <IconCards stroke={1.5} />, to: '/user/plates', enabled: !isLoggedOut },
+    { label: '姓名框查询', icon: <IconCards stroke={1.5} />, to: '/user/plates', enabled: true },
     { label: '账号设置', icon: <IconSettings2 stroke={1.5} />, to: '/user/settings', enabled: !isLoggedOut },
     { label: '曲目别名投票', icon: <IconGavel stroke={1.5} />, to: '/alias/vote', enabled: !isLoggedOut, divider: true },
     { label: '开发者面板', icon: <IconCode stroke={1.5} />, to: '/developer',
@@ -78,7 +78,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
         </Container>
         <Space h="md" />
         {navbarData.map((item) => item.enabled &&
-          <Container key={item.label} pl={0}>
+          <Container key={item.label}>
             {item.divider && <Divider className={classes.divider} ml="md" mt={10} mb={10} />}
             <NavbarButton {...item} active={active} onClose={onClose} />
           </Container>
@@ -86,7 +86,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
         <Space h="md" />
       </ScrollArea>
       <div className={classes.navbarFooter}>
-        <Container pl={0}>
+        <Container>
           <NavbarButton label="帮助文档" icon={<IconHelp stroke={1.5} />} to="/docs" onClose={onClose} />
           {!isLoggedOut && (
             <>
