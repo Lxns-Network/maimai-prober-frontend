@@ -96,7 +96,7 @@ export default function Login() {
         登录到 maimai DX 查分器
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt="sm">
-        请使用 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号
+        请使用 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号登录
       </Text>
       {!isTokenUndefined() && !isTokenExpired() &&
         <Alert variant="light" color="blue" icon={<IconAlertCircle />} mt="xl">

@@ -20,7 +20,7 @@ export interface MaimaiSongProps {
   artist: string;
   genre: string;
   bpm: number;
-  version: string;
+  version: number;
   difficulties: MaimaiDifficultiesProps;
 }
 

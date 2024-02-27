@@ -2,7 +2,7 @@
     transition: transform 50ms ease-in-out;
 
     &:active {
-        transform: perspective(100px) translate3d(0, 0, -3px);
+        transform: perspective(100px) translate3d(0, 0, -5px);
     }
 }
 

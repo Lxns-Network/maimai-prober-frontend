@@ -2,16 +2,18 @@
 
 ---
 
-以下所有请求均需要在请求头加入 API 密钥，如果你没有，请参考申请成为开发者获取。
+API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:00:00Z`，代表北京时间上午 8 时。
+
+## 开发者 API
+
+开发者 API 的所有请求均需要在请求头加入 API 密钥，如果没有，请[申请成为开发者](/developer/apply)获取。
 
 请求头示例：
 ```
 Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 ```
 
-API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:00:00Z`，代表北京时间上午 8 时。
-
-## 响应结构
+### 响应结构
 
 结果将会以 JSON 格式响应：
 
@@ -22,7 +24,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 | `message` | `string` | 值可空，请求失败理由 |
 | `data` | `dict` 或 `list` | 值可空，请求结果 |
 
-## POST `/api/v0/chunithm/player`
+### POST `/api/v0/chunithm/player`
 
 创建或修改玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_write_data` 权限。
 
@@ -30,7 +32,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 [Player](#player)
 
-## GET `/api/v0/chunithm/player/{friend_code}`
+### GET `/api/v0/chunithm/player/{friend_code}`
 
 通过好友码获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
 
@@ -44,7 +46,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 [Player](#player)
 
-## GET `/api/v0/chunithm/player/qq/{qq}`
+### GET `/api/v0/chunithm/player/qq/{qq}`
 
 通过 QQ 号获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
 
@@ -58,7 +60,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 [Player](#player)
 
-## GET `/api/v0/chunithm/player/{friend_code}/best`
+### GET `/api/v0/chunithm/player/{friend_code}/best`
 
 获取玩家缓存谱面的最佳成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -76,7 +78,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 | `song_name` | `string` | 曲名，与 `song_id` 冲突 |
 | `level_index` | [`LevelIndex`](#levelindex) | 难度 |
 
-## GET `/api/v0/chunithm/player/{friend_code}/bests`
+### GET `/api/v0/chunithm/player/{friend_code}/bests`
 
 获取玩家缓存的 Best 30、Selection 10 与 Recent 10。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -94,7 +96,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 | `selections` | [`Score[]`](#score) | Selection 10 列表 |
 | `recents` | [`Score[]`](#score) | Recent 10 列表 |
 
-## GET `/api/v0/chunithm/player/{friend_code}/bests`
+### GET `/api/v0/chunithm/player/{friend_code}/bests`
 
 获取玩家缓存单曲所有谱面的成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -111,7 +113,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 | `song_id` | `int` | 曲目 ID，与 `song_name` 冲突 |
 | `song_name` | `string` | 曲名，与 `song_id` 冲突 |
 
-## POST `/api/v0/chunithm/player/{friend_code}/scores`
+### POST `/api/v0/chunithm/player/{friend_code}/scores`
 
 上传玩家成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_write_data` 权限。
 
@@ -147,7 +149,7 @@ JSON 格式的玩家成绩：
 }
 ```
 
-## GET `/api/v0/chunithm/player/{friend_code}/recents`
+### GET `/api/v0/chunithm/player/{friend_code}/recents`
 
 获取玩家缓存的 Recent 10，按照 `play_time` 排序。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -161,7 +163,9 @@ JSON 格式的玩家成绩：
 
 [Score[]](#score)
 
-## GET `/api/v0/chunithm/song/list`
+## 公共 API
+
+### GET `/api/v0/chunithm/song/list`
 
 获取曲目列表。
 
@@ -179,7 +183,21 @@ JSON 格式的玩家成绩：
 | `genres` | [Genre[]](#genre) | 乐曲分类列表 |
 | `versions` | [Version[]](#version) | 曲目版本列表 |
 
-## GET `/api/v0/chunithm/alias/list`
+### GET `/api/v0/chunithm/song/{song_id}`
+
+获取曲目信息。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `song_id` | `int` | 曲目 ID |
+
+#### 响应体
+
+[Song](#song)
+
+### GET `/api/v0/chunithm/alias/list`
 
 获取曲目别名列表。
 

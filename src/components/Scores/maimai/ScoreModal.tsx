@@ -13,7 +13,7 @@ import {
   Space,
   Text,
 } from "@mantine/core";
-import { getMaimaiScoreCardBackgroundColor, getMaimaiScoreSecondaryColor } from "../../../utils/color.tsx";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import {useContext, useEffect, useState} from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
@@ -43,7 +43,7 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
             <Badge variant="filled" color="orange" size="sm">DX</Badge>
           )}
           <Text fz="lg" fw={500} mt={2}>{score.song_name}</Text>
-          <Text fz="xs" c="dimmed" mb={2}>谱面 ID：{score.id}</Text>
+          <Text fz="xs" c="dimmed" mb={2}>曲目 ID：{score.id}</Text>
           <Group gap={0} ml={-3}>
             <Image
               src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`}
@@ -56,8 +56,8 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
           </Group>
         </div>
         <Card w={54} h={38} p={0} radius="md" withBorder style={{
-          border: `2px solid ${getMaimaiScoreSecondaryColor(score.level_index)}`,
-          backgroundColor: getMaimaiScoreCardBackgroundColor(score.level_index),
+          border: `2px solid ${getScoreSecondaryColor("maimai", score.level_index)}`,
+          backgroundColor: getScoreCardBackgroundColor("maimai", score.level_index),
         }}>
           <Text size="xl" fw={500} ta="center" c="white" style={{
             lineHeight: rem(34),

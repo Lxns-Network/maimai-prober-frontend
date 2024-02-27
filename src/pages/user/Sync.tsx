@@ -33,8 +33,9 @@ import {
   IconRepeat
 } from "@tabler/icons-react";
 import classes from './Sync.module.css';
-import { openAlertModal } from "../../utils/modal.tsx";
-import { checkProxy } from "../../utils/checkProxy.tsx";
+import { openAlertModal } from "../../utils/modal";
+import { checkProxy } from "../../utils/checkProxy";
+import { LoginAlert } from "../../components/LoginAlert";
 
 const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
   return (
@@ -327,21 +328,8 @@ export default function Sync() {
           </Text>
         } loading={proxyAvailable && crawlStatus?.status === "pending"} />
       </Stepper>
-      {isLoggedOut ? (
-        <Alert variant="light" icon={<IconAlertCircle />} title="登录提示" mt="-lg">
-          <Text size="sm" mb="md">
-            你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。
-          </Text>
-          <Group>
-            <Button variant="filled" onClick={() => navigate("/login")}>
-              登录
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/register")}>
-              注册
-            </Button>
-          </Group>
-        </Alert>
-      ) : (
+      <LoginAlert content="你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。" mt="-lg" radius="md" />
+      {!isLoggedOut && (
         <Card withBorder radius="md" className={classes.card} p="md" mt="-lg">
           <Card.Section className={classes.section}>
             <Text size="xs" c="dimmed">

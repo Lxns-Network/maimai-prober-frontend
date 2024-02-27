@@ -16,7 +16,7 @@ import {
   IconChartBar,
   IconCloudUpload, IconCode, IconDoorEnter,
   IconGavel, IconHelp,
-  IconHome, IconLogout,
+  IconHome, IconLogout, IconMusic,
   IconSettings2, IconTable, IconTableOptions, IconTransferIn,
   IconUserCircle
 } from "@tabler/icons-react";
@@ -37,14 +37,15 @@ export default function Navbar({ style, onClose }: NavbarProps) {
 
   const navbarData = [
     { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true },
-    { label: '登录', icon: <IconDoorEnter stroke={1.5} />, to: '/login', enabled: isLoggedOut },
-    { label: '注册', icon: <IconTransferIn stroke={1.5} />, to: '/register', enabled: isLoggedOut },
-    { label: '同步游戏数据', icon: <IconCloudUpload stroke={1.5} />, to: '/user/sync', enabled: true },
-    { label: '账号详情', icon: <IconUserCircle stroke={1.5} />, to: '/user/profile', enabled: !isLoggedOut },
+    { label: '同步游戏数据', icon: <IconCloudUpload stroke={1.5} />, to: '/sync', enabled: true },
+    { label: '曲目查询', icon: <IconMusic stroke={1.5} />, to: '/songs', enabled: true },
+    { label: '姓名框查询', icon: <IconCards stroke={1.5} />, to: '/plates', enabled: true },
+    { label: '登录账号', icon: <IconDoorEnter stroke={1.5} />, to: '/login', enabled: isLoggedOut, divider: true },
+    { label: '新用户注册', icon: <IconTransferIn stroke={1.5} />, to: '/register', enabled: isLoggedOut },
+    { label: '账号详情', icon: <IconUserCircle stroke={1.5} />, to: '/user/profile', enabled: !isLoggedOut, divider: true },
     { label: '成绩管理', icon: <IconChartBar stroke={1.5} />, to: '/user/scores', enabled: !isLoggedOut },
-    { label: '姓名框查询', icon: <IconCards stroke={1.5} />, to: '/user/plates', enabled: true },
+    { label: '曲目别名投票', icon: <IconGavel stroke={1.5} />, to: '/alias/vote', enabled: !isLoggedOut },
     { label: '账号设置', icon: <IconSettings2 stroke={1.5} />, to: '/user/settings', enabled: !isLoggedOut },
-    { label: '曲目别名投票', icon: <IconGavel stroke={1.5} />, to: '/alias/vote', enabled: !isLoggedOut, divider: true },
     { label: '开发者面板', icon: <IconCode stroke={1.5} />, to: '/developer',
       enabled: (!isLoggedOut && checkPermission(UserPermission.Developer)) },
     { label: '申请成为开发者', icon: <IconCode stroke={1.5} />, to: '/developer/apply',
@@ -79,7 +80,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
         <Space h="md" />
         {navbarData.map((item) => item.enabled &&
           <Container key={item.label}>
-            {item.divider && <Divider className={classes.divider} ml="md" mt={10} mb={10} />}
+            {item.divider && <Divider className={classes.divider} mt={10} mb={10} />}
             <NavbarButton {...item} active={active} onClose={onClose} />
           </Container>
         )}

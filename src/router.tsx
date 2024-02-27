@@ -13,6 +13,7 @@ const Docs = lazy(() => import('./pages/public/Docs.tsx'));
 const Profile = lazy(() => import('./pages/user/Profile'));
 const Sync = lazy(() => import('./pages/user/Sync'));
 const Scores = lazy(() => import('./pages/user/Scores'));
+const Songs = lazy(() => import('./pages/user/Songs'));
 const Plates = lazy(() => import('./pages/user/Plates'));
 const Settings = lazy(() => import('./pages/user/Settings'));
 const NotFound = lazy(() => import('./pages/public/NotFound'));
@@ -47,9 +48,11 @@ const routesConfig = (
     <Route path="/register" element={<Register />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/sync" element={<Sync />} />
+    <Route path="/songs" element={<Songs />} />
+    <Route path="/plates" element={<Plates />} />
     <Route path="/docs/*" element={<Docs />} />
     <Route path="/user/sync" element={<Sync />} />
-    <Route path="/user/plates" element={<Plates />} />
     <Route path="/user" element={<ProtectedRoute />}>
       <Route index element={<Home />} />
       <Route path="profile" element={<Profile />} />

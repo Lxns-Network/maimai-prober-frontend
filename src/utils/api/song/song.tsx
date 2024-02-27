@@ -1,5 +1,7 @@
 export class SongList {
   songs: any[] = [];
+  genres: any[] = [];
+  versions: any[] = [];
 
   constructor() {
     this.songs = [];

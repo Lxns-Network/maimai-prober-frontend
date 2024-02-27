@@ -108,18 +108,20 @@ export const chunithmDifficultyColor = [
   ]
 ]
 
-export const getMaimaiScoreSecondaryColor = (level_index: number) => {
-  return maimaiDifficultyColor[2][level_index]
+export const getScoreSecondaryColor = (game: string, level_index: number) => {
+  if (game === "maimai") {
+    return maimaiDifficultyColor[2][level_index]
+  } else if (game === "chunithm") {
+    return chunithmDifficultyColor[2][level_index]
+  }
+  return "black";
 }
 
-export const getMaimaiScoreCardBackgroundColor = (level_index: number) => {
-  return maimaiDifficultyColor[1][level_index]
-}
-
-export const getChunithmScoreSecondaryColor = (level_index: number) => {
-  return chunithmDifficultyColor[2][level_index]
-}
-
-export const getChunithmScoreCardBackgroundColor = (level_index: number) => {
-  return chunithmDifficultyColor[1][level_index]
+export const getScoreCardBackgroundColor = (game: string, level_index: number) => {
+  if (game === "maimai") {
+    return maimaiDifficultyColor[1][level_index]
+  } else if (game === "chunithm") {
+    return chunithmDifficultyColor[1][level_index]
+  }
+  return "black";
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import {getPlateById, getPlateList, getPlayerPlateById} from "../../utils/api/player";
+import { getPlateById, getPlateList, getPlayerPlateById } from "../../utils/api/player";
 import {
   Container,
   Text,
@@ -7,14 +7,15 @@ import {
   Card,
   Image,
   Space,
-  Checkbox, Alert, Button, Group
+  Checkbox, Flex
 } from "@mantine/core";
 import { useToggle } from "@mantine/hooks";
 import classes from "../Page.module.css"
 import { RequiredSong } from "../../components/Plates/RequiredSong";
 import { PlateCombobox } from "../../components/Plates/PlateCombobox";
-import {IconAlertCircle} from "@tabler/icons-react";
-import {useNavigate} from "react-router-dom";
+import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
+import { openRetryModal } from "../../utils/modal.tsx";
+import { LoginAlert } from "../../components/LoginAlert";
 
 interface RequiredSongDataProps {
   id: number;
@@ -48,7 +49,6 @@ export default function Plates() {
   const [records, setRecords] = useState<any[]>([]);
   const [onlyRequired, toggleOnlyRequired] = useToggle();
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
-  const navigate = useNavigate();
   const game = 'maimai';
 
   const getPlateListHandler = async () => {
@@ -57,8 +57,8 @@ export default function Plates() {
       const data = await res.json();
       setDefaultPlates(data.plates);
       setPlates(data.plates);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      openRetryModal("姓名框列表获取失败", `${error}`, () => getPlateListHandler());
     }
   }
 
@@ -66,10 +66,9 @@ export default function Plates() {
     try {
       const res = await getPlateById(game, id);
       const data = await res.json();
-      console.log(data)
       setPlate(data);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      openRetryModal("姓名框获取失败", `${error}`, () => getPlateHandler(id));
     }
   }
 
@@ -82,8 +81,8 @@ export default function Plates() {
         throw new Error(data.message);
       }
       setPlate(data.data);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      openRetryModal("姓名框获取失败", `${error}`, () => getPlayerPlateHandler(id));
     }
   }
 
@@ -154,32 +153,30 @@ export default function Plates() {
         checked={onlyRequired}
         onChange={() => toggleOnlyRequired()}
       />
-      <Card mt="md" radius="md" p="md" withBorder className={classes.card}>
-        <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
-          {plate ? plate.description : "请选择姓名框"}
-        </Text>
-        <Text fw={700} size="xl">
-          {plate ? plate.name : "请选择姓名框"}
-        </Text>
-        <Space h="md" />
-        <Image src={`https://assets.lxns.net/maimai/plate/${plate ? plate.id : 0}.png!webp`} />
-      </Card>
-      {isLoggedOut && (
-        <Alert variant="light" icon={<IconAlertCircle />} title="登录提示" mt="md" mb="md">
-          <Text size="sm" mb="md">
-            你需要登录查分器账号才能查看你的姓名框获取进度。
+      {plate && (
+        <Card mt="md" radius="md" p="md" withBorder className={classes.card}>
+          <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
+            {plate.description}
           </Text>
-          <Group>
-            <Button variant="filled" onClick={() => navigate("/login")}>
-              登录
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/register")}>
-              注册
-            </Button>
-          </Group>
-        </Alert>
+          <Text fw={700} size="xl">
+            {plate.name}
+          </Text>
+          <Space h="md" />
+          <Image src={`https://assets.lxns.net/maimai/plate/${plate.id}.png!webp`} />
+        </Card>
       )}
-      {plate && plate.required && (
+      <LoginAlert content="你需要登录查分器账号才能查看你的姓名框获取进度。" mt="md" mb="md" radius="md" />
+      {!plate ? (
+        <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
+          <IconPlaylist size={64} stroke={1.5} />
+          <Text fz="sm">请选择一个姓名框来查看要求曲目</Text>
+        </Flex>
+      ) : !plate.required ? (
+        <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
+          <IconPlaylistOff size={64} stroke={1.5} />
+          <Text fz="sm">此姓名框没有要求曲目</Text>
+        </Flex>
+      ) : (
         <RequiredSong plate={plate} records={records} />
       )}
     </Container>

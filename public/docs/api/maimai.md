@@ -2,18 +2,20 @@
 
 ---
 
-以下所有请求均需要在请求头加入 API 密钥，如果你没有，请参考申请成为开发者获取。
+在本查分器中，同一首曲目的**标准、DX 谱面的曲目 ID 一致**，不存在大于 10000 的曲目 ID（如有，均会对 10000 取余处理）。
+
+API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:00:00Z`，代表北京时间上午 8 时。
+
+## 开发者 API
+
+开发者 API 的所有请求均需要在请求头加入 API 密钥，如果没有，请[申请成为开发者](/developer/apply)获取。
 
 请求头示例：
 ```
 Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 ```
 
-在本查分器中，同一首曲目的**标准、DX 谱面的曲目 ID 一致**，不存在大于 10000 的曲目 ID（如有，均会对 10000 取余处理）。
-
-API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:00:00Z`，代表北京时间上午 8 时。
-
-## 响应结构
+### 响应结构
 
 结果将会以 JSON 格式响应：
 
@@ -24,7 +26,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 | `message` | `string` | 值可空，请求失败理由 |
 | `data` | `dict` 或 `list` | 值可空，请求结果 |
 
-## POST `/api/v0/maimai/player`
+### POST `/api/v0/maimai/player`
 
 创建或修改玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_write_data` 权限。
 
@@ -32,7 +34,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 [Player](#player)
 
-## GET `/api/v0/maimai/player/{friend_code}`
+### GET `/api/v0/maimai/player/{friend_code}`
 
 通过好友码获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
 
@@ -46,7 +48,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 [Player](#player)
 
-## GET `/api/v0/maimai/player/qq/{qq}`
+### GET `/api/v0/maimai/player/qq/{qq}`
 
 通过 QQ 号获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
 
@@ -60,7 +62,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 [Player](#player)
 
-## GET `/api/v0/maimai/player/{friend_code}/best`
+### GET `/api/v0/maimai/player/{friend_code}/best`
 
 获取玩家缓存谱面的最佳成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -79,7 +81,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 | `level_index` | [`LevelIndex`](#levelindex) | 难度 |
 | `song_type` | [`SongType`](#songtype) | 谱面类型 |
 
-## GET `/api/v0/maimai/player/{friend_code}/bests`
+### GET `/api/v0/maimai/player/{friend_code}/bests`
 
 获取玩家缓存的 Best 50。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -98,7 +100,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 | `standard` | [`Score[]`](#score) | 旧版本谱面 Best 35 列表 |
 | `dx` | [`Score[]`](#score) | 现版本谱面 Best 15 列表 |
 
-## GET `/api/v0/maimai/player/{friend_code}/bests`
+### GET `/api/v0/maimai/player/{friend_code}/bests`
 
 获取玩家缓存单曲所有谱面的成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -116,7 +118,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 | `song_name` | `string` | 曲名，与 `song_id` 冲突 |
 | `song_type` | [`SongType`](#songtype) | 谱面类型 |
 
-## POST `/api/v0/maimai/player/{friend_code}/scores`
+### POST `/api/v0/maimai/player/{friend_code}/scores`
 
 上传玩家成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_write_data` 权限。
 
@@ -153,7 +155,7 @@ JSON 格式的玩家成绩：
 }
 ```
 
-## GET `/api/v0/maimai/player/{friend_code}/recents`
+### GET `/api/v0/maimai/player/{friend_code}/recents`
 
 获取玩家缓存的 Recent 50（仅增量爬取可用），按照 `play_time` 排序。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -167,7 +169,7 @@ JSON 格式的玩家成绩：
 
 [Score[]](#score)
 
-## GET `/api/v0/maimai/player/{friend_code}/plate/{plate_id}`
+### GET `/api/v0/maimai/player/{friend_code}/plate/{plate_id}`
 
 获取玩家姓名框进度。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
 
@@ -182,7 +184,9 @@ JSON 格式的玩家成绩：
 
 [Plate](#collection)
 
-## GET `/api/v0/maimai/song/list`
+## 公共 API
+
+### GET `/api/v0/maimai/song/list`
 
 获取曲目列表。
 
@@ -200,7 +204,21 @@ JSON 格式的玩家成绩：
 | `genres` | [Genre[]](#genre) | 乐曲分类列表 |
 | `versions` | [Version[]](#version) | 曲目版本列表 |
 
-## GET `/api/v0/maimai/alias/list`
+### GET `/api/v0/maimai/song/{song_id}`
+
+获取曲目信息。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `song_id` | `int` | 曲目 ID |
+
+#### 响应体
+
+[Song](#song)
+
+### GET `/api/v0/maimai/alias/list`
 
 获取曲目别名列表。
 
@@ -210,7 +228,7 @@ JSON 格式的玩家成绩：
 |-|-|-|
 | `aliases` | [Alias[]](#alias) | 曲目别名列表 |
 
-## GET `/api/v0/maimai/plate/list`
+### GET `/api/v0/maimai/plate/list`
 
 获取姓名框列表。
 
@@ -220,7 +238,21 @@ JSON 格式的玩家成绩：
 |-|-|-|
 | `plates` | [Plate[]](#collection) | 姓名框列表 |
 
-## GET `/api/v0/maimai/frame/list`
+### GET `/api/v0/maimai/plate/{plate_id}`
+
+获取姓名框信息。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `plate_id` | `int` | 姓名框 ID |
+
+#### 响应体
+
+[Plate](#collection)
+
+### GET `/api/v0/maimai/frame/list`
 
 获取背景列表。
 
@@ -235,6 +267,20 @@ JSON 格式的玩家成绩：
 | 字段名 | 类型 | 说明 |
 |-|-|-|
 | `frames` | [Frame[]](#collection) | 背景列表 |
+
+### GET `/api/v0/maimai/frame/{frame_id}`
+
+获取背景信息。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `frame_id` | `int` | 背景 ID |
+
+#### 响应体
+
+[Frame](#collection)
 
 ## 结构体
 

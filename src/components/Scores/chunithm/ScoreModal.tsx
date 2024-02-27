@@ -10,12 +10,9 @@ import {
   rem, Space,
   Text
 } from "@mantine/core";
-import {
-  getChunithmScoreCardBackgroundColor,
-  getChunithmScoreSecondaryColor,
-} from "../../../utils/color.tsx";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
-import {useContext, useEffect} from "react";
+import { useContext, useEffect } from "react";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import ScoreContext from "../../../utils/context.tsx";
@@ -36,7 +33,7 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
         </Avatar>
         <div style={{ flex: 1 }}>
           <Text fz="lg" fw={500} mt={2}>{score.song_name}</Text>
-          <Text fz="xs" c="dimmed" mb={8}>谱面 ID：{score.id}</Text>
+          <Text fz="xs" c="dimmed" mb={8}>曲目 ID：{score.id}</Text>
           <Group gap="xs">
             {score.clear === "failed" && (
               <Image
@@ -65,8 +62,8 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
           </Group>
         </div>
         <Card w={54} h={38} p={0} radius="md" withBorder style={{
-          border: `2px solid ${getChunithmScoreSecondaryColor(score.level_index || 0)}`,
-          backgroundColor: getChunithmScoreCardBackgroundColor(score.level_index || 0)
+          border: `2px solid ${getScoreSecondaryColor("chunithm", score.level_index || 0)}`,
+          backgroundColor: getScoreCardBackgroundColor("chunithm", score.level_index || 0)
         }}>
           <Text size="xl" fw={500} ta="center" c="white" style={{
             lineHeight: rem(34),
