@@ -98,16 +98,16 @@ export const Song = ({ song, difficulty, type, score, versions }: SongProps) => 
               </Box>
             )}
           </Group>
-          <Group mt="xs">
+          <Group mt="xs" gap="sm">
             {game === "maimai" ? (
-              <Box mr={12}>
+              <Box mr={16}>
                 <Text fz="xs" c="dimmed">DX Rating</Text>
                 <Text fz="md">
                   {parseInt(String(score.dx_rating))}
                 </Text>
               </Box>
             ) : (
-              <Box mr={12}>
+              <Box mr={16}>
                 <Text fz="xs" c="dimmed">Rating</Text>
                 <Text fz="md">
                   {Math.floor(score.rating * 100) / 100}
@@ -115,7 +115,7 @@ export const Song = ({ song, difficulty, type, score, versions }: SongProps) => 
               </Box>
             )}
             {score.play_time && (
-              <Box mr={12}>
+              <Box mr={16}>
                 <Text fz="xs" c="dimmed">游玩时间</Text>
                 <Text fz="md">
                   {new Date(score.play_time || "").toLocaleString()}
@@ -145,7 +145,7 @@ export const Song = ({ song, difficulty, type, score, versions }: SongProps) => 
         <Group>
           <Text fz="xs">版本</Text>
           <Text fz="sm" fw={700}>
-            {versions.slice().reverse().find((version) => song.version >= version.version)?.title || "未知"}
+            {versions.slice().reverse().find((version) => difficulty.version >= version.version)?.title || "未知"}
           </Text>
         </Group>
       </Group>

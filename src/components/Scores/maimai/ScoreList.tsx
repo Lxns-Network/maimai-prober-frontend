@@ -19,7 +19,7 @@ export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListPr
   return (
     <>
       <ScoreModal
-        score={scoreDetail as MaimaiScoreProps}
+        score={scoreDetail}
         song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
         onClose={(score) => {

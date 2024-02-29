@@ -16,6 +16,7 @@ import {
   IconThumbUpFilled
 } from "@tabler/icons-react";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { PhotoView } from "react-photo-view";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -99,9 +100,11 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
     <>
       <Group>
         {game && (
-          <Avatar src={`https://assets.lxns.net/${game}/jacket/${alias.song.id}.png!webp`} size={94} radius="md">
-            <Text ta="center" fz="xs">曲绘加载失败</Text>
-          </Avatar>
+          <PhotoView src={`https://assets.lxns.net/maimai/jacket/${alias.song.id}.png`}>
+            <Avatar src={`https://assets.lxns.net/${game}/jacket/${alias.song.id}.png!webp`} size={94} radius="md">
+              <Text ta="center" fz="xs">曲绘加载失败</Text>
+            </Avatar>
+          </PhotoView>
         )}
         <div style={{ flex: 1 }}>
           <div>

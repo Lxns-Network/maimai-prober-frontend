@@ -19,6 +19,7 @@ import { fetchAPI } from "../../utils/api/api.tsx";
 import { Link } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
 import { Song } from "../../components/Songs/Song";
+import {PhotoView} from "react-photo-view";
 
 export default function Songs() {
   const [game, setGame] = useLocalStorage({ key: 'game' });
@@ -46,9 +47,7 @@ export default function Songs() {
       if (!data.success) {
         throw new Error(data.message);
       }
-      if (data.data) {
-        setScores([...scores, ...data.data]);
-      }
+      return data.data;
     } catch (error) {
       openRetryModal("曲目成绩获取失败", `${error}`, () => getPlayerSongBestsHandler(type));
     }
@@ -89,10 +88,18 @@ export default function Songs() {
         // @ts-ignore
         if (song.difficulties[type].length === 0) return;
 
-        getPlayerSongBestsHandler(type);
+        let scores: any[] = [];
+        getPlayerSongBestsHandler(type).then((data) => {
+          if (data) {
+            scores = scores.concat(data);
+            setScores(scores);
+          }
+        });
       });
     } else {
-      getPlayerSongBestsHandler();
+      getPlayerSongBestsHandler().then((data) => {
+        if (data) setScores(data);
+      });
     }
   }, [song]);
 
@@ -129,9 +136,11 @@ export default function Songs() {
       {song && (
         <Card mt="md" radius="md" p="md" withBorder className={classes.card}>
           <Group wrap="nowrap">
-            <Avatar src={song && `https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`} size={94} radius="md">
-              <IconPhotoOff />
-            </Avatar>
+            <PhotoView src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`}>
+              <Avatar src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`} size={94} radius="md">
+                <IconPhotoOff />
+              </Avatar>
+            </PhotoView>
             <div style={{ flex: 1 }}>
               {song && <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>}
               <Text fz="xl" fw={700}>{song.title}</Text>
@@ -152,7 +161,7 @@ export default function Songs() {
               </Text>
             </Box>
             <Box mr={12}>
-              <Text fz="xs" c="dimmed">首次出现版本</Text>
+              <Text fz="xs" c="dimmed">版本</Text>
               <Text fz="sm">
                 {songList.versions.slice().reverse().find((version) => song.version >= version.version)?.title || "未知"}
               </Text>

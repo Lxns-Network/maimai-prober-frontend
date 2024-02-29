@@ -21,6 +21,7 @@ import { IconPhotoOff } from "@tabler/icons-react";
 import { ScoreHistory } from "./ScoreHistory.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import ScoreContext from "../../../utils/context.tsx";
+import { PhotoView } from "react-photo-view";
 
 interface ScoreModalProps {
   score: MaimaiScoreProps | null;
@@ -33,9 +34,11 @@ const ScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: Mai
   return (
     <>
       <Group wrap="nowrap">
-        <Avatar src={`https://assets.lxns.net/maimai/jacket/${score.id}.png!webp`} size={94} radius="md">
-          <IconPhotoOff />
-        </Avatar>
+        <PhotoView src={`https://assets.lxns.net/maimai/jacket/${score.id}.png`}>
+          <Avatar src={`https://assets.lxns.net/maimai/jacket/${score.id}.png!webp`} size={94} radius="md">
+            <IconPhotoOff />
+          </Avatar>
+        </PhotoView>
         <div style={{ flex: 1 }}>
           {score.type === "standard" ? (
             <Badge variant="filled" color="blue" size="sm">标准</Badge>

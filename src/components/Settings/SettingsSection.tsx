@@ -1,6 +1,7 @@
-import { Group, Switch, Text, Select, MultiSelect, Button } from '@mantine/core';
+import {Group, Switch, Text, Select, MultiSelect, Button, Box} from '@mantine/core';
 import { memo } from "react";
 import classes from "./Settings.module.css";
+import {useMediaQuery} from "@mantine/hooks";
 
 interface OptionsProps {
   value: string;
@@ -28,56 +29,60 @@ interface SettingsCardProps {
 }
 
 export const SettingsSection = memo(({ data, value, onChange }: SettingsCardProps) => {
+  const small = useMediaQuery('(max-width: 450px)');
+
   if (!data) {
     return null;
   }
 
   return data.map((item) => (
-    <Group justify="space-between" className={classes.item} wrap="nowrap" gap="xl" key={item.key}>
-      <div>
+    <Group justify="space-between" className={classes.item} wrap={"wrap"} key={item.key}>
+      <Box style={{ flex: 1 }}>
         <Text>{item.title}</Text>
         <Text size="xs" c="dimmed">
           {item.description}
         </Text>
-      </div>
-      {item.optionType === 'switch' && (
-        <Switch
-          onLabel="开"
-          offLabel="关"
-          className={classes.switch}
-          size="lg"
-          checked={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue}
-          onChange={(event) => onChange && onChange(item.key, event.currentTarget.checked)}
-        />
-      )}
-      {item.optionType === 'select' && (
-        <Select
-          variant="filled"
-          data={item.options || []}
-          value={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue as string}
-          comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
-          onChange={(value) => onChange && onChange(item.key, value)}
-        />
-      )}
-      {item.optionType === 'multi-select' && (
-        <MultiSelect
-          variant="filled"
-          data={item.options || []}
-          placeholder={item.placeholder}
-          value={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue as string[]}
-          comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
-          onChange={(value) => onChange && onChange(item.key, value)}
-        />
-      )}
-      {item.optionType === 'button' && (
-        <Button
-          variant="outline"
-          color={item.color || 'blue'}
-          onClick={item.onClick}
-        >
-          {item.placeholder}
-        </Button>
-      )}
+      </Box>
+      <Box style={{ flexBasis: small && item.optionType.includes("select") ? "100%" : "auto" }}>
+        {item.optionType === 'switch' && (
+          <Switch
+            onLabel="开"
+            offLabel="关"
+            className={classes.switch}
+            size="lg"
+            checked={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue}
+            onChange={(event) => onChange && onChange(item.key, event.currentTarget.checked)}
+          />
+        )}
+        {item.optionType === 'select' && (
+          <Select
+            variant="filled"
+            data={item.options || []}
+            value={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue as string}
+            comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
+            onChange={(value) => onChange && onChange(item.key, value)}
+          />
+        )}
+        {item.optionType === 'multi-select' && (
+          <MultiSelect
+            variant="filled"
+            data={item.options || []}
+            placeholder={item.placeholder}
+            value={(value !== null && value.hasOwnProperty(item.key)) ? value[item.key] : item.defaultValue as string[]}
+            comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
+            onChange={(value) => onChange && onChange(item.key, value)}
+          />
+        )}
+        {item.optionType === 'button' && (
+          <Button
+            variant="outline"
+            color={item.color || 'blue'}
+            onClick={item.onClick}
+          >
+            {item.placeholder}
+          </Button>
+        )}
+      </Box>
     </Group>
   ));
 });

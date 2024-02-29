@@ -19,7 +19,7 @@ export const ChunithmScoreList = ({ scores, songList, onScoreChange }: ScoreList
   return (
     <>
       <ScoreModal
-        score={scoreDetail as ChunithmScoreProps}
+        score={scoreDetail}
         song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
         onClose={(score) => {

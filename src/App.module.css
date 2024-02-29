@@ -12,3 +12,13 @@
     box-sizing: border-box;
     margin-top: var(--header-height);
 }
+
+.photoViewerIcon {
+    color: white;
+    opacity: 0.75;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.photoViewerIcon:hover {
+    opacity: 1;
+}

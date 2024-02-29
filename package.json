@@ -33,6 +33,7 @@
     "react-error-boundary": "^4.0.12",
     "react-lazyload": "^3.2.0",
     "react-markdown": "^9.0.1",
+    "react-photo-view": "^1.2.4",
     "react-qr-code": "^2.0.12",
     "react-router-dom": "^6.15.0",
     "recharts": "^2.9.2",
