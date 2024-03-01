@@ -15,7 +15,7 @@ import {
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
-import {useContext, useEffect, useState} from "react";
+import { useContext, useEffect, useState } from "react";
 import { fetchAPI } from "../../../utils/api/api.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { ScoreHistory } from "./ScoreHistory.tsx";

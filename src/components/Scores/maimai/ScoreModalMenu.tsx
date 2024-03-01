@@ -3,9 +3,10 @@ import { fetchAPI } from "../../../utils/api/api.tsx";
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../../utils/modal.tsx";
 import { ActionIcon, Menu } from "@mantine/core";
 import classes from "../ScoreModalMenu.module.css";
-import { IconClearAll, IconDots, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconClearAll, IconDots, IconMusic, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useContext } from "react";
 import ScoreContext from "../../../utils/context.tsx";
+import { useNavigate } from "react-router-dom";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps;
@@ -13,6 +14,7 @@ interface ScoreModalActionMenuProps {
 }
 
 export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
+  const navigate = useNavigate();
   const context = useContext(ScoreContext);
 
   const DeletePlayerScoreHandler = async () => {
@@ -62,6 +64,11 @@ export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) =>
           context.setCreateScoreOpened(true);
         }}>
           创建新成绩
+        </Menu.Item>
+        <Menu.Item leftSection={<IconMusic size={20} stroke={1.5} />} onClick={() => {
+          navigate(`/songs`, { state: { songId: score.id } });
+        }}>
+          查看曲目详情
         </Menu.Item>
 
         {score.achievements >= 0 && (

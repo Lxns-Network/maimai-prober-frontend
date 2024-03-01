@@ -298,7 +298,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
       {songList instanceof MaimaiSongList && (
         <>
           <Grid.Col span={12}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选 Full Combo</Text>
+            <Text fz="xs" c="dimmed" mb={3}>筛选 FULL COMBO</Text>
             <Group>
               <Chip.Group multiple value={fullCombo} onChange={setFullCombo}>
                 <Chip variant="filled" size="xs" value="nofc">无</Chip>
@@ -310,7 +310,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
             </Group>
           </Grid.Col>
           <Grid.Col span={12}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选 Full Sync</Text>
+            <Text fz="xs" c="dimmed" mb={3}>筛选 FULL SYNC</Text>
             <Group>
               <Chip.Group multiple value={fullSync} onChange={setFullSync}>
                 <Chip variant="filled" size="xs" value="nofs">无</Chip>
@@ -335,7 +335,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
       {songList instanceof ChunithmSongList && (
         <>
           <Grid.Col span={12}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选 Full Combo</Text>
+            <Text fz="xs" c="dimmed" mb={3}>筛选 FULL COMBO</Text>
             <Group>
               <Chip.Group multiple value={fullCombo} onChange={setFullCombo}>
                 <Chip variant="filled" size="xs" value="nofullcombo">无</Chip>
@@ -346,7 +346,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
             </Group>
           </Grid.Col>
           <Grid.Col span={12}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选 Full Chain</Text>
+            <Text fz="xs" c="dimmed" mb={3}>筛选 FULL CHAIN</Text>
             <Group>
               <Chip.Group multiple value={fullSync} onChange={setFullSync}>
                 <Chip variant="filled" size="xs" value="nofullchain">无</Chip>

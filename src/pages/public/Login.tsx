@@ -79,9 +79,9 @@ export default function Login() {
       localStorage.setItem("token", data.data.token);
       if (!game) setGame("maimai");
       if (state && state.redirect) {
-        navigate(state.redirect);
+        navigate(state.redirect, { replace: true });
       } else {
-        navigate("/")
+        navigate("/", { replace: true })
       }
     } catch (error) {
       openRetryModal("登录失败", `${error}`, () => loginHandler(values));

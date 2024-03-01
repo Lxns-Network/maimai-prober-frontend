@@ -16,7 +16,7 @@ import { SongCombobox } from "../../components/SongCombobox.tsx";
 import { AliasList } from "../../utils/api/alias.tsx";
 import { IconListDetails, IconPhotoOff } from "@tabler/icons-react";
 import { fetchAPI } from "../../utils/api/api.tsx";
-import { Link } from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
 import { Song } from "../../components/Songs/Song";
 import {PhotoView} from "react-photo-view";
@@ -28,6 +28,7 @@ export default function Songs() {
   const [songId, setSongId] = useState<number>(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<any[]>([]);
+  const location = useLocation();
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
   const songListFetchHandler = async (songList: SongList) => {
@@ -75,6 +76,8 @@ export default function Songs() {
   }, [game]);
 
   useEffect(() => {
+    if (!game) return;
+
     aliasList.fetch(game).then(() => {
       setAliasList(aliasList);
     });
@@ -109,6 +112,16 @@ export default function Songs() {
     setSong(songList.songs.find((song) => song.id === songId) || null)
     setScores([]);
   }, [songId]);
+
+  useEffect(() => {
+    if (!songList.songs.length) return;
+
+    if (location.state) {
+      if (location.state.songId) {
+        setSongId(location.state.songId);
+      }
+    }
+  }, [songList]);
 
   return (
     <Container className={classes.root} size={500}>
