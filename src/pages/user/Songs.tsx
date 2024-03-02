@@ -16,10 +16,13 @@ import { SongCombobox } from "../../components/SongCombobox.tsx";
 import { AliasList } from "../../utils/api/alias.tsx";
 import { IconListDetails, IconPhotoOff } from "@tabler/icons-react";
 import { fetchAPI } from "../../utils/api/api.tsx";
-import {Link, useLocation} from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
 import { Song } from "../../components/Songs/Song";
-import {PhotoView} from "react-photo-view";
+import { PhotoView } from "react-photo-view";
+import AudioPlayer from "react-h5-audio-player";
+import "react-h5-audio-player/lib/styles.css";
+import "./AudioPlayer.style.css";
 
 export default function Songs() {
   const [game, setGame] = useLocalStorage({ key: 'game' });
@@ -41,7 +44,7 @@ export default function Songs() {
   }
 
   const getPlayerSongBestsHandler = async (type?: string) => {
-    if (!song) return;
+    if (!song || !type) return;
     try {
       const res = await fetchAPI(`user/${game}/player/bests?song_id=${song.id}&song_type=${type}`, { method: "GET" });
       const data = await res.json();
@@ -147,39 +150,47 @@ export default function Songs() {
         你可以使用曲名、艺术家或<Anchor component={Link} to="/alias/vote">曲目别名</Anchor>来搜索曲目。
       </Text>
       {song && (
-        <Card mt="md" radius="md" p="md" withBorder className={classes.card}>
-          <Group wrap="nowrap">
-            <PhotoView src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`}>
-              <Avatar src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`} size={94} radius="md">
-                <IconPhotoOff />
-              </Avatar>
-            </PhotoView>
-            <div style={{ flex: 1 }}>
-              {song && <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>}
-              <Text fz="xl" fw={700}>{song.title}</Text>
-              <Text fz="sm" c="dimmed">{song.artist}</Text>
-            </div>
-          </Group>
-          <Group mt="md">
-            <Box mr={12}>
-              <Text fz="xs" c="dimmed">BPM</Text>
-              <Text fz="sm">
-                {song.bpm}
-              </Text>
-            </Box>
-            <Box mr={12}>
-              <Text fz="xs" c="dimmed">分类</Text>
-              <Text fz="sm">
-                {songList.genres.find((genre) => genre.genre === song.genre)?.title || song.genre}
-              </Text>
-            </Box>
-            <Box mr={12}>
-              <Text fz="xs" c="dimmed">版本</Text>
-              <Text fz="sm">
-                {songList.versions.slice().reverse().find((version) => song.version >= version.version)?.title || "未知"}
-              </Text>
-            </Box>
-          </Group>
+        <Card mt="md" radius="md" p={0} withBorder className={classes.card}>
+          <Card.Section m="md">
+            <Group wrap="nowrap">
+              <PhotoView src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`}>
+                <Avatar src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`} size={94} radius="md">
+                  <IconPhotoOff />
+                </Avatar>
+              </PhotoView>
+              <div style={{ flex: 1 }}>
+                {song && <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>}
+                <Text fz="xl" fw={700}>{song.title}</Text>
+                <Text fz="sm" c="dimmed">{song.artist}</Text>
+              </div>
+            </Group>
+            <Group mt="md">
+              <Box mr={12}>
+                <Text fz="xs" c="dimmed">BPM</Text>
+                <Text fz="sm">
+                  {song.bpm}
+                </Text>
+              </Box>
+              <Box mr={12}>
+                <Text fz="xs" c="dimmed">分类</Text>
+                <Text fz="sm">
+                  {songList.genres.find((genre) => genre.genre === song.genre)?.title || song.genre}
+                </Text>
+              </Box>
+              <Box mr={12}>
+                <Text fz="xs" c="dimmed">版本</Text>
+                <Text fz="sm">
+                  {songList.versions.slice().reverse().find((version) => song.version >= version.version)?.title || "未知"}
+                </Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          {game === "maimai" && (
+            <AudioPlayer
+              src={`https://assets2.lxns.net/maimai/music/${song.id}.mp3`}
+              preload="none"
+            />
+          )}
         </Card>
       )}
       <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mt="md" mb="md" radius="md" />

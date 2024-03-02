@@ -1,0 +1,48 @@
+.rhap_container {
+    padding: var(--mantine-spacing-md) !important;
+    padding-bottom: var(--mantine-spacing-sm) !important;
+    box-shadow: none !important;
+    border-top: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+    background: none !important;
+}
+
+.rhap_time {
+    font-size: var(--mantine-font-size-sm);
+    color: light-dark(var(--mantine-color-black), var(--mantine-color-text));
+}
+
+.rhap_download-progress, .rhap_volume-bar {
+    background: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
+}
+
+.rhap_progress-bar {
+    background: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
+.rhap_progress-indicator {
+    height: 16px;
+    width: 16px;
+    top: -6px;
+}
+
+.rhap_progress-indicator, .rhap_volume-indicator {
+    background: var(--mantine-primary-color-6);
+}
+
+.rhap_progress-filled {
+    background: var(--mantine-primary-color-6);
+}
+
+.rhap_repeat-button, .rhap_volume-button {
+    font-size: 20px;
+    height: 20px;
+    width: 20px;
+}
+
+.rhap_button-clear {
+    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+}
+
+.rhap_play-pause-button * {
+    color: var(--mantine-primary-color-6);
+}
