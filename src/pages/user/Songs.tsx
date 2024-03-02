@@ -44,7 +44,8 @@ export default function Songs() {
   }
 
   const getPlayerSongBestsHandler = async (type?: string) => {
-    if (!song || !type) return;
+    if (!song) return;
+    if (game === "maimai" && !type) return;
     try {
       const res = await fetchAPI(`user/${game}/player/bests?song_id=${song.id}&song_type=${type}`, { method: "GET" });
       const data = await res.json();
@@ -122,6 +123,7 @@ export default function Songs() {
     if (location.state) {
       if (location.state.songId) {
         setSongId(location.state.songId);
+        window.history.replaceState({}, '');
       }
     }
   }, [songList]);
