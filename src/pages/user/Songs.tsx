@@ -185,19 +185,17 @@ export default function Songs() {
               </Box>
             </Group>
           </Card.Section>
-          {game === "maimai" && (
-            <AudioPlayer
-              src={`https://assets2.lxns.net/maimai/music/${song.id}.mp3`}
-              preload="none"
-            />
-          )}
+          <AudioPlayer
+            src={`https://assets2.lxns.net/${game}/music/${song.id}.mp3`}
+            preload="none"
+          />
         </Card>
       )}
       <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mt="md" mb="md" radius="md" />
       {!song ? (
         <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
           <IconListDetails size={64} stroke={1.5} />
-          <Text fz="sm">请选择一个曲目来查看曲目详情</Text>
+          <Text fz="sm">请选择一首曲目来查看曲目详情</Text>
         </Flex>
       ) : (
         <>
