@@ -4,7 +4,7 @@ import {
   Text,
   Title,
   Card,
-  SegmentedControl, Group, Avatar, keys, Flex, Box, Anchor, Space, Stack
+  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack
 } from "@mantine/core";
 import classes from "./Songs.module.css"
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
@@ -20,7 +20,6 @@ import { Link, useLocation } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
 import { Song } from "../../components/Songs/Song";
 import { PhotoView } from "react-photo-view";
-import "react-h5-audio-player/lib/styles.css";
 import { AudioPlayer } from "../../components/AudioPlayer.tsx";
 
 export default function Songs() {
@@ -91,17 +90,8 @@ export default function Songs() {
     if (!song || isLoggedOut) return;
 
     if (songList instanceof MaimaiSongList) {
-      keys(song.difficulties).forEach((type) => {
-        // @ts-ignore
-        if (song.difficulties[type].length === 0) return;
-
-        let scores: any[] = [];
-        getPlayerSongBestsHandler(type).then((data) => {
-          if (data) {
-            scores = scores.concat(data);
-            setScores(scores);
-          }
-        });
+      Promise.all(Object.keys(song.difficulties).map((type) => getPlayerSongBestsHandler(type))).then((data) => {
+        setScores(data.flat().filter((record) => record));
       });
     } else {
       getPlayerSongBestsHandler().then((data) => {
@@ -155,7 +145,7 @@ export default function Songs() {
         <Card mt="md" radius="md" p={0} withBorder className={classes.card}>
           <Card.Section m="md">
             <Group wrap="nowrap">
-              <PhotoView src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`}>
+              <PhotoView src={`https://assets.lxns.net/${game}/jacket/${song.id}.png`}>
                 <Avatar src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`} size={94} radius="md">
                   <IconPhotoOff />
                 </Avatar>
@@ -180,7 +170,7 @@ export default function Songs() {
                 </Text>
               </Box>
               <Box mr={12}>
-                <Text fz="xs" c="dimmed">版本</Text>
+                <Text fz="xs" c="dimmed">首次出现版本</Text>
                 <Text fz="sm">
                   {songList.versions.slice().reverse().find((version) => song.version >= version.version)?.title || "未知"}
                 </Text>
