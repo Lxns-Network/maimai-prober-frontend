@@ -90,7 +90,12 @@ export default function Songs() {
     if (!song || isLoggedOut) return;
 
     if (songList instanceof MaimaiSongList) {
-      Promise.all(Object.keys(song.difficulties).map((type) => getPlayerSongBestsHandler(type))).then((data) => {
+      const s = song as MaimaiSongProps;
+      let types = [];
+      if (s.difficulties.dx.length) types.push("dx");
+      if (s.difficulties.standard.length) types.push("standard");
+
+      Promise.all(types.map((type) => getPlayerSongBestsHandler(type))).then((data) => {
         setScores(data.flat().filter((record) => record));
       });
     } else {
