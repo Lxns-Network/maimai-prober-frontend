@@ -1,5 +1,6 @@
-import { ActionIcon, Container, Group, Slider, Text } from "@mantine/core";
+import { ActionIcon, Container, Group, Slider, Text, Tooltip } from "@mantine/core";
 import {
+  IconDownload,
   IconPlayerPauseFilled,
   IconPlayerPlayFilled,
   IconPlayerTrackNextFilled,
@@ -30,6 +31,13 @@ export const AudioPlayer = ({ src, audioProps, ...others }: AudioPlayerProps) =>
   }
 
   useEffect(() => {
+    if (isPlaying) {
+      controls.pause();
+      toggleIsPlaying();
+    }
+  }, [src]);
+
+  useEffect(() => {
     if (state.time === state.duration && isRepeat) {
       controls.seek(0);
       controls.play();
@@ -57,14 +65,23 @@ export const AudioPlayer = ({ src, audioProps, ...others }: AudioPlayerProps) =>
       </Group>
       <Group mt="xs" justify="space-between" wrap="nowrap">
         <Group w="100%" maw="100px">
-          <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => toggleIsRepeat()}>
-            {isRepeat ? <IconRepeat /> : <IconRepeatOff />}
-          </ActionIcon>
+          <Tooltip label={isRepeat ? "关闭循环播放" : "循环播放"} position="bottom">
+            <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => toggleIsRepeat()}>
+              {isRepeat ? <IconRepeat /> : <IconRepeatOff />}
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="下载" position="bottom">
+            <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => window.open(src, '_blank')}>
+              <IconDownload />
+            </ActionIcon>
+          </Tooltip>
         </Group>
         <Group gap="xs" wrap="nowrap">
-          <ActionIcon variant="transparent" c="gray" onClick={() => controls.seek(state.time - 5)}>
-            <IconPlayerTrackPrevFilled />
-          </ActionIcon>
+          <Tooltip label="后退 5 秒" position="bottom">
+            <ActionIcon variant="transparent" c="gray" onClick={() => controls.seek(state.time - 5)}>
+              <IconPlayerTrackPrevFilled />
+            </ActionIcon>
+          </Tooltip>
           <ActionIcon radius="50%" size="lg" onClick={() => {
             toggleIsPlaying();
             if (isPlaying) {
@@ -75,14 +92,18 @@ export const AudioPlayer = ({ src, audioProps, ...others }: AudioPlayerProps) =>
           }}>
             {isPlaying ? <IconPlayerPauseFilled /> : <IconPlayerPlayFilled />}
           </ActionIcon>
-          <ActionIcon variant="transparent" c="gray" onClick={() => controls.seek(state.time + 5)}>
-            <IconPlayerTrackNextFilled />
-          </ActionIcon>
+          <Tooltip label="前进 5 秒" position="bottom">
+            <ActionIcon variant="transparent" c="gray" onClick={() => controls.seek(state.time + 5)}>
+              <IconPlayerTrackNextFilled />
+            </ActionIcon>
+          </Tooltip>
         </Group>
         <Group gap="xs" w="100%" maw="100px">
-          <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => state.muted ? controls.unmute() : controls.mute()}>
-            {state.muted ? <IconVolumeOff size={20} /> : <IconVolume />}
-          </ActionIcon>
+          <Tooltip label={state.muted ? "取消静音" : "静音"} position="bottom">
+            <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => state.muted ? controls.unmute() : controls.mute()}>
+              {state.muted ? <IconVolumeOff size={20} /> : <IconVolume />}
+            </ActionIcon>
+          </Tooltip>
           <Slider
             size="xs"
             min={0}
