@@ -1,0 +1,5 @@
+@import '../Page.module.css';
+
+.audioPlayer {
+    background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}

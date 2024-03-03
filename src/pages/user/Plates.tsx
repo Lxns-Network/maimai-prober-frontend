@@ -154,7 +154,7 @@ export default function Plates() {
         onChange={() => toggleOnlyRequired()}
       />
       {plate && (
-        <Card mt="md" radius="md" p="md" withBorder className={classes.card}>
+        <Card radius="md" mt="md" p="md" withBorder className={classes.card}>
           <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
             {plate.description}
           </Text>
@@ -165,7 +165,8 @@ export default function Plates() {
           <Image src={`https://assets.lxns.net/maimai/plate/${plate.id}.png!webp`} />
         </Card>
       )}
-      <LoginAlert content="你需要登录查分器账号才能查看你的姓名框获取进度。" mt="md" mb="md" radius="md" />
+      <Space h="md" />
+      <LoginAlert content="你需要登录查分器账号才能查看你的姓名框获取进度。" mb="md" radius="md" />
       {!plate ? (
         <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
           <IconPlaylist size={64} stroke={1.5} />

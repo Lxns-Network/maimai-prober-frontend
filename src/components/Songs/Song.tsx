@@ -16,7 +16,7 @@ export const Song = ({ song, difficulty, type, score, versions }: SongProps) => 
   const [game] = useLocalStorage({ key: 'game' });
 
   return (
-    <Card key={`${song.id}-${type}-${difficulty.difficulty}`} c="white" pt={5} p="0.5rem" mt="md" radius="md" withBorder style={{
+    <Card key={`${song.id}-${type}-${difficulty.difficulty}`} c="white" pt={5} p="0.5rem" radius="md" withBorder style={{
       border: `2px solid ${getScoreSecondaryColor(game, difficulty.difficulty)}`.replace(")", ", 0.95)"),
       backgroundColor: getScoreCardBackgroundColor(game, difficulty.difficulty).replace(")", ", 0.95)"),
     }}>

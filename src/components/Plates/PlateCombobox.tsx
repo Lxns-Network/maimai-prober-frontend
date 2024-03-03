@@ -43,6 +43,8 @@ export const PlateCombobox = ({ plates, value, onOptionSubmit, ...others }: Plat
 
   return (
     <Combobox
+      position="bottom"
+      middlewares={{ flip: false, shift: false }}
       store={combobox}
       onOptionSubmit={(value) => {
         onOptionSubmit && onOptionSubmit(parseInt(value));

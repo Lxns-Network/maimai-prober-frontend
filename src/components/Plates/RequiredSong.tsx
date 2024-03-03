@@ -45,7 +45,7 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
   }, [page, records]);
 
   return (
-    <Card mt="md" radius="md" p="md" withBorder className={classes.card}>
+    <Card radius="md" p="md" withBorder className={classes.card}>
       <Group justify="space-between">
         <div>
           <Text fz="lg" fw={700}>

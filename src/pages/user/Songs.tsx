@@ -4,9 +4,9 @@ import {
   Text,
   Title,
   Card,
-  SegmentedControl, Group, Avatar, keys, Flex, Box, Anchor
+  SegmentedControl, Group, Avatar, keys, Flex, Box, Anchor, Space, Stack
 } from "@mantine/core";
-import classes from "../Page.module.css"
+import classes from "./Songs.module.css"
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { useLocalStorage } from "@mantine/hooks";
@@ -20,9 +20,8 @@ import { Link, useLocation } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
 import { Song } from "../../components/Songs/Song";
 import { PhotoView } from "react-photo-view";
-import AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
-import "./AudioPlayer.style.css";
+import { AudioPlayer } from "../../components/AudioPlayer.tsx";
 
 export default function Songs() {
   const [game, setGame] = useLocalStorage({ key: 'game' });
@@ -65,6 +64,7 @@ export default function Songs() {
   useEffect(() => {
     if (!game) return;
 
+    setSongId(0);
     setSong(null);
     setScores([]);
     setSongList(new SongList());
@@ -188,19 +188,21 @@ export default function Songs() {
             </Group>
           </Card.Section>
           <AudioPlayer
+            className={classes.audioPlayer}
             src={`https://assets2.lxns.net/${game}/music/${song.id}.mp3`}
-            preload="none"
+            audioProps={{ preload: "none" }}
           />
         </Card>
       )}
-      <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mt="md" mb="md" radius="md" />
+      <Space h="md" />
+      <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mb="md" radius="md" />
       {!song ? (
         <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
           <IconListDetails size={64} stroke={1.5} />
           <Text fz="sm">请选择一首曲目来查看曲目详情</Text>
         </Flex>
       ) : (
-        <>
+        <Stack>
           {songList instanceof MaimaiSongList && (
             ["dx", "standard"].map((type) => (
               (song as MaimaiSongProps).difficulties[type as keyof MaimaiDifficultiesProps].slice().reverse().map((difficulty, i) => (
@@ -226,7 +228,7 @@ export default function Songs() {
               />
             ))
           )}
-        </>
+        </Stack>
       )}
     </Container>
   );

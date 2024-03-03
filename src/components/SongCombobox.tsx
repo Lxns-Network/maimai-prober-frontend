@@ -84,6 +84,8 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onSongsCha
 
   return (
     <Combobox
+      position="bottom"
+      middlewares={{ flip: false, shift: false }}
       store={combobox}
       onOptionSubmit={(value) => {
         onOptionSubmit && onOptionSubmit(parseInt(value));
