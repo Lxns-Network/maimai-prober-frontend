@@ -2,6 +2,16 @@
 
 ---
 
+## 2024/3/4
+
+- 新增隐私设置配置项**允许读取历史成绩**：`allow_third_party_fetch_history`
+  > 允许后，第三方开发者可以获取你的 DX Rating 趋势（中二节奏暂不支持）与成绩上传历史记录
+- 舞萌 DX 新增接口：
+  - [获取玩家 DX Rating 趋势](/docs/api/maimai#get-apiv0maimaiplayerfriend_codetrend)
+  - [获取玩家成绩上传历史记录](/docs/api/maimai#get-apiv0maimaiplayerfriendcodescorehistory)
+- 中二节奏新增[获取玩家成绩上传历史记录](/docs/api/chunithm#get-apiv0chunithmplayerfriendcodescorehistory)接口
+- 中二节奏支持查询成绩上传历史记录
+
 ## 2024/3/2
 
 - 曲目查询支持试听曲目

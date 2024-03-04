@@ -163,6 +163,27 @@ JSON 格式的玩家成绩：
 
 [Score[]](#score)
 
+### GET `/api/v0/chunithm/player/{friendCode}/score/history`
+
+获取玩家成绩上传历史记录。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores`、`allow_third_party_fetch_history` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friendCode` | `int` | 好友码 |
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `song_id` | `int` | 曲目 ID |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度 |
+
+#### 响应体
+
+[Score[]](#score)
+
 ## 公共 API
 
 ### GET `/api/v0/chunithm/song/list`
