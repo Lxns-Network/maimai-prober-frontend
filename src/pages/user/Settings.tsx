@@ -270,6 +270,12 @@ export default function Settings() {
           optionType: "switch",
           defaultValue: true,
         }, {
+          key: "allow_third_party_fetch_history",
+          title: "允许读取历史成绩",
+          description: `关闭后，第三方开发者将无法获取你的 ${game === "maimai" ? "DX Rating" : "Rating"} 趋势与成绩上传历史记录。`,
+          optionType: "switch",
+          defaultValue: false,
+        }, {
           key: "allow_third_party_write_data",
           title: "允许写入任何数据",
           description: "关闭后，第三方开发者将无法覆盖你的任何数据。",
