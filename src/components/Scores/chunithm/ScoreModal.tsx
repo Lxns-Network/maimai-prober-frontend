@@ -8,14 +8,16 @@ import {
   Image,
   Modal, NumberFormatter,
   rem, Space,
-  Text
+  Text, Accordion, Center, Loader
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import ScoreContext from "../../../utils/context.tsx";
+import { ScoreHistory } from "./ScoreHistory.tsx";
+import { fetchAPI } from "../../../utils/api/api.tsx";
 
 interface ScoreModalProps {
   score: ChunithmScoreProps | null;
@@ -119,10 +121,49 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
 }
 
 export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
+  const [historyScores, setHistoryScores] = useState<ChunithmScoreProps[]>([]);
+  const [fetching, setFetching] = useState(true);
   const context = useContext(ScoreContext);
 
+  const getPlayerScoreHistory = async (score: ChunithmScoreProps) => {
+    if (score.score < 0) {
+      setHistoryScores([]);
+      setFetching(false);
+      return;
+    }
+    setFetching(true);
+    try {
+      const res = await fetchAPI(`user/chunithm/player/score/history?song_id=${score.id}&level_index=${score.level_index}`, {
+        method: "GET",
+      })
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      if (data.data) {
+        setHistoryScores(data.data.sort((a: ChunithmScoreProps, b: ChunithmScoreProps) => {
+          const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
+
+          if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
+            return new Date(a.play_time).getTime() - new Date(b.play_time).getTime();
+          }
+
+          return uploadTimeDiff;
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFetching(false);
+    }
+  }
+
   useEffect(() => {
+    if (!score) return;
+
     context.setScore(score);
+    setHistoryScores([]);
+    getPlayerScoreHistory(score);
   }, [score]);
 
   return (
@@ -145,6 +186,20 @@ export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) =>
             )}
           </Container>
           <Space h="md" />
+          <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
+            <Accordion.Item value="history">
+              <Accordion.Control>上传历史记录</Accordion.Control>
+              <Accordion.Panel>
+                {fetching ? (
+                  <Center>
+                    <Loader />
+                  </Center>
+                ) : (
+                  <ScoreHistory scores={historyScores} />
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
         </Modal.Body>
       </Modal.Content>
     </Modal.Root>
