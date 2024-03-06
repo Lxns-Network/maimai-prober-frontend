@@ -73,7 +73,7 @@ export default function ResetPassword() {
         重置你的 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号密码
       </Text>
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
-        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
+        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <form onSubmit={form.onSubmit((values) => forgotPassword(values))}>
           <PasswordInput
             name="password"

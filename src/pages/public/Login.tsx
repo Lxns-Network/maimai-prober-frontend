@@ -104,7 +104,7 @@ export default function Login() {
         </Alert>
       }
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
-        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} />
+        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <form onSubmit={form.onSubmit((values) => loginHandler(values))}>
           <TextInput
             name="name"
