@@ -17,6 +17,10 @@
     @mixin smaller-than $mantine-breakpoint-sm {
         display: none;
     }
+
+    @supports (max-height: 100dvh) {
+        max-height: calc(100dvh - var(--header-height));
+    }
 }
 
 .tableOfContentsLink {

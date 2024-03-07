@@ -12,6 +12,10 @@
     @mixin smaller-than $mantine-breakpoint-md {
         width: var(--navbar-width);
     }
+
+    @supports (max-height: 100dvh) {
+        height: calc(100dvh - var(--header-height));
+    }
 }
 
 .navbarHeader {
