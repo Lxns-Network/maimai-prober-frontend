@@ -34,6 +34,29 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 [Player](#player)
 
+#### 请求示例
+
+```json
+{
+    "name": "Ｌｘｎｓ",
+    "rating": 11307,
+    "friend_code": 123456789000000,
+    "trophy_name": "つあメン覚醒電鉄　準急",
+    "course_rank": 0,
+    "class_rank": 0,
+    "star": 82,
+    "icon": {
+        "id": 200201
+    },
+    "name_plate": {
+        "id": 200201
+    },
+    "frame": {
+        "id": 300101
+    }
+}
+```
+
 ### GET `/api/v0/maimai/player/{friend_code}`
 
 通过好友码获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
@@ -334,12 +357,12 @@ JSON 格式的玩家成绩：
 | `course_rank` | `int` | 段位 ID |
 | `class_rank` | `int` | 阶级 ID |
 | `star` | `int` | 搭档觉醒数 |
-| `icon_url` | `string` | 头像 URL |
+| `icon` | [`Icon`](#collection) | 头像 |
 | `name_plate` | [`NamePlate`](#collection) | 姓名框 |
 | `frame` | [`Frame`](#collection) | 背景 |
 | `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
 
-> `icon_url` 与 `trophy_name` 参数可能会在后续变更，请开发者注意。
+> `trophy_name` 参数可能会在后续变更，请开发者注意。
 
 ### Score
 

@@ -32,6 +32,34 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 [Player](#player)
 
+#### 请求示例
+
+```json
+{
+    "name": "ωγαｐ×",
+    "level": 1,
+    "rating": 0.18,
+    "friend_code": 123456789000000,
+    "over_power": 13.2,
+    "change_over_power": 0.01,
+    "currency": 4500,
+    "total_currency": 5000,
+    "total_play_count": 2,
+    "trophy": {
+        "id": 866
+    },
+    "character": {
+        "id": 16620
+    },
+    "name_plate": {
+        "id": 10131
+    },
+    "map_icon": {
+        "id": 19
+    }
+}
+```
+
 ### GET `/api/v0/chunithm/player/{friend_code}`
 
 通过好友码获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
@@ -242,16 +270,14 @@ JSON 格式的玩家成绩：
 | `friend_code` | `int` | 好友码 |
 | `over_power` | `int` | 总 OVER POWER |
 | `change_over_power` | `int` | 上局游戏中变更的 OVER POWER |
-| `icon_url` | `string` | 头像 URL |
 | `currency` | `string` | 当前金币数 |
 | `total_currency` | `string` | 总金币数 |
 | `total_play_count` | `string` | 总游玩次数 |
 | `trophy` | [`Trophy`](#collection) | 称号 |
+| `character` | [`Character`](#collection) | 角色 |
 | `name_plate` | [`NamePlate`](#collection) | 名牌版 |
 | `map_icon` | [`MapIcon`](#collection) | 地图头像 |
 | `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
-
-> `icon_url` 参数可能会在后续变更，请开发者注意。
 
 ### Score
 
