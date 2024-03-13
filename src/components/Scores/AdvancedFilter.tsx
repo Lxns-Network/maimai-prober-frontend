@@ -2,10 +2,10 @@ import { MaimaiScoreProps } from "./maimai/Score.tsx";
 import { ChunithmScoreProps } from "./chunithm/Score.tsx";
 import {
   Button,
-  Chip,
+  Chip, Flex,
   Grid,
   Group,
-  MultiSelect,
+  MultiSelect, NumberInput,
   RangeSlider,
   Space, Switch,
   Text
@@ -13,7 +13,7 @@ import {
 import { IconReload } from "@tabler/icons-react";
 import { MaimaiDifficultiesProps, MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
-import { useDisclosure, useLocalStorage } from "@mantine/hooks";
+import {useDisclosure, useLocalStorage, useMediaQuery} from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
@@ -38,6 +38,8 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
   const [fullSync, setFullSync] = useState<string[]>([]);
   const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
   const [uploadTime, setUploadTime] = useState<[Date | null, Date | null]>([null, null]);
+
+  const small = useMediaQuery('(max-width: 30rem)');
 
   const resetFilter = () => {
     setDifficulty([]);
@@ -278,28 +280,73 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
           />
         </DatesProvider>
       </Grid.Col>
-      <Grid.Col span={12} mb="md">
+      <Grid.Col span={12}>
         <Text fz="xs" c="dimmed" mb={3}>筛选谱面定数</Text>
-        <RangeSlider
-          min={1}
-          max={16}
-          step={0.1}
-          minRange={0.1}
-          precision={1}
-          value={rating}
-          marks={Array.from({ length: 16 }, (_, index) => ({
-            value: index + 1,
-            label: String(index + 1),
-          }))}
-          onChange={setRating}
-          onChangeEnd={setEndRating}
-        />
+        <Group gap="xs">
+          <NumberInput
+            variant="filled"
+            w={60}
+            size="xs"
+            min={1}
+            max={16}
+            step={0.1}
+            decimalScale={1}
+            value={rating[0]}
+            onChange={(value) => {
+              if (typeof value !== "number" || isNaN(value)) return;
+              if (value > rating[1]) return;
+              value = Math.floor(value * 10) / 10;
+              setRating([value, rating[1]])
+              setEndRating([value, rating[1]])
+            }}
+            stepHoldDelay={500}
+            stepHoldInterval={100}
+            fixedDecimalScale
+          />
+          {small ? "~" : (
+            <RangeSlider
+              style={{ flex: 1 }}
+              min={1}
+              max={16}
+              step={0.1}
+              minRange={0.1}
+              precision={1}
+              value={rating}
+              marks={Array.from({ length: 16 }, (_, index) => ({
+                value: index + 1,
+                label: String(index + 1),
+              }))}
+              onChange={setRating}
+              onChangeEnd={setEndRating}
+              mb={24}
+            />
+          )}
+          <NumberInput
+            variant="filled"
+            w={60}
+            size="xs"
+            min={1}
+            max={16}
+            step={0.1}
+            decimalScale={1}
+            value={rating[1]}
+            onChange={(value) => {
+              if (typeof value !== "number" || isNaN(value)) return;
+              if (value < rating[0]) return;
+              setRating([rating[0], value])
+              setEndRating([rating[0], value])
+            }}
+            stepHoldDelay={500}
+            stepHoldInterval={100}
+            fixedDecimalScale
+          />
+        </Group>
       </Grid.Col>
       {songList instanceof MaimaiSongList && (
         <>
           <Grid.Col span={12}>
             <Text fz="xs" c="dimmed" mb={3}>筛选 FULL COMBO</Text>
-            <Group>
+            <Flex rowGap="xs" columnGap="md" wrap="wrap">
               <Chip.Group multiple value={fullCombo} onChange={setFullCombo}>
                 <Chip variant="filled" size="xs" value="nofc">无</Chip>
                 <Chip variant="filled" size="xs" value="fc">FC</Chip>
@@ -307,11 +354,11 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
                 <Chip variant="filled" size="xs" value="ap">AP</Chip>
                 <Chip variant="filled" size="xs" value="app">AP+</Chip>
               </Chip.Group>
-            </Group>
+            </Flex>
           </Grid.Col>
           <Grid.Col span={12}>
             <Text fz="xs" c="dimmed" mb={3}>筛选 FULL SYNC</Text>
-            <Group>
+            <Flex rowGap="xs" columnGap="md" wrap="wrap">
               <Chip.Group multiple value={fullSync} onChange={setFullSync}>
                 <Chip variant="filled" size="xs" value="nofs">无</Chip>
                 <Chip variant="filled" size="xs" value="fs">FS</Chip>
@@ -319,16 +366,16 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
                 <Chip variant="filled" size="xs" value="fsd">FSD</Chip>
                 <Chip variant="filled" size="xs" value="fsdp">FSD+</Chip>
               </Chip.Group>
-            </Group>
+            </Flex>
           </Grid.Col>
           <Grid.Col span={6}>
             <Text fz="xs" c="dimmed" mb={3}>筛选谱面类型</Text>
-            <Group>
+            <Flex rowGap="xs" columnGap="md" wrap="wrap">
               <Chip.Group multiple value={type} onChange={setType}>
                 <Chip variant="filled" size="xs" value="standard" color="blue">标准</Chip>
                 <Chip variant="filled" size="xs" value="dx" color="orange">DX</Chip>
               </Chip.Group>
-            </Group>
+            </Flex>
           </Grid.Col>
         </>
       )}
@@ -336,24 +383,24 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
         <>
           <Grid.Col span={12}>
             <Text fz="xs" c="dimmed" mb={3}>筛选 FULL COMBO</Text>
-            <Group>
+            <Flex rowGap="xs" columnGap="md" wrap="wrap">
               <Chip.Group multiple value={fullCombo} onChange={setFullCombo}>
                 <Chip variant="filled" size="xs" value="nofullcombo">无</Chip>
                 <Chip variant="filled" size="xs" value="fullcombo">FC</Chip>
                 <Chip variant="filled" size="xs" value="alljustice">AJ</Chip>
                 <Chip variant="filled" size="xs" value="ajc">AJC</Chip>
               </Chip.Group>
-            </Group>
+            </Flex>
           </Grid.Col>
           <Grid.Col span={12}>
             <Text fz="xs" c="dimmed" mb={3}>筛选 FULL CHAIN</Text>
-            <Group>
+            <Flex rowGap="xs" columnGap="md" wrap="wrap">
               <Chip.Group multiple value={fullSync} onChange={setFullSync}>
                 <Chip variant="filled" size="xs" value="nofullchain">无</Chip>
                 <Chip variant="filled" size="xs" value="fullchain">铂</Chip>
                 <Chip variant="filled" size="xs" value="fullchain2">金</Chip>
               </Chip.Group>
-            </Group>
+            </Flex>
           </Grid.Col>
         </>
       )}
