@@ -71,7 +71,7 @@ export const AudioPlayer = ({ src, audioProps, ...others }: AudioPlayerProps) =>
             </ActionIcon>
           </Tooltip>
           <Tooltip label="下载" position="bottom">
-            <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => window.open(src, '_blank')}>
+            <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => window.open(`${src}?download=true`, '_blank')}>
               <IconDownload />
             </ActionIcon>
           </Tooltip>
