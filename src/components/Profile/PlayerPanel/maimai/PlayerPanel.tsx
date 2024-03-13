@@ -21,9 +21,10 @@ export interface MaimaiPlayerProps {
   course_rank: number;
   class_rank: number;
   star: number;
+  icon_url: string; // deprecated
+  icon?: CollectionProps;
   name_plate?: CollectionProps;
   frame?: CollectionProps;
-  icon_url: string;
   upload_time: string;
 }
 

@@ -23,6 +23,7 @@ export interface ChunithmPlayerProps {
   currency: number;
   total_currency: number;
   icon_url: string;
+  character?: CollectionProps;
   name_plate?: CollectionProps;
   map_icon?: CollectionProps;
   upload_time: string;

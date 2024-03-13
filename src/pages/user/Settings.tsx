@@ -29,6 +29,12 @@ const crawlConfigData = {
     optionType: "switch",
     defaultValue: true,
   }, {
+    key: "allow_crawl_icon",
+    title: "允许爬取头像",
+    description: "允许后，每次爬取将会爬取头像并显示到玩家信息中。",
+    optionType: "switch",
+    defaultValue: true,
+  }, {
     key: "allow_crawl_name_plate",
     title: "允许爬取姓名框",
     description: "允许后，每次爬取将会爬取姓名框并显示到玩家信息中。",
@@ -79,7 +85,7 @@ const crawlConfigData = {
     }]
   }, {
     key: "allow_overwrite_best_score",
-    title: "允许覆盖最佳成绩（实验性）",
+    title: "允许覆盖最佳成绩",
     description: "允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。",
     optionType: "switch",
     defaultValue: false,
@@ -88,6 +94,12 @@ const crawlConfigData = {
     key: "allow_crawl_scores",
     title: "允许爬取谱面成绩",
     description: "关闭后，每次爬取时将不会爬取成绩数据。",
+    optionType: "switch",
+    defaultValue: true,
+  }, {
+    key: "allow_crawl_character",
+    title: "允许爬取角色",
+    description: "允许后，每次爬取将会爬取角色并显示到玩家信息中。",
     optionType: "switch",
     defaultValue: true,
   }, {
@@ -127,7 +139,7 @@ const crawlConfigData = {
     }]
   }, {
     key: "allow_overwrite_best_score",
-    title: "允许覆盖最佳成绩（实验性）",
+    title: "允许覆盖最佳成绩",
     description: "允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。",
     optionType: "switch",
     defaultValue: false,
@@ -315,7 +327,7 @@ export default function Settings() {
           color: "red",
           optionType: "button",
           onClick: () => openConfirmModal("删除所有谱面成绩", <>
-            你确定要删除你的查分器账号里<Mark>所有的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩</Mark>吗？这将包括所有历史爬取的谱面成绩，并且不可撤销。
+            你确定要<Mark>删除你的查分器账号里所有的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩</Mark>吗？这将包括<Mark>所有历史爬取的谱面成绩</Mark>，并且不可撤销。
           </>, deletePlayerScoresHandler, {
             confirmProps: { color: 'red' },
           }),

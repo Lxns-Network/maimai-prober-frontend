@@ -6,7 +6,7 @@ import { getRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
   return (
     <Group wrap="nowrap">
-      <Avatar src={player.icon_url} size={94} radius="md" style={{
+      <Avatar src={player.character ? `https://assets.lxns.net/chunithm/character/${player.character.id}.png!webp` : player.icon_url} size={94} radius="md" style={{
         backgroundSize: "5px 5px",
         backgroundImage: "linear-gradient(-45deg, transparent 45%, rgba(0, 0, 0, 0.2) 45%, rgba(0, 0, 0, 0.2) 55%, transparent 55%)",
       }}>

@@ -17,7 +17,7 @@ export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
 
   return (
     <Group wrap="nowrap">
-      <Avatar src={player.icon_url} size={94} radius="md" styles={(theme) => ({
+      <Avatar src={player.icon ? `https://assets.lxns.net/maimai/icon/${player.icon.id}.png!webp` : player.icon_url} size={94} radius="md" styles={(theme) => ({
         root: {
           backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
         }
