@@ -4,11 +4,22 @@ import { IconDatabaseOff } from "@tabler/icons-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
+  let ticks = [80, 90, 94, 97, 98, 99, 99.5, 100.5, 101];
+  let min = 101;
+  scores.forEach((score) => {
+    if (score.achievements < min) {
+      min = score.achievements;
+    }
+  });
+  ticks = ticks.filter((tick) => {
+    return tick >= Math.floor(min);
+  });
+
   return (
     <ResponsiveContainer width="100%" height={250}>
-      <AreaChart data={scores}>
+      <AreaChart data={scores} margin={{ top: 5, right: 5, bottom: 5, left: 15 }}>
         <defs>
-          <linearGradient id="dx_rating" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="achievements" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
             <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
           </linearGradient>
@@ -18,8 +29,8 @@ const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
           day: "numeric",
         })} fontSize={14} />
         <YAxis width={40} domain={([dataMin, dataMax]) => {
-          return [Math.max(Math.floor(dataMin) - 10, 0), Math.floor(dataMax) + 10]
-        }} fontSize={14} />
+          return [Math.max(Math.floor(dataMin) - 1, 80), Math.min(Math.floor(dataMax) + 1, 101)]
+        }} ticks={ticks} unit="%" fontSize={14} />
         <CartesianGrid strokeDasharray="3 3" />
         <Tooltip content={(props) => {
           if (!props.active || !props.payload || props.payload.length < 1) return null;
@@ -27,18 +38,26 @@ const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
           return (
             <Card p="xs" withBorder fz="sm">
               <Text>{new Date(payload.upload_time).toLocaleDateString()}</Text>
-              <Text c="#8884d8">DX Rating: {parseInt(payload.dx_rating)}</Text>
-              <Text>{payload.achievements}%</Text>
+              <Text c="#8884d8">{payload.achievements}%</Text>
+              <Text>DX Rating: {parseInt(payload.dx_rating)}</Text>
             </Card>
           )
         }} />
-        <Area type="monotone" dataKey="dx_rating" stroke="#8884d8" fillOpacity={1} fill="url(#dx_rating)" />
+        <Area type="monotone" dataKey="achievements" stroke="#8884d8" fillOpacity={1} fill="url(#achievements)" />
       </AreaChart>
     </ResponsiveContainer>
   )
 }
 
 export const ScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
+  const scoresLength = scores.length;
+
+  if (scores) {
+    scores = scores.filter((score) => {
+      return score.achievements >= 80;
+    });
+  }
+
   if (!scores || scores.length < 2) {
     return (
       <Flex gap="xs" align="center" direction="column" c="dimmed">
@@ -48,5 +67,8 @@ export const ScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
     )
   }
 
-  return <ScoreHistoryChart scores={scores} />
+  return <>
+    <ScoreHistoryChart scores={scores} />
+    {scores.length < scoresLength && <Text fz="xs" c="dimmed">※ 为了方便观察达成率变化，图表过滤了 {scoresLength - scores.length} 条达成率过低的成绩。</Text>}
+  </>
 }

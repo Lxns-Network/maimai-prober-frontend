@@ -6,10 +6,17 @@ export interface RatingTrendProps {
   total: number;
   standard_total: number;
   dx_total: number;
-  date: string;
+  date: string | number;
 }
 
 const RatingTrendChart = ({ trend }: { trend: RatingTrendProps[] }) => {
+  trend = trend.map((item) => {
+    return {
+      ...item,
+      date: new Date(item.date).getTime(),
+    }
+  })
+
   return (
     <ResponsiveContainer width="100%" height={250}>
       <ComposedChart data={trend}>
@@ -19,7 +26,7 @@ const RatingTrendChart = ({ trend }: { trend: RatingTrendProps[] }) => {
             <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
           </linearGradient>
         </defs>
-        <XAxis dataKey="date" tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', {
+        <XAxis dataKey="date" type="number" domain={["dataMin", "dataMax"]} tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', {
           month: "numeric",
           day: "numeric",
         })} fontSize={14} />
