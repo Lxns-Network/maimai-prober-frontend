@@ -291,9 +291,9 @@ JSON 格式的玩家成绩：
 | `level_index` | [`LevelIndex`](#levelindex) | 难度 |
 | `score` | `int` | 分数 |
 | `rating` | `float` | 仅获取 `Score` 时返回，Rating |
-| `clear` | [`ClearType`](#cleartype) | 分数 |
+| `clear` | [`ClearType`](#cleartype) | CLEAR 类型 |
 | `full_combo` | [`FullComboType`](#fullcombotype) | 值可空，FULL COMBO 类型 |
-| `full_chain` | [`FullChainType`](#fullchaintype) | 值可空，FULL SYNC 类型 |
+| `full_chain` | [`FullChainType`](#fullchaintype) | 值可空，FULL CHAIN 类型 |
 | `rank` | [`RankType`](#ratetype) | 仅获取 `Score` 时返回，评级类型 |
 | `play_time` | `string` | 值可空，游玩的 UTC 时间，精确到分钟 |
 | `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |

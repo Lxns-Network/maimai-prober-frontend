@@ -33,6 +33,7 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
 
   useEffect(() => {
     setPage(1);
+    setDifficulty(0);
     if (plate.required) {
       setDifficulties(plate.required.map((required) => required.difficulties).flat());
     }
