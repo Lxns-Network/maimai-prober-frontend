@@ -4,7 +4,7 @@ import {
   Text,
   Title,
   Card,
-  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack
+  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack, Badge
 } from "@mantine/core";
 import classes from "./Songs.module.css"
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
@@ -181,6 +181,16 @@ export default function Songs() {
                 </Text>
               </Box>
             </Group>
+            <Box mt={12}>
+              <Text fz="xs" c="dimmed" mb={3}>曲目别名</Text>
+              <Group gap="xs">
+                {aliasList.aliases && !aliasList.aliases.find((alias) => alias.song_id === song.id) ? (
+                  <Text fz="sm">暂无别名，你可以前往<Anchor fz="sm" component={Link} to="/alias/vote">曲目别名投票</Anchor>添加别名</Text>
+                ) : aliasList.aliases.find((alias) => alias.song_id === song.id).aliases.map((alias: any) => (
+                  <Badge variant="default" size="lg">{alias}</Badge>
+                ))}
+              </Group>
+            </Box>
           </Card.Section>
           <AudioPlayer
             className={classes.audioPlayer}
