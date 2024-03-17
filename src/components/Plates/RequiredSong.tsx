@@ -28,21 +28,37 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
 
   const pageSize = 20;
   const [page, setPage] = useState(1);
+  const [filteredRecords, setFilteredRecords] = useState<any[]>([]);
   const [displayRecords, setDisplayRecords] = useState<any[]>([]);
 
   useEffect(() => {
     setPage(1);
-
     if (plate.required) {
       setDifficulties(plate.required.map((required) => required.difficulties).flat());
     }
   }, [plate]);
 
   useEffect(() => {
+    if (difficulty === 4) {
+      setPage(1);
+    }
+    setFilteredRecords(records.filter((record) => {
+      return plate.required && plate.required.every((required) => {
+        if (required.difficulties.includes(difficulty || 0)) {
+          return required.songs.some((song) => {
+            return song.title === record.title && song.type === record.type;
+          });
+        }
+        return true;
+      })
+    }));
+  }, [difficulty]);
+
+  useEffect(() => {
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
-    setDisplayRecords(records.slice(start, end));
-  }, [page, records]);
+    setDisplayRecords(filteredRecords.slice(start, end));
+  }, [page, filteredRecords]);
 
   return (
     <Card radius="md" p="md" withBorder className={classes.card}>
@@ -125,7 +141,7 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
       </SimpleGrid>
       <Space h="md" />
       <Group justify="center">
-        <Pagination size="sm" total={Math.ceil(records.length / pageSize)} value={page} onChange={(page) => setPage(page)} />
+        <Pagination size="sm" total={Math.ceil(filteredRecords.length / pageSize)} value={page} onChange={(page) => setPage(page)} />
       </Group>
     </Card>
   )
