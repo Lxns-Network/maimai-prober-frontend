@@ -26,19 +26,22 @@ import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
 
 interface CreateAliasModalProps {
+  defaultSongId?: number;
+  defaultSongList?: SongList;
   opened: boolean;
   onClose: (alias?: any) => void;
 }
 
-export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => {
+export const CreateAliasModal = ({ defaultSongId, defaultSongList, opened, onClose }: CreateAliasModalProps) => {
   const [uploading, setUploading] = useState(false);
   const [songList, setSongList] = useState(new SongList());
   const [songs, setSongs] = useState([] as any[]);
+  const [readonly, setReadonly] = useState(false);
   const computedColorScheme = useComputedColorScheme('light');
 
   const form = useForm({
     initialValues: {
-      game: null,
+      game: null as "maimai" | "chunithm" | null,
       songId: null as number | null,
       alias: "",
       agree: false,
@@ -92,6 +95,24 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
   }, [songList]);
 
   useEffect(() => {
+    if (defaultSongList) {
+      form.setValues({
+        game: defaultSongList instanceof MaimaiSongList ? "maimai" : "chunithm",
+      });
+      setReadonly(true);
+      setSongList(defaultSongList);
+    }
+  }, [defaultSongList]);
+
+  useEffect(() => {
+    if (defaultSongId) {
+      form.setValues({
+        songId: defaultSongId,
+      });
+    }
+  }, [defaultSongId]);
+
+  useEffect(() => {
     if (!form.values.game) return;
 
     if (form.values.game === "maimai") {
@@ -100,7 +121,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
       setSongList(new ChunithmSongList());
     }
     form.setValues({
-      songId: null,
+      songId: defaultSongId || null,
       alias: "",
     });
   }, [form.values.game]);
@@ -135,6 +156,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                     { value: 'maimai', label: '舞萌 DX' },
                     { value: 'chunithm', label: '中二节奏' },
                   ]}
+                  disabled={readonly}
                   withAsterisk
                   {...form.getInputProps('game')}
                 />
@@ -145,6 +167,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                     onOptionSubmit={(value) => {
                       form.setValues({ songId: value });
                     }}
+                    disabled={readonly}
                     label="曲目"
                     mb="sm"
                     withAsterisk
@@ -157,7 +180,7 @@ export const CreateAliasModal = ({ opened, onClose }: CreateAliasModalProps) => 
                       form.setValues({
                         songId: song.id,
                       });
-                    }} mt={14} disabled={songList.songs.length === 0}>
+                    }} mt={14} disabled={songList.songs.length === 0 || readonly}>
                       <IconArrowsShuffle size={16} />
                     </ActionIcon>
                   </Tooltip>

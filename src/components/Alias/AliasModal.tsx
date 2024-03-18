@@ -109,7 +109,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
         <div style={{ flex: 1 }}>
           <div>
             <Text fz="xs" c="dimmed">曲名</Text>
-            <Text>{alias.song.name}</Text>
+            <Text>{alias.song.name || "未知"}</Text>
           </div>
           <Space h="xs" />
           <div>

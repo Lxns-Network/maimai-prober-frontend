@@ -4,23 +4,24 @@ import {
   Text,
   Title,
   Card,
-  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack, Badge
+  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack, Badge, ActionIcon
 } from "@mantine/core";
 import classes from "./Songs.module.css"
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { useLocalStorage } from "@mantine/hooks";
 import { SongList } from "../../utils/api/song/song.tsx";
-import { openRetryModal } from "../../utils/modal.tsx";
+import {openAlertModal, openRetryModal} from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
 import { AliasList } from "../../utils/api/alias.tsx";
-import { IconListDetails, IconPhotoOff } from "@tabler/icons-react";
+import {IconListDetails, IconPhotoOff, IconPlus} from "@tabler/icons-react";
 import { fetchAPI } from "../../utils/api/api.tsx";
 import { Link, useLocation } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
 import { Song } from "../../components/Songs/Song";
 import { PhotoView } from "react-photo-view";
 import { AudioPlayer } from "../../components/AudioPlayer.tsx";
+import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 
 export default function Songs() {
   const [game, setGame] = useLocalStorage({ key: 'game' });
@@ -29,8 +30,9 @@ export default function Songs() {
   const [songId, setSongId] = useState<number>(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<any[]>([]);
-  const location = useLocation();
+  const [opened, setOpened] = useState(false);
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
+  const location = useLocation();
 
   const songListFetchHandler = async (songList: SongList) => {
     try {
@@ -125,6 +127,7 @@ export default function Songs() {
 
   return (
     <Container className={classes.root} size={500}>
+      <CreateAliasModal defaultSongId={songId} defaultSongList={songList} opened={opened} onClose={() => setOpened(false)} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         曲目查询
       </Title>
@@ -184,11 +187,18 @@ export default function Songs() {
             <Box mt={12}>
               <Text fz="xs" c="dimmed" mb={3}>曲目别名</Text>
               <Group gap="xs">
-                {aliasList.aliases && !aliasList.aliases.find((alias) => alias.song_id === song.id) ? (
-                  <Text fz="sm">暂无别名，你可以前往<Anchor fz="sm" component={Link} to="/alias/vote">曲目别名投票</Anchor>添加别名</Text>
-                ) : aliasList.aliases.find((alias) => alias.song_id === song.id).aliases.map((alias: any) => (
-                  <Badge variant="default" size="lg">{alias}</Badge>
+                {aliasList.aliases && aliasList.aliases.find((alias) => alias.song_id === song.id)?.aliases.map((alias: any) => (
+                  <Badge variant="default" radius="md" size="lg">{alias}</Badge>
                 ))}
+                <ActionIcon variant="default" radius="md" size={26} onClick={() => {
+                  if (isLoggedOut) {
+                    openAlertModal("创建失败", "你需要登录查分器账号才能创建曲目别名。");
+                  } else {
+                    setOpened(true);
+                  }
+                }}>
+                  <IconPlus size={18} />
+                </ActionIcon>
               </Group>
             </Box>
           </Card.Section>

@@ -14,7 +14,7 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
   return (
     <UnstyledButton className={classes.alias} onClick={onClick} {...others}>
       <Flex>
-        <Text fz="sm" c="dimmed" style={{ flex: 1 }} truncate>{alias.song.name}</Text>
+        <Text fz="sm" c="dimmed" style={{ flex: 1 }} truncate>{alias.song.name || "未知"}</Text>
         {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (
           <Center>
             <Tooltip label="新提交" withinPortal>

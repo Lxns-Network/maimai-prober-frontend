@@ -99,7 +99,7 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onSongsCha
           placeholder="请选择曲目"
           leftSection={<IconSearch size={18} />}
           rightSection={
-            search.length !== 0 ? (
+            search.length !== 0 && !others.disabled ? (
               <CloseButton
                 size="sm"
                 onMouseDown={(event) => event.preventDefault()}
