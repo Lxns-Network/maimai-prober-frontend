@@ -341,6 +341,30 @@ JSON 格式的玩家成绩：
 
 [Frame](#collection)
 
+### GET `/api/v0/maimai/collection-genre/list`
+
+获取收藏品分类列表。
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `collectionGenres` | [CollectionGenre[]](#collectiongenre) | 背景列表 |
+
+### GET `/api/v0/maimai/collection-genre/{collection_genre_id}`
+
+获取收藏品分类信息。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `collection_genre_id` | `int` | 收藏品分类 ID |
+
+#### 响应体
+
+[CollectionGenre](#collectiongenre)
+
 ## 结构体
 
 ### Player
@@ -484,6 +508,7 @@ DX Rating 趋势
 | `name` | `string` | 收藏品名称 |
 | `color` | `string` | 值可空，仅玩家称号，称号颜色 |
 | `description` | `string` | 值可空，收藏品说明 |
+| `genre` | `string` | 值可空，除玩家称号，收藏品分类（日文） |
 | `required` | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求 |
 
 ### CollectionRequired
@@ -510,6 +535,16 @@ DX Rating 趋势
 | `type` | [`SongType`](#songtype) | 谱面类型 |
 | `completed` | `bool` | 值可空，要求的曲目是否完成 |
 | `completed_difficulties` | `int[]` | 值可空，已完成的难度 |
+
+### CollectionGenre
+
+收藏品分类
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 收藏品分类 ID |
+| `title` | `string` | 分类标题 |
+| `genre` | `string` | 分类标题（日文） |
 
 ## 枚举类型
 

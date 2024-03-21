@@ -2,6 +2,14 @@
 
 ---
 
+## 2024/3/21
+
+- 修复爬取舞萌 DX 收藏品时，部分收藏品获取错误的问题
+- 舞萌 DX 新增接口：
+  - [获取收藏品分类列表](/docs/api/maimai#get-apiv0maimaicollection-genrelist)
+  - [获取收藏品分类信息](/docs/api/maimai#get-apiv0maimaicollection-genrecollection_genre_id)
+- 舞萌 DX `Collection` 结构体中新增 `genre` 字段，用于获取收藏品分类（日文）
+
 ## 2024/3/18
 
 - 现在可以直接在曲目查询页创建曲目别名
