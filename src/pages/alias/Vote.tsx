@@ -22,9 +22,6 @@ import {
   IconHelp,
   IconPlus,
 } from "@tabler/icons-react";
-import { SongList } from "../../utils/api/song/song.tsx";
-import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
 import classes from "../Page.module.css"
 import { openAlertModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
@@ -72,7 +69,6 @@ export default function Vote() {
   const [opened, setOpened] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [game, setGame] = useLocalStorage({ key: 'game' });
-  const [songList, setSongList] = useState(new SongList());
   const [onlyNotApproved, toggleOnlyNotApproved] = useToggle();
 
   // 排序相关
@@ -156,16 +152,6 @@ export default function Vote() {
   useEffect(() => {
     if (!game) return;
 
-    let newSongList: any;
-    if (game === "maimai") {
-      newSongList = new MaimaiSongList();
-    } else {
-      newSongList = new ChunithmSongList();
-    }
-    newSongList.fetch().then(() => {
-      setSongId(0);
-      setSongList(newSongList);
-    });
     fetchHandler();
     setPage(1);
   }, [game]);
@@ -254,7 +240,6 @@ export default function Vote() {
       <Space h="md" />
       <Flex align="center" justify="space-between" gap="xs">
         <SongCombobox
-          songs={songList.songs}
           value={songId}
           onOptionSubmit={(value) => setSongId(value)}
           style={{ flex: 1 }}

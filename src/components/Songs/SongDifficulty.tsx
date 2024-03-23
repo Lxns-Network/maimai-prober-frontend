@@ -12,7 +12,7 @@ interface SongProps {
   versions: any[];
 }
 
-export const Song = ({ song, difficulty, type, score, versions }: SongProps) => {
+export const SongDifficulty = ({ song, difficulty, type, score, versions }: SongProps) => {
   const [game] = useLocalStorage({ key: 'game' });
 
   return (
@@ -133,7 +133,7 @@ export const Song = ({ song, difficulty, type, score, versions }: SongProps) => 
       ) : (
         <Divider color={getScoreSecondaryColor(game, difficulty.difficulty)} />
       )}
-      <Group mt={7} ml="0.5rem" gap="xs">
+      <Flex mt={8} ml="0.5rem" rowGap={4} columnGap="xs" wrap="wrap">
         {difficulty.note_designer && difficulty.note_designer != "-" && (
           <Group>
             <Text fz="xs">谱师</Text>
@@ -148,7 +148,7 @@ export const Song = ({ song, difficulty, type, score, versions }: SongProps) => 
             {versions.slice().reverse().find((version) => difficulty.version >= version.version)?.title || "未知"}
           </Text>
         </Group>
-      </Group>
+      </Flex>
     </Card>
   )
 }

@@ -8,52 +8,46 @@ import {
   Mark,
   Modal, Paper,
   rem,
-  Select,
   Space, Text,
   TextInput, Tooltip
 } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useForm } from "@mantine/form";
 import { IconArrowsShuffle } from "@tabler/icons-react";
-import { MaimaiSongList } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
-import { SongList } from "../../utils/api/song/song.tsx";
 import { createAlias } from "../../utils/api/alias.tsx";
 import { useComputedColorScheme } from "@mantine/core";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
+import { ApiContext } from "../../App.tsx";
+import { useLocalStorage } from "@mantine/hooks";
 
 interface CreateAliasModalProps {
   defaultSongId?: number;
-  defaultSongList?: SongList;
   opened: boolean;
   onClose: (alias?: any) => void;
 }
 
-export const CreateAliasModal = ({ defaultSongId, defaultSongList, opened, onClose }: CreateAliasModalProps) => {
+export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAliasModalProps) => {
   const [uploading, setUploading] = useState(false);
-  const [songList, setSongList] = useState(new SongList());
-  const [songs, setSongs] = useState([] as any[]);
   const [readonly, setReadonly] = useState(false);
+  const [game] = useLocalStorage({ key: 'game' })
   const computedColorScheme = useComputedColorScheme('light');
-
+  const context = useContext(ApiContext);
   const form = useForm({
     initialValues: {
-      game: null as "maimai" | "chunithm" | null,
       songId: null as number | null,
       alias: "",
       agree: false,
     },
 
     validate: {
-      game: (value) => value !== null ? null : "请选择曲目所属游戏",
       songId: (value) => value !== null ? null : "请选择曲目",
       alias: (value, values) => {
         if (value === "") return "请输入曲目别名";
         if (!/^.{1,32}$/.test(value)) return "别名长度不符合要求";
-        if (values.songId && songList.find(values.songId)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
+        if (values.songId && context.songList.find(values.songId)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
       },
       agree: (value) => value ? null : "请阅读并同意曲目别名命名规则",
     },
@@ -66,7 +60,7 @@ export const CreateAliasModal = ({ defaultSongId, defaultSongList, opened, onClo
         song_id: parseInt(values.songId),
         alias: values.alias,
       }
-      const res = await createAlias(values.game, alias);
+      const res = await createAlias(game, alias);
       if (res.status === 409) {
         openAlertModal("别名创建失败", "别名已存在，请输入其它曲目别名。");
         setUploading(false);
@@ -89,42 +83,13 @@ export const CreateAliasModal = ({ defaultSongId, defaultSongList, opened, onClo
   }
 
   useEffect(() => {
-    songList.fetch().then(() => {
-      setSongs(songList.songs);
-    });
-  }, [songList]);
-
-  useEffect(() => {
-    if (defaultSongList) {
-      form.setValues({
-        game: defaultSongList instanceof MaimaiSongList ? "maimai" : "chunithm",
-      });
-      setReadonly(true);
-      setSongList(defaultSongList);
-    }
-  }, [defaultSongList]);
-
-  useEffect(() => {
     if (defaultSongId) {
       form.setValues({
         songId: defaultSongId,
       });
+      setReadonly(true);
     }
   }, [defaultSongId]);
-
-  useEffect(() => {
-    if (!form.values.game) return;
-
-    if (form.values.game === "maimai") {
-      setSongList(new MaimaiSongList());
-    } else {
-      setSongList(new ChunithmSongList());
-    }
-    form.setValues({
-      songId: defaultSongId || null,
-      alias: "",
-    });
-  }, [form.values.game]);
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
@@ -138,7 +103,7 @@ export const CreateAliasModal = ({ defaultSongId, defaultSongList, opened, onClo
           <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
             <Flex align="center" gap="md">
               <Avatar size={94} radius="md" src={
-                (form.values.game && form.values.songId) ? `https://assets.lxns.net/${form.values.game}/jacket/${form.values.songId}.png!webp` : null
+                (form.values.songId) ? `https://assets.lxns.net/${game}/jacket/${form.values.songId}.png!webp` : null
               } styles={(theme) => ({
                 root: {
                   backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
@@ -147,22 +112,8 @@ export const CreateAliasModal = ({ defaultSongId, defaultSongList, opened, onClo
                 <Text ta="center" fz="xs">请选择曲目</Text>
               </Avatar>
               <div style={{ flex: 1 }}>
-                <Select
-                  label="曲目所属游戏"
-                  placeholder="请选择曲目所属游戏"
-                  comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
-                  mb="xs"
-                  data={[
-                    { value: 'maimai', label: '舞萌 DX' },
-                    { value: 'chunithm', label: '中二节奏' },
-                  ]}
-                  disabled={readonly}
-                  withAsterisk
-                  {...form.getInputProps('game')}
-                />
                 <Flex align="center" gap="xs">
                   <SongCombobox
-                    songs={songs}
                     value={form.values.songId || 0}
                     onOptionSubmit={(value) => {
                       form.setValues({ songId: value });
@@ -176,23 +127,23 @@ export const CreateAliasModal = ({ defaultSongId, defaultSongList, opened, onClo
                   />
                   <Tooltip label="随机一首曲目" withinPortal>
                     <ActionIcon variant="default" size={24} onClick={() => {
-                      const song = songList.songs[Math.floor(Math.random() * songList.songs.length)];
+                      const song = context.songList.songs[Math.floor(Math.random() * context.songList.songs.length)];
                       form.setValues({
                         songId: song.id,
                       });
-                    }} mt={14} disabled={songList.songs.length === 0 || readonly}>
+                    }} mt={14} disabled={context.songList.songs.length === 0 || readonly}>
                       <IconArrowsShuffle size={16} />
                     </ActionIcon>
                   </Tooltip>
                 </Flex>
+                <TextInput
+                  label="曲目别名"
+                  placeholder="请输入曲目别名"
+                  withAsterisk
+                  {...form.getInputProps("alias")}
+                />
               </div>
             </Flex>
-            <TextInput
-              label="曲目别名"
-              placeholder="请输入曲目别名"
-              withAsterisk
-              {...form.getInputProps("alias")}
-            />
             <Space h="md" />
             <Checkbox
               label="我已阅读并理解曲目别名命名规则"

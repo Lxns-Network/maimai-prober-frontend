@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {useContext, useEffect, useState} from "react";
 import {
   Container,
   Text,
@@ -10,23 +10,20 @@ import classes from "./Songs.module.css"
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { useLocalStorage } from "@mantine/hooks";
-import { SongList } from "../../utils/api/song/song.tsx";
-import {openAlertModal, openRetryModal} from "../../utils/modal.tsx";
+import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
-import { AliasList } from "../../utils/api/alias.tsx";
-import {IconListDetails, IconPhotoOff, IconPlus} from "@tabler/icons-react";
+import { IconListDetails, IconPhotoOff, IconPlus } from "@tabler/icons-react";
 import { fetchAPI } from "../../utils/api/api.tsx";
 import { Link, useLocation } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
-import { Song } from "../../components/Songs/Song";
+import { SongDifficulty } from "../../components/Songs/SongDifficulty.tsx";
 import { PhotoView } from "react-photo-view";
 import { AudioPlayer } from "../../components/AudioPlayer.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
+import { ApiContext } from "../../App.tsx";
 
 export default function Songs() {
   const [game, setGame] = useLocalStorage({ key: 'game' });
-  const [songList, setSongList] = useState(new SongList());
-  const [aliasList, setAliasList] = useState(new AliasList());
   const [songId, setSongId] = useState<number>(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<any[]>([]);
@@ -34,14 +31,7 @@ export default function Songs() {
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
   const location = useLocation();
 
-  const songListFetchHandler = async (songList: SongList) => {
-    try {
-      await songList.fetch();
-      setSongList(songList);
-    } catch (error) {
-      openRetryModal("曲目列表获取失败", `${error}`, () => songListFetchHandler(songList));
-    }
-  }
+  const context = useContext(ApiContext);
 
   const getPlayerSongBestsHandler = async (type?: string) => {
     if (!song) return;
@@ -68,30 +58,12 @@ export default function Songs() {
     setSongId(0);
     setSong(null);
     setScores([]);
-    setSongList(new SongList());
-    setAliasList(new AliasList());
-
-    let songList: MaimaiSongList | ChunithmSongList;
-    if (game === "maimai") {
-      songList = new MaimaiSongList();
-    } else {
-      songList = new ChunithmSongList();
-    }
-    songListFetchHandler(songList);
   }, [game]);
-
-  useEffect(() => {
-    if (!game) return;
-
-    aliasList.fetch(game).then(() => {
-      setAliasList(aliasList);
-    });
-  }, [aliasList]);
 
   useEffect(() => {
     if (!song || isLoggedOut) return;
 
-    if (songList instanceof MaimaiSongList) {
+    if (context.songList instanceof MaimaiSongList) {
       const s = song as MaimaiSongProps;
       let types = [];
       if (s.difficulties.dx.length) types.push("dx");
@@ -110,12 +82,12 @@ export default function Songs() {
   useEffect(() => {
     if (!songId) return;
 
-    setSong(songList.songs.find((song) => song.id === songId) || null)
+    setSong(context.songList.songs.find((song) => song.id === songId) || null)
     setScores([]);
   }, [songId]);
 
   useEffect(() => {
-    if (!songList.songs.length) return;
+    if (!context.songList.songs.length) return;
 
     if (location.state) {
       if (location.state.songId) {
@@ -123,11 +95,11 @@ export default function Songs() {
         window.history.replaceState({}, '');
       }
     }
-  }, [songList]);
+  }, [context.songList]);
 
   return (
     <Container className={classes.root} size={500}>
-      <CreateAliasModal defaultSongId={songId} defaultSongList={songList} opened={opened} onClose={() => setOpened(false)} />
+      <CreateAliasModal defaultSongId={songId} opened={opened} onClose={() => setOpened(false)} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         曲目查询
       </Title>
@@ -139,8 +111,6 @@ export default function Songs() {
         { label: '中二节奏', value: 'chunithm' },
       ]} />
       <SongCombobox
-        songs={songList.songs}
-        aliases={aliasList.aliases}
         value={songId}
         onOptionSubmit={(value) => setSongId(value)}
         radius="md"
@@ -174,25 +144,25 @@ export default function Songs() {
               <Box mr={12}>
                 <Text fz="xs" c="dimmed">分类</Text>
                 <Text fz="sm">
-                  {songList.genres.find((genre) => genre.genre === song.genre)?.title || song.genre}
+                  {context.songList.genres.find((genre) => genre.genre === song.genre)?.title || song.genre}
                 </Text>
               </Box>
               <Box mr={12}>
                 <Text fz="xs" c="dimmed">首次出现版本</Text>
                 <Text fz="sm">
-                  {songList.versions.slice().reverse().find((version) => song.version >= version.version)?.title || "未知"}
+                  {context.songList.versions.slice().reverse().find((version) => song.version >= version.version)?.title || "未知"}
                 </Text>
               </Box>
             </Group>
             <Box mt={12}>
               <Text fz="xs" c="dimmed" mb={3}>曲目别名</Text>
               <Group gap="xs">
-                {aliasList.aliases && aliasList.aliases.find((alias) => alias.song_id === song.id)?.aliases.map((alias: any) => (
-                  <Badge variant="default" radius="md" size="lg">{alias}</Badge>
+                {context.aliasList.aliases && context.aliasList.aliases.find((alias) => alias.song_id === song.id)?.aliases.map((alias: any) => (
+                  <Badge key={alias} variant="default" radius="md" size="lg">{alias}</Badge>
                 ))}
                 <ActionIcon variant="default" radius="md" size={26} onClick={() => {
                   if (isLoggedOut) {
-                    openAlertModal("创建失败", "你需要登录查分器账号才能创建曲目别名。");
+                    openAlertModal("登录提示", "你需要登录查分器账号才能创建曲目别名。");
                   } else {
                     setOpened(true);
                   }
@@ -218,28 +188,28 @@ export default function Songs() {
         </Flex>
       ) : (
         <Stack>
-          {songList instanceof MaimaiSongList && (
+          {context.songList instanceof MaimaiSongList && (
             ["dx", "standard"].map((type) => (
               (song as MaimaiSongProps).difficulties[type as keyof MaimaiDifficultiesProps].slice().reverse().map((difficulty, i) => (
-                <Song
+                <SongDifficulty
                   key={i}
                   song={song}
                   score={scores.find((record) => record.type === type && record.level_index === difficulty.difficulty)}
                   difficulty={difficulty}
                   type={type}
-                  versions={songList.versions}
+                  versions={context.songList.versions}
                 />
               ))
             ))
           )}
-          {songList instanceof ChunithmSongList && (
+          {context.songList instanceof ChunithmSongList && (
             (song as ChunithmSongProps).difficulties.slice().reverse().map((difficulty, i) => (
-              <Song
+              <SongDifficulty
                 key={i}
                 song={song}
                 score={scores.find((record) => record.level_index === difficulty.difficulty)}
                 difficulty={difficulty}
-                versions={songList.versions}
+                versions={context.songList.versions}
               />
             ))
           )}

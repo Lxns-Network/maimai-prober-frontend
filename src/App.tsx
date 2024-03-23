@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   ScrollArea,
@@ -22,7 +22,12 @@ import { Fallback } from "./pages/public/Fallback.tsx";
 import { PhotoProvider } from "react-photo-view";
 import 'react-photo-view/dist/react-photo-view.css';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
-import { useFullscreen } from "@mantine/hooks";
+import { useFullscreen, useLocalStorage } from "@mantine/hooks";
+import { SongList } from "./utils/api/song/song.tsx";
+import { AliasList } from "./utils/api/alias.tsx";
+import { MaimaiSongList } from "./utils/api/song/maimai.tsx";
+import { ChunithmSongList } from "./utils/api/song/chunithm.tsx";
+import { openRetryModal } from "./utils/modal.tsx";
 
 const theme = createTheme({
   focusRing: 'never',
@@ -32,7 +37,10 @@ const theme = createTheme({
 
 export const HEADER_HEIGHT = 56;
 export const NAVBAR_BREAKPOINT = 992;
-export const ApiContext = React.createContext({});
+export const ApiContext = React.createContext({
+  songList: new SongList(),
+  aliasList: new AliasList(),
+});
 
 export default function App() {
   const { toggle, fullscreen } = useFullscreen();
@@ -40,6 +48,10 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const viewport = useRef<HTMLDivElement>(null);
+
+  const [songList, setSongList] = useState(new SongList());
+  const [aliasList, setAliasList] = useState(new AliasList());
+  const [game] = useLocalStorage({ key: 'game' });
 
   const handleResize = () => {
     setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
@@ -73,10 +85,39 @@ export default function App() {
     }
   }, [location.pathname]);
 
-  const value = useMemo(() => ({}), []);
+  const songListFetchHandler = async (songList: SongList) => {
+    try {
+      await songList.fetch();
+      setSongList(songList);
+    } catch (error) {
+      openRetryModal("曲目列表获取失败", `${error}`, () => songListFetchHandler(songList));
+    }
+  }
+
+  useEffect(() => {
+    if (!game) return;
+
+    setSongList(new SongList());
+
+    let songList: MaimaiSongList | ChunithmSongList;
+    if (game === "maimai") {
+      songList = new MaimaiSongList();
+    } else {
+      songList = new ChunithmSongList();
+    }
+
+    Promise.all([songList.fetch(), aliasList.fetch(game)]).then(() => {
+      setSongList(songList);
+      setAliasList(aliasList);
+    }).catch((error) => {
+      openRetryModal("曲目列表获取失败", `${error}`, () => {
+        songListFetchHandler(songList);
+      });
+    });
+  }, [game]);
 
   return (
-    <ApiContext.Provider value={value}>
+    <ApiContext.Provider value={{ songList, aliasList }}>
       <MantineProvider theme={theme} defaultColorScheme="auto">
         <ErrorBoundary FallbackComponent={Fallback}>
           <ModalsProvider labels={{ confirm: '确定', cancel: '取消' }}>

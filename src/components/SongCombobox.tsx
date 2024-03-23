@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   CloseButton,
   Combobox,
@@ -12,20 +12,19 @@ import {
 import { MaimaiSongProps } from "../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../utils/api/song/chunithm.tsx";
 import { IconSearch } from "@tabler/icons-react";
+import { ApiContext } from "../App.tsx";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
-  songs: (MaimaiSongProps | ChunithmSongProps)[];
-  aliases?: {
-    song_id: number;
-    aliases: string[];
-  }[];
   value?: number;
   onSearchChange?: (search: string) => void;
   onSongsChange?: (songs: (MaimaiSongProps | ChunithmSongProps)[]) => void;
   onOptionSubmit?: (value: number) => void;
 }
 
-function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search: string, aliases?: SongComboboxProps["aliases"]) {
+function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search: string, aliases?: {
+  song_id: number;
+  aliases: string[];
+}[]): (MaimaiSongProps | ChunithmSongProps)[] {
   const result: (MaimaiSongProps | ChunithmSongProps)[] = [];
 
   for (let i = 0; i < songs.length; i += 1) {
@@ -52,9 +51,11 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
   return result
 }
 
-export const SongCombobox = ({ songs, aliases, value, onSearchChange, onSongsChange, onOptionSubmit, ...others }: SongComboboxProps) => {
+export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSubmit, ...others }: SongComboboxProps) => {
   const [search, setSearch] = useState('');
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
+
+  const context = useContext(ApiContext);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -62,23 +63,19 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onSongsCha
   const MAX_SONGS = 100;
 
   useEffect(() => {
-    setSearch('');
-  }, [songs, aliases]);
-
-  useEffect(() => {
-    setFilteredSongs(getFilteredSongs(songs, search, aliases));
-  }, [songs, search, aliases]);
+    setFilteredSongs(getFilteredSongs(context.songList.songs, search, context.aliasList.aliases));
+  }, [context.songList.songs, search, context.aliasList.aliases]);
 
   useEffect(() => {
     onSearchChange && onSearchChange(search);
   }, [search]);
 
   useEffect(() => {
-    onSongsChange && onSongsChange(search.length === 0 ? songs : filteredSongs);
+    onSongsChange && onSongsChange(search.length === 0 ? context.songList.songs : filteredSongs);
   }, [filteredSongs]);
 
   useEffect(() => {
-    const song = songs.find((song) => song.id === value);
+    const song = context.songList.songs.find((song) => song.id === value);
     setSearch(song?.title || '');
   }, [value]);
 
@@ -89,7 +86,7 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onSongsCha
       store={combobox}
       onOptionSubmit={(value) => {
         onOptionSubmit && onOptionSubmit(parseInt(value));
-        setSearch(songs.find((song) => song.id === parseInt(value))?.title || '');
+        setSearch(context.songList.songs.find((song) => song.id === parseInt(value))?.title || '');
         combobox.closeDropdown();
       }}
       transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
@@ -114,7 +111,7 @@ export const SongCombobox = ({ songs, aliases, value, onSearchChange, onSongsCha
           }
           rightSectionPointerEvents={search.length !== 0 ? 'auto' : 'none'}
           value={search}
-          disabled={songs.length === 0}
+          disabled={context.songList.songs.length === 0}
           onChange={(event) => {
             combobox.openDropdown();
             combobox.updateSelectedOptionIndex();

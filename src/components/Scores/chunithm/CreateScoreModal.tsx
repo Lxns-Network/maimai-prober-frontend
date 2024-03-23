@@ -144,7 +144,6 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
               </Avatar>
               <div style={{ flex: 1 }}>
                 <SongCombobox
-                  songs={songList.songs}
                   value={form.values.id || 0}
                   onOptionSubmit={(value) => {
                     form.setValues({ id: value });
