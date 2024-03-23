@@ -228,7 +228,7 @@ JSON 格式的玩家成绩：
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `songs` | [Song[]](#song) | 曲目列表 |
+| `songs` | [SongDifficulty[]](#song) | 曲目列表 |
 | `genres` | [Genre[]](#genre) | 乐曲分类列表 |
 | `versions` | [Version[]](#version) | 曲目版本列表 |
 
@@ -244,7 +244,7 @@ JSON 格式的玩家成绩：
 
 #### 响应体
 
-[Song](#song)
+[SongDifficulty](#song)
 
 ### GET `/api/v0/chunithm/alias/list`
 
@@ -298,7 +298,7 @@ JSON 格式的玩家成绩：
 | `play_time` | `string` | 值可空，游玩的 UTC 时间，精确到分钟 |
 | `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |
 
-### Song
+### SongDifficulty
 
 曲目
 

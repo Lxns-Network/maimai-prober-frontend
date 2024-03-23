@@ -259,7 +259,7 @@ JSON 格式的玩家成绩：
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `songs` | [Song[]](#song) | 曲目列表 |
+| `songs` | [SongDifficulty[]](#song) | 曲目列表 |
 | `genres` | [Genre[]](#genre) | 乐曲分类列表 |
 | `versions` | [Version[]](#version) | 曲目版本列表 |
 
@@ -275,7 +275,7 @@ JSON 格式的玩家成绩：
 
 #### 响应体
 
-[Song](#song)
+[SongDifficulty](#song)
 
 ### GET `/api/v0/maimai/alias/list`
 
@@ -419,7 +419,7 @@ DX Rating 趋势
 | `dx` | `int[]` | 现版本谱面总 DX Rating |
 | `date` | `string` | 日期 |
 
-### Song
+### SongDifficulty
 
 曲目
 
