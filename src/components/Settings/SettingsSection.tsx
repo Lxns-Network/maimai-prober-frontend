@@ -1,22 +1,24 @@
-import {Group, Switch, Text, Select, MultiSelect, Button, Box} from '@mantine/core';
+import { Group, Switch, Text, Select, MultiSelect, Button, Box } from '@mantine/core';
 import { memo } from "react";
 import classes from "./Settings.module.css";
-import {useMediaQuery} from "@mantine/hooks";
+import { useMediaQuery } from "@mantine/hooks";
+import { SettingsModalButton } from "./SettingsModal.tsx";
 
 interface OptionsProps {
   value: string;
   label: string;
 }
 
-interface SettingsProps {
+export interface SettingsProps {
   key: string;
   title: string;
   description: string;
-  optionType: 'switch' | 'select' | 'multi-select' | 'button';
+  optionType: 'switch' | 'select' | 'multi-select' | 'button' | 'group';
   // 可选参数
   placeholder?: string;
   color?: string; // 选项类型为 'button' 时需要
   defaultValue?: string | boolean | string[]; // string[] 选项类型为 'multi-select' 时需要
+  settings?: SettingsProps[]; // 选项类型为 'group' 时需要
   options?: OptionsProps[]; // 选项类型为 'select' 或 'multi-select' 时需要
   onChange?: (value: any) => void; // 选项更改时的回调函数
   onClick?: () => void; // 选项类型为 'button' 时需要
@@ -44,6 +46,9 @@ export const SettingsSection = memo(({ data, value, onChange }: SettingsCardProp
         </Text>
       </Box>
       <Box style={{ flexBasis: small && item.optionType.includes("select") ? "100%" : "auto" }}>
+        {item.optionType === 'group' && (
+          <SettingsModalButton title={item.title} data={item.settings || []} value={value} onChange={(key, value) => onChange && onChange(key, value)} />
+        )}
         {item.optionType === 'switch' && (
           <Switch
             onLabel="开"
