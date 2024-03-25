@@ -24,6 +24,7 @@ import { ApiContext } from "../../App.tsx";
 
 export default function Songs() {
   const [game, setGame] = useLocalStorage({ key: 'game' });
+  const [defaultSongId, setDefaultSongId] = useState<number>(0)
   const [songId, setSongId] = useState<number>(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<any[]>([]);
@@ -50,12 +51,24 @@ export default function Songs() {
 
   useEffect(() => {
     document.title = "曲目查询 | maimai DX 查分器";
+
+    if (location.state) {
+      if (location.state.songId) {
+        setDefaultSongId(location.state.songId);
+        window.history.replaceState({}, '');
+      }
+    }
   }, []);
 
   useEffect(() => {
     if (!game) return;
 
-    setSongId(0);
+    if (defaultSongId) {
+      setSongId(defaultSongId);
+      setDefaultSongId(0);
+    } else {
+      setSongId(0);
+    }
     setSong(null);
     setScores([]);
   }, [game]);
@@ -85,17 +98,6 @@ export default function Songs() {
     setSong(context.songList.songs.find((song) => song.id === songId) || null)
     setScores([]);
   }, [songId]);
-
-  useEffect(() => {
-    if (!context.songList.songs.length) return;
-
-    if (location.state) {
-      if (location.state.songId) {
-        setSongId(location.state.songId);
-        window.history.replaceState({}, '');
-      }
-    }
-  }, [context.songList]);
 
   return (
     <Container className={classes.root} size={500}>
