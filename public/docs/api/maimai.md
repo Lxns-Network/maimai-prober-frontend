@@ -206,7 +206,7 @@ JSON 格式的玩家成绩：
 
 [RatingTrend[]](#ratingtrend)
 
-### GET `/api/v0/maimai/player/{friendCode}/score/history`
+### GET `/api/v0/maimai/player/{friend_code}/score/history`
 
 获取玩家成绩上传历史记录。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores`、`allow_third_party_fetch_history` 权限。
 
@@ -214,7 +214,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `friendCode` | `int` | 好友码 |
+| `friend_code` | `int` | 好友码 |
 
 #### 查询参数
 
@@ -415,8 +415,8 @@ DX Rating 趋势
 | 字段名 | 类型 | 说明 |
 |-|-|-|
 | `total` | `int` | 总 DX Rating |
-| `standard` | `int[]` | 旧版本谱面总 DX Rating |
-| `dx` | `int[]` | 现版本谱面总 DX Rating |
+| `standard` | `int` | 旧版本谱面总 DX Rating |
+| `dx` | `int` | 现版本谱面总 DX Rating |
 | `date` | `string` | 日期 |
 
 ### SongDifficulty
