@@ -18,6 +18,7 @@ import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import ScoreContext from "../../../utils/context.tsx";
 import { ScoreHistory } from "./ScoreHistory.tsx";
 import { fetchAPI } from "../../../utils/api/api.tsx";
+import { PhotoView } from "react-photo-view";
 
 interface ScoreModalProps {
   score: ChunithmScoreProps | null;
@@ -30,9 +31,11 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
   return (
     <>
       <Group wrap="nowrap">
-        <Avatar src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png!webp`} size={94} radius="md">
-          <IconPhotoOff />
-        </Avatar>
+        <PhotoView src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png`}>
+          <Avatar src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png!webp`} size={94} radius="md">
+            <IconPhotoOff />
+          </Avatar>
+        </PhotoView>
         <div style={{ flex: 1 }}>
           <Text fz="lg" fw={500} mt={2}>{score.song_name}</Text>
           <Text fz="xs" c="dimmed" mb={8}>曲目 ID：{score.id}</Text>

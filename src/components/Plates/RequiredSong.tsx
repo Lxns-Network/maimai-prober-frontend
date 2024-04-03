@@ -19,6 +19,7 @@ import Icon from "@mdi/react";
 import { mdiCheck } from "@mdi/js";
 import { IconCheck } from "@tabler/icons-react";
 import { PlateDataProps } from "../../pages/user/Plates.tsx";
+import {PhotoView} from "react-photo-view";
 
 export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , records: any[] }) => {
   const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
@@ -125,7 +126,9 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
                   <IconCheck />
                 </ThemeIcon>
               )}} zIndex={1} />
-              <Image h={40} w={40} radius="sm" src={`https://assets.lxns.net/maimai/jacket/${record.id}.png!webp`} />
+              <PhotoView src={`https://assets.lxns.net/maimai/jacket/${record.id}.png`}>
+                <Image h={40} w={40} radius="sm" src={`https://assets.lxns.net/maimai/jacket/${record.id}.png!webp`} />
+              </PhotoView>
             </Box>
             <div>
               <Text size="sm" fw={500} lineClamp={1}>

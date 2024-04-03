@@ -17,11 +17,11 @@ import Icon from "@mdi/react";
 import { useForm } from "@mantine/form";
 import { IconArrowsShuffle } from "@tabler/icons-react";
 import { createAlias } from "../../utils/api/alias.tsx";
-import { useComputedColorScheme } from "@mantine/core";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
 import { ApiContext } from "../../App.tsx";
 import { useLocalStorage } from "@mantine/hooks";
+import { PhotoView } from "react-photo-view";
 
 interface CreateAliasModalProps {
   defaultSongId?: number;
@@ -33,7 +33,6 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   const [uploading, setUploading] = useState(false);
   const [readonly, setReadonly] = useState(false);
   const [game] = useLocalStorage({ key: 'game' })
-  const computedColorScheme = useComputedColorScheme('light');
   const context = useContext(ApiContext);
   const form = useForm({
     initialValues: {
@@ -91,6 +90,10 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
     }
   }, [defaultSongId]);
 
+  useEffect(() => {
+    form.reset();
+  }, [game]);
+
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
@@ -102,15 +105,15 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
         <Modal.Body>
           <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
             <Flex align="center" gap="md">
-              <Avatar size={94} radius="md" src={
-                (form.values.songId) ? `https://assets.lxns.net/${game}/jacket/${form.values.songId}.png!webp` : null
-              } styles={(theme) => ({
-                root: {
-                  backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
-                }
-              })}>
-                <Text ta="center" fz="xs">请选择曲目</Text>
-              </Avatar>
+              {form.values.songId ? (
+                <PhotoView src={`https://assets.lxns.net/${game}/jacket/${form.values.songId}.png`}>
+                  <Avatar size={94} radius="md" src={`https://assets.lxns.net/${game}/jacket/${form.values.songId}.png!webp`} />
+                </PhotoView>
+              ) : (
+                <Avatar size={94} radius="md" src={null}>
+                  <Text ta="center" fz="xs">请选择曲目</Text>
+                </Avatar>
+              )}
               <div style={{ flex: 1 }}>
                 <Flex align="center" gap="xs">
                   <SongCombobox

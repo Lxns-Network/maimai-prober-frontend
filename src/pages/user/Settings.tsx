@@ -29,9 +29,15 @@ const crawlConfigData = {
     optionType: "switch",
     defaultValue: true,
   }, {
+    key: "allow_overwrite_best_score",
+    title: "允许覆盖最佳成绩",
+    description: "允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。",
+    optionType: "switch",
+    defaultValue: false,
+  }, {
     key: "allow_crawl_collection",
     title: "收藏品爬取设置",
-    description: "设置每次爬取时是否爬取头像、姓名框、背景等收藏品。",
+    description: "设置每次爬取时是否爬取头像、姓名框、背景。",
     optionType: "group",
     settings: [{
       key: "allow_crawl_icon",
@@ -89,12 +95,6 @@ const crawlConfigData = {
       value: "remaster",
       label: "⚪ Re:MASTER",
     }]
-  }, {
-    key: "allow_overwrite_best_score",
-    title: "允许覆盖最佳成绩",
-    description: "允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。",
-    optionType: "switch",
-    defaultValue: false,
   }],
   chunithm: [{
     key: "allow_crawl_scores",
@@ -103,9 +103,15 @@ const crawlConfigData = {
     optionType: "switch",
     defaultValue: true,
   }, {
+    key: "allow_overwrite_best_score",
+    title: "允许覆盖最佳成绩",
+    description: "允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。",
+    optionType: "switch",
+    defaultValue: false,
+  }, {
     key: "allow_crawl_collection",
     title: "收藏品爬取设置",
-    description: "设置每次爬取时是否爬取角色、名牌版、地图头像等收藏品。",
+    description: "设置每次爬取时是否爬取角色、名牌版、地图头像。",
     optionType: "group",
     settings: [{
       key: "allow_crawl_character",
@@ -149,12 +155,6 @@ const crawlConfigData = {
       value: "ultima",
       label: "⚫ ULTIMA",
     }]
-  }, {
-    key: "allow_overwrite_best_score",
-    title: "允许覆盖最佳成绩",
-    description: "允许后，每次“完整爬取”或通过第三方开发者写入时会检查成绩是否低于最佳成绩，低于则覆盖最佳成绩。",
-    optionType: "switch",
-    defaultValue: false,
   }],
 }
 

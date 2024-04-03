@@ -28,6 +28,7 @@ import remarkFlexibleContainers from "remark-flexible-containers";
 import { useListState } from "@mantine/hooks";
 import { IconArrowLeft, IconCheck, IconCopy, IconListSearch } from "@tabler/icons-react";
 import LazyLoad from 'react-lazyload';
+import { PhotoView } from "react-photo-view";
 
 const scrollTo = (id: string) => {
   if (!id) return;
@@ -128,9 +129,13 @@ const Content = ({ markdown }: { markdown: string }) => {
           return <Title order={6} className={classes.heading6} {...props}>{children}</Title>;
         },
         img({ src, ...props }: any) {
-          return <LazyLoad overflow debounce={100} placeholder={<Loader />}>
-            <Image radius="md" w="auto" src={src} {...props} />
-          </LazyLoad>
+          return (
+            <LazyLoad overflow debounce={100} placeholder={<Loader />}>
+              <PhotoView src={src}>
+                <Image radius="md" w="auto" src={src} {...props} />
+              </PhotoView>
+            </LazyLoad>
+          );
         },
         ul({ children }) {
           return <ul className={classes.list}>{children}</ul>;
