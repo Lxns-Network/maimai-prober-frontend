@@ -134,6 +134,10 @@
 
 .blockQuote {
     padding: 0 1em;
-    color: var(--mantine-color-gray-text);
     border-left: 0.25em solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.blockQuote * {
+    font-size: var(--mantine-font-size-sm);
+    color: var(--mantine-color-gray-text) !important;
 }
