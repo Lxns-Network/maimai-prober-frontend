@@ -33,7 +33,9 @@ import { PhotoView } from "react-photo-view";
 const scrollTo = (id: string) => {
   if (!id) return;
 
-  window.history.pushState(null, "", `${window.location.pathname}#${encodeURIComponent(id)}`);
+  if (window.location.hash !== `#${encodeURIComponent(id)}`) {
+    window.history.pushState(null, "", `${window.location.pathname}#${encodeURIComponent(id)}`);
+  }
 
   const target = document.getElementById(id);
   const scrollArea = document.querySelector("#root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport");
