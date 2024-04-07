@@ -1,11 +1,11 @@
-import {Title, Text, Card, LoadingOverlay, SegmentedControl, Mark} from '@mantine/core';
+import { Title, Text, Card, LoadingOverlay, SegmentedControl, Mark, Anchor } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useEffect, useState } from "react";
 import { deletePlayerScores, unbindPlayer } from "../../utils/api/player";
 import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
 import { SettingsSection } from '../../components/Settings/SettingsSection';
 import { useLocalStorage } from "@mantine/hooks";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import classes from "../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 
@@ -61,11 +61,16 @@ const crawlConfigData = {
   }, {
     key: "crawl_scores_method",
     title: "爬取谱面成绩的方式",
-    description: "设置每次爬取时使用的爬取方式，增量爬取依赖最近游玩记录，适合已经完整爬取后频繁爬取，更加稳定。",
+    description: <>
+      设置每次爬取时使用的爬取方式。<Anchor component={Link} to="/docs/settings#爬取谱面成绩的方式">了解更多</Anchor>
+    </>,
     placeholder: "请选择爬取方式",
     optionType: "select",
-    defaultValue: "full",
+    defaultValue: "auto",
     options: [{
+      value: "auto",
+      label: "自动检测",
+    }, {
       value: "full",
       label: "完整爬取",
     }, {
