@@ -123,6 +123,20 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 | `standard` | [`Score[]`](#score) | 旧版本谱面 Best 35 列表 |
 | `dx` | [`Score[]`](#score) | 现版本谱面 Best 15 列表 |
 
+### GET `/api/v0/maimai/player/{friend_code}/bests/ap`
+
+获取玩家缓存的 All Perfect 50。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 响应体
+
+同 [Best 50](#get-apiv0maimaiplayerfriend_codebests)。
+
 ### GET `/api/v0/maimai/player/{friend_code}/bests`
 
 获取玩家缓存单曲所有谱面的成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
@@ -140,6 +154,10 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 | `song_id` | `int` | 曲目 ID，与 `song_name` 冲突 |
 | `song_name` | `string` | 曲名，与 `song_id` 冲突 |
 | `song_type` | [`SongType`](#songtype) | 谱面类型 |
+
+#### 响应体
+
+[Score[]](#score)
 
 ### POST `/api/v0/maimai/player/{friend_code}/scores`
 

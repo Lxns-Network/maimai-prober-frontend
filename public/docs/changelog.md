@@ -2,9 +2,14 @@
 
 ---
 
+## 2024/4/8
+
+- 修复了少数情况下导入成绩时，可能会出现 `internal server error` 的问题
+
 ## 2024/4/7
 
 - 舞萌 DX 爬取谱面成绩的方式新增**自动检测**：`auto`
+- 舞萌 DX 新增接口：[获取玩家 All Perfect 50](/docs/api/maimai#get-apiv0maimaiplayerfriend_codebestsap)
 
 ## 2024/3/25
 
