@@ -51,7 +51,7 @@ export default function App() {
 
   const [songList, setSongList] = useState(new SongList());
   const [aliasList, setAliasList] = useState(new AliasList());
-  const [game] = useLocalStorage({ key: 'game' });
+  const [game, setGame] = useLocalStorage({ key: 'game' });
 
   const handleResize = () => {
     setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
@@ -96,6 +96,10 @@ export default function App() {
 
   useEffect(() => {
     if (!game) return;
+    if (game === "undefined") {
+      setGame("maimai");
+      return;
+    }
 
     setSongList(new SongList());
 
