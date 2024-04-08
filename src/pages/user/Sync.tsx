@@ -276,7 +276,8 @@ export default function Sync() {
                       <Text size="sm" c="dimmed" mb="xs">
                         请将系统的 WLAN 代理设置为 <Code>proxy.maimai.lxns.net:8080</Code>，Android 用户在移动网络下需要设置接入点名称（APN）代理。
                       </Text>
-                      <CopyButtonWithIcon label="复制 HTTP 代理" content="proxy.maimai.lxns.net" />
+                      <CopyButtonWithIcon label="复制 IP 地址" description="IP 地址" content="proxy.maimai.lxns.net" mb="xs" />
+                      <CopyButtonWithIcon label="复制端口" description="端口" content="8080" />
                       <Divider my="xs" label="或使用 Clash 代理" labelPosition="center" />
                       <Flex>
                         <CopyButtonWithIcon label="复制 Clash 订阅链接" content="https://maimai.lxns.net/api/v0/proxy-config/clash" style={{
