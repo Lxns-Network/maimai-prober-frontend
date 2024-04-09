@@ -78,8 +78,6 @@ https://maimai.lxns.net/api/v0/proxy-config/clash
 
 #### 在线同步获取
 
-> 在开始爬取前，建议先根据需求设置[爬取谱面成绩的方式](/docs/settings#爬取谱面成绩的方式)（仅舞萌 DX）。
-
 正确配置代理后，在[同步游戏数据页](/user/sync)选择爬取的游戏并直接复制 OAuth 链接（带 `token`）。
 
 #### 离线同步获取
