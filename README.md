@@ -8,9 +8,11 @@ maimai DX 查分器
 ![](https://img.shields.io/codacy/grade/81bf94766124465aa512c883b2d6a9b5)
 ![](https://img.shields.io/discord/815106295614144512)
 
-该项目为落雪咖啡屋 maimai DX 查分器的前端部分，使用 React + TypeScript + Vite 编写。
+一个简单的舞萌 DX & 中二节奏国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。
 
-了解查分器的使用方法，请访问：[官方文档](https://maimai.lxns.net/docs)
+该项目为查分器的前端部分，使用 React + TypeScript + Vite 编写。
+
+了解查分器的使用方法，请参见：[官方文档](https://maimai.lxns.net/docs)
 
 ## 特性
 
