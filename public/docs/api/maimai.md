@@ -210,6 +210,20 @@ JSON 格式的玩家成绩：
 
 [Score[]](#score)
 
+### GET `/api/v0/maimai/player/{friend_code}/scores`
+
+获取玩家缓存的所有最佳成绩（简化后）。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 响应体
+
+[SimpleScore[]](#simplescore)
+
 ### GET `/api/v0/maimai/player/{friend_code}/trend`
 
 获取玩家 DX Rating 趋势。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_history` 权限。
@@ -425,6 +439,21 @@ JSON 格式的玩家成绩：
 | `type` | [`SongType`](#songtype) | 谱面类型 |
 | `play_time` | `string` | 值可空，游玩的 UTC 时间，精确到分钟 |
 | `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |
+
+### SimpleScore
+
+游玩成绩（简化）
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 曲目 ID |
+| `song_name` | `string` | 曲名 |
+| `level` | `string` | 难度标级，如 `14+` |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度 |
+| `fc` | [`FCType`](#fctype) | 值可空，FULL COMBO 类型 |
+| `fs` | [`FSType`](#fstype) | 值可空，FULL SYNC 类型 |
+| `rate` | [`RateType`](#ratetype) | 评级类型 |
+| `type` | [`SongType`](#songtype) | 谱面类型 |
 
 ### RatingTrend
 

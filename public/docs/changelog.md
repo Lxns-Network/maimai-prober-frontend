@@ -2,6 +2,11 @@
 
 ---
 
+## 2024/4/11
+
+- 舞萌 DX 新增接口：[获取玩家缓存的所有最佳成绩（简化后）](/docs/api/maimai#get-apiv0maimaiplayerfriend_codescores)
+- 中二节奏新增接口：[获取玩家缓存的所有最佳成绩（简化后）](/docs/api/chunithm#get-apiv0chunithmplayerfriend_codescores)
+
 ## 2024/4/8
 
 - 修复了少数情况下导入成绩时，可能会出现 `internal server error` 的问题
