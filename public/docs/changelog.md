@@ -2,10 +2,15 @@
 
 ---
 
+## 2024/4/12
+
+- 修复中二节奏爬取成绩时，通过最近游玩记录爬取的成绩无法正常保存的问题
+
 ## 2024/4/11
 
 - 舞萌 DX 新增接口：[获取玩家缓存的所有最佳成绩（简化后）](/docs/api/maimai#get-apiv0maimaiplayerfriend_codescores)
 - 中二节奏新增接口：[获取玩家缓存的所有最佳成绩（简化后）](/docs/api/chunithm#get-apiv0chunithmplayerfriend_codescores)
+- 获取玩家 Best 50（Best 30）时，若获取到的成绩有一部分参数为空，现在不会返回 `null`，而是返回一个空数组
 
 ## 2024/4/8
 
