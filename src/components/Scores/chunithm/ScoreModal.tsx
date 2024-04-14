@@ -3,42 +3,29 @@ import {
   Avatar,
   Box,
   Card,
-  Container,
   Group,
   Image,
-  Modal, NumberFormatter,
-  rem, Space,
-  Text, Accordion, Center, Loader
+  NumberFormatter,
+  rem,
+  Text,
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
-import { useContext, useEffect, useState } from "react";
 import { IconPhotoOff } from "@tabler/icons-react";
-import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
-import ScoreContext from "../../../utils/context.tsx";
-import { ScoreHistory } from "./ScoreHistory.tsx";
-import { fetchAPI } from "../../../utils/api/api.tsx";
 import { PhotoView } from "react-photo-view";
 
-interface ScoreModalProps {
-  score: ChunithmScoreProps | null;
-  song: ChunithmSongProps | null;
-  opened: boolean;
-  onClose: (score?: ChunithmScoreProps) => void;
-}
-
-const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
+export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
   return (
     <>
       <Group wrap="nowrap">
-        <PhotoView src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png`}>
-          <Avatar src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png!webp`} size={94} radius="md">
+        <PhotoView src={`https://assets.lxns.net/chunithm/jacket/${song.id}.png`}>
+          <Avatar src={`https://assets.lxns.net/chunithm/jacket/${song.id}.png!webp`} size={94} radius="md">
             <IconPhotoOff />
           </Avatar>
         </PhotoView>
         <div style={{ flex: 1 }}>
-          <Text fz="lg" fw={500} mt={2}>{score.song_name}</Text>
-          <Text fz="xs" c="dimmed" mb={8}>曲目 ID：{score.id}</Text>
+          <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+          <Text fz="xs" c="dimmed" mb={8}>曲目 ID：{song.id}</Text>
           <Group gap="xs">
             {score.clear === "failed" && (
               <Image
@@ -121,90 +108,4 @@ const ScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: C
       )}
     </>
   )
-}
-
-export const ScoreModal = ({ score, song, opened, onClose }: ScoreModalProps) => {
-  const [historyScores, setHistoryScores] = useState<ChunithmScoreProps[]>([]);
-  const [fetching, setFetching] = useState(true);
-  const context = useContext(ScoreContext);
-
-  const getPlayerScoreHistory = async (score: ChunithmScoreProps) => {
-    if (score.score < 0) {
-      setHistoryScores([]);
-      setFetching(false);
-      return;
-    }
-    setFetching(true);
-    try {
-      const res = await fetchAPI(`user/chunithm/player/score/history?song_id=${score.id}&level_index=${score.level_index}`, {
-        method: "GET",
-      })
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      if (data.data) {
-        setHistoryScores(data.data.sort((a: ChunithmScoreProps, b: ChunithmScoreProps) => {
-          const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
-
-          if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
-            return new Date(a.play_time).getTime() - new Date(b.play_time).getTime();
-          }
-
-          return uploadTimeDiff;
-        }));
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setFetching(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!score) return;
-
-    context.setScore(score);
-    setHistoryScores([]);
-    getPlayerScoreHistory(score);
-  }, [score]);
-
-  return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
-      <Modal.Overlay />
-      <Modal.Content>
-        <Modal.Header>
-          <Modal.Title>成绩详情</Modal.Title>
-          <Group gap="xs">
-            {score !== null && (
-              <ScoreModalMenu score={score} onClose={onClose} />
-            )}
-            <Modal.CloseButton />
-          </Group>
-        </Modal.Header>
-        <Modal.Body p={0}>
-          <Container>
-            {score !== null && song !== null && (
-              <ScoreModalContent score={score} song={song} />
-            )}
-          </Container>
-          <Space h="md" />
-          <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
-            <Accordion.Item value="history">
-              <Accordion.Control>上传历史记录</Accordion.Control>
-              <Accordion.Panel>
-                {fetching ? (
-                  <Center>
-                    <Loader />
-                  </Center>
-                ) : (
-                  <ScoreHistory scores={historyScores} />
-                )}
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
-        </Modal.Body>
-      </Modal.Content>
-    </Modal.Root>
-  );
 }

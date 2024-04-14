@@ -1,9 +1,9 @@
 import { Score, MaimaiScoreProps } from "./Score.tsx";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useState } from "react";
-import { ScoreModal } from "./ScoreModal.tsx";
 import { SimpleGrid } from "@mantine/core";
 import { MaimaiSongList } from "../../../utils/api/song/maimai.tsx";
+import {ScoreModal} from "../ScoreModal.tsx";
 
 interface ScoreListProps {
   scores: MaimaiScoreProps[];
@@ -19,12 +19,13 @@ export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListPr
   return (
     <>
       <ScoreModal
+        game="maimai"
         score={scoreDetail}
         song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
         onClose={(score) => {
           closeScoreAlert();
-          if (score) onScoreChange && onScoreChange(score);
+          if (score) onScoreChange && onScoreChange(score as MaimaiScoreProps);
         }}
       />
       <SimpleGrid cols={small ? 1 : 2} spacing="xs" w="100%">

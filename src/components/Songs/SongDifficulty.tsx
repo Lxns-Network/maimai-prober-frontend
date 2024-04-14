@@ -1,25 +1,26 @@
-import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import { useLocalStorage } from "@mantine/hooks";
 import { Badge, Box, Card, Divider, Flex, Group, Image, NumberFormatter, rem, Text, Title } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../utils/color.tsx";
+import { useComputedColorScheme } from "@mantine/core";
+import classes from "./SongDifficulty.module.css";
 
 interface SongProps {
-  song: MaimaiSongProps | ChunithmSongProps;
+  game: string;
   difficulty: any;
   type?: string;
   score: any;
   versions: any[];
+  onClick: () => void;
 }
 
-export const SongDifficulty = ({ song, difficulty, type, score, versions }: SongProps) => {
-  const [game] = useLocalStorage({ key: 'game' });
+export const SongDifficulty = ({ game, difficulty, type, score, versions, onClick }: SongProps) => {
+  const computedColorScheme = useComputedColorScheme('light');
 
   return (
-    <Card key={`${song.id}-${type}-${difficulty.difficulty}`} c="white" pt={5} p="0.5rem" radius="md" withBorder style={{
+    <Card className={classes.scoreCard} c="white" pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
       border: `2px solid ${getScoreSecondaryColor(game, difficulty.difficulty)}`.replace(")", ", 0.95)"),
       backgroundColor: getScoreCardBackgroundColor(game, difficulty.difficulty).replace(")", ", 0.95)"),
-    }}>
+      opacity: computedColorScheme === 'dark' ? 0.8 : 1,
+    }} onClick={onClick}>
       <Flex align="center" ml="0.5rem" mr="0.5rem" mb={5}>
         <Text fz="sm" fw={500} style={{ flex: 1 }}>
           {["BASIC", "ADVANCED", "EXPERT", "MASTER", game === "maimai" ? "Re:MASTER" : "ULTIMA"][difficulty.difficulty]}

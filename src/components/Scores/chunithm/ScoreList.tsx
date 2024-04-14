@@ -1,9 +1,9 @@
 import { Score, ChunithmScoreProps } from "./Score.tsx";
 import { SimpleGrid } from "@mantine/core";
 import { ChunithmSongList } from "../../../utils/api/song/chunithm.tsx";
-import { ScoreModal } from "./ScoreModal.tsx";
 import { useMediaQuery, useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
+import { ScoreModal } from "../ScoreModal.tsx";
 
 interface ScoreListProps {
   scores: ChunithmScoreProps[];
@@ -19,12 +19,13 @@ export const ChunithmScoreList = ({ scores, songList, onScoreChange }: ScoreList
   return (
     <>
       <ScoreModal
+        game="chunithm"
         score={scoreDetail}
         song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
         onClose={(score) => {
           closeScoreAlert();
-          if (score) onScoreChange && onScoreChange(score);
+          if (score) onScoreChange && onScoreChange(score as ChunithmScoreProps);
         }}
       />
       <SimpleGrid cols={small ? 1 : 2} spacing="xs" w="100%">

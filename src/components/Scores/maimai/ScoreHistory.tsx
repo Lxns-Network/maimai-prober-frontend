@@ -49,7 +49,7 @@ const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   )
 }
 
-export const ScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
+export const MaimaiScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   const scoresLength = scores.length;
 
   if (scores) {

@@ -13,7 +13,7 @@ interface ScoreModalActionMenuProps {
   onClose?: (score?: MaimaiScoreProps) => void;
 }
 
-export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
+export const MaimaiScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
   const navigate = useNavigate();
   const context = useContext(ScoreContext);
 
@@ -61,15 +61,21 @@ export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) =>
         <Menu.Label>更多操作</Menu.Label>
         <Menu.Item leftSection={<IconPlus size={20} stroke={1.5} />} onClick={() => {
           onClose && onClose();
-          context.setCreateScoreOpened(true);
+          if (Object.keys(context).length !== 0) {
+            context.setCreateScoreOpened(true);
+          } else {
+            navigate("/user/scores");
+          }
         }}>
           创建新成绩
         </Menu.Item>
-        <Menu.Item leftSection={<IconMusic size={20} stroke={1.5} />} onClick={() => {
-          navigate(`/songs`, { state: { songId: score.id } });
-        }}>
-          查看曲目详情
-        </Menu.Item>
+        {location.pathname !== "/songs" && (
+          <Menu.Item leftSection={<IconMusic size={20} stroke={1.5} />} onClick={() => {
+            navigate(`/songs`, { state: { songId: score.id } });
+          }}>
+            查看曲目详情
+          </Menu.Item>
+        )}
 
         {score.achievements >= 0 && (
           <>

@@ -1,4 +1,4 @@
-import {useContext, useEffect, useState} from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   Container,
   Text,
@@ -9,7 +9,7 @@ import {
 import classes from "./Songs.module.css"
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import { useLocalStorage } from "@mantine/hooks";
+import { useLocalStorage, useDisclosure } from "@mantine/hooks";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
 import { IconListDetails, IconPhotoOff, IconPlus } from "@tabler/icons-react";
@@ -21,13 +21,16 @@ import { PhotoView } from "react-photo-view";
 import { AudioPlayer } from "../../components/AudioPlayer.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { ApiContext } from "../../App.tsx";
+import { ScoreModal } from "../../components/Scores/ScoreModal.tsx";
 
 export default function Songs() {
-  const [game, setGame] = useLocalStorage({ key: 'game' });
+  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [defaultSongId, setDefaultSongId] = useState<number>(0)
   const [songId, setSongId] = useState<number>(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<any[]>([]);
+  const [score, setScore] = useState<any>(null);
   const [opened, setOpened] = useState(false);
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
   const location = useLocation();
@@ -101,6 +104,26 @@ export default function Songs() {
 
   return (
     <Container className={classes.root} size={500}>
+      <ScoreModal
+        game={game}
+        score={score}
+        song={song}
+        opened={scoreAlertOpened}
+        onClose={(score) => {
+          closeScoreAlert();
+          if (score) {
+            setScores((prev) => {
+              const index = prev.findIndex((record) => record.id === score.id && record.level_index === score.level_index);
+              if (index >= 0) {
+                prev[index] = score;
+                return [...prev];
+              } else {
+                return [...prev, score];
+              }
+            });
+          }
+        }}
+      />
       <CreateAliasModal defaultSongId={songId} opened={opened} onClose={() => setOpened(false)} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         曲目查询
@@ -108,7 +131,7 @@ export default function Songs() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         查询舞萌 DX 与中二节奏的曲目详情
       </Text>
-      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value)} data={[
+      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} data={[
         { label: '舞萌 DX', value: 'maimai' },
         { label: '中二节奏', value: 'chunithm' },
       ]} />
@@ -192,26 +215,43 @@ export default function Songs() {
         <Stack>
           {context.songList instanceof MaimaiSongList && (
             ["dx", "standard"].map((type) => (
-              (song as MaimaiSongProps).difficulties[type as keyof MaimaiDifficultiesProps].slice().reverse().map((difficulty, i) => (
+              (song as MaimaiSongProps).difficulties[type as keyof MaimaiDifficultiesProps].slice().reverse().map((difficulty) => (
                 <SongDifficulty
-                  key={i}
-                  song={song}
-                  score={scores.find((record) => record.type === type && record.level_index === difficulty.difficulty)}
+                  key={`${song.id}-${type}-${difficulty.difficulty}`}
+                  game="maimai"
                   difficulty={difficulty}
                   type={type}
+                  score={scores.find((record) => record.type === type && record.level_index === difficulty.difficulty)}
                   versions={context.songList.versions}
+                  onClick={() => {
+                    setScore(scores.find((record) => record.type === type && record.level_index === difficulty.difficulty) || {
+                      type: type,
+                      level_index: difficulty.difficulty,
+                      achievements: -1,
+                    });
+
+                    openScoreAlert();
+                  }}
                 />
               ))
             ))
           )}
           {context.songList instanceof ChunithmSongList && (
-            (song as ChunithmSongProps).difficulties.slice().reverse().map((difficulty, i) => (
+            (song as ChunithmSongProps).difficulties.slice().reverse().map((difficulty) => (
               <SongDifficulty
-                key={i}
-                song={song}
-                score={scores.find((record) => record.level_index === difficulty.difficulty)}
+                key={`${song.id}-${difficulty.difficulty}`}
+                game="chunithm"
                 difficulty={difficulty}
+                score={scores.find((record) => record.level_index === difficulty.difficulty)}
                 versions={context.songList.versions}
+                onClick={() => {
+                  setScore(scores.find((record) => record.level_index === difficulty.difficulty) || {
+                    level_index: difficulty.difficulty,
+                    score: -1,
+                  });
+
+                  openScoreAlert();
+                }}
               />
             ))
           )}

@@ -115,6 +115,7 @@ const ScoresContent = () => {
   useEffect(() => {
     if (!game) return;
 
+    scoreContext.setScore(null);
     setFetching(true);
     resetState();
     getPlayerScoresHandler();

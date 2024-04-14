@@ -38,7 +38,7 @@ const ScoreHistoryChart = ({ scores }: { scores: ChunithmScoreProps[] }) => {
   )
 }
 
-export const ScoreHistory = ({ scores }: { scores: ChunithmScoreProps[] }) => {
+export const ChunithmScoreHistory = ({ scores }: { scores: ChunithmScoreProps[] }) => {
   if (!scores || scores.length < 2) {
     return (
       <Flex gap="xs" align="center" direction="column" c="dimmed">
