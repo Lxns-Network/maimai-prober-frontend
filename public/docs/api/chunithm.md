@@ -26,7 +26,11 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 ### POST `/api/v0/chunithm/player`
 
-创建或修改玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_write_data` 权限。
+创建或修改玩家信息。
+
+#### 权限
+
+- `allow_third_party_write_data`
 
 #### 请求体
 
@@ -62,7 +66,11 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 ### GET `/api/v0/chunithm/player/{friend_code}`
 
-通过好友码获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
+获取玩家信息。
+
+#### 权限
+
+- `allow_third_party_fetch_player`
 
 #### URL 参数
 
@@ -76,7 +84,11 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 ### GET `/api/v0/chunithm/player/qq/{qq}`
 
-通过 QQ 号获取玩家信息。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_player` 权限。
+通过 QQ 号获取玩家信息。
+
+#### 权限
+
+- `allow_third_party_fetch_player`
 
 #### URL 参数
 
@@ -90,7 +102,11 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 ### GET `/api/v0/chunithm/player/{friend_code}/best`
 
-获取玩家缓存谱面的最佳成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+获取玩家缓存谱面的最佳成绩。
+
+#### 权限
+
+- `allow_third_party_fetch_scores`
 
 #### URL 参数
 
@@ -108,7 +124,13 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 ### GET `/api/v0/chunithm/player/{friend_code}/bests`
 
-获取玩家缓存的 Best 30、Selection 10 与 Recent 10。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+获取玩家缓存的 Best 30、Selection 10 与 Recent 10。
+
+> Selection 10 为 Best 31 至 40。
+
+#### 权限
+
+- `allow_third_party_fetch_scores`
 
 #### URL 参数
 
@@ -126,7 +148,11 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 ### GET `/api/v0/chunithm/player/{friend_code}/bests`
 
-获取玩家缓存单曲所有谱面的成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+获取玩家缓存单曲所有谱面的成绩。
+
+#### 权限
+
+- `allow_third_party_fetch_scores`
 
 #### URL 参数
 
@@ -143,7 +169,11 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 ### POST `/api/v0/chunithm/player/{friend_code}/scores`
 
-上传玩家成绩。当好友码被绑定时，需要查分器用户开启 `allow_third_party_write_data` 权限。
+上传玩家成绩。
+
+#### 权限
+
+- `allow_third_party_write_data`
 
 #### URL 参数
 
@@ -179,7 +209,11 @@ JSON 格式的玩家成绩：
 
 ### GET `/api/v0/chunithm/player/{friend_code}/recents`
 
-获取玩家缓存的 Recent 10，按照 `play_time` 排序。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+获取玩家缓存的 Recent 10，按照 `play_time` 排序。
+
+#### 权限
+
+- `allow_third_party_fetch_scores`
 
 #### URL 参数
 
@@ -193,7 +227,11 @@ JSON 格式的玩家成绩：
 
 ### GET `/api/v0/chunithm/player/{friend_code}/scores`
 
-获取玩家缓存的所有最佳成绩（简化后）。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores` 权限。
+获取玩家缓存的所有最佳成绩（简化后）。
+
+#### 权限
+
+- `allow_third_party_fetch_scores`
 
 #### URL 参数
 
@@ -207,7 +245,12 @@ JSON 格式的玩家成绩：
 
 ### GET `/api/v0/chunithm/player/{friend_code}/score/history`
 
-获取玩家成绩上传历史记录。当好友码被绑定时，需要查分器用户开启 `allow_third_party_fetch_scores`、`allow_third_party_fetch_history` 权限。
+获取玩家成绩上传历史记录。
+
+#### 权限
+
+- `allow_third_party_fetch_history`
+- `allow_third_party_fetch_scores`
 
 #### URL 参数
 
@@ -269,6 +312,15 @@ JSON 格式的玩家成绩：
 | 字段名 | 类型 | 说明 |
 |-|-|-|
 | `aliases` | [Alias[]](#alias) | 曲目别名列表 |
+
+## 游戏资源
+
+基础 URL：`https://assets2.lxns.net/chunithm`
+
+路径：
+- 角色：`/character/{character_id}.png`
+- 曲绘：`/jacket/{song_id}.png`
+- 音频：`/music/{song_id}.mp3`
 
 ## 结构体
 
