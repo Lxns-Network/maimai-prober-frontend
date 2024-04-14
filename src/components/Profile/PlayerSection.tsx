@@ -46,6 +46,7 @@ export const PlayerSection = () => {
   return (
     <Card className={classes.card} withBorder radius="md" mb="md" p={0}>
       <Tabs unstyled value={game} onChange={(value) => {
+        if (value === game) return;
         setFetching(true);
         setGame(value as string);
       }} classNames={classes}>

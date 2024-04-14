@@ -52,7 +52,7 @@ export const MaimaiPlayerPanel = ({ player }: { player: MaimaiPlayerProps }) => 
   return (
     <>
       <PlayerModal player={player} opened={opened} onClose={() => setOpened(false)} />
-      <ScrollArea maw={width < 768 ? width - 33 : 768} >
+      <ScrollArea maw={width < 768 ? width - 34 : 768} >
         <PlayerButton player={player} onClick={() => setOpened(true)} />
       </ScrollArea>
       <Divider />
