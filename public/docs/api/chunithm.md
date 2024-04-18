@@ -44,6 +44,11 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
     "level": 1,
     "rating": 0.18,
     "friend_code": 123456789000000,
+    "class_emblem": {
+        "base": 0,
+        "medal": 0
+    },
+    "reborn_count": 0,
     "over_power": 13.2,
     "change_over_power": 0.01,
     "currency": 4500,
@@ -209,7 +214,7 @@ JSON 格式的玩家成绩：
 
 ### GET `/api/v0/chunithm/player/{friend_code}/recents`
 
-获取玩家缓存的 Recent 10，按照 `play_time` 排序。
+获取玩家缓存的 Recent 50，按照 `play_time` 排序。
 
 #### 权限
 
@@ -334,6 +339,8 @@ JSON 格式的玩家成绩：
 | `level` | `string` | 玩家等级 |
 | `rating` | `int` | 玩家 Rating |
 | `friend_code` | `int` | 好友码 |
+| `class_emblem` | [`ClassEmblem`](#classemblem) | CLASS 勋章 |
+| `reborn_count` | `int` | 玩家等级突破次数 |
 | `over_power` | `int` | 总 OVER POWER |
 | `change_over_power` | `int` | 上局游戏中变更的 OVER POWER |
 | `currency` | `string` | 当前金币数 |
@@ -344,6 +351,15 @@ JSON 格式的玩家成绩：
 | `name_plate` | [`NamePlate`](#collection) | 名牌版 |
 | `map_icon` | [`MapIcon`](#collection) | 地图头像 |
 | `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
+
+### ClassEmblem
+
+CLASS 勋章
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `base` | `int` | 缎带（通关该组别全部课题组） |
+| `medal` | `int` | 勋章（通关任意一组） |
 
 ### Score
 
