@@ -67,7 +67,7 @@ export default function App() {
       refreshToken().catch(() => {
         logout();
         if (location.pathname !== '/login') {
-          navigate('/login', { state: { expired: true } });
+          navigate('/login', { state: { expired: true, redirect: location.pathname } });
         }
       });
     }

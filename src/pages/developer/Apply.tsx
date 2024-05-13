@@ -18,10 +18,12 @@ import { useForm } from "@mantine/form";
 import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/developer";
 import classes from "../Form.module.css";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { useNavigate } from "react-router-dom";
 
 export default function DeveloperApply() {
   const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
+  const navigate = useNavigate();
 
   const getDeveloperApplyHandler = async () => {
     try {
@@ -32,7 +34,7 @@ export default function DeveloperApply() {
       }
       if (data.data) {
         if (data.data.api_key) {
-          window.location.href = "/developer";
+          navigate("/developer", { replace: true });
         }
         form.setValues(data.data);
         setApplied(true);

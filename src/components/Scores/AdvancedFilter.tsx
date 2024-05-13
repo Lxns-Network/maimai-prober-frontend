@@ -13,7 +13,7 @@ import {
 import { IconReload } from "@tabler/icons-react";
 import { MaimaiDifficultiesProps, MaimaiSongList } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
-import {useDisclosure, useLocalStorage, useMediaQuery} from "@mantine/hooks";
+import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
@@ -74,7 +74,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
           ["dx", "standard"].forEach((type) => {
             const difficulties = song.difficulties[type as keyof MaimaiDifficultiesProps];
 
-            difficulties.forEach((difficulty, index) => {
+            difficulties.forEach((difficulty) => {
               if (scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`)) {
                 return;
               }
@@ -83,7 +83,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
                 id: song.id,
                 song_name: song.title,
                 level: difficulty.level,
-                level_index: index,
+                level_index: difficulty.difficulty,
                 achievements: -1,
                 fc: "",
                 fs: "",

@@ -36,7 +36,7 @@ export const LoginAlert = ({ content, ...props }: LoginAlertProps) => {
         {content}
       </Text>
       <Group>
-        <Button variant="filled" onClick={() => navigate("/login")}>
+        <Button variant="filled" onClick={() => navigate("/login", { replace: true, state: { redirect: window.location.pathname } })}>
           登录
         </Button>
         <Button variant="outline" onClick={() => navigate("/register")}>
