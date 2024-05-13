@@ -1,12 +1,16 @@
 import {
-  Accordion, Center, Container, Group, Loader,
-  Modal, ScrollArea, Text,
+  Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Group, Loader,
+  Modal, ScrollArea, Text, useCombobox,
 } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { MaimaiPlayerProps } from "./PlayerPanel.tsx";
 import { getPlayerRatingTrend } from "../../../../utils/api/player.tsx";
 import { PlayerContent } from "./PlayerContent.tsx";
 import { RatingTrend, RatingTrendProps } from "./RatingTrend.tsx";
+import { IconDots } from "@tabler/icons-react";
+import classes from "../../../Scores/ScoreModalMenu.module.css";
+import { ApiContext } from "../../../../App.tsx";
+import { openRetryModal } from "../../../../utils/modal.tsx";
 
 interface ModalProps {
   player: MaimaiPlayerProps;
@@ -15,26 +19,42 @@ interface ModalProps {
 }
 
 export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
+  const context = useContext(ApiContext);
+
   const [trend, setTrend] = useState<RatingTrendProps[] | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [version, setVersion] = useState<number>(
+    (context.songList.versions[context.songList.versions.length-1] || { version: 23000 }).version
+  );
+  const combobox = useCombobox({
+    onDropdownClose: () => combobox.resetSelectedOption(),
+  });
 
   const getPlayerRatingTrendHandler = async () => {
     try {
-      const res = await getPlayerRatingTrend('maimai');
+      const res = await getPlayerRatingTrend('maimai', version);
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);
       }
       setTrend(data.data);
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      openRetryModal("获取失败", `${error}`, () => getPlayerRatingTrendHandler());
     } finally {
       setFetching(false);
     }
   }
 
   useEffect(() => {
+    setFetching(true);
+    setTrend(null);
+    getPlayerRatingTrendHandler();
+  }, [version]);
+
+  useEffect(() => {
     if (!opened || trend) return;
+
+    setVersion(context.songList.versions[context.songList.versions.length-1].version.toString());
 
     getPlayerRatingTrendHandler();
   }, [opened]);
@@ -75,7 +95,41 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
           </Container>
           <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
             <Accordion.Item value="history">
-              <Accordion.Control>DX Rating 趋势图</Accordion.Control>
+              <Center>
+                <Accordion.Control>DX Rating 趋势图</Accordion.Control>
+                <Combobox shadow="md" position="bottom-end" width={200}
+                  store={combobox}
+                  onOptionSubmit={(val) => {
+                    setVersion(parseInt(val));
+                    combobox.closeDropdown();
+                  }}
+                  transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+                >
+                  <Combobox.Target>
+                    <ActionIcon className={classes.actionIcon} variant="subtle" mr="xs" onClick={() => combobox.toggleDropdown()}>
+                      <IconDots size={18} stroke={1.5} />
+                    </ActionIcon>
+                  </Combobox.Target>
+                  <Combobox.Dropdown>
+                    <Combobox.Group label="游戏版本">
+                      <Combobox.Options>
+                        {context.songList.versions.map((item) => {
+                          if (item.version < 23000) return null;
+
+                          return (
+                            <Combobox.Option value={item.version} key={item.version} active={item.version === version}>
+                              <Group gap="sm">
+                                {item.version === version && <CheckIcon color="gray" size={12}/>}
+                                <span>{item.title}</span>
+                              </Group>
+                            </Combobox.Option>
+                          );
+                        })}
+                      </Combobox.Options>
+                    </Combobox.Group>
+                  </Combobox.Dropdown>
+                </Combobox>
+              </Center>
               <Accordion.Panel>
                 {fetching ? (
                   <Center>

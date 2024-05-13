@@ -4,8 +4,8 @@ export async function getPlayerDetail(game: string) {
   return fetchAPI(`user/${game}/player`, { method: "GET" });
 }
 
-export async function getPlayerRatingTrend(game: string) {
-  return fetchAPI(`user/${game}/player/trend`, { method: "GET" });
+export async function getPlayerRatingTrend(game: string, version: number) {
+  return fetchAPI(`user/${game}/player/trend?version=${version}`, { method: "GET" });
 }
 
 export async function unbindPlayer(game: string) {
