@@ -31,7 +31,7 @@ export const UserSection = ({ user }: { user: UserProps | null }) => {
 
   if (!user) {
     return (
-      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red">
+      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red" mb="md">
         <Text size="sm">
           可能是网络连接已断开，请检查你的网络连接是否正常。
         </Text>
