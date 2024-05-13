@@ -140,7 +140,7 @@ export default function Plates() {
         姓名框查询
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        查询 maimai DX 姓名框与你的姓名框获取进度
+        查询「舞萌 DX」姓名框与你的姓名框获取进度
       </Text>
       <PlateCombobox
         plates={plates}

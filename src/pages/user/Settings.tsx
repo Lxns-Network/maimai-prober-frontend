@@ -220,7 +220,7 @@ export default function Settings() {
       if (!data.success) {
         throw new Error(data.message);
       }
-      openAlertModal("解绑成功", `你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号已经被解绑。`)
+      openAlertModal("解绑成功", `你的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」账号已经被解绑。`)
     } catch (error) {
       openRetryModal("解绑失败", `${error}`, unbindPlayerHandler);
     }
@@ -233,7 +233,7 @@ export default function Settings() {
       if (!data.success) {
         throw new Error(data.message);
       }
-      openAlertModal("删除成功", `你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩已经被删除。`)
+      openAlertModal("删除成功", `你的查分器账号里所有的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」谱面成绩已经被删除。`)
     } catch (error) {
       openRetryModal("删除失败", `${error}`, deletePlayerScoresHandler);
     }
@@ -274,7 +274,7 @@ export default function Settings() {
           爬取数据
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          设置每次爬取{game === "chunithm" ? "中二节奏" : "舞萌 DX "}的方式与获取的数据
+          设置每次爬取「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」的方式与获取的数据
         </Text>
         <SettingsSection onChange={updateUserConfigHandler} value={config} data={(crawlConfigData as any)[game ? game : 'maimai']} />
       </Card>
@@ -284,7 +284,7 @@ export default function Settings() {
           隐私设置
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          将影响第三方开发者通过查分器 API 访问你的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}数据
+          将影响第三方开发者通过查分器 API 访问你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」数据
         </Text>
         <SettingsSection onChange={updateUserConfigHandler} value={config} data={[{
           key: "allow_third_party_fetch_player",
@@ -330,21 +330,21 @@ export default function Settings() {
         }, {
           key: "unbind_account",
           title: "解绑游戏账号",
-          description: `解绑你的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号。`,
+          description: `解绑你的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」账号。`,
           placeholder: "解绑",
           optionType: "button",
           onClick: () => openConfirmModal("解绑游戏账号", <>
-            你确定要解绑你的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}账号吗？解绑后，你可以随时重新同步游戏数据，或切换其他查分器账号绑定。
+            你确定要解绑你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」账号吗？解绑后，你可以随时重新同步游戏数据，或切换其他查分器账号绑定。
           </>, unbindPlayerHandler),
         }, {
           key: "reset_account",
           title: "删除所有谱面成绩",
-          description: `删除你的查分器账号里所有的${game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩。`,
+          description: `删除你的查分器账号里所有的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」谱面成绩。`,
           placeholder: "删除",
           color: "red",
           optionType: "button",
           onClick: () => openConfirmModal("删除所有谱面成绩", <>
-            你确定要<Mark>删除你的查分器账号里所有的{game === "chunithm" ? "中二节奏" : "舞萌 DX "}谱面成绩</Mark>吗？这将包括<Mark>所有历史爬取的谱面成绩</Mark>，并且不可撤销。
+            你确定要<Mark>删除你的查分器账号里所有的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」谱面成绩</Mark>吗？这将包括<Mark>所有历史爬取的谱面成绩</Mark>，并且不可撤销。
           </>, deletePlayerScoresHandler, {
             confirmProps: { color: 'red' },
           }),

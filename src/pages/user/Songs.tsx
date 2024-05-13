@@ -129,7 +129,7 @@ export default function Songs() {
         曲目查询
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        查询舞萌 DX 与中二节奏的曲目详情
+        查询「舞萌 DX」与「中二节奏」的曲目详情
       </Text>
       <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} data={[
         { label: '舞萌 DX', value: 'maimai' },
