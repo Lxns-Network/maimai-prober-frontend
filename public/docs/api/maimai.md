@@ -272,6 +272,14 @@ JSON 格式的玩家成绩：
 
 - `allow_third_party_fetch_history`
 
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+
+> 指定 `version` 参数时，将会返回指定版本范围内的 DX Rating 趋势。
+
 #### URL 参数
 
 | 参数名 | 类型 | 说明 |
@@ -337,19 +345,26 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
 | `notes` | `bool` | 值可空，是否包含谱面物量，默认值为 `false` |
 
 #### 响应体
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `songs` | [SongDifficulty[]](#song) | 曲目列表 |
+| `songs` | [Song[]](#song) | 曲目列表 |
 | `genres` | [Genre[]](#genre) | 乐曲分类列表 |
 | `versions` | [Version[]](#version) | 曲目版本列表 |
 
 ### GET `/api/v0/maimai/song/{song_id}`
 
 获取曲目信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
 
 #### URL 参数
 
@@ -359,7 +374,7 @@ JSON 格式的玩家成绩：
 
 #### 响应体
 
-[SongDifficulty](#song)
+[Song](#song)
 
 ### GET `/api/v0/maimai/alias/list`
 
@@ -375,6 +390,12 @@ JSON 格式的玩家成绩：
 
 获取姓名框列表。
 
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+
 #### 响应体
 
 | 字段名 | 类型 | 说明 |
@@ -384,6 +405,12 @@ JSON 格式的玩家成绩：
 ### GET `/api/v0/maimai/plate/{plate_id}`
 
 获取姓名框信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
 
 #### URL 参数
 
@@ -403,6 +430,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
 | `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
 
 #### 响应体
@@ -414,6 +442,12 @@ JSON 格式的玩家成绩：
 ### GET `/api/v0/maimai/frame/{frame_id}`
 
 获取背景信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
 
 #### URL 参数
 
@@ -429,6 +463,12 @@ JSON 格式的玩家成绩：
 
 获取收藏品分类列表。
 
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+
 #### 响应体
 
 | 字段名 | 类型 | 说明 |
@@ -438,6 +478,12 @@ JSON 格式的玩家成绩：
 ### GET `/api/v0/maimai/collection-genre/{collection_genre_id}`
 
 获取收藏品分类信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
 
 #### URL 参数
 
@@ -528,7 +574,7 @@ DX Rating 趋势
 | `dx` | `int` | 现版本谱面总 DX Rating |
 | `date` | `string` | 日期 |
 
-### SongDifficulty
+### Song
 
 曲目
 
@@ -540,6 +586,7 @@ DX Rating 趋势
 | `genre` | `string` | 曲目分类 |
 | `bpm` | `int` | 曲目 BPM |
 | `version` | `int` | 曲目首次出现版本 |
+| `rights` | `string` | 曲目版权信息 |
 | `difficulties` | [`SongDifficulties`](#songdifficulties) | 谱面难度 |
 
 ### SongDifficulties

@@ -137,6 +137,6 @@
     border-left: 0.25em solid light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4));
 }
 
-.blockQuote * {
+.blockQuote p {
     color: var(--mantine-color-dimmed) !important;
 }
