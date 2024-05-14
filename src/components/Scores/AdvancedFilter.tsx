@@ -147,18 +147,16 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
         }
       } else {
         score = score as ChunithmScoreProps;
-        {
-          if (fullCombo.includes("nofullcombo")) { // 过滤 Full Combo
-            if (score.full_combo) return false;
-          } else if (fullCombo.length > 0 && !fullCombo.includes(score.full_combo)) {
+        if (fullCombo.includes("nofullcombo")) { // 过滤 Full Combo
+          if (score.full_combo) return false;
+        } else if (fullCombo.length > 0 && !fullCombo.includes(score.full_combo)) {
+          return false;
+        }
+        if (fullSync.includes("nofullchain")) { // 过滤 Full Chain
+          if (score.full_chain) return false;
+        } else if (fullSync.length > 0 && !fullSync.includes(score.full_chain)) {
+          if (!fullSync.includes("ajc") || score.score !== 1010000) {
             return false;
-          }
-          if (fullSync.includes("nofullchain")) { // 过滤 Full Chain
-            if (score.full_chain) return false;
-          } else if (fullSync.length > 0 && !fullSync.includes(score.full_chain)) {
-            if (!fullSync.includes("ajc") || score.score !== 1010000) {
-              return false;
-            }
           }
         }
       }
@@ -167,22 +165,22 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
 
     filteredData = filteredData.filter((score) => {
       const song = songList.find(score.id);
-      if (!song) {
-        return false;
-      }
+      if (!song) return false;
+
       if (songList instanceof ChunithmSongList) {
         const difficulty = songList.getDifficulty(song, score.level_index);
         if (!difficulty) return false;
-        return (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]); // 过滤定数
+        return ((genre.some((selected) => songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
+          && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
+            songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 500)) || version.length === 0) // 过滤版本
+          && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]); // 过滤定数
       } else {
         const difficulty = songList.getDifficulty(song, (score as MaimaiScoreProps).type, score.level_index);
-        {
-          if (!difficulty) return false;
-          return ((genre.some((selected) => songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
-            && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
-              songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 1000)) || version.length === 0) // 过滤版本
-            && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]);
-        }
+        if (!difficulty) return false;
+        return ((genre.some((selected) => songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
+          && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
+            songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 1000)) || version.length === 0) // 过滤版本
+          && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]);
       }
     })
 
@@ -231,38 +229,34 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
           comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
         />
       </Grid.Col>
-      {songList instanceof MaimaiSongList && (
-        <>
-          <Grid.Col span={6}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选乐曲分类</Text>
-            <MultiSelect
-              variant="filled"
-              data={songList.genres.map((version) => ({
-                value: version.genre,
-                label: version.title,
-              }))}
-              placeholder="请选择乐曲分类"
-              value={genre}
-              onChange={(value) => setGenre(value)}
-              comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
-            />
-          </Grid.Col>
-          <Grid.Col span={6}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选版本</Text>
-            <MultiSelect
-              variant="filled"
-              data={songList.versions.map((version) => ({
-                value: version.version.toString(),
-                label: version.title,
-              })).reverse()}
-              placeholder="请选择版本"
-              value={version.map((item) => item.toString())}
-              onChange={(value) => setVersion(value.map((item) => parseInt(item)))}
-              comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
-            />
-          </Grid.Col>
-        </>
-      )}
+      <Grid.Col span={6}>
+        <Text fz="xs" c="dimmed" mb={3}>筛选乐曲分类</Text>
+        <MultiSelect
+          variant="filled"
+          data={songList.genres.map((item) => ({
+            value: item.genre,
+            label: item.title || item.genre,
+          }))}
+          placeholder="请选择乐曲分类"
+          value={genre}
+          onChange={(value) => setGenre(value)}
+          comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
+        />
+      </Grid.Col>
+      <Grid.Col span={6}>
+        <Text fz="xs" c="dimmed" mb={3}>筛选版本</Text>
+        <MultiSelect
+          variant="filled"
+          data={songList.versions.map((item) => ({
+            value: item.version.toString(),
+            label: item.title,
+          })).reverse()}
+          placeholder="请选择版本"
+          value={version.map((item) => item.toString())}
+          onChange={(value) => setVersion(value.map((item) => parseInt(item)))}
+          comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
+        />
+      </Grid.Col>
       <Grid.Col span={6}>
         <Text fz="xs" c="dimmed" mb={3}>筛选上传时间</Text>
         <DatesProvider settings={{ locale: 'zh-cn', firstDayOfWeek: 0, weekendDays: [0, 6], timezone: 'Asia/Shanghai' }}>
@@ -361,10 +355,11 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
             <Flex rowGap="xs" columnGap="md" wrap="wrap">
               <Chip.Group multiple value={fullSync} onChange={setFullSync}>
                 <Chip variant="filled" size="xs" value="nofs">无</Chip>
+                <Chip variant="filled" size="xs" value="sync">SYNC</Chip>
                 <Chip variant="filled" size="xs" value="fs">FS</Chip>
                 <Chip variant="filled" size="xs" value="fsp">FS+</Chip>
-                <Chip variant="filled" size="xs" value="fsd">FSD</Chip>
-                <Chip variant="filled" size="xs" value="fsdp">FSD+</Chip>
+                <Chip variant="filled" size="xs" value="fsd">FDX</Chip>
+                <Chip variant="filled" size="xs" value="fsdp">FDX+</Chip>
               </Chip.Group>
             </Flex>
           </Grid.Col>
