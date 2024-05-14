@@ -235,7 +235,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
           variant="filled"
           data={songList.genres.map((item) => ({
             value: item.genre,
-            label: item.title || item.genre,
+            label: "title" in item ? item.title: item.genre,
           }))}
           placeholder="请选择乐曲分类"
           value={genre}
