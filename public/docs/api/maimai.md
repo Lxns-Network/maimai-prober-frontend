@@ -733,10 +733,11 @@ FULL SYNC 类型
 
 | 值 | 类型 | 说明 |
 |-|-|-|
-| `fsdp` | `string` | FSD+ |
-| `fsd` | `string` | FSD |
+| `fsdp` | `string` | FDX+ |
+| `fsd` | `string` | FDX |
 | `fsp` | `string` | FS+ |
 | `fs` | `string` | FS |
+| `sync` | `string` | SYNC PLAY |
 
 ### RateType
 

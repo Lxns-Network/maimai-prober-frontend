@@ -19,6 +19,11 @@ export interface ChunithmSongProps {
   difficulties: DifficultyProps[];
 }
 
+interface ChunithmGenreProps {
+  id: number;
+  genre: string;
+}
+
 interface ChunithmVersionProps {
   id: number;
   title: string;
@@ -27,6 +32,7 @@ interface ChunithmVersionProps {
 
 export class ChunithmSongList extends SongList {
   songs: ChunithmSongProps[] = [];
+  genres: ChunithmGenreProps[] = [];
   versions: ChunithmVersionProps[] = [];
 
   constructor() {
@@ -38,6 +44,7 @@ export class ChunithmSongList extends SongList {
       const res = await fetchAPI('chunithm/song/list', { method: "GET" });
       const data = await res?.json();
       this.songs = data.songs;
+      this.genres = data.genres;
       this.versions = data.versions;
     }
 
