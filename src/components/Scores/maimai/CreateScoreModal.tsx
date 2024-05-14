@@ -217,8 +217,8 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
                   <Chip size="xs" value="nofs">无</Chip>
                   <Chip size="xs" value="fs">FS</Chip>
                   <Chip size="xs" value="fsp">FS+</Chip>
-                  <Chip size="xs" value="fsd">FSD</Chip>
-                  <Chip size="xs" value="fsdp">FSD+</Chip>
+                  <Chip size="xs" value="fsd">FDX</Chip>
+                  <Chip size="xs" value="fsdp">FDX+</Chip>
                 </Group>
               </Chip.Group>
             </Input.Wrapper>
