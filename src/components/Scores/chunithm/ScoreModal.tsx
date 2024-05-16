@@ -13,6 +13,7 @@ import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../ut
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
+import { CustomMarquee } from "../../CustomMarquee.tsx";
 
 export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
   return (
@@ -24,7 +25,9 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
           </Avatar>
         </PhotoView>
         <div style={{ flex: 1 }}>
-          <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+          <CustomMarquee>
+            <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+          </CustomMarquee>
           <Text fz="xs" c="dimmed" mb={8}>曲目 ID：{song.id}</Text>
           <Group gap="xs">
             {score.clear === "failed" && (

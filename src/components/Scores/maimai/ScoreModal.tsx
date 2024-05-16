@@ -13,6 +13,7 @@ import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../ut
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
+import { CustomMarquee } from "../../CustomMarquee.tsx";
 
 export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
   return (
@@ -29,7 +30,9 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
           ) : (
             <Badge variant="filled" color="orange" size="sm">DX</Badge>
           )}
-          <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+          <CustomMarquee>
+            <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+          </CustomMarquee>
           <Text fz="xs" c="dimmed" mb={2}>曲目 ID：{song.id}</Text>
           <Group gap={0} ml={-3}>
             <Image
