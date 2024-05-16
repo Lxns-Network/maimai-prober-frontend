@@ -1,6 +1,6 @@
 .root {
     position: relative;
-    padding-top: 50px;
+    padding-top: 40px;
     padding-bottom: 100px;
 }
 
@@ -71,11 +71,11 @@
     color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
 }
 
-.botCard {
+.adCard {
     background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
 }
 
-.botCardInner {
+.adCardInner {
     align-items: center;
 
     @mixin smaller-than $mantine-breakpoint-xs {

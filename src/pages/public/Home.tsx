@@ -1,3 +1,4 @@
+import React, { useEffect, useRef } from "react";
 import {
   Title,
   Text,
@@ -10,10 +11,11 @@ import {
   Flex,
   Avatar, Card, Center
 } from '@mantine/core';
+import { Carousel } from "@mantine/carousel";
 import { useNavigate } from "react-router-dom";
-import React, { useEffect } from "react";
 import { IconChartBar, IconCode, IconGavel, IconHandStop, IconHistory } from "@tabler/icons-react";
 import { Footer } from "../../components/Footer.tsx";
+import Autoplay from "embla-carousel-autoplay";
 import classes from './Home.module.css';
 
 interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -67,6 +69,7 @@ const features = [
 ];
 
 export default function Home() {
+  const autoplay = useRef(Autoplay({ delay: 2000 }));
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -79,7 +82,7 @@ export default function Home() {
         <Image
           src="/logo.webp"
           alt="落雪咖啡屋 maimai DX 查分器"
-          maw={560}
+          maw={600}
           mx="auto"
           mb="md"
         />
@@ -139,25 +142,44 @@ export default function Home() {
         </Container>
 
         <Container className={classes.section} mt={rem(100)}>
-          <Card className={classes.botCard} withBorder radius="md" p="xl">
-            <Flex className={classes.botCardInner} gap="md">
-              <div style={{ flex: 1 }}>
-                <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
-                <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
-                  你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
-                  <Text className={classes.highlight} component="span" inherit fw={700}>
-                    舞萌 DX & 中二节奏
-                  </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
-                </Text>
-                <Button className={classes.control} variant="default" size="lg" mt="md" onClick={() =>
-                  window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
-                }>
-                  添加
-                </Button>
-              </div>
-              <Avatar src="./lxbot.webp" h="auto" w={96} radius="md" />
-            </Flex>
-          </Card>
+          <Center ta="center" mb={50}>
+            <div>
+              <Title order={2} mb="xs">其他工具</Title>
+              <Text c="dimmed">
+                基于 maimai DX 查分器开发的第三方开发者工具。
+              </Text>
+            </div>
+          </Center>
+          <Carousel
+            slideSize={{ base: '100%', sm: '80%' }}
+            slideGap="md"
+            loop
+            plugins={[autoplay.current]}
+            onMouseEnter={autoplay.current.stop}
+            onMouseLeave={autoplay.current.reset}
+          >
+            <Carousel.Slide>
+              <Card className={classes.adCard} withBorder radius="md" p="xl">
+                <Flex className={classes.adCardInner} gap="md">
+                  <div style={{ flex: 1 }}>
+                    <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
+                    <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
+                      你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
+                      <Text className={classes.highlight} component="span" inherit fw={700}>
+                        舞萌 DX & 中二节奏
+                      </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
+                    </Text>
+                    <Button className={classes.control} variant="default" size="lg" mt="md" onClick={() =>
+                      window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
+                    }>
+                      添加
+                    </Button>
+                  </div>
+                  <Avatar src="./lxbot.webp" h="auto" w={96} radius="md" />
+                </Flex>
+              </Card>
+            </Carousel.Slide>
+          </Carousel>
         </Container>
       </Container>
       <Footer />
