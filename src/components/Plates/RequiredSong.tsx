@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
+  ActionIcon,
   Badge,
   Box,
-  Card,
+  Card, Center, Flex,
+  Grid,
   Group,
   Image,
   LoadingOverlay, Pagination,
-  rem,
+  rem, RingProgress,
   SegmentedControl,
   SimpleGrid,
   Space,
@@ -15,15 +17,59 @@ import {
   ThemeIcon
 } from "@mantine/core";
 import classes from "../../pages/Page.module.css";
-import Icon from "@mdi/react";
-import { mdiCheck } from "@mdi/js";
 import { IconCheck } from "@tabler/icons-react";
 import { PlateDataProps } from "../../pages/user/Plates.tsx";
-import {PhotoView} from "react-photo-view";
+import { PhotoView } from "react-photo-view";
+import { CustomMarquee } from "../CustomMarquee.tsx";
+
+const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
+  if (!plate || !plate.required) {
+    return;
+  }
+
+  if (plate.required.every((required) => required.completed)) {
+    return (
+      <RingProgress
+        sections={[{ value: 100, color: 'teal' }]}
+        label={
+          <Center>
+            <ActionIcon color="teal" variant="light" radius="xl" size={44}>
+              <IconCheck size={22} />
+            </ActionIcon>
+          </Center>
+        }
+      />
+    );
+  }
+
+  const calculateCompletion = () => {
+    let total = 0;
+    let completed = 0;
+    (plate.required || []).forEach((required) => {
+      required.songs.forEach((song) => {
+        total += required.difficulties.length;
+        completed += song.completed_difficulties.length;
+      });
+    });
+    return Math.round(completed / total * 100);
+  }
+
+  return (
+    <RingProgress
+      roundCaps
+      sections={[{ value: calculateCompletion(), color: 'blue' }]}
+      label={
+        <Text c="blue" fw={700} ta="center" size="xl">
+          {calculateCompletion()}%
+        </Text>
+      }
+    />
+  );
+}
 
 export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , records: any[] }) => {
   const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
-  const [difficulty, setDifficulty] = useState<number | null>(null);
+  const [difficulty, setDifficulty] = useState<number>(0);
   const { height, ref } = useElementSize();
   const small = useMediaQuery(`(max-width: 450px)`);
 
@@ -62,48 +108,64 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
     setDisplayRecords(filteredRecords.slice(start, end));
   }, [page, filteredRecords]);
 
+  const difficultyProgress = (plate.required || []).reduce((acc, req) => {
+    if (!req.difficulties.includes(difficulty)) return acc;
+
+    const songsTotal = req.songs.length;
+    const songsCompleted = req.songs.filter(song =>
+      song.completed_difficulties && song.completed_difficulties.includes(difficulty)
+    ).length;
+
+    return {
+      total: acc.total + songsTotal,
+      completed: acc.completed + songsCompleted
+    };
+  }, { total: 0, completed: 0 });
+
   return (
     <Card radius="md" p="md" withBorder className={classes.card}>
-      <Group justify="space-between">
-        <div>
+      <Flex>
+        <div style={{ flex: 1 }}>
           <Text fz="lg" fw={700}>
             要求曲目
           </Text>
           <Text c="dimmed" size="xs">
             查询姓名框要求曲目的完成度
           </Text>
+          <Space h="md" />
+          <Grid grow h={height}>
+            <Grid.Col span={6} ref={ref}>
+              <Text fz="xs" c="dimmed">曲目范围</Text>
+              <CustomMarquee>
+                <Text fz="sm">{((plate && plate.description) || "").split("/")[0]}</Text>
+              </CustomMarquee>
+            </Grid.Col>
+            <Grid.Col span={6}>
+              {plate && plate.required && plate.required[0].fc && (
+                <div>
+                  <Text fz="xs" c="dimmed">FULL COMBO 要求</Text>
+                  <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${plate.required[0].fc}.webp`} />
+                </div>
+              )}
+              {plate && plate.required && plate.required[0].fs && (
+                <div>
+                  <Text fz="xs" c="dimmed">FULL SYNC 要求</Text>
+                  <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${plate.required[0].fs}.webp`} />
+                </div>
+              )}
+              {plate && plate.required && plate.required[0].rate && (
+                <div>
+                  <Text fz="xs" c="dimmed">达成率要求</Text>
+                  <Image w={rem(64)} ml={-8} src={`/assets/maimai/music_rank/${plate.required[0].rate}.webp`} />
+                </div>
+              )}
+            </Grid.Col>
+          </Grid>
         </div>
-        {plate && plate.required && plate.required.every((required) => required.completed) && (
-          <ThemeIcon variant="light" color="teal" size="xl" radius="xl">
-            <Icon path={mdiCheck} size={10} />
-          </ThemeIcon>
-        )}
-      </Group>
-      <Space h="md" />
-      <Group grow align="flex-start" h={height}>
-        <div ref={ref}>
-          <Text fz="xs" c="dimmed">曲目范围</Text>
-          <Text fz="sm">{((plate && plate.description) || "").split("/")[0]}</Text>
-        </div>
-        {plate && plate.required && plate.required[0].fc && (
-          <div>
-            <Text fz="xs" c="dimmed">FULL COMBO 要求</Text>
-            <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${plate.required[0].fc}.webp`} />
-          </div>
-        )}
-        {plate && plate.required && plate.required[0].fs && (
-          <div>
-            <Text fz="xs" c="dimmed">FULL SYNC 要求</Text>
-            <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${plate.required[0].fs}.webp`} />
-          </div>
-        )}
-        {plate && plate.required && plate.required[0].rate && (
-          <div>
-            <Text fz="xs" c="dimmed">达成率要求</Text>
-            <Image w={rem(64)} ml={-8} src={`/assets/maimai/music_rank/${plate.required[0].rate}.webp`} />
-          </div>
-        )}
-      </Group>
+        <Box h={height}>
+          <RequiredSongRingProgress plate={plate} />
+        </Box>
+      </Flex>
       <Space h="md" />
       <Text fz="xs" c="dimmed" mb={4}>要求难度</Text>
       <SegmentedControl orientation={
@@ -113,8 +175,10 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
           label: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'][difficulty],
           value: difficulty.toString(),
         })),
-      ]} value={difficulty?.toString()} onChange={(value) => setDifficulty(parseInt(value || ''))} />
-      <Space h="lg" />
+      ]} value={difficulty.toString()} onChange={(value) => setDifficulty(parseInt(value))} />
+      <Space h="md" />
+      <Text fz="xs" c="dimmed">已完成 {difficultyProgress.completed} / {difficultyProgress.total} 首：</Text>
+      <Space h="xs" />
       <SimpleGrid cols={2}>
         {displayRecords.map((record) => (
           <Group key={record.id} wrap="nowrap" gap="xs">
@@ -144,9 +208,9 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
         ))}
       </SimpleGrid>
       <Space h="md" />
-      <Group justify="center">
+      <Center>
         <Pagination size="sm" total={Math.ceil(filteredRecords.length / pageSize)} value={page} onChange={(page) => setPage(page)} />
-      </Group>
+      </Center>
     </Card>
   )
 }
