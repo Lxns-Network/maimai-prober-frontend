@@ -103,6 +103,10 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
   }, [difficulty]);
 
   useEffect(() => {
+    setDifficulty(difficulties.length - 1);
+  }, [difficulties]);
+
+  useEffect(() => {
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
     setDisplayRecords(filteredRecords.slice(start, end));
