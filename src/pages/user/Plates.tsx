@@ -108,7 +108,21 @@ export default function Plates() {
       return;
     }
 
-    const mergedRequiredSongs = plate.required.map((required) => required.songs).flat();
+    let mergedRequiredSongs = plate.required.map((required) => required.songs).flat();
+    // 去重并合并 completed_difficulties
+    mergedRequiredSongs = mergedRequiredSongs.reduce((acc: RequiredSongDataProps[], song) => {
+      const existing = acc.find((existingSong) => {
+        return existingSong.id === song.id && existingSong.type === song.type;
+      })
+      if (existing) {
+        existing.completed_difficulties = [
+          ...new Set([...existing.completed_difficulties, ...song.completed_difficulties]),
+        ];
+        return acc;
+      }
+      return [...acc, song];
+    }, []);
+
     const convertedRecords = [
       ...(mergedRequiredSongs && mergedRequiredSongs.length > 0
         ? mergedRequiredSongs.map((song) => {
