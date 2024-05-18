@@ -343,20 +343,20 @@ JSON 格式的玩家成绩：
 | 字段名 | 类型 | 说明 |
 |-|-|-|
 | `name` | `string` | 游戏内名称 |
-| `level` | `string` | 玩家等级 |
+| `level` | `int` | 玩家等级 |
 | `rating` | `int` | 玩家 Rating |
 | `friend_code` | `int` | 好友码 |
 | `class_emblem` | [`ClassEmblem`](#classemblem) | CLASS 勋章 |
 | `reborn_count` | `int` | 玩家等级突破次数 |
-| `over_power` | `int` | 总 OVER POWER |
-| `change_over_power` | `int` | 上局游戏中变更的 OVER POWER |
-| `currency` | `string` | 当前金币数 |
-| `total_currency` | `string` | 总金币数 |
-| `total_play_count` | `string` | 总游玩次数 |
+| `over_power` | `float` | 总 OVER POWER |
+| `change_over_power` | `float` | 上局游戏中变更的 OVER POWER |
+| `currency` | `int` | 当前金币数 |
+| `total_currency` | `int` | 总金币数 |
+| `total_play_count` | `int` | 总游玩次数 |
 | `trophy` | [`Trophy`](#collection) | 称号 |
-| `character` | [`Character`](#collection) | 角色 |
-| `name_plate` | [`NamePlate`](#collection) | 名牌版 |
-| `map_icon` | [`MapIcon`](#collection) | 地图头像 |
+| `character` | [`Character`](#collection) | 值可空，角色 |
+| `name_plate` | [`NamePlate`](#collection) | 值可空，名牌版 |
+| `map_icon` | [`MapIcon`](#collection) | 值可空，地图头像 |
 | `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
 
 ### ClassEmblem
@@ -383,9 +383,11 @@ CLASS 勋章
 | `clear` | [`ClearType`](#cleartype) | CLEAR 类型 |
 | `full_combo` | [`FullComboType`](#fullcombotype) | 值可空，FULL COMBO 类型 |
 | `full_chain` | [`FullChainType`](#fullchaintype) | 值可空，FULL CHAIN 类型 |
-| `rank` | [`RankType`](#ratetype) | 仅获取 `Score` 时返回，评级类型 |
+| `rank` | [`RankType`](#ranktype) | 仅获取 `Score` 时返回，评级类型 |
 | `play_time` | `string` | 值可空，游玩的 UTC 时间，精确到分钟 |
 | `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |
+
+> Recent 10 列表里成绩的 `clear` 字段可能为空。
 
 ### SimpleScore
 
@@ -400,7 +402,7 @@ CLASS 勋章
 | `clear` | [`ClearType`](#cleartype) | CLEAR 类型 |
 | `full_combo` | [`FullComboType`](#fullcombotype) | 值可空，FULL COMBO 类型 |
 | `full_chain` | [`FullChainType`](#fullchaintype) | 值可空，FULL CHAIN 类型 |
-| `rank` | [`RankType`](#ratetype) | 评级类型 |
+| `rank` | [`RankType`](#ranktype) | 评级类型 |
 
 ### Song
 

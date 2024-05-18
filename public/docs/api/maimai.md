@@ -521,9 +521,9 @@ JSON 格式的玩家成绩：
 | `course_rank` | `int` | 段位 ID |
 | `class_rank` | `int` | 阶级 ID |
 | `star` | `int` | 搭档觉醒数 |
-| `icon` | [`Icon`](#collection) | 头像 |
-| `name_plate` | [`NamePlate`](#collection) | 姓名框 |
-| `frame` | [`Frame`](#collection) | 背景 |
+| `icon` | [`Icon`](#collection) | 值可空，头像 |
+| `name_plate` | [`NamePlate`](#collection) | 值可空，姓名框 |
+| `frame` | [`Frame`](#collection) | 值可空，背景 |
 | `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
 
 > `trophy_name` 参数可能会在后续变更，请开发者注意。
