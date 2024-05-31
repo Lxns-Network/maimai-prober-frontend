@@ -4,13 +4,14 @@ import {
   Text,
   Title,
   Group,
-  Loader,
+  Loader, Space,
 } from '@mantine/core';
 import { getProfile } from '../../utils/api/user';
 import { PlayerSection } from '../../components/Profile/PlayerSection';
 import { UserProps, UserSection } from '../../components/Profile/UserSection';
 import { UserBindSection } from '../../components/Profile/UserBindSection';
 import classes from "../Page.module.css";
+import { UserTokenSection } from "../../components/Profile/UserTokenSection.tsx";
 
 export default function Profile() {
   const [user, setUser] = useState<UserProps | null>(null);
@@ -52,8 +53,12 @@ export default function Profile() {
         ) : (
           <>
             <PlayerSection />
+            <Space h="md" />
             <UserSection user={user} />
+            <Space h="md" />
             <UserBindSection userBind={user && user.bind} />
+            <Space h="md" />
+            <UserTokenSection token={user && user.token} />
           </>
         )}
     </Container>

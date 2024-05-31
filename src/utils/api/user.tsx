@@ -28,6 +28,10 @@ export async function updateUserBind(data: any) {
   return fetchAPI("user/bind", { method: "POST", body: data });
 }
 
+export async function generateUserToken() {
+  return fetchAPI("user/token", { method: "POST" });
+}
+
 export async function logoutUser() {
   return fetchAPI("user/logout", { method: "POST" });
 }

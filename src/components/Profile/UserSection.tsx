@@ -24,6 +24,7 @@ export interface UserProps {
   permission: number;
   register_time: string;
   bind: UserBindProps;
+  token?: string;
 }
 
 export const UserSection = ({ user }: { user: UserProps | null }) => {
@@ -69,7 +70,7 @@ export const UserSection = ({ user }: { user: UserProps | null }) => {
   }
 
   return (
-    <Card withBorder radius="md" className={classes.card} mb="md">
+    <Card withBorder radius="md" className={classes.card}>
       <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
         <div>
           <Text fz="lg" fw={700}>

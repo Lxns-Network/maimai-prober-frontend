@@ -118,7 +118,7 @@ export default function DeveloperInfo() {
             <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
               <div>
                 <Text fz="lg" fw={700}>
-                  API 密钥
+                  开发者 API 密钥
                 </Text>
                 <Text fz="xs" c="dimmed" mt={3}>
                   用于访问 maimai DX 查分器 API
@@ -149,7 +149,7 @@ export default function DeveloperInfo() {
               readOnly
             />
             <Group justify="flex-end" mt="md">
-              <Button variant="outline" size="sm" leftSection={<IconRefresh size={20} />} onClick={resetDeveloperApiKeyHandler}>
+              <Button variant="default" size="sm" leftSection={<IconRefresh size={20} />} onClick={resetDeveloperApiKeyHandler}>
                 重置 API 密钥
               </Button>
             </Group>
