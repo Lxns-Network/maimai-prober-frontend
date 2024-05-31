@@ -4,11 +4,11 @@ import {
   Card, Checkbox,
   Container,
   Flex,
-  Group, HoverCard,
+  Group,
   Loader,
   Pagination,
   SegmentedControl, Space,
-  Text, ThemeIcon,
+  Text,
   Title,
 } from '@mantine/core';
 import { useLocalStorage, useToggle } from "@mantine/hooks";
@@ -19,7 +19,6 @@ import {
   IconArrowDown,
   IconArrowUp,
   IconDatabaseOff,
-  IconHelp,
   IconPlus,
 } from "@tabler/icons-react";
 import classes from "../Page.module.css"
@@ -208,18 +207,6 @@ export default function Vote() {
               选择曲目别名的排序方式
             </Text>
           </div>
-          <HoverCard shadow="md" withinPortal>
-            <HoverCard.Target>
-              <ThemeIcon variant="subtle" color="default">
-                <IconHelp size={20} stroke={1.5} />
-              </ThemeIcon>
-            </HoverCard.Target>
-            <HoverCard.Dropdown>
-              <Text size="sm">
-                可以在成绩管理页使用曲目别名进行查询
-              </Text>
-            </HoverCard.Dropdown>
-          </HoverCard>
         </Group>
         <Flex gap="md" m="md" mt={0} wrap="wrap">
           {sortKeys.map((item) => (

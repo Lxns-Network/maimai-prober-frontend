@@ -51,7 +51,7 @@ const FullComboStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
 
   return <Box w="100%">
     {fc.map((r, index) => (
-      <Group key={r} mb="xs">
+      <Group key={r} mb="xs" h={30}>
         <Image
           src={`/assets/maimai/music_icon/${r}.webp`}
           h={30}
@@ -76,7 +76,7 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
 
   return <Box w="100%">
     {fs.map((r, index) => (
-      <Group key={r} mb="xs">
+      <Group key={r} mb="xs" h={30}>
         <Image
           src={`/assets/maimai/music_icon/${r}.webp`}
           h={30}
@@ -96,7 +96,7 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   </Box>;
 }
 
-export const StatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) => {
+export const MaimaiStatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   const small = useMediaQuery('(max-width: 30rem)');
   const extraSmall = useMediaQuery('(max-width: 28rem)');
 

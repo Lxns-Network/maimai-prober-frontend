@@ -33,12 +33,22 @@
 }
 
 .highlight {
+    display: inline-block;
     position: relative;
+    line-height: 1;
+    padding: 0 8px;
+    color: light-dark(var(--mantine-primary-color-6), var(--mantine-primary-color-4));
+}
+
+.highlight::before {
+    position: absolute;
+    content: '';
+    height: calc(100% + 12px);
+    width: 100%;
+    left: 0;
+    top: -6px;
     background-color: var(--mantine-primary-color-light);
     border-radius: var(--mantine-radius-sm);
-    padding: 4px 8px;
-    color: light-dark(var(--mantine-primary-color-6), var(--mantine-primary-color-4));
-    text-wrap: nowrap;
 }
 
 .controls {
@@ -72,10 +82,13 @@
 }
 
 .adCard {
+    padding: var(--mantine-spacing-xl);
     background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
 }
 
 .adCardInner {
+    word-break: break-all;
+    overflow-wrap: anywhere;
     align-items: center;
 
     @mixin smaller-than $mantine-breakpoint-xs {

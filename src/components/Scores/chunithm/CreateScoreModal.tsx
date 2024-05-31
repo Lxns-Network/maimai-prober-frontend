@@ -188,22 +188,22 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
               <Grid.Col span={6}>
                 <Input.Wrapper label="Full Combo" mb="xs" withAsterisk {...form.getInputProps("full_combo")}>
                   <Chip.Group onChange={(value) => form.setValues({ full_combo: value as any })}>
-                    <Group>
+                    <Flex wrap="wrap" columnGap="md" rowGap="xs">
                       <Chip size="xs" value="nofullcombo">无</Chip>
                       <Chip size="xs" value="fullcombo">FC</Chip>
                       <Chip size="xs" value="alljustice">AJ</Chip>
-                    </Group>
+                    </Flex>
                   </Chip.Group>
                 </Input.Wrapper>
               </Grid.Col>
               <Grid.Col span={6}>
                 <Input.Wrapper label="Full Chain" mb="md" withAsterisk {...form.getInputProps("full_chain")}>
                   <Chip.Group onChange={(value) => form.setValues({ full_chain: value as any })}>
-                    <Group>
+                    <Flex wrap="wrap" columnGap="md" rowGap="xs">
                       <Chip size="xs" value="nofullchain">无</Chip>
                       <Chip size="xs" value="fullchain">铂</Chip>
                       <Chip size="xs" value="fullchain2">金</Chip>
-                    </Group>
+                    </Flex>
                   </Chip.Group>
                 </Input.Wrapper>
               </Grid.Col>

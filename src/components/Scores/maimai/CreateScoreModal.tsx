@@ -202,24 +202,25 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
             </Grid>
             <Input.Wrapper label="Full Combo" mb="xs" withAsterisk {...form.getInputProps("fc")}>
               <Chip.Group onChange={(value) => form.setValues({ fc: value as any })}>
-                <Group>
+                <Flex wrap="wrap" columnGap="md" rowGap="xs">
                   <Chip size="xs" value="nofc">无</Chip>
                   <Chip size="xs" value="fc">FC</Chip>
                   <Chip size="xs" value="fcp">FC+</Chip>
                   <Chip size="xs" value="ap">AP</Chip>
                   <Chip size="xs" value="app">AP+</Chip>
-                </Group>
+                </Flex>
               </Chip.Group>
             </Input.Wrapper>
             <Input.Wrapper label="Full Sync" mb="md" withAsterisk {...form.getInputProps("fs")}>
               <Chip.Group onChange={(value) => form.setValues({ fs: value as any })}>
-                <Group>
+                <Flex wrap="wrap" columnGap="md" rowGap="xs">
                   <Chip size="xs" value="nofs">无</Chip>
+                  <Chip size="xs" value="sync">SYNC</Chip>
                   <Chip size="xs" value="fs">FS</Chip>
                   <Chip size="xs" value="fsp">FS+</Chip>
                   <Chip size="xs" value="fsd">FDX</Chip>
                   <Chip size="xs" value="fsdp">FDX+</Chip>
-                </Group>
+                </Flex>
               </Chip.Group>
             </Input.Wrapper>
             <Divider my="xs" label="以下为选填参数" labelPosition="center" />
