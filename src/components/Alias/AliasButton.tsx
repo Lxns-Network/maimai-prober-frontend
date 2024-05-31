@@ -1,4 +1,5 @@
 import {
+  Badge,
   Center,
   Flex, Group,
   Space,
@@ -9,12 +10,27 @@ import {
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { IconCheck, IconChevronRight, IconNorthStar } from "@tabler/icons-react";
 import classes from "./Alias.module.css";
+import { useLocalStorage } from "@mantine/hooks";
 
 export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
+  const [game] = useLocalStorage({ key: 'game' });
+
   return (
     <UnstyledButton className={classes.alias} onClick={onClick} {...others}>
-      <Flex>
-        <Text fz="sm" c="dimmed" style={{ flex: 1 }} truncate>{alias.song.name || "未知"}</Text>
+      <Flex align="center" columnGap={8}>
+        <Text fz="sm" c="dimmed" style={{ flex: 1 }} truncate>
+          {alias.song.name || "未知"}
+        </Text>
+        {game === "maimai" && alias.song.id >= 100000 && (
+          <Badge variant="filled" color="rgb(234, 61, 232)" size="sm">
+            宴
+          </Badge>
+        )}
+        {game === "chunithm" && alias.song.id >= 8000 && (
+          <Badge variant="filled" color="rgb(14, 45, 56)" size="sm">
+            WE
+          </Badge>
+        )}
         {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (
           <Center>
             <Tooltip label="新提交" withinPortal>

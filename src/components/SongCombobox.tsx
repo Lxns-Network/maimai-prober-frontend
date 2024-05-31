@@ -7,10 +7,10 @@ import {
   Text,
   useCombobox,
   InputBaseProps,
-  ElementProps
+  ElementProps, Group, Badge
 } from "@mantine/core";
-import { MaimaiSongProps } from "../utils/api/song/maimai.tsx";
-import { ChunithmSongProps } from "../utils/api/song/chunithm.tsx";
+import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.tsx";
+import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.tsx";
 import { IconSearch } from "@tabler/icons-react";
 import { ApiContext } from "../App.tsx";
 
@@ -135,12 +135,26 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
             )}
             {filteredSongs.slice(0, MAX_SONGS).map((song) => (
               <Combobox.Option value={song.id.toString()} key={song.id}>
-                <Text fz="sm" fw={500}>
-                  {song.title}
-                </Text>
-                <Text fz="xs" opacity={0.6}>
-                  {song.artist}
-                </Text>
+                <Group justify="space-between" wrap="nowrap">
+                  <div>
+                    <Text fz="sm" fw={500}>
+                      {song.title}
+                    </Text>
+                    <Text fz="xs" opacity={0.6}>
+                      {song.artist}
+                    </Text>
+                  </div>
+                  {context.songList instanceof MaimaiSongList && song.id >= 100000 && (
+                    <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
+                      宴
+                    </Badge>
+                  )}
+                  {context.songList instanceof ChunithmSongList && song.id >= 8000 && (
+                    <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
+                      WE
+                    </Badge>
+                  )}
+                </Group>
               </Combobox.Option>
             ))}
           </ScrollArea.Autosize>

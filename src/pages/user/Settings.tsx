@@ -99,6 +99,9 @@ const crawlConfigData = {
     }, {
       value: "remaster",
       label: "⚪ Re:MASTER",
+    }, {
+      value: "utage",
+      label: "💮 U·TA·GE",
     }]
   }],
   chunithm: [{
@@ -159,6 +162,9 @@ const crawlConfigData = {
     }, {
       value: "ultima",
       label: "⚫ ULTIMA",
+    }, {
+      value: "worldsend",
+      label: "🌈 WORLD'S END",
     }]
   }],
 }

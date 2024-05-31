@@ -1,11 +1,11 @@
 import {
   ActionIcon,
-  Avatar, Flex, Group,
+  Avatar, Badge, Flex, Group,
   Modal, Progress, Space, Text, ThemeIcon, Tooltip
 } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { useLocalStorage } from "@mantine/hooks";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { voteAlias } from "../../utils/api/alias.tsx";
 import {
   IconCheck,
@@ -17,6 +17,9 @@ import {
 } from "@tabler/icons-react";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { PhotoView } from "react-photo-view";
+import { ApiContext } from "../../App.tsx";
+import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -26,14 +29,17 @@ interface AliasModalProps {
 }
 
 const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (alias: AliasProps) => void }) => {
-  const [game] = useLocalStorage({ key: 'game' });
+  if (!alias) return null;
+
   const [progress, setProgress] = useState(0);
   const [weight, setWeight] = useState(0);
   const [loading, setLoading] = useState(0);
-
-  if (!alias) return null;
+  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
+  const [game] = useLocalStorage({ key: 'game' });
+  const context = useContext(ApiContext);
 
   useEffect(() => {
+    setSong(context.songList.find(alias.song.id) || null);
     setProgress((alias.weight.up / alias.weight.total) * 100);
 
     if (!alias.vote) return;
@@ -100,8 +106,8 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
     <>
       <Group>
         {game && (
-          <PhotoView src={`https://assets.lxns.net/${game}/jacket/${alias.song.id}.png`}>
-            <Avatar src={`https://assets.lxns.net/${game}/jacket/${alias.song.id}.png!webp`} size={94} radius="md">
+          <PhotoView src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
+            <Avatar src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
               <Text ta="center" fz="xs">曲绘加载失败</Text>
             </Avatar>
           </PhotoView>
@@ -109,7 +115,19 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
         <div style={{ flex: 1 }}>
           <div>
             <Text fz="xs" c="dimmed">曲名</Text>
-            <Text>{alias.song.name || "未知"}</Text>
+            <Group gap="xs">
+              <Text>{alias.song.name || "未知"}</Text>
+              {game === "maimai" && alias.song.id >= 100000 && (
+                <Badge variant="filled" color="rgb(234, 61, 232)" size="sm">
+                  宴
+                </Badge>
+              )}
+              {game === "chunithm" && alias.song.id >= 8000 && (
+                <Badge variant="filled" color="rgb(14, 45, 56)" size="sm">
+                  WE
+                </Badge>
+              )}
+            </Group>
           </div>
           <Space h="xs" />
           <div>

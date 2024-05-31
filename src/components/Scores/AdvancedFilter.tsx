@@ -24,14 +24,61 @@ interface AdvancedFilterProps {
   onChange: (filteredScores: (MaimaiScoreProps | ChunithmScoreProps)[]) => void;
 }
 
+const filterData = {
+  maimai: {
+    rating: [1, 15] as [number, number],
+    difficulties: [{
+      value: "0",
+      label: "🟢 BASIC",
+    }, {
+      value: "1",
+      label: "🟡 ADVANCED",
+    }, {
+      value: "2",
+      label: "🔴 EXPERT",
+    }, {
+      value: "3",
+      label: "🟣 MASTER",
+    }, {
+      value: "4",
+      label:"⚪ Re:MASTER",
+    }, {
+      value: "5",
+      label: "💮 U·TA·GE",
+    }]
+  },
+  chunithm: {
+    rating: [1, 16] as [number, number],
+    difficulties: [{
+      value: "0",
+      label: "🟢 BASIC",
+    }, {
+      value: "1",
+      label: "🟡 ADVANCED",
+    }, {
+      value: "2",
+      label: "🔴 EXPERT",
+    }, {
+      value: "3",
+      label: "🟣 MASTER",
+    }, {
+      value: "4",
+      label: "⚫ ULTIMA",
+    }, {
+      value: "5",
+      label: "🌈 WORLD'S END",
+    }]
+  }
+}
+
 export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterProps) => {
-  const [game] = useLocalStorage({ key: 'game' });
-  const [filteredScores, setFilteredScores] = useState<MaimaiScoreProps[] | ChunithmScoreProps[]>([]);
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
 
   const [difficulty, setDifficulty] = useState<string[]>([]);
   const [type, setType] = useState<string[]>([]);
-  const [rating, setRating] = useState<[number, number]>([1, 16]);
-  const [endRating, setEndRating] = useState<[number, number]>([1, 16]);
+  const [rating, setRating] = useState<[number, number]>([0, 0]);
+  const [endRating, setEndRating] = useState<[number, number]>([0, 0]);
   const [genre, setGenre] = useState<string[]>([]);
   const [version, setVersion] = useState<number[]>([]);
   const [fullCombo, setFullCombo] = useState<string[]>([]);
@@ -41,11 +88,13 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
 
   const small = useMediaQuery('(max-width: 30rem)');
 
-  const resetFilter = () => {
+  const resetFilter = (game?: "maimai" | "chunithm") => {
+    if (!game) return;
+
+    setRating(filterData[game].rating);
     setDifficulty([]);
     setGenre([]);
     setVersion([]);
-    setRating([1, 16]);
     setFullCombo([]);
     setFullSync([]);
     setType([]);
@@ -53,15 +102,15 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
   }
 
   useEffect(() => {
-    resetFilter();
-  }, [scores]);
+    resetFilter(game);
+  }, [game]);
 
   useEffect(() => {
     onChange(filteredScores);
   }, [filteredScores]);
 
   useEffect(() => {
-    if (!scores) return;
+    if (!scores || !game) return;
 
     let filteredData = [...scores];
 
@@ -71,15 +120,12 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
           filteredData.map((item) => `${item.id}-${(item as MaimaiScoreProps).type}-${item.level_index}`));
 
         songList.songs.forEach((song) => {
-          ["dx", "standard"].forEach((type) => {
+          ["dx", "standard", "utage"].forEach((type) => {
             const difficulties = song.difficulties[type as keyof MaimaiDifficultiesProps];
+            if (!difficulties) return;
 
             difficulties.forEach((difficulty) => {
-              if (scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`)) {
-                return;
-              }
-
-              filteredData.push({
+              if (!scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`)) filteredData.push({
                 id: song.id,
                 song_name: song.title,
                 level: difficulty.level,
@@ -97,17 +143,16 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
           });
         });
       } else {
-        songList.songs.forEach((song) => {
-          song.difficulties.forEach((difficulty, index) => {
-            if (filteredData.find((item) => item.id === song.id && item.level_index === index)) {
-              return;
-            }
+        const scoreKeys = new Set(
+          filteredData.map((item) => `${item.id}-${item.level_index}`));
 
-            filteredData.push({
+        songList.songs.forEach((song) => {
+          song.difficulties.forEach((difficulty) => {
+            if (!scoreKeys.has(`${song.id}-${difficulty.difficulty}`)) filteredData.push({
               id: song.id,
               song_name: song.title,
               level: difficulty.level,
-              level_index: index,
+              level_index: difficulty.difficulty,
               score: -1,
               clear: "",
               full_combo: "",
@@ -123,8 +168,9 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
     }
 
     // 如果没有任何筛选条件，直接返回
-    if (difficulty.length + type.length + fullCombo.length + fullSync.length + genre.length + version.length === 0 && rating[0] === 1 && rating[1] === 16 && uploadTime[0] === null && uploadTime[1] === null) {
-      setFilteredScores(filteredData as any);
+    if (difficulty.length + type.length + fullCombo.length + fullSync.length + genre.length + version.length === 0 &&
+      rating.every((v, i)=> v === filterData[game].rating[i]) && uploadTime.every((v) => v === null)) {
+      setFilteredScores(filteredData);
       return;
     }
 
@@ -132,7 +178,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
     filteredData = filteredData.filter((score) => {
       if (songList instanceof MaimaiSongList) {
         score = score as MaimaiScoreProps;
-        if (type.length > 0 && !type.includes(score.type)) { // 过滤谱面类型
+        if (type.length > 0 && !type.includes(score.type) && score.type !== "utage") { // 过滤谱面类型
           return false;
         }
         if (fullCombo.includes("nofc")) { // 过滤 Full Combo
@@ -145,6 +191,10 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
         } else if (fullSync.length > 0 && !fullSync.includes(score.fs)) {
           return false;
         }
+        // 宴谱的 level_index 基本都是 0，需要提前过滤
+        if (score.type === "utage" && (difficulty.includes("5") || difficulty.length === 0)) {
+          return true;
+        }
       } else {
         score = score as ChunithmScoreProps;
         if (fullCombo.includes("nofullcombo")) { // 过滤 Full Combo
@@ -155,9 +205,9 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
         if (fullSync.includes("nofullchain")) { // 过滤 Full Chain
           if (score.full_chain) return false;
         } else if (fullSync.length > 0 && !fullSync.includes(score.full_chain)) {
-          if (!fullSync.includes("ajc") || score.score !== 1010000) {
+          if (fullSync.includes("ajc") && score.score !== 1010000) {
             return false;
-          }
+          } else if (!fullSync.includes("ajc")) return false;
         }
       }
       return difficulty.includes(score.level_index.toString()) || difficulty.length === 0 // 过滤难度
@@ -167,20 +217,26 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
       const song = songList.find(score.id);
       if (!song) return false;
 
-      if (songList instanceof ChunithmSongList) {
-        const difficulty = songList.getDifficulty(song, score.level_index);
+      if (songList instanceof MaimaiSongList) {
+        score = score as MaimaiScoreProps;
+        const difficulty = songList.getDifficulty(song, score.type, score.level_index);
         if (!difficulty) return false;
-        return ((genre.some((selected) => songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
-          && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
-            songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 500)) || version.length === 0) // 过滤版本
-          && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]); // 过滤定数
-      } else {
-        const difficulty = songList.getDifficulty(song, (score as MaimaiScoreProps).type, score.level_index);
-        if (!difficulty) return false;
-        return ((genre.some((selected) => songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
+        return ((genre.some((selected) =>
+            songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
           && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
             songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 1000)) || version.length === 0) // 过滤版本
-          && (difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]);
+          && ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
+            rating.every((v, i)=> v === filterData[game].rating[i]) && score.type === "utage")); // 过滤定数
+      } else {
+        score = score as ChunithmScoreProps;
+        const difficulty = songList.getDifficulty(song, score.level_index);
+        if (!difficulty) return false;
+        return ((genre.some((selected) =>
+            songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
+          && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
+            songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 500)) || version.length === 0) // 过滤版本
+          && ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
+            rating.every((v, i)=> v === filterData[game].rating[i]) && score.level_index === 5)); // 过滤定数
       }
     })
 
@@ -198,7 +254,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
       });
     }
 
-    setFilteredScores(filteredData as any);
+    setFilteredScores(filteredData);
   }, [showUnplayed, difficulty, type, genre, version, endRating, fullCombo, fullSync, uploadTime]);
 
   return <>
@@ -207,22 +263,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
         <Text fz="xs" c="dimmed" mb={3}>筛选难度</Text>
         <MultiSelect
           variant="filled"
-          data={[{
-            value: "0",
-            label: "🟢 BASIC",
-          }, {
-            value: "1",
-            label: "🟡 ADVANCED",
-          }, {
-            value: "2",
-            label: "🔴 EXPERT",
-          }, {
-            value: "3",
-            label: "🟣 MASTER",
-          }, {
-            value: "4",
-            label: game !== "chunithm" ? "⚪ Re:MASTER" : "⚫ ULTIMA",
-          }]}
+          data={(filterData[game] || {}).difficulties}
           placeholder="请选择难度"
           value={difficulty}
           onChange={(value) => setDifficulty(value)}
@@ -281,8 +322,8 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
             variant="filled"
             w={60}
             size="xs"
-            min={1}
-            max={16}
+            min={game && filterData[game].rating[0]}
+            max={game && filterData[game].rating[1]}
             step={0.1}
             decimalScale={1}
             value={rating[0]}
@@ -300,13 +341,13 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
           {small ? "~" : (
             <RangeSlider
               style={{ flex: 1 }}
-              min={1}
-              max={16}
+              min={game && filterData[game].rating[0]}
+              max={game && filterData[game].rating[1]}
               step={0.1}
               minRange={0.1}
               precision={1}
               value={rating}
-              marks={Array.from({ length: 16 }, (_, index) => ({
+              marks={Array.from({ length: game ? filterData[game].rating[1] : 0 }, (_, index) => ({
                 value: index + 1,
                 label: String(index + 1),
               }))}
@@ -319,8 +360,8 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
             variant="filled"
             w={60}
             size="xs"
-            min={1}
-            max={16}
+            min={game && filterData[game].rating[0]}
+            max={game && filterData[game].rating[1]}
             step={0.1}
             decimalScale={1}
             value={rating[1]}
@@ -407,7 +448,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
         defaultChecked={showUnplayed}
         onChange={toggleShowUnplayed}
       />
-      <Button leftSection={<IconReload size={20} />} variant="light" onClick={resetFilter}>
+      <Button leftSection={<IconReload size={20} />} variant="light" onClick={() => resetFilter(game)}>
         重置筛选条件
       </Button>
     </Group>

@@ -16,12 +16,13 @@ import { IconListDetails, IconPhotoOff, IconPlus } from "@tabler/icons-react";
 import { fetchAPI } from "../../utils/api/api.tsx";
 import { Link, useLocation } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
-import { SongDifficulty } from "../../components/Songs/SongDifficulty.tsx";
 import { PhotoView } from "react-photo-view";
 import { AudioPlayer } from "../../components/AudioPlayer.tsx";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { ApiContext } from "../../App.tsx";
 import { ScoreModal } from "../../components/Scores/ScoreModal.tsx";
+import { MaimaiSongDifficulty } from "../../components/Songs/maimai/SongDifficulty.tsx";
+import { ChunithmSongDifficulty } from "../../components/Songs/chunithm/SongDifficulty.tsx";
 
 export default function Songs() {
   const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
@@ -44,6 +45,9 @@ export default function Songs() {
       const res = await fetchAPI(`user/${game}/player/bests?song_id=${song.id}&song_type=${type}`, { method: "GET" });
       const data = await res.json();
       if (!data.success) {
+        if (data.code === 404) {
+          return [];
+        }
         throw new Error(data.message);
       }
       return data.data;
@@ -107,7 +111,6 @@ export default function Songs() {
       <ScoreModal
         game={game}
         score={score}
-        song={song}
         opened={scoreAlertOpened}
         onClose={(score) => {
           closeScoreAlert();
@@ -148,13 +151,13 @@ export default function Songs() {
         <Card mt="md" radius="md" p={0} withBorder className={classes.card}>
           <Card.Section m="md">
             <Group wrap="nowrap">
-              <PhotoView src={`https://assets.lxns.net/${game}/jacket/${song.id}.png`}>
-                <Avatar src={`https://assets.lxns.net/${game}/jacket/${song.id}.png!webp`} size={94} radius="md">
+              <PhotoView src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
+                <Avatar src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
                   <IconPhotoOff />
                 </Avatar>
               </PhotoView>
               <div style={{ flex: 1 }}>
-                {song && <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>}
+                <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>
                 <Text fz="xl" fw={700}>{song.title}</Text>
                 <Text fz="sm" c="dimmed">{song.artist}</Text>
               </div>
@@ -199,7 +202,7 @@ export default function Songs() {
           </Card.Section>
           <AudioPlayer
             className={classes.audioPlayer}
-            src={`https://assets2.lxns.net/${game}/music/${song.id}.mp3`}
+            src={`https://assets2.lxns.net/${game}/music/${song.id%10000}.mp3`}
             audioProps={{ preload: "none" }}
           />
         </Card>
@@ -214,13 +217,13 @@ export default function Songs() {
       ) : (
         <Stack>
           {context.songList instanceof MaimaiSongList && (
-            ["dx", "standard"].map((type) => (
-              (song as MaimaiSongProps).difficulties[type as keyof MaimaiDifficultiesProps].slice().reverse().map((difficulty) => (
-                <SongDifficulty
+            ["dx", "standard", "utage"].map((type) => {
+              if (type === "utage" && !(song as MaimaiSongProps).difficulties.utage) return null;
+
+              return (song as MaimaiSongProps).difficulties[type as keyof MaimaiDifficultiesProps].slice().reverse().map((difficulty) => (
+                <MaimaiSongDifficulty
                   key={`${song.id}-${type}-${difficulty.difficulty}`}
-                  game="maimai"
                   difficulty={difficulty}
-                  type={type}
                   score={scores.find((record) => record.type === type && record.level_index === difficulty.difficulty)}
                   versions={context.songList.versions}
                   onClick={() => {
@@ -234,13 +237,12 @@ export default function Songs() {
                   }}
                 />
               ))
-            ))
+            })
           )}
           {context.songList instanceof ChunithmSongList && (
             (song as ChunithmSongProps).difficulties.slice().reverse().map((difficulty) => (
-              <SongDifficulty
+              <ChunithmSongDifficulty
                 key={`${song.id}-${difficulty.difficulty}`}
-                game="chunithm"
                 difficulty={difficulty}
                 score={scores.find((record) => record.level_index === difficulty.difficulty)}
                 versions={context.songList.versions}

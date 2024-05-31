@@ -30,4 +30,8 @@ export class SongList {
   getDifficulty(song: any, ...args: any[]) {
     return song.difficulties[args[0]][args[1]];
   }
+
+  getSongResourceId(song: any) {
+    return song.id%10000;
+  }
 }

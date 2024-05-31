@@ -9,19 +9,21 @@ import {
   Modal, Paper,
   rem,
   Space, Text,
-  TextInput, Tooltip
+  TextInput, Tooltip, Box, Alert
 } from "@mantine/core";
 import { useContext, useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useForm } from "@mantine/form";
-import { IconArrowsShuffle } from "@tabler/icons-react";
+import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
 import { createAlias } from "../../utils/api/alias.tsx";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
 import { ApiContext } from "../../App.tsx";
 import { useLocalStorage } from "@mantine/hooks";
 import { PhotoView } from "react-photo-view";
+import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
+import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 
 interface CreateAliasModalProps {
   defaultSongId?: number;
@@ -32,6 +34,7 @@ interface CreateAliasModalProps {
 export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAliasModalProps) => {
   const [uploading, setUploading] = useState(false);
   const [readonly, setReadonly] = useState(false);
+  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [game] = useLocalStorage({ key: 'game' })
   const context = useContext(ApiContext);
   const form = useForm({
@@ -82,6 +85,15 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   }
 
   useEffect(() => {
+    if (form.values.songId) {
+      const song = context.songList.find(form.values.songId);
+      setSong(song);
+    } else {
+      setSong(null);
+    }
+  }, [form.values.songId]);
+
+  useEffect(() => {
     if (defaultSongId) {
       form.setValues({
         songId: defaultSongId,
@@ -105,9 +117,9 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
         <Modal.Body>
           <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
             <Flex align="center" gap="md">
-              {form.values.songId ? (
-                <PhotoView src={`https://assets.lxns.net/${game}/jacket/${form.values.songId}.png`}>
-                  <Avatar size={94} radius="md" src={`https://assets.lxns.net/${game}/jacket/${form.values.songId}.png!webp`} />
+              {song ? (
+                <PhotoView src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
+                  <Avatar size={94} radius="md" src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} />
                 </PhotoView>
               ) : (
                 <Avatar size={94} radius="md" src={null}>
@@ -148,6 +160,13 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
               </div>
             </Flex>
             <Space h="md" />
+            {form.values.songId && ((game === "maimai" && form.values.songId >= 100000) || (game === "chunithm" && form.values.songId >= 8000)) && (
+              <Alert color="yellow" variant="light" icon={<IconAlertCircle />} title="特殊曲目注意" mb="md">
+                <Text size="sm">
+                  你目前选中的是「{game === "maimai" ? "宴会场曲目" : "WORLD'S END 曲目"}」，请确认你要提交的是原曲还是特殊曲目。
+                </Text>
+              </Alert>
+            )}
             <Checkbox
               label="我已阅读并理解曲目别名命名规则"
               {...form.getInputProps("agree", { type: 'checkbox' })}
@@ -156,16 +175,22 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
             <Paper p="md" withBorder>
               <Text fz="sm" fw={700} mb="sm">曲目别名命名规则</Text>
               <List size="xs" icon={
-                <Icon color="orange" path={mdiAlertCircle} size={rem(18)} />
+                <Box h={18}>
+                  <Icon color="orange" path={mdiAlertCircle} size={rem(18)} />
+                </Box>
               }>
                 <List.Item>不建议使用符号（全角或半角）、空格</List.Item>
                 <List.Item>不建议使用重复的别名，除非曲目的知名度很高</List.Item>
                 <List.Item>长度不应过长，且不应包含生僻字</List.Item>
                 <List.Item icon={
-                  <Icon color="rgb(250,82,82)" path={mdiCancel} size={rem(18)} />
+                  <Box h={18}>
+                    <Icon color="rgb(250,82,82)" path={mdiCancel} size={rem(18)} />
+                  </Box>
                 }>不允许包含<Mark>敏感内容</Mark>，或其他令人不适的内容</List.Item>
                 <List.Item icon={
-                  <Icon color="rgb(250,82,82)" path={mdiCancel} size={rem(18)} />
+                  <Box h={18}>
+                    <Icon color="rgb(250,82,82)" path={mdiCancel} size={rem(18)} />
+                  </Box>
                 }>不允许使用容易跟随版本变化而失效的别名</List.Item>
               </List>
             </Paper>

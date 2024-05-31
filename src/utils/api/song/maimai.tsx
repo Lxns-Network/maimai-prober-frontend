@@ -2,16 +2,31 @@ import { fetchAPI } from "../api.tsx";
 import { SongList } from "./song.tsx";
 
 export interface DifficultyProps {
+  type: string;
   difficulty: number;
   level: string;
   level_value: number;
   note_designer: string;
   version: number;
+  kanji: string;
+  description: string;
+  is_buddy: boolean;
+  notes: MaimaiNotesProps
+}
+
+export interface MaimaiNotesProps {
+  total: number;
+  tap: number;
+  hold: number;
+  slide: number;
+  touch: number;
+  break: number;
 }
 
 export interface MaimaiDifficultiesProps {
   dx: DifficultyProps[];
   standard: DifficultyProps[];
+  utage: DifficultyProps[];
 }
 
 export interface MaimaiSongProps {
@@ -64,7 +79,9 @@ export class MaimaiSongList extends SongList {
   }
 
   getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
-    if (type === "standard") {
+    if (type === "utage") {
+      return song.difficulties.utage[level_index]
+    } else if (type === "standard") {
       return song.difficulties.standard[level_index]
     } else {
       return song.difficulties.dx[level_index]
@@ -73,7 +90,9 @@ export class MaimaiSongList extends SongList {
 }
 
 export function getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
-  if (type === "standard") {
+  if (type === "utage") {
+      return song.difficulties.utage[level_index]
+  } else if (type === "standard") {
     return song.difficulties.standard[level_index]
   } else {
     return song.difficulties.dx[level_index]

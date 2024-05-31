@@ -26,7 +26,74 @@ interface ScoreProps {
   onClick: () => void;
 }
 
+const UtageScore = memo(({ score, song, onClick }: ScoreProps) => {
+  const computedColorScheme = useComputedColorScheme('light');
+  const difficulty = getDifficulty(song, "utage", 0);
+
+  return (
+    <Card
+      shadow="sm"
+      radius="md"
+      p={0}
+      className={[classes.card, classes.scoreCard].join(' ')}
+      style={{
+        border: `2px solid rgb(204, 12, 175)`,
+        opacity: computedColorScheme === 'dark' ? 0.8 : 1,
+      }}
+      onClick={onClick}
+    >
+      <BackgroundImage src={`https://assets.lxns.net/maimai/jacket/${score.id%10000}.png!webp`}>
+        <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
+          backgroundColor: "rgba(204, 12, 175, 0.95)",
+        }}>
+          <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">{score.song_name}</Text>
+          {difficulty.is_buddy && (
+            <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">バディ</Badge>
+          )}
+        </Flex>
+        <Group justify="space-between" p={10} pt={5} pb={5} wrap="nowrap" style={{
+          backgroundColor: "rgba(234, 61, 232, 0.7)",
+        }}>
+          {score.achievements != -1 ? (
+            <div>
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white">
+                {parseInt(String(score.achievements))}
+                <span style={{ fontSize: rem(16) }}>.{
+                  (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
+                }%</span>
+              </Text>
+              <Text size="xs" c="white">
+                DX Rating: -
+              </Text>
+            </div>
+          ) : (
+            <div>
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+                未游玩
+              </Text>
+              <Text size="xs" c="white">
+                或未上传至查分器
+              </Text>
+            </div>
+          )}
+          <Card w={40} h={30} p={0} radius="md" withBorder>
+            <Text size="md" fw={500} ta="center" style={{
+              lineHeight: rem(28),
+            }}>
+              {difficulty.level}
+            </Text>
+          </Card>
+        </Group>
+      </BackgroundImage>
+    </Card>
+  )
+});
+
 export const Score = memo(({ score, song, onClick }: ScoreProps) => {
+  if (song.id >= 100000) {
+    return <UtageScore score={score} song={song} onClick={onClick} />
+  }
+
   const computedColorScheme = useComputedColorScheme('light');
 
   return (
