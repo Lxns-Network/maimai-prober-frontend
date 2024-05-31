@@ -33,7 +33,7 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
           <div>
             <Text fz="xs" c="dimmed">Over Power</Text>
             <Text fz="sm">{(player.over_power || 0).toFixed(2)}
-              <Text fz="xs" component="span" ml={4}>({(player.change_over_power || 0).toFixed(2)}%)</Text></Text>
+              <Text fz="xs" component="span" ml={4}>({(player.over_power_progress || 0).toFixed(2)}%)</Text></Text>
           </div>
           <div>
             <Text fz="xs" c="dimmed">所持金币</Text>

@@ -13,6 +13,7 @@ import { ChunithmPlayerPanel } from "./PlayerPanel/chunithm/PlayerPanel.tsx";
 import { PlayerPanelSkeleton } from "./PlayerPanel/Skeleton.tsx";
 import { useNavigate } from "react-router-dom";
 import classes from "./Profile.module.css";
+import { openRetryModal } from "../../utils/modal.tsx";
 
 export const PlayerSection = () => {
   const [player, setPlayer] = useState<any>(null);
@@ -26,12 +27,15 @@ export const PlayerSection = () => {
       const res = await getPlayerDetail(game);
       const data = await res.json();
       if (!data.success) {
+        if (data.code === 404) {
+          setPlayer(null);
+          return;
+        }
         throw new Error(data.message);
       }
       setPlayer(data.data);
     } catch (error) {
-      setPlayer(null);
-      console.error(error);
+      openRetryModal("获取玩家数据失败", `${error}`, () => fetchPlayerData())
     } finally {
       setFetching(false);
     }
@@ -40,11 +44,12 @@ export const PlayerSection = () => {
   useEffect(() => {
     if (!game) return;
 
+    setPlayer(null);
     fetchPlayerData();
   }, [game]);
 
   return (
-    <Card className={classes.card} withBorder radius="md" mb="md" p={0}>
+    <Card className={classes.card} withBorder radius="md" p={0}>
       <Tabs unstyled value={game} onChange={(value) => {
         if (value === game) return;
         setFetching(true);

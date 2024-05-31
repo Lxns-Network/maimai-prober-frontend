@@ -21,7 +21,6 @@ export interface MaimaiPlayerProps {
   course_rank: number;
   class_rank: number;
   star: number;
-  icon_url: string; // deprecated
   icon?: CollectionProps;
   name_plate?: CollectionProps;
   frame?: CollectionProps;
@@ -39,7 +38,10 @@ const examplePlayer: MaimaiPlayerProps = {
   "course_rank": 0,
   "class_rank": 0,
   "star": 0,
-  "icon_url": "https://maimai.wahlap.com/maimai-mobile/img/Icon/df44b1de570dfba8.png",
+  "icon": {
+    "id": 1,
+    "name": ""
+  },
   "upload_time": "2024-01-01T08:00:00Z"
 };
 
@@ -47,7 +49,7 @@ export const MaimaiPlayerPanel = ({ player }: { player: MaimaiPlayerProps }) => 
   const { width } = useViewportSize();
   const [opened, setOpened] = useState(false);
 
-  if (!player) player =  examplePlayer;
+  if (!player) player = examplePlayer;
 
   return (
     <>

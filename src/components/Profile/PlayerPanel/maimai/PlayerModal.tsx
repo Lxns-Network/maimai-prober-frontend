@@ -46,6 +46,8 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
   }
 
   useEffect(() => {
+    if (!opened) return;
+
     setFetching(true);
     setTrend(null);
     getPlayerRatingTrendHandler();

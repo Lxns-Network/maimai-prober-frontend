@@ -3,7 +3,7 @@ import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useState } from "react";
 import { SimpleGrid } from "@mantine/core";
 import { MaimaiSongList } from "../../../utils/api/song/maimai.tsx";
-import {ScoreModal} from "../ScoreModal.tsx";
+import { ScoreModal } from "../ScoreModal.tsx";
 
 interface ScoreListProps {
   scores: MaimaiScoreProps[];
@@ -12,8 +12,8 @@ interface ScoreListProps {
 }
 
 export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListProps) => {
-  const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [scoreDetail, setScoreDetail] = useState<MaimaiScoreProps | null>(null);
+  const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const small = useMediaQuery('(max-width: 25rem)');
 
   return (
@@ -21,7 +21,6 @@ export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListPr
       <ScoreModal
         game="maimai"
         score={scoreDetail}
-        song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
         onClose={(score) => {
           closeScoreAlert();

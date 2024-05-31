@@ -19,10 +19,9 @@ export interface ChunithmPlayerProps {
     color: string;
   };
   over_power: number;
-  change_over_power: number;
+  over_power_progress: number;
   currency: number;
   total_currency: number;
-  icon_url: string;
   character?: CollectionProps;
   name_plate?: CollectionProps;
   map_icon?: CollectionProps;
@@ -34,13 +33,16 @@ const examplePlayer: ChunithmPlayerProps = {
   "rating": 0,
   "friend_code": 888888888888888,
   "over_power": 0,
-  "change_over_power": 0,
-  "icon_url": "https://chunithm.wahlap.com/mobile/img/71e1e250b22e2f4f.png",
+  "over_power_progress": 0,
   "currency": 0,
   "total_currency": 0,
   "trophy": {
     "name": "NEW COMER",
     "color": "normal"
+  },
+  "character": {
+    "id": 0,
+    "name": ""
   },
   "upload_time": "2024-01-01T08:00:00Z"
 };

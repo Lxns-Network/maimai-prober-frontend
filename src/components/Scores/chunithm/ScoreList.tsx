@@ -12,8 +12,8 @@ interface ScoreListProps {
 }
 
 export const ChunithmScoreList = ({ scores, songList, onScoreChange }: ScoreListProps) => {
-  const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [scoreDetail, setScoreDetail] = useState<ChunithmScoreProps | null>(null);
+  const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const small = useMediaQuery('(max-width: 25rem)');
 
   return (
@@ -21,7 +21,6 @@ export const ChunithmScoreList = ({ scores, songList, onScoreChange }: ScoreList
       <ScoreModal
         game="chunithm"
         score={scoreDetail}
-        song={(scoreDetail ? songList.find(scoreDetail.id) : null) as any}
         opened={scoreAlertOpened}
         onClose={(score) => {
           closeScoreAlert();
