@@ -14,7 +14,7 @@ import {
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
-import { StatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
+import { MaimaiStatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
 import {
   IconArrowDown,
   IconArrowUp,
@@ -39,6 +39,7 @@ import ScoreContext from "../../utils/context.tsx";
 import { API_URL } from "../../main.tsx";
 import { fetchAPI } from "../../utils/api/api.tsx";
 import { ApiContext } from "../../App.tsx";
+import {ChunithmStatisticsSection} from "../../components/Scores/chunithm/StatisticsSection.tsx";
 
 const sortKeys = {
   maimai: [
@@ -60,7 +61,7 @@ const sortKeys = {
 };
 
 const ScoresContent = () => {
-  const [game, setGame] = useLocalStorage({ key: 'game' });
+  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
 
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
@@ -96,6 +97,9 @@ const ScoresContent = () => {
       const res = await getPlayerScores(game);
       const data = await res.json();
       if (!data.success) {
+        if (data.code === 404) {
+          return;
+        }
         throw new Error(data.message);
       }
       if (data.data) {
@@ -226,7 +230,7 @@ const ScoresContent = () => {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         管理你的 maimai DX 查分器账号的成绩
       </Text>
-      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value)} data={[
+      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} data={[
         { label: '舞萌 DX', value: 'maimai' },
         { label: '中二节奏', value: 'chunithm' },
       ]} />
@@ -241,8 +245,8 @@ const ScoresContent = () => {
             </Text>
           </div>
         </Group>
-        <Flex m="md" mt={0} gap="md" wrap="wrap">
-          {(sortKeys[game as keyof typeof sortKeys] || sortKeys.maimai).map((item) => (
+        <Flex m="md" gap="md" mt={0} wrap="wrap">
+          {(sortKeys[game] || sortKeys.maimai).map((item) => (
             <Button
               key={item.key}
               onClick={() => sort(item.key)}
@@ -321,7 +325,11 @@ const ScoresContent = () => {
           </Group>
           {context.songList instanceof MaimaiSongList && <>
             <Space h="md" />
-            <StatisticsSection scores={searchedScores as MaimaiScoreProps[]} />
+            <MaimaiStatisticsSection scores={searchedScores as MaimaiScoreProps[]} />
+          </>}
+          {context.songList instanceof ChunithmSongList && <>
+            <Space h="md" />
+            <ChunithmStatisticsSection scores={searchedScores as ChunithmScoreProps[]} />
           </>}
         </>
       ))}
