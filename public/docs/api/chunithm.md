@@ -6,7 +6,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 ## 开发者 API
 
-开发者 API 的所有请求均需要在请求头加入 API 密钥，如果没有，请[申请成为开发者](/developer/apply)获取。
+开发者 API 的所有请求均需要在请求头加入**开发者 API 密钥**，如果没有，请[申请成为开发者](/developer/apply)获取。
 
 请求头示例：
 ```
@@ -50,7 +50,7 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
     },
     "reborn_count": 0,
     "over_power": 13.2,
-    "change_over_power": 0.01,
+    "over_power_progress": 0.01,
     "currency": 4500,
     "total_currency": 5000,
     "total_play_count": 2,
@@ -274,6 +274,31 @@ JSON 格式的玩家成绩：
 
 [Score[]](#score)
 
+## 个人 API
+
+个人 API 的所有请求均需要在请求头加入**个人 API 密钥**，如果没有，请前往[账号详情](/user/profile)生成。
+
+请求头示例：
+```
+X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
+```
+
+### GET `/api/v0/user/chunithm/player`
+
+获取玩家信息。
+
+#### 响应体
+
+[Player](#player)
+
+### GET `/api/v0/user/chunithm/player/scores`
+
+获取玩家所有成绩。
+
+#### 响应体
+
+[Score[]](#score)
+
 ## 公共 API
 
 ### GET `/api/v0/chunithm/song/list`
@@ -348,8 +373,8 @@ JSON 格式的玩家成绩：
 | `friend_code` | `int` | 好友码 |
 | `class_emblem` | [`ClassEmblem`](#classemblem) | CLASS 勋章 |
 | `reborn_count` | `int` | 玩家等级突破次数 |
-| `over_power` | `float` | 总 OVER POWER |
-| `change_over_power` | `float` | 上局游戏中变更的 OVER POWER |
+| `over_power` | `float` | OVER POWER |
+| `over_power_progress` | `float` | OVER POWER 总进度 |
 | `currency` | `int` | 当前金币数 |
 | `total_currency` | `int` | 总金币数 |
 | `total_play_count` | `int` | 总游玩次数 |
@@ -416,7 +441,10 @@ CLASS 勋章
 | `genre` | `string` | 曲目分类 |
 | `bpm` | `int` | 曲目 BPM |
 | `version` | `int` | 曲目首次出现版本 |
+| `disabled` | `bool` | 值可空，是否被禁用，默认值为 `false` |
 | `difficulties` | [`SongDifficulty[]`](#songdifficulty) | 谱面难度 |
+
+> `disabled` 为 `true` 时，该曲目不会出现在 Best 30、Selection 10 中。
 
 ### SongDifficulty
 
@@ -430,6 +458,8 @@ CLASS 勋章
 | `note_designer` | `string` | 谱师 |
 | `version` | `int` | 谱面首次出现版本 |
 | `notes` | [`Notes`](#notes) | 值可空，谱面物量 |
+| `kanji` | `string` | 仅 WORLD'S END 难度，谱面属性 |
+| `star` | `int` | 仅 WORLD'S END 难度，谱面星级 |
 
 ### Notes
 
@@ -495,6 +525,7 @@ CLASS 勋章
 | `2` | `int` | EXPERT |
 | `3` | `int` | MASTER |
 | `4` | `int` | ULTIMA |
+| `5` | `int` | WORLD'S END |
 
 ### ClearType
 

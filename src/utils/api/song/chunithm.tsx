@@ -6,7 +6,20 @@ export interface DifficultyProps {
   level: string;
   level_value: number;
   note_designer: string;
+  origin_id: number;
+  kanji: string;
+  star: number;
   version: number;
+  notes: ChunithmNotesProps;
+}
+
+export interface ChunithmNotesProps {
+  total: number;
+  tap: number;
+  hold: number;
+  slide: number;
+  air: number;
+  flick: number;
 }
 
 export interface ChunithmSongProps {
@@ -56,10 +69,14 @@ export class ChunithmSongList extends SongList {
   }
 
   getDifficulty(song: ChunithmSongProps, level_index: number) {
-    return song.difficulties[level_index]
+    return song.difficulties.find((d) => d.difficulty === level_index);
+  }
+
+  getSongResourceId(song: ChunithmSongProps) {
+    return song.id < 8000 ? song.id : (song.difficulties[0] || {}).origin_id;
   }
 }
 
 export function getDifficulty(song: ChunithmSongProps, level_index: number) {
-  return song.difficulties[level_index]
+  return song.difficulties.find((d) => d.difficulty === level_index);
 }

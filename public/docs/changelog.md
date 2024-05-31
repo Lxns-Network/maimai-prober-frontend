@@ -2,18 +2,38 @@
 
 ---
 
-## 2024/6
+## 2024/6/6
 
 > **此部分变动将在舞萌 DX 2024（Ver.CN1.40）正式发布后更新**
 
 - 初步适配舞萌 DX 2024（Ver.CN1.40）：
+  - 新增对宴会场谱面的支持：
+    - 成绩管理、曲目查询支持查询宴谱成绩
+    - 支持爬取宴谱成绩
+      > [爬取谱面成绩的难度](/user/settings)需要选中 **U·TA·GE** 难度
+    - 曲目列表的变化请参考[获取曲目列表](/docs/api/maimai#get-apiv0maimaisonglist)接口
+    - 查询单曲最佳成绩等接口时需要将 `song_type` 设为 `utage`，`level_index` 设为 0
+      > 如获取 **[協]Love You** 的最佳成绩：
+      > `/api/v0/maimai/player/{friend_code}/best?song_id=100018&song_type=utage&level_index=0`
   - 获取曲目列表等资源时可以使用 `version` 查询参数指定游戏版本，默认为 `24000`
     > 可以根据需求自行修改为舞萌 DX 2023 的版本 ID（暂不支持早期版本）：`23000`
   - [获取玩家 DX Rating 趋势](/docs/api/maimai#get-apiv0maimaiplayerfriend_codetrend)接口新增 `version` 查询参数，用于获取指定游戏版本范围内的趋势，默认为 `24000`
   - [FULL SYNC 类型](/docs/api/maimai#fstype)新增 SYNC PLAY：`sync`
+- 舞萌 DX、中二节奏 `Song` 结构体中新增 `disabled` 字段，用于获取曲目是否被禁用
+  > 通常发生在小版本更新中曲目被删除，值为 `true` 时不会显示在 Best 50（或 Best 30、Selection 10）中
 - 舞萌 DX `Song` 结构体中新增 `rights` 字段，用于获取曲目版权信息
+- 新增对中二节奏 WORLD'S END 难度的支持：
+  - 成绩管理、曲目查询支持查询该难度的成绩
+  - 支持爬取该难度的成绩
+    > [爬取谱面成绩的难度](/user/settings)需要选中 **WORLD'S END** 难度
+  - 曲目列表的变化请参考[获取曲目列表](/docs/api/chunithm#get-apiv0chunithmsonglist)接口
+  - 查询单曲最佳成绩等接口时需要将 `level_index` 设为 5
+    > 如获取 **B.B.K.K.B.K.K.** 的 WORLD'S END 最佳成绩：
+    > `/api/v0/chunithm/player/{friend_code}/best?song_id=8020&level_index=5`
 - 获取中二节奏曲目列表时可以使用 `version` 查询参数指定资源版本，默认为 `20500`
-- 修复中二节奏部分成绩 Rating 可能为负数的问题
+- 修复中二节奏部分成绩 Rating、OVER POWER 计算有误的问题
+- 修复中二节奏删除曲目会出现在 Best 30、Selection 10 中的问题
+- 新增个人 API，使用个人 API 密钥可以完全访问查分器用户绑定的玩家数据
 - 修复部分接口返回值不符合预期的问题
 
 ### ⚠ 破坏性变动
@@ -26,10 +46,17 @@
   - 玩家相关：`/api/v0/player` 及其所有子接口
     > 请使用 `/api/v0/{game}/player` 代替
 - 舞萌 DX、中二节奏 `Player` 结构体中删除字段：`icon_url`
+- 中二节奏 `Player` 结构体 `change_over_power` 字段更名为 `over_power_progress`
 - 由于资源导出工具的更新，部分字段至少会有以下变化：
   - 舞萌 DX、中二节奏收藏品的 `required` 字段现在可空，空值不再是 `[]`
   - 部分浮点数类型的字段（如 `level_value` 等）为整数时不会显示小数点
   > 受此影响，部分功能可能会不符合预期，如有问题请[联系我们](/docs/about#联系我们)
+
+## 2024/5/31
+
+- 舞萌 DX、中二节奏支持查询谱面详情（谱师、物量）
+  > 舞萌 DX 支持查询物量达成率占比（可选模式 `101-`、`100-`、`0+`）
+- 中二节奏成绩管理支持查询详细统计信息
 
 ## 2024/5/17
 

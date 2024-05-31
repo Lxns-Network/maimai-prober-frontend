@@ -8,7 +8,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 ## 开发者 API
 
-开发者 API 的所有请求均需要在请求头加入 API 密钥，如果没有，请[申请成为开发者](/developer/apply)获取。
+开发者 API 的所有请求均需要在请求头加入**开发者 API 密钥**，如果没有，请[申请成为开发者](/developer/apply)获取。
 
 请求头示例：
 ```
@@ -335,6 +335,31 @@ JSON 格式的玩家成绩：
 
 [Plate](#collection)
 
+## 个人 API
+
+个人 API 的所有请求均需要在请求头加入**个人 API 密钥**，如果没有，请前往[账号详情](/user/profile)生成。
+
+请求头示例：
+```
+X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
+```
+
+### GET `/api/v0/user/maimai/player`
+
+获取玩家信息。
+
+#### 响应体
+
+[Player](#player)
+
+### GET `/api/v0/user/maimai/player/scores`
+
+获取玩家所有成绩。
+
+#### 响应体
+
+[Score[]](#score)
+
 ## 公共 API
 
 ### GET `/api/v0/maimai/song/list`
@@ -587,7 +612,10 @@ DX Rating 趋势
 | `bpm` | `int` | 曲目 BPM |
 | `version` | `int` | 曲目首次出现版本 |
 | `rights` | `string` | 曲目版权信息 |
+| `disabled` | `bool` | 值可空，是否被禁用，默认值为 `false` |
 | `difficulties` | [`SongDifficulties`](#songdifficulties) | 谱面难度 |
+
+> `disabled` 为 `true` 时，该曲目不会出现在 Best 50 中。
 
 ### SongDifficulties
 
@@ -597,6 +625,9 @@ DX Rating 趋势
 |-|-|-|
 | `standard` | [`SongDifficulty[]`](#songdifficulty) | 曲目标准谱面难度列表 |
 | `dx` | [`SongDifficulty[]`](#songdifficulty) | 曲目 DX 谱面难度列表 |
+| `utage` | [`SongDifficultyUtage[]`](#songdifficultyutage) | 可选，宴会场曲目谱面难度列表 |
+
+> 仅宴会场曲目（曲目 ID 大于 100000）拥有 `utage` 字段。
 
 ### SongDifficulty
 
@@ -612,6 +643,21 @@ DX Rating 趋势
 | `version` | `int` | 谱面首次出现版本 |
 | `notes` | [`Notes`](#notes) | 值可空，谱面物量 |
 
+### SongDifficultyUtage
+
+宴会场曲目谱面难度
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `kanji` | `string` | 谱面属性 |
+| `description` | `string` | 谱面描述 |
+| `is_buddy` | `bool` | 是否为バディ谱面 |
+| `notes` | [`Notes`](#notes) 或 [`BuddyNotes`](#buddynotes) | 值可空，谱面物量 |
+
+> `is_buddy` 为 `true` 时，`notes` 为 [`BuddyNotes`](#buddynotes)。
+
+> 其他参数与 [`SongDifficulty`](#songdifficulty) 相同。
+
 ### Notes
 
 谱面物量
@@ -624,6 +670,15 @@ DX Rating 趋势
 | `slide` | `int` | SLIDE 物量 |
 | `touch` | `int` | TOUCH 物量 |
 | `break` | `int` | BREAK 物量 |
+
+### BuddyNotes
+
+仅宴会场曲目，バディ谱面物量
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `left` | [`Notes`](#notes) | 1P 谱面物量 |
+| `right` | [`Notes`](#notes) | 2P 谱面物量 |
 
 ### Genre
 
@@ -716,6 +771,8 @@ DX Rating 趋势
 | `3` | `int` | MASTER |
 | `4` | `int` | Re:MASTER |
 
+> 当曲目为宴会场曲目时，该字段默认为 `0`。
+
 ### FCType
 
 FULL COMBO 类型
@@ -768,3 +825,6 @@ FULL SYNC 类型
 |-|-|-|
 | `standard` | `string` | 标准谱面 |
 | `dx` | `string` | DX 谱面 |
+| `utage` | `string` | 宴会场谱面 |
+
+> 仅宴会场曲目（曲目 ID 大于 100000）为 `utage` 类型。
