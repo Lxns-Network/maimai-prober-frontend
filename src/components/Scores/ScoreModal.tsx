@@ -12,19 +12,51 @@ import { MaimaiScoreModalContent } from "./maimai/ScoreModal.tsx";
 import { ChunithmScoreModalContent } from "./chunithm/ScoreModal.tsx";
 import { ChunithmScoreHistory } from "./chunithm/ScoreHistory.tsx";
 import { ChunithmScoreModalMenu } from "./chunithm/ScoreModalMenu.tsx";
+import { MaimaiChart } from "./maimai/Chart.tsx";
+import { openRetryModal } from "../../utils/modal.tsx";
+import { ApiContext } from "../../App.tsx";
+import classes from "./ScoreModal.module.css"
+import { ChunithmChart } from "./chunithm/Chart.tsx";
 
 interface ScoreModalProps {
   game: "maimai" | "chunithm";
   score: MaimaiScoreProps | ChunithmScoreProps | null;
-  song: MaimaiSongProps | ChunithmSongProps | null;
   opened: boolean;
   onClose: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
 }
 
-export const ScoreModal = ({ game, score, song, opened, onClose }: ScoreModalProps) => {
+export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
   const [historyScores, setHistoryScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [fetching, setFetching] = useState(true);
-  const context = useContext(ScoreContext);
+  const [difficulty, setDifficulty] = useState();
+  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
+  const context = useContext(ApiContext);
+  const scoreContext = useContext(ScoreContext);
+
+  const getSongDetailHandler = async (id: number) => {
+    const res = await fetchAPI(`${game}/song/${id}`, {
+      method: "GET",
+    });
+    const data = await res.json();
+    setSong(data);
+  }
+
+  useEffect(() => {
+    if (!score) return;
+
+    setSong(context.songList.find(score.id))
+    getSongDetailHandler(score.id);
+  }, [score]);
+
+  useEffect(() => {
+    if (!song) return;
+
+    if (isMaimaiScoreProps(score)) {
+      setDifficulty(context.songList.getDifficulty(song, score.type, score.level_index));
+    } else if (isChunithmScoreProps(score)) {
+      setDifficulty(context.songList.getDifficulty(song, score.level_index));
+    }
+  }, [song]);
 
   const getPlayerScoreHistory = async (score: any) => {
     if ((game === "maimai" && score.achievements < 0) ||
@@ -53,8 +85,8 @@ export const ScoreModal = ({ game, score, song, opened, onClose }: ScoreModalPro
           return uploadTimeDiff;
         }));
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      openRetryModal("历史记录获取失败", `${error}`, () => getPlayerScoreHistory(score))
     } finally {
       setFetching(false);
     }
@@ -63,36 +95,40 @@ export const ScoreModal = ({ game, score, song, opened, onClose }: ScoreModalPro
   useEffect(() => {
     if (!score) return;
 
-    Object.keys(context).length !== 0 && context.setScore(score);
+    Object.keys(context).length !== 0 && scoreContext.setScore(score);
     setHistoryScores([]);
     getPlayerScoreHistory(score);
   }, [score]);
 
+  function isMaimaiScoreProps(obj: any): obj is MaimaiScoreProps {
+    if (!obj) return false;
+    return typeof obj === 'object' && 'dx_rating' in obj;
+  }
+
+  function isChunithmScoreProps(obj: any): obj is ChunithmScoreProps {
+    if (!obj) return false;
+    return typeof obj === 'object' && 'rating' in obj;
+  }
+
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
+    <Modal.Root opened={opened} onClose={onClose} centered size="lg">
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>
           <Modal.Title>成绩详情</Modal.Title>
           <Group gap="xs">
-            {score !== null && (
-              game === "maimai" ?
-                <MaimaiScoreModalMenu score={score as MaimaiScoreProps} onClose={onClose} /> :
-                <ChunithmScoreModalMenu score={score as ChunithmScoreProps} onClose={onClose} />
-            )}
+            {isMaimaiScoreProps(score) && <MaimaiScoreModalMenu score={score} onClose={onClose} />}
+            {isChunithmScoreProps(score) && <ChunithmScoreModalMenu score={score} onClose={onClose} />}
             <Modal.CloseButton />
           </Group>
         </Modal.Header>
         <Modal.Body p={0}>
           <Container>
-            {score !== null && song !== null && (
-              game === "maimai" ?
-                <MaimaiScoreModalContent score={score as MaimaiScoreProps} song={song as MaimaiSongProps} /> :
-                <ChunithmScoreModalContent score={score as ChunithmScoreProps} song={song as ChunithmSongProps} />
-            )}
+            {isMaimaiScoreProps(score) && <MaimaiScoreModalContent score={score} song={song as MaimaiSongProps} />}
+            {isChunithmScoreProps(score) && <ChunithmScoreModalContent score={score} song={song as ChunithmSongProps} />}
           </Container>
           <Space h="md" />
-          <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
+          <Accordion className={classes.accordion} chevronPosition="left" variant="filled" radius={0} defaultValue="history">
             <Accordion.Item value="history">
               <Accordion.Control>上传历史记录</Accordion.Control>
               <Accordion.Panel>
@@ -100,11 +136,17 @@ export const ScoreModal = ({ game, score, song, opened, onClose }: ScoreModalPro
                   <Center>
                     <Loader />
                   </Center>
-                ) : (
-                  game === "maimai" ?
-                    <MaimaiScoreHistory scores={historyScores as MaimaiScoreProps[]} /> :
-                    <ChunithmScoreHistory scores={historyScores as ChunithmScoreProps[]} />
+                ) : (game === "maimai" ?
+                  <MaimaiScoreHistory scores={historyScores as MaimaiScoreProps[]} /> :
+                  <ChunithmScoreHistory scores={historyScores as ChunithmScoreProps[]} />
                 )}
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value="chart">
+              <Accordion.Control>谱面详情</Accordion.Control>
+              <Accordion.Panel>
+                {isMaimaiScoreProps(score) && <MaimaiChart difficulty={difficulty as any} />}
+                {isChunithmScoreProps(score) && <ChunithmChart difficulty={difficulty as any} />}
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>
