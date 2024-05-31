@@ -1,9 +1,10 @@
-import { BackgroundImage, Card, Flex, Group, NumberFormatter, rem, Text } from "@mantine/core";
+import {BackgroundImage, Card, Flex, Group, NumberFormatter, rem, Text, ThemeIcon} from "@mantine/core";
 import { chunithmDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
 import { memo } from "react";
 import classes from "../Scores.module.css"
 import { useComputedColorScheme } from "@mantine/core";
+import { IconStarFilled } from "@tabler/icons-react";
 
 export interface ChunithmScoreProps {
   id: number;
@@ -27,7 +28,77 @@ interface ScoreProps {
   onClick: () => void;
 }
 
+const WorldsEndScore = ({ score, song, onClick }: ScoreProps) => {
+  const computedColorScheme = useComputedColorScheme('light');
+  const difficulty = getDifficulty(song, score.level_index);
+  if (!difficulty) {
+    return null;
+  }
+
+  return (
+    <Card
+      shadow="sm"
+      radius="md"
+      p={0}
+      className={[classes.card, classes.scoreCard, classes.scoreWorldsEnd].join(' ')}
+      style={{
+        opacity: computedColorScheme === 'dark' ? 0.8 : 1,
+      }}
+      onClick={onClick}
+    >
+      <BackgroundImage src={`https://assets.lxns.net/chunithm/jacket/${difficulty.origin_id}.png!webp`}>
+        <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
+          backgroundColor: "rgba(14, 45, 56, 0.95)",
+        }}>
+          <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">{score.song_name}</Text>
+          <Group wrap="nowrap" justify="center" gap={0}>
+            {Array.from({ length: difficulty.star }, (_, i) => (
+              <ThemeIcon key={i} size={12} variant="subtle" color="yellow">
+                <IconStarFilled />
+              </ThemeIcon>
+            ))}
+          </Group>
+        </Flex>
+        <Group justify="space-between" p={10} pt={5} pb={5} wrap="nowrap" style={{
+          backgroundColor: "rgba(14, 45, 56, 0.7)",
+        }}>
+          {score.score != -1 ? (
+            <div>
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+                <NumberFormatter value={score.score || 0} thousandSeparator />
+              </Text>
+              <Text size="xs" c="white">
+                Rating: -
+              </Text>
+            </div>
+          ) : (
+            <div>
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+                未游玩
+              </Text>
+              <Text size="xs" c="white">
+                或未上传至查分器
+              </Text>
+            </div>
+          )}
+          <Card w={40} h={30} p={0} radius="md" withBorder>
+            <Text size="md" fw={500} ta="center" style={{
+              lineHeight: rem(28),
+            }}>
+              {difficulty.kanji}
+            </Text>
+          </Card>
+        </Group>
+      </BackgroundImage>
+    </Card>
+  )
+}
+
 export const Score = memo(({ score, song, onClick }: ScoreProps) => {
+  if (song.id >= 8000) {
+    return <WorldsEndScore score={score} song={song} onClick={onClick} />
+  }
+
   const computedColorScheme = useComputedColorScheme('light');
 
   return (

@@ -15,3 +15,36 @@
         z-index: 1;
     }
 }
+
+.scoreWorldsEnd {
+    --angle: 0deg;
+    padding: 2px !important;
+}
+
+.scoreWorldsEnd::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: var(--mantine-radius-md);
+    padding: 2px;
+    background: conic-gradient(from var(--angle), red, yellow, lime, aqua, blue, magenta, red);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: 10s rotate linear infinite;
+}
+
+@keyframes rotate {
+    to {
+        --angle: 360deg;
+    }
+}
+
+@property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
