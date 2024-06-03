@@ -10,15 +10,16 @@ import {
   Space,
   Text,
   Title,
-  SegmentedControl, Flex, Mark,
+  SegmentedControl, Flex,
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { MaimaiStatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
+import { ChunithmStatisticsSection } from "../../components/Scores/chunithm/StatisticsSection.tsx";
 import {
   IconArrowDown,
   IconArrowUp,
-  IconDatabaseOff, IconFileExport, IconFileImport, IconPlus,
+  IconDatabaseOff, IconPlus,
 } from "@tabler/icons-react";
 
 import { MaimaiScoreProps } from '../../components/Scores/maimai/Score.tsx';
@@ -29,17 +30,15 @@ import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunit
 import { ChunithmScoreList } from "../../components/Scores/chunithm/ScoreList.tsx";
 import { ChunithmScoreProps } from "../../components/Scores/chunithm/Score.tsx";
 import classes from "../Page.module.css"
-import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
+import { openRetryModal } from "../../utils/modal.tsx";
 import { AdvancedFilter } from "../../components/Scores/AdvancedFilter.tsx";
+import { ScoreExportSection } from "../../components/Scores/ScoreExportSection.tsx";
 import { MaimaiCreateScoreModal } from "../../components/Scores/maimai/CreateScoreModal.tsx";
 import { ChunithmCreateScoreModal } from "../../components/Scores/chunithm/CreateScoreModal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
 
-import ScoreContext from "../../utils/context.tsx";
-import { API_URL } from "../../main.tsx";
-import { fetchAPI } from "../../utils/api/api.tsx";
 import { ApiContext } from "../../App.tsx";
-import {ChunithmStatisticsSection} from "../../components/Scores/chunithm/StatisticsSection.tsx";
+import ScoreContext from "../../utils/context.tsx";
 
 const sortKeys = {
   maimai: [
@@ -333,87 +332,7 @@ const ScoresContent = () => {
           </>}
         </>
       ))}
-      <Group gap="sm" grow mt="md">
-        {scores && scores.length > 0 && (
-          <Button
-            variant="transparent"
-            leftSection={<IconFileExport size={20} />}
-            onClick={() => {
-              async function download(type: string) {
-                try {
-                  const res = await fetchAPI(`user/${game}/player/scores/export/${type}`, {
-                    method: 'GET',
-                  });
-                  if (res.status !== 200) {
-                    throw new Error(`HTTP ${res.status}`);
-                  }
-                  const blob = await res.blob();
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `${game}-scores.${type}`;
-                  a.click();
-                } catch (error) {
-                  openRetryModal("成绩导出失败", `${error}`, download.bind(null, type));
-                }
-              }
-
-              download('csv');
-            }}
-          >
-            导出为 CSV
-          </Button>
-        )}
-        <Button
-          variant="transparent"
-          leftSection={<IconFileImport size={20} />}
-          onClick={
-            openConfirmModal.bind(null, "导入成绩", <>
-              导入成绩前，建议先备份当前成绩。导入成绩将会<Mark>删除当前所有成绩（包括历史成绩）</Mark>，是否继续？
-            </>, () => {
-              async function upload() {
-                const file = document.createElement('input');
-                file.type = 'file';
-                file.accept = '.csv';
-                file.onchange = async () => {
-                  try {
-                    if (!file.files || !file.files[0]) return;
-                    const formData = new FormData();
-                    formData.append('file', file.files[0]);
-                    const res = await fetch(`${API_URL}/user/${game}/player/scores/import`, {
-                      method: 'POST',
-                      credentials: 'include',
-                      headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                      },
-                      body: formData,
-                    });
-                    const data = await res.json();
-                    if (!data.success) {
-                      if (data.code === 400) {
-                        openAlertModal("成绩导入失败", `成绩导入失败，无效的 CSV 文件。`);
-                        return;
-                      }
-                      throw new Error(data.message);
-                    }
-                    openAlertModal("成绩导入成功", `成绩导入成功，你的 ${game === "maimai" ? "DX Rating" : "Rating"} 已自动更新。`);
-                    getPlayerScoresHandler();
-                  } catch (error) {
-                    openRetryModal("成绩导入失败", `${error}`, upload);
-                  }
-                };
-                file.click();
-              }
-
-              upload();
-            }, {
-              confirmProps: { color: 'red' }
-            })
-          }
-        >
-          从 CSV 导入
-        </Button>
-      </Group>
+      <ScoreExportSection scores={scores} onImport={getPlayerScoresHandler} />
     </Container>
   );
 }

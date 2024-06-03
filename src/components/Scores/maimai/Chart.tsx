@@ -1,5 +1,5 @@
 import { DifficultyProps, MaimaiNotesProps } from "../../../utils/api/song/maimai.tsx";
-import {Center, keys, SegmentedControl, Select, Space, Table, Text} from "@mantine/core";
+import { Center, keys, Loader, SegmentedControl, Select, Space, Table, Text } from "@mantine/core";
 import { useState } from "react";
 
 // 基础权重
@@ -44,7 +44,9 @@ const break_bonus = {
 };
 
 const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
-  if (!notes) return;
+  if (!notes) return <Center mt="xs" mb="md">
+    <Loader />
+  </Center>;
 
   const [mode, setMode] = useState("101-");
   const total = notes.tap + notes.touch + 2 * notes.hold + 3 * notes.slide + 5 * notes.break;

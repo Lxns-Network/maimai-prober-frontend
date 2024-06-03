@@ -11,9 +11,19 @@ import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { IconCheck, IconChevronRight, IconNorthStar } from "@tabler/icons-react";
 import classes from "./Alias.module.css";
 import { useLocalStorage } from "@mantine/hooks";
+import { useContext, useEffect, useState } from "react";
+import { ApiContext } from "../../App.tsx";
+import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
+import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 
 export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
   const [game] = useLocalStorage({ key: 'game' });
+  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps>();
+  const context = useContext(ApiContext);
+
+  useEffect(() => {
+    setSong(context.songList.find(alias.song.id) || null);
+  }, [alias.song.id]);
 
   return (
     <UnstyledButton className={classes.alias} onClick={onClick} {...others}>
@@ -28,7 +38,7 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
         )}
         {game === "chunithm" && alias.song.id >= 8000 && (
           <Badge variant="filled" color="rgb(14, 45, 56)" size="sm">
-            WE
+            {(song as ChunithmSongProps).difficulties[0].kanji}
           </Badge>
         )}
         {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (

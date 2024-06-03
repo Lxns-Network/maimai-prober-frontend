@@ -151,7 +151,7 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
                   )}
                   {context.songList instanceof ChunithmSongList && song.id >= 8000 && (
                     <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
-                      WE
+                      {(song as ChunithmSongProps).difficulties[0].kanji}
                     </Badge>
                   )}
                 </Group>

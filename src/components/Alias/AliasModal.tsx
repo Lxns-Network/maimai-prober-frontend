@@ -124,7 +124,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
               )}
               {game === "chunithm" && alias.song.id >= 8000 && (
                 <Badge variant="filled" color="rgb(14, 45, 56)" size="sm">
-                  WE
+                  {(song as ChunithmSongProps).difficulties[0].kanji}
                 </Badge>
               )}
             </Group>

@@ -2,16 +2,16 @@ import { ChunithmScoreProps } from "./Score.tsx";
 import {
   Avatar,
   Box,
-  Card,
+  Card, Center,
   Group,
   Image,
-  NumberFormatter,
+  NumberFormatter, Rating,
   rem,
-  Text, ThemeIcon,
+  Text,
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
-import { IconPhotoOff, IconStarFilled } from "@tabler/icons-react";
+import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../../CustomMarquee.tsx";
 import classes from "./ScoreModal.module.css";
@@ -32,7 +32,7 @@ const ChunithmWorldsEndScoreModalContent = ({ score, song }: { score: ChunithmSc
         </PhotoView>
         <div style={{ flex: 1 }}>
           <CustomMarquee>
-            <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+            <Text fz="lg" fw={500}>{song.title}</Text>
           </CustomMarquee>
           <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>
           <Text fz="xs" c="dimmed" mb={8}>原曲 ID：{difficulty.origin_id}</Text>
@@ -63,18 +63,14 @@ const ChunithmWorldsEndScoreModalContent = ({ score, song }: { score: ChunithmSc
             )}
           </Group>
         </div>
-        <Card w={60} h={54} p={0} radius="md" withBorder style={{
+        <Card w={60} h={54} p={0} radius="md" style={{
           border: "2px solid rgb(14, 45, 56)",
         }}>
-          <Group wrap="nowrap" justify="center" gap={0} style={{
+          <Center pb={1} style={{
             backgroundColor: "rgb(14, 45, 56)",
           }}>
-            {Array.from({ length: difficulty.star }, (_, i) => (
-              <ThemeIcon key={i} size={11} variant="subtle" color="yellow">
-                <IconStarFilled />
-              </ThemeIcon>
-            ))}
-          </Group>
+            <Rating count={difficulty.star} value={5} size={10} readOnly />
+          </Center>
           <Text className={classes.worldsEndText} fz={24} fw={700} ta="center">
             {difficulty.kanji}
           </Text>
@@ -135,7 +131,7 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
         </PhotoView>
         <div style={{ flex: 1 }}>
           <CustomMarquee>
-            <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+            <Text fz="lg" fw={500}>{song.title}</Text>
           </CustomMarquee>
           <Text fz="xs" c="dimmed" mb={8}>曲目 ID：{song.id}</Text>
           <Group gap="xs">

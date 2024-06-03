@@ -1,10 +1,9 @@
-import {BackgroundImage, Card, Flex, Group, NumberFormatter, rem, Text, ThemeIcon} from "@mantine/core";
+import { BackgroundImage, Card, Flex, Group, NumberFormatter, Rating, rem, Text } from "@mantine/core";
 import { chunithmDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
 import { memo } from "react";
 import classes from "../Scores.module.css"
 import { useComputedColorScheme } from "@mantine/core";
-import { IconStarFilled } from "@tabler/icons-react";
 
 export interface ChunithmScoreProps {
   id: number;
@@ -52,11 +51,7 @@ const WorldsEndScore = ({ score, song, onClick }: ScoreProps) => {
         }}>
           <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">{score.song_name}</Text>
           <Group wrap="nowrap" justify="center" gap={0}>
-            {Array.from({ length: difficulty.star }, (_, i) => (
-              <ThemeIcon key={i} size={12} variant="subtle" color="yellow">
-                <IconStarFilled />
-              </ThemeIcon>
-            ))}
+            <Rating count={difficulty.star} value={5} size={12} readOnly />
           </Group>
         </Flex>
         <Group justify="space-between" p={10} pt={5} pb={5} wrap="nowrap" style={{
