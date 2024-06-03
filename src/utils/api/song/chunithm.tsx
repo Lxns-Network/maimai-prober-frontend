@@ -73,6 +73,7 @@ export class ChunithmSongList extends SongList {
   }
 
   getSongResourceId(song: ChunithmSongProps) {
+    if (!song) return 0;
     return song.id < 8000 ? song.id : (song.difficulties[0] || {}).origin_id;
   }
 }

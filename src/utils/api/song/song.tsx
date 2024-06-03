@@ -32,6 +32,7 @@ export class SongList {
   }
 
   getSongResourceId(song: any) {
+    if (!song) return 0;
     return song.id%10000;
   }
 }

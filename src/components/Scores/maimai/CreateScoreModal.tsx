@@ -7,7 +7,7 @@ import {
   Select,
   Text
 } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import {
@@ -22,6 +22,7 @@ import { createPlayerScore } from "../../../utils/api/player.tsx";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import { MaimaiScoreProps } from "./Score.tsx";
 import "dayjs/locale/zh-cn"
+import { ApiContext } from "../../../App.tsx";
 
 interface CreateScoreModalProps {
   songList: MaimaiSongList
@@ -35,6 +36,7 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
   const [song, setSong] = useState<MaimaiSongProps | null>(null);
   const [difficulties, setDifficulties] = useState<DifficultyProps[] | null>(null);
   const computedColorScheme = useComputedColorScheme('light');
+  const context = useContext(ApiContext);
 
   const form = useForm({
     initialValues: {
@@ -143,7 +145,7 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
           })}>
             <Flex align="center" gap="md">
               <Avatar size={94} radius="md" src={
-                form.values.id ? `https://assets.lxns.net/maimai/jacket/${form.values.id}.png!webp` : null
+                form.values.id ? `https://assets.lxns.net/maimai/jacket/${context.songList.getSongResourceId(song)}.png!webp` : null
               } styles={(theme) => ({
                 root: {
                   backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],

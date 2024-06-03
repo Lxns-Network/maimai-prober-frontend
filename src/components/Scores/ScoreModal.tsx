@@ -95,19 +95,19 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   useEffect(() => {
     if (!score) return;
 
-    Object.keys(context).length !== 0 && scoreContext.setScore(score);
+    Object.keys(scoreContext).length !== 0 && scoreContext.setScore(score);
     setHistoryScores([]);
     getPlayerScoreHistory(score);
   }, [score]);
 
   function isMaimaiScoreProps(obj: any): obj is MaimaiScoreProps {
     if (!obj) return false;
-    return typeof obj === 'object' && 'dx_rating' in obj;
+    return typeof obj === 'object' && 'achievements' in obj;
   }
 
   function isChunithmScoreProps(obj: any): obj is ChunithmScoreProps {
     if (!obj) return false;
-    return typeof obj === 'object' && 'rating' in obj;
+    return typeof obj === 'object' && 'score' in obj;
   }
 
   return (

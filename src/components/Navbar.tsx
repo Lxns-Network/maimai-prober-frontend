@@ -30,10 +30,9 @@ interface NavbarProps {
 export default function Navbar({ style, onClose }: NavbarProps) {
   const [qrcodeOpened, setQrcodeOpened] = useState(false);
   const [active, setActive] = useState('');
-  const [game, setGame] = useLocalStorage({ key: 'game', defaultValue: 'maimai' });
-  const location = useLocation();
-
+  const [game, setGame] = useLocalStorage<string>({ key: 'game', defaultValue: null as any });
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
+  const location = useLocation();
 
   const navbarData = [
     { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true },

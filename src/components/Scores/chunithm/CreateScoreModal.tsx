@@ -7,7 +7,7 @@ import {
   Select,
   Text
 } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import {
@@ -21,6 +21,7 @@ import { createPlayerScore } from "../../../utils/api/player.tsx";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import { ChunithmScoreProps } from "./Score.tsx";
 import "dayjs/locale/zh-cn"
+import { ApiContext } from "../../../App.tsx";
 
 interface CreateScoreModalProps {
   songList: ChunithmSongList
@@ -34,6 +35,7 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
   const [song, setSong] = useState<ChunithmSongProps | null>(null);
   const [difficulties, setDifficulties] = useState<DifficultyProps[] | null>(null);
   const computedColorScheme = useComputedColorScheme('light');
+  const context = useContext(ApiContext);
 
   const form = useForm({
     initialValues: {
@@ -134,7 +136,7 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
           })}>
             <Flex align="center" gap="md">
               <Avatar size={94} radius="md" src={
-                form.values.id ? `https://assets.lxns.net/chunithm/jacket/${form.values.id}.png!webp` : null
+                form.values.id ? `https://assets.lxns.net/chunithm/jacket/${context.songList.getSongResourceId(song)}.png!webp` : null
               } styles={(theme) => ({
                 root: {
                   backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
@@ -159,7 +161,8 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
                   mb="sm"
                   withAsterisk
                   data={difficulties ? difficulties.map((difficulty) => ({
-                    label: `${["🟢 BASIC", "🟡 ADVANCED", "🔴 EXPERT", "🟣 MASTER", "⚫ ULTIMA", "🔵 WORLD'S END"][difficulty.difficulty]} ${difficulty.level}`,
+                    label: `${["🟢 BASIC", "🟡 ADVANCED", "🔴 EXPERT", "🟣 MASTER", "⚫ ULTIMA", "🔵 WORLD'S END"][difficulty.difficulty]} ${
+                      difficulty.difficulty === 5 ? difficulty.kanji : difficulty.level}`,
                     value: difficulty.difficulty.toString(),
                   })) : []}
                   disabled={!difficulties || difficulties.length === 0}

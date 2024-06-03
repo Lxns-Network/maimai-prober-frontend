@@ -26,15 +26,17 @@ export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
       </Avatar>
       <div>
         <Group gap="xs" mb={8}>
-          <Badge variant="light" radius={rem(10)} color={getTrophyColor((player.trophy && player.trophy.color) || "normal")} style={{
-            height: "auto",
-          }} children={
-            <Text fz="xs" style={{
-              whiteSpace: "pre-wrap"
-            }}>
-              {player.trophy && player.trophy.name}
-            </Text>
-          } />
+          {player.trophy && (
+            <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color || "normal")} style={{
+              height: "auto",
+            }} children={
+              <Text fz="xs" style={{
+                whiteSpace: "pre-wrap"
+              }}>
+                {player.trophy.name}
+              </Text>
+            } />
+          )}
           <Badge variant="gradient" gradient={getDeluxeRatingGradient(player.rating)}>DX Rating: {player.rating}</Badge>
         </Group>
         <Text fz="lg" fw={500}>

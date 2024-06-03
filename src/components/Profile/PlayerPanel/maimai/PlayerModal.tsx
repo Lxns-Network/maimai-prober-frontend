@@ -21,16 +21,16 @@ interface ModalProps {
 export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
   const context = useContext(ApiContext);
 
-  const [trend, setTrend] = useState<RatingTrendProps[] | null>(null);
+  const [trend, setTrend] = useState<RatingTrendProps[]>([]);
   const [fetching, setFetching] = useState(true);
-  const [version, setVersion] = useState<number>(
-    (context.songList.versions[context.songList.versions.length-1] || { version: 23000 }).version
-  );
+  const [version, setVersion] = useState<number>(0);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
 
   const getPlayerRatingTrendHandler = async () => {
+    if (version < 23000) return;
+
     try {
       const res = await getPlayerRatingTrend('maimai', version);
       const data = await res.json();
@@ -49,15 +49,14 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
     if (!opened) return;
 
     setFetching(true);
-    setTrend(null);
+    setTrend([]);
     getPlayerRatingTrendHandler();
   }, [version]);
 
   useEffect(() => {
-    if (!opened || trend) return;
+    if (!opened || trend.length > 0) return;
 
-    setVersion(context.songList.versions[context.songList.versions.length-1].version.toString());
-
+    setVersion(context.songList.versions[context.songList.versions.length-1].version);
     getPlayerRatingTrendHandler();
   }, [opened]);
 

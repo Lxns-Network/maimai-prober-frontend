@@ -202,7 +202,7 @@ export default function Songs() {
           </Card.Section>
           <AudioPlayer
             className={classes.audioPlayer}
-            src={`https://assets2.lxns.net/${game}/music/${song.id%10000}.mp3`}
+            src={`https://assets2.lxns.net/${game}/music/${context.songList.getSongResourceId(song)}.mp3`}
             audioProps={{ preload: "none" }}
           />
         </Card>
@@ -228,6 +228,7 @@ export default function Songs() {
                   versions={context.songList.versions}
                   onClick={() => {
                     setScore(scores.find((record) => record.type === type && record.level_index === difficulty.difficulty) || {
+                      id: song.id,
                       type: type,
                       level_index: difficulty.difficulty,
                       achievements: -1,
@@ -248,6 +249,7 @@ export default function Songs() {
                 versions={context.songList.versions}
                 onClick={() => {
                   setScore(scores.find((record) => record.level_index === difficulty.difficulty) || {
+                    id: song.id,
                     level_index: difficulty.difficulty,
                     score: -1,
                   });

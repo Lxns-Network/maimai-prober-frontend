@@ -163,7 +163,11 @@ export default function Sync() {
           setStep(2);
         } else {
           setStep(3);
-          openAlertModal("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。")
+          if (data.data.status === "failed") {
+            openAlertModal("同步游戏数据失败", "你的游戏数据同步时出现了错误，请查看同步结果了解详情。")
+          } else if (data.data.status === "finished") {
+            openAlertModal("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。")
+          }
         }
         setCrawlStatus(data.data);
       }
@@ -313,7 +317,7 @@ export default function Sync() {
             </Text>
             <CopyButtonWithIcon
               label="复制微信 OAuth 链接"
-              content={`${API_URL}/${game ? game : 'maimai'}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
+              content={`${API_URL}/${game || "maimai"}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
             />
             {!isLoggedOut && (
               <Text>
