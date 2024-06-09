@@ -8,7 +8,6 @@ import {
 } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "../utils/session";
-import { QrcodeModal } from "./QrcodeModal";
 import { useLocalStorage } from "@mantine/hooks";
 import { logoutUser } from "../utils/api/user.tsx";
 import {
@@ -28,7 +27,6 @@ interface NavbarProps {
 }
 
 export default function Navbar({ style, onClose }: NavbarProps) {
-  const [qrcodeOpened, setQrcodeOpened] = useState(false);
   const [active, setActive] = useState('');
   const [game, setGame] = useLocalStorage<string>({ key: 'game', defaultValue: null as any });
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
@@ -68,7 +66,6 @@ export default function Navbar({ style, onClose }: NavbarProps) {
 
   return (
     <nav className={classes.navbar} style={style}>
-      <QrcodeModal opened={qrcodeOpened} onClose={() => setQrcodeOpened(false)} />
       <ScrollArea className={classes.navbarMain} type="scroll">
         <Container>
           <SegmentedControl fullWidth radius="md" mt="md" value={game} onChange={setGame} data={[
