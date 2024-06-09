@@ -13,12 +13,8 @@ import {
   ThemeIcon,
   Alert,
   Stepper,
-  CopyButton,
-  Tooltip,
-  ActionIcon,
-  TextInput, Divider, Space, SegmentedControl, Stack,
+  Divider, Space, Stack,
 } from '@mantine/core';
-import { API_URL } from '../../main';
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useLocalStorage, useResizeObserver } from '@mantine/hooks';
@@ -26,61 +22,19 @@ import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
 import {
   IconAlertCircle,
-  IconCheck,
-  IconCopy,
   IconDownload,
-  IconRefresh,
   IconRepeat
 } from "@tabler/icons-react";
-import classes from './Sync.module.css';
 import { openAlertModal } from "../../utils/modal";
 import { checkProxy } from "../../utils/checkProxy";
+import classes from './Sync.module.css';
+
 import { LoginAlert } from "../../components/LoginAlert";
+import { RadioCardGroup } from "../../components/RadioCardGroup.tsx";
+import { CrawlTokenAlert } from "../../components/Sync/CrawlTokenAlert.tsx";
+import { CopyButtonWithIcon } from "../../components/Sync/CopyButtonWithIcon.tsx";
+import { WechatOAuthLink } from "../../components/Sync/WechatOAuthLink.tsx";
 
-const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
-  return (
-    <TextInput
-      variant="filled"
-      value={content}
-      onFocus={(e) => e.target.select()}
-      rightSection={
-        <CopyButton value={content} timeout={2000}>
-          {({ copied, copy }) => (
-            <Tooltip label={copied ? '已复制' : label} withArrow position="right">
-              <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
-                {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </CopyButton>
-      }
-      readOnly
-      {...others}
-    />
-  )
-}
-
-const CrawlTokenAlert = ({ token, resetHandler }: any) => {
-  const getExpireTime = (crawlToken: string) => {
-    return Math.floor(((JSON.parse(atob(crawlToken.split('.')[1])).exp - new Date().getTime() / 1000)) / 60)
-  }
-
-  const isTokenExpired = token && getExpireTime(token) < 0;
-  const alertColor = isTokenExpired ? 'yellow' : 'blue';
-
-  return (
-    <Alert variant="light" icon={<IconAlertCircle />} title="链接有效期提示" color={alertColor}>
-      <Text size="sm" mb="md">
-        {token ? `该链接${
-          isTokenExpired ? "已失效，" : `将在 ${getExpireTime(token) + 1} 分钟内失效，逾时`
-        }请点击下方按钮刷新 OAuth 链接。` : "链接未生成，请点击下方按钮生成 OAuth 链接。"}
-      </Text>
-      <Button variant="outline" leftSection={<IconRefresh size={20} />} onClick={resetHandler} color={alertColor}>
-        {token ? "刷新链接" : "生成链接"}
-      </Button>
-    </Alert>
-  );
-};
 
 interface CrawlStatusProps {
   game: string;
@@ -300,14 +254,14 @@ export default function Sync() {
           </Group>
         } loading={!proxyAvailable} />
         <Stepper.Step label="步骤 2" description={
-          <Stack gap="xs" w={stepperRect.width - 54}>
+          <Stack gap="xs" w={stepperRect.width - 54} mb="md">
             <Text fz="sm">
               选择需要爬取的游戏
             </Text>
-            <SegmentedControl size="md" mb="md" color="blue" fullWidth value={game} onChange={setGame} data={[
-              { label: '舞萌 DX', value: 'maimai' },
-              { label: '中二节奏', value: 'chunithm' },
-            ]} />
+            <RadioCardGroup data={[
+              { name: '舞萌 DX', description: '爬取玩家信息、成绩与收藏品', value: 'maimai' },
+              { name: '中二节奏', description: '爬取玩家信息、成绩与收藏品', value: 'chunithm' },
+            ]} value={game} onChange={(value) => setGame(value)} />
           </Stack>
         } />
         <Stepper.Step label="步骤 3" description={
@@ -315,10 +269,7 @@ export default function Sync() {
             <Text fz="sm">
               复制微信 OAuth 链接，发送至安全的聊天中并打开
             </Text>
-            <CopyButtonWithIcon
-              label="复制微信 OAuth 链接"
-              content={`${API_URL}/${game || "maimai"}/wechat/auth` + (crawlToken ? `?token=${window.btoa(crawlToken)}` : "")}
-            />
+            <WechatOAuthLink game={game} crawlToken={crawlToken} />
             {!isLoggedOut && (
               <Text>
                 <CrawlTokenAlert token={crawlToken} resetHandler={getUserCrawlTokenHandler} />
