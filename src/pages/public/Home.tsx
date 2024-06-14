@@ -9,7 +9,7 @@ import {
   SimpleGrid,
   ThemeIcon,
   Flex,
-  Avatar, Card, Center
+  Avatar, Card, Center, Stack
 } from '@mantine/core';
 import { Carousel } from "@mantine/carousel";
 import { useNavigate } from "react-router-dom";
@@ -161,20 +161,22 @@ export default function Home() {
             <Carousel.Slide>
               <Card className={classes.adCard} withBorder radius="md">
                 <Flex className={classes.adCardInner} gap="md">
-                  <div style={{ flex: 1 }}>
-                    <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
-                    <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
-                      你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
-                      <Text className={classes.highlight} inherit fw={700}>
-                        舞萌 DX & 中二节奏
-                      </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
-                    </Text>
-                    <Button className={classes.control} variant="default" size="lg" mt="md" onClick={() =>
+                  <Stack align="flex-start" justify="space-between" style={{ flex: 1 }}>
+                    <div>
+                      <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
+                      <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
+                        你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
+                        <Text className={classes.highlight} inherit fw={700}>
+                          舞萌 DX & 中二节奏
+                        </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
+                      </Text>
+                    </div>
+                    <Button className={classes.control} variant="default" size="lg" onClick={() =>
                       window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
                     }>
                       添加
                     </Button>
-                  </div>
+                  </Stack>
                   <Avatar src="./lxbot.webp" h="auto" w={96} radius="md" />
                 </Flex>
               </Card>
@@ -182,21 +184,23 @@ export default function Home() {
             <Carousel.Slide>
               <Card className={classes.adCard} withBorder radius="md">
                 <Flex className={classes.adCardInner} gap="md">
-                  <div style={{ flex: 1 }}>
-                    <Title order={2} mb={7}>Telegram Bot「秋葉」</Title>
-                    <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
-                      秋葉是由 ☆ 开发的 Telegram 机器人，支持查询你在 maimai DX 查分器中的{' '}
-                      <Text className={classes.highlight} inherit fw={700}>
-                        舞萌 DX & 中二节奏
-                      </Text>{' '}
-                      游戏数据并绘制最佳成绩图，也具有包括 maimai、CHUNITHM、Arcaea 在内的各种功能。
-                    </Text>
-                    <Button className={classes.control} variant="default" size="lg" mt="md" onClick={() =>
+                  <Stack align="flex-start" justify="space-between" style={{ flex: 1 }}>
+                    <div>
+                      <Title order={2} mb={7}>Telegram Bot「秋葉」</Title>
+                      <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
+                        秋葉是由 ☆ 开发的 Telegram 机器人，支持查询你在 maimai DX 查分器中的{' '}
+                        <Text className={classes.highlight} inherit fw={700}>
+                          舞萌 DX & 中二节奏
+                        </Text>{' '}
+                        游戏数据并绘制最佳成绩图，也具有包括 maimai、CHUNITHM、Arcaea 在内的各种功能。
+                      </Text>
+                    </div>
+                    <Button className={classes.control} variant="default" size="lg" onClick={() =>
                       window.open("https://t.me/AkihaBot", "_blank")
                     }>
-                      使用
+                      添加
                     </Button>
-                  </div>
+                  </Stack>
                   <Avatar src="./akihabot.webp" h="auto" w={96} radius="md" />
                 </Flex>
               </Card>
