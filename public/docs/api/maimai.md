@@ -2,7 +2,7 @@
 
 ---
 
-在本查分器中，同一首曲目的**标准、DX 谱面的曲目 ID 一致**，不存在大于 10000 的曲目 ID（如有，均会对 10000 取余处理）。
+在本查分器中，同一首曲目的**标准、DX 谱面的曲目 ID 一致**，不存在大于 10000 的曲目 ID（如有，均会对 10000 取余处理）。宴会场曲目为例外，不分标准、DX 谱面，曲目 ID 大于 100000。
 
 API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:00:00Z`，代表北京时间上午 8 时。
 
@@ -651,7 +651,7 @@ DX Rating 趋势
 |-|-|-|
 | `kanji` | `string` | 谱面属性 |
 | `description` | `string` | 谱面描述 |
-| `is_buddy` | `bool` | 是否为バディ谱面 |
+| `is_buddy` | `bool` | 是否为 BUDDY 谱面 |
 | `notes` | [`Notes`](#notes) 或 [`BuddyNotes`](#buddynotes) | 值可空，谱面物量 |
 
 > `is_buddy` 为 `true` 时，`notes` 为 [`BuddyNotes`](#buddynotes)。
@@ -673,7 +673,7 @@ DX Rating 趋势
 
 ### BuddyNotes
 
-仅宴会场曲目，バディ谱面物量
+仅宴会场曲目，BUDDY 谱面物量
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
