@@ -97,14 +97,11 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
   useEffect(() => {
     if (score) form.setValues({
       id: score.id,
+      difficulty: null,
     });
   }, [score]);
 
   useEffect(() => {
-    form.setValues({
-      difficulty: null,
-    });
-
     setDifficulties(null);
 
     if (!form.values.id) return;
@@ -161,7 +158,7 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
                   mb="sm"
                   withAsterisk
                   data={difficulties ? difficulties.map((difficulty) => ({
-                    label: `${["🟢 BASIC", "🟡 ADVANCED", "🔴 EXPERT", "🟣 MASTER", "⚫ ULTIMA", "🔵 WORLD'S END"][difficulty.difficulty]} ${
+                    label: `${["🟢 BASIC", "🟡 ADVANCED", "🔴 EXPERT", "🟣 MASTER", "⚫ ULTIMA", "🌈 WORLD'S END"][difficulty.difficulty]} ${
                       difficulty.difficulty === 5 ? difficulty.kanji : difficulty.level}`,
                     value: difficulty.difficulty.toString(),
                   })) : []}

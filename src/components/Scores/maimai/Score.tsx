@@ -48,7 +48,7 @@ const UtageScore = memo(({ score, song, onClick }: ScoreProps) => {
         }}>
           <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">{score.song_name}</Text>
           {difficulty.is_buddy && (
-            <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">バディ</Badge>
+            <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">BUDDY</Badge>
           )}
         </Flex>
         <Group justify="space-between" p={10} pt={5} pb={5} wrap="nowrap" style={{

@@ -29,7 +29,7 @@ const MaimaiUtageScoreModalContent = ({ score, song }: { score: MaimaiScoreProps
         <div style={{ flex: 1 }}>
           <Group gap={6}>
             {difficulty.is_buddy && (
-              <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">バディ</Badge>
+              <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">BUDDY</Badge>
             )}
           </Group>
           <CustomMarquee>

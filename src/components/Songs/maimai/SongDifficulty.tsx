@@ -50,7 +50,7 @@ const UtageSongDifficulty = ({ difficulty, score, versions, onClick }: SongProps
           />
         </Flex>
         {difficulty.is_buddy && (
-          <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">バディ</Badge>
+          <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">BUDDY</Badge>
         )}
       </Flex>
       {score ? (

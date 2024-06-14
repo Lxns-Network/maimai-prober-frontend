@@ -101,15 +101,12 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
   useEffect(() => {
     if (score) form.setValues({
       id: score.id,
+      type: null,
+      difficulty: null,
     });
   }, [score]);
 
   useEffect(() => {
-    form.setValues({
-      type: null,
-      difficulty: null,
-    });
-
     setDifficulties(null);
 
     if (!form.values.id) return;
@@ -169,6 +166,9 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
                     <Group>
                       <Chip size="xs" value="standard" disabled={!song || song.difficulties.standard.length === 0}>标准</Chip>
                       <Chip size="xs" value="dx" color="orange" disabled={!song || song.difficulties.dx.length === 0}>DX</Chip>
+                      {song && song.id >= 100000 && (
+                        <Chip size="xs" value="utage" color="rgb(234,61,232)">U·TA·GE</Chip>
+                      )}
                     </Group>
                   </Chip.Group>
                 </Input.Wrapper>
@@ -181,7 +181,8 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
                   placeholder="请选择难度"
                   withAsterisk
                   data={difficulties ? difficulties.map((difficulty) => ({
-                    label: `${["🟢 BASIC", "🟡 ADVANCED", "🔴 EXPERT", "🟣 MASTER", "⚪ Re:MASTER"][difficulty.difficulty]} ${difficulty.level}`,
+                    label: `${["🟢 BASIC", "🟡 ADVANCED", "🔴 EXPERT", "🟣 MASTER", "⚪ Re:MASTER", "💮 U·TA·GE"][
+                      (song && song.id >= 100000) ? 5 : difficulty.difficulty]} ${difficulty.level}`,
                     value: difficulty.difficulty.toString(),
                   })) : []}
                   disabled={!difficulties || difficulties.length === 0}
@@ -196,7 +197,7 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
                   decimalScale={4}
                   suffix="%"
                   min={0}
-                  max={101}
+                  max={(difficulties && difficulties[0].is_buddy) ? 202 : 101}
                   withAsterisk
                   {...form.getInputProps("achievements")}
                 />
