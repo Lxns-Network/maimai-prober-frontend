@@ -29,6 +29,13 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
 
   for (let i = 0; i < songs.length; i += 1) {
     const song = songs[i];
+
+    if (!isNaN(Number(search))) {
+      if (song.id === Number(search) && !result.includes(song)) {
+        result.push(song);
+      }
+    }
+
     const titleMatch = song.title.toLowerCase().includes(search.toLowerCase());
     const artistMatch = song.artist.toLowerCase().includes(search.toLowerCase());
 
