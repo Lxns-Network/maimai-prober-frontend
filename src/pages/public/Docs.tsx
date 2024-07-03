@@ -104,7 +104,7 @@ const Content = ({ markdown }: { markdown: string }) => {
           return <a href={href} onClick={(event) => {
             event.preventDefault();
             if (href && href.startsWith("#")) {
-              scrollTo(href.slice(1));
+              scrollTo(decodeURIComponent(href.slice(1)));
               return;
             }
             href && navigate(href);
