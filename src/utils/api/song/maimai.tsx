@@ -36,6 +36,7 @@ export interface MaimaiSongProps {
   genre: string;
   bpm: number;
   version: number;
+  disabled?: boolean;
   difficulties: MaimaiDifficultiesProps;
 }
 

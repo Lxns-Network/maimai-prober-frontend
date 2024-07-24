@@ -24,7 +24,9 @@ export const CustomMarquee = ({ children }: { children: ReactNode }) => {
   }, [play]);
 
   return (
-    <Marquee ref={ref} delay={1} onCycleComplete={() => setPlay(false)} play={play}>
+    <Marquee ref={ref} delay={1} onCycleComplete={() => setPlay(false)} play={play} style={{
+      zIndex: 0,
+    }}>
       {Children.map(children, (child) => (
         <Box mr="md" style={{
           wordBreak: "break-all",

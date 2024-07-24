@@ -29,6 +29,7 @@ export interface ChunithmSongProps {
   genre: string;
   bpm: number;
   version: number;
+  disabled?: boolean;
   difficulties: DifficultyProps[];
 }
 

@@ -2,7 +2,7 @@ import {
   Avatar,
   Button,
   Chip, Divider, Flex, Grid,
-  Group, Input,
+  Group, Indicator, Input,
   Modal, NumberInput,
   Select,
   Text
@@ -141,15 +141,17 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
             openConfirmModal("确认创建成绩", "你确定要创建成绩吗？我们不推荐手动维护成绩，这可能会导致未来 DX Rating 与游戏内显示不一致。", () => createScoreHandler(values));
           })}>
             <Flex align="center" gap="md">
-              <Avatar size={94} radius="md" src={
-                form.values.id ? `https://assets.lxns.net/maimai/jacket/${context.songList.getSongResourceId(song)}.png!webp` : null
-              } styles={(theme) => ({
-                root: {
-                  backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
-                }
-              })}>
-                <Text ta="center" fz="xs">请选择曲目</Text>
-              </Avatar>
+              <Indicator color="red" position="bottom-center" inline label="被移除" size={18} withBorder disabled={!song?.disabled}>
+                <Avatar size={94} radius="md" src={
+                  form.values.id ? `https://assets.lxns.net/maimai/jacket/${context.songList.getSongResourceId(song)}.png!webp` : null
+                } styles={(theme) => ({
+                  root: {
+                    backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
+                  }
+                })}>
+                  <Text ta="center" fz="xs">请选择曲目</Text>
+                </Avatar>
+              </Indicator>
               <div style={{ flex: 1 }}>
                 <SongCombobox
                   value={form.values.id || 0}
@@ -253,7 +255,7 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
             <Text size="xs" mb="sm" c="gray">成绩保存后，你的玩家 DX Rating 将会自动更新。</Text>
             <Group justify="flex-end">
               <Button variant="default" onClick={onClose}>取消</Button>
-              <Button type="submit" loading={uploading}>保存</Button>
+              <Button type="submit" loading={uploading} disabled={song?.disabled}>保存</Button>
             </Group>
           </form>
         </Modal.Body>

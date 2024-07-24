@@ -4,7 +4,7 @@ import {
   Text,
   Title,
   Card,
-  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack, Badge, ActionIcon
+  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack, Badge, ActionIcon, Indicator
 } from "@mantine/core";
 import classes from "./Songs.module.css"
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
@@ -152,9 +152,11 @@ export default function Songs() {
           <Card.Section m="md">
             <Group wrap="nowrap">
               <PhotoView src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
-                <Avatar src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
-                  <IconPhotoOff />
-                </Avatar>
+                <Indicator color="red" position="bottom-center" zIndex={1} inline label="被移除" size={18} withBorder disabled={!song?.disabled}>
+                  <Avatar src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
+                    <IconPhotoOff />
+                  </Avatar>
+                </Indicator>
               </PhotoView>
               <div style={{ flex: 1 }}>
                 <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>
