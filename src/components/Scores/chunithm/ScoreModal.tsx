@@ -117,6 +117,7 @@ const ChunithmWorldsEndScoreModalContent = ({ score, song }: { score: ChunithmSc
 }
 
 export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
+  if (!song) return;
   if (song.id >= 8000) {
     return <ChunithmWorldsEndScoreModalContent score={score} song={song} />
   }

@@ -200,9 +200,9 @@ export default function Developers() {
         </Group>
       ) : (
         <Stack align="center">
-          <Pagination total={Math.ceil(developers.length / PAGE_SIZE)} value={activePage} onChange={setPage} />
+          <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={activePage} onChange={setPage} />
           {displayDevelopers}
-          <Pagination total={Math.ceil(developers.length / PAGE_SIZE)} value={activePage} onChange={setPage} />
+          <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={activePage} onChange={setPage} />
         </Stack>
       )}
     </Container>

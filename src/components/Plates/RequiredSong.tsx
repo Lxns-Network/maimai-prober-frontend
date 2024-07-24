@@ -213,7 +213,7 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
       </SimpleGrid>
       <Space h="md" />
       <Center>
-        <Pagination size="sm" total={Math.ceil(filteredRecords.length / pageSize)} value={page} onChange={(page) => setPage(page)} />
+        <Pagination hideWithOnePage size="sm" total={Math.ceil(filteredRecords.length / pageSize)} value={page} onChange={(page) => setPage(page)} />
       </Center>
     </Card>
   )

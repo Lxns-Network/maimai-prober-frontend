@@ -297,9 +297,7 @@ const ScoresContent = () => {
       ) : (
         <>
           <Group justify="center">
-            {totalPages > 1 && (
-              <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
-            )}
+            <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
             {context.songList instanceof MaimaiSongList && (
               <MaimaiScoreList
                 scores={displayScores as MaimaiScoreProps[]}
@@ -319,7 +317,7 @@ const ScoresContent = () => {
               />
             )}
             {totalPages > 1 && (
-              <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
+              <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
             )}
           </Group>
           {context.songList instanceof MaimaiSongList && <>

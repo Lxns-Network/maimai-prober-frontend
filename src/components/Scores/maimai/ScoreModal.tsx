@@ -102,6 +102,7 @@ const MaimaiUtageScoreModalContent = ({ score, song }: { score: MaimaiScoreProps
 }
 
 export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
+  if (!song) return;
   if (song.id > 100000) {
     return <MaimaiUtageScoreModalContent score={score} song={song} />
   }

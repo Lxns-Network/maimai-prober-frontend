@@ -254,15 +254,11 @@ export default function Vote() {
         </Flex>
       ) : (
         <Group justify="center">
-          {totalPages > 1 && (
-            <Pagination total={totalPages} value={page} onChange={setPage} />
-          )}
+          <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} />
           <AliasList aliases={displayAliases} onDelete={() => {
             fetchHandler();
           }} />
-          {totalPages > 1 && (
-            <Pagination total={totalPages} value={page} onChange={setPage} />
-          )}
+          <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} />
         </Group>
       ))}
     </Container>
