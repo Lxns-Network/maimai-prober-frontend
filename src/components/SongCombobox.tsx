@@ -13,6 +13,7 @@ import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.tsx";
 import { IconSearch } from "@tabler/icons-react";
 import { ApiContext } from "../App.tsx";
+import { toHiragana } from 'wanakana';
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   value?: number;
@@ -26,6 +27,7 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
   aliases: string[];
 }[]): (MaimaiSongProps | ChunithmSongProps)[] {
   const result: (MaimaiSongProps | ChunithmSongProps)[] = [];
+  const hiragana = toHiragana(search);
 
   for (let i = 0; i < songs.length; i += 1) {
     const song = songs[i];
@@ -37,9 +39,11 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
     }
 
     const titleMatch = song.title.toLowerCase().includes(search.toLowerCase());
+    const titleHiraganaMatch = toHiragana(song.title).toLowerCase().includes(hiragana.toLowerCase());
     const artistMatch = song.artist.toLowerCase().includes(search.toLowerCase());
+    const artistHiraganaMatch = toHiragana(song.artist).toLowerCase().includes(hiragana.toLowerCase());
 
-    if ((titleMatch || artistMatch) && !result.includes(song)) {
+    if ((titleMatch || titleHiraganaMatch || artistMatch || artistHiraganaMatch) && !result.includes(song)) {
       result.push(song);
     }
 

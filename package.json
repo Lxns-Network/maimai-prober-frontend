@@ -11,14 +11,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mantine/carousel": "^7.10.1",
-    "@mantine/core": "^7.10.1",
-    "@mantine/dates": "^7.10.1",
+    "@mantine/carousel": "^7.11.0",
+    "@mantine/core": "^7.11.1",
+    "@mantine/dates": "^7.11.1",
     "@mantine/form": "^6.0.21",
-    "@mantine/hooks": "^7.10.1",
-    "@mantine/modals": "^7.10.1",
-    "@mantine/notifications": "^7.10.1",
-    "@mantine/nprogress": "^7.10.1",
+    "@mantine/hooks": "^7.11.1",
+    "@mantine/modals": "^7.11.1",
+    "@mantine/notifications": "^7.11.1",
+    "@mantine/nprogress": "^7.11.1",
     "@mdi/js": "^7.4.47",
     "@mdi/react": "^1.6.1",
     "@tabler/icons-react": "^2.47.0",
@@ -51,7 +51,8 @@
     "remark-slug": "^7.0.1",
     "remark-toc": "^9.0.0",
     "stylelint": "^16.6.1",
-    "stylelint-config-standard-scss": "^13.1.0"
+    "stylelint-config-standard-scss": "^13.1.0",
+    "wanakana": "^5.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.13.0",
