@@ -16,6 +16,7 @@ import { PlateCombobox } from "../../components/Plates/PlateCombobox";
 import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
 import { openRetryModal } from "../../utils/modal.tsx";
 import { LoginAlert } from "../../components/LoginAlert";
+import { ASSET_URL } from "../../main.tsx";
 
 interface RequiredSongDataProps {
   id: number;
@@ -176,7 +177,7 @@ export default function Plates() {
             {plate.name}
           </Text>
           <Space h="md" />
-          <Image src={`https://assets.lxns.net/maimai/plate/${plate.id}.png!webp`} />
+          <Image src={`${ASSET_URL}/maimai/plate/${plate.id}.png!webp`} />
         </Card>
       )}
       <Space h="md" />

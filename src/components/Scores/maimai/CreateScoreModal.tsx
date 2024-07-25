@@ -2,7 +2,7 @@ import {
   Avatar,
   Button,
   Chip, Divider, Flex, Grid,
-  Group, Indicator, Input,
+  Group, Input,
   Modal, NumberInput,
   Select,
   Text
@@ -23,6 +23,8 @@ import { SongCombobox } from "../../SongCombobox.tsx";
 import { MaimaiScoreProps } from "./Score.tsx";
 import "dayjs/locale/zh-cn"
 import { ApiContext } from "../../../App.tsx";
+import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
+import { ASSET_URL } from "../../../main.tsx";
 
 interface CreateScoreModalProps {
   songList: MaimaiSongList
@@ -141,9 +143,9 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
             openConfirmModal("确认创建成绩", "你确定要创建成绩吗？我们不推荐手动维护成绩，这可能会导致未来 DX Rating 与游戏内显示不一致。", () => createScoreHandler(values));
           })}>
             <Flex align="center" gap="md">
-              <Indicator color="red" position="bottom-center" inline label="被移除" size={18} withBorder disabled={!song?.disabled}>
+              <SongDisabledIndicator disabled={song?.disabled}>
                 <Avatar size={94} radius="md" src={
-                  form.values.id ? `https://assets.lxns.net/maimai/jacket/${context.songList.getSongResourceId(song)}.png!webp` : null
+                  form.values.id ? `${ASSET_URL}/maimai/jacket/${context.songList.getSongResourceId(song)}.png!webp` : null
                 } styles={(theme) => ({
                   root: {
                     backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
@@ -151,7 +153,7 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
                 })}>
                   <Text ta="center" fz="xs">请选择曲目</Text>
                 </Avatar>
-              </Indicator>
+              </SongDisabledIndicator>
               <div style={{ flex: 1 }}>
                 <SongCombobox
                   value={form.values.id || 0}

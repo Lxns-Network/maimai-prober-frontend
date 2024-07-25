@@ -21,6 +21,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { PlateDataProps } from "../../pages/user/Plates.tsx";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../CustomMarquee.tsx";
+import { ASSET_URL } from "../../main.tsx";
 
 const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
   if (!plate || !plate.required) {
@@ -194,8 +195,8 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
                   <IconCheck />
                 </ThemeIcon>
               )}} zIndex={1} />
-              <PhotoView src={`https://assets.lxns.net/maimai/jacket/${record.id}.png`}>
-                <Image h={40} w={40} radius="sm" src={`https://assets.lxns.net/maimai/jacket/${record.id}.png!webp`} />
+              <PhotoView src={`${ASSET_URL}/maimai/jacket/${record.id}.png`}>
+                <Image h={40} w={40} radius="sm" src={`${ASSET_URL}/maimai/jacket/${record.id}.png!webp`} />
               </PhotoView>
             </Box>
             <div>

@@ -12,6 +12,7 @@ import "mantine-datatable/styles.css";
 import "./index.css";
 
 export const API_URL = import.meta.env.VITE_API_URL;
+export const ASSET_URL = import.meta.env.VITE_ASSET_URL;
 export const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

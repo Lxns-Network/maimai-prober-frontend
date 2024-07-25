@@ -15,6 +15,8 @@ import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../../CustomMarquee.tsx";
 import classes from "./ScoreModal.module.css";
+import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
+import { ASSET_URL } from "../../../main.tsx";
 
 const ChunithmWorldsEndScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
   const difficulty = getDifficulty(song, score.level_index);
@@ -25,8 +27,8 @@ const ChunithmWorldsEndScoreModalContent = ({ score, song }: { score: ChunithmSc
   return (
     <>
       <Group wrap="nowrap">
-        <PhotoView src={`https://assets.lxns.net/chunithm/jacket/${difficulty.origin_id}.png`}>
-          <Avatar src={`https://assets.lxns.net/chunithm/jacket/${difficulty.origin_id}.png!webp`} size={94} radius="md">
+        <PhotoView src={`${ASSET_URL}/chunithm/jacket/${difficulty.origin_id}.png`}>
+          <Avatar src={`${ASSET_URL}/chunithm/jacket/${difficulty.origin_id}.png!webp`} size={94} radius="md">
             <IconPhotoOff />
           </Avatar>
         </PhotoView>
@@ -125,11 +127,13 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
   return (
     <>
       <Group wrap="nowrap">
-        <PhotoView src={`https://assets.lxns.net/chunithm/jacket/${song.id}.png`}>
-          <Avatar src={`https://assets.lxns.net/chunithm/jacket/${song.id}.png!webp`} size={94} radius="md">
-            <IconPhotoOff />
-          </Avatar>
-        </PhotoView>
+        <SongDisabledIndicator disabled={song?.disabled}>
+          <PhotoView src={`${ASSET_URL}/chunithm/jacket/${song.id}.png`}>
+            <Avatar src={`${ASSET_URL}/chunithm/jacket/${song.id}.png!webp`} size={94} radius="md">
+              <IconPhotoOff />
+            </Avatar>
+          </PhotoView>
+        </SongDisabledIndicator>
         <div style={{ flex: 1 }}>
           <CustomMarquee>
             <Text fz="lg" fw={500}>{song.title}</Text>

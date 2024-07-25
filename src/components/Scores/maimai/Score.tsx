@@ -3,6 +3,7 @@ import { maimaiDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { memo } from "react";
 import classes from "../Scores.module.css";
+import { ASSET_URL } from "../../../main.tsx";
 
 export interface MaimaiScoreProps {
   id: number;
@@ -42,7 +43,7 @@ const UtageScore = memo(({ score, song, onClick }: ScoreProps) => {
       }}
       onClick={onClick}
     >
-      <BackgroundImage src={`https://assets.lxns.net/maimai/jacket/${score.id%10000}.png!webp`}>
+      <BackgroundImage src={`${ASSET_URL}/maimai/jacket/${score.id%10000}.png!webp`}>
         <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
           backgroundColor: "rgba(204, 12, 175, 0.95)",
         }}>
@@ -108,7 +109,7 @@ export const Score = memo(({ score, song, onClick }: ScoreProps) => {
       }}
       onClick={onClick}
     >
-      <BackgroundImage src={`https://assets.lxns.net/maimai/jacket/${score.id}.png!webp`}>
+      <BackgroundImage src={`${ASSET_URL}/maimai/jacket/${score.id}.png!webp`}>
         <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
           backgroundColor: maimaiDifficultyColor[2][score.level_index].replace(")", ", 0.95)"),
         }}>

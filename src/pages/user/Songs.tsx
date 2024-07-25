@@ -4,7 +4,7 @@ import {
   Text,
   Title,
   Card,
-  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack, Badge, ActionIcon, Indicator
+  SegmentedControl, Group, Avatar, Flex, Box, Anchor, Space, Stack, Badge, ActionIcon
 } from "@mantine/core";
 import classes from "./Songs.module.css"
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
@@ -23,6 +23,8 @@ import { ApiContext } from "../../App.tsx";
 import { ScoreModal } from "../../components/Scores/ScoreModal.tsx";
 import { MaimaiSongDifficulty } from "../../components/Songs/maimai/SongDifficulty.tsx";
 import { ChunithmSongDifficulty } from "../../components/Songs/chunithm/SongDifficulty.tsx";
+import { SongDisabledIndicator } from "../../components/SongDisabledIndicator.tsx";
+import { ASSET_URL } from "../../main.tsx";
 
 export default function Songs() {
   const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
@@ -151,13 +153,13 @@ export default function Songs() {
         <Card mt="md" radius="md" p={0} withBorder className={classes.card}>
           <Card.Section m="md">
             <Group wrap="nowrap">
-              <PhotoView src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
-                <Indicator color="red" position="bottom-center" zIndex={1} inline label="被移除" size={18} withBorder disabled={!song?.disabled}>
-                  <Avatar src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
+              <SongDisabledIndicator disabled={song.disabled}>
+                <PhotoView src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
+                  <Avatar src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
                     <IconPhotoOff />
                   </Avatar>
-                </Indicator>
-              </PhotoView>
+                </PhotoView>
+              </SongDisabledIndicator>
               <div style={{ flex: 1 }}>
                 <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>
                 <Text fz="xl" fw={700}>{song.title}</Text>

@@ -2,11 +2,12 @@ import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
 import { Avatar, Badge, Divider, Group, NumberFormatter, rem, Text } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
+import { ASSET_URL } from "../../../../main.tsx";
 
 export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
   return (
     <Group wrap="nowrap">
-      <Avatar src={`https://assets.lxns.net/chunithm/character/${player.character ? player.character.id : 0}.png!webp`} size={94} radius="md" style={{
+      <Avatar src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`} size={94} radius="md" style={{
         backgroundSize: "5px 5px",
         backgroundImage: "linear-gradient(-45deg, transparent 45%, rgba(0, 0, 0, 0.2) 45%, rgba(0, 0, 0, 0.2) 55%, transparent 55%)",
       }}>

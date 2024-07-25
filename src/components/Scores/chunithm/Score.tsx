@@ -4,6 +4,7 @@ import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunit
 import { memo } from "react";
 import classes from "../Scores.module.css"
 import { useComputedColorScheme } from "@mantine/core";
+import { ASSET_URL } from "../../../main.tsx";
 
 export interface ChunithmScoreProps {
   id: number;
@@ -45,7 +46,7 @@ const WorldsEndScore = ({ score, song, onClick }: ScoreProps) => {
       }}
       onClick={onClick}
     >
-      <BackgroundImage src={`https://assets.lxns.net/chunithm/jacket/${difficulty.origin_id}.png!webp`}>
+      <BackgroundImage src={`${ASSET_URL}/chunithm/jacket/${difficulty.origin_id}.png!webp`}>
         <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
           backgroundColor: "rgba(14, 45, 56, 0.95)",
         }}>
@@ -108,7 +109,7 @@ export const Score = memo(({ score, song, onClick }: ScoreProps) => {
       }}
       onClick={onClick}
     >
-      <BackgroundImage src={`https://assets.lxns.net/chunithm/jacket/${score.id}.png!webp`}>
+      <BackgroundImage src={`${ASSET_URL}/chunithm/jacket/${score.id}.png!webp`}>
         <Flex pt={5} pb={2} pl="xs" pr="xs" style={{
           backgroundColor: chunithmDifficultyColor[2][score.level_index].replace(")", ", 0.95)"),
         }}>

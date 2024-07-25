@@ -11,13 +11,14 @@ import {
 } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getDeluxeRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
+import { ASSET_URL } from "../../../../main.tsx";
 
 export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
   const computedColorScheme = useComputedColorScheme('light');
 
   return (
     <Group wrap="nowrap">
-      <Avatar src={`https://assets.lxns.net/maimai/icon/${player.icon ? player.icon.id : 0}.png!webp`} size={94} radius="md" styles={(theme) => ({
+      <Avatar src={`${ASSET_URL}/maimai/icon/${player.icon ? player.icon.id : 0}.png!webp`} size={94} radius="md" styles={(theme) => ({
         root: {
           backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
         }

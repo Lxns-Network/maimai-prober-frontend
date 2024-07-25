@@ -24,6 +24,7 @@ import { useLocalStorage } from "@mantine/hooks";
 import { PhotoView } from "react-photo-view";
 import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { ASSET_URL } from "../../main.tsx";
 
 interface CreateAliasModalProps {
   defaultSongId?: number;
@@ -118,8 +119,8 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
           <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
             <Flex align="center" gap="md">
               {song ? (
-                <PhotoView src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
-                  <Avatar size={94} radius="md" src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} />
+                <PhotoView src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
+                  <Avatar size={94} radius="md" src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} />
                 </PhotoView>
               ) : (
                 <Avatar size={94} radius="md" src={null}>

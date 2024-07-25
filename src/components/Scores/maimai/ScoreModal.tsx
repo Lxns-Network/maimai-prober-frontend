@@ -14,6 +14,8 @@ import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.t
 import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../../CustomMarquee.tsx";
+import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
+import { ASSET_URL } from "../../../main.tsx";
 
 const MaimaiUtageScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
   const difficulty = getDifficulty(song, "utage", 0);
@@ -21,8 +23,8 @@ const MaimaiUtageScoreModalContent = ({ score, song }: { score: MaimaiScoreProps
   return (
     <>
       <Group wrap="nowrap">
-        <PhotoView src={`https://assets.lxns.net/maimai/jacket/${song.id%10000}.png`}>
-          <Avatar src={`https://assets.lxns.net/maimai/jacket/${song.id%10000}.png!webp`} size={94} radius="md">
+        <PhotoView src={`${ASSET_URL}/maimai/jacket/${song.id%10000}.png`}>
+          <Avatar src={`${ASSET_URL}/maimai/jacket/${song.id%10000}.png!webp`} size={94} radius="md">
             <IconPhotoOff />
           </Avatar>
         </PhotoView>
@@ -110,11 +112,13 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
   return (
     <>
       <Group wrap="nowrap">
-        <PhotoView src={`https://assets.lxns.net/maimai/jacket/${song.id}.png`}>
-          <Avatar src={`https://assets.lxns.net/maimai/jacket/${song.id}.png!webp`} size={94} radius="md">
-            <IconPhotoOff />
-          </Avatar>
-        </PhotoView>
+        <SongDisabledIndicator disabled={song?.disabled}>
+          <PhotoView src={`${ASSET_URL}/maimai/jacket/${song.id}.png`}>
+            <Avatar src={`${ASSET_URL}/maimai/jacket/${song.id}.png!webp`} size={94} radius="md">
+              <IconPhotoOff />
+            </Avatar>
+          </PhotoView>
+        </SongDisabledIndicator>
         <div style={{ flex: 1 }}>
           {score.type === "standard" ? (
             <Badge variant="filled" color="blue" size="sm">标准</Badge>

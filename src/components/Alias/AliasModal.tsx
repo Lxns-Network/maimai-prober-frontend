@@ -20,6 +20,7 @@ import { PhotoView } from "react-photo-view";
 import { ApiContext } from "../../App.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
+import { ASSET_URL } from "../../main.tsx";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -106,8 +107,8 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
     <>
       <Group>
         {game && (
-          <PhotoView src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
-            <Avatar src={`https://assets.lxns.net/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
+          <PhotoView src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
+            <Avatar src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
               <Text ta="center" fz="xs">曲绘加载失败</Text>
             </Avatar>
           </PhotoView>
