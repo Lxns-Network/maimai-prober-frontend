@@ -26,40 +26,48 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
   song_id: number;
   aliases: string[];
 }[]): (MaimaiSongProps | ChunithmSongProps)[] {
-  const result: (MaimaiSongProps | ChunithmSongProps)[] = [];
-  const hiragana = toHiragana(search);
+  const result = new Set<MaimaiSongProps | ChunithmSongProps>();
+  const hiragana = toHiragana(search).toLowerCase();
+  const searchLower = search.toLowerCase();
+  const searchNumber = !isNaN(Number(search)) ? Number(search) : null;
 
-  for (let i = 0; i < songs.length; i += 1) {
-    const song = songs[i];
+  const aliasMap = new Map<number, string[]>();
+  if (aliases) {
+    for (const alias of aliases) {
+      aliasMap.set(alias.song_id, alias.aliases.map(a => a.toLowerCase()));
+    }
+  }
 
-    if (!isNaN(Number(search))) {
-      if (song.id === Number(search) && !result.includes(song)) {
-        result.push(song);
-      }
+  for (const song of songs) {
+    if (searchNumber !== null && song.id === searchNumber) {
+      result.add(song);
+      continue;
     }
 
-    const titleMatch = song.title.toLowerCase().includes(search.toLowerCase());
-    const titleHiraganaMatch = toHiragana(song.title).toLowerCase().includes(hiragana.toLowerCase());
-    const artistMatch = song.artist.toLowerCase().includes(search.toLowerCase());
-    const artistHiraganaMatch = toHiragana(song.artist).toLowerCase().includes(hiragana.toLowerCase());
+    const titleLower = song.title.toLowerCase();
+    const artistLower = song.artist.toLowerCase();
+    const titleHiragana = toHiragana(song.title).toLowerCase();
+    const artistHiragana = toHiragana(song.artist).toLowerCase();
 
-    if ((titleMatch || titleHiraganaMatch || artistMatch || artistHiraganaMatch) && !result.includes(song)) {
-      result.push(song);
+    if (
+      titleLower.includes(searchLower) ||
+      titleHiragana.includes(hiragana) ||
+      artistLower.includes(searchLower) ||
+      artistHiragana.includes(hiragana)
+    ) {
+      result.add(song);
+      continue;
     }
 
-    if (aliases) {
-      for (let j = 0; j < aliases.length; j += 1) {
-        const alias = aliases[j];
-        const aliasMatch = alias.aliases.some((aliasText) => aliasText.toLowerCase().includes(search.toLowerCase()));
-
-        if (aliasMatch && alias.song_id === song.id && !result.includes(song)) {
-          result.push(song);
-        }
+    if (aliasMap.has(song.id)) {
+      const aliasList = aliasMap.get(song.id);
+      if (aliasList && aliasList.some(alias => alias.includes(searchLower))) {
+        result.add(song);
       }
     }
   }
 
-  return result
+  return Array.from(result);
 }
 
 export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSubmit, ...others }: SongComboboxProps) => {

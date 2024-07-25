@@ -32,7 +32,7 @@ export const ChunithmScoreList = ({ scores, songList, onScoreChange }: ScoreList
           <Score
             key={`score-${score.id}-${score.level_index}`}
             score={score}
-            song={songList.find(score.id) as any}
+            song={songList.find(score.id)}
             onClick={() => {
               setScoreDetail(score);
               openScoreAlert();

@@ -14,7 +14,7 @@ export const RadioCardGroup = ({ data, value, onChange }: RadioCardGroupProps) =
         <Radio.Indicator />
         <div>
           <Text className={classes.label}>{item.name}</Text>
-          <Text className={classes.description}>{item.description}</Text>
+          <Text className={classes.description} lh="xs">{item.description}</Text>
         </div>
       </Group>
     </Radio.Card>

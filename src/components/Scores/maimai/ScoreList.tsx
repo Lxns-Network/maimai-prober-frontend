@@ -32,7 +32,7 @@ export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListPr
           <Score
             key={`score-${score.id}-${score.type}-${score.level_index}`}
             score={score}
-            song={songList.find(score.id) as any}
+            song={songList.find(score.id)}
             onClick={() => {
               setScoreDetail(score);
               openScoreAlert();
