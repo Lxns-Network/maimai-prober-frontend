@@ -13,11 +13,11 @@ import {
   ThemeIcon,
   Alert,
   Stepper,
-  Divider, Space, Stack,
+  Divider, Space, Stack, SimpleGrid,
 } from '@mantine/core';
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
-import { useIdle, useLocalStorage, useResizeObserver } from '@mantine/hooks';
+import { useIdle, useLocalStorage, useMediaQuery, useResizeObserver } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
 import {
@@ -34,15 +34,39 @@ import { RadioCardGroup } from "../../components/RadioCardGroup.tsx";
 import { CrawlTokenAlert } from "../../components/Sync/CrawlTokenAlert.tsx";
 import { CopyButtonWithIcon } from "../../components/Sync/CopyButtonWithIcon.tsx";
 import { WechatOAuthLink } from "../../components/Sync/WechatOAuthLink.tsx";
+import { ScoresChangesModal } from "../../components/Sync/ScoresChangesModal.tsx";
 
+interface ScoreChangeDetailProps {
+  new: any;
+  old: any;
+}
+
+export interface ScoreChangesProps {
+  id: number;
+  level: string;
+  level_index: number;
+  type: string;
+  // maimai
+  achievements: ScoreChangeDetailProps;
+  dx_rating: ScoreChangeDetailProps;
+  dx_score: ScoreChangeDetailProps;
+  fc: ScoreChangeDetailProps;
+  fs: ScoreChangeDetailProps;
+  // chunithm
+  score: ScoreChangeDetailProps;
+  rating: ScoreChangeDetailProps;
+  over_power: ScoreChangeDetailProps;
+  full_combo: ScoreChangeDetailProps;
+  full_chain: ScoreChangeDetailProps;
+}
 
 interface CrawlStatusProps {
-  game: string;
+  game: "maimai" | "chunithm";
   friend_code: number;
   status: string;
   create_time: string;
   complete_time: string;
-  crawled_score_count: number;
+  scores: ScoreChangesProps[];
   failed_difficulties: number[];
 }
 
@@ -51,8 +75,9 @@ export default function Sync() {
   const [networkError, setNetworkError] = useState(false);
   const [crawlToken, setCrawlToken] = useState<string | null>(null);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
+  const [resultOpened, setResultOpened] = useState(false);
   const [step, setStep] = useState(0);
-  const [game, setGame] = useLocalStorage({ key: 'game' });
+  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const navigate = useNavigate();
   const idle = useIdle(60000);
 
@@ -126,7 +151,7 @@ export default function Sync() {
         setCrawlStatus(data.data);
       }
     } catch (error) {
-      console.log(error);
+      openAlertModal("获取同步结果失败", `${error}`);
     }
   }
 
@@ -141,9 +166,11 @@ export default function Sync() {
   }, [crawlStatus, proxyAvailable]);
 
   const [stepper, stepperRect] = useResizeObserver();
+  const small = useMediaQuery('(max-width: 600px)');
 
   return (
     <Container className={classes.root} size={400}>
+      <ScoresChangesModal game={crawlStatus ? crawlStatus.game : game} scores={crawlStatus ? crawlStatus.scores || [] : []} opened={resultOpened} onClose={() => setResultOpened(false)} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         同步游戏数据
       </Title>
@@ -261,7 +288,7 @@ export default function Sync() {
             <RadioCardGroup data={[
               { name: '舞萌 DX', description: '爬取玩家信息、成绩与收藏品', value: 'maimai' },
               { name: '中二节奏', description: '爬取玩家信息、成绩与收藏品', value: 'chunithm' },
-            ]} value={game} onChange={(value) => setGame(value)} />
+            ]} value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} />
           </Stack>
         } />
         <Stepper.Step label="步骤 3" description={
@@ -293,9 +320,9 @@ export default function Sync() {
             </Text>
             <Text fz="lg" c={
               crawlStatus ? (
-                  crawlStatus.status === "failed" ? "red" : (
-                    crawlStatus.status === "finished" ? "teal" : "default"
-                  )
+                crawlStatus.status === "failed" ? "red" : (
+                  crawlStatus.status === "finished" ? "teal" : "default"
+                )
               ) : "default"
             }>
               {!crawlStatus && "等待前置步骤完成"}
@@ -325,7 +352,7 @@ export default function Sync() {
                   </div>
                   <div>
                     <Text fz="xs" c="dimmed">爬取的成绩数</Text>
-                    <Text fz="sm">{crawlStatus.crawled_score_count || 0}</Text>
+                    <Text fz="sm">{(crawlStatus.scores || []).length}</Text>
                   </div>
                   <div>
                     <Text fz="xs" c="dimmed">爬取失败的难度</Text>
@@ -344,22 +371,23 @@ export default function Sync() {
                 </Group>
               </Card.Section>
               <Card.Section p="md">
-                <Group justify="space-between">
-                  <Group>
-                    <Button onClick={() => navigate("/user/profile")}>
-                      账号详情
-                    </Button>
-                    <Button variant="outline" onClick={() => navigate("/user/scores")}>
-                      成绩管理
-                    </Button>
-                  </Group>
+                <SimpleGrid cols={small ? 2 : 4}>
+                  <Button onClick={() => setResultOpened(true)}>
+                    查看同步结果
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/user/profile")}>
+                    账号详情
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/user/scores")}>
+                    成绩管理
+                  </Button>
                   <Button variant="outline" leftSection={<IconRepeat size={18} />} onClick={() => {
                     setCrawlStatus(null);
                     setStep(1);
                   }}>
                     重新同步
                   </Button>
-                </Group>
+                </SimpleGrid>
               </Card.Section>
             </>
           )}
