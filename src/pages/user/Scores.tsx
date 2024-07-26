@@ -120,6 +120,7 @@ const ScoresContent = () => {
 
     scoreContext.setScore(null);
     setFetching(true);
+    setTotalPages(0);
     resetState();
     getPlayerScoresHandler();
   }, [game]);
@@ -289,47 +290,42 @@ const ScoresContent = () => {
         <Group justify="center" mt="md" mb="md">
           <Loader />
         </Group>
-      ) : (displayScores && displayScores.length === 0 && scores ? (
+      ) : (displayScores && displayScores.length === 0 && scores && (
         <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
           <IconDatabaseOff size={64} stroke={1.5} />
           <Text fz="sm">没有获取或筛选到任何成绩</Text>
         </Flex>
-      ) : (
-        <>
-          <Group justify="center">
-            <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
-            {context.songList instanceof MaimaiSongList && (
-              <MaimaiScoreList
-                scores={displayScores as MaimaiScoreProps[]}
-                songList={context.songList}
-                onScoreChange={(score) => {
-                  if (score) getPlayerScoresHandler();
-                }}
-              />
-            )}
-            {context.songList instanceof ChunithmSongList && (
-              <ChunithmScoreList
-                scores={displayScores as ChunithmScoreProps[]}
-                songList={context.songList}
-                onScoreChange={(score) => {
-                  if (score) getPlayerScoresHandler();
-                }}
-              />
-            )}
-            {totalPages > 1 && (
-              <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
-            )}
-          </Group>
-          {context.songList instanceof MaimaiSongList && <>
-            <Space h="md" />
-            <MaimaiStatisticsSection scores={searchedScores as MaimaiScoreProps[]} />
-          </>}
-          {context.songList instanceof ChunithmSongList && <>
-            <Space h="md" />
-            <ChunithmStatisticsSection scores={searchedScores as ChunithmScoreProps[]} />
-          </>}
-        </>
       ))}
+      <Group justify="center">
+        <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
+        {context.songList instanceof MaimaiSongList && (
+          <MaimaiScoreList
+            scores={displayScores as MaimaiScoreProps[]}
+            songList={context.songList}
+            onScoreChange={(score) => {
+              if (score) getPlayerScoresHandler();
+            }}
+          />
+        )}
+        {context.songList instanceof ChunithmSongList && (
+          <ChunithmScoreList
+            scores={displayScores as ChunithmScoreProps[]}
+            songList={context.songList}
+            onScoreChange={(score) => {
+              if (score) getPlayerScoresHandler();
+            }}
+          />
+        )}
+        <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
+      </Group>
+      {context.songList instanceof MaimaiSongList && <>
+        <Space h="md" />
+        <MaimaiStatisticsSection scores={searchedScores as MaimaiScoreProps[]} />
+      </>}
+      {context.songList instanceof ChunithmSongList && <>
+        <Space h="md" />
+        <ChunithmStatisticsSection scores={searchedScores as ChunithmScoreProps[]} />
+      </>}
       <ScoreExportSection scores={scores} onImport={getPlayerScoresHandler} />
     </Container>
   );

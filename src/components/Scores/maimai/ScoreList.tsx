@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SimpleGrid } from "@mantine/core";
 import { MaimaiSongList } from "../../../utils/api/song/maimai.tsx";
 import { ScoreModal } from "../ScoreModal.tsx";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 interface ScoreListProps {
   scores: MaimaiScoreProps[];
@@ -12,6 +13,7 @@ interface ScoreListProps {
 }
 
 export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListProps) => {
+  const [parent] = useAutoAnimate();
   const [scoreDetail, setScoreDetail] = useState<MaimaiScoreProps | null>(null);
   const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const small = useMediaQuery('(max-width: 25rem)');
@@ -27,7 +29,7 @@ export const MaimaiScoreList = ({ scores, songList, onScoreChange }: ScoreListPr
           if (score) onScoreChange && onScoreChange(score as MaimaiScoreProps);
         }}
       />
-      <SimpleGrid cols={small ? 1 : 2} spacing="xs" w="100%">
+      <SimpleGrid cols={small ? 1 : 2} spacing="xs" w="100%" ref={parent}>
         {scores.map((score) => (
           <Score
             key={`score-${score.id}-${score.type}-${score.level_index}`}

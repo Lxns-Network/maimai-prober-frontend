@@ -10,14 +10,12 @@ import {
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { IconCheck, IconChevronRight, IconNorthStar } from "@tabler/icons-react";
 import classes from "./Alias.module.css";
-import { useLocalStorage } from "@mantine/hooks";
 import { useContext, useEffect, useState } from "react";
 import { ApiContext } from "../../App.tsx";
 import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 
 export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
-  const [game] = useLocalStorage({ key: 'game' });
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps>();
   const context = useContext(ApiContext);
 
@@ -31,14 +29,14 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
         <Text fz="sm" c="dimmed" style={{ flex: 1 }} truncate>
           {alias.song.name || "未知"}
         </Text>
-        {game === "maimai" && alias.song.id >= 100000 && (
+        {alias.game === "maimai" && alias.song.id >= 100000 && (
           <Badge variant="filled" color="rgb(234, 61, 232)" size="sm">
             宴
           </Badge>
         )}
-        {game === "chunithm" && alias.song.id >= 8000 && (
+        {alias.game === "chunithm" && alias.song.id >= 8000 && (
           <Badge variant="filled" color="rgb(14, 45, 56)" size="sm">
-            {(song as ChunithmSongProps).difficulties[0].kanji}
+            {song && (song as ChunithmSongProps).difficulties[0].kanji}
           </Badge>
         )}
         {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (

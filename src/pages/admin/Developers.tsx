@@ -21,6 +21,7 @@ import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-re
 import classes from "./Developers.module.css";
 import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { EditUserModal } from "../../components/Users/EditUserModal.tsx";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 interface DeveloperProps {
   id: number;
@@ -142,8 +143,10 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
 }
 
 export default function Developers() {
+  const [parent] = useAutoAnimate();
+  const [displayDevelopers, setDisplayDevelopers] = useState<DeveloperProps[]>([]);
   const [developers, setDevelopers] = useState<DeveloperProps[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
@@ -158,7 +161,7 @@ export default function Developers() {
       setDevelopers(data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
         return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
       }));
-      setIsLoaded(true);
+      setFetching(false);
     } catch (error) {
       openRetryModal("开发者列表获取失败", `${error}`, getDevelopersHandler);
     }
@@ -170,20 +173,21 @@ export default function Developers() {
     getDevelopersHandler();
   }, []);
 
-  const [activePage, setPage] = useState(1);
+  const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
-  const displayDevelopers = developers.slice((activePage - 1) * PAGE_SIZE, activePage * PAGE_SIZE).map((developer) => (
-    <DeveloperCard
-      key={developer.id}
-      developer={developer}
-      userOnClick={
-        () => {
-          setActiveUser(developer.user);
-          open();
-        }
-      }
-    />
-  ));
+
+  useEffect(() => {
+    const scrollArea = document.querySelector("#root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport");
+
+    if (scrollArea) {
+      scrollArea.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    setDisplayDevelopers(developers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
+  }, [page, developers]);
 
   return (
     <Container className={classes.root}>
@@ -194,17 +198,27 @@ export default function Developers() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         查看并管理 maimai DX 查分器的开发者
       </Text>
-      {!isLoaded ? (
-        <Group justify="center" mt="xl">
-          <Loader />
-        </Group>
-      ) : (
-        <Stack align="center">
-          <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={activePage} onChange={setPage} />
-          {displayDevelopers}
-          <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={activePage} onChange={setPage} />
+      <Stack align="center">
+        <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} />
+        <Stack w="100%" ref={parent}>
+          {fetching && (
+            <Group justify="center">
+              <Loader />
+            </Group>
+          )}
+          {displayDevelopers.map((developer) => (
+            <DeveloperCard
+              key={developer.id}
+              developer={developer}
+              userOnClick={() => {
+                setActiveUser(developer.user);
+                open();
+              }}
+            />
+          ))}
         </Stack>
-      )}
+        <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} />
+      </Stack>
     </Container>
   );
 }

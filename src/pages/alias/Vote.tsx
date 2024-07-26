@@ -4,8 +4,7 @@ import {
   Card, Checkbox,
   Container,
   Flex,
-  Group,
-  Loader,
+  Group, Loader,
   Pagination,
   SegmentedControl, Space,
   Text,
@@ -22,7 +21,7 @@ import {
   IconPlus,
 } from "@tabler/icons-react";
 import classes from "../Page.module.css"
-import { openAlertModal } from "../../utils/modal.tsx";
+import { openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
 
 export interface AliasProps {
@@ -46,6 +45,7 @@ export interface AliasProps {
   };
   upload_time: string;
   // extra
+  game?: string;
   vote?: VoteProps;
 }
 
@@ -62,12 +62,11 @@ const sortKeys = [
 ];
 
 export default function Vote() {
-  const [displayAliases, setDisplayAliases] = useState<AliasProps[]>([]);
+  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const [aliases, setAliases] = useState<AliasProps[]>([]);
   const [votes, setVotes] = useState<VoteProps[]>([]);
   const [opened, setOpened] = useState(false);
   const [fetching, setFetching] = useState(false);
-  const [game, setGame] = useLocalStorage({ key: 'game' });
   const [onlyNotApproved, toggleOnlyNotApproved] = useToggle();
 
   // 排序相关
@@ -93,12 +92,9 @@ export default function Vote() {
   };
 
   const getUserVotesHandler = async () => {
+    if (!game) return;
     try {
       const res = await getUserVotes(game);
-      if (res.status === 429) {
-        openAlertModal("投票获取失败", "请求过于频繁，请稍后再试。")
-        return
-      }
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);
@@ -109,18 +105,15 @@ export default function Vote() {
     }
   };
 
-  const getAliasListHandler = async () => {
+  const getAliasListHandler = async (page: number) => {
+    if (!game) return;
+    setFetching(true);
     try {
       const res = await getAliasList(game, page, onlyNotApproved, sortBy, reverseSortDirection ? 'asc' : 'desc', songId);
-      if (res.status === 429) {
-        openAlertModal("曲目别名获取失败", "请求过于频繁，请稍后再试。")
-        return
-      }
       const data = await res.json();
       if (!data.success || !data.data || !data.data.aliases) {
         setFetching(false);
         setTotalPages(0);
-        setAliases([]);
         if (data.message) {
           throw new Error(data.message);
         }
@@ -129,19 +122,12 @@ export default function Vote() {
       setTotalPages(data.data.page_count);
       setAliases(data.data.aliases);
     } catch (error) {
-      console.error(error);
+      openRetryModal("曲目别名获取失败", `${error}`, () => {
+        getAliasListHandler(page);
+      });
     } finally {
-      setDisplayAliases([]);
+      setFetching(false);
     }
-  };
-
-  const fetchHandler = async () => {
-    if (!game) return;
-
-    setFetching(true);
-    getAliasListHandler().then(() => {
-      getUserVotesHandler();
-    });
   }
 
   useEffect(() => {
@@ -151,23 +137,27 @@ export default function Vote() {
   useEffect(() => {
     if (!game) return;
 
-    fetchHandler();
+    setFetching(true);
     setPage(1);
+    getUserVotesHandler().then(() => {
+      getAliasListHandler(1);
+    });
   }, [game]);
 
   useEffect(() => {
+    getAliasListHandler(page);
+  }, [onlyNotApproved, page, songId, sortBy, reverseSortDirection]);
+
+  useEffect(() => {
     aliases.forEach((alias, i) => {
+      alias.game = game;
       const vote = votes.find((vote) => vote.alias_id === alias.alias_id);
       if (vote) alias.vote = vote;
       aliases[i] = alias;
     });
-    setFetching(false);
-    setDisplayAliases(aliases);
-  }, [votes]);
 
-  useEffect(() => {
-    fetchHandler();
-  }, [onlyNotApproved, page, songId, sortBy, reverseSortDirection]);
+    setAliases(aliases);
+  }, [aliases]);
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
@@ -181,7 +171,7 @@ export default function Vote() {
   return (
     <Container className={classes.root} size={400}>
       <CreateAliasModal opened={opened} onClose={(alias) => {
-        if (alias) fetchHandler();
+        if (alias) getAliasListHandler(page);
         setOpened(false);
       }} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
@@ -190,10 +180,7 @@ export default function Vote() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         提交曲目别名，或为你喜欢的曲目别名投票
       </Text>
-      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => {
-        setGame(value);
-        setFetching(true);
-      }} data={[
+      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} data={[
         { label: '舞萌 DX', value: 'maimai' },
         { label: '中二节奏', value: 'chunithm' },
       ]} />
@@ -243,24 +230,21 @@ export default function Vote() {
         onChange={() => toggleOnlyNotApproved()}
       />
       <Space h="md" />
-      {fetching ? (
-        <Group justify="center" mt="md">
+      {fetching && totalPages === 0 ? (
+        <Group justify="center" mt="md" mb="md">
           <Loader />
         </Group>
-      ) : (totalPages === 0 ? (
+      ) : (totalPages === 0 && (
         <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
           <IconDatabaseOff size={64} stroke={1.5} />
           <Text fz="sm">暂时没有可投票的曲目别名</Text>
         </Flex>
-      ) : (
-        <Group justify="center">
-          <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} />
-          <AliasList aliases={displayAliases} onDelete={() => {
-            fetchHandler();
-          }} />
-          <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} />
-        </Group>
       ))}
+      <Group justify="center">
+        <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} disabled={fetching} />
+        <AliasList aliases={aliases} onVote={() => getUserVotesHandler()} onDelete={() => getAliasListHandler(page)} />
+        <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} disabled={fetching} />
+      </Group>
     </Container>
   );
 }

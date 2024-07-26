@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@formkit/auto-animate": "^0.8.2",
     "@mantine/carousel": "^7.11.0",
     "@mantine/core": "^7.11.1",
     "@mantine/dates": "^7.11.1",

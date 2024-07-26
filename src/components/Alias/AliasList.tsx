@@ -1,19 +1,26 @@
 import { SimpleGrid } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { Alias } from "./Alias.tsx";
-import { useLocalStorage, useSetState } from "@mantine/hooks";
+import { useSetState } from "@mantine/hooks";
 import { AliasModal } from "./AliasModal.tsx";
 import { useEffect, useState } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
-export const AliasList = ({ aliases, onDelete }: { aliases: AliasProps[], onDelete: () => void }) => {
-  const [game] = useLocalStorage({ key: 'game' });
+interface AliasListProps {
+  aliases: AliasProps[];
+  onVote: () => void;
+  onDelete: () => void;
+}
+
+export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
+  const [parent] = useAutoAnimate();
   const [opened, setOpened] = useState(false);
   const [alias, setAlias] = useSetState<AliasProps>({} as AliasProps);
   const [displayAliases, setDisplayAliases] = useState<AliasProps[]>([]);
 
   useEffect(() => {
     setDisplayAliases(aliases);
-  }, []);
+  }, [aliases]);
 
   useEffect(() => {
     if (alias.alias_id) {
@@ -29,15 +36,16 @@ export const AliasList = ({ aliases, onDelete }: { aliases: AliasProps[], onDele
   return (
     <>
       <AliasModal alias={alias} setAlias={setAlias} opened={opened} onClose={() => setOpened(false)} />
-      <SimpleGrid cols={2} spacing="xs" w="100%">
+      <SimpleGrid cols={2} spacing="xs" w="100%" ref={parent}>
         {displayAliases.map((alias) => (
           <Alias
-            key={`${game}-${alias.alias_id}`}
+            key={`${alias.game}:${alias.alias_id}`}
             alias={alias}
             onClick={() => {
               setAlias(alias);
               setOpened(true);
             }}
+            onVote={() => onVote()}
             onDelete={onDelete}
           />
         ))}
