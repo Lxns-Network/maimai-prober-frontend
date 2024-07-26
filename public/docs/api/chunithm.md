@@ -137,7 +137,9 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 获取玩家缓存的 Best 30、Selection 10 与 Recent 10。
 
-> Selection 10 为 Best 31 至 40。
+::: info 提示
+Selection 10 为 Best 31 至 40。
+:::
 
 #### 权限
 
@@ -418,7 +420,9 @@ CLASS 勋章
 | `play_time` | `string` | 值可空，游玩的 UTC 时间，精确到分钟 |
 | `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |
 
-> Recent 10 列表里成绩的 `clear` 字段可能为空。
+::: info 提示
+Recent 10 列表里成绩的 `clear` 字段可能为空。
+:::
 
 ### SimpleScore
 
@@ -450,7 +454,9 @@ CLASS 勋章
 | `disabled` | `bool` | 值可空，是否被禁用，默认值为 `false` |
 | `difficulties` | [`SongDifficulty[]`](#songdifficulty) | 谱面难度 |
 
-> `disabled` 为 `true` 时，该曲目不会出现在 Best 30、Selection 10 中。
+::: info 提示
+`disabled` 为 `true` 时，该曲目不会出现在 Best 30、Selection 10 中。
+:::
 
 ### SongDifficulty
 
@@ -551,7 +557,9 @@ FULL COMBO 类型
 | `alljustice` | `string` | ALL JUSTICE |
 | `fullcombo` | `string` | FULL COMBO |
 
-> AJC 显示为 ALL JUSTICE，需要开发者自行判断。
+::: info 提示
+AJC 显示为 ALL JUSTICE，需要开发者自行判断。
+:::
 
 ### FullChainType
 

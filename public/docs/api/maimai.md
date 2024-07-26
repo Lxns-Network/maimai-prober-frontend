@@ -284,7 +284,9 @@ JSON 格式的玩家成绩：
 |-|-|-|
 | `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
 
-> 指定 `version` 参数时，将会返回指定版本范围内的 DX Rating 趋势。
+::: info 提示
+指定 `version` 参数时，将会返回指定版本范围内的 DX Rating 趋势。
+:::
 
 #### URL 参数
 
@@ -557,7 +559,9 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 | `frame` | [`Frame`](#collection) | 值可空，背景 |
 | `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
 
-> `trophy_name` 参数可能会在后续变更，请开发者注意。
+::: warning 注意
+`trophy_name` 参数可能会在后续变更，请开发者注意。
+:::
 
 ### Score
 
@@ -621,7 +625,9 @@ DX Rating 趋势
 | `disabled` | `bool` | 值可空，是否被禁用，默认值为 `false` |
 | `difficulties` | [`SongDifficulties`](#songdifficulties) | 谱面难度 |
 
-> `disabled` 为 `true` 时，该曲目不会出现在 Best 50 中。
+::: info 提示
+`disabled` 为 `true` 时，该曲目不会出现在 Best 50 中。
+:::
 
 ### SongDifficulties
 
@@ -633,7 +639,9 @@ DX Rating 趋势
 | `dx` | [`SongDifficulty[]`](#songdifficulty) | 曲目 DX 谱面难度列表 |
 | `utage` | [`SongDifficultyUtage[]`](#songdifficultyutage) | 可选，宴会场曲目谱面难度列表 |
 
-> 仅宴会场曲目（曲目 ID 大于 100000）拥有 `utage` 字段。
+::: info 提示
+仅宴会场曲目（曲目 ID 大于 100000）拥有 `utage` 字段。
+:::
 
 ### SongDifficulty
 
@@ -660,9 +668,13 @@ DX Rating 趋势
 | `is_buddy` | `bool` | 是否为 BUDDY 谱面 |
 | `notes` | [`Notes`](#notes) 或 [`BuddyNotes`](#buddynotes) | 值可空，谱面物量 |
 
-> `is_buddy` 为 `true` 时，`notes` 为 [`BuddyNotes`](#buddynotes)。
+::: info 提示
+`is_buddy` 为 `true` 时，`notes` 为 [`BuddyNotes`](#buddynotes)。
+:::
 
-> 其他参数与 [`SongDifficulty`](#songdifficulty) 相同。
+::: info 提示
+其他参数与 [`SongDifficulty`](#songdifficulty) 相同。
+:::
 
 ### Notes
 
@@ -777,7 +789,9 @@ DX Rating 趋势
 | `3` | `int` | MASTER |
 | `4` | `int` | Re:MASTER |
 
-> 当曲目为宴会场曲目时，该字段默认为 `0`。
+::: info 提示
+当曲目为宴会场曲目时，该字段默认为 `0`。
+:::
 
 ### FCType
 
@@ -833,4 +847,6 @@ FULL SYNC 类型
 | `dx` | `string` | DX 谱面 |
 | `utage` | `string` | 宴会场谱面 |
 
-> 仅宴会场曲目（曲目 ID 大于 100000）为 `utage` 类型。
+::: info 提示
+仅宴会场曲目（曲目 ID 大于 100000）为 `utage` 类型。
+:::
