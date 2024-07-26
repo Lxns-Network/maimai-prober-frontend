@@ -226,7 +226,7 @@ const ScoresChangesTable = ({ game, scores }: { game: "maimai" | "chunithm", sco
             return <Text size="sm">
               <NumberFormatter value={score.new} thousandSeparator />
               {score.old !== undefined && <Text span c="green">
-                {` (+${<NumberFormatter value={score.new-score.old} thousandSeparator />})`}
+                {` `}(+<NumberFormatter value={score.new-score.old} thousandSeparator />)
               </Text>}
             </Text>;
           }

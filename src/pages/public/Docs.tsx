@@ -11,11 +11,11 @@ import {
   Title,
   Tooltip,
   TypographyStylesProvider,
-  Image, Box, Center, Anchor
+  Image, Box, Center, Anchor, Alert
 } from "@mantine/core";
 import classes from "./Docs.module.css"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
@@ -26,7 +26,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import remarkSlug from "remark-slug";
 import remarkFlexibleContainers from "remark-flexible-containers";
 import { useListState } from "@mantine/hooks";
-import { IconArrowLeft, IconCheck, IconCopy, IconListSearch } from "@tabler/icons-react";
+import { IconAlertCircle, IconArrowLeft, IconCheck, IconCopy, IconInfoCircle, IconListSearch } from "@tabler/icons-react";
 import LazyLoad from 'react-lazyload';
 import { PhotoView } from "react-photo-view";
 
@@ -146,6 +146,31 @@ const Content = ({ markdown }: { markdown: string }) => {
           return <ol className={classes.list}>{children}</ol>;
         },
         div({ className, children, ...props }) {
+          const classesName = className ? className.split(" ") : [];
+
+          if (classesName.includes("remark-container")) {
+            let icon = <IconInfoCircle />;
+            let color = "blue";
+            if (classesName.includes("warning")) {
+              icon = <IconAlertCircle />;
+              color = "yellow";
+            }
+            if (classesName.includes("danger")) {
+              icon = <IconAlertCircle />;
+              color = "red";
+            }
+
+            const childrenArray = React.Children.toArray(children);
+            const titleChild = childrenArray.find(
+              child => React.isValidElement(child) && child.props.className?.includes('remark-container-title')
+            ) as React.ReactElement;
+
+            return <Alert className={classes.alert} radius="md" mt="md" variant="light" color={color} title={titleChild?.props.children} icon={icon}>
+              {childrenArray.filter(
+                (child) => !React.isValidElement(child) || !child.props.className?.includes('remark-container-title')
+              )}
+            </Alert>
+          }
           return <div className={className} {...props}>{children}</div>;
         },
         th({ children, ...props }) {

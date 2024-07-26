@@ -140,3 +140,8 @@
 .blockQuote p {
     color: var(--mantine-color-dimmed) !important;
 }
+
+.alert p {
+    margin: 0 !important;
+    font-size: var(--mantine-font-size-sm);
+}
