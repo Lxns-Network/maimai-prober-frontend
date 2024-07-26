@@ -4,6 +4,10 @@
 
 ## 2024/7/26
 
+- 舞萌 DX 新增接口：
+  - [获取头像列表](/docs/api/maimai#get-apiv0maimaiiconlist)
+  - [获取头像信息](/docs/api/maimai#get-apiv0maimaiiconicon_id)
+- 部分页面新增动画效果
 - 修复舞萌 DX API 返回的成绩不是历史最佳 DX 分数的问题
 
 ## 2024/7/25

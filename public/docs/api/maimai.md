@@ -419,6 +419,43 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 |-|-|-|
 | `aliases` | [Alias[]](#alias) | 曲目别名列表 |
 
+### GET `/api/v0/maimai/icon/list`
+
+获取头像列表。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `plates` | [Plate[]](#collection) | 姓名框列表 |
+
+### GET `/api/v0/maimai/icon/{icon_id}`
+
+获取头像信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `icon_id` | `int` | 姓名框 ID |
+
+#### 响应体
+
+[Icon](#collection)
+
 ### GET `/api/v0/maimai/plate/list`
 
 获取姓名框列表。
@@ -428,6 +465,7 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 | 参数名 | 类型 | 说明 |
 |-|-|-|
 | `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
 
 #### 响应体
 
