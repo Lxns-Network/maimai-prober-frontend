@@ -7,7 +7,7 @@ import {
   Card,
   Image,
   Space,
-  Checkbox, Flex
+  Checkbox, Flex, Transition
 } from "@mantine/core";
 import { useToggle } from "@mantine/hooks";
 import classes from "../Page.module.css"
@@ -168,18 +168,24 @@ export default function Plates() {
         checked={onlyRequired}
         onChange={() => toggleOnlyRequired()}
       />
-      {plate && (
-        <Card radius="md" mt="md" p="md" withBorder className={classes.card}>
-          <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
-            {plate.description}
-          </Text>
-          <Text fw={700} size="xl">
-            {plate.name}
-          </Text>
-          <Space h="md" />
-          <Image src={`${ASSET_URL}/maimai/plate/${plate.id}.png!webp`} />
-        </Card>
-      )}
+      <Transition
+        mounted={Boolean(plate)}
+        transition="pop"
+        timingFunction="ease"
+      >
+        {(styles) => (
+          <Card radius="md" mt="md" p="md" withBorder className={classes.card} style={styles}>
+            <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
+              {plate && plate.description}
+            </Text>
+            <Text fw={700} size="xl">
+              {plate && plate.name}
+            </Text>
+            <Space h="md" />
+            <Image src={`${ASSET_URL}/maimai/plate/${plate ? plate.id : 0}.png!webp`} />
+          </Card>
+        )}
+      </Transition>
       <Space h="md" />
       <LoginAlert content="你需要登录查分器账号才能查看你的姓名框获取进度。" mb="md" radius="md" />
       {!plate ? (
@@ -187,14 +193,21 @@ export default function Plates() {
           <IconPlaylist size={64} stroke={1.5} />
           <Text fz="sm">请选择一个姓名框来查看要求曲目</Text>
         </Flex>
-      ) : !plate.required ? (
+      ) : !plate.required && (
         <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
           <IconPlaylistOff size={64} stroke={1.5} />
           <Text fz="sm">此姓名框没有要求曲目</Text>
         </Flex>
-      ) : (
-        <RequiredSong plate={plate} records={records} />
       )}
+      <Transition
+        mounted={Boolean(plate && plate.required)}
+        transition="pop"
+        timingFunction="ease"
+      >
+        {(styles) => (
+          <RequiredSong plate={plate} records={records} style={styles} />
+        )}
+      </Transition>
     </Container>
   );
 }

@@ -11,8 +11,7 @@ import { useContext, useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import {
-  DifficultyProps,
-  ChunithmSongList,
+  ChunithmDifficultyProps,
   ChunithmSongProps
 } from "../../../utils/api/song/chunithm.tsx";
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../../utils/modal.tsx";
@@ -26,18 +25,19 @@ import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
 
 interface CreateScoreModalProps {
-  songList: ChunithmSongList
   score?: ChunithmScoreProps | null;
   opened: boolean;
   onClose: (score?: any) => void;
 }
 
-export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: CreateScoreModalProps) => {
+export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScoreModalProps) => {
   const [uploading, setUploading] = useState(false);
   const [song, setSong] = useState<ChunithmSongProps | null>(null);
-  const [difficulties, setDifficulties] = useState<DifficultyProps[] | null>(null);
+  const [difficulties, setDifficulties] = useState<ChunithmDifficultyProps[] | null>(null);
   const computedColorScheme = useComputedColorScheme('light');
   const context = useContext(ApiContext);
+
+  const songList = context.songList.chunithm;
 
   const form = useForm({
     initialValues: {
@@ -97,8 +97,8 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
   }
 
   useEffect(() => {
-    if (score) form.setValues({
-      id: score.id,
+    form.setValues({
+      id: score ? score.id : 0,
       difficulty: null,
     });
   }, [score]);
@@ -108,7 +108,8 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
 
     if (!form.values.id) return;
 
-    setSong(songList.find(parseInt(form.values.id as any)));
+    const song = songList.find(form.values.id);
+    song && setSong(song);
   }, [form.values.id]);
 
   useEffect(() => {
@@ -116,8 +117,8 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
 
     setDifficulties(song.difficulties);
 
-    if (score) form.setValues({
-      difficulty: score.level_index.toString(),
+    form.setValues({
+      difficulty: score ? score.level_index.toString() : null,
     });
   }, [song]);
 
@@ -136,7 +137,7 @@ export const ChunithmCreateScoreModal = ({ songList, score, opened, onClose }: C
             <Flex align="center" gap="md">
               <SongDisabledIndicator disabled={song?.disabled}>
                 <Avatar size={94} radius="md" src={
-                  form.values.id ? `${ASSET_URL}/chunithm/jacket/${context.songList.getSongResourceId(song)}.png!webp` : null
+                  song ? `${ASSET_URL}/chunithm/jacket/${songList.getSongResourceId(song.id)}.png!webp` : null
                 } styles={(theme) => ({
                   root: {
                     backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],

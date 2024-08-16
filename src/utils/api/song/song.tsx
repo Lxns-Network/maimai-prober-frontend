@@ -1,38 +1,26 @@
+import { MaimaiSongList } from "./maimai.tsx";
+import { ChunithmSongList } from "./chunithm.tsx";
+
 export class SongList {
-  songs: any[] = [];
-  genres: any[] = [];
-  versions: any[] = [];
+  maimai: MaimaiSongList;
+  chunithm: ChunithmSongList;
 
   constructor() {
-    this.songs = [];
+    this.maimai = new MaimaiSongList();
+    this.chunithm = new ChunithmSongList();
   }
 
   async fetch() {
-    return this.songs;
+    await this.maimai.fetch();
+    await this.chunithm.fetch();
   }
 
-  push(...songs: any[]) {
-    this.songs.push(...songs);
-  }
-
-  find(id: number) {
-    return this.songs.find((song: any) => song.id === id);
-  }
-
-  clear() {
-    this.songs = [];
-  }
-
-  get length() {
-    return this.songs.length;
-  }
-
-  getDifficulty(song: any, ...args: any[]) {
-    return song.difficulties[args[0]][args[1]];
-  }
-
-  getSongResourceId(song: any) {
-    if (!song) return 0;
-    return song.id%10000;
+  getSongList() {
+    const game = localStorage.getItem("game");
+    if (game === "chunithm") {
+      return this.chunithm;
+    } else {
+      return this.maimai;
+    }
   }
 }

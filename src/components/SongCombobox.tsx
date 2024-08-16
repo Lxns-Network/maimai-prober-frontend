@@ -14,6 +14,7 @@ import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.
 import { IconSearch } from "@tabler/icons-react";
 import { ApiContext } from "../App.tsx";
 import { toHiragana } from 'wanakana';
+import {useLocalStorage} from "@mantine/hooks";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   value?: number;
@@ -71,6 +72,8 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
 }
 
 export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSubmit, ...others }: SongComboboxProps) => {
+  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
+  const [game] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game', defaultValue: 'maimai' });
   const [search, setSearch] = useState('');
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
 
@@ -82,21 +85,29 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
   const MAX_SONGS = 100;
 
   useEffect(() => {
-    setFilteredSongs(getFilteredSongs(context.songList.songs, search, context.aliasList.aliases));
-  }, [context.songList.songs, search, context.aliasList.aliases]);
+    setFilteredSongs([]);
+    setSongList(context.songList[game]);
+  }, [game]);
+
+  useEffect(() => {
+    if (!songList) return;
+    setFilteredSongs(getFilteredSongs(songList.songs, search, context.aliasList[game].aliases));
+  }, [songList?.songs, search]);
 
   useEffect(() => {
     onSearchChange && onSearchChange(search);
   }, [search]);
 
   useEffect(() => {
-    onSongsChange && onSongsChange(search.length === 0 ? context.songList.songs : filteredSongs);
+    if (!songList) return;
+    onSongsChange && onSongsChange(search.length === 0 ? songList.songs : filteredSongs);
   }, [filteredSongs]);
 
   useEffect(() => {
-    const song = context.songList.songs.find((song) => song.id === value);
+    if (!songList) return;
+    const song = songList.songs.find((song) => song.id === value);
     setSearch(song?.title || '');
-  }, [value]);
+  }, [songList, value]);
 
   return (
     <Combobox
@@ -105,7 +116,7 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
       store={combobox}
       onOptionSubmit={(value) => {
         onOptionSubmit && onOptionSubmit(parseInt(value));
-        setSearch(context.songList.songs.find((song) => song.id === parseInt(value))?.title || '');
+        setSearch(songList?.songs.find((song) => song.id === parseInt(value))?.title || '');
         combobox.closeDropdown();
       }}
       transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
@@ -130,7 +141,7 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
           }
           rightSectionPointerEvents={search.length !== 0 ? 'auto' : 'none'}
           value={search}
-          disabled={context.songList.songs.length === 0}
+          disabled={songList?.songs.length === 0}
           onChange={(event) => {
             combobox.openDropdown();
             combobox.updateSelectedOptionIndex();
@@ -163,12 +174,12 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
                       {song.artist}
                     </Text>
                   </div>
-                  {context.songList instanceof MaimaiSongList && song.id >= 100000 && (
+                  {songList instanceof MaimaiSongList && song.id >= 100000 && (
                     <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
                       宴
                     </Badge>
                   )}
-                  {context.songList instanceof ChunithmSongList && song.id >= 8000 && (
+                  {songList instanceof ChunithmSongList && song.id >= 8000 && (
                     <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
                       {(song as ChunithmSongProps).difficulties[0].kanji}
                     </Badge>

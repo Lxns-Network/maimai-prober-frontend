@@ -1,4 +1,4 @@
-import { DifficultyProps, MaimaiNotesProps } from "../../../utils/api/song/maimai.tsx";
+import { MaimaiDifficultyProps, MaimaiNotesProps } from "../../../utils/api/song/maimai.tsx";
 import { Center, keys, Loader, SegmentedControl, Select, Space, Table, Text } from "@mantine/core";
 import { useState } from "react";
 
@@ -53,7 +53,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
 
   const rows = keys(notes).map((key) => {
     if (key === "touch" && notes[key] === 0) {
-      return <Table.Tr key={`${mode}-${key}`}>
+      return <Table.Tr key={`${mode}:${key}`}>
         <Table.Td>TOUCH</Table.Td>
         {Array(5).fill(0).map((_, i) => {
           return <Table.Td key={i}>-</Table.Td>;
@@ -61,7 +61,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
       </Table.Tr>;
     }
 
-    return <Table.Tr key={`${mode}-${key}`}>
+    return <Table.Tr key={`${mode}:${key}`}>
       <Table.Td>{key.toLocaleUpperCase()}</Table.Td>
       <Table.Td>{notes[key]}</Table.Td>
       {keys(basic).map((type) => {
@@ -166,7 +166,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
   </Table.ScrollContainer>;
 }
 
-export const MaimaiChart = ({ difficulty }: { difficulty: DifficultyProps }) => {
+export const MaimaiChart = ({ difficulty }: { difficulty: MaimaiDifficultyProps }) => {
   if (!difficulty) return;
 
   const [side, setSide] = useState<"left" | "right">("left");

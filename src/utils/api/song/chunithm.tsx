@@ -1,7 +1,6 @@
 import { fetchAPI } from "../api.tsx";
-import { SongList } from "./song.tsx";
 
-export interface DifficultyProps {
+export interface ChunithmDifficultyProps {
   difficulty: number;
   level: string;
   level_value: number;
@@ -30,10 +29,10 @@ export interface ChunithmSongProps {
   bpm: number;
   version: number;
   disabled?: boolean;
-  difficulties: DifficultyProps[];
+  difficulties: ChunithmDifficultyProps[];
 }
 
-interface ChunithmGenreProps {
+export interface ChunithmGenreProps {
   id: number;
   genre: string;
 }
@@ -44,14 +43,10 @@ interface ChunithmVersionProps {
   version: number;
 }
 
-export class ChunithmSongList extends SongList {
+export class ChunithmSongList {
   songs: ChunithmSongProps[] = [];
   genres: ChunithmGenreProps[] = [];
   versions: ChunithmVersionProps[] = [];
-
-  constructor() {
-    super();
-  }
 
   async fetch() {
     if (this.songs.length === 0) {
@@ -65,6 +60,10 @@ export class ChunithmSongList extends SongList {
     return this.songs;
   }
 
+  find(id: number) {
+    return this.songs.find((song: any) => song.id === id);
+  }
+
   push(...songs: ChunithmSongProps[]) {
     this.songs.push(...songs);
   }
@@ -73,12 +72,13 @@ export class ChunithmSongList extends SongList {
     return song.difficulties.find((d) => d.difficulty === level_index);
   }
 
-  getSongResourceId(song: ChunithmSongProps) {
+  getSongResourceId(id: number) {
+    const song = this.find(id);
     if (!song) return 0;
     return song.id < 8000 ? song.id : (song.difficulties[0] || {}).origin_id;
   }
 }
 
 export function getDifficulty(song: ChunithmSongProps, level_index: number) {
-  return song.difficulties.find((d) => d.difficulty === level_index);
+  return song.difficulties.find((d) => d.difficulty === level_index) || null;
 }

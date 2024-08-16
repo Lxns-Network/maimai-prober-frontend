@@ -14,13 +14,15 @@ import { useContext, useEffect, useState } from "react";
 import { ApiContext } from "../../App.tsx";
 import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import useStoredGame from "../../hooks/useStoredGame.tsx";
 
 export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
+  const [game] = useStoredGame();
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps>();
   const context = useContext(ApiContext);
 
   useEffect(() => {
-    setSong(context.songList.find(alias.song.id) || null);
+    setSong(context.songList[game].find(alias.song.id));
   }, [alias.song.id]);
 
   return (
@@ -29,12 +31,12 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
         <Text fz="sm" c="dimmed" style={{ flex: 1 }} truncate>
           {alias.song.name || "未知"}
         </Text>
-        {alias.game === "maimai" && alias.song.id >= 100000 && (
+        {game === "maimai" && alias.song.id >= 100000 && (
           <Badge variant="filled" color="rgb(234, 61, 232)" size="sm">
             宴
           </Badge>
         )}
-        {alias.game === "chunithm" && alias.song.id >= 8000 && (
+        {game === "chunithm" && alias.song.id >= 8000 && (
           <Badge variant="filled" color="rgb(14, 45, 56)" size="sm">
             {song && (song as ChunithmSongProps).difficulties[0].kanji}
           </Badge>

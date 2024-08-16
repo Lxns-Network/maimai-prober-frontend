@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   ActionIcon,
@@ -68,7 +68,9 @@ const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
   );
 }
 
-export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , records: any[] }) => {
+export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps | null, records: any[], style?: React.CSSProperties; }) => {
+  if (!plate) return null;
+
   const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
   const [difficulty, setDifficulty] = useState<number>(0);
   const { height, ref } = useElementSize();
@@ -128,7 +130,7 @@ export const RequiredSong = ({ plate, records }: { plate: PlateDataProps , recor
   }, { total: 0, completed: 0 });
 
   return (
-    <Card radius="md" p="md" withBorder className={classes.card}>
+    <Card radius="md" p="md" withBorder className={classes.card} style={style}>
       <Flex>
         <div style={{ flex: 1 }}>
           <Text fz="lg" fw={700}>

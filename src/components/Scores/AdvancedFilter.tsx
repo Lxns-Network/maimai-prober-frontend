@@ -11,8 +11,8 @@ import {
   Text
 } from "@mantine/core";
 import { IconReload } from "@tabler/icons-react";
-import { MaimaiDifficultiesProps, MaimaiSongList } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongList } from "../../utils/api/song/chunithm.tsx";
+import {MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps} from "../../utils/api/song/maimai.tsx";
+import {ChunithmSongList, ChunithmSongProps} from "../../utils/api/song/chunithm.tsx";
 import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
@@ -214,25 +214,31 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
     })
 
     filteredData = filteredData.filter((score) => {
-      const song = songList.find(score.id);
+      let song = songList.find(score.id);
       if (!song) return false;
 
       if (songList instanceof MaimaiSongList) {
+        song = song as MaimaiSongProps;
         score = score as MaimaiScoreProps;
+
         const difficulty = songList.getDifficulty(song, score.type, score.level_index);
         if (!difficulty) return false;
+
         return ((genre.some((selected) =>
-            songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
+            songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre)) || genre.length === 0) // 过滤乐曲分类
           && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
             songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 1000)) || version.length === 0) // 过滤版本
           && ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
             rating.every((v, i)=> v === filterData[game].rating[i]) && score.type === "utage")); // 过滤定数
       } else {
+        song = song as ChunithmSongProps;
         score = score as ChunithmScoreProps;
+
         const difficulty = songList.getDifficulty(song, score.level_index);
         if (!difficulty) return false;
+
         return ((genre.some((selected) =>
-            songList.genres.find((genre) => genre.genre === selected)?.genre === song.genre)) || genre.length === 0) // 过滤乐曲分类
+            songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre)) || genre.length === 0) // 过滤乐曲分类
           && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
             songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 500)) || version.length === 0) // 过滤版本
           && ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (

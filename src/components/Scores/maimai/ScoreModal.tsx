@@ -10,12 +10,13 @@ import {
   Text,
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
-import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
+import { getDifficulty, MaimaiDifficultyProps, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../../CustomMarquee.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
+import { useEffect, useState } from "react";
 
 const MaimaiUtageScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
   const difficulty = getDifficulty(song, "utage", 0);
@@ -109,6 +110,12 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
     return <MaimaiUtageScoreModalContent score={score} song={song} />
   }
 
+  const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | null>(null);
+
+  useEffect(() => {
+    setDifficulty(getDifficulty(song, score.type, score.level_index));
+  }, [song]);
+
   return (
     <>
       <Group wrap="nowrap">
@@ -147,7 +154,7 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
           <Text size="xl" fw={500} ta="center" c="white" style={{
             lineHeight: rem(34),
           }}>
-            {getDifficulty(song, score.type, score.level_index).level_value.toFixed(1)}
+            {difficulty ? difficulty.level_value.toFixed(1) : "?"}
           </Text>
         </Card>
       </Group>

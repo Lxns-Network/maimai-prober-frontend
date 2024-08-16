@@ -434,7 +434,7 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `plates` | [Plate[]](#collection) | 姓名框列表 |
+| `icons` | [Icon[]](#collection) | 头像列表 |
 
 ### GET `/api/v0/maimai/icon/{icon_id}`
 
@@ -450,7 +450,7 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `icon_id` | `int` | 姓名框 ID |
+| `icon_id` | `int` | 头像 ID |
 
 #### 响应体
 

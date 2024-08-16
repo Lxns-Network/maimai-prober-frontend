@@ -45,7 +45,6 @@ export interface AliasProps {
   };
   upload_time: string;
   // extra
-  game?: string;
   vote?: VoteProps;
 }
 
@@ -105,7 +104,7 @@ export default function Vote() {
     }
   };
 
-  const getAliasListHandler = async (page: number) => {
+  const getAliasListHandler = async (page: number, songId?: number) => {
     if (!game) return;
     setFetching(true);
     try {
@@ -114,6 +113,7 @@ export default function Vote() {
       if (!data.success || !data.data || !data.data.aliases) {
         setFetching(false);
         setTotalPages(0);
+        setAliases([]);
         if (data.message) {
           throw new Error(data.message);
         }
@@ -123,7 +123,7 @@ export default function Vote() {
       setAliases(data.data.aliases);
     } catch (error) {
       openRetryModal("曲目别名获取失败", `${error}`, () => {
-        getAliasListHandler(page);
+        getAliasListHandler(page, songId);
       });
     } finally {
       setFetching(false);
@@ -138,6 +138,7 @@ export default function Vote() {
     if (!game) return;
 
     setFetching(true);
+    setSongId(0);
     setPage(1);
     getUserVotesHandler().then(() => {
       getAliasListHandler(1);
@@ -145,12 +146,11 @@ export default function Vote() {
   }, [game]);
 
   useEffect(() => {
-    getAliasListHandler(page);
+    getAliasListHandler(page, songId);
   }, [onlyNotApproved, page, songId, sortBy, reverseSortDirection]);
 
   useEffect(() => {
     aliases.forEach((alias, i) => {
-      alias.game = game;
       const vote = votes.find((vote) => vote.alias_id === alias.alias_id);
       if (vote) alias.vote = vote;
       aliases[i] = alias;
@@ -171,7 +171,7 @@ export default function Vote() {
   return (
     <Container className={classes.root} size={400}>
       <CreateAliasModal opened={opened} onClose={(alias) => {
-        if (alias) getAliasListHandler(page);
+        if (alias) getAliasListHandler(page, songId);
         setOpened(false);
       }} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
@@ -241,9 +241,9 @@ export default function Vote() {
         </Flex>
       ))}
       <Group justify="center">
-        <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} disabled={fetching} />
+        <Pagination total={totalPages} value={page} onChange={setPage} disabled={fetching} />
         <AliasList aliases={aliases} onVote={() => getUserVotesHandler()} onDelete={() => getAliasListHandler(page)} />
-        <Pagination hideWithOnePage total={totalPages} value={page} onChange={setPage} disabled={fetching} />
+        <Pagination total={totalPages} value={page} onChange={setPage} disabled={fetching} />
       </Group>
     </Container>
   );

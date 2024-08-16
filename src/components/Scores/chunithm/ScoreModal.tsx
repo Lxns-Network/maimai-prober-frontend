@@ -10,13 +10,14 @@ import {
   Text,
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
-import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
+import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "../../../utils/api/song/chunithm.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../../CustomMarquee.tsx";
 import classes from "./ScoreModal.module.css";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
+import { useEffect, useState } from "react";
 
 const ChunithmWorldsEndScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
   const difficulty = getDifficulty(song, score.level_index);
@@ -124,6 +125,12 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
     return <ChunithmWorldsEndScoreModalContent score={score} song={song} />
   }
 
+  const [difficulty, setDifficulty] = useState<ChunithmDifficultyProps | null>(null);
+
+  useEffect(() => {
+    setDifficulty(getDifficulty(song, score.level_index));
+  }, [song]);
+
   return (
     <>
       <Group wrap="nowrap">
@@ -173,7 +180,7 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
           <Text size="xl" fw={500} ta="center" c="white" style={{
             lineHeight: rem(34),
           }}>
-            {getDifficulty(song, score.level_index)?.level_value.toFixed(1)}
+            {difficulty ? difficulty.level_value.toFixed(1) : "?"}
           </Text>
         </Card>
       </Group>

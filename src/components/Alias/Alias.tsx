@@ -8,7 +8,7 @@ import {
 } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { approveAlias, deleteAlias, deleteUserAlias, voteAlias } from "../../utils/api/alias.tsx";
-import { useLocalStorage, useSetState } from "@mantine/hooks";
+import { useSetState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { checkPermission, getLoginUserId, UserPermission } from "../../utils/session.tsx";
 import { AliasButton } from "./AliasButton.tsx";
@@ -20,6 +20,7 @@ import {
 } from "@tabler/icons-react";
 import classes from "./Alias.module.css"
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import useStoredGame from "../../hooks/useStoredGame.tsx";
 
 interface AliasCardProps {
   alias: AliasProps;
@@ -29,16 +30,16 @@ interface AliasCardProps {
 }
 
 export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
+  const [game] = useStoredGame();
   const [displayAlias, setDisplayAlias] = useSetState(alias);
   const [weight, setWeight] = useState(0);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(0);
-  const [game] = useLocalStorage({ key: 'game' });
 
   const voteAliasHandler = async (alias_id: number, vote: boolean) => {
     setLoading(vote ? 1 : -1);
     try {
-      const res = await voteAlias(alias.game || game, alias_id, vote);
+      const res = await voteAlias(game, alias_id, vote);
       if (res.status === 429) {
         openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
         return
@@ -78,9 +79,9 @@ export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
     try {
       let res;
       if (checkPermission(UserPermission.Administrator)) {
-        res = await deleteAlias(alias.game || game, alias.alias_id);
+        res = await deleteAlias(game, alias.alias_id);
       } else {
-        res = await deleteUserAlias(alias.game || game, alias.alias_id);
+        res = await deleteUserAlias(game, alias.alias_id);
       }
       const data = await res.json();
       if (!data.success) {
@@ -136,7 +137,7 @@ export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
               <Menu.Label>更多操作</Menu.Label>
               {checkPermission(UserPermission.Administrator) && !alias.approved && (
                 <Menu.Item c="teal" leftSection={<IconCheck size={20} stroke={1.5} />} onClick={() => {
-                  approveAlias(alias.game || game, alias.alias_id).then(() => setDisplayAlias({ approved: true }));
+                  approveAlias(game, alias.alias_id).then(() => setDisplayAlias({ approved: true }));
                 }}>批准</Menu.Item>
               )}
               {alias.uploader && alias.uploader.id !== getLoginUserId() && (

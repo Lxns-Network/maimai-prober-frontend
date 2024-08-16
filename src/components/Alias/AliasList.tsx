@@ -39,7 +39,7 @@ export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
       <SimpleGrid cols={2} spacing="xs" w="100%" ref={parent}>
         {displayAliases.map((alias) => (
           <Alias
-            key={`${alias.game}:${alias.alias_id}`}
+            key={`${alias.song.id}:${alias.alias_id}`}
             alias={alias}
             onClick={() => {
               setAlias(alias);

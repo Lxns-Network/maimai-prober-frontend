@@ -24,11 +24,13 @@ export interface ChunithmScoreProps {
 
 interface ScoreProps {
   score: ChunithmScoreProps;
-  song: ChunithmSongProps;
+  song: ChunithmSongProps | null;
   onClick: () => void;
 }
 
 const WorldsEndScore = ({ score, song, onClick }: ScoreProps) => {
+  if (!song) return null;
+
   const computedColorScheme = useComputedColorScheme('light');
   const difficulty = getDifficulty(song, score.level_index);
   if (!difficulty) {
@@ -90,8 +92,8 @@ const WorldsEndScore = ({ score, song, onClick }: ScoreProps) => {
   )
 }
 
-export const Score = memo(({ score, song, onClick }: ScoreProps) => {
-  if (song.id >= 8000) {
+export const ChunithmScore = memo(({ score, song, onClick }: ScoreProps) => {
+  if (song && song.id >= 8000) {
     return <WorldsEndScore score={score} song={song} onClick={onClick} />
   }
 
@@ -102,6 +104,7 @@ export const Score = memo(({ score, song, onClick }: ScoreProps) => {
       shadow="sm"
       radius="md"
       p={0}
+      h={84.5}
       className={[classes.card, classes.scoreCard].join(' ')}
       style={{
         border: `2px solid ${chunithmDifficultyColor[2][score.level_index]}`,
@@ -141,7 +144,7 @@ export const Score = memo(({ score, song, onClick }: ScoreProps) => {
             <Text size="md" fw={500} ta="center" style={{
               lineHeight: rem(28),
             }}>
-              {song != null ? getDifficulty(song, score.level_index)?.level_value.toFixed(1) : score.level}
+              {song !== null ? getDifficulty(song, score.level_index)?.level_value.toFixed(1) : score.level}
             </Text>
           </Card>
         </Group>

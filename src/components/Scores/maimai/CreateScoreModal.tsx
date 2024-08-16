@@ -11,9 +11,8 @@ import { useContext, useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import {
-  DifficultyProps,
+  MaimaiDifficultyProps,
   MaimaiDifficultiesProps,
-  MaimaiSongList,
   MaimaiSongProps
 } from "../../../utils/api/song/maimai.tsx";
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../../utils/modal.tsx";
@@ -27,18 +26,19 @@ import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
 
 interface CreateScoreModalProps {
-  songList: MaimaiSongList
   score?: MaimaiScoreProps | null;
   opened: boolean;
   onClose: (score?: any) => void;
 }
 
-export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: CreateScoreModalProps) => {
+export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreModalProps) => {
   const [uploading, setUploading] = useState(false);
   const [song, setSong] = useState<MaimaiSongProps | null>(null);
-  const [difficulties, setDifficulties] = useState<DifficultyProps[] | null>(null);
+  const [difficulties, setDifficulties] = useState<MaimaiDifficultyProps[] | null>(null);
   const computedColorScheme = useComputedColorScheme('light');
   const context = useContext(ApiContext);
+
+  const songList = context.songList.maimai;
 
   const form = useForm({
     initialValues: {
@@ -113,10 +113,12 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
 
     if (!form.values.id) return;
 
-    setSong(songList.find(parseInt(form.values.id as any)));
+    const song = songList.find(form.values.id);
+    song && setSong(song);
 
-    if (score) form.setValues({
-      type: score.type,
+    form.setValues({
+      type: score ? score.type : null,
+      difficulty: null,
     });
   }, [form.values.id]);
 
@@ -125,8 +127,8 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
 
     setDifficulties(song.difficulties[form.values.type as keyof MaimaiDifficultiesProps]);
 
-    if (score) form.setValues({
-      difficulty: score.level_index.toString(),
+    form.setValues({
+      difficulty: score ? score.level_index.toString() : null,
     });
   }, [form.values.type]);
 
@@ -145,7 +147,7 @@ export const MaimaiCreateScoreModal = ({ songList, score, opened, onClose }: Cre
             <Flex align="center" gap="md">
               <SongDisabledIndicator disabled={song?.disabled}>
                 <Avatar size={94} radius="md" src={
-                  form.values.id ? `${ASSET_URL}/maimai/jacket/${context.songList.getSongResourceId(song)}.png!webp` : null
+                  song ? `${ASSET_URL}/maimai/jacket/${songList.getSongResourceId(song.id)}.png!webp` : null
                 } styles={(theme) => ({
                   root: {
                     backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],

@@ -22,12 +22,9 @@ import { Fallback } from "./pages/public/Fallback.tsx";
 import { PhotoProvider } from "react-photo-view";
 import 'react-photo-view/dist/react-photo-view.css';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
-import { useFullscreen, useLocalStorage } from "@mantine/hooks";
+import { useFullscreen, useLocalStorage, useSetState } from "@mantine/hooks";
 import { SongList } from "./utils/api/song/song.tsx";
 import { AliasList } from "./utils/api/alias.tsx";
-import { MaimaiSongList } from "./utils/api/song/maimai.tsx";
-import { ChunithmSongList } from "./utils/api/song/chunithm.tsx";
-import { openRetryModal } from "./utils/modal.tsx";
 
 const theme = createTheme({
   focusRing: 'never',
@@ -39,7 +36,10 @@ export const HEADER_HEIGHT = 56;
 export const NAVBAR_BREAKPOINT = 992;
 export const ApiContext = React.createContext({
   songList: new SongList(),
-  aliasList: new AliasList(),
+  aliasList: {
+    maimai: new AliasList(),
+    chunithm: new AliasList(),
+  },
 });
 
 export default function App() {
@@ -49,8 +49,11 @@ export default function App() {
   const location = useLocation();
   const viewport = useRef<HTMLDivElement>(null);
 
-  const [songList, setSongList] = useState(new SongList());
-  const [aliasList, setAliasList] = useState(new AliasList());
+  const [songList] = useState(new SongList());
+  const [aliasList] = useSetState({
+    maimai: new AliasList(),
+    chunithm: new AliasList(),
+  });
   const [game, setGame] = useLocalStorage({ key: 'game' });
 
   const handleResize = () => {
@@ -85,15 +88,6 @@ export default function App() {
     }
   }, [location.pathname]);
 
-  const songListFetchHandler = async (songList: SongList) => {
-    try {
-      await songList.fetch();
-      setSongList(songList);
-    } catch (error) {
-      openRetryModal("曲目列表获取失败", `${error}`, () => songListFetchHandler(songList));
-    }
-  }
-
   useEffect(() => {
     if (!game) return;
     if (game === "undefined") {
@@ -101,23 +95,12 @@ export default function App() {
       return;
     }
 
-    setSongList(new SongList());
-
-    let songList: MaimaiSongList | ChunithmSongList;
-    if (game === "maimai") {
-      songList = new MaimaiSongList();
-    } else {
-      songList = new ChunithmSongList();
+    if (songList.maimai.songs.length + songList.chunithm.songs.length === 0) {
+      Promise.all([
+        songList.fetch(),
+        ...["maimai", "chunithm"].map(game => aliasList[game as 'maimai' | 'chunithm'].fetch(game))
+      ])
     }
-
-    Promise.all([songList.fetch(), aliasList.fetch(game)]).then(() => {
-      setSongList(songList);
-      setAliasList(aliasList);
-    }).catch((error) => {
-      openRetryModal("曲目列表获取失败", `${error}`, () => {
-        songListFetchHandler(songList);
-      });
-    });
   }, [game]);
 
   return (

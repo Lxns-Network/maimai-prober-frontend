@@ -22,8 +22,8 @@ import { SongCombobox } from "../SongCombobox.tsx";
 import { ApiContext } from "../../App.tsx";
 import { useLocalStorage } from "@mantine/hooks";
 import { PhotoView } from "react-photo-view";
-import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
+import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { ASSET_URL } from "../../main.tsx";
 
 interface CreateAliasModalProps {
@@ -35,9 +35,11 @@ interface CreateAliasModalProps {
 export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAliasModalProps) => {
   const [uploading, setUploading] = useState(false);
   const [readonly, setReadonly] = useState(false);
+  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-  const [game] = useLocalStorage({ key: 'game' })
+  const [game] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game' });
   const context = useContext(ApiContext);
+
   const form = useForm({
     initialValues: {
       songId: null as number | null,
@@ -50,7 +52,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
       alias: (value, values) => {
         if (value === "") return "请输入曲目别名";
         if (!/^.{1,32}$/.test(value)) return "别名长度不符合要求";
-        if (values.songId && context.songList.find(values.songId)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
+        if (values.songId && songList?.find(values.songId)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
       },
       agree: (value) => value ? null : "请阅读并同意曲目别名命名规则",
     },
@@ -86,9 +88,13 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   }
 
   useEffect(() => {
+    setSongList(context.songList[game]);
+  }, [game]);
+
+  useEffect(() => {
     if (form.values.songId) {
-      const song = context.songList.find(form.values.songId);
-      setSong(song);
+      const song = songList?.find(form.values.songId);
+      song && setSong(song);
     } else {
       setSong(null);
     }
@@ -119,8 +125,8 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
           <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
             <Flex align="center" gap="md">
               {song ? (
-                <PhotoView src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
-                  <Avatar size={94} radius="md" src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} />
+                <PhotoView src={`${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png`}>
+                  <Avatar size={94} radius="md" src={`${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png!webp`} />
                 </PhotoView>
               ) : (
                 <Avatar size={94} radius="md" src={null}>
@@ -143,11 +149,11 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
                   />
                   <Tooltip label="随机一首曲目" withinPortal>
                     <ActionIcon variant="default" size={24} onClick={() => {
-                      const song = context.songList.songs[Math.floor(Math.random() * context.songList.songs.length)];
+                      const song = songList?.songs[Math.floor(Math.random() * songList?.songs.length)];
                       form.setValues({
-                        songId: song.id,
+                        songId: song?.id,
                       });
-                    }} mt={14} disabled={context.songList.songs.length === 0 || readonly}>
+                    }} mt={14} disabled={songList?.songs.length === 0 || readonly}>
                       <IconArrowsShuffle size={16} />
                     </ActionIcon>
                   </Tooltip>

@@ -12,12 +12,12 @@ import {
   useComputedColorScheme
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
-import { DifficultyProps } from "../../../utils/api/song/chunithm.tsx";
+import { ChunithmDifficultyProps } from "../../../utils/api/song/chunithm.tsx";
 import { ChunithmScoreProps } from "../../Scores/chunithm/Score.tsx";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 
 interface SongProps {
-  difficulty: DifficultyProps;
+  difficulty: ChunithmDifficultyProps;
   score: ChunithmScoreProps;
   versions: any[];
   onClick: () => void;
@@ -27,7 +27,7 @@ const WorldsEndSongDifficulty = ({ difficulty, score, versions, onClick }: SongP
   const computedColorScheme = useComputedColorScheme('light');
 
   return (
-    <Card className={[classes.scoreCard, classes.scoreWorldsEnd].join(' ')} c="white" pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
+    <Card className={[classes.scoreCard, classes.scoreWorldsEnd].join(' ')} c="white" mih={82.5} pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
       backgroundColor: "rgba(14, 45, 56, 0.95)",
       opacity: computedColorScheme === 'dark' ? 0.8 : 1,
     }} onClick={onClick}>
@@ -127,7 +127,7 @@ export const ChunithmSongDifficulty = ({ difficulty, score, versions, onClick }:
   const computedColorScheme = useComputedColorScheme('light');
 
   return (
-    <Card className={classes.scoreCard} c="white" pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
+    <Card className={classes.scoreCard} c="white" mih={82.5} pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
       border: `2px solid ${getScoreSecondaryColor("chunithm", difficulty.difficulty)}`.replace(")", ", 0.95)"),
       backgroundColor: getScoreCardBackgroundColor("chunithm", difficulty.difficulty).replace(")", ", 0.95)"),
       opacity: computedColorScheme === 'dark' ? 0.8 : 1,

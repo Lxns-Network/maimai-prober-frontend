@@ -23,11 +23,13 @@ export interface MaimaiScoreProps {
 
 interface ScoreProps {
   score: MaimaiScoreProps;
-  song: MaimaiSongProps;
+  song: MaimaiSongProps | null;
   onClick: () => void;
 }
 
 const UtageScore = memo(({ score, song, onClick }: ScoreProps) => {
+  if (!song) return null;
+
   const computedColorScheme = useComputedColorScheme('light');
   const difficulty = getDifficulty(song, "utage", 0);
 
@@ -90,8 +92,8 @@ const UtageScore = memo(({ score, song, onClick }: ScoreProps) => {
   )
 });
 
-export const Score = memo(({ score, song, onClick }: ScoreProps) => {
-  if (song.id >= 100000) {
+export const MaimaiScore = memo(({ score, song, onClick }: ScoreProps) => {
+  if (song && song.id >= 100000) {
     return <UtageScore score={score} song={song} onClick={onClick} />
   }
 
@@ -102,6 +104,7 @@ export const Score = memo(({ score, song, onClick }: ScoreProps) => {
       shadow="sm"
       radius="md"
       p={0}
+      h={84.5}
       className={[classes.card, classes.scoreCard].join(' ')}
       style={{
         border: `2px solid ${maimaiDifficultyColor[2][score.level_index]}`,
@@ -149,7 +152,7 @@ export const Score = memo(({ score, song, onClick }: ScoreProps) => {
             <Text size="md" fw={500} ta="center" style={{
               lineHeight: rem(28),
             }}>
-              {song != null ? getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1) : score.level}
+              {song !== null ? getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1) : score.level}
             </Text>
           </Card>
         </Group>

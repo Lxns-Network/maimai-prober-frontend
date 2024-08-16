@@ -20,6 +20,7 @@ interface ModalProps {
 
 export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
   const context = useContext(ApiContext);
+  const songList = context.songList.maimai;
 
   const [trend, setTrend] = useState<RatingTrendProps[]>([]);
   const [fetching, setFetching] = useState(true);
@@ -56,7 +57,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
   useEffect(() => {
     if (!opened || trend.length > 0) return;
 
-    setVersion(context.songList.versions[context.songList.versions.length-1].version);
+    setVersion(songList.versions[songList.versions.length-1].version);
     getPlayerRatingTrendHandler();
   }, [opened]);
 
@@ -114,11 +115,11 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
                   <Combobox.Dropdown>
                     <Combobox.Group label="游戏版本">
                       <Combobox.Options>
-                        {context.songList.versions.map((item) => {
+                        {songList.versions.map((item) => {
                           if (item.version < 23000) return null;
 
                           return (
-                            <Combobox.Option value={item.version} key={item.version} active={item.version === version}>
+                            <Combobox.Option value={item.version.toString()} key={item.version} active={item.version === version}>
                               <Group gap="sm">
                                 {item.version === version && <CheckIcon color="gray" size={12}/>}
                                 <span>{item.title}</span>

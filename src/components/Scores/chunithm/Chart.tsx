@@ -1,4 +1,4 @@
-import { DifficultyProps, ChunithmNotesProps } from "../../../utils/api/song/chunithm.tsx";
+import { ChunithmDifficultyProps, ChunithmNotesProps } from "../../../utils/api/song/chunithm.tsx";
 import { keys, Space, Table, Text } from "@mantine/core";
 
 const ChartNotes = ({ notes }: { notes: ChunithmNotesProps }) => {
@@ -18,7 +18,7 @@ const ChartNotes = ({ notes }: { notes: ChunithmNotesProps }) => {
   </Table.ScrollContainer>;
 }
 
-export const ChunithmChart = ({ difficulty }: { difficulty: DifficultyProps }) => {
+export const ChunithmChart = ({ difficulty }: { difficulty: ChunithmDifficultyProps }) => {
   if (!difficulty) return;
 
   return <>

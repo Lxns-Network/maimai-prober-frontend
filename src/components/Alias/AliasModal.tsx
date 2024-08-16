@@ -4,7 +4,6 @@ import {
   Modal, Progress, Space, Text, ThemeIcon, Tooltip
 } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
-import { useLocalStorage } from "@mantine/hooks";
 import { useContext, useEffect, useState } from "react";
 import { voteAlias } from "../../utils/api/alias.tsx";
 import {
@@ -21,6 +20,7 @@ import { ApiContext } from "../../App.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ASSET_URL } from "../../main.tsx";
+import useStoredGame from "../../hooks/useStoredGame.tsx";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -36,11 +36,13 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
   const [weight, setWeight] = useState(0);
   const [loading, setLoading] = useState(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-  const [game] = useLocalStorage({ key: 'game' });
+  const [game] = useStoredGame();
+
   const context = useContext(ApiContext);
+  const songList = context.songList[game];
 
   useEffect(() => {
-    setSong(context.songList.find(alias.song.id) || null);
+    setSong(songList.find(alias.song.id) || null);
     setProgress((alias.weight.up / alias.weight.total) * 100);
 
     if (!alias.vote) return;
@@ -107,8 +109,8 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
     <>
       <Group>
         {game && (
-          <PhotoView src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png`}>
-            <Avatar src={`${ASSET_URL}/${game}/jacket/${context.songList.getSongResourceId(song)}.png!webp`} size={94} radius="md">
+          <PhotoView src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : 0)}.png`}>
+            <Avatar src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : 0)}.png!webp`} size={94} radius="md">
               <Text ta="center" fz="xs">曲绘加载失败</Text>
             </Avatar>
           </PhotoView>
@@ -125,7 +127,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
               )}
               {game === "chunithm" && alias.song.id >= 8000 && (
                 <Badge variant="filled" color="rgb(14, 45, 56)" size="sm">
-                  {(song as ChunithmSongProps).difficulties[0].kanji}
+                  {song && (song as ChunithmSongProps).difficulties[0].kanji}
                 </Badge>
               )}
             </Group>

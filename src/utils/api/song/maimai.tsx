@@ -1,7 +1,6 @@
 import { fetchAPI } from "../api.tsx";
-import { SongList } from "./song.tsx";
 
-export interface DifficultyProps {
+export interface MaimaiDifficultyProps {
   type: string;
   difficulty: number;
   level: string;
@@ -24,9 +23,9 @@ export interface MaimaiNotesProps {
 }
 
 export interface MaimaiDifficultiesProps {
-  dx: DifficultyProps[];
-  standard: DifficultyProps[];
-  utage: DifficultyProps[];
+  dx: MaimaiDifficultyProps[];
+  standard: MaimaiDifficultyProps[];
+  utage: MaimaiDifficultyProps[];
 }
 
 export interface MaimaiSongProps {
@@ -40,7 +39,7 @@ export interface MaimaiSongProps {
   difficulties: MaimaiDifficultiesProps;
 }
 
-interface MaimaiGenreProps {
+export interface MaimaiGenreProps {
   id: number;
   title: string;
   genre: string;
@@ -52,16 +51,10 @@ interface MaimaiVersionProps {
   version: number;
 }
 
-export class MaimaiSongList extends SongList {
+export class MaimaiSongList {
   songs: MaimaiSongProps[] = [];
   genres: MaimaiGenreProps[] = [];
   versions: MaimaiVersionProps[] = [];
-
-  constructor() {
-    super();
-    this.genres = [];
-    this.versions = [];
-  }
 
   async fetch() {
     if (this.songs.length === 0) {
@@ -73,6 +66,10 @@ export class MaimaiSongList extends SongList {
     }
 
     return this.songs;
+  }
+
+  find(id: number) {
+    return this.songs.find((song: any) => song.id === id);
   }
 
   push(...songs: MaimaiSongProps[]) {
@@ -87,6 +84,12 @@ export class MaimaiSongList extends SongList {
     } else {
       return song.difficulties.dx[level_index]
     }
+  }
+
+  getSongResourceId(id: number) {
+    const song = this.find(id);
+    if (!song) return 0;
+    return song.id % 10000;
   }
 }
 

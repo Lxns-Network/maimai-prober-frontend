@@ -6,8 +6,8 @@ import { Accordion, Center, Container, Group, Loader, Modal, Space } from "@mant
 import { MaimaiScoreModalMenu } from "./maimai/ScoreModalMenu.tsx";
 import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
 import { ChunithmScoreProps } from "./chunithm/Score.tsx";
-import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
+import { ChunithmDifficultyProps, ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { MaimaiScoreModalContent } from "./maimai/ScoreModal.tsx";
 import { ChunithmScoreModalContent } from "./chunithm/ScoreModal.tsx";
 import { ChunithmScoreHistory } from "./chunithm/ScoreHistory.tsx";
@@ -26,10 +26,12 @@ interface ScoreModalProps {
 }
 
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
+  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [historyScores, setHistoryScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [fetching, setFetching] = useState(true);
-  const [difficulty, setDifficulty] = useState();
+  const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | ChunithmDifficultyProps | null>(null);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
+
   const context = useContext(ApiContext);
   const scoreContext = useContext(ScoreContext);
 
@@ -42,20 +44,29 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   }
 
   useEffect(() => {
+    setSong(null);
+    setSongList(context.songList[game]);
+  }, [game]);
+
+  useEffect(() => {
     if (!score) return;
 
-    setSong(context.songList.find(score.id))
+    setSong(songList?.find(score.id) || null);
     getSongDetailHandler(score.id);
   }, [score]);
 
   useEffect(() => {
     if (!song) return;
 
-    if (isMaimaiScoreProps(score)) {
-      setDifficulty(context.songList.getDifficulty(song, score.type, score.level_index));
-    } else if (isChunithmScoreProps(score)) {
-      setDifficulty(context.songList.getDifficulty(song, score.level_index));
+    let difficulty;
+    if (songList instanceof MaimaiSongList) {
+      score = score as MaimaiScoreProps;
+      difficulty = songList.getDifficulty(song as MaimaiSongProps, score.type, score.level_index);
+    } else if (songList instanceof ChunithmSongList) {
+      score = score as ChunithmScoreProps;
+      difficulty = songList.getDifficulty(song as ChunithmSongProps, score.level_index);
     }
+    difficulty && setDifficulty(difficulty);
   }, [song]);
 
   const getPlayerScoreHistory = async (score: any) => {
@@ -145,8 +156,8 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
             <Accordion.Item value="chart">
               <Accordion.Control>谱面详情</Accordion.Control>
               <Accordion.Panel>
-                {isMaimaiScoreProps(score) && <MaimaiChart difficulty={difficulty as any} />}
-                {isChunithmScoreProps(score) && <ChunithmChart difficulty={difficulty as any} />}
+                {isMaimaiScoreProps(score) && <MaimaiChart difficulty={difficulty as MaimaiDifficultyProps} />}
+                {isChunithmScoreProps(score) && <ChunithmChart difficulty={difficulty as ChunithmDifficultyProps} />}
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>

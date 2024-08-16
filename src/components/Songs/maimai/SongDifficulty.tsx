@@ -12,12 +12,12 @@ import {
   useComputedColorScheme
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
-import { DifficultyProps } from "../../../utils/api/song/maimai.tsx";
+import { MaimaiDifficultyProps } from "../../../utils/api/song/maimai.tsx";
 import { MaimaiScoreProps } from "../../Scores/maimai/Score.tsx";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 
 interface SongProps {
-  difficulty: DifficultyProps;
+  difficulty: MaimaiDifficultyProps;
   score: MaimaiScoreProps;
   versions: any[];
   onClick: () => void;
@@ -27,7 +27,7 @@ const UtageSongDifficulty = ({ difficulty, score, versions, onClick }: SongProps
   const computedColorScheme = useComputedColorScheme('light');
 
   return (
-    <Card className={classes.scoreCard} c="white" pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
+    <Card className={classes.scoreCard} c="white" mih={82.5} pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
       border: "2px solid rgba(204, 12, 175, 0.95)",
       backgroundColor: "rgba(234, 61, 232, 0.95)",
       opacity: computedColorScheme === 'dark' ? 0.8 : 1,
@@ -117,7 +117,7 @@ export const MaimaiSongDifficulty = ({ difficulty, score, versions, onClick }: S
   const computedColorScheme = useComputedColorScheme('light');
 
   return (
-    <Card className={classes.scoreCard} c="white" pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
+    <Card className={classes.scoreCard} c="white" mih={82.5} pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
       border: `2px solid ${getScoreSecondaryColor("maimai", difficulty.difficulty)}`.replace(")", ", 0.95)"),
       backgroundColor: getScoreCardBackgroundColor("maimai", difficulty.difficulty).replace(")", ", 0.95)"),
       opacity: computedColorScheme === 'dark' ? 0.8 : 1,
