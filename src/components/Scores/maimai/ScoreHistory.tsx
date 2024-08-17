@@ -2,18 +2,19 @@ import { MaimaiScoreProps } from "./Score.tsx";
 import { Card, Flex, Text } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useMemo } from "react";
 
 const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
-  let ticks = [80, 90, 94, 97, 98, 99, 99.5, 100.5, 101];
-  let min = 101;
-  scores.forEach((score) => {
-    if (score.achievements < min) {
-      min = score.achievements;
-    }
-  });
-  ticks = ticks.filter((tick) => {
-    return tick >= Math.floor(min);
-  });
+  const ticks = useMemo(() => {
+    let ticks = [80, 90, 94, 97, 98, 99, 99.5, 100.5, 101];
+    let min = 101;
+    scores.forEach((score) => {
+      if (score.achievements < min) {
+        min = score.achievements;
+      }
+    });
+    return ticks.filter((tick) => tick >= Math.floor(min));
+  }, [scores]);
 
   return (
     <ResponsiveContainer width="100%" height={250}>

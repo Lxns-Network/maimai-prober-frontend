@@ -10,7 +10,7 @@ import { MaimaiScoreProps } from "../Scores/maimai/Score.tsx";
 import { ChunithmSongDifficulty } from "./chunithm/SongDifficulty.tsx";
 import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
 import { ApiContext } from "../../App.tsx";
-import { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { ScoreModal } from "../Scores/ScoreModal.tsx";
 import { useDisclosure, useLocalStorage } from "@mantine/hooks";
 import { Stack } from "@mantine/core";
@@ -71,9 +71,10 @@ interface SongDifficultiesProps {
   song: MaimaiSongProps | ChunithmSongProps | null;
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
   setScores: (scores: any) => void;
+  style?: React.CSSProperties;
 }
 
-export const SongDifficultyList = ({ song, scores, setScores }: SongDifficultiesProps) => {
+export const SongDifficultyList = ({ song, scores, setScores, style }: SongDifficultiesProps) => {
   const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const [difficulties, setDifficulties] = useState<(MaimaiDifficultyProps | ChunithmDifficultyProps)[]>([]);
   const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
@@ -120,7 +121,7 @@ export const SongDifficultyList = ({ song, scores, setScores }: SongDifficulties
           }
         }}
       />
-      <Stack ref={ref}>
+      <Stack ref={ref} style={style}>
         {difficulties.map((difficulty) => {
           if (!song) return null;
           if (game === "maimai" && "type" in difficulty) {

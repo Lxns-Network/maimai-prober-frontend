@@ -67,7 +67,6 @@ export default function Songs() {
 
     setSongList(context.songList[game]);
     setScores([]);
-    setSong(null);
 
     if (defaultSongId) {
       setSongId(defaultSongId);
@@ -129,7 +128,7 @@ export default function Songs() {
         你可以使用曲目 ID、曲名、艺术家或<Anchor component={Link} to="/alias/vote">曲目别名</Anchor>来搜索曲目。
       </Text>
       <Transition
-        mounted={Boolean(song)}
+        mounted={Boolean(songId)}
         transition="pop"
         timingFunction="ease"
       >
@@ -140,7 +139,7 @@ export default function Songs() {
       <Space h="md" />
       <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mb="md" radius="md" />
       <Transition
-        mounted={!Boolean(song)}
+        mounted={!Boolean(songId)}
         transition="pop"
         timingFunction="ease"
         enterDelay={250}
@@ -152,7 +151,15 @@ export default function Songs() {
           </Flex>
         )}
       </Transition>
-      <SongDifficultyList song={song} scores={scores} setScores={setScores} />
+      <Transition
+        mounted={Boolean(songId)}
+        transition="pop"
+        timingFunction="ease"
+      >
+        {(styles) => (
+          <SongDifficultyList song={song} scores={scores} setScores={setScores} style={styles} />
+        )}
+      </Transition>
     </Container>
   );
 }

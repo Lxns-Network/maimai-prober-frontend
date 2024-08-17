@@ -1,6 +1,6 @@
 import { MaimaiGenreProps, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import React, {useContext, useMemo} from "react";
+import React, { useContext } from "react";
 import { ApiContext } from "../../App.tsx";
 import { ActionIcon, Avatar, Badge, Box, Card, Group, Text } from "@mantine/core";
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
@@ -18,7 +18,7 @@ interface SongCardProps {
   style?: React.CSSProperties;
 }
 
-const SongCardContent = ({ song, onCreateAlias }: SongCardProps) => {
+export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
   const [game] = useStoredGame();
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
@@ -28,7 +28,7 @@ const SongCardContent = ({ song, onCreateAlias }: SongCardProps) => {
 
   if (!song) return null;
 
-  return <>
+  return <Card mt="md" radius="md" p={0} withBorder className={classes.card} style={style}>
     <Card.Section m="md">
       <Group wrap="nowrap">
         <SongDisabledIndicator disabled={song.disabled}>
@@ -87,13 +87,5 @@ const SongCardContent = ({ song, onCreateAlias }: SongCardProps) => {
       src={`https://assets2.lxns.net/${game}/music/${songList.getSongResourceId(song.id)}.mp3`}
       audioProps={{ preload: "none" }}
     />
-  </>
-}
-
-export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
-  const fixedSong = useMemo(() => song, []);
-
-  return <Card mt="md" radius="md" p={0} withBorder className={classes.card} style={style}>
-    <SongCardContent song={fixedSong} onCreateAlias={onCreateAlias} />
   </Card>
 }

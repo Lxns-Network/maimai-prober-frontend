@@ -37,7 +37,7 @@ import { SongCombobox } from "../../components/SongCombobox.tsx";
 
 import { ApiContext } from "../../App.tsx";
 import ScoreContext from "../../utils/context.tsx";
-import {ScoreList} from "../../components/Scores/ScoreList.tsx";
+import { ScoreList } from "../../components/Scores/ScoreList.tsx";
 
 const sortKeys = {
   maimai: [
@@ -257,7 +257,7 @@ const ScoresContent = () => {
           <Accordion.Item value="advanced-filter">
             <Accordion.Control>高级筛选设置</Accordion.Control>
             <Accordion.Panel>
-              <AdvancedFilter scores={scores} songList={context.songList.getSongList()} onChange={(result) => {
+              <AdvancedFilter scores={scores} onChange={(result) => {
                 setFilteredScores(result);
               }} />
             </Accordion.Panel>

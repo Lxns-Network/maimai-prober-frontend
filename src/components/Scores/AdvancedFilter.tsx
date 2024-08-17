@@ -11,16 +11,16 @@ import {
   Text
 } from "@mantine/core";
 import { IconReload } from "@tabler/icons-react";
-import {MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps} from "../../utils/api/song/maimai.tsx";
-import {ChunithmSongList, ChunithmSongProps} from "../../utils/api/song/chunithm.tsx";
+import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
+import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
+import { ApiContext } from "../../App.tsx";
 
 interface AdvancedFilterProps {
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
-  songList: MaimaiSongList | ChunithmSongList;
   onChange: (filteredScores: (MaimaiScoreProps | ChunithmScoreProps)[]) => void;
 }
 
@@ -71,8 +71,9 @@ const filterData = {
   }
 }
 
-export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterProps) => {
+export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
   const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
 
   const [difficulty, setDifficulty] = useState<string[]>([]);
@@ -86,6 +87,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
   const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
   const [uploadTime, setUploadTime] = useState<[Date | null, Date | null]>([null, null]);
 
+  const context = useContext(ApiContext);
   const small = useMediaQuery('(max-width: 30rem)');
 
   const resetFilter = (game?: "maimai" | "chunithm") => {
@@ -102,6 +104,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
   }
 
   useEffect(() => {
+    setSongList(context.songList[game]);
     resetFilter(game);
   }, [game]);
 
@@ -142,7 +145,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
             });
           });
         });
-      } else {
+      } else if (songList instanceof ChunithmSongList) {
         const scoreKeys = new Set(
           filteredData.map((item) => `${item.id}-${item.level_index}`));
 
@@ -214,6 +217,7 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
     })
 
     filteredData = filteredData.filter((score) => {
+      if (!songList) return false;
       let song = songList.find(score.id);
       if (!song) return false;
 
@@ -262,6 +266,8 @@ export const AdvancedFilter = ({ scores, songList, onChange }: AdvancedFilterPro
 
     setFilteredScores(filteredData);
   }, [showUnplayed, difficulty, type, genre, version, endRating, fullCombo, fullSync, uploadTime]);
+
+  if (!songList) return null;
 
   return <>
     <Grid mb="xs">

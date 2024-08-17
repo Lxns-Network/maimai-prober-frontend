@@ -14,7 +14,7 @@ import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.
 import { IconSearch } from "@tabler/icons-react";
 import { ApiContext } from "../App.tsx";
 import { toHiragana } from 'wanakana';
-import {useLocalStorage} from "@mantine/hooks";
+import { useLocalStorage } from "@mantine/hooks";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   value?: number;
@@ -73,7 +73,8 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
 
 export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSubmit, ...others }: SongComboboxProps) => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [game] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game', defaultValue: 'maimai' });
+  const [aliases, setAliases] = useState<{ song_id: number; aliases: string[] }[]>([]);
+  const [game] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game' });
   const [search, setSearch] = useState('');
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
 
@@ -85,13 +86,16 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
   const MAX_SONGS = 100;
 
   useEffect(() => {
+    if (!game) return;
+
     setFilteredSongs([]);
     setSongList(context.songList[game]);
+    setAliases(context.aliasList[game].aliases);
   }, [game]);
 
   useEffect(() => {
     if (!songList) return;
-    setFilteredSongs(getFilteredSongs(songList.songs, search, context.aliasList[game].aliases));
+    setFilteredSongs(getFilteredSongs(songList.songs, search, aliases));
   }, [songList?.songs, search]);
 
   useEffect(() => {
