@@ -1,4 +1,4 @@
-import { BackgroundImage, Badge, Card, Flex, Group, rem, Text, useComputedColorScheme } from "@mantine/core";
+import { BackgroundImage, Badge, Box, Card, Flex, Group, rem, Text, useComputedColorScheme } from "@mantine/core";
 import { maimaiDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
 import { memo } from "react";
@@ -123,39 +123,41 @@ export const MaimaiScore = memo(({ score, song, onClick }: ScoreProps) => {
             <Badge variant="filled" color="orange" size="sm">DX</Badge>
           )}
         </Flex>
-        <Group justify="space-between" p={10} pt={5} pb={5} wrap="nowrap" style={{
+        <Box h="100%" p={10} pt={0} pb={0} style={{
           backgroundColor: maimaiDifficultyColor[1][score.level_index].replace(")", ", 0.7)"),
         }}>
-          {score.achievements != -1 ? (
-            <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white">
-                {parseInt(String(score.achievements))}
-                <span style={{ fontSize: rem(16) }}>.{
-                  (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
-                }%</span>
+          <Group h={54} justify="space-between" wrap="nowrap" >
+            {score.achievements != -1 ? (
+              <div>
+                <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white">
+                  {parseInt(String(score.achievements))}
+                  <span style={{ fontSize: rem(16) }}>.{
+                    (String(score.achievements).split(".")[1] || "0").padEnd(4, "0")
+                  }%</span>
+                </Text>
+                <Text size="xs" c="white">
+                  DX Rating: {parseInt(String(score.dx_rating))}
+                </Text>
+              </div>
+            ) : (
+              <div>
+                <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+                  未游玩
+                </Text>
+                <Text size="xs" c="white">
+                  或未上传至查分器
+                </Text>
+              </div>
+            )}
+            <Card w={40} h={30} p={0} radius="md" withBorder>
+              <Text size="md" fw={500} ta="center" style={{
+                lineHeight: rem(28),
+              }}>
+                {song ? getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1) : score.level}
               </Text>
-              <Text size="xs" c="white">
-                DX Rating: {parseInt(String(score.dx_rating))}
-              </Text>
-            </div>
-          ) : (
-            <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
-                未游玩
-              </Text>
-              <Text size="xs" c="white">
-                或未上传至查分器
-              </Text>
-            </div>
-          )}
-          <Card w={40} h={30} p={0} radius="md" withBorder>
-            <Text size="md" fw={500} ta="center" style={{
-              lineHeight: rem(28),
-            }}>
-              {song !== null ? getDifficulty(song, score.type, score.level_index)?.level_value.toFixed(1) : score.level}
-            </Text>
-          </Card>
-        </Group>
+            </Card>
+          </Group>
+        </Box>
       </BackgroundImage>
     </Card>
   )

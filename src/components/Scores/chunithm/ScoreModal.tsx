@@ -120,21 +120,23 @@ const ChunithmWorldsEndScoreModalContent = ({ score, song }: { score: ChunithmSc
 }
 
 export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
+  const [difficulty, setDifficulty] = useState<ChunithmDifficultyProps | null>(null);
+
+  useEffect(() => {
+    if (!song) return;
+
+    setDifficulty(getDifficulty(song, score.level_index));
+  }, [song]);
+
   if (!song) return;
   if (song.id >= 8000) {
     return <ChunithmWorldsEndScoreModalContent score={score} song={song} />
   }
 
-  const [difficulty, setDifficulty] = useState<ChunithmDifficultyProps | null>(null);
-
-  useEffect(() => {
-    setDifficulty(getDifficulty(song, score.level_index));
-  }, [song]);
-
   return (
     <>
       <Group wrap="nowrap">
-        <SongDisabledIndicator disabled={song?.disabled}>
+        <SongDisabledIndicator disabled={song.disabled}>
           <PhotoView src={`${ASSET_URL}/chunithm/jacket/${song.id}.png`}>
             <Avatar src={`${ASSET_URL}/chunithm/jacket/${song.id}.png!webp`} size={94} radius="md">
               <IconPhotoOff />
@@ -203,14 +205,14 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
             </Box>
           </Group>
           <Group mt="md">
-            <Box mr={12}>
+            <Box>
               <Text fz="xs" c="dimmed">Rating</Text>
               <Text fz="md">
                 {Math.floor(score.rating * 100) / 100}
               </Text>
             </Box>
             {score.play_time && (
-              <Box mr={12}>
+              <Box>
                 <Text fz="xs" c="dimmed">游玩时间</Text>
                 <Text fz="md">
                   {new Date(score.play_time || "").toLocaleString()}

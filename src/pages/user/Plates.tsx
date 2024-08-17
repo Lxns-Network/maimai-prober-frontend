@@ -7,7 +7,7 @@ import {
   Card,
   Image,
   Space,
-  Checkbox, Flex, Transition
+  Checkbox, Flex, Transition, AspectRatio
 } from "@mantine/core";
 import { useToggle } from "@mantine/hooks";
 import classes from "../Page.module.css"
@@ -182,7 +182,9 @@ export default function Plates() {
               {plate && plate.name}
             </Text>
             <Space h="md" />
-            <Image src={`${ASSET_URL}/maimai/plate/${plate ? plate.id : 0}.png!webp`} />
+            <AspectRatio ratio={720 / 116}>
+              <Image src={`${ASSET_URL}/maimai/plate/${plate ? plate.id : 0}.png!webp`} />
+            </AspectRatio>
           </Card>
         )}
       </Transition>

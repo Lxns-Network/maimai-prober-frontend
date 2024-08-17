@@ -68,14 +68,14 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
         if (key === "break" && type === "perfect") {
           const critical_perfect_bonus = break_bonus.critical_perfect / notes.break;
           if (mode == "100-") {
-            return <Table.Td>
+            return <Table.Td key={type}>
               <Text size="sm" c="yellow">{critical_perfect_bonus.toFixed(4)}%</Text>
               <div>{(break_bonus.perfect[0] / notes.break).toFixed(4)}%</div>
               <div>{(critical_perfect_bonus - break_bonus.perfect[1] / notes.break).toFixed(4)}%</div>
             </Table.Td>;
           }
           if (mode == "101-") {
-            return <Table.Td>
+            return <Table.Td key={type}>
               <Text size="sm" c="yellow">{(0).toFixed(4)}%</Text>
               {break_bonus.perfect.map((v) => {
                 return <div key={v}>{(v / notes.break - critical_perfect_bonus).toFixed(4)}%</div>;
@@ -83,7 +83,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
             </Table.Td>;
           }
           const percentage = basic.perfect.break / total * 100;
-          return <Table.Td>
+          return <Table.Td key={type}>
             <Text size="sm" c="yellow">{(percentage + critical_perfect_bonus).toFixed(4)}%</Text>
             {break_bonus.perfect.map((v) => {
               return <div key={v}>{(percentage + v / notes.break).toFixed(4)}%</div>;
@@ -128,7 +128,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
           }
           return <Table.Td key={type}>{percentage.toFixed(4)}%</Table.Td>;
         } else {
-          return <Table.Td>-</Table.Td>;
+          return <Table.Td key={type}>-</Table.Td>;
         }
       })}
     </Table.Tr>;

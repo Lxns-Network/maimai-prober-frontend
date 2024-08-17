@@ -105,21 +105,23 @@ const MaimaiUtageScoreModalContent = ({ score, song }: { score: MaimaiScoreProps
 }
 
 export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
+  const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | null>(null);
+
+  useEffect(() => {
+    if (!song) return;
+
+    setDifficulty(getDifficulty(song, score.type, score.level_index));
+  }, [song]);
+
   if (!song) return;
   if (song.id > 100000) {
     return <MaimaiUtageScoreModalContent score={score} song={song} />
   }
 
-  const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | null>(null);
-
-  useEffect(() => {
-    setDifficulty(getDifficulty(song, score.type, score.level_index));
-  }, [song]);
-
   return (
     <>
       <Group wrap="nowrap">
-        <SongDisabledIndicator disabled={song?.disabled}>
+        <SongDisabledIndicator disabled={song.disabled}>
           <PhotoView src={`${ASSET_URL}/maimai/jacket/${song.id}.png`}>
             <Avatar src={`${ASSET_URL}/maimai/jacket/${song.id}.png!webp`} size={94} radius="md">
               <IconPhotoOff />
@@ -176,14 +178,14 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
             </Box>
           </Group>
           <Group mt="md">
-            <Box mr={12}>
+            <Box>
               <Text fz="xs" c="dimmed">DX Rating</Text>
               <Text fz="md">
                 {parseInt(String(score.dx_rating))}
               </Text>
             </Box>
             {score.play_time && (
-              <Box mr={12}>
+              <Box>
                 <Text fz="xs" c="dimmed">游玩时间</Text>
                 <Text fz="md">
                   {new Date(score.play_time || "").toLocaleString()}

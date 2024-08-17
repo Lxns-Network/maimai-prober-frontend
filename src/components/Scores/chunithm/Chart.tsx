@@ -8,9 +8,9 @@ const ChartNotes = ({ notes }: { notes: ChunithmNotesProps }) => {
     <Table mb={-12} horizontalSpacing={0}>
       <Table.Tbody>
         {keys(notes).map((key) => {
-          return <Table.Tr>
-            <Table.Td key={key}>{key.toLocaleUpperCase()}</Table.Td>
-            <Table.Td key={key}>{notes[key]}</Table.Td>
+          return <Table.Tr key={key}>
+            <Table.Td>{key.toLocaleUpperCase()}</Table.Td>
+            <Table.Td>{notes[key]}</Table.Td>
           </Table.Tr>;
         })}
       </Table.Tbody>

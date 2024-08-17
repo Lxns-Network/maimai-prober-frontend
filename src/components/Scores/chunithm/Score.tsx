@@ -1,4 +1,4 @@
-import { BackgroundImage, Card, Flex, Group, NumberFormatter, Rating, rem, Text } from "@mantine/core";
+import { BackgroundImage, Box, Card, Flex, Group, NumberFormatter, Rating, rem, Text } from "@mantine/core";
 import { chunithmDifficultyColor } from "../../../utils/color.tsx";
 import { getDifficulty, ChunithmSongProps } from "../../../utils/api/song/chunithm.tsx";
 import { memo } from "react";
@@ -118,36 +118,38 @@ export const ChunithmScore = memo(({ score, song, onClick }: ScoreProps) => {
         }}>
           <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">{score.song_name}</Text>
         </Flex>
-        <Group justify="space-between" p={10} pt={5} pb={5} wrap="nowrap" style={{
+        <Box h="100%" p={10} pt={0} pb={0} style={{
           backgroundColor: chunithmDifficultyColor[1][score.level_index].replace(")", ", 0.7)"),
         }}>
-          {score.score != -1 ? (
-            <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
-                <NumberFormatter value={score.score || 0} thousandSeparator />
+          <Group h={54} justify="space-between" wrap="nowrap" >
+            {score.score != -1 ? (
+              <div>
+                <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+                  <NumberFormatter value={score.score || 0} thousandSeparator />
+                </Text>
+                <Text size="xs" c="white">
+                  Rating: {Math.floor(score.rating * 100) / 100}
+                </Text>
+              </div>
+            ) : (
+              <div>
+                <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+                  未游玩
+                </Text>
+                <Text size="xs" c="white">
+                  或未上传至查分器
+                </Text>
+              </div>
+            )}
+            <Card w={40} h={30} p={0} radius="md" withBorder>
+              <Text size="md" fw={500} ta="center" style={{
+                lineHeight: rem(28),
+              }}>
+                {song ? getDifficulty(song, score.level_index)?.level_value.toFixed(1) : score.level}
               </Text>
-              <Text size="xs" c="white">
-                Rating: {Math.floor(score.rating * 100) / 100}
-              </Text>
-            </div>
-          ) : (
-            <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
-                未游玩
-              </Text>
-              <Text size="xs" c="white">
-                或未上传至查分器
-              </Text>
-            </div>
-          )}
-          <Card w={40} h={30} p={0} radius="md" withBorder>
-            <Text size="md" fw={500} ta="center" style={{
-              lineHeight: rem(28),
-            }}>
-              {song !== null ? getDifficulty(song, score.level_index)?.level_value.toFixed(1) : score.level}
-            </Text>
-          </Card>
-        </Group>
+            </Card>
+          </Group>
+        </Box>
       </BackgroundImage>
     </Card>
   )
