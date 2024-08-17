@@ -52,6 +52,14 @@ const ScoreHistoryChart = ({ scores }: { scores: ChunithmScoreProps[] }) => {
 }
 
 export const ChunithmScoreHistory = ({ scores }: { scores: ChunithmScoreProps[] }) => {
+  const scoresLength = scores.length;
+
+  if (scores) {
+    scores = scores.filter((score) => {
+      return score.score >= 800000;
+    });
+  }
+
   if (!scores || scores.length < 2) {
     return (
       <Flex gap="xs" align="center" direction="column" c="dimmed">
@@ -61,5 +69,8 @@ export const ChunithmScoreHistory = ({ scores }: { scores: ChunithmScoreProps[] 
     )
   }
 
-  return <ScoreHistoryChart scores={scores} />
+  return <>
+    <ScoreHistoryChart scores={scores} />
+    {scores.length < scoresLength && <Text fz="xs" c="dimmed">※ 为了方便观察分数变化，图表过滤了 {scoresLength - scores.length} 条分数过低的成绩。</Text>}
+  </>
 }
