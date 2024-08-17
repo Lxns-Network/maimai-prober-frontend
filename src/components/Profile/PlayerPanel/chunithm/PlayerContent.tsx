@@ -1,8 +1,9 @@
 import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
-import { Avatar, Badge, Divider, Group, NumberFormatter, rem, Text } from "@mantine/core";
+import { Avatar, Badge, Divider, Flex, Group, NumberFormatter, rem, Text } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 import { ASSET_URL } from "../../../../main.tsx";
+import { CustomMarquee } from "../../../CustomMarquee.tsx";
 
 export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
   return (
@@ -14,18 +15,27 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
         <IconPhotoOff />
       </Avatar>
       <div>
-        <Group gap="xs" mb={8}>
-          <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color)} style={{
-            height: "auto",
-          }} children={
-            <Text fz="xs" style={{
-              whiteSpace: "pre-wrap"
-            }}>
-              {player.trophy.name}
-            </Text>
-          } />
-          <Badge variant="gradient" gradient={getRatingGradient(player.rating)}>Rating: {player.rating}</Badge>
-        </Group>
+        <Flex gap="xs" mb={8}>
+          {player.trophy && (
+            <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color)} style={{
+              height: "auto",
+              flex: "1",
+              justifyContent: "flex-start"
+            }} children={
+              <Text fz="xs" style={{
+                whiteSpace: "pre-wrap"
+              }}>
+                <CustomMarquee>
+                  {player.trophy.name}
+                </CustomMarquee>
+              </Text>
+            } />
+          )}
+          <Badge variant="gradient" gradient={getRatingGradient(player.rating)} style={{
+            flex: "none"
+          }}>Rating: {player.rating}</Badge>
+        </Flex>
+
         <Text fz="lg" fw={500}>
           {player.name}
         </Text>

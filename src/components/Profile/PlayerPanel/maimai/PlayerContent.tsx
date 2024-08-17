@@ -2,7 +2,7 @@ import { MaimaiPlayerProps } from "./PlayerPanel.tsx";
 import {
   Avatar,
   Badge,
-  Divider,
+  Divider, Flex,
   Group,
   Image,
   rem,
@@ -12,6 +12,7 @@ import {
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getDeluxeRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 import { ASSET_URL } from "../../../../main.tsx";
+import { CustomMarquee } from "../../../CustomMarquee.tsx";
 
 export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
   const computedColorScheme = useComputedColorScheme('light');
@@ -26,20 +27,27 @@ export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
         <IconPhotoOff />
       </Avatar>
       <div>
-        <Group gap="xs" mb={8}>
+        <Flex gap="xs" mb={8}>
           {player.trophy && (
             <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color || "normal")} style={{
               height: "auto",
+              flex: "1",
+              justifyContent: "flex-start"
             }} children={
               <Text fz="xs" style={{
                 whiteSpace: "pre-wrap"
               }}>
-                {player.trophy.name}
+                <CustomMarquee>
+                  {player.trophy.name}
+                </CustomMarquee>
               </Text>
             } />
           )}
-          <Badge variant="gradient" gradient={getDeluxeRatingGradient(player.rating)}>DX Rating: {player.rating}</Badge>
-        </Group>
+          <Badge variant="gradient" gradient={getDeluxeRatingGradient(player.rating)} style={{
+            flex: "none"
+          }}>DX Rating: {player.rating}</Badge>
+        </Flex>
+
         <Text fz="lg" fw={500}>
           {player.name}
         </Text>
