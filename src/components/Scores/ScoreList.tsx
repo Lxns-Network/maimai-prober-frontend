@@ -1,51 +1,67 @@
 import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useContext, useState } from "react";
-import { SimpleGrid } from "@mantine/core";
+import { BackgroundImage, Card, SimpleGrid, useComputedColorScheme } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { MaimaiScore, MaimaiScoreProps } from "./maimai/Score.tsx";
+import { MaimaiScoreContent, MaimaiScoreProps } from "./maimai/Score.tsx";
 import { ScoreModal } from "./ScoreModal.tsx";
-import { ChunithmScore, ChunithmScoreProps } from "./chunithm/Score.tsx";
+import { ChunithmScoreContent, ChunithmScoreProps } from "./chunithm/Score.tsx";
 import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { ApiContext } from "../../App.tsx";
 import useStoredGame from "../../hooks/useStoredGame.tsx";
+import classes from "./Scores.module.css";
+import { getScoreSecondaryColor } from "../../utils/color.tsx";
+import { ASSET_URL } from "../../main.tsx";
 
 interface ScoreProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
-  onClick?: (score: MaimaiScoreProps | ChunithmScoreProps) => void;
+  onClick?: () => void;
 }
 
 const Score = ({ score, onClick }: ScoreProps) => {
   const [game] = useStoredGame();
 
+  const computedColorScheme = useComputedColorScheme('light');
   const context = useContext(ApiContext);
   const songList = context.songList[game] as MaimaiSongList | ChunithmSongList;
-  let song = songList.find(score.id);
+  const song = songList.find(score.id);
 
-  if (game === "maimai" && "type" in score) {
-    song = song as MaimaiSongProps;
+  let borderSize = 2;
+  let levelIndex = score.level_index;
+  let classNameList = [classes.card, classes.scoreCard]
 
-    return <MaimaiScore
-      key={`${score.id}:${score.type}:${score.level_index}`}
-      score={score}
-      song={song}
-      onClick={() => {
-        onClick && onClick(score);
-      }}
-    />
-  } else if (game === "chunithm") {
-    score = score as ChunithmScoreProps
-    song = song as ChunithmSongProps;
-
-    return <ChunithmScore
-      key={`${score.id}:${score.level_index}`}
-      score={score}
-      song={song}
-      onClick={() => {
-        onClick && onClick(score);
-      }}
-    />
+  if (game === "maimai" && "type" in score && score.type === "utage") {
+    levelIndex = 5;
+  } else if (game === "chunithm" && score.id >= 8000) {
+    borderSize = 0;
+    classNameList.push(classes.scoreWorldsEnd);
   }
+
+  return (
+    <Card
+      shadow="sm"
+      radius="md"
+      p={0}
+      h={84.5}
+      className={classNameList.join(' ')}
+      style={{
+        border: `${borderSize}px solid ${getScoreSecondaryColor(game, levelIndex)}`,
+        opacity: computedColorScheme === 'dark' ? 0.8 : 1,
+      }}
+      onClick={() => onClick && onClick()}
+    >
+      <BackgroundImage src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : score.id)}.png!webp`}>
+        {game === "maimai" && <MaimaiScoreContent
+          score={score as MaimaiScoreProps}
+          song={song as MaimaiSongProps}
+        />}
+        {game === "chunithm" && <ChunithmScoreContent
+          score={score as ChunithmScoreProps}
+          song={song as ChunithmSongProps}
+        />}
+      </BackgroundImage>
+    </Card>
+  )
 }
 
 interface ScoreListProps {
@@ -56,16 +72,16 @@ interface ScoreListProps {
 export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
   const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const [ref] = useAutoAnimate();
-  const [scoreDetail, setScoreDetail] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
-  const [scoreAlertOpened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
+  const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
+  const [opened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const small = useMediaQuery('(max-width: 25rem)');
 
   return (
     <>
       <ScoreModal
         game={game}
-        score={scoreDetail}
-        opened={scoreAlertOpened}
+        score={score}
+        opened={opened}
         onClose={(score) => {
           closeScoreAlert();
           if (score) onScoreChange && onScoreChange(score as MaimaiScoreProps);
@@ -76,8 +92,8 @@ export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
           return <Score
             key={`${score.id}:${"type" in score && score.type}:${score.level_index}`}
             score={score}
-            onClick={(score) => {
-              setScoreDetail(score);
+            onClick={() => {
+              setScore(score);
               openScoreAlert();
             }}
           />

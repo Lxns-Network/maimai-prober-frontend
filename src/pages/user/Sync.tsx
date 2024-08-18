@@ -296,7 +296,7 @@ export default function Sync() {
             <Text fz="sm">
               复制微信 OAuth 链接，发送至安全的聊天中并打开
             </Text>
-            <WechatOAuthLink game={game} crawlToken={crawlToken} />
+            {game && <WechatOAuthLink game={game} crawlToken={crawlToken} />}
             {!isLoggedOut && (
               <Text>
                 <CrawlTokenAlert token={crawlToken} resetHandler={getUserCrawlTokenHandler} />

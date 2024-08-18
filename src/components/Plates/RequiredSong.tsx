@@ -22,6 +22,7 @@ import { PlateDataProps } from "../../pages/user/Plates.tsx";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../CustomMarquee.tsx";
 import { ASSET_URL } from "../../main.tsx";
+import {useAutoAnimate} from "@formkit/auto-animate/react";
 
 const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
   if (!plate || !plate.required) {
@@ -71,9 +72,11 @@ const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
 export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps | null, records: any[], style?: React.CSSProperties; }) => {
   if (!plate) return null;
 
-  const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
-  const [difficulty, setDifficulty] = useState<number>(0);
   const { height, ref } = useElementSize();
+
+  const [animationRef] = useAutoAnimate();
+  const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
+  const [difficulty, setDifficulty] = useState<number>(3);
   const small = useMediaQuery(`(max-width: 450px)`);
 
   const pageSize = 20;
@@ -116,6 +119,7 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
   }, [page, filteredRecords]);
 
   const difficultyProgress = (plate.required || []).reduce((acc, req) => {
+    if (difficulty === undefined) return acc;
     if (!req.difficulties.includes(difficulty)) return acc;
 
     const songsTotal = req.songs.length;
@@ -182,11 +186,11 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
           label: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'][difficulty],
           value: difficulty.toString(),
         })),
-      ]} value={difficulty.toString()} onChange={(value) => setDifficulty(parseInt(value))} />
+      ]} defaultValue="3" onChange={(value) => setDifficulty(parseInt(value))} />
       <Space h="md" />
       <Text fz="xs" c="dimmed">已完成 {difficultyProgress.completed} / {difficultyProgress.total} 首：</Text>
       <Space h="xs" />
-      <SimpleGrid cols={2}>
+      <SimpleGrid cols={2} ref={animationRef}>
         {displayRecords.map((record) => (
           <Group key={record.id} wrap="nowrap" gap="xs">
             <Box pos="relative" h={40}>

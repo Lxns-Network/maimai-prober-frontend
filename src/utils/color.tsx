@@ -74,6 +74,7 @@ export const maimaiDifficultyColor = [
     "rgb(246,72,97)",
     "rgb(158,69,226)",
     "rgb(186,103,248)",
+    "rgb(234,61,232)",
   ],
   [
     "rgb(14,117,54)",
@@ -81,6 +82,7 @@ export const maimaiDifficultyColor = [
     "rgb(188,38,52)",
     "rgb(111,24,173)",
     "rgb(192,69,227)",
+    "rgb(204,12,175)",
   ]
 ]
 
@@ -98,6 +100,7 @@ export const chunithmDifficultyColor = [
     "rgb(233,40,40)",
     "rgb(137,26,222)",
     "rgb(101,101,104)",
+    "rgb(14,45,56)",
   ],
   [
     "rgb(0,146,112)",
@@ -105,6 +108,7 @@ export const chunithmDifficultyColor = [
     "rgb(206,34,35)",
     "rgb(120,22,195)",
     "rgb(43,48,51)",
+    "rgb(14,45,56)",
   ]
 ]
 
@@ -124,4 +128,8 @@ export const getScoreCardBackgroundColor = (game: string, level_index: number) =
     return chunithmDifficultyColor[1][level_index]
   }
   return "black";
+}
+
+export const getTransparentColor = (color: string, opacity = 0.95) => {
+  return color.replace(")", `, ${opacity})`).replace("rgb(", "rgba(");
 }

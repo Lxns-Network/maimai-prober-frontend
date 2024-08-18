@@ -8,7 +8,7 @@ import {
 import classes from "./Songs.module.css"
 import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import { useLocalStorage } from "@mantine/hooks";
+import { useDisclosure, useLocalStorage } from "@mantine/hooks";
 import { openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
@@ -23,7 +23,7 @@ import { SongDifficultyList } from "../../components/Songs/SongDifficultyList.ts
 export default function Songs() {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
-  const [createAliasOpened, setCreateAliasOpened] = useState(false);
+  const [createAliasOpened, createAlias] = useDisclosure();
   const [defaultSongId, setDefaultSongId] = useState<number>(0)
   const [songId, setSongId] = useState<number>(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
@@ -107,7 +107,7 @@ export default function Songs() {
 
   return (
     <Container className={classes.root} size={500}>
-      <CreateAliasModal defaultSongId={defaultSongId} opened={createAliasOpened} onClose={() => setCreateAliasOpened(false)} />
+      <CreateAliasModal defaultSongId={songId} opened={createAliasOpened} onClose={() => createAlias.close()} />
       <Title order={2} size="h2" fw={900} ta="center" mt="xs">
         曲目查询
       </Title>
@@ -133,7 +133,7 @@ export default function Songs() {
         timingFunction="ease"
       >
         {(styles) => (
-          <SongCard song={song} onCreateAlias={() => setCreateAliasOpened(true)} style={styles} />
+          <SongCard song={song} onCreateAlias={() => createAlias.open()} style={styles} />
         )}
       </Transition>
       <Space h="md" />
