@@ -22,7 +22,7 @@ import { PlateDataProps } from "../../pages/user/Plates.tsx";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../CustomMarquee.tsx";
 import { ASSET_URL } from "../../main.tsx";
-import {useAutoAnimate} from "@formkit/auto-animate/react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
   if (!plate || !plate.required) {

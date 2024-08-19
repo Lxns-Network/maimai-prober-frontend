@@ -49,8 +49,8 @@ export default function App() {
   const location = useLocation();
   const viewport = useRef<HTMLDivElement>(null);
 
-  const [songList] = useState(new SongList());
-  const [aliasList] = useSetState({
+  const [songList, setSongList] = useState(new SongList());
+  const [aliasList, setAliasList] = useSetState({
     maimai: new AliasList(),
     chunithm: new AliasList(),
   });
@@ -98,8 +98,12 @@ export default function App() {
     if (songList.maimai.songs.length + songList.chunithm.songs.length === 0) {
       Promise.all([
         songList.fetch(),
-        ...["maimai", "chunithm"].map(game => aliasList[game as 'maimai' | 'chunithm'].fetch(game))
-      ])
+        aliasList['maimai'].fetch('maimai'),
+        aliasList['chunithm'].fetch('chunithm')
+      ]).then(() => {
+        setSongList(songList);
+        setAliasList(aliasList);
+      });
     }
   }, [game]);
 

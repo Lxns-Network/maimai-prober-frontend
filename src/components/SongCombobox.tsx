@@ -95,6 +95,7 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
 
   useEffect(() => {
     if (!songList) return;
+
     setFilteredSongs(getFilteredSongs(songList.songs, search, aliases));
   }, [songList?.songs, search]);
 
@@ -104,6 +105,7 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
 
   useEffect(() => {
     if (!songList) return;
+
     onSongsChange && onSongsChange(search.length === 0 ? songList.songs : filteredSongs);
   }, [filteredSongs]);
 
