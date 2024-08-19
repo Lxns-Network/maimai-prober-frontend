@@ -17,18 +17,14 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
       <div>
         <Flex gap="xs" mb={8}>
           {player.trophy && (
-            <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color)} style={{
-              height: "auto",
-              flex: "1",
-              justifyContent: "flex-start"
-            }} children={
-              <Text fz="xs" style={{
-                whiteSpace: "pre-wrap"
-              }}>
-                <CustomMarquee>
+            <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color)} children={
+              <CustomMarquee>
+                <Text fz="xs" style={{
+                  whiteSpace: "pre-wrap"
+                }}>
                   {player.trophy.name}
-                </CustomMarquee>
-              </Text>
+                </Text>
+              </CustomMarquee>
             } />
           )}
           <Badge variant="gradient" gradient={getRatingGradient(player.rating)} style={{
