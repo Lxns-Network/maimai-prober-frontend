@@ -1,9 +1,8 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { MaimaiScoreProps } from "./maimai/Score.tsx";
 import ScoreContext from "../../utils/context.tsx";
 import { fetchAPI } from "../../utils/api/api.tsx";
-import { Accordion, Center, Container, Group, Loader, Modal, Space } from "@mantine/core";
-import { MaimaiScoreModalMenu } from "./maimai/ScoreModalMenu.tsx";
+import { Accordion, Avatar, Center, Container, Group, Loader, Modal, Space, Text, Transition } from "@mantine/core";
 import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
 import { ChunithmScoreProps } from "./chunithm/Score.tsx";
 import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
@@ -11,12 +10,16 @@ import { ChunithmDifficultyProps, ChunithmSongList, ChunithmSongProps } from "..
 import { MaimaiScoreModalContent } from "./maimai/ScoreModal.tsx";
 import { ChunithmScoreModalContent } from "./chunithm/ScoreModal.tsx";
 import { ChunithmScoreHistory } from "./chunithm/ScoreHistory.tsx";
-import { ChunithmScoreModalMenu } from "./chunithm/ScoreModalMenu.tsx";
 import { MaimaiChart } from "./maimai/Chart.tsx";
 import { openRetryModal } from "../../utils/modal.tsx";
 import { ApiContext } from "../../App.tsx";
 import classes from "./ScoreModal.module.css"
 import { ChunithmChart } from "./chunithm/Chart.tsx";
+import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
+import { ASSET_URL } from "../../main.tsx";
+import { IconPhotoOff } from "@tabler/icons-react";
+import { useIntersection } from "@mantine/hooks";
+import { CustomMarquee } from "../CustomMarquee.tsx";
 
 interface ScoreModalProps {
   game: "maimai" | "chunithm";
@@ -35,6 +38,12 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   const context = useContext(ApiContext);
   const scoreContext = useContext(ScoreContext);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { ref, entry } = useIntersection({
+    root: containerRef.current,
+    threshold: 1,
+  });
+
   const getSongDetailHandler = async (id: number) => {
     const res = await fetchAPI(`${game}/song/${id}`, {
       method: "GET",
@@ -42,32 +51,6 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     const data = await res.json();
     setSong(data);
   }
-
-  useEffect(() => {
-    setSong(null);
-    setSongList(context.songList[game]);
-  }, [game]);
-
-  useEffect(() => {
-    if (!score) return;
-
-    setSong(songList?.find(score.id) || null);
-    getSongDetailHandler(score.id);
-  }, [score]);
-
-  useEffect(() => {
-    if (!song) return;
-
-    let difficulty;
-    if (songList instanceof MaimaiSongList) {
-      score = score as MaimaiScoreProps;
-      difficulty = songList.getDifficulty(song as MaimaiSongProps, score.type, score.level_index);
-    } else if (songList instanceof ChunithmSongList) {
-      score = score as ChunithmScoreProps;
-      difficulty = songList.getDifficulty(song as ChunithmSongProps, score.level_index);
-    }
-    difficulty && setDifficulty(difficulty);
-  }, [song]);
 
   const getPlayerScoreHistory = async (score: any) => {
     if ((game === "maimai" && score.achievements < 0) ||
@@ -104,9 +87,32 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   }
 
   useEffect(() => {
+    setSong(null);
+    setSongList(context.songList[game]);
+  }, [game]);
+
+  useEffect(() => {
+    if (!song) return;
+
+    let difficulty;
+    if (songList instanceof MaimaiSongList) {
+      score = score as MaimaiScoreProps;
+      difficulty = songList.getDifficulty(song as MaimaiSongProps, score.type, score.level_index);
+    } else if (songList instanceof ChunithmSongList) {
+      score = score as ChunithmScoreProps;
+      difficulty = songList.getDifficulty(song as ChunithmSongProps, score.level_index);
+    }
+    difficulty && setDifficulty(difficulty);
+  }, [song]);
+
+  useEffect(() => {
     if (!score) return;
 
     Object.keys(scoreContext).length !== 0 && scoreContext.setScore(score);
+
+    setSong(songList?.find(score.id) || null);
+    getSongDetailHandler(score.id);
+
     setHistoryScores([]);
     getPlayerScoreHistory(score);
   }, [score]);
@@ -124,17 +130,45 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   return (
     <Modal.Root opened={opened} onClose={onClose} centered size="lg">
       <Modal.Overlay />
-      <Modal.Content>
+      <Modal.Content ref={containerRef}>
         <Modal.Header>
-          <Modal.Title>成绩详情</Modal.Title>
-          <Group gap="xs">
-            {isMaimaiScoreProps(score) && <MaimaiScoreModalMenu score={score} onClose={onClose} />}
-            {isChunithmScoreProps(score) && <ChunithmScoreModalMenu score={score} onClose={onClose} />}
+          <Modal.Title>
+            <Transition
+              mounted={entry ? entry.isIntersecting : true}
+              transition="slide-right"
+              enterDelay={300}
+              duration={250}
+            >
+              {(styles) => (
+                <Text style={styles}>成绩详情</Text>
+              )}
+            </Transition>
+            <Transition
+              mounted={entry ? !entry.isIntersecting : false}
+              transition="slide-right"
+              enterDelay={300}
+              duration={250}
+            >
+              {(styles) => (
+                <Group wrap="nowrap" gap="xs" style={styles}>
+                  <Avatar src={song ? `${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png!webp` : null} size={28} radius="md">
+                    <IconPhotoOff />
+                  </Avatar>
+                  <CustomMarquee>
+                    <Text>{song?.title}</Text>
+                  </CustomMarquee>
+                </Group>
+              )}
+            </Transition>
+          </Modal.Title>
+          <Space w="xs" />
+          <Group wrap="nowrap" gap="xs">
+            {score && <ScoreModalMenu score={score} onClose={onClose} />}
             <Modal.CloseButton />
           </Group>
         </Modal.Header>
         <Modal.Body p={0}>
-          <Container>
+          <Container ref={ref}>
             {isMaimaiScoreProps(score) && <MaimaiScoreModalContent score={score} song={song as MaimaiSongProps} />}
             {isChunithmScoreProps(score) && <ChunithmScoreModalContent score={score} song={song as ChunithmSongProps} />}
           </Container>
