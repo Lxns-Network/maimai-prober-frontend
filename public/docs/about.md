@@ -6,7 +6,9 @@
 
 ## 联系我们
 
-QQ 群：**597413470**
+QQ 群：
+- 用户交流群：**597413470**
+- 开发者交流群：**991669419**
 
 GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 
