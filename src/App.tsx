@@ -89,13 +89,12 @@ export default function App() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!game) return;
-    if (game === "undefined") {
+    if (game !== "maimai" && game !== "chunithm") {
       setGame("maimai");
       return;
     }
 
-    if (songList.maimai.songs.length + songList.chunithm.songs.length === 0) {
+    if (songList.maimai.songs.length === 0 || songList.chunithm.songs.length === 0) {
       Promise.all([
         songList.fetch(),
         aliasList['maimai'].fetch('maimai'),

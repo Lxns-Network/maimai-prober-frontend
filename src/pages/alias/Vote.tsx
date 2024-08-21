@@ -6,7 +6,7 @@ import {
   Flex,
   Group, Loader,
   Pagination,
-  SegmentedControl, Space,
+  Space,
   Text,
   Title,
 } from '@mantine/core';
@@ -23,6 +23,7 @@ import {
 import classes from "../Page.module.css"
 import { openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
+import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
 
 export interface AliasProps {
   alias_id: number;
@@ -180,10 +181,7 @@ export default function Vote() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         提交曲目别名，或为你喜欢的曲目别名投票
       </Text>
-      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} data={[
-        { label: '舞萌 DX', value: 'maimai' },
-        { label: '中二节奏', value: 'chunithm' },
-      ]} />
+      <GameSegmentedControl mb="md" game={game} onChange={setGame} />
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group m="md" justify="space-between">
           <div>

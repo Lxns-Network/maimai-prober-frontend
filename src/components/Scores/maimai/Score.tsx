@@ -29,6 +29,7 @@ interface ScoreContentProps {
 }
 
 export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
+  const [isBuddy, setIsBuddy] = useState(false);
   const [level, setLevel] = useState(score.level);
 
   const deluxeRating = score.type !== "utage" ? `${parseInt(String(score.dx_rating))}` : "-";
@@ -36,9 +37,10 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
 
   useEffect(() => {
     if (!song) return;
-    if (score.type === "utage") return;
     const difficulty = getDifficulty(song, score.type, score.level_index);
     if (!difficulty) return;
+    setIsBuddy(difficulty.is_buddy);
+    if (score.type === "utage") return;
     setLevel(difficulty.level_value.toFixed(1));
   }, [song]);
 
@@ -49,6 +51,7 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
       <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">{score.song_name}</Text>
       {score.type === "standard" && <Badge variant="filled" color="blue" size="sm">标准</Badge>}
       {score.type === "dx" && <Badge variant="filled" color="orange" size="sm">DX</Badge>}
+      {isBuddy && <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">BUDDY</Badge>}
     </Flex>
     <Box h="100%" p={10} pt={0} pb={0} style={{
       backgroundColor: getTransparentColor(getScoreCardBackgroundColor("maimai", levelIndex), 0.7),

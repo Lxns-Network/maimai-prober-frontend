@@ -1,25 +1,29 @@
-import { MaimaiScoreProps } from "./Score.tsx";
-import { fetchAPI } from "../../../utils/api/api.tsx";
-import { openAlertModal, openConfirmModal, openRetryModal } from "../../../utils/modal.tsx";
+import { fetchAPI } from "../../utils/api/api.tsx";
+import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { ActionIcon, Menu } from "@mantine/core";
-import classes from "../ScoreModalMenu.module.css";
+import classes from "./ScoreModalMenu.module.css";
 import { IconClearAll, IconDots, IconMusic, IconPlus, IconTrash } from "@tabler/icons-react";
-import { useContext } from "react";
-import ScoreContext from "../../../utils/context.tsx";
+import { useContext, useEffect, useState } from "react";
+import ScoreContext from "../../utils/context.tsx";
 import { useNavigate } from "react-router-dom";
+import { MaimaiScoreProps } from "./maimai/Score.tsx";
+import { ChunithmScoreProps } from "./chunithm/Score.tsx";
+import useStoredGame from "../../hooks/useStoredGame.tsx";
 
 interface ScoreModalActionMenuProps {
-  score: MaimaiScoreProps;
-  onClose?: (score?: MaimaiScoreProps) => void;
+  score: MaimaiScoreProps | ChunithmScoreProps;
+  onClose?: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
 }
 
-export const MaimaiScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
+export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
+  const [params, setParams] = useState(new URLSearchParams());
+  const [game] = useStoredGame();
   const navigate = useNavigate();
   const context = useContext(ScoreContext);
 
   const DeletePlayerScoreHandler = async () => {
     try {
-      const res = await fetchAPI(`user/maimai/player/score?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {
+      const res = await fetchAPI(`user/${game}/player/score?${params.toString()}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -35,7 +39,7 @@ export const MaimaiScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuPro
 
   const DeletePlayerScoresHandler = async () => {
     try {
-      const res = await fetchAPI(`user/maimai/player/scores?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {
+      const res = await fetchAPI(`user/${game}/player/scores?${params.toString()}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -48,6 +52,18 @@ export const MaimaiScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuPro
       openRetryModal("成绩删除失败", `${err}`, DeletePlayerScoresHandler)
     }
   }
+
+  useEffect(() => {
+    if (!score) return;
+
+    const params = new URLSearchParams({
+      song_id: score.id.toString(),
+      level_index: score.level_index.toString()
+    });
+    if (game === "maimai" && "type" in score) params.append("song_type", score.type);
+
+    setParams(params);
+  }, [score]);
 
   return (
     <Menu shadow="md" width={200} position="bottom-end">
@@ -77,7 +93,7 @@ export const MaimaiScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuPro
           </Menu.Item>
         )}
 
-        {score.achievements >= 0 && (
+        {score.upload_time && (
           <>
             <Menu.Divider />
             <Menu.Label>敏感操作</Menu.Label>

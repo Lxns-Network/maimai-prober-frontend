@@ -9,7 +9,7 @@ import {
   SimpleGrid,
   ThemeIcon,
   Flex,
-  Avatar, Card, Center, Stack
+  Avatar, Card, Center, Stack, AspectRatio
 } from '@mantine/core';
 import { Carousel } from "@mantine/carousel";
 import { useNavigate } from "react-router-dom";
@@ -79,13 +79,15 @@ export default function Home() {
   return (
     <>
       <Container className={classes.root}>
-        <Image
-          src="/logo.webp"
-          alt="落雪咖啡屋 maimai DX 查分器"
-          maw={600}
-          mx="auto"
-          mb="md"
-        />
+        <AspectRatio ratio={1200 / 863}>
+          <Image
+            src="/logo.webp"
+            alt="落雪咖啡屋 maimai DX 查分器"
+            maw={600}
+            mx="auto"
+            mb="md"
+          />
+        </AspectRatio>
 
         <Title className={classes.title}>
           落雪咖啡屋{' '}

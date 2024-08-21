@@ -240,6 +240,7 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
                   placeholder="请输入 DX 分数"
                   min={0}
                   max={9999}
+                  allowDecimal={false}
                   {...form.getInputProps("dx_score")}
                 />
               </Grid.Col>

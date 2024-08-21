@@ -181,6 +181,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
                   mb="sm"
                   min={0}
                   max={1010000}
+                  allowDecimal={false}
                   withAsterisk
                   {...form.getInputProps("score")}
                 />

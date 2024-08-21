@@ -10,7 +10,7 @@ import {
   Space,
   Text,
   Title,
-  SegmentedControl, Flex,
+  Flex,
 } from '@mantine/core';
 import { getPlayerScores } from "../../utils/api/player";
 import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
@@ -25,7 +25,7 @@ import {
 import { MaimaiScoreProps } from '../../components/Scores/maimai/Score.tsx';
 import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 
-import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { ChunithmScoreProps } from "../../components/Scores/chunithm/Score.tsx";
 import classes from "../Page.module.css"
 import { openRetryModal } from "../../utils/modal.tsx";
@@ -38,6 +38,7 @@ import { SongCombobox } from "../../components/SongCombobox.tsx";
 import { ApiContext } from "../../App.tsx";
 import ScoreContext from "../../utils/context.tsx";
 import { ScoreList } from "../../components/Scores/ScoreList.tsx";
+import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
 
 const sortKeys = {
   maimai: [
@@ -59,6 +60,7 @@ const sortKeys = {
 };
 
 const ScoresContent = () => {
+  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
 
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
@@ -110,7 +112,9 @@ const ScoresContent = () => {
   useEffect(() => {
     if (!game) return;
 
+    setSongList(context.songList[game]);
     scoreContext.setScore(null);
+
     setFetching(true);
     setSongId(0);
     getPlayerScoresHandler();
@@ -155,8 +159,7 @@ const ScoresContent = () => {
     if (!searchedScores) return;
 
     const sortedElements = searchedScores.sort((a: any, b: any) => {
-      const songList = context.songList.getSongList();
-
+      if (!songList) return 0;
       if (key === 'level_value') {
         let songA = songList.find(a.id);
         let songB = songList.find(b.id);
@@ -224,10 +227,7 @@ const ScoresContent = () => {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         管理你的 maimai DX 查分器账号的成绩
       </Text>
-      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} data={[
-        { label: '舞萌 DX', value: 'maimai' },
-        { label: '中二节奏', value: 'chunithm' },
-      ]} />
+      <GameSegmentedControl mb="md" game={game} onChange={setGame} />
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group justify="space-between" m="md">
           <div>

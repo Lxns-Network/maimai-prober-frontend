@@ -4,7 +4,7 @@ import {
   Container,
   Divider,
   ScrollArea,
-  SegmentedControl, Space
+  Space
 } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "../utils/session";
@@ -20,6 +20,7 @@ import {
   IconUserCircle
 } from "@tabler/icons-react";
 import classes from './Navbar.module.css';
+import { GameSegmentedControl } from "./GameSegmentedControl.tsx";
 
 interface NavbarProps {
   style?: React.CSSProperties;
@@ -28,7 +29,7 @@ interface NavbarProps {
 
 export default function Navbar({ style, onClose }: NavbarProps) {
   const [active, setActive] = useState('');
-  const [game, setGame] = useLocalStorage<string>({ key: 'game', defaultValue: null as any });
+  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
   const location = useLocation();
 
@@ -68,10 +69,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     <nav className={classes.navbar} style={style}>
       <ScrollArea className={classes.navbarMain} type="scroll">
         <Container>
-          <SegmentedControl fullWidth radius="md" mt="md" value={game} onChange={setGame} data={[
-            { label: '舞萌 DX', value: 'maimai' },
-            { label: '中二节奏', value: 'chunithm' },
-          ]} />
+          <GameSegmentedControl mt="md" game={game} onChange={setGame} />
         </Container>
         <Space h="md" />
         {navbarData.map((item) => item.enabled &&

@@ -3,7 +3,7 @@ import {
   Container,
   Text,
   Title,
-  SegmentedControl, Flex, Anchor, Space, Transition
+  Flex, Anchor, Space, Transition
 } from "@mantine/core";
 import classes from "./Songs.module.css"
 import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
@@ -19,10 +19,12 @@ import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { ApiContext } from "../../App.tsx";
 import { SongCard } from "../../components/Songs/SongCard.tsx";
 import { SongDifficultyList } from "../../components/Songs/SongDifficultyList.tsx";
+import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
 
 export default function Songs() {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+
   const [createAliasOpened, createAlias] = useDisclosure();
   const [defaultSongId, setDefaultSongId] = useState<number>(0)
   const [songId, setSongId] = useState<number>(0);
@@ -114,10 +116,7 @@ export default function Songs() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         查询「舞萌 DX」与「中二节奏」的曲目详情
       </Text>
-      <SegmentedControl mb="md" radius="md" fullWidth value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} data={[
-        { label: '舞萌 DX', value: 'maimai' },
-        { label: '中二节奏', value: 'chunithm' },
-      ]} />
+      <GameSegmentedControl mb="md" game={game} onChange={setGame} />
       <SongCombobox
         value={songId}
         onOptionSubmit={(value) => setSongId(value)}
