@@ -41,7 +41,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref, entry } = useIntersection({
     root: containerRef.current,
-    threshold: 1,
+    threshold: 0.95,
   });
 
   const getSongDetailHandler = async (id: number) => {
@@ -131,10 +131,10 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     <Modal.Root opened={opened} onClose={onClose} centered size="lg">
       <Modal.Overlay />
       <Modal.Content ref={containerRef}>
-        <Modal.Header>
+        <Modal.Header mah={60}>
           <Modal.Title>
             <Transition
-              mounted={entry ? entry.isIntersecting : true}
+              mounted={entry?.isIntersecting ?? true}
               transition="slide-right"
               enterDelay={300}
               duration={250}

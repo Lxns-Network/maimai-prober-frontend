@@ -10,7 +10,7 @@ import { MaimaiScoreProps } from "../Scores/maimai/Score.tsx";
 import { ChunithmSongDifficulty } from "./chunithm/SongDifficulty.tsx";
 import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
 import { ApiContext } from "../../App.tsx";
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { ScoreModal } from "../Scores/ScoreModal.tsx";
 import { useDisclosure, useLocalStorage } from "@mantine/hooks";
 import { Stack } from "@mantine/core";
@@ -27,14 +27,13 @@ const SongDifficulty = ({ song, difficulty, score, onClick }: SongDifficultyProp
   const [game] = useStoredGame();
 
   const context = useContext(ApiContext);
-  let fixedDifficulty = useMemo(() => difficulty, []);
 
   if (game === "maimai") {
-    fixedDifficulty = fixedDifficulty as MaimaiDifficultyProps;
+    difficulty = difficulty as MaimaiDifficultyProps;
     score = score as MaimaiScoreProps;
 
     return <MaimaiSongDifficulty
-      difficulty={fixedDifficulty}
+      difficulty={difficulty}
       score={score}
       versions={context.songList.maimai.versions}
       onClick={() => {
@@ -49,11 +48,11 @@ const SongDifficulty = ({ song, difficulty, score, onClick }: SongDifficultyProp
       }}
     />
   } else if (game === "chunithm") {
-    fixedDifficulty = fixedDifficulty as ChunithmDifficultyProps;
+    difficulty = difficulty as ChunithmDifficultyProps;
     score = score as ChunithmScoreProps;
 
     return <ChunithmSongDifficulty
-      difficulty={fixedDifficulty}
+      difficulty={difficulty}
       score={score}
       versions={context.songList.chunithm.versions}
       onClick={() => {
