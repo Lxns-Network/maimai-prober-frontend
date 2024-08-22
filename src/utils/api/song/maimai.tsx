@@ -10,7 +10,7 @@ export interface MaimaiDifficultyProps {
   kanji: string;
   description: string;
   is_buddy: boolean;
-  notes: MaimaiNotesProps
+  notes: MaimaiNotesProps;
 }
 
 export interface MaimaiNotesProps {
@@ -94,11 +94,12 @@ export class MaimaiSongList {
 }
 
 export function getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
-  if (type === "utage") {
+  if (type === "utage" && "utage" in song.difficulties) {
       return song.difficulties.utage[level_index]
   } else if (type === "standard") {
     return song.difficulties.standard[level_index]
-  } else {
+  } else if (type === "dx") {
     return song.difficulties.dx[level_index]
   }
+  return null;
 }
