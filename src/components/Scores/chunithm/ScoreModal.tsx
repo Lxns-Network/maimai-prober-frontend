@@ -125,7 +125,7 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
           </Group>
           <Grid mt="md">
             <Grid.Col span={6}>
-              <Paper className={classes.subparameters}>
+              <Paper className={classes.subParameters}>
                 <Text fz="xs" c="dimmed">Rating</Text>
                 <Text fz="md">
                   {song.id >= 8000 ? "-" : Math.floor(score.rating * 100) / 100}
@@ -133,7 +133,7 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
               </Paper>
             </Grid.Col>
             <Grid.Col span={6}>
-              <Paper className={classes.subparameters}>
+              <Paper className={classes.subParameters}>
                 <Text fz="xs" c="dimmed">Over Power</Text>
                 <Text fz="md">
                   {Math.floor(score.over_power * 100) / 100}%
@@ -142,7 +142,7 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
             </Grid.Col>
             {score.play_time && (
               <Grid.Col span={small ? 12 : 6}>
-                <Paper className={classes.subparameters}>
+                <Paper className={classes.subParameters}>
                   <Text fz="xs" c="dimmed">游玩时间</Text>
                   <Text fz="md">
                     {new Date(score.play_time || "").toLocaleString()}
@@ -151,7 +151,7 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
               </Grid.Col>
             )}
             <Grid.Col span={small ? 12 : 6}>
-              <Paper className={classes.subparameters}>
+              <Paper className={classes.subParameters}>
                 <Text fz="xs" c="dimmed">上传时间</Text>
                 <Text fz="md">
                   {new Date(score.upload_time || "").toLocaleString()}

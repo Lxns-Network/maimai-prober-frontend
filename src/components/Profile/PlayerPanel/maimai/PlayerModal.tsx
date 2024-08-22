@@ -1,6 +1,6 @@
 import {
-  Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Group, Loader,
-  Modal, ScrollArea, Text, useCombobox,
+  Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Grid, Group, Loader,
+  Modal, Paper, ScrollArea, Text, useCombobox,
 } from "@mantine/core";
 import { useContext, useEffect, useState } from "react";
 import { MaimaiPlayerProps } from "./PlayerPanel.tsx";
@@ -8,9 +8,10 @@ import { getPlayerRatingTrend } from "../../../../utils/api/player.tsx";
 import { PlayerContent } from "./PlayerContent.tsx";
 import { RatingTrend, RatingTrendProps } from "./RatingTrend.tsx";
 import { IconDots } from "@tabler/icons-react";
-import classes from "../../../Scores/ScoreModalMenu.module.css";
+import classes from "../PlayerModal.module.css";
 import { ApiContext } from "../../../../App.tsx";
 import { openRetryModal } from "../../../../utils/modal.tsx";
+import {CustomMarquee} from "../../../CustomMarquee.tsx";
 
 interface ModalProps {
   player: MaimaiPlayerProps;
@@ -76,24 +77,36 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
             </Container>
           </ScrollArea>
           <Container mb="md">
-            <Group>
-              {player.name_plate && (
-                <div>
-                  <Text fz="xs" c="dimmed">姓名框</Text>
-                  <Text fz="sm">{player.name_plate.name}</Text>
-                </div>
-              )}
-              {player.frame && (
-                <div>
-                  <Text fz="xs" c="dimmed">背景板</Text>
-                  <Text fz="sm">{player.frame.name}</Text>
-                </div>
-              )}
-              <div>
-                <Text fz="xs" c="dimmed">上次同步时间</Text>
-                <Text fz="sm">{(new Date(Date.parse(player.upload_time))).toLocaleString()}</Text>
-              </div>
-            </Group>
+            <Grid>
+              <Grid.Col span={6}>
+                {player.name_plate && (
+                  <Paper className={classes.subParameters}>
+                    <Text fz="xs" c="dimmed">姓名框</Text>
+                    <Text fz="sm">
+                      <CustomMarquee>{player.name_plate.name}</CustomMarquee>
+                    </Text>
+                  </Paper>
+                )}
+              </Grid.Col>
+              <Grid.Col span={6}>
+                {player.frame && (
+                  <Paper className={classes.subParameters}>
+                    <Text fz="xs" c="dimmed">背景板</Text>
+                    <Text fz="sm">
+                      <CustomMarquee>{player.frame.name}</CustomMarquee>
+                    </Text>
+                  </Paper>
+                )}
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Paper className={classes.subParameters}>
+                  <Text fz="xs" c="dimmed">上次同步时间</Text>
+                  <Text fz="sm">
+                    <CustomMarquee>{(new Date(Date.parse(player.upload_time))).toLocaleString()}</CustomMarquee>
+                  </Text>
+                </Paper>
+              </Grid.Col>
+            </Grid>
           </Container>
           <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
             <Accordion.Item value="history">

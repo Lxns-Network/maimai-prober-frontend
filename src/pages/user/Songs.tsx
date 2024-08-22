@@ -140,7 +140,6 @@ export default function Songs() {
       <Transition
         mounted={!Boolean(songId)}
         transition="pop"
-        timingFunction="ease"
         enterDelay={250}
       >
         {(styles) => (
@@ -153,7 +152,6 @@ export default function Songs() {
       <Transition
         mounted={Boolean(songId)}
         transition="pop"
-        timingFunction="ease"
       >
         {(styles) => (
           <SongDifficultyList song={song} scores={scores} setScores={setScores} style={styles} />

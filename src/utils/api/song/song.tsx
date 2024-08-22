@@ -14,13 +14,4 @@ export class SongList {
     await this.maimai.fetch();
     await this.chunithm.fetch();
   }
-
-  getSongList() {
-    const game = localStorage.getItem("game");
-    if (game === "chunithm") {
-      return this.chunithm;
-    } else {
-      return this.maimai;
-    }
-  }
 }

@@ -1,5 +1,7 @@
 import { ChunithmDifficultyProps, ChunithmNotesProps } from "../../../utils/api/song/chunithm.tsx";
-import { keys, Space, Table, Text } from "@mantine/core";
+import {Box, Flex, keys, Space, Table, Text} from "@mantine/core";
+import {useContext} from "react";
+import {ApiContext} from "../../../App.tsx";
 
 const ChartNotes = ({ notes }: { notes: ChunithmNotesProps }) => {
   if (!notes) return;
@@ -19,11 +21,26 @@ const ChartNotes = ({ notes }: { notes: ChunithmNotesProps }) => {
 }
 
 export const ChunithmChart = ({ difficulty }: { difficulty: ChunithmDifficultyProps }) => {
+  const context = useContext(ApiContext);
+  const versions = context.songList.chunithm.versions;
+
   if (!difficulty) return;
 
   return <>
-    <Text size="xs" c="gray">谱师</Text>
-    <Text size="sm">{difficulty.note_designer}</Text>
+    <Flex columnGap="xl">
+      {difficulty.note_designer && (
+        <Box>
+          <Text fz="xs" c="gray">谱师</Text>
+          <Text fz="sm">{difficulty.note_designer}</Text>
+        </Box>
+      )}
+      <Box>
+        <Text fz="xs" c="gray">版本</Text>
+        <Text fz="sm">
+          {versions.slice().reverse().find((version) => difficulty.version >= version.version)?.title || "未知"}
+        </Text>
+      </Box>
+    </Flex>
     <Space h="md" />
     <Text size="xs" c="gray">物量</Text>
     <ChartNotes notes={difficulty.notes} />

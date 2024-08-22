@@ -13,7 +13,6 @@ import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../ut
 import {
   getDifficulty,
   MaimaiDifficultyProps,
-  MaimaiNotesProps,
   MaimaiSongProps
 } from "../../../utils/api/song/maimai.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
@@ -107,7 +106,7 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
           </Group>
           <Grid mt="md">
             <Grid.Col span={6}>
-              <Paper className={classes.subparameters}>
+              <Paper className={classes.subParameters}>
                 <Text fz="xs" c="dimmed">DX Rating</Text>
                 <Text>
                   {score.type === "utage" ? "-" : parseInt(String(score.dx_rating))}
@@ -115,7 +114,7 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
               </Paper>
             </Grid.Col>
             <Grid.Col span={6}>
-              <Paper className={classes.subparameters}>
+              <Paper className={classes.subParameters}>
                 <Group wrap="nowrap" gap="xs">
                   <Text fz="xs" c="dimmed">DX 分数</Text>
                   <Group wrap="nowrap" h={12} gap={0}>
@@ -123,10 +122,11 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
                       if (!difficulty || !difficulty.notes) return null;
 
                       let percentage: number;
-                      if (difficulty.is_buddy) {
-                        percentage = Math.floor((score.dx_score / (difficulty.notes["left" as keyof MaimaiNotesProps] + difficulty.notes["right" as keyof MaimaiNotesProps]) * 3) * 100);
-                      } else {
+                      if (difficulty.notes.total) {
                         percentage = Math.floor((score.dx_score / (difficulty.notes.total * 3)) * 100);
+                      } else {
+                        // @ts-ignore
+                        percentage = Math.floor((score.dx_score / ((difficulty.notes.left.total + difficulty.notes.right.total) * 3)) * 100);
                       }
                       let count = 0;
                       let rate = 1;
@@ -155,21 +155,23 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
                 {difficulty && difficulty.notes ? <Text>
                   {score.dx_score}
                   <span style={{ fontSize: 12, marginLeft: 4 }}>
-                    / {difficulty.notes.total * 3}
+                    / { // @ts-ignore
+                      (difficulty.notes.total || difficulty.notes.left.total + difficulty.notes.right.total) * 3
+                    }
                   </span>
                 </Text> : <Text>{score.dx_score}</Text>}
               </Paper>
             </Grid.Col>
             {score.play_time && (
               <Grid.Col span={small ? 12 : 6}>
-                <Paper className={classes.subparameters}>
+                <Paper className={classes.subParameters}>
                   <Text fz="xs" c="dimmed">游玩时间</Text>
                   <Text>{new Date(score.play_time || "").toLocaleString()}</Text>
                 </Paper>
               </Grid.Col>
             )}
             <Grid.Col span={small ? 12 : 6}>
-              <Paper className={classes.subparameters}>
+              <Paper className={classes.subParameters}>
                 <Text fz="xs" c="dimmed">上传时间</Text>
                 <Text fz="md">{new Date(score.upload_time || "").toLocaleString()}</Text>
               </Paper>

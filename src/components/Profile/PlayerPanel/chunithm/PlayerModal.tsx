@@ -1,9 +1,11 @@
 import {
-  Container, Group,
-  Modal, ScrollArea, Text,
+  Container, Grid,
+  Modal, Paper, ScrollArea, Text,
 } from "@mantine/core";
 import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
 import { PlayerContent } from "./PlayerContent.tsx";
+import classes from "../PlayerModal.module.css";
+import { CustomMarquee } from "../../../CustomMarquee.tsx";
 
 interface ModalProps {
   player: ChunithmPlayerProps;
@@ -27,24 +29,36 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
             </Container>
           </ScrollArea>
           <Container mb="md">
-            <Group>
-              {player.name_plate && (
-                <div>
-                  <Text fz="xs" c="dimmed">名牌版</Text>
-                  <Text fz="sm">{player.name_plate.name}</Text>
-                </div>
-              )}
-              {player.map_icon && (
-                <div>
-                  <Text fz="xs" c="dimmed">地图头像</Text>
-                  <Text fz="sm">{player.map_icon.name}</Text>
-                </div>
-              )}
-              <div>
-                <Text fz="xs" c="dimmed">上次同步时间</Text>
-                <Text fz="sm">{(new Date(Date.parse(player.upload_time))).toLocaleString()}</Text>
-              </div>
-            </Group>
+            <Grid>
+              <Grid.Col span={6}>
+                {player.name_plate && (
+                  <Paper className={classes.subParameters}>
+                    <Text fz="xs" c="dimmed">名牌版</Text>
+                    <Text fz="sm">
+                      <CustomMarquee>{player.name_plate.name}</CustomMarquee>
+                    </Text>
+                  </Paper>
+                )}
+              </Grid.Col>
+              <Grid.Col span={6}>
+                {player.map_icon && (
+                  <Paper className={classes.subParameters}>
+                    <Text fz="xs" c="dimmed">地图头像</Text>
+                    <Text fz="sm">
+                      <CustomMarquee>{player.map_icon.name}</CustomMarquee>
+                    </Text>
+                  </Paper>
+                )}
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Paper className={classes.subParameters}>
+                  <Text fz="xs" c="dimmed">上次同步时间</Text>
+                  <Text fz="sm">
+                    <CustomMarquee>{(new Date(Date.parse(player.upload_time))).toLocaleString()}</CustomMarquee>
+                  </Text>
+                </Paper>
+              </Grid.Col>
+            </Grid>
           </Container>
         </Modal.Body>
       </Modal.Content>
