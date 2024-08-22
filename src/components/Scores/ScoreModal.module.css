@@ -1,2 +1,21 @@
-.accordion {
+.subparameters {
+    background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+    padding: 6px 12px;
+    border-radius: var(--mantine-radius-md);
+}
+
+.worldsEndText {
+    background: conic-gradient(
+            from 240deg,
+            rgb(2, 224, 1),
+            rgb(213, 226, 17),
+            rgb(226, 121, 87),
+            rgb(212, 1, 150),
+            rgb(141, 12, 202),
+            rgb(77,120,107),
+            rgb(2, 224, 1)
+    );
+    -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
 }
