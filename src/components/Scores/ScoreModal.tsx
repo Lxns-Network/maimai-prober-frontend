@@ -12,7 +12,6 @@ import { ChunithmScoreModalContent } from "./chunithm/ScoreModal.tsx";
 import { ChunithmScoreHistory } from "./chunithm/ScoreHistory.tsx";
 import { MaimaiChart } from "./maimai/Chart.tsx";
 import { openRetryModal } from "../../utils/modal.tsx";
-import { ApiContext } from "../../App.tsx";
 import classes from "./ScoreModal.module.css"
 import { ChunithmChart } from "./chunithm/Chart.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
@@ -20,6 +19,7 @@ import { ASSET_URL } from "../../main.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { useIntersection } from "@mantine/hooks";
 import { CustomMarquee } from "../CustomMarquee.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
 
 interface ScoreModalProps {
   game: "maimai" | "chunithm";
@@ -35,7 +35,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | ChunithmDifficultyProps | null>(null);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
 
-  const context = useContext(ApiContext);
+  const getSongList = useSongListStore((state) => state.getSongList);
   const scoreContext = useContext(ScoreContext);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +88,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
   useEffect(() => {
     setSong(null);
-    setSongList(context.songList[game]);
+    setSongList(getSongList(game));
   }, [game]);
 
   useEffect(() => {

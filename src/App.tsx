@@ -22,9 +22,10 @@ import { Fallback } from "./pages/public/Fallback.tsx";
 import { PhotoProvider } from "react-photo-view";
 import 'react-photo-view/dist/react-photo-view.css';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
-import { useFullscreen, useLocalStorage, useSetState } from "@mantine/hooks";
-import { SongList } from "./utils/api/song/song.tsx";
-import { AliasList } from "./utils/api/alias.tsx";
+import { useFullscreen, useLocalStorage } from "@mantine/hooks";
+import useSongListStore from "./hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
+import useAliasListStore from "./hooks/useAliasListStore.tsx";
 
 const theme = createTheme({
   focusRing: 'never',
@@ -34,13 +35,7 @@ const theme = createTheme({
 
 export const HEADER_HEIGHT = 56;
 export const NAVBAR_BREAKPOINT = 992;
-export const ApiContext = React.createContext({
-  songList: new SongList(),
-  aliasList: {
-    maimai: new AliasList(),
-    chunithm: new AliasList(),
-  },
-});
+export const ApiContext = React.createContext({});
 
 export default function App() {
   const { toggle, fullscreen } = useFullscreen();
@@ -49,11 +44,12 @@ export default function App() {
   const location = useLocation();
   const viewport = useRef<HTMLDivElement>(null);
 
-  const [songList, setSongList] = useState(new SongList());
-  const [aliasList, setAliasList] = useSetState({
-    maimai: new AliasList(),
-    chunithm: new AliasList(),
-  });
+  const [getSongList, fetchSongList] = useSongListStore(
+    useShallow((state) => [state.getSongList, state.fetchSongList]),
+  )
+  const [fetchAliasList] = useAliasListStore(
+    useShallow((state) => [state.fetchAliasList]),
+  )
   const [game, setGame] = useLocalStorage({ key: 'game' });
 
   const handleResize = () => {
@@ -94,20 +90,18 @@ export default function App() {
       return;
     }
 
-    if (songList.maimai.songs.length === 0 || songList.chunithm.songs.length === 0) {
+    if (getSongList(game).songs.length === 0) {
       Promise.all([
-        songList.fetch(),
-        aliasList['maimai'].fetch('maimai'),
-        aliasList['chunithm'].fetch('chunithm')
-      ]).then(() => {
-        setSongList(songList);
-        setAliasList(aliasList);
+        fetchSongList(),
+        fetchAliasList(),
+      ]).catch((error) => {
+        console.log(error);
       });
     }
   }, [game]);
 
   return (
-    <ApiContext.Provider value={{ songList, aliasList }}>
+    <ApiContext.Provider value={{}}>
       <MantineProvider theme={theme} defaultColorScheme="auto">
         <ErrorBoundary FallbackComponent={Fallback}>
           <ModalsProvider labels={{ confirm: '确定', cancel: '取消' }}>

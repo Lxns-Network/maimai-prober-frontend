@@ -35,10 +35,10 @@ import { MaimaiCreateScoreModal } from "../../components/Scores/maimai/CreateSco
 import { ChunithmCreateScoreModal } from "../../components/Scores/chunithm/CreateScoreModal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
 
-import { ApiContext } from "../../App.tsx";
 import ScoreContext from "../../utils/context.tsx";
 import { ScoreList } from "../../components/Scores/ScoreList.tsx";
 import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
 
 const sortKeys = {
   maimai: [
@@ -79,6 +79,8 @@ const ScoresContent = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const scoreContext = useContext(ScoreContext);
+  const getSongList = useSongListStore((state) => state.getSongList);
   const small = useMediaQuery('(max-width: 30rem)');
 
   useEffect(() => {
@@ -112,7 +114,7 @@ const ScoresContent = () => {
   useEffect(() => {
     if (!game) return;
 
-    setSongList(context.songList[game]);
+    setSongList(getSongList(game));
     scoreContext.setScore(null);
 
     setFetching(true);
@@ -203,9 +205,6 @@ const ScoresContent = () => {
     }
     return null;
   };
-
-  const context = useContext(ApiContext);
-  const scoreContext = useContext(ScoreContext);
 
   return (
     <Container className={classes.root} size={400}>

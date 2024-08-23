@@ -17,15 +17,17 @@ import { CustomMarquee } from "../../CustomMarquee.tsx";
 import classes from "../ScoreModal.module.css";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
-import { useContext, useEffect, useState } from "react";
-import { ApiContext } from "../../../App.tsx";
+import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
+import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state.chunithm })),
+  )
   const [difficulty, setDifficulty] = useState<ChunithmDifficultyProps | null>(null);
 
-  const context = useContext(ApiContext);
-  const songList = context.songList.chunithm;
   const small = useMediaQuery('(max-width: 30rem)');
 
   useEffect(() => {

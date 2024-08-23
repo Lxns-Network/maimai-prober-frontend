@@ -1,17 +1,18 @@
 import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { BackgroundImage, Card, SimpleGrid, useComputedColorScheme } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { MaimaiScoreContent, MaimaiScoreProps } from "./maimai/Score.tsx";
 import { ScoreModal } from "./ScoreModal.tsx";
 import { ChunithmScoreContent, ChunithmScoreProps } from "./chunithm/Score.tsx";
-import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import { ApiContext } from "../../App.tsx";
-import useStoredGame from "../../hooks/useStoredGame.tsx";
+import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
+import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import useFixedGame from "../../hooks/useFixedGame.tsx";
 import classes from "./Scores.module.css";
 import { getScoreSecondaryColor } from "../../utils/color.tsx";
 import { ASSET_URL } from "../../main.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 interface ScoreProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
@@ -19,11 +20,12 @@ interface ScoreProps {
 }
 
 const Score = ({ score, onClick }: ScoreProps) => {
-  const [game] = useStoredGame();
+  const [game] = useFixedGame();
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state[game] })),
+  )
 
   const computedColorScheme = useComputedColorScheme('light');
-  const context = useContext(ApiContext);
-  const songList = context.songList[game] as MaimaiSongList | ChunithmSongList;
   const song = songList.find(score.id);
 
   let borderSize = 2;

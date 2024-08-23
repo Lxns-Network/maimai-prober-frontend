@@ -1,4 +1,4 @@
-import useStoredGame from "../../hooks/useStoredGame.tsx";
+import useFixedGame from "../../hooks/useFixedGame.tsx";
 import { ChunithmDifficultyProps, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { ChunithmScoreProps } from "../Scores/chunithm/Score.tsx";
 import {
@@ -9,12 +9,13 @@ import {
 import { MaimaiScoreProps } from "../Scores/maimai/Score.tsx";
 import { ChunithmSongDifficulty } from "./chunithm/SongDifficulty.tsx";
 import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
-import { ApiContext } from "../../App.tsx";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScoreModal } from "../Scores/ScoreModal.tsx";
 import { useDisclosure, useLocalStorage } from "@mantine/hooks";
 import { Stack } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 interface SongDifficultyProps {
   song: MaimaiSongProps | ChunithmSongProps;
@@ -24,9 +25,10 @@ interface SongDifficultyProps {
 }
 
 const SongDifficulty = ({ song, difficulty, score, onClick }: SongDifficultyProps) => {
-  const [game] = useStoredGame();
-
-  const context = useContext(ApiContext);
+  const [game] = useFixedGame();
+  const { versions } = useSongListStore(
+    useShallow((state) => ({ versions: state[game].versions })),
+  )
 
   if (game === "maimai") {
     difficulty = difficulty as MaimaiDifficultyProps;
@@ -35,7 +37,7 @@ const SongDifficulty = ({ song, difficulty, score, onClick }: SongDifficultyProp
     return <MaimaiSongDifficulty
       difficulty={difficulty}
       score={score}
-      versions={context.songList.maimai.versions}
+      versions={versions}
       onClick={() => {
         difficulty = difficulty as MaimaiDifficultyProps;
 
@@ -54,7 +56,7 @@ const SongDifficulty = ({ song, difficulty, score, onClick }: SongDifficultyProp
     return <ChunithmSongDifficulty
       difficulty={difficulty}
       score={score}
-      versions={context.songList.chunithm.versions}
+      versions={versions}
       onClick={() => {
         onClick && onClick(score || {
           id: song.id,

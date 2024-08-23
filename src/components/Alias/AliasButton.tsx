@@ -10,19 +10,22 @@ import {
 import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { IconCheck, IconChevronRight, IconNorthStar } from "@tabler/icons-react";
 import classes from "./Alias.module.css";
-import { useContext, useEffect, useState } from "react";
-import { ApiContext } from "../../App.tsx";
+import { useEffect, useState } from "react";
 import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import useStoredGame from "../../hooks/useStoredGame.tsx";
+import useFixedGame from "../../hooks/useFixedGame.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
-  const [game] = useStoredGame();
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps>();
-  const context = useContext(ApiContext);
+  const [game] = useFixedGame();
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state[game] })),
+  )
 
   useEffect(() => {
-    setSong(context.songList[game].find(alias.song.id));
+    setSong(songList.find(alias.song.id));
   }, [alias.song.id]);
 
   return (

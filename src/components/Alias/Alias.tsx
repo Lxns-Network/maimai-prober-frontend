@@ -20,7 +20,7 @@ import {
 } from "@tabler/icons-react";
 import classes from "./Alias.module.css"
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
-import useStoredGame from "../../hooks/useStoredGame.tsx";
+import useFixedGame from "../../hooks/useFixedGame.tsx";
 
 interface AliasCardProps {
   alias: AliasProps;
@@ -30,7 +30,7 @@ interface AliasCardProps {
 }
 
 export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
-  const [game] = useStoredGame();
+  const [game] = useFixedGame();
   const [displayAlias, setDisplayAlias] = useSetState(alias);
   const [weight, setWeight] = useState(0);
   const [progress, setProgress] = useState(0);

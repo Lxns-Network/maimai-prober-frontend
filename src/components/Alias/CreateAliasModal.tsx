@@ -11,7 +11,7 @@ import {
   Space, Text,
   TextInput, Tooltip, Box, Alert
 } from "@mantine/core";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useForm } from "@mantine/form";
@@ -19,12 +19,12 @@ import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
 import { createAlias } from "../../utils/api/alias.tsx";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
-import { ApiContext } from "../../App.tsx";
 import { useLocalStorage } from "@mantine/hooks";
 import { PhotoView } from "react-photo-view";
 import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { ASSET_URL } from "../../main.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
 
 interface CreateAliasModalProps {
   defaultSongId?: number;
@@ -38,8 +38,8 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [game] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game' });
-  const context = useContext(ApiContext);
 
+  const getSongList = useSongListStore((state) => state.getSongList);
   const form = useForm({
     initialValues: {
       songId: null as number | null,
@@ -88,7 +88,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   }
 
   useEffect(() => {
-    setSongList(context.songList[game]);
+    setSongList(getSongList(game));
   }, [game]);
 
   useEffect(() => {

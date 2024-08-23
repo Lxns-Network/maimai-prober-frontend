@@ -4,7 +4,7 @@ import {
   Modal, Progress, Space, Text, ThemeIcon, Tooltip
 } from "@mantine/core";
 import { AliasProps } from "../../pages/alias/Vote.tsx";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { voteAlias } from "../../utils/api/alias.tsx";
 import {
   IconCheck,
@@ -16,11 +16,12 @@ import {
 } from "@tabler/icons-react";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { PhotoView } from "react-photo-view";
-import { ApiContext } from "../../App.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ASSET_URL } from "../../main.tsx";
-import useStoredGame from "../../hooks/useStoredGame.tsx";
+import useFixedGame from "../../hooks/useFixedGame.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -36,10 +37,11 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
   const [weight, setWeight] = useState(0);
   const [loading, setLoading] = useState(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-  const [game] = useStoredGame();
+  const [game] = useFixedGame();
 
-  const context = useContext(ApiContext);
-  const songList = context.songList[game];
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state[game] })),
+  )
 
   useEffect(() => {
     setSong(songList.find(alias.song.id) || null);

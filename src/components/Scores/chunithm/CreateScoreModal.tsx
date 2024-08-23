@@ -7,7 +7,7 @@ import {
   Select,
   Text
 } from "@mantine/core";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import {
@@ -20,9 +20,10 @@ import { createPlayerScore } from "../../../utils/api/player.tsx";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import { ChunithmScoreProps } from "./Score.tsx";
 import "dayjs/locale/zh-cn"
-import { ApiContext } from "../../../App.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
+import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 interface CreateScoreModalProps {
   score?: ChunithmScoreProps | null;
@@ -31,13 +32,13 @@ interface CreateScoreModalProps {
 }
 
 export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScoreModalProps) => {
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state.chunithm })),
+  )
   const [uploading, setUploading] = useState(false);
   const [song, setSong] = useState<ChunithmSongProps | null>(null);
   const [difficulties, setDifficulties] = useState<ChunithmDifficultyProps[] | null>(null);
   const computedColorScheme = useComputedColorScheme('light');
-  const context = useContext(ApiContext);
-
-  const songList = context.songList.chunithm;
 
   const form = useForm({
     initialValues: {

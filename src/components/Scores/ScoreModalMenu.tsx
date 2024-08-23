@@ -8,7 +8,7 @@ import ScoreContext from "../../utils/context.tsx";
 import { useNavigate } from "react-router-dom";
 import { MaimaiScoreProps } from "./maimai/Score.tsx";
 import { ChunithmScoreProps } from "./chunithm/Score.tsx";
-import useStoredGame from "../../hooks/useStoredGame.tsx";
+import useFixedGame from "../../hooks/useFixedGame.tsx";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
@@ -17,7 +17,7 @@ interface ScoreModalActionMenuProps {
 
 export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
   const [params, setParams] = useState(new URLSearchParams());
-  const [game] = useStoredGame();
+  const [game] = useFixedGame();
   const navigate = useNavigate();
   const context = useContext(ScoreContext);
 

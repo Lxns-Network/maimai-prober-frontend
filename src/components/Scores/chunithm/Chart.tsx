@@ -1,7 +1,7 @@
 import { ChunithmDifficultyProps, ChunithmNotesProps } from "../../../utils/api/song/chunithm.tsx";
-import {Box, Flex, keys, Space, Table, Text} from "@mantine/core";
-import {useContext} from "react";
-import {ApiContext} from "../../../App.tsx";
+import { Box, Group, keys, Space, Table, Text } from "@mantine/core";
+import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 const ChartNotes = ({ notes }: { notes: ChunithmNotesProps }) => {
   if (!notes) return;
@@ -21,26 +21,27 @@ const ChartNotes = ({ notes }: { notes: ChunithmNotesProps }) => {
 }
 
 export const ChunithmChart = ({ difficulty }: { difficulty: ChunithmDifficultyProps }) => {
-  const context = useContext(ApiContext);
-  const versions = context.songList.chunithm.versions;
+  const { versions } = useSongListStore(
+    useShallow((state) => ({ versions: state.chunithm.versions })),
+  )
 
   if (!difficulty) return;
 
   return <>
-    <Flex columnGap="xl">
+    <Group>
       {difficulty.note_designer && (
-        <Box>
+        <Box mr={12}>
           <Text fz="xs" c="gray">谱师</Text>
           <Text fz="sm">{difficulty.note_designer}</Text>
         </Box>
       )}
-      <Box>
+      <Box mr={12}>
         <Text fz="xs" c="gray">版本</Text>
         <Text fz="sm">
           {versions.slice().reverse().find((version) => difficulty.version >= version.version)?.title || "未知"}
         </Text>
       </Box>
-    </Flex>
+    </Group>
     <Space h="md" />
     <Text size="xs" c="gray">物量</Text>
     <ChartNotes notes={difficulty.notes} />

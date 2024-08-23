@@ -1,7 +1,8 @@
 import { MaimaiDifficultyProps, MaimaiNotesProps } from "../../../utils/api/song/maimai.tsx";
-import { Box, Center, Flex, keys, Loader, SegmentedControl, Select, Space, Table, Text } from "@mantine/core";
-import { useContext, useState } from "react";
-import { ApiContext } from "../../../App.tsx";
+import { Box, Center, Group, keys, Loader, SegmentedControl, Select, Space, Table, Text } from "@mantine/core";
+import { useState } from "react";
+import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 // 基础权重
 const basic = {
@@ -168,28 +169,28 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
 }
 
 export const MaimaiChart = ({ difficulty }: { difficulty: MaimaiDifficultyProps }) => {
+  const { versions } = useSongListStore(
+    useShallow((state) => ({ versions: state.maimai.versions })),
+  )
   const [side, setSide] = useState<"left" | "right">("left");
-
-  const context = useContext(ApiContext);
-  const versions = context.songList.maimai.versions;
 
   if (!difficulty) return;
 
   return <>
-    <Flex columnGap="xl">
+    <Group>
       {difficulty.note_designer && (
-        <Box>
+        <Box mr={12}>
           <Text fz="xs" c="gray">谱师</Text>
           <Text fz="sm">{difficulty.note_designer}</Text>
         </Box>
       )}
-      <Box>
+      <Box mr={12}>
         <Text fz="xs" c="gray">版本</Text>
         <Text fz="sm">
           {versions.slice().reverse().find((version) => difficulty.version >= version.version)?.title || "未知"}
         </Text>
       </Box>
-    </Flex>
+    </Group>
     <Space h="xs" />
     {difficulty.is_buddy ? (
       <>

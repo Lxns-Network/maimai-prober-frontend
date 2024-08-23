@@ -2,16 +2,17 @@ import {
   Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Grid, Group, Loader,
   Modal, Paper, ScrollArea, Text, useCombobox,
 } from "@mantine/core";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { MaimaiPlayerProps } from "./PlayerPanel.tsx";
 import { getPlayerRatingTrend } from "../../../../utils/api/player.tsx";
 import { PlayerContent } from "./PlayerContent.tsx";
 import { RatingTrend, RatingTrendProps } from "./RatingTrend.tsx";
 import { IconDots } from "@tabler/icons-react";
 import classes from "../PlayerModal.module.css";
-import { ApiContext } from "../../../../App.tsx";
 import { openRetryModal } from "../../../../utils/modal.tsx";
-import {CustomMarquee} from "../../../CustomMarquee.tsx";
+import { CustomMarquee } from "../../../CustomMarquee.tsx";
+import { useShallow } from "zustand/react/shallow";
+import useSongListStore from "../../../../hooks/useSongListStore.tsx";
 
 interface ModalProps {
   player: MaimaiPlayerProps;
@@ -20,8 +21,9 @@ interface ModalProps {
 }
 
 export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
-  const context = useContext(ApiContext);
-  const songList = context.songList.maimai;
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state.maimai })),
+  )
 
   const [trend, setTrend] = useState<RatingTrendProps[]>([]);
   const [fetching, setFetching] = useState(true);

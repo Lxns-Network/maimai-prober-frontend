@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Text,
@@ -16,10 +16,10 @@ import { fetchAPI } from "../../utils/api/api.tsx";
 import { Link, useLocation } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
-import { ApiContext } from "../../App.tsx";
 import { SongCard } from "../../components/Songs/SongCard.tsx";
 import { SongDifficultyList } from "../../components/Songs/SongDifficultyList.tsx";
 import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
 
 export default function Songs() {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
@@ -31,9 +31,9 @@ export default function Songs() {
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<any[]>([]);
 
+  const getSongList = useSongListStore((state) => state.getSongList);
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
   const location = useLocation();
-  const context = useContext(ApiContext);
 
   const getPlayerSongBestsHandler = async (type?: string) => {
     if (!song) return;
@@ -67,7 +67,7 @@ export default function Songs() {
   useEffect(() => {
     if (!game) return;
 
-    setSongList(context.songList[game]);
+    setSongList(getSongList(game));
     setScores([]);
 
     if (defaultSongId) {

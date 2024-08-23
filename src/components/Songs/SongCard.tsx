@@ -1,7 +1,6 @@
 import { MaimaiGenreProps, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import React, { useContext } from "react";
-import { ApiContext } from "../../App.tsx";
+import React from "react";
 import { ActionIcon, Avatar, Badge, Box, Card, Group, Text } from "@mantine/core";
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
 import { PhotoView } from "react-photo-view";
@@ -10,7 +9,10 @@ import { IconPhotoOff, IconPlus } from "@tabler/icons-react";
 import { openAlertModal } from "../../utils/modal.tsx";
 import { AudioPlayer } from "../AudioPlayer.tsx";
 import classes from "./SongCard.module.css";
-import useStoredGame from "../../hooks/useStoredGame.tsx";
+import useFixedGame from "../../hooks/useFixedGame.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
+import useAliasListStore from "../../hooks/useAliasListStore.tsx";
 
 interface SongCardProps {
   song: MaimaiSongProps | ChunithmSongProps | null;
@@ -19,12 +21,15 @@ interface SongCardProps {
 }
 
 export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
-  const [game] = useStoredGame();
-  const isLoggedOut = !Boolean(localStorage.getItem("token"));
+  const [game] = useFixedGame();
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state[game] })),
+  );
+  const { aliasList } = useAliasListStore(
+    useShallow((state) => ({ aliasList: state[game] })),
+  );
 
-  const context = useContext(ApiContext);
-  const songList = context.songList[game];
-  const aliasList = context.aliasList[game];
+  const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
   if (!song) return null;
 

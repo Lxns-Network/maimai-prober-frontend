@@ -14,10 +14,10 @@ import { IconReload } from "@tabler/icons-react";
 import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
-import { ApiContext } from "../../App.tsx";
+import useSongListStore from "../../hooks/useSongListStore.tsx";
 
 interface AdvancedFilterProps {
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
@@ -87,7 +87,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
   const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
   const [uploadTime, setUploadTime] = useState<[Date | null, Date | null]>([null, null]);
 
-  const context = useContext(ApiContext);
+  const getSongList = useSongListStore((state) => state.getSongList);
   const small = useMediaQuery('(max-width: 30rem)');
 
   const resetFilter = (game?: "maimai" | "chunithm") => {
@@ -104,7 +104,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
   }
 
   useEffect(() => {
-    setSongList(context.songList[game]);
+    setSongList(getSongList(game));
     resetFilter(game);
   }, [game]);
 

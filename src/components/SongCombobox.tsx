@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CloseButton,
   Combobox,
@@ -12,9 +12,10 @@ import {
 import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.tsx";
 import { IconSearch } from "@tabler/icons-react";
-import { ApiContext } from "../App.tsx";
 import { toHiragana } from 'wanakana';
 import { useLocalStorage } from "@mantine/hooks";
+import useSongListStore from "../hooks/useSongListStore.tsx";
+import useAliasListStore from "../hooks/useAliasListStore.tsx";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   value?: number;
@@ -78,7 +79,8 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
   const [search, setSearch] = useState('');
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
 
-  const context = useContext(ApiContext);
+  const getSongList = useSongListStore((state) => state.getSongList);
+  const getAliasList = useAliasListStore((state) => state.getAliasList);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -89,8 +91,8 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
     if (!game) return;
 
     setFilteredSongs([]);
-    setSongList(context.songList[game]);
-    setAliases(context.aliasList[game].aliases);
+    setSongList(getSongList(game));
+    setAliases(getAliasList(game).aliases);
   }, [game]);
 
   useEffect(() => {

@@ -53,7 +53,8 @@
     "remark-toc": "^9.0.0",
     "stylelint": "^16.6.1",
     "stylelint-config-standard-scss": "^13.1.0",
-    "wanakana": "^5.3.1"
+    "wanakana": "^5.3.1",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
     "@types/node": "^20.13.0",

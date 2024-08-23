@@ -20,20 +20,21 @@ import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../../CustomMarquee.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
 import classes from "../ScoreModal.module.css";
-import { ApiContext } from "../../../App.tsx";
+import { useShallow } from "zustand/react/shallow";
+import useSongListStore from "../../../hooks/useSongListStore.tsx";
 
 export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state.maimai })),
+  )
   const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | null>(null);
   const [level, setLevel] = useState(score.level);
 
-  const context = useContext(ApiContext);
-  const songList = context.songList.maimai;
-  const small = useMediaQuery('(max-width: 30rem)');
-
   const levelIndex = score.type !== "utage" ? score.level_index : 5;
+  const small = useMediaQuery('(max-width: 30rem)');
 
   useEffect(() => {
     if (!song) return;

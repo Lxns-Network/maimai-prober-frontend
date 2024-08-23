@@ -7,7 +7,7 @@ import {
   Select,
   Text
 } from "@mantine/core";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import {
@@ -21,9 +21,10 @@ import { createPlayerScore } from "../../../utils/api/player.tsx";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import { MaimaiScoreProps } from "./Score.tsx";
 import "dayjs/locale/zh-cn"
-import { ApiContext } from "../../../App.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
+import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import { useShallow } from "zustand/react/shallow";
 
 interface CreateScoreModalProps {
   score?: MaimaiScoreProps | null;
@@ -32,14 +33,14 @@ interface CreateScoreModalProps {
 }
 
 export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreModalProps) => {
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state.maimai })),
+  )
   const [uploading, setUploading] = useState(false);
   const [song, setSong] = useState<MaimaiSongProps | null>(null);
   const [difficulties, setDifficulties] = useState<MaimaiDifficultyProps[] | null>(null);
+
   const computedColorScheme = useComputedColorScheme('light');
-  const context = useContext(ApiContext);
-
-  const songList = context.songList.maimai;
-
   const form = useForm({
     initialValues: {
       id: score ? score.id : null,
