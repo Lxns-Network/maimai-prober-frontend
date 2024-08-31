@@ -658,8 +658,9 @@ DX Rating 趋势
 | `artist` | `string` | 艺术家 |
 | `genre` | `string` | 曲目分类 |
 | `bpm` | `int` | 曲目 BPM |
+| `map` | `string` | 值可空，曲目所属区域 |
 | `version` | `int` | 曲目首次出现版本 |
-| `rights` | `string` | 曲目版权信息 |
+| `rights` | `string` | 值可空，曲目版权信息 |
 | `disabled` | `bool` | 值可空，是否被禁用，默认值为 `false` |
 | `difficulties` | [`SongDifficulties`](#songdifficulties) | 谱面难度 |
 
@@ -788,7 +789,7 @@ DX Rating 趋势
 | `rate` | [`RateType`](#ratetype) | 值可空，要求的评级类型 |
 | `fc` | [`FCType`](#fctype) | 值可空，要求的 FULL COMBO 类型 |
 | `fs` | [`FSType`](#fstype) | 值可空，要求的 FULL SYNC 类型 |
-| `songs` | [`CollectionRequiredSong[]`](#collectionrequiredsong) | 值可空，要求的曲目 |
+| `songs` | [`CollectionRequiredSong[]`](#collectionrequiredsong) | 值可空，要求的曲目列表 |
 | `completed` | `bool` | 值可空，要求是否全部完成 |
 
 ### CollectionRequiredSong
