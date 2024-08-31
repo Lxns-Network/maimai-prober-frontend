@@ -136,9 +136,9 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
             </Grid.Col>
             <Grid.Col span={6}>
               <Paper className={classes.subParameters}>
-                <Text fz="xs" c="dimmed">Over Power</Text>
+                <Text fz="xs" c="dimmed">OVER POWER</Text>
                 <Text fz="md">
-                  {Math.floor(score.over_power * 100) / 100}%
+                  {!score.over_power ? "-" : Math.floor(score.over_power * 100) / 100}%
                 </Text>
               </Paper>
             </Grid.Col>

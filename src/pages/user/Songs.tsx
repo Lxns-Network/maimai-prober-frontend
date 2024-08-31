@@ -105,10 +105,7 @@ export default function Songs() {
   }, [song]);
 
   useEffect(() => {
-    if (!songId) {
-      setSearchParams({});
-      return;
-    }
+    if (!songId) return;
 
     const song = songList?.songs.find((song) => song.id === songId);
     if (!song) return;
@@ -119,7 +116,7 @@ export default function Songs() {
     });
     setSong(song);
     setScores([]);
-  }, [songId]);
+  }, [songId, songList?.songs]);
 
   return (
     <Container className={classes.root} size={500}>
@@ -141,7 +138,7 @@ export default function Songs() {
         你可以使用曲目 ID、曲名、艺术家或<Anchor component={Link} to="/alias/vote">曲目别名</Anchor>来搜索曲目。
       </Text>
       <Transition
-        mounted={Boolean(songId)}
+        mounted={Boolean(songId && song)}
         transition="pop"
         timingFunction="ease"
       >
@@ -152,7 +149,7 @@ export default function Songs() {
       <Space h="md" />
       <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mb="md" radius="md" />
       <Transition
-        mounted={!Boolean(songId)}
+        mounted={!Boolean(songId && song)}
         transition="pop"
         enterDelay={250}
       >
@@ -164,7 +161,7 @@ export default function Songs() {
         )}
       </Transition>
       <Transition
-        mounted={Boolean(songId)}
+        mounted={Boolean(songId && song)}
         transition="pop"
       >
         {(styles) => (

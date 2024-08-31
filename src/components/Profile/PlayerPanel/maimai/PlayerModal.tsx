@@ -58,7 +58,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
   }, [version]);
 
   useEffect(() => {
-    if (!opened || trend.length > 0) return;
+    if (!opened || trend.length > 0 || songList.versions.length === 0) return;
 
     setVersion(songList.versions[songList.versions.length-1].version);
     getPlayerRatingTrendHandler();

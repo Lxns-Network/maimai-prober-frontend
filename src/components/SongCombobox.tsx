@@ -113,9 +113,10 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
 
   useEffect(() => {
     if (!songList) return;
+
     const song = songList.songs.find((song) => song.id === value);
     setSearch(song?.title || '');
-  }, [songList, value]);
+  }, [songList?.songs, value]);
 
   return (
     <Combobox

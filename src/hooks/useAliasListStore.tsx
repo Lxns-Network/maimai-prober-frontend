@@ -8,13 +8,16 @@ interface AliasListState {
   fetchAliasList: () => Promise<void>,
 }
 
-const useAliasListStore = create<AliasListState>((_, get) => ({
-  maimai: new AliasList(),
-  chunithm: new AliasList(),
+const useAliasListStore = create<AliasListState>((set, get) => ({
+  maimai: new AliasList('maimai'),
+  chunithm: new AliasList('chunithm'),
   getAliasList: (game) => get()[game],
   fetchAliasList: async () => {
-    await get().maimai.fetch('maimai');
-    await get().chunithm.fetch('chunithm');
+    await Promise.all([get().maimai.fetch(), get().chunithm.fetch()]);
+
+    set({
+      getAliasList: (game: 'maimai' | 'chunithm') => get()[game],
+    });
   },
 }))
 

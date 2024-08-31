@@ -33,8 +33,13 @@ export async function approveAlias(game: string, aliasId: number) {
 }
 
 export class AliasList {
+  game: string = "";
   aliases: any[] = [];
   searchMap: any = {};
+
+  constructor(game: string) {
+    this.game = game;
+  }
 
   private parseSearchMap() {
     this.aliases.forEach((alias) => {
@@ -45,8 +50,8 @@ export class AliasList {
     })
   }
 
-  async fetch(game: string) {
-    const res = await fetchAPI(`${game}/alias/list`, { method: "GET" });
+  async fetch() {
+    const res = await fetchAPI(`${this.game}/alias/list`, { method: "GET" });
     const data = await res?.json();
     this.aliases = data.aliases;
     this.parseSearchMap();

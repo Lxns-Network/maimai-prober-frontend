@@ -29,7 +29,7 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
   const { aliasList } = useAliasListStore(
     useShallow((state) => ({ aliasList: state[game] })),
   );
-  const [colors, setColors] = useState([]);
+  const [colors, setColors] = useState<string[]>([]);
 
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
@@ -38,7 +38,7 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
   return <Card mt="md" radius="md" p={0} withBorder className={classes.card} style={style}>
     <ColorExtractor
       src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png!webp`}
-      getColors={(colors: any) => setColors(colors)}
+      getColors={(colors: string[]) => setColors(colors)}
     />
     <Card.Section m="md">
       <Group wrap="nowrap">
