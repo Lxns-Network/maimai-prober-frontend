@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ScrollArea,
   MantineProvider,
@@ -40,6 +40,7 @@ export const ApiContext = React.createContext({});
 export default function App() {
   const { toggle, fullscreen } = useFullscreen();
   const [opened, setOpened] = useState(window.innerWidth > NAVBAR_BREAKPOINT);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const viewport = useRef<HTMLDivElement>(null);
@@ -86,7 +87,11 @@ export default function App() {
 
   useEffect(() => {
     if (game !== "maimai" && game !== "chunithm") {
-      setGame("maimai");
+      let defaultGame = "maimai";
+      if (/maimai|chunithm/.test(searchParams.get("game") || "")) {
+        defaultGame = searchParams.get("game") || defaultGame;
+      }
+      setGame(defaultGame);
       return;
     }
 

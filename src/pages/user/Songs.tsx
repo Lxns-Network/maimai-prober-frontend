@@ -13,7 +13,7 @@ import { openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
 import { fetchAPI } from "../../utils/api/api.tsx";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { LoginAlert } from "../../components/LoginAlert";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { SongCard } from "../../components/Songs/SongCard.tsx";
@@ -31,6 +31,7 @@ export default function Songs() {
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<any[]>([]);
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const getSongList = useSongListStore((state) => state.getSongList);
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
   const location = useLocation();
@@ -60,7 +61,12 @@ export default function Songs() {
       if (location.state.songId) {
         setDefaultSongId(location.state.songId);
         window.history.replaceState({}, '');
+        return;
       }
+    }
+
+    if (searchParams.has("song_id")) {
+      setDefaultSongId(parseInt(searchParams.get("song_id") || "0"));
     }
   }, []);
 
@@ -74,6 +80,7 @@ export default function Songs() {
       setSongId(defaultSongId);
       setDefaultSongId(0);
     } else {
+      setSearchParams({});
       setSongId(0);
     }
   }, [game]);
@@ -98,11 +105,18 @@ export default function Songs() {
   }, [song]);
 
   useEffect(() => {
-    if (!songId) return;
+    if (!songId) {
+      setSearchParams({});
+      return;
+    }
 
     const song = songList?.songs.find((song) => song.id === songId);
     if (!song) return;
 
+    setSearchParams({
+      "game": game,
+      "song_id": songId.toString(),
+    });
     setSong(song);
     setScores([]);
   }, [songId]);
