@@ -1,3 +1,18 @@
+@import '../../pages/Page.module.css';
+
+.jacket {
+    position: relative;
+
+    &::before {
+        content: "";
+        inset: calc(-1.25rem* var(--mantine-scale));
+        z-index: -1;
+        position: absolute;
+        background-image: linear-gradient(-45deg, var(--primary-color) 50%, var(--secondary-color) 0);
+        filter: blur(72px);
+    }
+}
+
 .audioPlayer {
     background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
 }

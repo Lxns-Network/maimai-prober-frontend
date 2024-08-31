@@ -1,6 +1,6 @@
 import { MaimaiGenreProps, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import React from "react";
+import React, { useState } from "react";
 import { ActionIcon, Avatar, Badge, Box, Card, Group, Text } from "@mantine/core";
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
 import { PhotoView } from "react-photo-view";
@@ -13,6 +13,7 @@ import useFixedGame from "../../hooks/useFixedGame.tsx";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
 import { useShallow } from "zustand/react/shallow";
 import useAliasListStore from "../../hooks/useAliasListStore.tsx";
+import { ColorExtractor } from 'react-color-extractor'
 
 interface SongCardProps {
   song: MaimaiSongProps | ChunithmSongProps | null;
@@ -28,21 +29,31 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
   const { aliasList } = useAliasListStore(
     useShallow((state) => ({ aliasList: state[game] })),
   );
+  const [colors, setColors] = useState([]);
 
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
   if (!song) return null;
 
   return <Card mt="md" radius="md" p={0} withBorder className={classes.card} style={style}>
+    <ColorExtractor
+      src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png!webp`}
+      getColors={(colors: any) => setColors(colors)}
+    />
     <Card.Section m="md">
       <Group wrap="nowrap">
-        <SongDisabledIndicator disabled={song.disabled}>
-          <PhotoView src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png`}>
-            <Avatar src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png!webp`} size={94} radius="md">
-              <IconPhotoOff />
-            </Avatar>
-          </PhotoView>
-        </SongDisabledIndicator>
+        <Box className={classes.jacket} style={{
+          '--primary-color': colors && colors[0],
+          '--secondary-color': colors && colors[1]
+        }}>
+          <SongDisabledIndicator disabled={song.disabled}>
+            <PhotoView src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png`}>
+              <Avatar src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png!webp`} size={94} radius="md">
+                <IconPhotoOff />
+              </Avatar>
+            </PhotoView>
+          </SongDisabledIndicator>
+        </Box>
         <div style={{ flex: 1 }}>
           <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>
           <Text fz="xl" fw={700}>{song.title}</Text>
@@ -68,6 +79,14 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
             {songList.versions.slice().reverse().find((version) => song.version >= version.version)?.title || "未知"}
           </Text>
         </Box>
+        {"map" in song && song.map && (
+          <Box mr={12}>
+            <Text fz="xs" c="dimmed">所属区域</Text>
+            <Text fz="sm">
+              {song.map}
+            </Text>
+          </Box>
+        )}
       </Group>
       <Box mt={12}>
         <Text fz="xs" c="dimmed" mb={3}>曲目别名</Text>
