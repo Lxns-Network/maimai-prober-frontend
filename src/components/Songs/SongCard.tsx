@@ -1,6 +1,6 @@
 import { MaimaiGenreProps, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ActionIcon, Avatar, Badge, Box, Card, Group, Text } from "@mantine/core";
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
 import { PhotoView } from "react-photo-view";
@@ -21,6 +21,43 @@ interface SongCardProps {
   style?: React.CSSProperties;
 }
 
+function hexToRgb(hex: string) {
+  const bigint = parseInt(hex.slice(1), 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255
+  };
+}
+
+function colorDistance(c1: { r: number, g: number, b: number }, c2: { r: number, g: number, b: number }) {
+  return Math.sqrt(
+    Math.pow(c1.r - c2.r, 2) +
+    Math.pow(c1.g - c2.g, 2) +
+    Math.pow(c1.b - c2.b, 2)
+  );
+}
+
+function findMostContrastingColors(colors: string[]) {
+  let maxDistance = 0;
+  let colorPair: string[] = [];
+
+  for (let i = 0; i < colors.length; i++) {
+    for (let j = i + 1; j < colors.length; j++) {
+      const rgb1 = hexToRgb(colors[i]);
+      const rgb2 = hexToRgb(colors[j]);
+      const distance = colorDistance(rgb1, rgb2);
+
+      if (distance > maxDistance) {
+        maxDistance = distance;
+        colorPair = [colors[i], colors[j]];
+      }
+    }
+  }
+
+  return colorPair;
+}
+
 export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
   const [game] = useFixedGame();
   const { songList } = useSongListStore(
@@ -30,8 +67,12 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
     useShallow((state) => ({ aliasList: state[game] })),
   );
   const [colors, setColors] = useState<string[]>([]);
-
+  const [contrastColors, setContrastColors] = useState<string[]>([]);
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
+
+  useEffect(() => {
+    setContrastColors(findMostContrastingColors(colors));
+  }, [colors]);
 
   if (!song) return null;
 
@@ -43,8 +84,8 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
     <Card.Section m="md">
       <Group wrap="nowrap">
         <Box className={classes.jacket} style={{
-          '--primary-color': colors && colors[0],
-          '--secondary-color': colors && colors[1]
+          '--primary-color': contrastColors && contrastColors[0],
+          '--secondary-color': contrastColors && contrastColors[1]
         }}>
           <SongDisabledIndicator disabled={song.disabled}>
             <PhotoView src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png`}>
