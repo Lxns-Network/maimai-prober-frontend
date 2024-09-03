@@ -52,7 +52,7 @@ export function UserButton({ user, onClick, ...others }: { user: UserProps, onCl
           <Text c="dimmed" size="xs">{user.email}</Text>
         </div>
 
-        <IconChevronRight size={16} />
+        <IconChevronRight size={16} color="gray" />
       </Group>
     </UnstyledButton>
   );
