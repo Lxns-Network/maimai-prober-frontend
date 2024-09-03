@@ -1,0 +1,16 @@
+.changeLabel {
+    position: relative;
+}
+
+.changeLabel::after {
+    content: attr(data-label);
+    position: absolute;
+    left: 0.5rem;
+    bottom: -0.5rem;
+    padding: 0.1rem 0.25rem;
+    border-radius: 0.1rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    font-weight: 500;
+    background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+}

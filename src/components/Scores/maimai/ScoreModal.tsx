@@ -2,8 +2,8 @@ import { MaimaiScoreProps } from "./Score.tsx";
 import {
   Avatar,
   Badge,
-  Box,
-  Card, Grid,
+  Box, Button,
+  Grid,
   Group,
   Image, Paper,
   rem,
@@ -15,7 +15,7 @@ import {
   MaimaiDifficultyProps,
   MaimaiSongProps
 } from "../../../utils/api/song/maimai.tsx";
-import { IconPhotoOff } from "@tabler/icons-react";
+import { IconChevronRight, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { CustomMarquee } from "../../CustomMarquee.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
@@ -25,6 +25,8 @@ import { useMediaQuery } from "@mantine/hooks";
 import classes from "../ScoreModal.module.css";
 import { useShallow } from "zustand/react/shallow";
 import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import { MaimaiRatingHistoryModal } from "./RatingHistoryModal.tsx";
+import { DeluxeRatingCalculator } from "./DeluxeRatingCalculator.tsx";
 
 export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
   const { songList } = useSongListStore(
@@ -32,6 +34,8 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
   )
   const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | null>(null);
   const [level, setLevel] = useState(score.level);
+  const [ratingHistoryOpened, setRatingHistoryOpened] = useState(false);
+  const [calculatorOpened, setCalculatorOpened] = useState(false);
 
   const levelIndex = score.type !== "utage" ? score.level_index : 5;
   const small = useMediaQuery('(max-width: 30rem)');
@@ -50,6 +54,19 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
 
   return (
     <>
+      <MaimaiRatingHistoryModal
+        song={song}
+        difficulty={difficulty}
+        opened={ratingHistoryOpened}
+        onClose={() => setRatingHistoryOpened(false)}
+      />
+      <DeluxeRatingCalculator
+        defaultAchievements={score.achievements}
+        defaultDeluxeRating={score.dx_rating}
+        defaultLevelValue={difficulty?.level_value}
+        opened={calculatorOpened}
+        onClose={() => setCalculatorOpened(false)}
+      />
       <Group wrap="nowrap">
         <SongDisabledIndicator disabled={song.disabled}>
           <PhotoView src={`${ASSET_URL}/maimai/jacket/${songList.getSongResourceId(song.id)}.png`}>
@@ -77,16 +94,16 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
             />
           </Group>
         </div>
-        <Card w={54} h={38} p={0} radius="md" withBorder style={{
+        <Button w={54} h={38} p={0} radius="md" style={{
           border: `2px solid ${getScoreSecondaryColor("maimai", levelIndex)}`,
           backgroundColor: getScoreCardBackgroundColor("maimai", levelIndex),
-        }}>
+        }} onClick={() => setRatingHistoryOpened(true)}>
           <Text size="xl" fw={500} ta="center" c="white" style={{
             lineHeight: rem(34),
           }}>
             {level}
           </Text>
-        </Card>
+        </Button>
       </Group>
       {score.achievements != -1 ? (
         <>
@@ -107,11 +124,17 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
           </Group>
           <Grid mt="md">
             <Grid.Col span={6}>
-              <Paper className={classes.subParameters}>
-                <Text fz="xs" c="dimmed">DX Rating</Text>
-                <Text>
-                  {score.type === "utage" ? "-" : parseInt(String(score.dx_rating))}
-                </Text>
+              <Paper className={[classes.subParameters, classes.subParametersButton].join(' ')} onClick={() => setCalculatorOpened(true)}>
+                <Group>
+                  <div style={{ flex: 1 }}>
+                    <Text fz="xs" c="dimmed">DX Rating</Text>
+                    <Text>
+                      {score.type === "utage" ? "-" : parseInt(String(score.dx_rating))}
+                    </Text>
+                  </div>
+
+                  <IconChevronRight size={16} color="gray" />
+                </Group>
               </Paper>
             </Grid.Col>
             <Grid.Col span={6}>

@@ -4,6 +4,14 @@
     border-radius: var(--mantine-radius-md);
 }
 
+.subParametersButton {
+    cursor: pointer;
+}
+
+.subParametersButton:hover {
+    background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+}
+
 .worldsEndText {
     background: conic-gradient(
             from 240deg,
