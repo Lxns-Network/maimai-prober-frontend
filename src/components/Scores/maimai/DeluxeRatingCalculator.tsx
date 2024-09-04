@@ -112,7 +112,7 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
 
   useEffect(() => {
     setAchievements(defaultAchievements);
-    setDeluxeRating(defaultDeluxeRating);
+    setDeluxeRating(parseInt(String(defaultDeluxeRating)));
     setLevelValue(defaultLevelValue);
   }, [defaultAchievements, defaultDeluxeRating, defaultLevelValue]);
 
@@ -160,6 +160,7 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
               variant="filled"
               label="DX Rating"
               min={0}
+              allowDecimal={false}
               value={deluxeRating}
               onChange={(value) => setDeluxeRating(value as number)}
             />}
