@@ -18,7 +18,7 @@ import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import { ASSET_URL } from "../../main.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { useIntersection } from "@mantine/hooks";
-import { CustomMarquee } from "../CustomMarquee.tsx";
+import { Marquee } from "../Marquee.tsx";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
 
 interface ScoreModalProps {
@@ -154,9 +154,9 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                   <Avatar src={song ? `${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png!webp` : null} size={28} radius="md">
                     <IconPhotoOff />
                   </Avatar>
-                  <CustomMarquee>
+                  <Marquee>
                     <Text>{song?.title}</Text>
-                  </CustomMarquee>
+                  </Marquee>
                 </Group>
               )}
             </Transition>

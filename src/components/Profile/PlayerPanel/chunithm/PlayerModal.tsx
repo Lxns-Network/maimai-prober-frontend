@@ -5,7 +5,7 @@ import {
 import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
 import { PlayerContent } from "./PlayerContent.tsx";
 import classes from "../PlayerModal.module.css";
-import { CustomMarquee } from "../../../CustomMarquee.tsx";
+import { Marquee } from "../../../Marquee.tsx";
 
 interface ModalProps {
   player: ChunithmPlayerProps;
@@ -35,7 +35,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
                   <Paper className={classes.subParameters}>
                     <Text fz="xs" c="dimmed">名牌版</Text>
                     <Text fz="sm">
-                      <CustomMarquee>{player.name_plate.name}</CustomMarquee>
+                      <Marquee>{player.name_plate.name}</Marquee>
                     </Text>
                   </Paper>
                 )}
@@ -45,7 +45,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
                   <Paper className={classes.subParameters}>
                     <Text fz="xs" c="dimmed">地图头像</Text>
                     <Text fz="sm">
-                      <CustomMarquee>{player.map_icon.name}</CustomMarquee>
+                      <Marquee>{player.map_icon.name}</Marquee>
                     </Text>
                   </Paper>
                 )}
@@ -54,7 +54,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
                 <Paper className={classes.subParameters}>
                   <Text fz="xs" c="dimmed">上次同步时间</Text>
                   <Text fz="sm">
-                    <CustomMarquee>{(new Date(Date.parse(player.upload_time))).toLocaleString()}</CustomMarquee>
+                    <Marquee>{(new Date(Date.parse(player.upload_time))).toLocaleString()}</Marquee>
                   </Text>
                 </Paper>
               </Grid.Col>

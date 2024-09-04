@@ -12,7 +12,7 @@ import {
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getDeluxeRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 import { ASSET_URL } from "../../../../main.tsx";
-import { CustomMarquee } from "../../../CustomMarquee.tsx";
+import { Marquee } from "../../../Marquee.tsx";
 
 export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
   const computedColorScheme = useComputedColorScheme('light');
@@ -30,13 +30,13 @@ export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
         <Flex gap="xs" mb={8}>
           {player.trophy && (
             <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color || "normal")} children={
-              <CustomMarquee>
+              <Marquee>
                 <Text fz="xs" style={{
                   whiteSpace: "pre-wrap"
                 }}>
                   {player.trophy.name}
                 </Text>
-              </CustomMarquee>
+              </Marquee>
             } />
           )}
           <Badge variant="gradient" gradient={getDeluxeRatingGradient(player.rating)} style={{

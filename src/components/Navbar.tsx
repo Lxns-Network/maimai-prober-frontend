@@ -84,19 +84,12 @@ export default function Navbar({ style, onClose }: NavbarProps) {
         <Container>
           <NavbarButton label="帮助文档" icon={<IconHelp stroke={1.5} />} to="/docs" onClose={onClose} />
           {!isLoggedOut && (
-            <>
-              {/*
-              <NavbarButton label="应用登录二维码" icon={mdiQrcode} onClose={() => null} onClick={() => {
-                setQrcodeOpened(true);
-              }} />
-              */}
-              <NavbarButton label="登出" icon={<IconLogout stroke={1.5} />} to="/" onClose={onClose} onClick={() => {
-                logoutUser().then(() => {
-                  localStorage.removeItem('token');
-                  window.location.href = "/";
-                });
-              }} />
-            </>
+            <NavbarButton label="登出" icon={<IconLogout stroke={1.5} />} to="/" onClose={onClose} onClick={() => {
+              logoutUser().then(() => {
+                localStorage.removeItem('token');
+                window.location.href = "/";
+              });
+            }} />
           )}
         </Container>
       </div>

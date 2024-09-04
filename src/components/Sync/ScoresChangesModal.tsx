@@ -13,7 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { getScoreCardBackgroundColor } from "../../utils/color.tsx";
-import { CustomMarquee } from "../CustomMarquee.tsx";
+import { Marquee } from "../Marquee.tsx";
 
 interface ScoresChangesModalProps {
   game: "maimai" | "chunithm";
@@ -135,7 +135,7 @@ const ScoresChangesTable = ({ game, scores }: { game: "maimai" | "chunithm", sco
               <Badge variant="filled" color="orange" size="xs" w={40}>DX</Badge>
             )}
             <Space w={8} />
-            <CustomMarquee>{song_name}</CustomMarquee>
+            <Marquee>{song_name}</Marquee>
           </Flex>;
         },
       },
@@ -204,7 +204,7 @@ const ScoresChangesTable = ({ game, scores }: { game: "maimai" | "chunithm", sco
         title: '曲名',
         width: 100,
         render: ({ song_name }) => {
-          return <CustomMarquee>{song_name}</CustomMarquee>;
+          return <Marquee>{song_name}</Marquee>;
         },
       },
       {

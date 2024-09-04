@@ -20,7 +20,7 @@ import classes from "../../pages/Page.module.css";
 import { IconCheck } from "@tabler/icons-react";
 import { PlateDataProps } from "../../pages/user/Plates.tsx";
 import { PhotoView } from "react-photo-view";
-import { CustomMarquee } from "../CustomMarquee.tsx";
+import { Marquee } from "../Marquee.tsx";
 import { ASSET_URL } from "../../main.tsx";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 
@@ -147,9 +147,9 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
           <Grid grow h={height}>
             <Grid.Col span={6} ref={ref}>
               <Text fz="xs" c="dimmed">曲目范围</Text>
-              <CustomMarquee>
+              <Marquee>
                 <Text fz="sm">{((plate && plate.description) || "").split("/")[0]}</Text>
-              </CustomMarquee>
+              </Marquee>
             </Grid.Col>
             <Grid.Col span={6}>
               {plate && plate.required && plate.required[0].fc && (

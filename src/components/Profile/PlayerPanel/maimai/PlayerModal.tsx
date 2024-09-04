@@ -10,7 +10,7 @@ import { RatingTrend, RatingTrendProps } from "./RatingTrend.tsx";
 import { IconDots } from "@tabler/icons-react";
 import classes from "../PlayerModal.module.css";
 import { openRetryModal } from "../../../../utils/modal.tsx";
-import { CustomMarquee } from "../../../CustomMarquee.tsx";
+import { Marquee } from "../../../Marquee.tsx";
 import { useShallow } from "zustand/react/shallow";
 import useSongListStore from "../../../../hooks/useSongListStore.tsx";
 
@@ -85,7 +85,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
                   <Paper className={classes.subParameters}>
                     <Text fz="xs" c="dimmed">姓名框</Text>
                     <Text fz="sm">
-                      <CustomMarquee>{player.name_plate.name}</CustomMarquee>
+                      <Marquee>{player.name_plate.name}</Marquee>
                     </Text>
                   </Paper>
                 )}
@@ -95,7 +95,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
                   <Paper className={classes.subParameters}>
                     <Text fz="xs" c="dimmed">背景板</Text>
                     <Text fz="sm">
-                      <CustomMarquee>{player.frame.name}</CustomMarquee>
+                      <Marquee>{player.frame.name}</Marquee>
                     </Text>
                   </Paper>
                 )}
@@ -104,7 +104,7 @@ export const PlayerModal = ({ player, opened, onClose }: ModalProps) => {
                 <Paper className={classes.subParameters}>
                   <Text fz="xs" c="dimmed">上次同步时间</Text>
                   <Text fz="sm">
-                    <CustomMarquee>{(new Date(Date.parse(player.upload_time))).toLocaleString()}</CustomMarquee>
+                    <Marquee>{(new Date(Date.parse(player.upload_time))).toLocaleString()}</Marquee>
                   </Text>
                 </Paper>
               </Grid.Col>

@@ -1,18 +1,21 @@
-import { Children, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Children, ReactNode, useEffect, useLayoutEffect, useState } from "react";
 import { Group } from "@mantine/core";
+import { useHover } from "@mantine/hooks";
 
-interface CustomMarqueeProps {
+interface MarqueeProps {
   speed?: number;
   delay?: number;
   interval?: number;
+  pauseOnHover?: boolean;
   children: ReactNode;
   props?: any;
 }
 
-export const CustomMarquee = ({ speed = 0.5, delay = 1000, interval = 1000, children, ...props }: CustomMarqueeProps) => {
+export const Marquee = ({ speed = 0.5, delay = 1000, interval = 1000, pauseOnHover = true, children, ...props }: MarqueeProps) => {
+  const { hovered, ref } = useHover();
   const [isScrolling, setIsScrolling] = useState(false);
   const [translateX, setTranslateX] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
+  const [direction, setDirection] = useState(1);
 
   useEffect(() => {
     if (!isScrolling) {
@@ -20,8 +23,7 @@ export const CustomMarquee = ({ speed = 0.5, delay = 1000, interval = 1000, chil
       return;
     }
 
-    let direction = 1;
-    let isPaused = false;
+    let isPaused = hovered && pauseOnHover;
 
     const scroll = () => {
       if (!isPaused) {
@@ -33,7 +35,7 @@ export const CustomMarquee = ({ speed = 0.5, delay = 1000, interval = 1000, chil
 
           if (newTranslateX <= -maxTranslateX - speed || newTranslateX >= speed) {
             isPaused = true;
-            direction *= -1;
+            setDirection((prev) => -prev);
 
             setTimeout(() => {
               isPaused = false;
@@ -48,7 +50,7 @@ export const CustomMarquee = ({ speed = 0.5, delay = 1000, interval = 1000, chil
     const intervalId = setInterval(scroll, 10);
 
     return () => clearInterval(intervalId);
-  }, [isScrolling]);
+  }, [isScrolling, direction, hovered]);
 
   useLayoutEffect(() => {
     if (ref.current && ref.current.scrollWidth > ref.current.clientWidth) {

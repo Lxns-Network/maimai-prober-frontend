@@ -180,13 +180,19 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
                       <Table.Td>{row.levelValue.toFixed(1)}</Table.Td>
                       {method != "dx_rating" && rows[index+1] ? (
                         <Table.Td className={classes.changeLabel} fw={500} data-label={
-                          `+ ${(Math.round(row.deluxeRating*100)-Math.round(rows[index+1].deluxeRating*100))/100}`
+                          `+ ${(parseInt(row.deluxeRating)-parseInt(rows[index+1].deluxeRating))}`
                         }>
-                          {row.deluxeRating.toFixed(2)}
+                          {parseInt(row.deluxeRating)}
+                          <Text span c="gray" size="sm">
+                            .{row.deluxeRating.toFixed(2).split(".")[1]}
+                          </Text>
                         </Table.Td>
                       ) : (
                         <Table.Td fw={500}>
-                          {row.deluxeRating.toFixed(2)}
+                          {parseInt(row.deluxeRating)}
+                          <Text span c="gray" size="sm">
+                            .{row.deluxeRating.toFixed(2).split(".")[1]}
+                          </Text>
                         </Table.Td>
                       )}
                     </Table.Tr>

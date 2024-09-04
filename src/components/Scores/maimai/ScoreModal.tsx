@@ -1,5 +1,6 @@
 import { MaimaiScoreProps } from "./Score.tsx";
 import {
+  AspectRatio,
   Avatar,
   Badge,
   Box, Button,
@@ -8,6 +9,7 @@ import {
   Image, Paper,
   rem,
   Text,
+  Tooltip,
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
 import {
@@ -17,7 +19,7 @@ import {
 } from "../../../utils/api/song/maimai.tsx";
 import { IconChevronRight, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
-import { CustomMarquee } from "../../CustomMarquee.tsx";
+import { Marquee } from "../../Marquee.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
 import { useEffect, useState } from "react";
@@ -46,8 +48,11 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
     const difficulty = getDifficulty(song, score.type, score.level_index);
     if (!difficulty) return;
     setDifficulty(difficulty);
-    if (score.type === "utage") return;
-    setLevel(difficulty.level_value.toFixed(1));
+    if (score.type === "utage") {
+      setLevel(difficulty.level);
+    } else {
+      setLevel(difficulty.level_value.toFixed(1));
+    }
   }, [song]);
 
   if (!song) return;
@@ -79,31 +84,37 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
           {score.type === "standard" && <Badge variant="filled" color="blue" size="sm">标准</Badge>}
           {score.type === "dx" && <Badge variant="filled" color="orange" size="sm">DX</Badge>}
           {difficulty?.is_buddy && <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">BUDDY</Badge>}
-          <CustomMarquee>
+          <Marquee>
             <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
-          </CustomMarquee>
+          </Marquee>
           <Text fz="xs" c="dimmed" mb={2}>曲目 ID：{song.id}</Text>
           <Group gap={0} ml={-3}>
-            <Image
-              src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`}
-              w={rem(30)}
-            />
-            <Image
-              src={`/assets/maimai/music_icon/${score.fs || "blank"}.webp`}
-              w={rem(30)}
-            />
+            <AspectRatio ratio={1}>
+              <Image
+                src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`}
+                w={rem(30)}
+              />
+            </AspectRatio>
+            <AspectRatio ratio={1}>
+              <Image
+                src={`/assets/maimai/music_icon/${score.fs || "blank"}.webp`}
+                w={rem(30)}
+              />
+            </AspectRatio>
           </Group>
         </div>
-        <Button w={54} h={38} p={0} radius="md" style={{
-          border: `2px solid ${getScoreSecondaryColor("maimai", levelIndex)}`,
-          backgroundColor: getScoreCardBackgroundColor("maimai", levelIndex),
-        }} onClick={() => setRatingHistoryOpened(true)}>
-          <Text size="xl" fw={500} ta="center" c="white" style={{
-            lineHeight: rem(34),
-          }}>
-            {level}
-          </Text>
-        </Button>
+        <Tooltip label="查看谱面历史定数">
+          <Button w={54} h={38} p={0} radius="md" style={{
+            border: `2px solid ${getScoreSecondaryColor("maimai", levelIndex)}`,
+            backgroundColor: getScoreCardBackgroundColor("maimai", levelIndex),
+          }} onClick={() => setRatingHistoryOpened(true)}>
+            <Text size="xl" fw={500} ta="center" c="white" style={{
+              lineHeight: rem(34),
+            }}>
+              {level}
+            </Text>
+          </Button>
+        </Tooltip>
       </Group>
       {score.achievements != -1 ? (
         <>

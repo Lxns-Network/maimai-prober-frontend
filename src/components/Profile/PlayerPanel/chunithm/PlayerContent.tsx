@@ -3,7 +3,7 @@ import { Avatar, Badge, Divider, Flex, Group, NumberFormatter, rem, Text } from 
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
 import { ASSET_URL } from "../../../../main.tsx";
-import { CustomMarquee } from "../../../CustomMarquee.tsx";
+import { Marquee } from "../../../Marquee.tsx";
 
 export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
   return (
@@ -18,13 +18,13 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
         <Flex gap="xs" mb={8}>
           {player.trophy && (
             <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color)} children={
-              <CustomMarquee>
+              <Marquee>
                 <Text fz="xs" style={{
                   whiteSpace: "pre-wrap"
                 }}>
                   {player.trophy.name}
                 </Text>
-              </CustomMarquee>
+              </Marquee>
             } />
           )}
           <Badge variant="gradient" gradient={getRatingGradient(player.rating)} style={{

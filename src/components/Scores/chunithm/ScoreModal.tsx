@@ -13,7 +13,7 @@ import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../ut
 import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "../../../utils/api/song/chunithm.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
-import { CustomMarquee } from "../../CustomMarquee.tsx";
+import { Marquee } from "../../Marquee.tsx";
 import classes from "../ScoreModal.module.css";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "../../../main.tsx";
@@ -49,9 +49,9 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
           </PhotoView>
         </SongDisabledIndicator>
         <div style={{ flex: 1 }}>
-          <CustomMarquee>
+          <Marquee>
             <Text fz="lg" fw={500}>{song.title}</Text>
-          </CustomMarquee>
+          </Marquee>
           <Text fz="xs" c="dimmed" mb={8}>曲目 ID：{song.id}</Text>
           {difficulty?.origin_id && <Text fz="xs" c="dimmed" mt={-8} mb={8}>原曲 ID：{difficulty?.origin_id}</Text>}
           <Group gap="xs">
@@ -138,7 +138,7 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
               <Paper className={classes.subParameters}>
                 <Text fz="xs" c="dimmed">OVER POWER</Text>
                 <Text fz="md">
-                  {!score.over_power ? "-" : Math.floor(score.over_power * 100) / 100}%
+                  {!score.over_power ? "-" : `${Math.floor(score.over_power * 100) / 100}%`}
                 </Text>
               </Paper>
             </Grid.Col>
