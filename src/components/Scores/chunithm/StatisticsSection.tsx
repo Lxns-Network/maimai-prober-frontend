@@ -47,7 +47,7 @@ const RateStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
 }
 
 const FullComboStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
-  const full_combo = ['alljustice', 'fullcombo']
+  const full_combo = ['alljusticecritical', 'alljustice', 'fullcombo']
 
   return <Box w="100%">
     {full_combo.map((r, index) => (

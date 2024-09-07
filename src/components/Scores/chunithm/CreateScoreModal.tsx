@@ -1,6 +1,6 @@
 import {
   Avatar,
-  Button, Checkbox,
+  Button,
   Chip, Divider, Flex, Grid,
   Group, Input,
   Modal, NumberInput,
@@ -45,7 +45,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
       id: score ? score.id : null,
       difficulty: score ? score.level_index.toString() : null,
       score: null as number | null,
-      clear: null as boolean | null,
+      clear: null as string | null,
       full_combo: null as string | null,
       full_chain: null as string | null,
       play_time: null as Date | null,
@@ -69,7 +69,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
         type: values.type,
         level_index: parseInt(values.difficulty),
         score: values.score,
-        clear: values.clear ? "clear" : "failed",
+        clear: values.clear,
         full_combo: values.full_combo !== "nofullcombo" ? values.full_combo : null,
         full_chain: values.full_chain !== "nofullchain" ? values.full_chain : null,
         play_time: values.play_time ? values.play_time.toISOString().split('.')[0]+"Z" : null,
@@ -175,35 +175,66 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
               </div>
             </Flex>
             <Grid mb="xs">
-              <Grid.Col span={12}>
+              <Grid.Col span={6}>
                 <NumberInput
                   label="分数"
                   placeholder="请输入分数"
-                  mb="sm"
                   min={0}
                   max={1010000}
                   allowDecimal={false}
                   withAsterisk
                   {...form.getInputProps("score")}
                 />
-                <Checkbox
-                  label="是否 Clear"
-                  defaultChecked={false}
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Select
+                  label="Clear"
+                  placeholder="请选择 Clear 类型"
+                  data={[{
+                    label: "FAILED",
+                    value: "failed",
+                  }, {
+                    label: "CLEAR",
+                    value: "clear",
+                  }, {
+                    label: "HARD",
+                    value: "hard",
+                    disabled: true,
+                  }, {
+                    label: "ABSOLUTE",
+                    value: "absolute",
+                    disabled: true,
+                  }, {
+                    label: "ABSOLUTE+",
+                    value: "absolutep",
+                    disabled: true,
+                  }, {
+                    label: "ABSOLUTE++",
+                    value: "absolutepp",
+                    disabled: true,
+                  }, {
+                    label: "CATASTROPHY",
+                    value: "catastrophy",
+                    disabled: true,
+                  }]}
+                  comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
+                  withAsterisk
                   {...form.getInputProps("clear")}
                 />
               </Grid.Col>
-              <Grid.Col span={6}>
-                <Input.Wrapper label="Full Combo" mb="xs" withAsterisk {...form.getInputProps("full_combo")}>
+              <Grid.Col span={12}>
+                <Input.Wrapper label="Full Combo" withAsterisk {...form.getInputProps("full_combo")}>
                   <Chip.Group onChange={(value) => form.setValues({ full_combo: value as any })}>
                     <Flex wrap="wrap" columnGap="md" rowGap="xs">
                       <Chip size="xs" value="nofullcombo">无</Chip>
                       <Chip size="xs" value="fullcombo">FC</Chip>
                       <Chip size="xs" value="alljustice">AJ</Chip>
+                      <Chip size="xs" value="alljusticecritical" disabled>AJC</Chip>
                     </Flex>
                   </Chip.Group>
                 </Input.Wrapper>
               </Grid.Col>
-              <Grid.Col span={6}>
+              <Grid.Col span={12}>
                 <Input.Wrapper label="Full Chain" mb="md" withAsterisk {...form.getInputProps("full_chain")}>
                   <Chip.Group onChange={(value) => form.setValues({ full_chain: value as any })}>
                     <Flex wrap="wrap" columnGap="md" rowGap="xs">

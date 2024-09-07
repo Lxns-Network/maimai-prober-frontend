@@ -1,5 +1,6 @@
 import { ChunithmScoreProps } from "./Score.tsx";
 import {
+  AspectRatio,
   Avatar,
   Box,
   Card, Center, Grid,
@@ -7,6 +8,7 @@ import {
   Image,
   NumberFormatter, Paper, Rating,
   rem,
+  Stack,
   Text,
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
@@ -52,33 +54,21 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
           <Marquee>
             <Text fz="lg" fw={500}>{song.title}</Text>
           </Marquee>
-          <Text fz="xs" c="dimmed" mb={8}>曲目 ID：{song.id}</Text>
-          {difficulty?.origin_id && <Text fz="xs" c="dimmed" mt={-8} mb={8}>原曲 ID：{difficulty?.origin_id}</Text>}
-          <Group gap="xs">
-            {score.clear === "failed" && (
+          <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>
+          {difficulty?.origin_id && <Text fz="xs" c="dimmed">原曲 ID：{difficulty?.origin_id}</Text>}
+          <Group gap="xs" mt={8}>
+            <AspectRatio ratio={132 / 24}>
               <Image
-                src={`/assets/chunithm/music_icon/failed.webp`}
+                src={`/assets/chunithm/music_icon/${score.full_combo || "fullcombo_blank"}.webp`}
                 w={rem(94)}
               />
-            )}
-            {score.clear === "clear" && !score.full_combo && (
+            </AspectRatio>
+            <AspectRatio ratio={132 / 24}>
               <Image
-                src={`/assets/chunithm/music_icon/clear.webp`}
+                src={`/assets/chunithm/music_icon/${score.full_chain || "fullchain_blank"}.webp`}
                 w={rem(94)}
               />
-            )}
-            {score.full_combo && (
-              <Image
-                src={`/assets/chunithm/music_icon/${score.full_combo}.webp`}
-                w={rem(94)}
-              />
-            )}
-            {score.full_chain && (
-              <Image
-                src={`/assets/chunithm/music_icon/${score.full_chain}.webp`}
-                w={rem(94)}
-              />
-            )}
+            </AspectRatio>
           </Group>
         </div>
         {difficulty?.star ? (
@@ -114,10 +104,20 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
       ) : (
         <>
           <Group mt="md">
-            <Image
-              src={`/assets/chunithm/music_rank/${score.rank}.webp`}
-              w={rem(94)}
-            />
+            <Stack gap={8}>
+              <AspectRatio ratio={132 / 24}>
+                <Image
+                  src={`/assets/chunithm/music_rank/${score.rank}.webp`}
+                  w={rem(94)}
+                />
+              </AspectRatio>
+              <AspectRatio ratio={132 / 24}>
+                <Image
+                  src={`/assets/chunithm/music_icon/${score.clear}.webp`}
+                  w={rem(94)}
+                />
+              </AspectRatio>
+            </Stack>
             <Box>
               <Text fz="xs" c="dimmed">成绩</Text>
               <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>

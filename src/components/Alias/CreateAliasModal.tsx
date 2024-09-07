@@ -167,7 +167,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
               </div>
             </Flex>
             <Space h="md" />
-            {form.values.songId && ((game === "maimai" && form.values.songId >= 100000) || (game === "chunithm" && form.values.songId >= 8000)) && (
+            {Boolean(form.values.songId) && ((game === "maimai" && form.values.songId! >= 100000) || (game === "chunithm" && form.values.songId! >= 8000)) && (
               <Alert color="yellow" variant="light" icon={<IconAlertCircle />} title="特殊曲目注意" mb="md">
                 <Text size="sm">
                   你目前选中的是「{game === "maimai" ? "宴会场曲目" : "WORLD'S END 曲目"}」，请确认你要提交的是原曲还是特殊曲目。

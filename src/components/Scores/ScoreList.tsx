@@ -30,7 +30,7 @@ const Score = ({ score, onClick }: ScoreProps) => {
 
   let borderSize = 2;
   let levelIndex = score.level_index;
-  let classNameList = [classes.card, classes.scoreCard]
+  const classNameList = [classes.card, classes.scoreCard]
 
   if (game === "maimai" && "type" in score && score.type === "utage") {
     levelIndex = 5;
