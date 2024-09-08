@@ -50,7 +50,7 @@ const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
     (plate.required || []).forEach((required) => {
       required.songs.forEach((song) => {
         total += required.difficulties.length;
-        completed += song.completed_difficulties.length;
+        completed += (song.completed_difficulties || []).length;
       });
     });
     return Math.round(completed / total * 100);
@@ -76,7 +76,7 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
 
   const [animationRef] = useAutoAnimate();
   const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
-  const [difficulty, setDifficulty] = useState<number>(3);
+  const [difficulty, setDifficulty] = useState<number>(0);
   const small = useMediaQuery(`(max-width: 450px)`);
 
   const pageSize = 20;
@@ -86,7 +86,6 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
 
   useEffect(() => {
     setPage(1);
-    setDifficulty(0);
     if (plate.required) {
       setDifficulties(plate.required.map((required) => required.difficulties).flat());
     }
@@ -109,7 +108,8 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
   }, [difficulty]);
 
   useEffect(() => {
-    setDifficulty(difficulties.length - 1);
+    // 防止动画导致 SegmentedControl 无法正常渲染
+    setTimeout(() => setDifficulty(difficulties.length - 1), 250);
   }, [difficulties]);
 
   useEffect(() => {
@@ -181,12 +181,12 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
       <Text fz="xs" c="dimmed" mb={4}>要求难度</Text>
       <SegmentedControl orientation={
         small && difficulties.length > 4 ? "vertical" : "horizontal"
-      } size="xs" fullWidth data={[
+      } size="xs" data={[
         ...difficulties.map((difficulty) => ({
           label: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'][difficulty],
           value: difficulty.toString(),
         })),
-      ]} defaultValue="3" onChange={(value) => setDifficulty(parseInt(value))} />
+      ]} value={difficulty.toString()} onChange={(value) => setDifficulty(parseInt(value))} />
       <Space h="md" />
       <Text fz="xs" c="dimmed">已完成 {difficultyProgress.completed} / {difficultyProgress.total} 首：</Text>
       <Space h="xs" />

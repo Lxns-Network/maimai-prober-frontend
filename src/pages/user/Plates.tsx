@@ -22,8 +22,8 @@ interface RequiredSongDataProps {
   id: number;
   title: string;
   type: string;
-  completed: boolean;
-  completed_difficulties: number[];
+  completed?: boolean;
+  completed_difficulties?: number[];
 }
 
 interface RequiredDataProps {
@@ -116,8 +116,9 @@ export default function Plates() {
         return existingSong.id === song.id && existingSong.type === song.type;
       })
       if (existing) {
+        if (!existing.completed_difficulties) existing.completed_difficulties = [];
         existing.completed_difficulties = [
-          ...new Set([...existing.completed_difficulties, ...song.completed_difficulties]),
+          ...new Set([...existing.completed_difficulties, ...(song.completed_difficulties || [])]),
         ];
         return acc;
       }
