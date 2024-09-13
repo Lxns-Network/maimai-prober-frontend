@@ -7,9 +7,9 @@ import {
   Space
 } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
-import { checkPermission, UserPermission } from "../utils/session";
+import { checkPermission, UserPermission } from "../../../utils/session";
 import { useLocalStorage } from "@mantine/hooks";
-import { logoutUser } from "../utils/api/user.tsx";
+import { logoutUser } from "../../../utils/api/user";
 import {
   IconCards,
   IconChartBar,
@@ -20,7 +20,7 @@ import {
   IconUserCircle
 } from "@tabler/icons-react";
 import classes from './Navbar.module.css';
-import { GameSegmentedControl } from "./GameSegmentedControl.tsx";
+import { GameSegmentedControl } from "../../GameSegmentedControl";
 
 interface NavbarProps {
   style?: React.CSSProperties;

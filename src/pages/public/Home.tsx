@@ -14,7 +14,7 @@ import {
 import { Carousel } from "@mantine/carousel";
 import { useNavigate } from "react-router-dom";
 import { IconChartBar, IconCode, IconGavel, IconHandStop, IconHistory } from "@tabler/icons-react";
-import { Footer } from "../../components/Footer.tsx";
+import { Footer } from "../../components/Shell/Footer/Footer";
 import Autoplay from "embla-carousel-autoplay";
 import classes from './Home.module.css';
 
