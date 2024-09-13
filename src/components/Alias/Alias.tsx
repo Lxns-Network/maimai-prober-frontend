@@ -143,7 +143,7 @@ export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
               {alias.uploader && alias.uploader.id !== getLoginUserId() && (
                 <Menu.Item c="red" leftSection={<IconFlag2Filled size={20} stroke={1.5} />} disabled>举报滥用</Menu.Item>
               )}
-              {(checkPermission(UserPermission.Administrator) || alias.uploader.id === getLoginUserId()) && (
+              {(checkPermission(UserPermission.Administrator) || (alias.uploader && alias.uploader.id === getLoginUserId())) && (
                 <Menu.Item c="red" leftSection={<IconTrash size={20} stroke={1.5} />} onClick={() => {
                   deleteUserAliasHandler();
                 }}>删除</Menu.Item>

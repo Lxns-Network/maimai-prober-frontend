@@ -42,6 +42,9 @@ export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
             key={`${alias.song.id}:${alias.alias_id}`}
             alias={alias}
             onClick={() => {
+              if (!alias.uploader) setAlias({
+                uploader: undefined,
+              });
               setAlias(alias);
               setOpened(true);
             }}
