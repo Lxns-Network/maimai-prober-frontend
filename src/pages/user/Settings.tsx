@@ -8,7 +8,6 @@ import { useLocalStorage } from "@mantine/hooks";
 import { Link, useNavigate } from "react-router-dom";
 import classes from "../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
-import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
 
 interface ConfigProps {
   allow_crawl_scores?: boolean;
@@ -173,7 +172,7 @@ const crawlConfigData = {
 export default function Settings() {
   const [config, setConfig] = useState({} as ConfigProps);
   const [fetching, setFetching] = useState(true);
-  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -269,7 +268,6 @@ export default function Settings() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         设置你的 maimai DX 查分器账号
       </Text>
-      <GameSegmentedControl mb="md" game={game} onChange={setGame} />
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>

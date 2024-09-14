@@ -37,7 +37,6 @@ import { SongCombobox } from "../../components/SongCombobox.tsx";
 
 import ScoreContext from "../../utils/context.tsx";
 import { ScoreList } from "../../components/Scores/ScoreList.tsx";
-import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
 
 const sortKeys = {
@@ -61,7 +60,7 @@ const sortKeys = {
 
 const ScoresContent = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
 
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
@@ -226,7 +225,6 @@ const ScoresContent = () => {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         管理你的 maimai DX 查分器账号的成绩
       </Text>
-      <GameSegmentedControl mb="md" game={game} onChange={setGame} />
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group justify="space-between" m="md">
           <div>

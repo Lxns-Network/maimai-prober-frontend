@@ -18,12 +18,11 @@ import { LoginAlert } from "../../components/LoginAlert";
 import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { SongCard } from "../../components/Songs/SongCard.tsx";
 import { SongDifficultyList } from "../../components/Songs/SongDifficultyList.tsx";
-import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
 
 export default function Songs() {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
 
   const [createAliasOpened, createAlias] = useDisclosure();
   const [defaultSongId, setDefaultSongId] = useState<number>(0)
@@ -127,7 +126,6 @@ export default function Songs() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         查询「舞萌 DX」与「中二节奏」的曲目详情
       </Text>
-      <GameSegmentedControl mb="md" game={game} onChange={setGame} />
       <SongCombobox
         value={songId}
         onOptionSubmit={(value) => setSongId(value)}

@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
+  Box,
   Container,
   Divider,
   ScrollArea,
-  Space
 } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "../../../utils/session";
-import { useLocalStorage } from "@mantine/hooks";
 import { logoutUser } from "../../../utils/api/user";
 import {
   IconCards,
@@ -20,7 +19,6 @@ import {
   IconUserCircle
 } from "@tabler/icons-react";
 import classes from './Navbar.module.css';
-import { GameSegmentedControl } from "../../GameSegmentedControl";
 
 interface NavbarProps {
   style?: React.CSSProperties;
@@ -29,7 +27,6 @@ interface NavbarProps {
 
 export default function Navbar({ style, onClose }: NavbarProps) {
   const [active, setActive] = useState('');
-  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const isLoggedOut = !Boolean(localStorage.getItem("token"));
   const location = useLocation();
 
@@ -68,17 +65,14 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   return (
     <nav className={classes.navbar} style={style}>
       <ScrollArea className={classes.navbarMain} type="scroll">
-        <Container>
-          <GameSegmentedControl mt="md" game={game} onChange={setGame} />
-        </Container>
-        <Space h="md" />
-        {navbarData.map((item) => item.enabled &&
-          <Container key={item.label}>
-            {item.divider && <Divider className={classes.divider} mt={10} mb={10} />}
-            <NavbarButton {...item} active={active} onClose={onClose} />
-          </Container>
-        )}
-        <Space h="md" />
+        <Box pt="md" pb="md">
+          {navbarData.map((item) => item.enabled &&
+            <Container key={item.label}>
+              {item.divider && <Divider className={classes.divider} mt={10} mb={10} />}
+              <NavbarButton {...item} active={active} onClose={onClose} />
+            </Container>
+          )}
+        </Box>
       </ScrollArea>
       <div className={classes.navbarFooter}>
         <Container>

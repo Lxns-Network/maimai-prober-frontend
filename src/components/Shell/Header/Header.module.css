@@ -44,3 +44,36 @@
     height: 14px;
     margin-left: 5px;
 }
+
+.gameTabs {
+    @media (min-width: 27em) {
+        display: none !important;
+    }
+}
+
+.gameTab {
+    font-size: var(--mantine-font-size-sm);
+    line-height: 32px;
+    text-align: center;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    margin-bottom: -1px;
+    border-radius: 4px 4px 0 0;
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+
+    &:hover {
+        background: var(--mantine-color-default-hover);
+    }
+
+    &[data-active='true'] {
+        color: var(--mantine-primary-color-light-color);
+        background: var(--mantine-primary-color-light);
+        border-bottom: 1px solid var(--mantine-primary-color-light-color);
+
+        &:hover {
+            background: var(--mantine-primary-color-light-hover);
+        }
+    }
+}

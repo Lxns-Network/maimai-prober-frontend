@@ -1,52 +1,21 @@
 import {
   Group,
   Burger,
-  ActionIcon,
-  useMantineColorScheme, Tooltip, Menu, UnstyledButton, Text
+  Menu, UnstyledButton, Text, Stack,
+  Box, Transition
 } from '@mantine/core';
 import Logo from "./Logo";
-import { IconChevronDown, IconMoonStars, IconSun, IconSunMoon } from "@tabler/icons-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import classes from './Header.module.css';
-import { HEADER_HEIGHT } from "../../../App";
 import { useLocalStorage } from "@mantine/hooks";
-
-const colorSchemes = {
-  auto: {
-    icon: <IconSunMoon stroke={1.5} />,
-    label: '跟随系统',
-    color: 'blue'
-  },
-  dark: {
-    icon: <IconMoonStars stroke={1.5} />,
-    label: '深色模式',
-    color: 'blue'
-  },
-  light: {
-    icon: <IconSun stroke={1.5} />,
-    label: '浅色模式',
-    color: 'yellow'
-  }
-}
-
-const ColorSchemeToggle = () => {
-  const { colorScheme, setColorScheme } = useMantineColorScheme();
-
-  return (
-    <Group justify="center">
-      <Tooltip label={colorSchemes[colorScheme].label} position="left">
-        <ActionIcon variant="light" size="lg" onClick={() => setColorScheme(
-          colorScheme === 'auto' ? 'dark' : colorScheme === 'dark' ? 'light' : 'auto'
-        )} color={colorSchemes[colorScheme].color}>
-          {colorSchemes[colorScheme].icon}
-        </ActionIcon>
-      </Tooltip>
-    </Group>
-  );
-}
+import React from "react";
+import { ColorSchemeToggle } from "./ColorSchemeToggle.tsx";
 
 interface HeaderProps {
   navbarOpened: boolean;
   onNavbarToggle(): void;
+  gameTabVisible: boolean;
+  headerRef: React.RefObject<HTMLDivElement>;
 }
 
 const games = [{
@@ -59,39 +28,64 @@ const games = [{
   version: 20500
 }]
 
-export default function Header({ navbarOpened, onNavbarToggle }: HeaderProps) {
+const translateY = {
+  in: { opacity: 1, transform: 'translateY(0)', maxHeight: '32px' },
+  out: { opacity: 0, transform: 'translateY(-32px)', maxHeight: 0 },
+  common: { transformOrigin: 'top' },
+  transitionProperty: 'transform, opacity, max-height',
+};
+
+export default function Header({ navbarOpened, onNavbarToggle, gameTabVisible, headerRef }: HeaderProps) {
   const [game, setGame] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game', defaultValue: 'maimai' });
 
   return (
-    <div className={classes.header}>
-      <Group wrap="nowrap" h={HEADER_HEIGHT}>
-        <Burger className={classes.navbarToggle} opened={navbarOpened} onClick={onNavbarToggle} size="sm" />
-        <Group style={{ flex: 1 }} gap="sm">
-          <Logo />
-          <Menu width={180} withinPortal={false}>
-            <Menu.Target>
-              <UnstyledButton className={classes.game}>
-                <Text fz={14}>
-                  {games.find((item) => item.id === game)?.name}
-                </Text>
-                <IconChevronDown className={classes.gameChevron} stroke={1.5} />
-              </UnstyledButton>
-            </Menu.Target>
-
-            <Menu.Dropdown>
-              {games.map((item) => (
-                <Menu.Item key={item.id} onClick={() => setGame(item.id as 'maimai' | 'chunithm')}>
-                  {item.name}{' '}
-                  <Text span c="dimmed" fz="xs">
-                    ({item.version})
+    <div className={classes.header} ref={headerRef}>
+      <Stack gap={0}>
+        <Group wrap="nowrap" mt={12} mb={12}>
+          <Burger className={classes.navbarToggle} opened={navbarOpened} onClick={onNavbarToggle} size="sm" />
+          <Group style={{ flex: 1 }} gap="sm">
+            <Logo />
+            <Menu width={180} withinPortal={false}>
+              <Menu.Target>
+                <UnstyledButton className={classes.game}>
+                  <Text fz={14}>
+                    {games.find((item) => item.id === game)?.name}
                   </Text>
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
+                  <IconChevronDown className={classes.gameChevron} stroke={1.5} />
+                </UnstyledButton>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                {games.map((item) => (
+                  <Menu.Item key={item.id} onClick={() => setGame(item.id as 'maimai' | 'chunithm')}>
+                    {item.name}{' '}
+                    <Text span c="dimmed" fz="xs">
+                      ({item.version})
+                    </Text>
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
+          <ColorSchemeToggle />
         </Group>
-        <ColorSchemeToggle />
-      </Group>
+
+        <Transition mounted={gameTabVisible} transition={translateY} duration={300} timingFunction="ease">
+          {(styles) => (
+            <Group className={classes.gameTabs} gap={0} grow style={styles}>
+              {games.map((item) => (
+                <Box
+                  className={classes.gameTab}
+                  onClick={() => setGame(item.id as 'maimai' | 'chunithm')}
+                  data-active={game === item.id}
+                >
+                  {item.name}
+                </Box>
+              ))}
+            </Group>
+          )}
+        </Transition>
+      </Stack>
     </div>
   );
 }

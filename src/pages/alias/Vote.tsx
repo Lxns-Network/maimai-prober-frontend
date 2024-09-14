@@ -23,7 +23,6 @@ import {
 import classes from "../Page.module.css"
 import { openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
-import { GameSegmentedControl } from "../../components/GameSegmentedControl.tsx";
 
 export interface AliasProps {
   alias_id: number;
@@ -62,7 +61,7 @@ const sortKeys = [
 ];
 
 export default function Vote() {
-  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const [aliases, setAliases] = useState<AliasProps[]>([]);
   const [votes, setVotes] = useState<VoteProps[]>([]);
   const [opened, setOpened] = useState(false);
@@ -181,7 +180,6 @@ export default function Vote() {
       <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
         提交曲目别名，或为你喜欢的曲目别名投票
       </Text>
-      <GameSegmentedControl mb="md" game={game} onChange={setGame} />
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group m="md" justify="space-between">
           <div>
