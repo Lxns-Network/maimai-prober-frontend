@@ -2,7 +2,7 @@ import {
   Group,
   Burger,
   Menu, UnstyledButton, Text, Stack,
-  Box, Transition
+  Transition
 } from '@mantine/core';
 import Logo from "./Logo";
 import { IconChevronDown } from "@tabler/icons-react";
@@ -10,11 +10,12 @@ import classes from './Header.module.css';
 import { useLocalStorage } from "@mantine/hooks";
 import React from "react";
 import { ColorSchemeToggle } from "./ColorSchemeToggle.tsx";
+import { GameTabs } from "./GameTabs.tsx";
 
 interface HeaderProps {
   navbarOpened: boolean;
   onNavbarToggle(): void;
-  gameTabVisible: boolean;
+  gameTabsVisible: boolean;
   headerRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -29,13 +30,13 @@ const games = [{
 }]
 
 const translateY = {
-  in: { opacity: 1, transform: 'translateY(0)', maxHeight: '32px' },
-  out: { opacity: 0, transform: 'translateY(-32px)', maxHeight: 0 },
+  in: { opacity: 1, bottom: 0, maxHeight: '32px' },
+  out: { opacity: 0, bottom: '32px', maxHeight: 0 },
   common: { transformOrigin: 'top' },
-  transitionProperty: 'transform, opacity, max-height',
+  transitionProperty: 'opacity, bottom, max-height',
 };
 
-export default function Header({ navbarOpened, onNavbarToggle, gameTabVisible, headerRef }: HeaderProps) {
+export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, headerRef }: HeaderProps) {
   const [game, setGame] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game', defaultValue: 'maimai' });
 
   return (
@@ -70,19 +71,14 @@ export default function Header({ navbarOpened, onNavbarToggle, gameTabVisible, h
           <ColorSchemeToggle />
         </Group>
 
-        <Transition mounted={gameTabVisible} transition={translateY} duration={300} timingFunction="ease">
+        <Transition mounted={gameTabsVisible} transition={translateY} duration={300} timingFunction="ease">
           {(styles) => (
-            <Group className={classes.gameTabs} gap={0} grow style={styles}>
-              {games.map((item) => (
-                <Box
-                  className={classes.gameTab}
-                  onClick={() => setGame(item.id as 'maimai' | 'chunithm')}
-                  data-active={game === item.id}
-                >
-                  {item.name}
-                </Box>
-              ))}
-            </Group>
+            <GameTabs
+              tabs={games}
+              activeTab={game}
+              onTabChange={(tab) => setGame(tab as 'maimai' | 'chunithm')}
+              style={styles}
+            />
           )}
         </Transition>
       </Stack>
