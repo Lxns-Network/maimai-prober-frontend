@@ -25,6 +25,8 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   useEffect(() => {
     const currentScrollTop = scrollState.y;
 
+    if (Math.abs(lastScrollTop - currentScrollTop) <= 50) return;
+
     if (currentScrollTop > lastScrollTop) {
       setScrollDirection('down');
     } else if (currentScrollTop < lastScrollTop) {
@@ -79,7 +81,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
       <Header
         navbarOpened={navbarOpened}
         onNavbarToggle={onNavbarToggle}
-        gameTabVisible={!scrollDirection || scrollDirection === 'up'}
+        gameTabsVisible={!scrollDirection || scrollDirection === 'up'}
         headerRef={headerRef}
       />
       <ScrollArea className={classes.routesWrapper} style={{
