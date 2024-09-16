@@ -307,6 +307,18 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 
 [Score[]](#score)
 
+### POST `/api/v0/user/chunithm/player/scores`
+
+上传玩家成绩。
+
+#### 请求体
+
+JSON 格式的玩家成绩：
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `scores` | [`Score[]`](#score) | 玩家成绩 |
+
 ## 公共 API
 
 ### GET `/api/v0/chunithm/song/list`
