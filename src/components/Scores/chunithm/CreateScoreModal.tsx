@@ -16,7 +16,7 @@ import {
 } from "../../../utils/api/song/chunithm.tsx";
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../../utils/modal.tsx";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
-import { createPlayerScore } from "../../../utils/api/player.tsx";
+import { createPlayerScores } from "../../../utils/api/player.tsx";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import { ChunithmScoreProps } from "./Score.tsx";
 import "dayjs/locale/zh-cn"
@@ -74,7 +74,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
         full_chain: values.full_chain !== "nofullchain" ? values.full_chain : null,
         play_time: values.play_time ? values.play_time.toISOString().split('.')[0]+"Z" : null,
       }
-      const res = await createPlayerScore("chunithm", score);
+      const res = await createPlayerScores("chunithm", [score]);
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);

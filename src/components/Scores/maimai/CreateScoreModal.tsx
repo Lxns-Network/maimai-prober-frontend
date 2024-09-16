@@ -17,7 +17,7 @@ import {
 } from "../../../utils/api/song/maimai.tsx";
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../../utils/modal.tsx";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
-import { createPlayerScore } from "../../../utils/api/player.tsx";
+import { createPlayerScores } from "../../../utils/api/player.tsx";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import { MaimaiScoreProps } from "./Score.tsx";
 import "dayjs/locale/zh-cn"
@@ -77,7 +77,7 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
         dx_score: values.dx_score || 0,
         play_time: values.play_time ? values.play_time.toISOString().split('.')[0]+"Z" : null,
       }
-      const res = await createPlayerScore("maimai", score);
+      const res = await createPlayerScores("maimai", [score]);
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);

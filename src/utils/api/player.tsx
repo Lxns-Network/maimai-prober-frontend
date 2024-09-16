@@ -16,12 +16,16 @@ export async function getPlayerScores(game: string) {
   return fetchAPI(`user/${game}/player/scores`, { method: "GET" });
 }
 
+export async function getPlayerBests(game: string) {
+  return fetchAPI(`user/${game}/player/bests`, { method: "GET" });
+}
+
 export async function deletePlayerScores(game: string) {
   return fetchAPI(`user/${game}/player/scores`, { method: "DELETE" });
 }
 
-export async function createPlayerScore(game: string, score: any) {
-  return fetchAPI(`user/${game}/player/score`, { method: "POST", body: score });
+export async function createPlayerScores(game: string, scores: any) {
+  return fetchAPI(`user/${game}/player/scores`, { method: "POST", body: { scores } });
 }
 
 export async function getPlayerPlateById(game: string, id: number) {
