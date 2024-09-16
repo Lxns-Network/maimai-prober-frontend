@@ -56,6 +56,7 @@
     "remark-toc": "^9.0.0",
     "stylelint": "^16.6.1",
     "stylelint-config-standard-scss": "^13.1.0",
+    "swr": "^2.2.5",
     "wanakana": "^5.3.1",
     "zustand": "^4.5.5"
   },
