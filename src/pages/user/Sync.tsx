@@ -4,12 +4,10 @@ import {
   Button,
   Code,
   Card,
-  Container,
   Flex,
   Group,
   Loader,
   Text,
-  Title,
   ThemeIcon,
   Alert,
   Stepper,
@@ -35,6 +33,7 @@ import { CrawlTokenAlert } from "../../components/Sync/CrawlTokenAlert.tsx";
 import { CopyButtonWithIcon } from "../../components/Sync/CopyButtonWithIcon.tsx";
 import { WechatOAuthLink } from "../../components/Sync/WechatOAuthLink.tsx";
 import { ScoresChangesModal } from "../../components/Sync/ScoresChangesModal.tsx";
+import {Page} from "@/components/Page/Page.tsx";
 
 interface ScoreChangeDetailProps {
   new: any;
@@ -70,7 +69,7 @@ interface CrawlStatusProps {
   failed_difficulties: number[];
 }
 
-export default function Sync() {
+const SyncContent = () => {
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [networkError, setNetworkError] = useState(false);
   const [crawlToken, setCrawlToken] = useState<string | null>(null);
@@ -98,8 +97,6 @@ export default function Sync() {
   }
 
   useEffect(() => {
-    document.title = "同步游戏数据 | maimai DX 查分器";
-
     if (!isLoggedOut) getUserCrawlTokenHandler();
   }, []);
 
@@ -169,14 +166,8 @@ export default function Sync() {
   const small = useMediaQuery('(max-width: 600px)');
 
   return (
-    <Container className={classes.root} size={400}>
+    <div>
       <ScoresChangesModal game={crawlStatus ? crawlStatus.game : game} scores={crawlStatus ? crawlStatus.scores || [] : []} opened={resultOpened} onClose={() => setResultOpened(false)} />
-      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
-        同步游戏数据
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        使用 HTTP 代理同步你的玩家数据与成绩
-      </Text>
       {(new Date()).getHours() >= 18 &&
         <Alert radius="md" icon={<IconAlertCircle />} title="游玩高峰期警告" color="yellow" mb="xl">
           <Text size="sm" mb="md">
@@ -393,6 +384,18 @@ export default function Sync() {
           )}
         </Card>
       )}
-    </Container>
+    </div>
   );
+}
+
+export default function Sync() {
+  return (
+    <Page
+      meta={{
+        title: "同步游戏数据",
+        description: "使用 HTTP 代理同步你的玩家数据与成绩",
+      }}
+      children={<SyncContent />}
+    />
+  )
 }

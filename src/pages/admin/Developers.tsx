@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Container,
   Card,
-  Title,
   Text,
   Group,
   Loader,
@@ -22,6 +20,7 @@ import classes from "./Developers.module.css";
 import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { EditUserModal } from "../../components/Users/EditUserModal.tsx";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { Page } from "@/components/Page/Page.tsx";
 
 interface DeveloperProps {
   id: number;
@@ -142,7 +141,7 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
   )
 }
 
-export default function Developers() {
+const AdminDevelopersContent = () => {
   const [parent] = useAutoAnimate();
   const [displayDevelopers, setDisplayDevelopers] = useState<DeveloperProps[]>([]);
   const [developers, setDevelopers] = useState<DeveloperProps[]>([]);
@@ -168,8 +167,6 @@ export default function Developers() {
   }
 
   useEffect(() => {
-    document.title = "管理开发者 | maimai DX 查分器";
-
     getDevelopersHandler();
   }, []);
 
@@ -190,14 +187,8 @@ export default function Developers() {
   }, [page, developers]);
 
   return (
-    <Container className={classes.root}>
+    <div>
       <EditUserModal user={activeUser as UserProps} opened={opened} close={() => close()} />
-      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
-        管理开发者
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        查看并管理 maimai DX 查分器的开发者
-      </Text>
       <Stack align="center">
         <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} />
         <Stack w="100%" ref={parent}>
@@ -219,6 +210,18 @@ export default function Developers() {
         </Stack>
         <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} />
       </Stack>
-    </Container>
+    </div>
   );
+}
+
+export default function AdminDevelopers() {
+  return (
+    <Page
+      meta={{
+        title: "管理开发者",
+        description: "查看并管理 maimai DX 查分器的开发者",
+      }}
+      children={<AdminDevelopersContent />}
+    />
+  )
 }

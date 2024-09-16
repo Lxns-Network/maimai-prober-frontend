@@ -38,7 +38,7 @@ const scrollTo = (id: string) => {
   }
 
   const target = document.getElementById(id);
-  const scrollArea = document.querySelector("#root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport");
+  const scrollArea = document.querySelector("#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport");
 
   if (target && scrollArea) {
     const offsetTop = target.offsetTop - parseInt(window.getComputedStyle(target).marginTop, 10);

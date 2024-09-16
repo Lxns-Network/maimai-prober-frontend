@@ -2,13 +2,11 @@ import { useEffect, useState } from 'react';
 import {
   Button,
   Card, Checkbox,
-  Container,
   Flex,
   Group, Loader,
   Pagination,
   Space,
   Text,
-  Title,
 } from '@mantine/core';
 import { useLocalStorage, useToggle } from "@mantine/hooks";
 import { getAliasList, getUserVotes } from "../../utils/api/alias.tsx";
@@ -23,6 +21,7 @@ import {
 import classes from "../Page.module.css"
 import { openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../../components/SongCombobox.tsx";
+import { Page } from "@/components/Page/Page.tsx";
 
 export interface AliasProps {
   alias_id: number;
@@ -60,7 +59,7 @@ const sortKeys = [
   { name: '提交时间', key: 'alias_id' },
 ];
 
-export default function Vote() {
+const AliasVoteContent = () => {
   const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const [aliases, setAliases] = useState<AliasProps[]>([]);
   const [votes, setVotes] = useState<VoteProps[]>([]);
@@ -131,10 +130,6 @@ export default function Vote() {
   }
 
   useEffect(() => {
-    document.title = "曲目别名投票 | maimai DX 查分器";
-  }, []);
-
-  useEffect(() => {
     if (!game) return;
 
     setFetching(true);
@@ -169,17 +164,11 @@ export default function Vote() {
   };
 
   return (
-    <Container className={classes.root} size={400}>
+    <div>
       <CreateAliasModal opened={opened} onClose={(alias) => {
         if (alias) getAliasListHandler(page, songId);
         setOpened(false);
       }} />
-      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
-        曲目别名投票
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        提交曲目别名，或为你喜欢的曲目别名投票
-      </Text>
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group m="md" justify="space-between">
           <div>
@@ -241,6 +230,18 @@ export default function Vote() {
         <AliasList aliases={aliases} onVote={() => getUserVotesHandler()} onDelete={() => getAliasListHandler(page)} />
         <Pagination total={totalPages} value={page} onChange={setPage} disabled={fetching} />
       </Group>
-    </Container>
+    </div>
   );
+}
+
+export default function AliasVote() {
+  return (
+    <Page
+      meta={{
+        title: "曲目别名投票",
+        description: "提交曲目别名，或为你喜欢的曲目别名投票",
+      }}
+      children={<AliasVoteContent />}
+    />
+  )
 }

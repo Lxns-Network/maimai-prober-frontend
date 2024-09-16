@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { getPlateById, getPlateList, getPlayerPlateById } from "../../utils/api/player";
 import {
-  Container,
   Text,
-  Title,
   Card,
   Image,
   Space,
@@ -17,6 +15,7 @@ import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
 import { openRetryModal } from "../../utils/modal.tsx";
 import { LoginAlert } from "../../components/LoginAlert";
 import { ASSET_URL } from "../../main.tsx";
+import { Page } from "@/components/Page/Page.tsx";
 
 interface RequiredSongDataProps {
   id: number;
@@ -42,7 +41,7 @@ export interface PlateDataProps {
   required?: RequiredDataProps[];
 }
 
-export default function Plates() {
+const PlatesContent = () => {
   const [defaultPlates, setDefaultPlates] = useState<PlateDataProps[]>([]);
   const [plates, setPlates] = useState<PlateDataProps[]>([]);
   const [plateId, setPlateId] = useState<number | null>(null);
@@ -88,8 +87,6 @@ export default function Plates() {
   }
 
   useEffect(() => {
-    document.title = "姓名框查询 | maimai DX 查分器";
-
     getPlateListHandler();
   }, []);
 
@@ -151,13 +148,7 @@ export default function Plates() {
   }, [onlyRequired]);
 
   return (
-    <Container className={classes.root} size={500}>
-      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
-        姓名框查询
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        查询「舞萌 DX」姓名框与你的姓名框获取进度
-      </Text>
+    <div>
       <PlateCombobox
         plates={plates}
         onOptionSubmit={(value) => setPlateId(value)}
@@ -211,6 +202,18 @@ export default function Plates() {
           <RequiredSong plate={plate} records={records} style={styles} />
         )}
       </Transition>
-    </Container>
-  );
+    </div>
+  )
+}
+
+export default function Plates() {
+  return (
+    <Page
+      meta={{
+        title: "姓名框查询",
+        description: "查询「舞萌 DX」姓名框与你的姓名框获取进度",
+      }}
+      children={<PlatesContent />}
+    />
+  )
 }

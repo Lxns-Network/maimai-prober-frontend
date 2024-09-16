@@ -16,6 +16,7 @@ import { validateEmail, validateUserName } from "../../utils/validator";
 import { updateUserProfile } from "../../utils/api/user.tsx";
 import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { useUser } from "@/hooks/swr/useUser.ts";
 
 export interface UserProps {
   id: number;
@@ -27,7 +28,8 @@ export interface UserProps {
   token?: string;
 }
 
-export const UserSection = ({ user }: { user: UserProps | null }) => {
+export const UserSection = () => {
+  const { user } = useUser();
   const [visible, visibleHandler] = useDisclosure(false)
 
   if (!user) {

@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import {
-  Container,
   Text,
-  Title,
   Flex, Anchor, Space, Transition
 } from "@mantine/core";
-import classes from "./Songs.module.css"
 import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { useDisclosure, useLocalStorage } from "@mantine/hooks";
@@ -19,8 +16,9 @@ import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
 import { SongCard } from "../../components/Songs/SongCard.tsx";
 import { SongDifficultyList } from "../../components/Songs/SongDifficultyList.tsx";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { Page } from "@/components/Page/Page.tsx";
 
-export default function Songs() {
+const SongsContent = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
 
@@ -54,8 +52,6 @@ export default function Songs() {
   }
 
   useEffect(() => {
-    document.title = "曲目查询 | maimai DX 查分器";
-
     if (location.state) {
       if (location.state.songId) {
         setDefaultSongId(location.state.songId);
@@ -118,14 +114,8 @@ export default function Songs() {
   }, [songId, songList?.songs]);
 
   return (
-    <Container className={classes.root} size={500}>
+    <div>
       <CreateAliasModal defaultSongId={songId} opened={createAliasOpened} onClose={() => createAlias.close()} />
-      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
-        曲目查询
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        查询「舞萌 DX」与「中二节奏」的曲目详情
-      </Text>
       <SongCombobox
         value={songId}
         onOptionSubmit={(value) => setSongId(value)}
@@ -166,6 +156,18 @@ export default function Songs() {
           <SongDifficultyList song={song} scores={scores} setScores={setScores} style={styles} />
         )}
       </Transition>
-    </Container>
+    </div>
   );
+}
+
+export default function Songs() {
+  return (
+    <Page
+      meta={{
+        title: "曲目查询",
+        description: "查询「舞萌 DX」与「中二节奏」的曲目详情",
+      }}
+      children={<SongsContent />}
+    />
+  )
 }

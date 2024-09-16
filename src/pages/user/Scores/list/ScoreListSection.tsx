@@ -1,43 +1,22 @@
-import { useContext, useEffect, useState } from 'react';
-import {
-  Accordion,
-  Button,
-  Card,
-  Container,
-  Group,
-  Loader,
-  Pagination,
-  Space,
-  Text,
-  Title,
-  Flex,
-} from '@mantine/core';
-import { getPlayerScores } from "../../utils/api/player";
+import { useContext, useEffect, useState } from "react";
+import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.tsx";
+import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.tsx";
 import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
-import { MaimaiStatisticsSection } from "../../components/Scores/maimai/StatisticsSection.tsx";
-import { ChunithmStatisticsSection } from "../../components/Scores/chunithm/StatisticsSection.tsx";
-import {
-  IconArrowDown,
-  IconArrowUp,
-  IconDatabaseOff, IconPlus,
-} from "@tabler/icons-react";
-
-import { MaimaiScoreProps } from '../../components/Scores/maimai/Score.tsx';
-import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-
-import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import { ChunithmScoreProps } from "../../components/Scores/chunithm/Score.tsx";
-import classes from "../Page.module.css"
-import { openRetryModal } from "../../utils/modal.tsx";
-import { AdvancedFilter } from "../../components/Scores/AdvancedFilter.tsx";
-import { ScoreExportSection } from "../../components/Scores/ScoreExportSection.tsx";
-import { MaimaiCreateScoreModal } from "../../components/Scores/maimai/CreateScoreModal.tsx";
-import { ChunithmCreateScoreModal } from "../../components/Scores/chunithm/CreateScoreModal.tsx";
-import { SongCombobox } from "../../components/SongCombobox.tsx";
-
-import ScoreContext from "../../utils/context.tsx";
-import { ScoreList } from "../../components/Scores/ScoreList.tsx";
-import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { useScores } from "@/hooks/swr/useScores.ts";
+import { MaimaiScoreProps } from "@/components/Scores/maimai/Score.tsx";
+import { ChunithmScoreProps } from "@/components/Scores/chunithm/Score.tsx";
+import ScoreContext from "@/utils/context.tsx";
+import useSongListStore from "@/hooks/useSongListStore.tsx";
+import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
+import { MaimaiCreateScoreModal } from "@/components/Scores/maimai/CreateScoreModal.tsx";
+import { ChunithmCreateScoreModal } from "@/components/Scores/chunithm/CreateScoreModal.tsx";
+import { Accordion, Button, Card, Flex, Group, Loader, Pagination, Space, Text } from "@mantine/core";
+import classes from "@/pages/Page.module.css";
+import { AdvancedFilter } from "@/components/Scores/AdvancedFilter.tsx";
+import { SongCombobox } from "@/components/SongCombobox.tsx";
+import { ScoreList } from "@/components/Scores/ScoreList.tsx";
+import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSection.tsx";
+import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/StatisticsSection.tsx";
 
 const sortKeys = {
   maimai: [
@@ -58,14 +37,13 @@ const sortKeys = {
   ]
 };
 
-const ScoresContent = () => {
+export const ScoreListSection = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
 
-  const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
+  const { scores, isLoading, mutate } = useScores(game);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [displayScores, setDisplayScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]); // 用于分页显示的成绩列表
-  const [fetching, setFetching] = useState(true);
 
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
   const [searchedScores, setSearchedScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
@@ -83,46 +61,20 @@ const ScoresContent = () => {
   const small = useMediaQuery('(max-width: 30rem)');
 
   useEffect(() => {
-    document.title = "成绩管理 | maimai DX 查分器";
-  }, []);
-
-  const getPlayerScoresHandler = async () => {
-    try {
-      const res = await getPlayerScores(game);
-      const data = await res.json();
-      if (!data.success) {
-        if (data.code === 404) {
-          return;
-        }
-        throw new Error(data.message);
-      }
-      if (data.data) {
-        setFilteredScores(data.data);
-        setScores(data.data);
-      } else {
-        setFilteredScores([]);
-        setScores([]);
-      }
-    } catch (error) {
-      openRetryModal("成绩列表获取失败", `${error}`, getPlayerScoresHandler);
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  useEffect(() => {
     if (!game) return;
 
     setSongList(getSongList(game));
     scoreContext.setScore(null);
 
-    setFetching(true);
     setSongId(0);
-    getPlayerScoresHandler();
   }, [game]);
 
   useEffect(() => {
-    if (!filteredScores || fetching) return;
+    setFilteredScores(scores);
+  }, [scores]);
+
+  useEffect(() => {
+    if (!filteredScores || isLoading) return;
 
     if (!filteredSongs) {
       setSearchedScores(filteredScores);
@@ -206,25 +158,19 @@ const ScoresContent = () => {
   };
 
   return (
-    <Container className={classes.root} size={400}>
+    <div>
       {game === "maimai" && (
         <MaimaiCreateScoreModal score={scoreContext.score} opened={scoreContext.createScoreOpened} onClose={(score) => {
-          if (score) getPlayerScoresHandler();
+          if (score) mutate();
           scoreContext.setCreateScoreOpened(false);
         }} />
       )}
       {game === "chunithm" && (
         <ChunithmCreateScoreModal score={scoreContext.score} opened={scoreContext.createScoreOpened} onClose={(score) => {
-          if (score) getPlayerScoresHandler();
+          if (score) mutate();
           scoreContext.setCreateScoreOpened(false);
         }} />
       )}
-      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
-        成绩管理
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        管理你的 maimai DX 查分器账号的成绩
-      </Text>
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group justify="space-between" m="md">
           <div>
@@ -277,7 +223,7 @@ const ScoresContent = () => {
         </Button>
       </Flex>
       <Space h="md" />
-      {fetching && totalPages === 0 ? (
+      {isLoading && totalPages === 0 ? (
         <Group justify="center" mt="md" mb="md">
           <Loader />
         </Group>
@@ -288,27 +234,15 @@ const ScoresContent = () => {
         </Flex>
       ))}
       <Group justify="center">
-        <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={fetching} />
+        <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
         <ScoreList scores={displayScores} onScoreChange={(score) => {
-          if (score) getPlayerScoresHandler();
+          if (score) mutate();
         }} />
-        <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={fetching} />
+        <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
       </Group>
       <Space h="md" />
       {game === "maimai" && <MaimaiStatisticsSection scores={searchedScores as MaimaiScoreProps[]} />}
       {game === "chunithm" && <ChunithmStatisticsSection scores={searchedScores as ChunithmScoreProps[]} />}
-      <ScoreExportSection scores={scores} onImport={getPlayerScoresHandler} />
-    </Container>
-  );
-}
-
-export default function Scores() {
-  const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
-  const [createScoreOpened, setCreateScoreOpened] = useState(false);
-
-  return (
-    <ScoreContext.Provider value={{ score, setScore, createScoreOpened, setCreateScoreOpened }}>
-      <ScoresContent />
-    </ScoreContext.Provider>
+    </div>
   );
 }

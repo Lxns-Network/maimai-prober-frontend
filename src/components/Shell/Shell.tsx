@@ -1,7 +1,7 @@
 import { Overlay, rem, ScrollArea, Transition } from "@mantine/core";
 import Navbar from "./Navbar/Navbar.tsx";
 import Header from "./Header/Header.tsx";
-import classes from "../../App.module.css";
+import classes from "./Shell.module.css";
 import React, { useEffect, useRef, useState } from "react";
 import { NAVBAR_BREAKPOINT } from "../../App.tsx";
 import { useScroll, useWindowSize } from "react-use";
@@ -25,16 +25,11 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   useEffect(() => {
     const currentScrollTop = scrollState.y;
 
-    if (Math.abs(lastScrollTop - currentScrollTop) <= 50) return;
-
-    if (currentScrollTop > lastScrollTop) {
-      setScrollDirection('down');
-    } else if (currentScrollTop < lastScrollTop) {
-      setScrollDirection('up');
+    if (Math.abs(lastScrollTop - currentScrollTop) > 50) {
+      setScrollDirection(currentScrollTop > lastScrollTop ? 'down' : 'up');
+      setLastScrollTop(currentScrollTop);
     }
-
-    setLastScrollTop(currentScrollTop);
-  }, [scrollState.y, lastScrollTop]);
+  }, [scrollState.y]);
 
   useEffect(() => {
     setScrollDirection('up');
@@ -43,14 +38,15 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   useEffect(() => {
     if (!scrollDirection) return;
 
-    let start = 0;
     let frameRequest = 0;
+    let start: number | undefined = undefined;
 
     const updateHeight = (timestamp: number) => {
-      if (!start) start = timestamp;
+      if (start === undefined) start = timestamp;
       const elapsed = timestamp - start;
 
-      setHeaderHeight(headerRef.current?.clientHeight || 56);
+      const currentHeight = headerRef.current?.clientHeight || 56;
+      setHeaderHeight((prevHeight) => (prevHeight !== currentHeight ? currentHeight : prevHeight));
 
       if (elapsed < 300) {
         frameRequest = requestAnimationFrame(updateHeight);
@@ -71,7 +67,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   }, [headerRef.current, width]);
 
   return (
-    <div style={{
+    <div id="shell-root" style={{
       "--navbar-width": "300px",
       "--header-height": `${headerHeight}px`,
     } as React.CSSProperties}>

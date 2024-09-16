@@ -29,7 +29,7 @@
     padding: 2px 8px 2px 12px !important;
     border-radius: var(--mantine-radius-xl);
 
-    @media (max-width: 27em) {
+    @mixin smaller-than $mantine-breakpoint-xs {
         display: none;
     }
 

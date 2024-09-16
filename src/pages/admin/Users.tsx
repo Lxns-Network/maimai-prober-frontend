@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  Container,
   Group,
   TextInput,
   Button,
-  Title, Text, keys, Flex, Card, Badge
+  Text, keys, Flex, Card, Badge
 } from '@mantine/core';
 import { deleteUsers, getUsers } from "../../utils/api/user";
 import { useDisclosure, useViewportSize } from '@mantine/hooks';
@@ -16,6 +15,7 @@ import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/mo
 import { EditUserModal } from "../../components/Users/EditUserModal.tsx";
 import { SendBatchEmailModal } from "../../components/Users/SendBatchEmailModal.tsx";
 import { permissionToList, UserPermission } from "../../utils/session.tsx";
+import { Page } from "@/components/Page/Page.tsx";
 
 export interface UserProps {
   id: number;
@@ -61,7 +61,7 @@ function sortData(
   );
 }
 
-export default function Users() {
+const AdminUsersContent = () => {
   const [users, setUsers] = useState<UserProps[]>([]);
   const [fetching, setFetching] = useState<boolean>(true);
 
@@ -151,15 +151,13 @@ export default function Users() {
   }
 
   useEffect(() => {
-    document.title = "管理用户 | maimai DX 查分器";
-
     getUserHandler();
   }, []);
 
   const { width } = useViewportSize();
 
   return (
-    <>
+    <div>
       <EditUserModal user={activeUser as UserProps} opened={editUserModalOpened} close={() => {
         const index = users.findIndex((user) => user.id === activeUser?.id);
         users.splice(index, 1);
@@ -175,134 +173,137 @@ export default function Users() {
       <SendBatchEmailModal users={selectedUsers} opened={sendBatchEmailModalOpened} close={() => {
         sendBatchEmailModal.close();
       }} />
-      <Container className={classes.root}>
-        <Title order={2} size="h2" fw={900} ta="center" mt="xs">
-          管理用户
-        </Title>
-        <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-          查看并管理 maimai DX 查分器的用户
-        </Text>
-        <TextInput
-          placeholder="搜索用户"
-          radius="md"
-          leftSection={<IconSearch size={18} />}
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
+      <TextInput
+        placeholder="搜索用户"
+        radius="md"
+        mb="md"
+        leftSection={<IconSearch size={18} />}
+        value={search}
+        onChange={(event) => setSearch(event.currentTarget.value)}
+      />
+      <Card className={classes.card} withBorder radius="md" w={width > NAVBAR_BREAKPOINT ? `100%` : width - 32} p={0}>
+        <Card.Section className={classes.section} m={0}>
+          <Text size="sm" mb="xs">对所选的 {selectedUsers.length} 名用户进行操作：</Text>
+          <Group>
+            <Button variant="filled" leftSection={<IconSend size={20} />} disabled={selectedUsers.length === 0} onClick={() => {
+              sendBatchEmailModal.open();
+            }}>群发邮件</Button>
+            <Button variant="outline" color="red" leftSection={<IconTrash size={20} />} onClick={() => {
+              openConfirmModal("删除用户", `你确定要删除所选的 ${selectedUsers.length} 名用户吗？`, deleteUsersHandler, {
+                confirmProps: { color: 'red' }
+              });
+            }} disabled={selectedUsers.length === 0}>
+              删除
+            </Button>
+          </Group>
+        </Card.Section>
+        <DataTable highlightOnHover striped
+          verticalSpacing="xs"
+          mih={users.length === 0 ? 150 : 0}
+          emptyState={
+            <Flex gap="xs" align="center" direction="column" c="dimmed">
+              <IconDatabaseOff size={48} stroke={1.5} />
+              <Text fz="sm">没有记录</Text>
+            </Flex>
+          }
+          // 数据
+          columns={[
+            {
+              accessor: 'id',
+              title: 'ID',
+              width: 50,
+              sortable: true,
+            },
+            {
+              accessor: 'name',
+              title: '用户名',
+              width: 100,
+              ellipsis: true,
+              sortable: true,
+            },
+            {
+              accessor: 'email',
+              title: '邮箱',
+              width: 200,
+              ellipsis: true,
+              sortable: true,
+            },
+            {
+              accessor: 'permission',
+              title: '权限',
+              width: 150,
+              render: ({ permission }) => {
+                return <Group gap="xs">
+                  {permissionToList(permission-UserPermission.User).map((permission) => (
+                    <Badge variant="default" key={permission}>{{
+                      1: '普通用户',
+                      2: '开发者',
+                      4: '管理员',
+                    }[permission]}</Badge>
+                  ))}
+                </Group>;
+              },
+              sortable: true,
+            },
+            {
+              accessor: 'register_time',
+              title: '注册时间',
+              width: 150,
+              render: ({ register_time }) => new Date(register_time).toLocaleString(),
+              sortable: true,
+            },
+          ]}
+          records={displayUsers}
+          totalRecords={sortedUsers.length}
+          noRecordsText="没有记录"
+          // 筛选
+          sortStatus={sortStatus}
+          onSortStatusChange={setSortStatus}
+          // 弹窗
+          onRowClick={({ record }) => {
+            setActiveUser(record);
+            editUserModal.open();
+          }}
+          // 分页
+          recordsPerPage={pageSize}
+          paginationText={({ from, to, totalRecords}) => {
+            return `${from}-${to} 名用户，共 ${totalRecords} 名`;
+          }}
+          page={page}
+          onPageChange={(p) => setPage(p)}
+          recordsPerPageOptions={PAGE_SIZES}
+          recordsPerPageLabel="每页显示"
+          onRecordsPerPageChange={setPageSize}
+          // 选择
+          selectedRecords={selectedUsers}
+          onSelectedRecordsChange={setSelectedUsers}
+          allRecordsSelectionCheckboxProps={{
+            indeterminate: selectedUsers.length > 0 && selectedUsers.length < sortedUsers.length,
+            checked: users.length > 0 && selectedUsers.length === sortedUsers.length,
+            onChange: () => {
+              if (selectedUsers.length === sortedUsers.length) {
+                setSelectedUsers([]);
+              } else {
+                setSelectedUsers(sortedUsers);
+              }
+            },
+          }}
+          // 其它
+          fetching={fetching}
         />
-      </Container>
-      <Container mb="md">
-        <Card className={classes.card} withBorder radius="md" w={width > NAVBAR_BREAKPOINT ? `100%` : width - 32} p={0}>
-          <Card.Section className={classes.section} m={0}>
-            <Text size="sm" mb="xs">对所选的 {selectedUsers.length} 名用户进行操作：</Text>
-            <Group>
-              <Button variant="filled" leftSection={<IconSend size={20} />} disabled={selectedUsers.length === 0} onClick={() => {
-                sendBatchEmailModal.open();
-              }}>群发邮件</Button>
-              <Button variant="outline" color="red" leftSection={<IconTrash size={20} />} onClick={() => {
-                openConfirmModal("删除用户", `你确定要删除所选的 ${selectedUsers.length} 名用户吗？`, deleteUsersHandler, {
-                  confirmProps: { color: 'red' }
-                });
-              }} disabled={selectedUsers.length === 0}>
-                删除
-              </Button>
-            </Group>
-          </Card.Section>
-          <DataTable highlightOnHover striped
-            verticalSpacing="xs"
-            mih={users.length === 0 ? 150 : 0}
-            emptyState={
-              <Flex gap="xs" align="center" direction="column" c="dimmed">
-                <IconDatabaseOff size={48} stroke={1.5} />
-                <Text fz="sm">没有记录</Text>
-              </Flex>
-            }
-            // 数据
-            columns={[
-              {
-                accessor: 'id',
-                title: 'ID',
-                width: 50,
-                sortable: true,
-              },
-              {
-                accessor: 'name',
-                title: '用户名',
-                width: 100,
-                ellipsis: true,
-                sortable: true,
-              },
-              {
-                accessor: 'email',
-                title: '邮箱',
-                width: 200,
-                ellipsis: true,
-                sortable: true,
-              },
-              {
-                accessor: 'permission',
-                title: '权限',
-                width: 150,
-                render: ({ permission }) => {
-                  return <Group gap="xs">
-                    {permissionToList(permission-UserPermission.User).map((permission) => (
-                      <Badge variant="default" key={permission}>{{
-                        1: '普通用户',
-                        2: '开发者',
-                        4: '管理员',
-                      }[permission]}</Badge>
-                    ))}
-                  </Group>;
-                },
-                sortable: true,
-              },
-              {
-                accessor: 'register_time',
-                title: '注册时间',
-                width: 150,
-                render: ({ register_time }) => new Date(register_time).toLocaleString(),
-                sortable: true,
-              },
-            ]}
-            records={displayUsers}
-            totalRecords={sortedUsers.length}
-            noRecordsText="没有记录"
-            // 筛选
-            sortStatus={sortStatus}
-            onSortStatusChange={setSortStatus}
-            // 弹窗
-            onRowClick={({ record }) => {
-              setActiveUser(record);
-              editUserModal.open();
-            }}
-            // 分页
-            recordsPerPage={pageSize}
-            paginationText={({ from, to, totalRecords}) => {
-              return `${from}-${to} 名用户，共 ${totalRecords} 名`;
-            }}
-            page={page}
-            onPageChange={(p) => setPage(p)}
-            recordsPerPageOptions={PAGE_SIZES}
-            recordsPerPageLabel="每页显示"
-            onRecordsPerPageChange={setPageSize}
-            // 选择
-            selectedRecords={selectedUsers}
-            onSelectedRecordsChange={setSelectedUsers}
-            allRecordsSelectionCheckboxProps={{
-              indeterminate: selectedUsers.length > 0 && selectedUsers.length < sortedUsers.length,
-              checked: users.length > 0 && selectedUsers.length === sortedUsers.length,
-              onChange: () => {
-                if (selectedUsers.length === sortedUsers.length) {
-                  setSelectedUsers([]);
-                } else {
-                  setSelectedUsers(sortedUsers);
-                }
-              },
-            }}
-            // 其它
-            fetching={fetching}
-          />
-        </Card>
-      </Container>
-    </>
-  );
+      </Card>
+    </div>
+  )
+}
+
+export default function AdminUsers() {
+  return (
+    <Page
+      meta={{
+        title: "管理用户",
+        description: "查看并管理 maimai DX 查分器的用户",
+      }}
+      children={<AdminUsersContent />}
+    />
+  )
 }

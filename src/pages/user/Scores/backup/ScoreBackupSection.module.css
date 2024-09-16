@@ -1,0 +1,10 @@
+.cardButton {
+    &:hover {
+        background-color: var(--mantine-color-default-hover);
+    }
+
+    &[data-disabled] {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}

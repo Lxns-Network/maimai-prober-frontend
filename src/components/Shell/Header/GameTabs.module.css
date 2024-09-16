@@ -1,7 +1,7 @@
 .tabs {
     position: relative;
 
-    @media (min-width: 27em) {
+    @mixin larger-than $mantine-breakpoint-xs {
         display: none !important;
     }
 }

@@ -12,12 +12,14 @@ import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { useUser } from "@/hooks/swr/useUser.ts";
 
 export interface UserBindProps {
   qq?: number;
 }
 
-export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }) => {
+export const UserBindSection = () => {
+  const { user, mutate } = useUser();
   const [visible, visibleHandler] = useDisclosure(false)
 
   const form = useForm({
@@ -42,8 +44,7 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
         throw new Error(data.message)
       }
       openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");
-      userBind = userBind || {}
-      userBind.qq = parseInt(form.values.qq)
+      mutate({ ...user, bind: { ...(user?.bind || {}), qq: parseInt(form.values.qq)} } as any, false);
     } catch (error) {
       openRetryModal("绑定失败", `${error}`, updateUserBindHandler);
     } finally {
@@ -73,8 +74,8 @@ export const UserBindSection = ({ userBind }: { userBind: UserBindProps | null }
       <form onSubmit={form.onSubmit(() => updateUserBindHandler())}>
         <TextInput
           label="QQ"
-          placeholder={(userBind && userBind.qq && (visible ? userBind.qq.toString() :
-            userBind.qq.toString().replace(/./g, '•'))) || "请输入你的 QQ 号"}
+          placeholder={(user?.bind && user?.bind.qq && (visible ? user?.bind.qq.toString() :
+            user?.bind.qq.toString().replace(/./g, '•'))) || "请输入你的 QQ 号"}
           variant="filled"
           mb={5}
           {...form.getInputProps('qq')}

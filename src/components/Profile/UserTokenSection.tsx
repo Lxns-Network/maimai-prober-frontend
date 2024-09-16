@@ -14,12 +14,12 @@ import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
-import { useState } from "react";
+import { useUser } from "@/hooks/swr/useUser.ts";
 
 const GenerateTokenPaper = () => (
-    <Paper p="md" withBorder>
-      <Text fz="sm" fw={700} mb="sm">注意事项</Text>
-      <List size="xs" icon={
+  <Paper p="md" withBorder>
+    <Text fz="sm" fw={700} mb="sm">注意事项</Text>
+    <List size="xs" icon={
       <Box h={18}>
         <Icon color="orange" path={mdiAlertCircle} size={rem(18)} />
       </Box>
@@ -42,8 +42,8 @@ const GenerateTokenPaper = () => (
   </Paper>
 )
 
-export const UserTokenSection = ({ token }: { token: string | undefined | null }) => {
-  const [userToken, setUserToken] = useState<string | null>(token || null);
+export const UserTokenSection = () => {
+  const { user, mutate } = useUser();
   const [visible, visibleHandler] = useDisclosure(false);
 
   const generateUserTokenHandler = async () => {
@@ -53,13 +53,13 @@ export const UserTokenSection = ({ token }: { token: string | undefined | null }
       if (!data.success) {
         throw new Error(data.message)
       }
-      setUserToken(data.data.token)
+      mutate({ ...user, token: data.data.token } as any, false);
     } catch (error) {
       openRetryModal("生成失败", `${error}`, generateUserTokenHandler);
     }
   }
 
-  if (!userToken) {
+  if (!user?.token) {
     return (
       <Card withBorder radius="md" className={classes.card}>
         <Group justify="space-between" wrap="nowrap" gap="xl" align="center">
@@ -101,9 +101,9 @@ export const UserTokenSection = ({ token }: { token: string | undefined | null }
       </Group>
       <TextInput
         variant="filled"
-        value={visible ? userToken : userToken.replace(/./g, '•')}
+        value={visible ? user?.token : user?.token.replace(/./g, '•')}
         rightSection={
-          <CopyButton value={userToken} timeout={2000}>
+          <CopyButton value={user?.token} timeout={2000}>
             {({ copied, copy }) => (
               <Tooltip label={copied ? '已复制' : '复制'} withArrow position="right">
                 <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>

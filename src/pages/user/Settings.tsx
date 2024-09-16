@@ -1,5 +1,4 @@
-import { Title, Text, Card, LoadingOverlay, Mark, Anchor } from '@mantine/core';
-import { Container } from '@mantine/core';
+import { Text, Card, LoadingOverlay, Mark, Anchor } from '@mantine/core';
 import { useEffect, useState } from "react";
 import { deletePlayerScores, unbindPlayer } from "../../utils/api/player";
 import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
@@ -8,6 +7,7 @@ import { useLocalStorage } from "@mantine/hooks";
 import { Link, useNavigate } from "react-router-dom";
 import classes from "../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
+import { Page } from "@/components/Page/Page.tsx";
 
 interface ConfigProps {
   allow_crawl_scores?: boolean;
@@ -169,15 +169,11 @@ const crawlConfigData = {
   }],
 }
 
-export default function Settings() {
+const SettingsContent = () => {
   const [config, setConfig] = useState({} as ConfigProps);
   const [fetching, setFetching] = useState(true);
   const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
   const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = "账号设置 | maimai DX 查分器";
-  }, []);
 
   const getUserConfigHandler = async () => {
     try {
@@ -261,13 +257,7 @@ export default function Settings() {
   }
 
   return (
-    <Container className={classes.root} size={400}>
-      <Title order={2} size="h2" fw={900} ta="center" mt="xs">
-        账号设置
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mt="sm" mb={26}>
-        设置你的 maimai DX 查分器账号
-      </Text>
+    <div>
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
@@ -360,6 +350,18 @@ export default function Settings() {
           }),
         }]} />
       </Card>
-    </Container>
+    </div>
   );
+}
+
+export default function Settings() {
+  return (
+    <Page
+      meta={{
+        title: "账号设置",
+        description: "设置你的 maimai DX 查分器账号",
+      }}
+      children={<SettingsContent />}
+    />
+  )
 }
