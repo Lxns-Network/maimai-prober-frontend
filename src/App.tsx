@@ -23,6 +23,7 @@ import useSongListStore from "./hooks/useSongListStore.tsx";
 import { useShallow } from "zustand/react/shallow";
 import useAliasListStore from "./hooks/useAliasListStore.tsx";
 import Shell from "./components/Shell/Shell.tsx";
+import useTouchEvents from "beautiful-react-hooks/useTouchEvents";
 
 const theme = createTheme({
   focusRing: 'never',
@@ -40,6 +41,23 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const viewport = useRef<HTMLDivElement>(null);
+
+  // 右滑打开侧边栏
+  const ref = useRef<HTMLDivElement>(null);
+  const { onTouchStart, onTouchEnd } = useTouchEvents(ref);
+  let startX = 0;
+
+  onTouchStart((event) => {
+    startX = event.touches[0].clientX;
+  });
+
+  onTouchEnd((event) => {
+    const endX = event.changedTouches[0].clientX;
+
+    if (endX - startX > 100) {
+      setOpened(true);
+    }
+  });
 
   const [getSongList, fetchSongList] = useSongListStore(
     useShallow((state) => [state.getSongList, state.fetchSongList]),
@@ -135,15 +153,17 @@ export default function App() {
             <Notifications />
             <RouterTransition />
             <Shell navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} viewportRef={viewport}>
-              <Suspense fallback={(
-                <Group justify="center" p={rem(80)}>
-                  <Loader type="dots" size="xl" />
-                </Group>
-              )}>
-                <ErrorBoundary FallbackComponent={Fallback}>
-                  <Outlet />
-                </ErrorBoundary>
-              </Suspense>
+              <div ref={ref}>
+                <Suspense fallback={(
+                  <Group justify="center" p={rem(80)}>
+                    <Loader type="dots" size="xl" />
+                  </Group>
+                )}>
+                  <ErrorBoundary FallbackComponent={Fallback}>
+                    <Outlet />
+                  </ErrorBoundary>
+                </Suspense>
+              </div>
             </Shell>
           </PhotoProvider>
         </ModalsProvider>

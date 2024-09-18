@@ -25,6 +25,7 @@
     "@tabler/icons-react": "^2.47.0",
     "@types/grecaptcha": "^3.0.9",
     "@vcarl/remark-headings": "^0.1.0",
+    "beautiful-react-hooks": "^5.0.2",
     "dayjs": "^1.11.11",
     "embla-carousel-autoplay": "^7.1.0",
     "embla-carousel-react": "^7.1.0",
