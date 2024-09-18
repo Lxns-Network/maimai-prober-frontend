@@ -11,8 +11,8 @@ import {
   ThemeIcon
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { MaimaiDifficultyProps, MaimaiSongProps } from "../../../utils/api/song/maimai.tsx";
-import { fetchAPI } from "../../../utils/api/api.tsx";
+import { MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.tsx";
+import { fetchAPI } from "@/utils/api/api.tsx";
 import { IconArrowBigDownFilled, IconArrowBigRightFilled, IconArrowBigUpFilled } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
 

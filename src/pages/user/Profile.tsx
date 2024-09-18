@@ -34,8 +34,8 @@ export default function Profile() {
   return (
     <Page
       meta={{
-        title: "账号设置",
-        description: "设置你的 maimai DX 查分器账号",
+        title: "账号详情",
+        description: "查看你的 maimai DX 查分器账号详情与游戏数据",
       }}
       children={<ProfileContent />}
     />

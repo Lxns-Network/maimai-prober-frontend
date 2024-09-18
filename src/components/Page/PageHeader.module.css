@@ -1,6 +1,5 @@
 .wrapper {
     position: relative;
-    z-index: 4;
     background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
 
     @mixin smaller-than $mantine-breakpoint-md {

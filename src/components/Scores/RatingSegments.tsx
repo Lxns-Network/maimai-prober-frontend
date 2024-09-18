@@ -1,11 +1,11 @@
 import { Box, Text, Group, Paper, SimpleGrid, NumberFormatter} from '@mantine/core';
-import { IconProgress } from '@tabler/icons-react';
+import { IconLoader3 } from '@tabler/icons-react';
 import classes from './RatingSegments.module.css';
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/pages/user/Scores/bests/ScoreBestsSection.tsx";
 import { useLocalStorage } from "@mantine/hooks";
 
 export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBestsProps }) {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: "maimai" });
 
   const data = []
 
@@ -23,8 +23,6 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
     data.push({ label: 'SELECTION 10', count: selectionsAvg, part: 0 });
     data.push({ label: 'RECENT 10', count: recentsAvg, part: Math.round(recentsAvg / (bestsAvg + recentsAvg) * 100), color: '#fd7e14' });
   }
-
-  if (data.length == 0) return null;
 
   const descriptions = data.map((stat) => (
     <Box key={stat.label} style={{ borderBottomColor: stat.color }} className={classes.stat}>
@@ -54,7 +52,7 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
             )}
           </Text>
         </Group>
-        <IconProgress size="1.4rem" className={classes.icon} stroke={1.5} />
+        <IconLoader3 size="1.5rem" className={classes.icon} stroke={1.5} />
       </Group>
 
       <Text c="dimmed" fz="sm">
