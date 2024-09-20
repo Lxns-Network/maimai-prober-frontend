@@ -1,10 +1,8 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { MaimaiScoreProps } from "./maimai/Score.tsx";
 import ScoreContext from "../../utils/context.tsx";
 import { fetchAPI } from "../../utils/api/api.tsx";
 import { Accordion, Avatar, Center, Container, Group, Loader, Modal, Space, Text, Transition } from "@mantine/core";
 import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
-import { ChunithmScoreProps } from "./chunithm/Score.tsx";
 import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmDifficultyProps, ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import { MaimaiScoreModalContent } from "./maimai/ScoreModal.tsx";
@@ -20,6 +18,7 @@ import { IconPhotoOff } from "@tabler/icons-react";
 import { useIntersection } from "@mantine/hooks";
 import { Marquee } from "../Marquee.tsx";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 interface ScoreModalProps {
   game: "maimai" | "chunithm";

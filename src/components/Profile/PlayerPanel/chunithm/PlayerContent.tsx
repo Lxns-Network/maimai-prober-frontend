@@ -1,9 +1,9 @@
-import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
+import { ChunithmPlayerProps } from "@/types/player";
 import { Avatar, Badge, Divider, Flex, Group, NumberFormatter, rem, Text } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
-import { getRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
-import { ASSET_URL } from "../../../../main.tsx";
-import { Marquee } from "../../../Marquee.tsx";
+import { getRatingGradient, getTrophyColor } from "@/utils/color.tsx";
+import { ASSET_URL } from "@/main.tsx";
+import { Marquee } from "@/components/Marquee.tsx";
 
 export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
   return (

@@ -4,28 +4,7 @@ import { PlayerModal } from "./PlayerModal.tsx";
 import { useState } from "react";
 import { useViewportSize } from "@mantine/hooks";
 import classes from "../PlayerPanel.module.css"
-
-interface CollectionProps {
-  id: number;
-  name: string;
-}
-
-export interface MaimaiPlayerProps {
-  name: string;
-  rating: number;
-  friend_code: number;
-  trophy?: {
-    name: string;
-    color: string;
-  };
-  course_rank: number;
-  class_rank: number;
-  star: number;
-  icon?: CollectionProps;
-  name_plate?: CollectionProps;
-  frame?: CollectionProps;
-  upload_time: string;
-}
+import { MaimaiPlayerProps } from "@/types/player";
 
 const examplePlayer: MaimaiPlayerProps = {
   "name": "ｍａｉｍａｉ",

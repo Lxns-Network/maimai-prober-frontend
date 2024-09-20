@@ -2,7 +2,7 @@ import {
   UnstyledButton,
   UnstyledButtonProps
 } from "@mantine/core";
-import { MaimaiPlayerProps } from "./PlayerPanel.tsx";
+import { MaimaiPlayerProps } from "@/types/player";
 import { PlayerContent } from "./PlayerContent.tsx";
 import classes from "../PlayerPanel.module.css"
 

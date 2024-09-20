@@ -3,25 +3,10 @@ import {
   getScoreCardBackgroundColor,
   getScoreSecondaryColor,
   getTransparentColor
-} from "../../../utils/color.tsx";
-import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "../../../utils/api/song/chunithm.tsx";
+} from "@/utils/color.tsx";
+import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "@/utils/api/song/chunithm.tsx";
 import { useEffect, useState } from "react";
-
-export interface ChunithmScoreProps {
-  id: number;
-  song_name: string;
-  level: string;
-  level_index: number;
-  score: number;
-  rating: number;
-  over_power: number;
-  clear: string;
-  full_combo: string;
-  full_chain: string;
-  rank: string;
-  play_time?: string;
-  upload_time: string;
-}
+import { ChunithmScoreProps } from "@/types/score";
 
 interface ScoreContentProps {
   score: ChunithmScoreProps;

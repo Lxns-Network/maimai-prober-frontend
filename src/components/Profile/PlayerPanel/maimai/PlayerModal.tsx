@@ -3,16 +3,16 @@ import {
   Modal, Paper, ScrollArea, Text, useCombobox,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { MaimaiPlayerProps } from "./PlayerPanel.tsx";
-import { getPlayerRatingTrend } from "../../../../utils/api/player.tsx";
+import { MaimaiPlayerProps } from "@/types/player";
+import { getPlayerRatingTrend } from "@/utils/api/player.tsx";
 import { PlayerContent } from "./PlayerContent.tsx";
 import { RatingTrend, RatingTrendProps } from "./RatingTrend.tsx";
 import { IconDots } from "@tabler/icons-react";
 import classes from "../PlayerModal.module.css";
-import { openRetryModal } from "../../../../utils/modal.tsx";
-import { Marquee } from "../../../Marquee.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { Marquee } from "@/components/Marquee.tsx";
 import { useShallow } from "zustand/react/shallow";
-import useSongListStore from "../../../../hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.tsx";
 
 interface ModalProps {
   player: MaimaiPlayerProps;

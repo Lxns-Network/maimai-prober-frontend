@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
-import { UserProps } from "@/components/Profile/UserSection.tsx";
+import { UserProps } from "@/types/user";
 
 export const useUser = () => {
   const {

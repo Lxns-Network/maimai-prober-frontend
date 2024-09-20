@@ -2,9 +2,9 @@ import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useState } from "react";
 import { BackgroundImage, Card, SimpleGrid, useComputedColorScheme } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { MaimaiScoreContent, MaimaiScoreProps } from "./maimai/Score.tsx";
+import { MaimaiScoreContent } from "./maimai/Score.tsx";
 import { ScoreModal } from "./ScoreModal.tsx";
-import { ChunithmScoreContent, ChunithmScoreProps } from "./chunithm/Score.tsx";
+import { ChunithmScoreContent } from "./chunithm/Score.tsx";
 import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
 import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
 import useFixedGame from "../../hooks/useFixedGame.tsx";
@@ -13,6 +13,7 @@ import { getScoreSecondaryColor } from "../../utils/color.tsx";
 import { ASSET_URL } from "../../main.tsx";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
 import { useShallow } from "zustand/react/shallow";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 interface ScoreProps {
   score: MaimaiScoreProps | ChunithmScoreProps;

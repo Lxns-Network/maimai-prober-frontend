@@ -1,9 +1,8 @@
 import useSWR from "swr";
-import { MaimaiScoreProps } from "@/components/Scores/maimai/Score.tsx";
-import { ChunithmScoreProps } from "@/components/Scores/chunithm/Score.tsx";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
-export const useScores = (game: string) => {
+export const useScores = (game: "maimai" | "chunithm") => {
   const {
     data,
     error,

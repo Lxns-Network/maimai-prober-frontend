@@ -1,8 +1,8 @@
 import useSWR from "swr";
-import { ChunithmBestsProps, MaimaiBestsProps } from "@/pages/user/Scores/bests/ScoreBestsSection.tsx";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
+import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
 
-export const useBests = (game: string) => {
+export const useBests = (game: "maimai" | "chunithm") => {
   const {
     data,
     error,

@@ -1,12 +1,10 @@
 import useFixedGame from "../../hooks/useFixedGame.tsx";
 import { ChunithmDifficultyProps, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import { ChunithmScoreProps } from "../Scores/chunithm/Score.tsx";
 import {
   MaimaiDifficultiesProps,
   MaimaiDifficultyProps,
   MaimaiSongProps
 } from "../../utils/api/song/maimai.tsx";
-import { MaimaiScoreProps } from "../Scores/maimai/Score.tsx";
 import { ChunithmSongDifficulty } from "./chunithm/SongDifficulty.tsx";
 import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
 import React, { useEffect, useState } from "react";
@@ -16,6 +14,7 @@ import { Stack } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
 import { useShallow } from "zustand/react/shallow";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 interface SongDifficultyProps {
   song: MaimaiSongProps | ChunithmSongProps;

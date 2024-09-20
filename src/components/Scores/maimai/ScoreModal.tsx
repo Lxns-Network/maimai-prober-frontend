@@ -1,4 +1,3 @@
-import { MaimaiScoreProps } from "./Score.tsx";
 import {
   AspectRatio,
   Avatar,
@@ -11,24 +10,25 @@ import {
   Text,
   Tooltip,
 } from "@mantine/core";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.tsx";
 import {
   getDifficulty,
   MaimaiDifficultyProps,
   MaimaiSongProps
-} from "../../../utils/api/song/maimai.tsx";
+} from "@/utils/api/song/maimai.tsx";
 import { IconChevronRight, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
-import { ASSET_URL } from "../../../main.tsx";
+import { ASSET_URL } from "@/main.tsx";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
 import classes from "../ScoreModal.module.css";
 import { useShallow } from "zustand/react/shallow";
-import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.tsx";
 import { MaimaiRatingHistoryModal } from "./RatingHistoryModal.tsx";
 import { DeluxeRatingCalculator } from "./DeluxeRatingCalculator.tsx";
+import { MaimaiScoreProps } from "@/types/score";
 
 export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
   const { songList } = useSongListStore(

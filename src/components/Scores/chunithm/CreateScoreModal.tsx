@@ -13,17 +13,17 @@ import { useComputedColorScheme } from "@mantine/core";
 import {
   ChunithmDifficultyProps,
   ChunithmSongProps
-} from "../../../utils/api/song/chunithm.tsx";
-import { openAlertModal, openConfirmModal, openRetryModal } from "../../../utils/modal.tsx";
+} from "@/utils/api/song/chunithm.tsx";
+import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
-import { createPlayerScores } from "../../../utils/api/player.tsx";
+import { createPlayerScores } from "@/utils/api/player.tsx";
 import { SongCombobox } from "../../SongCombobox.tsx";
-import { ChunithmScoreProps } from "./Score.tsx";
 import "dayjs/locale/zh-cn"
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
-import { ASSET_URL } from "../../../main.tsx";
-import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import { ASSET_URL } from "@/main.tsx";
+import useSongListStore from "@/hooks/useSongListStore.tsx";
 import { useShallow } from "zustand/react/shallow";
+import { ChunithmScoreProps } from "@/types/score";
 
 interface CreateScoreModalProps {
   score?: ChunithmScoreProps | null;

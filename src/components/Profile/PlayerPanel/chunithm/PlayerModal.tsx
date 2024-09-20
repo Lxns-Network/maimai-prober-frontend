@@ -2,10 +2,10 @@ import {
   Container, Grid,
   Modal, Paper, ScrollArea, Text,
 } from "@mantine/core";
-import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
+import { ChunithmPlayerProps } from "@/types/player";
 import { PlayerContent } from "./PlayerContent.tsx";
 import classes from "../PlayerModal.module.css";
-import { Marquee } from "../../../Marquee.tsx";
+import { Marquee } from "@/components/Marquee.tsx";
 
 interface ModalProps {
   player: ChunithmPlayerProps;

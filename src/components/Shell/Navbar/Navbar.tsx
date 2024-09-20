@@ -7,8 +7,8 @@ import {
   ScrollArea,
 } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
-import { checkPermission, UserPermission } from "../../../utils/session";
-import { logoutUser } from "../../../utils/api/user";
+import { checkPermission, UserPermission } from "@/utils/session.tsx";
+import { logoutUser } from "@/utils/api/user.tsx";
 import {
   IconCards,
   IconChartBar,

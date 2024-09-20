@@ -1,5 +1,3 @@
-import { MaimaiScoreProps } from "./maimai/Score.tsx";
-import { ChunithmScoreProps } from "./chunithm/Score.tsx";
 import {
   Button,
   Chip, Flex,
@@ -18,6 +16,7 @@ import { useEffect, useState } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
 import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 interface AdvancedFilterProps {
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];

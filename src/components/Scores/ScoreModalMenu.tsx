@@ -6,9 +6,8 @@ import { IconClearAll, IconDots, IconMusic, IconPlus, IconTrash } from "@tabler/
 import { useContext, useEffect, useState } from "react";
 import ScoreContext from "../../utils/context.tsx";
 import { useNavigate } from "react-router-dom";
-import { MaimaiScoreProps } from "./maimai/Score.tsx";
-import { ChunithmScoreProps } from "./chunithm/Score.tsx";
 import useFixedGame from "../../hooks/useFixedGame.tsx";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps | ChunithmScoreProps;

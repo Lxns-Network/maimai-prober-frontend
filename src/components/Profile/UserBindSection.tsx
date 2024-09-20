@@ -14,10 +14,6 @@ import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { useUser } from "@/hooks/swr/useUser.ts";
 
-export interface UserBindProps {
-  qq?: number;
-}
-
 export const UserBindSection = () => {
   const { user, mutate } = useUser();
   const [visible, visibleHandler] = useDisclosure(false)

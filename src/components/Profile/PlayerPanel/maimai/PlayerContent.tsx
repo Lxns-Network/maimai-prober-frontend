@@ -1,4 +1,4 @@
-import { MaimaiPlayerProps } from "./PlayerPanel.tsx";
+import { MaimaiPlayerProps } from "@/types/player";
 import {
   Avatar,
   Badge,
@@ -10,9 +10,9 @@ import {
   useComputedColorScheme,
 } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
-import { getDeluxeRatingGradient, getTrophyColor } from "../../../../utils/color.tsx";
-import { ASSET_URL } from "../../../../main.tsx";
-import { Marquee } from "../../../Marquee.tsx";
+import { getDeluxeRatingGradient, getTrophyColor } from "@/utils/color.tsx";
+import { ASSET_URL } from "@/main.tsx";
+import { Marquee } from "@/components/Marquee.tsx";
 
 export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
   const computedColorScheme = useComputedColorScheme('light');

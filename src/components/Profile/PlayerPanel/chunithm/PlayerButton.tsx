@@ -2,7 +2,7 @@ import {
   UnstyledButton,
   UnstyledButtonProps
 } from "@mantine/core";
-import { ChunithmPlayerProps } from "./PlayerPanel.tsx";
+import { ChunithmPlayerProps } from "@/types/player";
 import { PlayerContent } from "./PlayerContent.tsx";
 import classes from "../PlayerPanel.module.css"
 

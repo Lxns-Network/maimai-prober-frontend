@@ -12,9 +12,9 @@ import {
   useComputedColorScheme
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
-import { MaimaiDifficultyProps } from "../../../utils/api/song/maimai.tsx";
-import { MaimaiScoreProps } from "../../Scores/maimai/Score.tsx";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
+import { MaimaiDifficultyProps } from "@/utils/api/song/maimai.tsx";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.tsx";
+import { MaimaiScoreProps } from "@/types/score";
 
 interface SongProps {
   difficulty: MaimaiDifficultyProps;

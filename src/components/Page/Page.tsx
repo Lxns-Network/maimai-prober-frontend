@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { PageTabs } from "./PageTabs.tsx";
 import { PageHeader } from "./PageHeader.tsx";
 import { PageRawContent } from "./PageRawContent.tsx";
+import { NAVBAR_BREAKPOINT } from "@/App.tsx";
 
 export interface PageProps {
   meta: {
@@ -23,7 +24,7 @@ export const Page = (props: PageProps) => {
 
   return (
     <div style={{
-      "--page-max-width": "700px",
+      "--page-max-width": `calc(${NAVBAR_BREAKPOINT}px - var(--navbar-width))`,
     } as React.CSSProperties}>
       <PageHeader {...props} />
 

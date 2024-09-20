@@ -1,7 +1,7 @@
-import { MaimaiDifficultyProps, MaimaiNotesProps } from "../../../utils/api/song/maimai.tsx";
+import { MaimaiDifficultyProps, MaimaiNotesProps } from "@/utils/api/song/maimai.tsx";
 import { Box, Center, Group, keys, Loader, SegmentedControl, Select, Space, Table, Text } from "@mantine/core";
 import { useState } from "react";
-import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.tsx";
 import { useShallow } from "zustand/react/shallow";
 
 // 基础权重

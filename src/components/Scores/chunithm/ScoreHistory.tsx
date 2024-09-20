@@ -1,7 +1,7 @@
-import { ChunithmScoreProps } from "./Score.tsx";
 import { Card, Flex, Text, NumberFormatter } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ChunithmScoreProps } from "@/types/score";
 
 const ScoreHistoryChart = ({ scores }: { scores: ChunithmScoreProps[] }) => {
   let ticks = [800000, 900000, 925000, 950000, 975000, 990000, 1000000, 1005000, 1007500, 1009000, 1010000];

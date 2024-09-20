@@ -5,16 +5,15 @@ import {
   Button,
   Text, keys, Flex, Card, Badge
 } from '@mantine/core';
-import { deleteUsers, getUsers } from "../../utils/api/user";
+import { deleteUsers, getUsers } from "@/utils/api/user";
 import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
-import { NAVBAR_BREAKPOINT } from "../../App.tsx";
 import { IconDatabaseOff, IconSearch, IconSend, IconTrash } from "@tabler/icons-react";
 import classes from "../Page.module.css";
-import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
-import { EditUserModal } from "../../components/Users/EditUserModal.tsx";
-import { SendBatchEmailModal } from "../../components/Users/SendBatchEmailModal.tsx";
-import { permissionToList, UserPermission } from "../../utils/session.tsx";
+import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
+import { SendBatchEmailModal } from "@/components/Users/SendBatchEmailModal.tsx";
+import { permissionToList, UserPermission } from "@/utils/session.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 
 export interface UserProps {
@@ -157,7 +156,7 @@ const AdminUsersContent = () => {
   const { width } = useViewportSize();
 
   return (
-    <div>
+    <div style={{position:"relative"}}>
       <EditUserModal user={activeUser as UserProps} opened={editUserModalOpened} close={() => {
         const index = users.findIndex((user) => user.id === activeUser?.id);
         users.splice(index, 1);
@@ -181,7 +180,7 @@ const AdminUsersContent = () => {
         value={search}
         onChange={(event) => setSearch(event.currentTarget.value)}
       />
-      <Card className={classes.card} withBorder radius="md" w={width > NAVBAR_BREAKPOINT ? `100%` : width - 32} p={0}>
+      <Card className={classes.card} withBorder radius="md" w={width > 700 ? `100%` : width - 32} p={0}>
         <Card.Section className={classes.section} m={0}>
           <Text size="sm" mb="xs">对所选的 {selectedUsers.length} 名用户进行操作：</Text>
           <Group>
@@ -199,7 +198,7 @@ const AdminUsersContent = () => {
         </Card.Section>
         <DataTable highlightOnHover striped
           verticalSpacing="xs"
-          mih={users.length === 0 ? 150 : 0}
+          mih={displayUsers.length === 0 ? 150 : 0}
           emptyState={
             <Flex gap="xs" align="center" direction="column" c="dimmed">
               <IconDatabaseOff size={48} stroke={1.5} />

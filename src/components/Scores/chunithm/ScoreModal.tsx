@@ -1,4 +1,3 @@
-import { ChunithmScoreProps } from "./Score.tsx";
 import {
   AspectRatio,
   Avatar,
@@ -21,8 +20,9 @@ import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "@/main.tsx";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
-import useSongListStore from "../../../hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.tsx";
 import { useShallow } from "zustand/react/shallow";
+import { ChunithmScoreProps } from "@/types/score";
 
 export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
   const { songList } = useSongListStore(

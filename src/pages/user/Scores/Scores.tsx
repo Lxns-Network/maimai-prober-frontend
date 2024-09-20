@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { MaimaiScoreProps } from '@/components/Scores/maimai/Score.tsx';
-import { ChunithmScoreProps } from "@/components/Scores/chunithm/Score.tsx";
 import ScoreContext from "@/utils/context.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { ScoreBestsSection } from "@/pages/user/Scores/bests/ScoreBestsSection.tsx";
 import { ScoreBackupSection } from "@/pages/user/Scores/backup/ScoreBackupSection.tsx";
 import { ScoreListSection } from "@/pages/user/Scores/list/ScoreListSection.tsx";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 export function Scores() {
   const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);

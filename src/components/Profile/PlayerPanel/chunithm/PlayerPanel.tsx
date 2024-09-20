@@ -4,29 +4,7 @@ import { useViewportSize } from "@mantine/hooks";
 import { useState } from "react";
 import { PlayerModal } from "./PlayerModal.tsx";
 import classes from "../PlayerPanel.module.css"
-
-interface CollectionProps {
-  id: number;
-  name: string;
-}
-
-export interface ChunithmPlayerProps {
-  name: string;
-  rating: number;
-  friend_code: number;
-  trophy: {
-    name: string;
-    color: string;
-  };
-  over_power: number;
-  over_power_progress: number;
-  currency: number;
-  total_currency: number;
-  character?: CollectionProps;
-  name_plate?: CollectionProps;
-  map_icon?: CollectionProps;
-  upload_time: string;
-}
+import { ChunithmPlayerProps } from "@/types/player";
 
 const examplePlayer: ChunithmPlayerProps = {
   "name": "ＣＨＵＮＩＴＨＭ",

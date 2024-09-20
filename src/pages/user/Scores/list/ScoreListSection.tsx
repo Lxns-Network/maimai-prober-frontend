@@ -3,8 +3,6 @@ import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.tsx";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.tsx";
 import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useScores } from "@/hooks/swr/useScores.ts";
-import { MaimaiScoreProps } from "@/components/Scores/maimai/Score.tsx";
-import { ChunithmScoreProps } from "@/components/Scores/chunithm/Score.tsx";
 import ScoreContext from "@/utils/context.tsx";
 import useSongListStore from "@/hooks/useSongListStore.tsx";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
@@ -17,6 +15,7 @@ import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSection.tsx";
 import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/StatisticsSection.tsx";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 const sortKeys = {
   maimai: [
@@ -39,7 +38,7 @@ const sortKeys = {
 
 export const ScoreListSection = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
 
   const { scores, isLoading, mutate } = useScores(game);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);

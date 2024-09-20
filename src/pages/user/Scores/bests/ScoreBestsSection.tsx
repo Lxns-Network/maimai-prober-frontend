@@ -1,27 +1,12 @@
 import { useLocalStorage } from "@mantine/hooks";
 import { Box, Flex, Group, Loader, Space, Text, Title } from "@mantine/core";
-import { MaimaiScoreProps } from "@/components/Scores/maimai/Score.tsx";
-import { ChunithmScoreProps } from "@/components/Scores/chunithm/Score.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { useBests } from "@/hooks/swr/useBests.ts";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { RatingSegments } from "@/components/Scores/RatingSegments.tsx";
 
-export interface MaimaiBestsProps {
-  standard: MaimaiScoreProps[];
-  dx: MaimaiScoreProps[];
-  standard_total: number;
-  dx_total: number;
-}
-
-export interface ChunithmBestsProps {
-  bests: ChunithmScoreProps[];
-  selections: ChunithmScoreProps[];
-  recents: ChunithmScoreProps[];
-}
-
 export const ScoreBestsSection = () => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
 
   const { bests, isLoading } = useBests(game);
 

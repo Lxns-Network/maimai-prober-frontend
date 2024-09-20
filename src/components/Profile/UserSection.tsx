@@ -10,23 +10,12 @@ import {
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
-import { UserBindProps } from "./UserBindSection";
 import { useForm } from "@mantine/form";
-import { validateEmail, validateUserName } from "../../utils/validator";
-import { updateUserProfile } from "../../utils/api/user.tsx";
+import { validateEmail, validateUserName } from "@/utils/validator";
+import { updateUserProfile } from "@/utils/api/user.tsx";
 import classes from "./Profile.module.css";
-import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { useUser } from "@/hooks/swr/useUser.ts";
-
-export interface UserProps {
-  id: number;
-  name: string;
-  email: string;
-  permission: number;
-  register_time: string;
-  bind: UserBindProps;
-  token?: string;
-}
 
 export const UserSection = () => {
   const { user } = useUser();

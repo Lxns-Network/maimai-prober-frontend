@@ -31,7 +31,6 @@ const theme = createTheme({
   activeClassName: classes.active,
 });
 
-export const HEADER_HEIGHT = 56;
 export const NAVBAR_BREAKPOINT = 992;
 
 export default function App() {

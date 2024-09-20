@@ -1,7 +1,7 @@
 import { Card, Grid, Image, rem, Text, Group, Spoiler, Divider, NumberFormatter, Flex, Box } from "@mantine/core";
-import { ChunithmScoreProps } from "./Score.tsx";
 import classes from "../Scores.module.css"
 import { useMediaQuery } from "@mantine/hooks";
+import { ChunithmScoreProps } from "@/types/score";
 
 const RateStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
   const rate = [

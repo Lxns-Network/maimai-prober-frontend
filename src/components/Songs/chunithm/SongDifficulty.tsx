@@ -13,9 +13,9 @@ import {
   useComputedColorScheme
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
-import { ChunithmDifficultyProps } from "../../../utils/api/song/chunithm.tsx";
-import { ChunithmScoreProps } from "../../Scores/chunithm/Score.tsx";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "../../../utils/color.tsx";
+import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm.tsx";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.tsx";
+import { ChunithmScoreProps } from "@/types/score";
 
 interface SongProps {
   difficulty: ChunithmDifficultyProps;

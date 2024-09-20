@@ -1,8 +1,8 @@
 import { Box, Text, Group, Paper, SimpleGrid, NumberFormatter} from '@mantine/core';
 import { IconLoader3 } from '@tabler/icons-react';
 import classes from './RatingSegments.module.css';
-import { ChunithmBestsProps, MaimaiBestsProps } from "@/pages/user/Scores/bests/ScoreBestsSection.tsx";
 import { useLocalStorage } from "@mantine/hooks";
+import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
 
 export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBestsProps }) {
   const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: "maimai" });

@@ -1,8 +1,8 @@
-import { MaimaiScoreProps } from "./Score.tsx";
 import { Card, Flex, Text } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useMemo } from "react";
+import { MaimaiScoreProps } from "@/types/score";
 
 const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   const ticks = useMemo(() => {
