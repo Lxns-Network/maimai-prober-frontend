@@ -1,5 +1,20 @@
 import {
-  AspectRatio, Avatar, Box, Card, Center, Flex, Grid, Group, Image, NumberFormatter, Paper, Rating, rem, Stack, Text
+  AspectRatio,
+  Avatar,
+  Box, Button,
+  Card,
+  Center,
+  Flex,
+  Grid,
+  Group,
+  Image,
+  NumberFormatter,
+  Paper,
+  Rating,
+  rem,
+  Stack,
+  Text,
+  Tooltip
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "@/utils/api/song/chunithm.ts";
@@ -14,12 +29,14 @@ import { useMediaQuery } from "@mantine/hooks";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps } from "@/types/score";
+import {RatingHistoryModal} from "@/components/Scores/RatingHistoryModal.tsx";
 
 export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
   const { songList } = useSongListStore(
     useShallow((state) => ({ songList: state.chunithm })),
   )
   const [difficulty, setDifficulty] = useState<ChunithmDifficultyProps | null>(null);
+  const [ratingHistoryOpened, setRatingHistoryOpened] = useState(false);
 
   const small = useMediaQuery('(max-width: 30rem)');
 
@@ -33,6 +50,12 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
 
   return (
     <>
+      <RatingHistoryModal
+        song={song}
+        difficulty={difficulty}
+        opened={ratingHistoryOpened}
+        onClose={() => setRatingHistoryOpened(false)}
+      />
       <Group wrap="nowrap">
         <SongDisabledIndicator disabled={song.disabled}>
           <PhotoView src={`${ASSET_URL}/chunithm/jacket/${difficulty?.origin_id ?? songList.getSongResourceId(song.id)}.png`}>
@@ -76,16 +99,18 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
             </Text>
           </Card>
         ) : (
-          <Card w={54} h={38} p={0} radius="md" withBorder style={{
-            border: `2px solid ${getScoreSecondaryColor("chunithm", score.level_index || 0)}`,
-            backgroundColor: getScoreCardBackgroundColor("chunithm", score.level_index || 0)
-          }}>
-            <Text size="xl" fw={500} ta="center" c="white" style={{
-              lineHeight: rem(34),
-            }}>
-              {difficulty ? difficulty.level_value.toFixed(1) : "?"}
-            </Text>
-          </Card>
+          <Tooltip label="查看谱面历史定数">
+            <Button w={54} h={38} p={0} radius="md" style={{
+              border: `2px solid ${getScoreSecondaryColor("chunithm", score.level_index || 0)}`,
+              backgroundColor: getScoreCardBackgroundColor("chunithm", score.level_index || 0)
+            }} onClick={() => setRatingHistoryOpened(true)}>
+              <Text size="xl" fw={500} ta="center" c="white" style={{
+                lineHeight: rem(34),
+              }}>
+                {difficulty ? difficulty.level_value.toFixed(1) : "?"}
+              </Text>
+            </Button>
+          </Tooltip>
         )}
       </Group>
       {score.score < 0 ? (

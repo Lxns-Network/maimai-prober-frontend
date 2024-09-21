@@ -15,7 +15,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import classes from "../ScoreModal.module.css";
 import { useShallow } from "zustand/react/shallow";
 import useSongListStore from "@/hooks/useSongListStore.ts";
-import { MaimaiRatingHistoryModal } from "./RatingHistoryModal.tsx";
+import { RatingHistoryModal } from "../RatingHistoryModal.tsx";
 import { DeluxeRatingCalculator } from "./DeluxeRatingCalculator.tsx";
 import { MaimaiScoreProps } from "@/types/score";
 
@@ -48,7 +48,7 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
 
   return (
     <>
-      <MaimaiRatingHistoryModal
+      <RatingHistoryModal
         song={song}
         difficulty={difficulty}
         opened={ratingHistoryOpened}
