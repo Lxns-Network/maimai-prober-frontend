@@ -1,22 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  Box,
-  Container,
-  Divider,
-  ScrollArea,
-} from '@mantine/core';
+import { Box, Container, Divider, ScrollArea } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
-import { checkPermission, UserPermission } from "@/utils/session.tsx";
-import { logoutUser } from "@/utils/api/user.tsx";
+import { checkPermission, UserPermission } from "@/utils/session.ts";
+import { logoutUser } from "@/utils/api/user.ts";
 import {
-  IconCards,
-  IconChartBar,
-  IconCloudUpload, IconCode, IconDoorEnter,
-  IconGavel, IconHelp,
-  IconHome, IconLogout, IconMusic,
-  IconSettings2, IconTable, IconTableOptions, IconTransferIn,
-  IconUserCircle
+  IconCards, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome, IconLogout,
+  IconMusic, IconSettings2, IconTable, IconTableOptions, IconTransferIn, IconUserCircle
 } from "@tabler/icons-react";
 import classes from './Navbar.module.css';
 

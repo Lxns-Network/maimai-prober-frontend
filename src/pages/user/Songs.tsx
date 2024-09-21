@@ -1,21 +1,18 @@
 import { useEffect, useState } from "react";
-import {
-  Text,
-  Flex, Anchor, Space, Transition
-} from "@mantine/core";
-import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { Text, Flex, Anchor, Space, Transition } from "@mantine/core";
+import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useDisclosure, useLocalStorage } from "@mantine/hooks";
-import { openRetryModal } from "../../utils/modal.tsx";
-import { SongCombobox } from "../../components/SongCombobox.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
-import { fetchAPI } from "../../utils/api/api.tsx";
+import { fetchAPI } from "@/utils/api/api.ts";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { LoginAlert } from "../../components/LoginAlert";
-import { CreateAliasModal } from "../../components/Alias/CreateAliasModal.tsx";
-import { SongCard } from "../../components/Songs/SongCard.tsx";
-import { SongDifficultyList } from "../../components/Songs/SongDifficultyList.tsx";
-import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { LoginAlert } from "@/components/LoginAlert";
+import { CreateAliasModal } from "@/components/Alias/CreateAliasModal.tsx";
+import { SongCard } from "@/components/Songs/SongCard.tsx";
+import { SongDifficultyList } from "@/components/Songs/SongDifficultyList.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Page } from "@/components/Page/Page.tsx";
 
 const SongsContent = () => {

@@ -1,26 +1,17 @@
-import {
-  ActionIcon, Button,
-  Card,
-  Container,
-  Group,
-  Menu,
-  Progress
-} from "@mantine/core";
-import { AliasProps } from "../../pages/alias/Vote.tsx";
-import { approveAlias, deleteAlias, deleteUserAlias, voteAlias } from "../../utils/api/alias.tsx";
+import { ActionIcon, Button, Card, Container, Group, Menu, Progress } from "@mantine/core";
+import { approveAlias, deleteAlias, deleteUserAlias, voteAlias } from "@/utils/api/alias.ts";
 import { useSetState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
-import { checkPermission, getLoginUserId, UserPermission } from "../../utils/session.tsx";
+import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { AliasButton } from "./AliasButton.tsx";
 import {
-  IconCheck, IconDotsVertical,
-  IconFlag2Filled,
-  IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled,
+  IconCheck, IconDotsVertical, IconFlag2Filled, IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled,
   IconTrash
 } from "@tabler/icons-react";
 import classes from "./Alias.module.css"
-import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
-import useFixedGame from "../../hooks/useFixedGame.tsx";
+import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import useFixedGame from "@/hooks/useFixedGame.ts";
+import { AliasProps } from "@/types/alias";
 
 interface AliasCardProps {
   alias: AliasProps;

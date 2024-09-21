@@ -1,18 +1,7 @@
-import {
-  AspectRatio,
-  Divider,
-  Flex,
-  Group,
-  Image,
-  Modal,
-  ScrollArea,
-  Stack,
-  Text,
-  ThemeIcon
-} from "@mantine/core";
+import { AspectRatio, Divider, Flex, Group, Image, Modal, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.tsx";
-import { fetchAPI } from "@/utils/api/api.tsx";
+import { MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { fetchAPI } from "@/utils/api/api.ts";
 import { IconArrowBigDownFilled, IconArrowBigRightFilled, IconArrowBigUpFilled } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
 

@@ -1,5 +1,5 @@
 import { isTokenExpired, isTokenUndefined } from "../session";
-import { refreshToken } from "./user";
+import { refreshToken } from "./user.ts";
 
 export const API_URL = import.meta.env.VITE_API_URL;
 

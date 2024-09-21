@@ -1,23 +1,23 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import ScoreContext from "../../utils/context.tsx";
-import { fetchAPI } from "../../utils/api/api.tsx";
+import ScoreContext from "@/utils/context.ts";
+import { fetchAPI } from "@/utils/api/api.ts";
 import { Accordion, Avatar, Center, Container, Group, Loader, Modal, Space, Text, Transition } from "@mantine/core";
 import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
-import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmDifficultyProps, ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ChunithmDifficultyProps, ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { MaimaiScoreModalContent } from "./maimai/ScoreModal.tsx";
 import { ChunithmScoreModalContent } from "./chunithm/ScoreModal.tsx";
 import { ChunithmScoreHistory } from "./chunithm/ScoreHistory.tsx";
 import { MaimaiChart } from "./maimai/Chart.tsx";
-import { openRetryModal } from "../../utils/modal.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
 import classes from "./ScoreModal.module.css"
 import { ChunithmChart } from "./chunithm/Chart.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
-import { ASSET_URL } from "../../main.tsx";
+import { ASSET_URL } from "@/main.tsx";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { useIntersection } from "@mantine/hooks";
 import { Marquee } from "../Marquee.tsx";
-import useSongListStore from "../../hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 interface ScoreModalProps {

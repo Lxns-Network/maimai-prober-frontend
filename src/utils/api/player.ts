@@ -1,8 +1,4 @@
-import { fetchAPI } from "./api";
-
-export async function getPlayerDetail(game: string) {
-  return fetchAPI(`user/${game}/player`, { method: "GET" });
-}
+import { fetchAPI } from "./api.ts";
 
 export async function getPlayerRatingTrend(game: string, version: number) {
   return fetchAPI(`user/${game}/player/trend?version=${version}`, { method: "GET" });
@@ -10,14 +6,6 @@ export async function getPlayerRatingTrend(game: string, version: number) {
 
 export async function unbindPlayer(game: string) {
   return fetchAPI(`user/${game}/player`, { method: "DELETE" });
-}
-
-export async function getPlayerScores(game: string) {
-  return fetchAPI(`user/${game}/player/scores`, { method: "GET" });
-}
-
-export async function getPlayerBests(game: string) {
-  return fetchAPI(`user/${game}/player/bests`, { method: "GET" });
 }
 
 export async function deletePlayerScores(game: string) {

@@ -1,21 +1,14 @@
 import { useEffect, useState } from "react";
 import {
-  CloseButton,
-  Combobox,
-  InputBase,
-  ScrollArea,
-  Text,
-  useCombobox,
-  InputBaseProps,
-  ElementProps, Group, Badge
+  CloseButton, Combobox, InputBase, ScrollArea, Text, useCombobox, InputBaseProps, ElementProps, Group, Badge
 } from "@mantine/core";
-import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.tsx";
-import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.tsx";
+import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.ts";
+import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.ts";
 import { IconSearch } from "@tabler/icons-react";
 import { toHiragana } from 'wanakana';
 import { useLocalStorage } from "@mantine/hooks";
-import useSongListStore from "../hooks/useSongListStore.tsx";
-import useAliasListStore from "../hooks/useAliasListStore.tsx";
+import useSongListStore from "../hooks/useSongListStore.ts";
+import useAliasListStore from "../hooks/useAliasListStore.ts";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   value?: number;

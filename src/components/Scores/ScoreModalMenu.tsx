@@ -1,12 +1,12 @@
-import { fetchAPI } from "../../utils/api/api.tsx";
-import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
+import { fetchAPI } from "@/utils/api/api.ts";
+import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { ActionIcon, Menu } from "@mantine/core";
 import classes from "./ScoreModalMenu.module.css";
 import { IconClearAll, IconDots, IconMusic, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useContext, useEffect, useState } from "react";
-import ScoreContext from "../../utils/context.tsx";
+import ScoreContext from "@/utils/context.ts";
 import { useNavigate } from "react-router-dom";
-import useFixedGame from "../../hooks/useFixedGame.tsx";
+import useFixedGame from "@/hooks/useFixedGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 interface ScoreModalActionMenuProps {

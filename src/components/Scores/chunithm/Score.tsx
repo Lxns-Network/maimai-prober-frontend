@@ -1,10 +1,8 @@
 import { Box, Card, Flex, Group, NumberFormatter, Rating, rem, Text } from "@mantine/core";
 import {
-  getScoreCardBackgroundColor,
-  getScoreSecondaryColor,
-  getTransparentColor
-} from "@/utils/color.tsx";
-import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "@/utils/api/song/chunithm.tsx";
+  getScoreCardBackgroundColor, getScoreSecondaryColor, getTransparentColor
+} from "@/utils/color.ts";
+import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "@/utils/api/song/chunithm.ts";
 import { useEffect, useState } from "react";
 import { ChunithmScoreProps } from "@/types/score";
 

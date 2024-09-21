@@ -1,18 +1,13 @@
 import {
-  Badge,
-  Flex,
-  Group, HoverCard, Image, Mark,
-  Modal, NumberFormatter, rem, Space,
-  Text, ThemeIcon,
+  Badge, Flex, Group, HoverCard, Image, Mark, Modal, NumberFormatter, rem, Space, Text, ThemeIcon
 } from "@mantine/core";
-import { ScoreChangesProps } from "../../pages/user/Sync.tsx";
+import { ScoreChangesProps } from "@/pages/user/Sync.tsx";
 import { DataTable } from "mantine-datatable";
 import {
-  IconArrowRight,
-  IconDatabaseOff, IconHelp,
+  IconArrowRight, IconDatabaseOff, IconHelp,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { getScoreCardBackgroundColor } from "../../utils/color.tsx";
+import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { Marquee } from "../Marquee.tsx";
 
 interface ScoresChangesModalProps {

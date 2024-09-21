@@ -1,16 +1,4 @@
-import { fetchAPI } from "./api.tsx";
-
-export async function getAliasList(game: string, page: number, approved: boolean = false, sort: string = "alias_id", order: string = "desc", songId: number = 0) {
-  let url = `user/${game}/alias/list?page=${page}&sort=${sort}+${order}&approved=${approved}`;
-  if (songId !== 0) {
-    url += `&song_id=${songId}`;
-  }
-  return fetchAPI(url, { method: "GET" });
-}
-
-export async function getUserVotes(game: string) {
-  return fetchAPI(`user/${game}/alias/votes`, { method: "GET" });
-}
+import { fetchAPI } from "./api.ts";
 
 export async function createAlias(game: string, data: any) {
   return fetchAPI(`user/${game}/alias`, { method: "POST", body: data });

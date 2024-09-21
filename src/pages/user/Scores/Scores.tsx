@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import ScoreContext from "@/utils/context.tsx";
+import ScoreContext from "@/utils/context.ts";
 import { Page } from "@/components/Page/Page.tsx";
-import { ScoreBestsSection } from "@/pages/user/Scores/bests/ScoreBestsSection.tsx";
-import { ScoreBackupSection } from "@/pages/user/Scores/backup/ScoreBackupSection.tsx";
-import { ScoreListSection } from "@/pages/user/Scores/list/ScoreListSection.tsx";
+import { ScoreBestsSection } from "./bests/ScoreBestsSection.tsx";
+import { ScoreBackupSection } from "./backup/ScoreBackupSection.tsx";
+import { ScoreListSection } from "./list/ScoreListSection.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 export function Scores() {

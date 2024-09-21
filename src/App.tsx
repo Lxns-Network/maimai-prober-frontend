@@ -1,15 +1,10 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import {
-  MantineProvider,
-  rem,
-  Loader,
-  Group, createTheme, ActionIcon
-} from '@mantine/core';
+import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from '@mantine/core';
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
 import { isTokenUndefined, logout } from "./utils/session";
-import { refreshToken } from "./utils/api/user";
+import { refreshToken } from "./utils/api/user.ts";
 import RouterTransition from "./components/RouterTransition";
 import classes from "./App.module.css";
 
@@ -19,9 +14,9 @@ import { PhotoProvider } from "react-photo-view";
 import 'react-photo-view/dist/react-photo-view.css';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
 import { useFullscreen, useLocalStorage } from "@mantine/hooks";
-import useSongListStore from "./hooks/useSongListStore.tsx";
+import useSongListStore from "./hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
-import useAliasListStore from "./hooks/useAliasListStore.tsx";
+import useAliasListStore from "./hooks/useAliasListStore.ts";
 import Shell from "./components/Shell/Shell.tsx";
 import useTouchEvents from "beautiful-react-hooks/useTouchEvents";
 

@@ -1,25 +1,18 @@
 import { useEffect, useState } from "react";
 import {
-  Title,
-  PasswordInput,
-  TextInput,
-  Text,
-  Group,
-  Anchor,
-  Button,
-  LoadingOverlay, Alert, useComputedColorScheme, Card,
+  Title, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Alert, useComputedColorScheme, Card
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useLocation, useNavigate } from "react-router-dom";
-import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
+import { API_URL, RECAPTCHA_SITE_KEY } from '@/main';
 import { useForm } from "@mantine/form";
-import { validatePassword, validateUserName } from "../../utils/validator";
+import { validatePassword, validateUserName } from "@/utils/validator.ts";
 import { useLocalStorage } from "@mantine/hooks";
 import { IconAlertCircle, IconLock, IconUser } from "@tabler/icons-react";
-import ReCaptcha from "../../utils/reCaptcha.tsx";
+import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
-import { isTokenExpired, isTokenUndefined } from "../../utils/session.tsx";
-import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
+import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 
 export default function Login() {
   const [visible, setVisible] = useState(false);

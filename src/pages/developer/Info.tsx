@@ -1,19 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  Group,
-  Text,
-  Loader,
-  Card,
-  Switch,
-  ActionIcon,
-  Tooltip,
-  CopyButton,
-  Anchor,
-  Divider,
-  useMantineTheme,
-  Button, TextInput,
+  Group, Text, Loader, Card, Switch, ActionIcon, Tooltip, CopyButton, Anchor, Divider, useMantineTheme, Button,
+  TextInput
 } from '@mantine/core';
-import { getDeveloperApply, resetDeveloperApiKey } from "../../utils/api/developer";
+import { getDeveloperApply, resetDeveloperApiKey } from "@/utils/api/developer.ts";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure, useSetState } from "@mantine/hooks";

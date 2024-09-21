@@ -1,30 +1,21 @@
 import {
-  ActionIcon,
-  Avatar,
-  Button,
-  Checkbox, Flex,
-  Group,
-  List,
-  Mark,
-  Modal, Paper,
-  rem,
-  Space, Text,
-  TextInput, Tooltip, Box, Alert
+  ActionIcon, Avatar, Button, Checkbox, Flex, Group, List, Mark, Modal, Paper, rem, Space, Text, TextInput, Tooltip,
+  Box, Alert
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useForm } from "@mantine/form";
 import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
-import { createAlias } from "../../utils/api/alias.tsx";
+import { createAlias } from "@/utils/api/alias.ts";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
 import { useLocalStorage } from "@mantine/hooks";
 import { PhotoView } from "react-photo-view";
-import { MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import { ASSET_URL } from "../../main.tsx";
-import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
+import { ASSET_URL } from "@/main.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 
 interface CreateAliasModalProps {
   defaultSongId?: number;
@@ -50,7 +41,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
     validate: {
       songId: (value) => value !== null ? null : "请选择曲目",
       alias: (value, values) => {
-        if (value === "") return "请输入曲目别名";
+        if (value.trim() === "") return "请输入曲目别名";
         if (!/^.{1,32}$/.test(value)) return "别名长度不符合要求";
         if (values.songId && songList?.find(values.songId)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
       },
@@ -63,7 +54,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
     try {
       const alias = {
         song_id: parseInt(values.songId),
-        alias: values.alias,
+        alias: values.alias.trim(),
       }
       const res = await createAlias(game, alias);
       if (res.status === 409) {

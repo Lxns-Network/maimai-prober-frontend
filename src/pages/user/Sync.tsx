@@ -1,39 +1,24 @@
 import { useEffect, useState } from 'react';
 import {
-  Accordion,
-  Button,
-  Code,
-  Card,
-  Flex,
-  Group,
-  Loader,
-  Text,
-  ThemeIcon,
-  Alert,
-  Stepper,
-  Divider, Space, Stack, SimpleGrid,
+  Accordion, Button, Code, Card, Flex, Group, Loader, Text, ThemeIcon, Alert, Stepper, Divider, Space, Stack, SimpleGrid
 } from '@mantine/core';
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useLocalStorage, useMediaQuery, useResizeObserver } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
-import { getCrawlStatus, getUserCrawlToken } from "../../utils/api/user";
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconRepeat
-} from "@tabler/icons-react";
-import { openAlertModal } from "../../utils/modal";
-import { checkProxy } from "../../utils/checkProxy";
+import { getCrawlStatus, getUserCrawlToken } from "@/utils/api/user.ts";
+import { IconAlertCircle, IconDownload, IconRepeat } from "@tabler/icons-react";
+import { openAlertModal } from "@/utils/modal";
+import { checkProxy } from "@/utils/checkProxy.ts";
 import classes from './Sync.module.css';
 
-import { LoginAlert } from "../../components/LoginAlert";
-import { RadioCardGroup } from "../../components/RadioCardGroup.tsx";
-import { CrawlTokenAlert } from "../../components/Sync/CrawlTokenAlert.tsx";
-import { CopyButtonWithIcon } from "../../components/Sync/CopyButtonWithIcon.tsx";
-import { WechatOAuthLink } from "../../components/Sync/WechatOAuthLink.tsx";
-import { ScoresChangesModal } from "../../components/Sync/ScoresChangesModal.tsx";
-import {Page} from "@/components/Page/Page.tsx";
+import { LoginAlert } from "@/components/LoginAlert";
+import { RadioCardGroup } from "@/components/RadioCardGroup.tsx";
+import { CrawlTokenAlert } from "@/components/Sync/CrawlTokenAlert.tsx";
+import { CopyButtonWithIcon } from "@/components/Sync/CopyButtonWithIcon.tsx";
+import { WechatOAuthLink } from "@/components/Sync/WechatOAuthLink.tsx";
+import { ScoresChangesModal } from "@/components/Sync/ScoresChangesModal.tsx";
+import { Page } from "@/components/Page/Page.tsx";
 
 interface ScoreChangeDetailProps {
   new: any;

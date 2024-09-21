@@ -1,18 +1,12 @@
 import {
-  Button,
-  Card,
-  Group, Switch,
-  Text,
-  TextInput,
-  ActionIcon, CopyButton, Tooltip,
-  List, Mark, Paper, rem, Box
+  Button, Card, Group, Switch, Text, TextInput, ActionIcon, CopyButton, Tooltip, List, Mark, Paper, rem, Box
 } from "@mantine/core";
-import { generateUserToken } from "../../utils/api/user";
+import { generateUserToken } from "@/utils/api/user.ts";
 import Icon from "@mdi/react";
 import { mdiAlertCircle, mdiEye, mdiEyeOff, mdiInformation } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";
-import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
+import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 import { useUser } from "@/hooks/swr/useUser.ts";
 

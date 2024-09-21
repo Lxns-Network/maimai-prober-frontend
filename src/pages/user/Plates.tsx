@@ -1,20 +1,14 @@
 import { useEffect, useState } from "react";
-import { getPlateById, getPlateList, getPlayerPlateById } from "../../utils/api/player";
-import {
-  Text,
-  Card,
-  Image,
-  Space,
-  Checkbox, Flex, Transition, AspectRatio
-} from "@mantine/core";
+import { getPlateById, getPlateList, getPlayerPlateById } from "@/utils/api/player.ts";
+import { Text, Card, Image, Space, Checkbox, Flex, Transition, AspectRatio } from "@mantine/core";
 import { useToggle } from "@mantine/hooks";
 import classes from "../Page.module.css"
-import { RequiredSong } from "../../components/Plates/RequiredSong";
-import { PlateCombobox } from "../../components/Plates/PlateCombobox";
+import { RequiredSong } from "@/components/Plates/RequiredSong";
+import { PlateCombobox } from "@/components/Plates/PlateCombobox";
 import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
-import { openRetryModal } from "../../utils/modal.tsx";
-import { LoginAlert } from "../../components/LoginAlert";
-import { ASSET_URL } from "../../main.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { LoginAlert } from "@/components/LoginAlert";
+import { ASSET_URL } from "@/main.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 
 interface RequiredSongDataProps {

@@ -1,27 +1,20 @@
 import {
-  ActionIcon,
-  Avatar, Badge, Flex, Group,
-  Modal, Progress, Space, Text, ThemeIcon, Tooltip
+  ActionIcon, Avatar, Badge, Flex, Group, Modal, Progress, Space, Text, ThemeIcon, Tooltip
 } from "@mantine/core";
-import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { useEffect, useState } from "react";
-import { voteAlias } from "../../utils/api/alias.tsx";
+import { voteAlias } from "@/utils/api/alias.ts";
 import {
-  IconCheck,
-  IconNorthStar,
-  IconThumbDown,
-  IconThumbDownFilled,
-  IconThumbUp,
-  IconThumbUpFilled
+  IconCheck, IconNorthStar, IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled
 } from "@tabler/icons-react";
-import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { PhotoView } from "react-photo-view";
-import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ASSET_URL } from "../../main.tsx";
-import useFixedGame from "../../hooks/useFixedGame.tsx";
-import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
+import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ASSET_URL } from "@/main.tsx";
+import useFixedGame from "@/hooks/useFixedGame.ts";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
+import { AliasProps } from "@/types/alias";
 
 interface AliasModalProps {
   alias: AliasProps;

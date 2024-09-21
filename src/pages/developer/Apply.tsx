@@ -1,23 +1,12 @@
 import { useEffect, useState } from "react";
-import {
-  Title,
-  TextInput,
-  Text,
-  Group,
-  Button,
-  LoadingOverlay,
-  Textarea, Card
-} from '@mantine/core';
+import { Title, TextInput, Text, Group, Button, LoadingOverlay, Textarea, Card } from '@mantine/core';
 import { Container, rem } from '@mantine/core';
 import Icon from "@mdi/react";
-import {
-  mdiCodeTags,
-  mdiLink,
-} from "@mdi/js";
+import { mdiCodeTags, mdiLink } from "@mdi/js";
 import { useForm } from "@mantine/form";
-import { getDeveloperApply, sendDeveloperApply } from "../../utils/api/developer";
+import { getDeveloperApply, sendDeveloperApply } from "@/utils/api/developer.ts";
 import classes from "../Form.module.css";
-import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { useNavigate } from "react-router-dom";
 
 export default function DeveloperApply() {

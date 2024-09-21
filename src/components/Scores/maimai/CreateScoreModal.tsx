@@ -1,28 +1,18 @@
 import {
-  Avatar,
-  Button,
-  Chip, Divider, Flex, Grid,
-  Group, Input,
-  Modal, NumberInput,
-  Select,
-  Text
+  Avatar, Button, Chip, Divider, Flex, Grid, Group, Input, Modal, NumberInput, Select, Text
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
-import {
-  MaimaiDifficultyProps,
-  MaimaiDifficultiesProps,
-  MaimaiSongProps
-} from "@/utils/api/song/maimai.tsx";
+import { MaimaiDifficultyProps, MaimaiDifficultiesProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
-import { createPlayerScores } from "@/utils/api/player.tsx";
+import { createPlayerScores } from "@/utils/api/player.ts";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import "dayjs/locale/zh-cn"
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "@/main.tsx";
-import useSongListStore from "@/hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { MaimaiScoreProps } from "@/types/score";
 

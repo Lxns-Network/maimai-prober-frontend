@@ -1,21 +1,14 @@
 import {
-  Button,
-  Chip, Flex,
-  Grid,
-  Group,
-  MultiSelect, NumberInput,
-  RangeSlider,
-  Space, Switch,
-  Text
+  Button, Chip, Flex, Grid, Group, MultiSelect, NumberInput, RangeSlider, Space, Switch, Text
 } from "@mantine/core";
 import { IconReload } from "@tabler/icons-react";
-import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongList, ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
-import useSongListStore from "../../hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 interface AdvancedFilterProps {

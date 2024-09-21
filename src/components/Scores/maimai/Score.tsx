@@ -1,10 +1,8 @@
 import { Badge, Box, Card, Flex, Group, rem, Text } from "@mantine/core";
 import {
-  getScoreCardBackgroundColor,
-  getScoreSecondaryColor,
-  getTransparentColor,
-} from "@/utils/color.tsx";
-import { getDifficulty, MaimaiSongProps } from "@/utils/api/song/maimai.tsx";
+  getScoreCardBackgroundColor, getScoreSecondaryColor, getTransparentColor,
+} from "@/utils/color.ts";
+import { getDifficulty, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { useEffect, useState } from "react";
 import { MaimaiScoreProps } from "@/types/score";
 

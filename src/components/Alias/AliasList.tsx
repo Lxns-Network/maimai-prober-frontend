@@ -1,10 +1,10 @@
 import { SimpleGrid } from "@mantine/core";
-import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { Alias } from "./Alias.tsx";
 import { useSetState } from "@mantine/hooks";
 import { AliasModal } from "./AliasModal.tsx";
 import { useEffect, useState } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { AliasProps } from "@/types/alias";
 
 interface AliasListProps {
   aliases: AliasProps[];

@@ -1,16 +1,7 @@
 import { MaimaiPlayerProps } from "@/types/player";
-import {
-  Avatar,
-  Badge,
-  Divider, Flex,
-  Group,
-  Image,
-  rem,
-  Text,
-  useComputedColorScheme,
-} from "@mantine/core";
+import { Avatar, Badge, Divider, Flex, Group, Image, rem, Text, useComputedColorScheme } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
-import { getDeluxeRatingGradient, getTrophyColor } from "@/utils/color.tsx";
+import { getDeluxeRatingGradient, getTrophyColor } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
 

@@ -1,4 +1,4 @@
-import { fetchAPI } from "./api";
+import { fetchAPI } from "./api.ts";
 
 export async function sendDeveloperApply(data: any) {
   return fetchAPI(`user/developer/apply`, { method: "POST", body: data });

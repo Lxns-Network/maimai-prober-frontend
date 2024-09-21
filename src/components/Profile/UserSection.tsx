@@ -1,18 +1,10 @@
-import {
-  Alert,
-  Button,
-  Card,
-  Group,
-  Switch,
-  Text,
-  TextInput,
-} from "@mantine/core";
+import { Alert, Button, Card, Group, Switch, Text, TextInput } from "@mantine/core";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "@/utils/validator";
-import { updateUserProfile } from "@/utils/api/user.tsx";
+import { updateUserProfile } from "@/utils/api/user.ts";
 import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { useUser } from "@/hooks/swr/useUser.ts";

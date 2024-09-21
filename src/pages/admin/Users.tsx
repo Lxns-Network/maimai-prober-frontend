@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  Group,
-  TextInput,
-  Button,
-  Text, keys, Flex, Card, Badge
-} from '@mantine/core';
-import { deleteUsers, getUsers } from "@/utils/api/user";
+import { Group, TextInput, Button, Text, keys, Flex, Card, Badge } from '@mantine/core';
+import { deleteUsers, getUsers } from "@/utils/api/user.ts";
 import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
 import { IconDatabaseOff, IconSearch, IconSend, IconTrash } from "@tabler/icons-react";
@@ -13,7 +8,7 @@ import classes from "../Page.module.css";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
 import { SendBatchEmailModal } from "@/components/Users/SendBatchEmailModal.tsx";
-import { permissionToList, UserPermission } from "@/utils/session.tsx";
+import { permissionToList, UserPermission } from "@/utils/session.ts";
 import { Page } from "@/components/Page/Page.tsx";
 
 export interface UserProps {

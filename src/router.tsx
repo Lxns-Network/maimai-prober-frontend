@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route } from "react-router-dom";
 import { checkPermission, isTokenExpired, isTokenUndefined, logout, UserPermission } from "./utils/session";
-import { refreshToken } from "./utils/api/user";
+import { refreshToken } from "./utils/api/user.ts";
 import App from "./App";
 
 const Home = lazy(() => import('./pages/public/Home'));

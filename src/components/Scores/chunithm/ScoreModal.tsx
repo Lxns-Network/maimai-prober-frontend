@@ -1,17 +1,8 @@
 import {
-  AspectRatio,
-  Avatar,
-  Box,
-  Card, Center, Flex, Grid,
-  Group,
-  Image,
-  NumberFormatter, Paper, Rating,
-  rem,
-  Stack,
-  Text,
+  AspectRatio, Avatar, Box, Card, Center, Flex, Grid, Group, Image, NumberFormatter, Paper, Rating, rem, Stack, Text
 } from "@mantine/core";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.tsx";
-import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "@/utils/api/song/chunithm.tsx";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
+import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "@/utils/api/song/chunithm.ts";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
@@ -20,7 +11,7 @@ import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "@/main.tsx";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
-import useSongListStore from "@/hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps } from "@/types/score";
 

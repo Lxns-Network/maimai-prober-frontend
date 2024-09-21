@@ -1,20 +1,10 @@
 import {
-  AspectRatio,
-  Box,
-  Card,
-  Divider,
-  Flex,
-  Group,
-  Image,
-  NumberFormatter, Rating,
-  rem, Stack,
-  Text,
-  Title,
+  AspectRatio, Box, Card, Divider, Flex, Group, Image, NumberFormatter, Rating, rem, Stack, Text, Title,
   useComputedColorScheme
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
-import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm.tsx";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.tsx";
+import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm.ts";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { ChunithmScoreProps } from "@/types/score";
 
 interface SongProps {

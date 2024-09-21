@@ -1,4 +1,4 @@
-import { logoutUser } from "./api/user";
+import { logoutUser } from "./api/user.ts";
 
 const getLoginSessionPayload = () => {
   const token = localStorage.getItem('token');

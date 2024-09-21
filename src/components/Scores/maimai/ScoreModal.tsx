@@ -1,21 +1,10 @@
 import {
-  AspectRatio,
-  Avatar,
-  Badge,
-  Box, Button,
-  Grid,
-  Group,
-  Image, Paper,
-  rem,
-  Text,
-  Tooltip,
+  AspectRatio, Avatar, Badge, Box, Button, Grid, Group, Image, Paper, rem, Text, Tooltip
 } from "@mantine/core";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.tsx";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import {
-  getDifficulty,
-  MaimaiDifficultyProps,
-  MaimaiSongProps
-} from "@/utils/api/song/maimai.tsx";
+  getDifficulty, MaimaiDifficultyProps, MaimaiSongProps
+} from "@/utils/api/song/maimai.ts";
 import { IconChevronRight, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
@@ -25,7 +14,7 @@ import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
 import classes from "../ScoreModal.module.css";
 import { useShallow } from "zustand/react/shallow";
-import useSongListStore from "@/hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { MaimaiRatingHistoryModal } from "./RatingHistoryModal.tsx";
 import { DeluxeRatingCalculator } from "./DeluxeRatingCalculator.tsx";
 import { MaimaiScoreProps } from "@/types/score";

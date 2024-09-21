@@ -1,22 +1,14 @@
 import { useEffect, useState } from "react";
-import {
-  Title,
-  PasswordInput,
-  TextInput,
-  Text,
-  Group,
-  Button,
-  LoadingOverlay, Card, Anchor,
-} from '@mantine/core';
+import { Title, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay, Card, Anchor } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
-import { API_URL, RECAPTCHA_SITE_KEY } from "../../main";
+import { API_URL, RECAPTCHA_SITE_KEY } from "@/main";
 import { useForm } from "@mantine/form";
-import { validateEmail, validatePassword, validateUserName } from "../../utils/validator";
+import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
 import { IconLock, IconMail, IconUser } from "@tabler/icons-react";
-import ReCaptcha from "../../utils/reCaptcha.tsx";
+import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
-import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
+import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 
 export default function Register() {
   const [visible, setVisible] = useState(false);

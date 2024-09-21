@@ -1,12 +1,12 @@
 import { useForm } from "@mantine/form";
-import { validateEmail, validateUserName } from "../../utils/validator.tsx";
+import { validateEmail, validateUserName } from "@/utils/validator.ts";
 import { useEffect } from "react";
-import { listToPermission, permissionToList, UserPermission } from "../../utils/session.tsx";
-import { deleteUser, updateUser } from "../../utils/api/user.tsx";
-import { openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
-import {Button, Group, Modal, MultiSelect, Space, TextInput} from "@mantine/core";
+import { listToPermission, permissionToList, UserPermission } from "@/utils/session.ts";
+import { deleteUser, updateUser } from "@/utils/api/user.ts";
+import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { Button, Group, Modal, MultiSelect, Space, TextInput } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
-import { UserProps } from "../../pages/admin/Users.tsx";
+import { UserProps } from "@/pages/admin/Users.tsx";
 
 export const EditUserModal = ({ user, opened, close }: { user: UserProps | null, opened: boolean, close(): void }) => {
   const form = useForm({

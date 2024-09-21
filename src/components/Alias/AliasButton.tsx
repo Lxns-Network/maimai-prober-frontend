@@ -1,21 +1,15 @@
 import {
-  Badge,
-  Center,
-  Flex, Group,
-  Space,
-  Text, ThemeIcon, Tooltip,
-  UnstyledButton,
-  UnstyledButtonProps
+  Badge, Center, Flex, Group, Space, Text, ThemeIcon, Tooltip, UnstyledButton, UnstyledButtonProps
 } from "@mantine/core";
-import { AliasProps } from "../../pages/alias/Vote.tsx";
 import { IconCheck, IconChevronRight, IconNorthStar } from "@tabler/icons-react";
 import classes from "./Alias.module.css";
 import { useEffect, useState } from "react";
-import { MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
-import useFixedGame from "../../hooks/useFixedGame.tsx";
-import useSongListStore from "../../hooks/useSongListStore.tsx";
+import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
+import useFixedGame from "@/hooks/useFixedGame.ts";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
+import { AliasProps } from "@/types/alias";
 
 export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps>();

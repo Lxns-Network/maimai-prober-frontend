@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { AliasList } from "../utils/api/alias.tsx";
+import { AliasList } from "../utils/api/alias.ts";
 
 interface AliasListState {
   maimai: AliasList,

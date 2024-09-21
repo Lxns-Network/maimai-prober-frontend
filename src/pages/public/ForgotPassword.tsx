@@ -1,24 +1,14 @@
 import { useEffect, useState } from "react";
-import {
-  Title,
-  TextInput,
-  Text,
-  Group,
-  Anchor,
-  Button,
-  LoadingOverlay,
-  Center,
-  Box, Card
-} from '@mantine/core';
+import { Title, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box, Card } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { API_URL, RECAPTCHA_SITE_KEY } from '../../main';
-import { validateEmail } from "../../utils/validator";
+import { API_URL, RECAPTCHA_SITE_KEY } from '@/main';
+import { validateEmail } from "@/utils/validator.ts";
 import { Link } from "react-router-dom";
 import { useForm } from "@mantine/form";
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
-import ReCaptcha from "../../utils/reCaptcha.tsx";
+import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
-import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 
 export default function ForgotPassword() {
   const [visible, setVisible] = useState(false);

@@ -1,5 +1,5 @@
 import { Modal } from "@mantine/core";
-import { SettingProps, SettingsSection } from "./SettingsSection.tsx";
+import { SettingProps, SettingList } from "./SettingList.tsx";
 
 interface SettingsModalProps {
   title: string;
@@ -20,7 +20,7 @@ export const SettingsModal = ({ title, data, value, opened, onClose, onChange }:
           <Modal.CloseButton />
         </Modal.Header>
         <Modal.Body>
-          <SettingsSection data={data} value={value} onChange={onChange} />
+          <SettingList data={data} value={value} onChange={onChange} />
         </Modal.Body>
       </Modal.Content>
     </Modal.Root>

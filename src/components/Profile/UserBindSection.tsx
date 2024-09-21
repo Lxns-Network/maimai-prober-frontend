@@ -1,12 +1,6 @@
-import {
-  Button,
-  Card,
-  Group, Switch,
-  Text,
-  TextInput,
-} from "@mantine/core";
+import { Button, Card, Group, Switch, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { updateUserBind } from "../../utils/api/user";
+import { updateUserBind } from "@/utils/api/user.ts";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";

@@ -557,6 +557,10 @@ CLEAR 类型
 
 | 值 | 类型 | 说明 |
 |-|-|-|
+| `catastrophy` | `string` | CATASTROPHY |
+| `absolutep` | `string` | ABSOLUTE+ |
+| `absolute` | `string` | ABSOLUTE |
+| `hard` | `string` | HARD |
 | `clear` | `string` | CLEAR |
 | `failed` | `string` | FAILED |
 
@@ -566,12 +570,9 @@ FULL COMBO 类型
 
 | 值 | 类型 | 说明 |
 |-|-|-|
+| `alljusticecritical` | `string` | ALL JUSTICE CRITICAL |
 | `alljustice` | `string` | ALL JUSTICE |
 | `fullcombo` | `string` | FULL COMBO |
-
-::: info 提示
-AJC 显示为 ALL JUSTICE，需要开发者自行判断。
-:::
 
 ### FullChainType
 

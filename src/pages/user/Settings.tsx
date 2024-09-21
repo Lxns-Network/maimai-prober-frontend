@@ -1,25 +1,13 @@
 import { Text, Card, LoadingOverlay, Mark, Anchor } from '@mantine/core';
-import { useEffect, useState } from "react";
-import { deletePlayerScores, unbindPlayer } from "../../utils/api/player";
-import { deleteSelfUser, getUserConfig, updateUserConfig } from "../../utils/api/user";
-import { SettingsSection } from '../../components/Settings/SettingsSection';
+import { deletePlayerScores, unbindPlayer } from "@/utils/api/player.ts";
+import { deleteSelfUser, updateUserConfig } from "@/utils/api/user.ts";
+import { SettingList } from '../../components/Settings/SettingList.tsx';
 import { useLocalStorage } from "@mantine/hooks";
 import { Link, useNavigate } from "react-router-dom";
 import classes from "../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { Page } from "@/components/Page/Page.tsx";
-
-interface ConfigProps {
-  allow_crawl_scores?: boolean;
-  allow_crawl_name_plate?: boolean;
-  allow_crawl_frame?: boolean;
-  allow_crawl_map_icon?: boolean;
-  crawl_scores_method?: string;
-  crawl_scores_difficulty?: string[];
-  allow_third_party_fetch_player?: boolean;
-  allow_third_party_fetch_scores?: boolean;
-  allow_third_party_write_data?: boolean;
-}
+import { useUserConfig } from "@/hooks/swr/useUserConfig.ts";
 
 const crawlConfigData = {
   maimai: [{
@@ -170,32 +158,9 @@ const crawlConfigData = {
 }
 
 const SettingsContent = () => {
-  const [config, setConfig] = useState({} as ConfigProps);
-  const [fetching, setFetching] = useState(true);
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
+  const { config, isLoading, mutate } = useUserConfig(game);
   const navigate = useNavigate();
-
-  const getUserConfigHandler = async () => {
-    try {
-      const res = await getUserConfig(game);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setConfig(data.data);
-    } catch (error) {
-      openRetryModal("账号设置获取失败", `${error}`, getUserConfigHandler)
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!game) return;
-
-    setFetching(true);
-    getUserConfigHandler();
-  }, [game]);
 
   const updateUserConfigHandler = async (key: string, value: any) => {
     const newConfig = {
@@ -212,7 +177,7 @@ const SettingsContent = () => {
     } catch (error) {
       openRetryModal("保存设置失败", `${error}`, () => updateUserConfigHandler(key, value));
     } finally {
-      setConfig(newConfig);
+      mutate(newConfig);
     }
   }
 
@@ -259,24 +224,24 @@ const SettingsContent = () => {
   return (
     <div>
       <Card withBorder radius="md" className={classes.card} mb="md">
-        <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
           爬取数据
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
           设置每次爬取「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」的方式与获取的数据
         </Text>
-        <SettingsSection onChange={updateUserConfigHandler} value={config} data={(crawlConfigData as any)[game ? game : 'maimai']} />
+        <SettingList onChange={updateUserConfigHandler} value={config} data={(crawlConfigData as any)[game ? game : 'maimai']} />
       </Card>
       <Card withBorder radius="md" className={classes.card} mb="md">
-        <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
           隐私设置
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
           将影响第三方开发者通过查分器 API 访问你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」数据
         </Text>
-        <SettingsSection onChange={updateUserConfigHandler} value={config} data={[{
+        <SettingList onChange={updateUserConfigHandler} value={config} data={[{
           key: "allow_third_party_fetch_player",
           title: "允许读取玩家信息",
           description: "关闭后，第三方开发者将无法获取你的玩家信息。",
@@ -310,7 +275,7 @@ const SettingsContent = () => {
         <Text fz="xs" c="dimmed" mt={3} mb="xl">
           重置密码、删除数据等敏感操作
         </Text>
-        <SettingsSection data={[{
+        <SettingList data={[{
           key: "reset_password",
           title: "重置密码",
           description: "重置你的查分器账号密码。",

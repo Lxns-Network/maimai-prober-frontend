@@ -1,18 +1,18 @@
-import { MaimaiGenreProps, MaimaiSongProps } from "../../utils/api/song/maimai.tsx";
-import { ChunithmSongProps } from "../../utils/api/song/chunithm.tsx";
+import { MaimaiGenreProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import React, { useState } from "react";
 import { ActionIcon, Avatar, Badge, Box, Card, CopyButton, Group, Stack, Text, Title } from "@mantine/core";
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
 import { PhotoView } from "react-photo-view";
-import { ASSET_URL } from "../../main.tsx";
+import { ASSET_URL } from "@/main.tsx";
 import { IconPhotoOff, IconPlus } from "@tabler/icons-react";
-import { openAlertModal } from "../../utils/modal.tsx";
+import { openAlertModal } from "@/utils/modal.tsx";
 import { AudioPlayer } from "../AudioPlayer.tsx";
 import classes from "./SongCard.module.css";
-import useFixedGame from "../../hooks/useFixedGame.tsx";
-import useSongListStore from "../../hooks/useSongListStore.tsx";
+import useFixedGame from "@/hooks/useFixedGame.ts";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
-import useAliasListStore from "../../hooks/useAliasListStore.tsx";
+import useAliasListStore from "@/hooks/useAliasListStore.ts";
 import { ColorExtractor } from 'react-color-extractor'
 import { notifications } from "@mantine/notifications";
 

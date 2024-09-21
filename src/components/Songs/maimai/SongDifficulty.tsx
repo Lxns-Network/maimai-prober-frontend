@@ -1,19 +1,9 @@
 import {
-  Badge,
-  Box,
-  Card,
-  Divider,
-  Flex,
-  Group,
-  Image,
-  rem,
-  Text,
-  Title,
-  useComputedColorScheme
+  Badge, Box, Card, Divider, Flex, Group, Image, rem, Text, Title, useComputedColorScheme
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
-import { MaimaiDifficultyProps } from "@/utils/api/song/maimai.tsx";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.tsx";
+import { MaimaiDifficultyProps } from "@/utils/api/song/maimai.ts";
+import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { MaimaiScoreProps } from "@/types/score";
 
 interface SongProps {

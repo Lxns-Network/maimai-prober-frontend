@@ -1,17 +1,10 @@
 import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useScores } from "@/hooks/swr/useScores.ts";
 import {
-  Box,
-  Card,
-  Flex,
-  Mark,
-  SimpleGrid, Space,
-  Text, ThemeIcon,
-  Title,
-  UnstyledButton
+  Box, Card, Flex, Mark, SimpleGrid, Space, Text, ThemeIcon, Title, UnstyledButton
 } from "@mantine/core";
 import { IconFileExport, IconFileImport } from "@tabler/icons-react";
-import { fetchAPI } from "@/utils/api/api.tsx";
+import { fetchAPI } from "@/utils/api/api.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { API_URL } from "@/main.tsx";
 import React from "react";

@@ -1,4 +1,4 @@
-import { fetchAPI } from "../api.tsx";
+import { fetchAPI } from "../api.ts";
 
 export interface MaimaiDifficultyProps {
   type: string;

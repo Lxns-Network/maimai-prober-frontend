@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { MaimaiSongList } from "../utils/api/song/maimai.tsx";
-import { ChunithmSongList } from "../utils/api/song/chunithm.tsx";
+import { MaimaiSongList } from "../utils/api/song/maimai.ts";
+import { ChunithmSongList } from "../utils/api/song/chunithm.ts";
 
 type SongListState = {
   maimai: MaimaiSongList,

@@ -1,5 +1,5 @@
-import { MaimaiSongList } from "./maimai.tsx";
-import { ChunithmSongList } from "./chunithm.tsx";
+import { MaimaiSongList } from "./maimai.ts";
+import { ChunithmSongList } from "./chunithm.ts";
 
 export class SongList {
   maimai: MaimaiSongList;

@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState } from "react";
-import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.tsx";
-import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.tsx";
+import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useScores } from "@/hooks/swr/useScores.ts";
-import ScoreContext from "@/utils/context.tsx";
-import useSongListStore from "@/hooks/useSongListStore.tsx";
+import ScoreContext from "@/utils/context.ts";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
 import { MaimaiCreateScoreModal } from "@/components/Scores/maimai/CreateScoreModal.tsx";
 import { ChunithmCreateScoreModal } from "@/components/Scores/chunithm/CreateScoreModal.tsx";

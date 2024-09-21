@@ -1,6 +1,6 @@
-import { ChunithmDifficultyProps, ChunithmNotesProps } from "@/utils/api/song/chunithm.tsx";
+import { ChunithmDifficultyProps, ChunithmNotesProps } from "@/utils/api/song/chunithm.ts";
 import { Box, Group, keys, Space, Table, Text } from "@mantine/core";
-import useSongListStore from "@/hooks/useSongListStore.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 
 const ChartNotes = ({ notes }: { notes: ChunithmNotesProps }) => {

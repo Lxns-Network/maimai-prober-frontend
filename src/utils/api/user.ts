@@ -1,8 +1,4 @@
-import { fetchAPI } from "./api";
-
-export async function getProfile() {
-  return fetchAPI("user/profile", { method: "GET" });
-}
+import { fetchAPI } from "./api.ts";
 
 export async function updateUserProfile(data: any) {
   return fetchAPI("user/profile", { method: "POST", body: data });
@@ -14,10 +10,6 @@ export async function getUserCrawlToken() {
 
 export async function getCrawlStatus() {
   return fetchAPI("user/crawl/status", { method: "GET" });
-}
-
-export async function getUserConfig(game: string) {
-  return fetchAPI(`user/${game}/config`, { method: "GET" });
 }
 
 export async function updateUserConfig(game: string, data: any) {

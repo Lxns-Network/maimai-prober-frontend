@@ -60,7 +60,7 @@ const Setting = ({ data, value, onChange }: {
                   offLabel="关"
                   className={classes.switch}
                   size="lg"
-                  checked={(value !== null && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue}
+                  checked={(value !== undefined && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue}
                   onChange={(event) => onChange && onChange(data.key, event.currentTarget.checked)}
                 />
               )}
@@ -68,7 +68,7 @@ const Setting = ({ data, value, onChange }: {
                 <Select
                   variant="filled"
                   data={data.options || []}
-                  value={(value !== null && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string}
+                  value={(value !== undefined && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string}
                   comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   onChange={(value) => onChange && onChange(data.key, value)}
                 />
@@ -78,7 +78,7 @@ const Setting = ({ data, value, onChange }: {
                   variant="filled"
                   data={data.options || []}
                   placeholder={data.placeholder}
-                  value={(value !== null && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string[]}
+                  value={(value !== undefined && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string[]}
                   comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   onChange={(value) => onChange && onChange(data.key, value)}
                 />
@@ -100,7 +100,7 @@ const Setting = ({ data, value, onChange }: {
   );
 }
 
-export const SettingsSection = memo(({ data, value, onChange }: {
+export const SettingList = memo(({ data, value, onChange }: {
   data: SettingProps[];
   value?: any;
   onChange?: (key: string, value: any) => void;
