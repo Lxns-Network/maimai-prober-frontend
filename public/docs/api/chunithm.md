@@ -462,6 +462,7 @@ Recent 10 列表里成绩的 `clear` 字段可能为空。
 | `artist` | `string` | 艺术家 |
 | `genre` | `string` | 曲目分类 |
 | `bpm` | `int` | 曲目 BPM |
+| `map` | `string` | 值可空，曲目所属地图 |
 | `version` | `int` | 曲目首次出现版本 |
 | `disabled` | `bool` | 值可空，是否被禁用，默认值为 `false` |
 | `difficulties` | [`SongDifficulty[]`](#songdifficulty) | 谱面难度 |

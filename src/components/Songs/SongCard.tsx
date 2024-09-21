@@ -1,7 +1,7 @@
 import { MaimaiGenreProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import React, { useState } from "react";
-import { ActionIcon, Avatar, Badge, Box, Card, CopyButton, Group, Stack, Text, Title } from "@mantine/core";
+import {ActionIcon, Avatar, Badge, Box, Card, CopyButton, Flex, Group, Stack, Text, Title} from "@mantine/core";
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
 import { PhotoView } from "react-photo-view";
 import { ASSET_URL } from "@/main.tsx";
@@ -73,7 +73,7 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
           <Text fz="sm" c="dimmed">{song.artist}</Text>
         </Stack>
       </Group>
-      <Group mt="md">
+      <Flex rowGap={12} columnGap="md" wrap="wrap" mt="md">
         <Box mr={12}>
           <Text fz="xs" c="dimmed">BPM</Text>
           <Text fz="sm">
@@ -94,13 +94,13 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
         </Box>
         {"map" in song && song.map && (
           <Box mr={12}>
-            <Text fz="xs" c="dimmed">所属区域</Text>
+            <Text fz="xs" c="dimmed">{game === "maimai" ? "所属区域" : "所属地图"}</Text>
             <Text fz="sm">
               {song.map}
             </Text>
           </Box>
         )}
-      </Group>
+      </Flex>
       <Box mt={12}>
         <Text fz="xs" c="dimmed" mb={3}>曲目别名</Text>
         <Group gap="xs">
