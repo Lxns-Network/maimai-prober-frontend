@@ -329,7 +329,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `20500` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
 | `notes` | `bool` | 值可空，是否包含谱面物量，默认值为 `false` |
 
 #### 响应体
@@ -348,7 +348,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `20500` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
 
 #### URL 参数
 
@@ -388,7 +388,7 @@ JSON 格式的玩家成绩：
 | 字段名 | 类型 | 说明 |
 |-|-|-|
 | `name` | `string` | 游戏内名称 |
-| `level` | `int` | 玩家等级 |
+| `level` | `int` | 玩家等级，最大值为 99 |
 | `rating` | `int` | 玩家 Rating |
 | `friend_code` | `int` | 好友码 |
 | `class_emblem` | [`ClassEmblem`](#classemblem) | CLASS 勋章 |
@@ -410,8 +410,8 @@ CLASS 勋章
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `base` | `int` | 缎带（通关该组别全部课题组） |
-| `medal` | `int` | 勋章（通关任意一组） |
+| `base` | `int` | 缎带（通关该组别全部课题组），默认值为 0 |
+| `medal` | `int` | 勋章（通关任意一组），默认值为 0 |
 
 ### Score
 
@@ -571,7 +571,7 @@ FULL COMBO 类型
 
 | 值 | 类型 | 说明 |
 |-|-|-|
-| `alljusticecritical` | `string` | ALL JUSTICE CRITICAL |
+| `alljusticecritical` | `string` | AJC |
 | `alljustice` | `string` | ALL JUSTICE |
 | `fullcombo` | `string` | FULL COMBO |
 

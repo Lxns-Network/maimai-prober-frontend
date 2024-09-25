@@ -46,6 +46,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
       id: (value) => value !== null && value !== 0 ? null : "请选择曲目",
       difficulty: (value) => value !== null ? null : "请选择难度",
       score: (value) => value !== null ? null : "请输入分数",
+      clear: (value) => value !== null ? null : "请选择 Clear 类型",
       full_combo: (value) => value !== null ? null : "请选择 Full Combo",
       full_chain: (value) => value !== null ? null : "请选择 Full Chain",
       play_time: (value) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
@@ -190,19 +191,15 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
                   }, {
                     label: "HARD",
                     value: "hard",
-                    disabled: true,
                   }, {
                     label: "ABSOLUTE",
                     value: "absolute",
-                    disabled: true,
                   }, {
                     label: "ABSOLUTE+",
                     value: "absolutep",
-                    disabled: true,
                   }, {
                     label: "CATASTROPHY",
                     value: "catastrophy",
-                    disabled: true,
                   }]}
                   comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   withAsterisk
@@ -216,7 +213,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
                       <Chip size="xs" value="nofullcombo">无</Chip>
                       <Chip size="xs" value="fullcombo">FC</Chip>
                       <Chip size="xs" value="alljustice">AJ</Chip>
-                      <Chip size="xs" value="alljusticecritical" disabled>AJC</Chip>
+                      <Chip size="xs" value="alljusticecritical">AJC</Chip>
                     </Flex>
                   </Chip.Group>
                 </Input.Wrapper>

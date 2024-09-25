@@ -200,9 +200,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
         if (fullSync.includes("nofullchain")) { // 过滤 Full Chain
           if (score.full_chain) return false;
         } else if (fullSync.length > 0 && !fullSync.includes(score.full_chain)) {
-          if (fullSync.includes("ajc") && score.score !== 1010000) {
-            return false;
-          } else if (!fullSync.includes("ajc")) return false;
+          return false;
         }
       }
       return difficulty.includes(score.level_index.toString()) || difficulty.length === 0 // 过滤难度
@@ -428,7 +426,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
                 <Chip variant="filled" size="xs" value="nofullcombo">无</Chip>
                 <Chip variant="filled" size="xs" value="fullcombo">FC</Chip>
                 <Chip variant="filled" size="xs" value="alljustice">AJ</Chip>
-                <Chip variant="filled" size="xs" value="ajc">AJC</Chip>
+                <Chip variant="filled" size="xs" value="alljusticecritical">AJC</Chip>
               </Chip.Group>
             </Flex>
           </Grid.Col>

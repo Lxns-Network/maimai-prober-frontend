@@ -16,9 +16,9 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
     data.push({ label: 'BEST 15', count: bests.dx_total, part: Math.round((parts - bests.standard_total) / parts * 100), color: '#fd7e14' });
   } else if (game === 'chunithm') {
     bests = bests as ChunithmBestsProps;
-    const bestsAvg = Math.floor(bests.bests.reduce((acc, score) => acc + score.rating, 0) / bests.bests.length * 100) / 100;
-    const selectionsAvg = Math.floor(bests.selections.reduce((acc, score) => acc + score.rating, 0) / bests.selections.length * 100) / 100;
-    const recentsAvg = Math.floor(bests.recents.reduce((acc, score) => acc + score.rating, 0) / bests.recents.length * 100) / 100;
+    const bestsAvg = Math.floor(bests.bests.reduce((acc, score) => acc + score.rating, 0) / bests.bests.length * 100) / 100 || 0;
+    const selectionsAvg = Math.floor(bests.selections.reduce((acc, score) => acc + score.rating, 0) / bests.selections.length * 100) / 100 || 0;
+    const recentsAvg = Math.floor(bests.recents.reduce((acc, score) => acc + score.rating, 0) / bests.recents.length * 100) / 100 || 0;
     data.push({ label: 'BEST 30', count: bestsAvg, part: Math.round(bestsAvg / (bestsAvg + recentsAvg) * 100), color: '#228be6' });
     data.push({ label: 'SELECTION 10', count: selectionsAvg, part: 0 });
     data.push({ label: 'RECENT 10', count: recentsAvg, part: Math.round(recentsAvg / (bestsAvg + recentsAvg) * 100), color: '#fd7e14' });
