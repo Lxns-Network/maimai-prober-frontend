@@ -60,7 +60,7 @@ const Setting = ({ data, value, onChange }: {
                   offLabel="关"
                   className={classes.switch}
                   size="lg"
-                  checked={(value !== undefined && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue}
+                  checked={(Boolean(value) && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue}
                   onChange={(event) => onChange && onChange(data.key, event.currentTarget.checked)}
                 />
               )}
@@ -68,7 +68,7 @@ const Setting = ({ data, value, onChange }: {
                 <Select
                   variant="filled"
                   data={data.options || []}
-                  value={(value !== undefined && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string}
+                  value={(Boolean(value) && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string}
                   comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   onChange={(value) => onChange && onChange(data.key, value)}
                 />

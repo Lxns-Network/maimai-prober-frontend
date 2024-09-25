@@ -32,7 +32,7 @@ export const getRatingGradient = (rating: number) => {
   } else if (rating < 16) {
     return { from: "gold", to: "yellow" }
   }
-  return { from: "red", to: "green" };
+  return { from: "grape", to: "cyan" };
 }
 
 export const getDeluxeRatingGradient = (rating: number) => {
@@ -57,7 +57,7 @@ export const getDeluxeRatingGradient = (rating: number) => {
   } else if (rating < 15000) {
     return { from: "khaki", to: "goldenrod" };
   }
-  return { from: "red", to: "green" };
+  return { from: "grape", to: "cyan" };
 }
 
 export const maimaiDifficultyColor = [

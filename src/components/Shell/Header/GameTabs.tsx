@@ -24,6 +24,8 @@ export const GameTabs = ({ tabs, activeTab, onTabChange, style }: GameTabsProps)
         <UnstyledButton
           key={item.id}
           className={classes.tab}
+          fz="sm"
+          ta="center"
           ref={setControlRef(item.id)}
           onClick={() => onTabChange(item.id)}
           mod={{ active: activeTab === item.id }}
