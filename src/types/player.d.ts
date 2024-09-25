@@ -19,6 +19,10 @@ export interface ChunithmPlayerProps {
   name: string;
   rating: number;
   friend_code: number;
+  class_emblem: {
+    base: number;
+    medal: number;
+  };
   trophy: {
     name: string;
     color: string;

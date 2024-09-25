@@ -10,6 +10,10 @@ const examplePlayer: ChunithmPlayerProps = {
   "name": "ＣＨＵＮＩＴＨＭ",
   "rating": 0,
   "friend_code": 888888888888888,
+  "class_emblem": {
+    "base": 0,
+    "medal": 0
+  },
   "over_power": 0,
   "over_power_progress": 0,
   "currency": 0,

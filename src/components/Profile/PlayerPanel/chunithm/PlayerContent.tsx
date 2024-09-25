@@ -1,5 +1,5 @@
 import { ChunithmPlayerProps } from "@/types/player";
-import { Avatar, Badge, Divider, Flex, Group, NumberFormatter, rem, Text } from "@mantine/core";
+import { Avatar, Badge, Divider, Flex, Group, NumberFormatter, rem, Text, Image } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main.tsx";
@@ -37,21 +37,36 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
         </Text>
         <Divider mt={5} mb={10} variant="dashed" />
         <Group wrap="nowrap">
+          {player.class_emblem.base + player.class_emblem.medal !== 0 && (
+            <Flex align="center" justify="center" style={{
+              position: "relative",
+            }}>
+              {player.class_emblem.base !== 0 && (
+                <Image src={`/assets/chunithm/class_emblem/base/${player.class_emblem.base}.webp`} h={24} w="auto"/>
+              )}
+              {player.class_emblem.medal !== 0 && (
+                <Image src={`/assets/chunithm/class_emblem/medal/${player.class_emblem.medal}.webp`} h={40} w="auto" style={{
+                  position: player.class_emblem.base ? "absolute" : "static",
+                }}/>
+              )}
+            </Flex>
+          )}
           <div>
             <Text fz="xs" c="dimmed">Over Power</Text>
             <Text fz="sm">{(player.over_power || 0).toFixed(2)}
-              <Text fz="xs" component="span" ml={4}>({(player.over_power_progress || 0).toFixed(2)}%)</Text></Text>
-          </div>
-          <div>
-            <Text fz="xs" c="dimmed">所持金币</Text>
-            <Text fz="sm">
-              <NumberFormatter value={player.currency || 0} thousandSeparator />
+              <Text fz="xs" component="span" ml={4}>({(player.over_power_progress || 0).toFixed(2)}%)</Text>
             </Text>
           </div>
           <div>
-            <Text fz="xs" c="dimmed">全部金币</Text>
+            <Text fz="xs" c="dimmed" lineClamp={1}>所持金币</Text>
             <Text fz="sm">
-              <NumberFormatter value={player.total_currency || 0} thousandSeparator />
+              <NumberFormatter value={player.currency || 0} thousandSeparator/>
+            </Text>
+          </div>
+          <div>
+            <Text fz="xs" c="dimmed" lineClamp={1}>全部金币</Text>
+            <Text fz="sm">
+              <NumberFormatter value={player.total_currency || 0} thousandSeparator/>
             </Text>
           </div>
         </Group>
