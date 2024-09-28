@@ -64,7 +64,8 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
         "id": 866
     },
     "character": {
-        "id": 16620
+        "id": 16620,
+        "level": 1
     },
     "name_plate": {
         "id": 10131
@@ -537,6 +538,7 @@ Recent 10 列表里成绩的 `clear` 字段可能为空。
 | `id` | `int` | 收藏品 ID |
 | `name` | `string` | 收藏品名称 |
 | `color` | `string` | 值可空，仅玩家称号，称号颜色 |
+| `level` | `int` | 值可空，仅玩家角色，角色等级 |
 
 ## 枚举类型
 

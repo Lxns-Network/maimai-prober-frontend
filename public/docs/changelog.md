@@ -4,6 +4,8 @@
 
 ## 2024/9/28
 
+- 中二节奏玩家详情现在会展示玩家的等级与角色背景框
+- 中二节奏 `Character` 结构体中新增 `level` 字段，用于获取玩家角色等级
 - 帮助文档的目录现在支持展开与折叠标题
 - 尝试修复 `TypeError: Failed to fetch dynamically imported module`
 
