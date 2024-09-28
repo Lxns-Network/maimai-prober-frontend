@@ -4,6 +4,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from "react-router-dom";
 import { router } from './router';
+import { Helmet } from "react-helmet";
 
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
@@ -23,6 +24,14 @@ window.addEventListener('vite:preloadError', () => {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
+    <Helmet>
+      <title>maimai DX 查分器</title>
+      <meta name="description"
+            content="一个简单的舞萌 DX & 中二节奏国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。"/>
+      <meta name="keywords"
+            content="maimai,maimai DX,舞萌,舞萌 DX,CHUNITHM,中二,中二节奏,查分,查分器,查分网站,传分,传分器,传分网站"/>
+      <meta name="author" content="落雪咖啡屋"/>
+    </Helmet>
     <RouterProvider router={router} />
   </React.StrictMode>,
 )

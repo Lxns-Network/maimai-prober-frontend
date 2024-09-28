@@ -20,6 +20,7 @@ import {
 } from "@tabler/icons-react";
 import LazyLoad from 'react-lazyload';
 import { PhotoView } from "react-photo-view";
+import { Helmet } from "react-helmet";
 
 const scrollTo = (id: string) => {
   if (!id) return;
@@ -253,6 +254,8 @@ export default function Docs() {
   const { "*": page } = useParams();
   const [markdown, setMarkdown] = useState("");
   const [headings, handlers] = useListState([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -290,15 +293,31 @@ export default function Docs() {
 
     (file.data.headings as any).forEach((heading: any) => {
       if (heading.depth === 1) {
-        document.title = `${heading.value} | maimai DX 查分器`;
+        setTitle(heading.value);
       }
     });
+
+    if (markdown) {
+      let d = markdown.split("---")[1] || "";
+      d = d.replace(/\[(.*?)]\(.*?\)/g, "$1");
+      d = d.replace(/[>#*`-]/g, "");
+      d = d.replace(/\s+/g, " ").trim();
+      d = d.slice(0, 150).trim() + (d.length > 150 ? "..." : "");
+      setDescription(d);
+    }
 
     scrollTo(decodeURIComponent(location.hash.slice(1)));
   }, [markdown]);
 
   return (
     <Flex>
+      <Helmet
+        defaultTitle="maimai DX 查分器"
+        titleTemplate="%s | maimai DX 查分器"
+      >
+        <title>{title}</title>
+        <meta name="description" content={description} />
+      </Helmet>
       <Container mr={0} className={classes.content}>
         {markdown && page && (
           <Anchor component={Link} to="/docs">
