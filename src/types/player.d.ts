@@ -17,12 +17,14 @@ export interface MaimaiPlayerProps {
 
 export interface ChunithmPlayerProps {
   name: string;
+  level: number;
   rating: number;
   friend_code: number;
   class_emblem: {
     base: number;
     medal: number;
   };
+  reborn_count: number;
   trophy: {
     name: string;
     color: string;
@@ -40,4 +42,5 @@ export interface ChunithmPlayerProps {
 interface CollectionProps {
   id: number;
   name: string;
+  level?: number;
 }

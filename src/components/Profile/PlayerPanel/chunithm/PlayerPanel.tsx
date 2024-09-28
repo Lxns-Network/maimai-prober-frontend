@@ -7,26 +7,28 @@ import classes from "../PlayerPanel.module.css"
 import { ChunithmPlayerProps } from "@/types/player";
 
 const examplePlayer: ChunithmPlayerProps = {
-  "name": "ＣＨＵＮＩＴＨＭ",
-  "rating": 0,
-  "friend_code": 888888888888888,
-  "class_emblem": {
-    "base": 0,
-    "medal": 0
+  name: "ＣＨＵＮＩＴＨＭ",
+  level: 1,
+  rating: 0,
+  friend_code: 888888888888888,
+  class_emblem: {
+    base: 0,
+    medal: 0
   },
-  "over_power": 0,
-  "over_power_progress": 0,
-  "currency": 0,
-  "total_currency": 0,
-  "trophy": {
-    "name": "NEW COMER",
-    "color": "normal"
+  reborn_count: 0,
+  over_power: 0,
+  over_power_progress: 0,
+  currency: 0,
+  total_currency: 0,
+  trophy: {
+    name: "NEW COMER",
+    color: "normal"
   },
-  "character": {
-    "id": 0,
-    "name": ""
+  character: {
+    id: 0,
+    name: ""
   },
-  "upload_time": "2024-01-01T08:00:00Z"
+  upload_time: "2024-01-01T08:00:00Z"
 };
 
 export const ChunithmPlayerPanel = ({ player }: { player: ChunithmPlayerProps }) => {
