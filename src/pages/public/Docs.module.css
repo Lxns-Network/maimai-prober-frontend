@@ -25,13 +25,19 @@
 
 .tableOfContentsLink {
     font-size: var(--mantine-font-size-sm);
-    padding: 8px;
+    padding-top: 8px;
+    padding-right: var(--mantine-spacing-md);
+    padding-bottom: 8px;
     border-top-right-radius: var(--mantine-radius-sm);
     border-bottom-right-radius: var(--mantine-radius-sm);
     border-left: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
     color: var(--mantine-color-text) !important;
     text-decoration: none !important;
     word-break: break-all;
+
+    &:hover {
+        background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+    }
 }
 
 .externalLink:after {

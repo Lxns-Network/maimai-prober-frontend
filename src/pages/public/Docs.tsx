@@ -1,17 +1,6 @@
 import {
-  ActionIcon,
-  Container,
-  CopyButton,
-  Flex,
-  Group, Loader,
-  NavLink,
-  ScrollArea,
-  Space,
-  Text,
-  Title,
-  Tooltip,
-  TypographyStylesProvider,
-  Image, Box, Center, Anchor, Alert
+  ActionIcon, Container, CopyButton, Flex, Group, Loader, ScrollArea, Space, Text, Title, Tooltip,
+  TypographyStylesProvider, Image, Box, Center, Anchor, Alert, TreeNodeData, Tree, RenderTreeNodePayload
 } from "@mantine/core";
 import classes from "./Docs.module.css"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -26,7 +15,9 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import remarkSlug from "remark-slug";
 import remarkFlexibleContainers from "remark-flexible-containers";
 import { useListState } from "@mantine/hooks";
-import { IconAlertCircle, IconArrowLeft, IconCheck, IconCopy, IconInfoCircle, IconListSearch } from "@tabler/icons-react";
+import {
+  IconAlertCircle, IconArrowLeft, IconCheck, IconChevronDown, IconCopy, IconInfoCircle, IconListSearch
+} from "@tabler/icons-react";
 import LazyLoad from 'react-lazyload';
 import { PhotoView } from "react-photo-view";
 
@@ -50,27 +41,75 @@ const scrollTo = (id: string) => {
   }
 }
 
+function Leaf({ level, node, expanded, hasChildren, elementProps, tree }: RenderTreeNodePayload) {
+  useEffect(() => {
+    if (level === 1) tree.expand(node.value);
+  }, [level]);
+
+  return (
+    <div
+      className={[elementProps.className, classes.tableOfContentsLink].join(" ")}
+      onClick={(event) => {
+        event.preventDefault();
+        scrollTo(node.value);
+        elementProps.onClick?.(event);
+      }}
+    >
+      <Group gap={5} ml="md">
+        <span style={{ flex: 1 }}>{node.label}</span>
+
+        {hasChildren && (
+          <IconChevronDown
+            size={14}
+            style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        )}
+      </Group>
+    </div>
+  );
+}
+
 const TableOfContents = ({ headings }: any) => {
+  const data: TreeNodeData[] = [];
+
+  const parentStack: TreeNodeData[] = [];
+
+  headings.forEach((heading: any) => {
+    const node: TreeNodeData = {
+      label: heading.value,
+      value: heading.data.id,
+      children: []
+    };
+
+    if (heading.depth === 1) {
+      data.push(node);
+      parentStack.length = 0;
+      parentStack.push(node);
+    } else if (heading.depth < parentStack.length) {
+      parentStack[heading.depth - 1] = node;
+      parentStack.length = heading.depth;
+      parentStack[heading.depth - 2].children?.push(node);
+    } else {
+      if (parentStack.length >= heading.depth) {
+        parentStack[heading.depth - 1] = node;
+      } else {
+        parentStack.push(node);
+      }
+
+      if (parentStack.length >= 2) {
+        const parent = parentStack[parentStack.length - 2];
+        parent.children?.push(node);
+      }
+    }
+  });
+
   return (
     <ScrollArea h="100%" type="never">
       <Group mb="md" mt="2rem">
         <IconListSearch size={18} stroke={1.5} />
         <Text mb={0}>目录</Text>
       </Group>
-      {headings.map((heading: any) => (
-        heading.depth !== 1 && <NavLink
-          className={classes.tableOfContentsLink}
-          data-heading={heading.depth}
-          key={heading.data.id}
-          href={`#${heading.data.id}`}
-          label={heading.value}
-          style={{ paddingLeft: `calc(${heading.depth-1} * var(--mantine-spacing-md))` }}
-          onClick={(event) => {
-            event.preventDefault();
-            scrollTo(heading.data.id);
-          }}
-        />
-      ))}
+      <Tree data={data} levelOffset="md" renderNode={(payload) => <Leaf {...payload} />} />
       <Space h="2rem" />
     </ScrollArea>
   );
