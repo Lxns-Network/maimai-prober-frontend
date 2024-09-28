@@ -1,10 +1,6 @@
-import {
-  AspectRatio, Avatar, Badge, Box, Button, Grid, Group, Image, Paper, rem, Text, Tooltip
-} from "@mantine/core";
+import { AspectRatio, Avatar, Badge, Box, Button, Grid, Group, Image, Paper, rem, Text, Tooltip } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
-import {
-  getDifficulty, MaimaiDifficultyProps, MaimaiSongProps
-} from "@/utils/api/song/maimai.ts";
+import { getDifficulty, MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { IconChevronRight, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";

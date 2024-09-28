@@ -1,6 +1,6 @@
-import { useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
+import { useDisclosure, useLocalStorage } from "@mantine/hooks";
 import { useState } from "react";
-import { BackgroundImage, Card, SimpleGrid, useComputedColorScheme } from "@mantine/core";
+import { BackgroundImage, Box, Card, Grid, useComputedColorScheme } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { MaimaiScoreContent } from "./maimai/Score.tsx";
 import { ScoreModal } from "./ScoreModal.tsx";
@@ -14,6 +14,7 @@ import { ASSET_URL } from "@/main.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { GridBreakpoints } from "@mantine/core/lib/components/Grid/Grid.context";
 
 interface ScoreProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
@@ -77,10 +78,9 @@ export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
   const [ref] = useAutoAnimate();
   const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
   const [opened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
-  const small = useMediaQuery('(max-width: 25rem)');
 
   return (
-    <>
+    <Box w="100%">
       <ScoreModal
         game={game}
         score={score}
@@ -90,18 +90,25 @@ export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
           if (score) onScoreChange && onScoreChange(score as MaimaiScoreProps);
         }}
       />
-      <SimpleGrid cols={small ? 1 : 2} spacing="xs" w="100%" ref={ref}>
-        {scores.map((score) => {
-          return <Score
-            key={`${score.id}:${"type" in score && score.type}:${score.level_index}`}
-            score={score}
-            onClick={() => {
-              setScore(score);
-              openScoreAlert();
-            }}
-          />
-        })}
-      </SimpleGrid>
-    </>
+      <Grid
+        type="container"
+        breakpoints={{ md: '400px' } as GridBreakpoints}
+        gutter="xs"
+        ref={ref}
+      >
+        {scores.map((score) => (
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Score
+              key={`${score.id}:${"type" in score && score.type}:${score.level_index}`}
+              score={score}
+              onClick={() => {
+                setScore(score);
+                openScoreAlert();
+              }}
+            />
+          </Grid.Col>
+        ))}
+      </Grid>
+    </Box>
   );
 }
