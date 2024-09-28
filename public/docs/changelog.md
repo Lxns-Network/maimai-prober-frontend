@@ -2,9 +2,25 @@
 
 ---
 
+## 2024/9/28
+
+- 帮助文档的目录现在支持展开与折叠标题
+- 尝试修复 `TypeError: Failed to fetch dynamically imported module`
+
+## 2024/9/27
+
+- 中二节奏 `Player` 结构体中新增 `rating_possession` 字段，用于获取玩家 Rating 领域颜色
+
 ## 2024/9/25
 
-- 适配中二节奏 2025（Ver.CN1.20）
+- 适配中二节奏 2025（Ver.CN1.20）：
+  - [CLEAR 类型](/docs/api/chunithm#cleartype)新增值：
+    - CATASTROPHY：`catastrophy`
+    - ABSOLUTE+：`absolutep`
+    - ABSOLUTE：`absolute`
+    - HARD：`hard`
+  - [FULL COMBO 类型](/docs/api/chunithm#fullcombotype)新增 AJC：`alljusticecritical`
+    > 原有理论值成绩的 FULL COMBO 类型现在为 AJC
 - 中二节奏玩家详情现在会展示玩家的段位
 
 ## 2024/9/21

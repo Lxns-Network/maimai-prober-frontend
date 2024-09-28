@@ -390,6 +390,7 @@ JSON 格式的玩家成绩：
 | `name` | `string` | 游戏内名称 |
 | `level` | `int` | 玩家等级，最大值为 99 |
 | `rating` | `int` | 玩家 Rating |
+| `rating_possession` | `string` | 玩家 Rating 领域颜色 |
 | `friend_code` | `int` | 好友码 |
 | `class_emblem` | [`ClassEmblem`](#classemblem) | CLASS 勋章 |
 | `reborn_count` | `int` | 玩家等级突破次数 |
