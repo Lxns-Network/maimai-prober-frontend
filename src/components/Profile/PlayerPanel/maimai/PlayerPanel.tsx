@@ -7,21 +7,21 @@ import classes from "../PlayerPanel.module.css"
 import { MaimaiPlayerProps } from "@/types/player";
 
 const examplePlayer: MaimaiPlayerProps = {
-  "name": "ｍａｉｍａｉ",
-  "rating": 0,
-  "friend_code": 888888888888888,
-  "trophy": {
+  name: "ｍａｉｍａｉ",
+  rating: 0,
+  friend_code: 888888888888888,
+  trophy: {
     "name": "欢迎来到“舞萌DX”！",
     "color": "Normal"
   },
-  "course_rank": 0,
-  "class_rank": 0,
-  "star": 0,
-  "icon": {
-    "id": 1,
-    "name": ""
+  course_rank: 0,
+  class_rank: 0,
+  star: 0,
+  icon: {
+    id: 1,
+    name: ""
   },
-  "upload_time": "2024-01-01T08:00:00Z"
+  upload_time: "2024-01-01T08:00:00Z"
 };
 
 export const MaimaiPlayerPanel = ({ player }: { player: MaimaiPlayerProps }) => {

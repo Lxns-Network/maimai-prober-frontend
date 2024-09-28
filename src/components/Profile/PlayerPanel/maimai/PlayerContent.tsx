@@ -38,7 +38,7 @@ export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
         <Text fz="lg" fw={500}>
           {player.name}
         </Text>
-        <Divider mt={5} mb={5} variant="dashed" />
+        <Divider mb={10} variant="dashed" />
         <Group gap={0} wrap="nowrap">
           <Image src={`/assets/maimai/course_rank/${player.course_rank || 0}.webp`} h={36} w="auto" />
           <Image src={`/assets/maimai/class_rank/${player.class_rank || 0}.webp`} h={46} mt={-2} w="auto" />
