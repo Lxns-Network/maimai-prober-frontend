@@ -17,6 +17,10 @@ export const API_URL = import.meta.env.VITE_API_URL;
 export const ASSET_URL = import.meta.env.VITE_ASSET_URL;
 export const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
+window.addEventListener('vite:preloadError', () => {
+  window.location.reload()
+})
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <RouterProvider router={router} />
