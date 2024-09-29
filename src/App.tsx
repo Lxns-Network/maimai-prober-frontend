@@ -46,6 +46,8 @@ export default function App() {
   });
 
   onTouchEnd((event) => {
+    if (startX / window.innerWidth > 0.1) return;
+
     const endX = event.changedTouches[0].clientX;
 
     if (endX - startX > 100) {
