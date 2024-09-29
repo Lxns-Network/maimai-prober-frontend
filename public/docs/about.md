@@ -20,4 +20,4 @@ GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 
 ## 赞助
 
-查分器的维护及运营需要费用，您可以通过[爱发电](https://afdian.net/a/lxnssama)支持查分器的可持续运行。
+查分器的维护及运营需要费用，您可以通过[爱发电](https://ifdian.net/a/lxnssama)支持查分器的可持续运行。
