@@ -1,0 +1,11 @@
+.fullComboSyncSection {
+    flex-direction: column;
+
+    @media (max-width: 28rem) {
+        flex-direction: row;
+    }
+
+    @media (max-width: 26rem) {
+        flex-direction: column;
+    }
+}

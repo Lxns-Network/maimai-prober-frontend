@@ -1,4 +1,4 @@
-import { SimpleGrid } from "@mantine/core";
+import { Box, SimpleGrid } from "@mantine/core";
 import { Alias } from "./Alias.tsx";
 import { useSetState } from "@mantine/hooks";
 import { AliasModal } from "./AliasModal.tsx";
@@ -34,9 +34,14 @@ export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
   }, [alias]);
 
   return (
-    <>
+    <Box w="100%">
       <AliasModal alias={alias} setAlias={setAlias} opened={opened} onClose={() => setOpened(false)} />
-      <SimpleGrid cols={2} spacing="xs" w="100%" ref={parent}>
+      <SimpleGrid
+        type="container"
+        cols={{ base: 1, '400px': 2 }}
+        spacing="xs"
+        ref={parent}
+      >
         {displayAliases.map((alias) => (
           <Alias
             key={`${alias.song.id}:${alias.alias_id}`}
@@ -53,6 +58,6 @@ export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
           />
         ))}
       </SimpleGrid>
-    </>
+    </Box>
   );
 }

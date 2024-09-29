@@ -78,7 +78,7 @@ const Setting = ({ data, value, onChange }: {
                   variant="filled"
                   data={data.options || []}
                   placeholder={data.placeholder}
-                  value={(value !== undefined && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string[]}
+                  value={(Boolean(value) && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string[]}
                   comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   onChange={(value) => onChange && onChange(data.key, value)}
                 />

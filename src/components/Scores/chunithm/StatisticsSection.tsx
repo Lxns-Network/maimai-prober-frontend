@@ -1,5 +1,4 @@
 import { Card, Grid, Image, rem, Text, Group, Spoiler, Divider, NumberFormatter, Flex, Box } from "@mantine/core";
-import classes from "../Scores.module.css"
 import { useMediaQuery } from "@mantine/hooks";
 import { ChunithmScoreProps } from "@/types/score";
 
@@ -27,7 +26,7 @@ const RateStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
         count += calculateCount(scores, rate[i].min, rate[i].max);
       }
       return (
-        <Group key={r.id} mb="xs" h={30}>
+        <Group key={r.id} mb="xs" h={30} wrap="nowrap">
           <Image
             src={`/assets/chunithm/music_rank/${r.id}_s.webp`}
             h={18}
@@ -51,7 +50,7 @@ const FullComboStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
 
   return <Box w="100%">
     {full_combo.map((r, index) => (
-      <Group key={r} mb="xs" h={30}>
+      <Group key={r} mb="xs" h={30} wrap="nowrap">
         <Image
           src={`/assets/chunithm/music_icon/${r}_s.webp`}
           h={18}
@@ -76,7 +75,7 @@ export const ChunithmStatisticsSection = ({ scores }: { scores: ChunithmScorePro
   const extraSmall = useMediaQuery('(max-width: 28rem)');
 
   return (
-    <Card withBorder radius="md" className={classes.card}>
+    <Card withBorder radius="md">
       <Spoiler maxHeight={120} showLabel="显示详细统计信息..." hideLabel="隐藏详细统计信息">
         <Grid gutter={small ? "md" : "xl"}>
           <Grid.Col span={extraSmall ? 12 : 6}>

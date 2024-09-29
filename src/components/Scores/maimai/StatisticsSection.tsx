@@ -1,5 +1,5 @@
 import { Card, Grid, Image, rem, Text, Group, Spoiler, Divider, NumberFormatter, Flex, Box } from "@mantine/core";
-import classes from "../Scores.module.css"
+import classes from "./StatisticsSection.module.css"
 import { useMediaQuery } from "@mantine/hooks";
 import { MaimaiScoreProps } from "@/types/score";
 
@@ -27,7 +27,7 @@ const RateStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
         count += calculateCount(scores, rate[i].min, rate[i].max);
       }
       return (
-        <Group key={r.id} mb="xs">
+        <Group key={r.id} mb="xs" wrap="nowrap">
           <Image
             src={`/assets/maimai/music_rank/${r.id}.webp`}
             h={30}
@@ -51,7 +51,7 @@ const FullComboStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
 
   return <Box w="100%">
     {fc.map((r, index) => (
-      <Group key={r} mb="xs" h={30}>
+      <Group key={r} mb="xs" h={30} wrap="nowrap">
         <Image
           src={`/assets/maimai/music_icon/${r}.webp`}
           h={30}
@@ -76,7 +76,7 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
 
   return <Box w="100%">
     {fs.map((r, index) => (
-      <Group key={r} mb="xs" h={30}>
+      <Group key={r} mb="xs" h={30} wrap="nowrap">
         <Image
           src={`/assets/maimai/music_icon/${r}.webp`}
           h={30}
@@ -101,14 +101,14 @@ export const MaimaiStatisticsSection = ({ scores }: { scores: MaimaiScoreProps[]
   const extraSmall = useMediaQuery('(max-width: 28rem)');
 
   return (
-    <Card withBorder radius="md" className={classes.card}>
+    <Card withBorder radius="md">
       <Spoiler maxHeight={120} showLabel="显示详细统计信息..." hideLabel="隐藏详细统计信息">
         <Grid gutter={small ? "md" : "xl"}>
           <Grid.Col span={extraSmall ? 12 : 6}>
             <RateStatistics scores={scores} />
           </Grid.Col>
           <Grid.Col span={extraSmall ? 12 : 6}>
-            <Flex gap="md" direction={extraSmall ? "row" : "column"}>
+            <Flex className={classes.fullComboSyncSection} gap="md">
               <FullComboStatistics scores={scores} />
               <FullSyncStatistics scores={scores} />
             </Flex>

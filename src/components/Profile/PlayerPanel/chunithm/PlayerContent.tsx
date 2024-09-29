@@ -84,19 +84,19 @@ export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
           )}
           <div>
             <Text fz="xs" c="dimmed">Over Power</Text>
-            <Text fz="sm" fw={500}>{(player.over_power || 0).toFixed(2)}
+            <Text fz="sm">{(player.over_power || 0).toFixed(2)}
               <Text fz="xs" component="span" ml={4}>({(player.over_power_progress || 0).toFixed(2)}%)</Text>
             </Text>
           </div>
           <div>
             <Text fz="xs" c="dimmed" lineClamp={1}>所持金币</Text>
-            <Text fz="sm" fw={500}>
+            <Text fz="sm">
               <NumberFormatter value={player.currency || 0} thousandSeparator/>
             </Text>
           </div>
           <div>
             <Text fz="xs" c="dimmed" lineClamp={1}>全部金币</Text>
-            <Text fz="sm" fw={500}>
+            <Text fz="sm">
               <NumberFormatter value={player.total_currency || 0} thousandSeparator/>
             </Text>
           </div>
