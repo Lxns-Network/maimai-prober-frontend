@@ -1,11 +1,11 @@
 import { ChunithmPlayerProps } from "@/types/player";
-import {Avatar, Badge, Divider, Flex, Group, rem, Text, Image, Center, NumberFormatter} from "@mantine/core";
+import { Avatar, Badge, Divider, Flex, Group, rem, Text, Image, Center, NumberFormatter } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
 
-export const PlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
+export const ChunithmPlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
   let characterColor = "normal";
   if (player.character && player.character.level) {
     if (player.character.level >= 100) {

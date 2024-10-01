@@ -5,7 +5,7 @@ import { getDeluxeRatingGradient, getTrophyColor } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
 
-export const PlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
+export const MaimaiPlayerContent = ({ player }: { player: MaimaiPlayerProps }) => {
   const computedColorScheme = useComputedColorScheme('light');
 
   return (

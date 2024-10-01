@@ -1,16 +1,17 @@
 import { AspectRatio, Divider, Flex, Group, Image, Modal, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { fetchAPI } from "@/utils/api/api.ts";
 import { IconArrowBigDownFilled, IconArrowBigRightFilled, IconArrowBigUpFilled } from "@tabler/icons-react";
 import { useLocalStorage, useScrollIntoView } from "@mantine/hooks";
 import { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
+import { getSong } from "@/utils/api/song/song.tsx";
+import { Game } from "@/types/game";
 
 interface RatingHistoryModalProps {
   song?: MaimaiSongProps | ChunithmSongProps | null;
   difficulty?: MaimaiDifficultyProps | ChunithmDifficultyProps | null;
   opened: boolean;
-  onClose: (score?: any) => void;
+  onClose: () => void;
 }
 
 const HISTORY_VERSION_LIST = {
@@ -19,7 +20,7 @@ const HISTORY_VERSION_LIST = {
 };
 
 export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: RatingHistoryModalProps) => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: "game", defaultValue: "maimai" });
+  const [game] = useLocalStorage<Game>({ key: "game", defaultValue: "maimai" });
   const { scrollIntoView, targetRef, scrollableRef } = useScrollIntoView<
     HTMLDivElement,
     HTMLDivElement
@@ -32,18 +33,10 @@ export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: Rating
     chunithm: 760 / 336,
   }[game];
 
-  const getSongDetailHandler = async (id: number, version: number) => {
-    const res = await fetchAPI(`${game}/song/${id}?version=${version}`, {
-      method: "GET",
-    });
-    if (res.status === 404) return null;
-    return await res.json();
-  }
+  const fetchRatings = useCallback(async () => {
+    if (!song || !difficulty) return;
 
-  useEffect(() => {
-    if (!opened || !song || !difficulty) return;
-
-    Promise.all(
+    const data = await Promise.all(
       versions.map((version) => {
         if (version < Math.max(...versions.filter(n => n <= song.version))) {
           return Promise.resolve(null);
@@ -51,36 +44,41 @@ export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: Rating
         if (version >= versions[versions.length - 1]) {
           return Promise.resolve(song);
         }
-        return getSongDetailHandler(song.id, version)
+        return getSong(game, song.id, version)
       })
-    ).then((data) => {
-      setRatings(data.map((d: any, i: number) => {
-        let previousDifficulties, currentDifficulties;
-        if (game === "maimai") {
-          difficulty = difficulty as MaimaiDifficultyProps;
-          previousDifficulties = data[i - 1]?.difficulties[difficulty.type];
-          currentDifficulties = d?.difficulties[difficulty.type];
-        } else {
-          difficulty = difficulty as ChunithmDifficultyProps;
-          previousDifficulties = data[i - 1]?.difficulties;
-          currentDifficulties = d?.difficulties;
-        }
+    );
 
-        if (!d && data[i-1] && previousDifficulties.length !== 0)
-          return -Math.abs(previousDifficulties[difficulty.difficulty].level_value); // 设为负数表示删除曲，但保留定数
-        if (!d || difficulty.difficulty >= currentDifficulties.length) return 0;
-        return currentDifficulties[difficulty.difficulty].level_value;
-      }));
-    }).catch((error) => {
-      console.error(error);
-    });
-  }, [opened]);
+    setRatings(data.map((song: MaimaiSongProps | ChunithmSongProps, i: number) => {
+      let previousDifficulties, currentDifficulties;
+      if (game === "maimai") {
+        const d = difficulty as MaimaiDifficultyProps;
+        song = song as MaimaiSongProps;
+        previousDifficulties = data[i - 1]?.difficulties[d.type];
+        currentDifficulties = song?.difficulties[d.type as keyof MaimaiSongProps["difficulties"]];
+      } else {
+        song = song as ChunithmSongProps;
+        previousDifficulties = data[i - 1]?.difficulties;
+        currentDifficulties = song?.difficulties;
+      }
+
+      if (!song && data[i-1] && previousDifficulties.length !== 0)
+        return -Math.abs(previousDifficulties[difficulty.difficulty].level_value); // 设为负数表示删除曲，但保留定数
+      if (!song || difficulty.difficulty >= currentDifficulties.length) return 0;
+      return currentDifficulties[difficulty.difficulty].level_value;
+    }));
+  }, [song, difficulty, versions, game]);
+
+  useEffect(() => {
+    if (!opened) return;
+
+    fetchRatings();
+  }, [opened, fetchRatings]);
 
   useEffect(() => {
     setTimeout(() => {
       scrollIntoView();
     }, 50);
-  }, [ratings]);
+  }, [ratings, scrollIntoView]);
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>

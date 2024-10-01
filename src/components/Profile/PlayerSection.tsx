@@ -1,21 +1,14 @@
-import {
-  Button,
-  Card,
-  Overlay,
-  Stack,
-  Text, useComputedColorScheme
-} from "@mantine/core";
+import { Button, Card, Overlay, Stack, Text, useComputedColorScheme } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
-import { MaimaiPlayerPanel } from "./PlayerPanel/maimai/PlayerPanel.tsx";
-import { ChunithmPlayerPanel } from "./PlayerPanel/chunithm/PlayerPanel.tsx";
 import { PlayerPanelSkeleton } from "./PlayerPanel/Skeleton.tsx";
 import { useNavigate } from "react-router-dom";
 import classes from "./Profile.module.css";
 import { usePlayer } from "@/hooks/swr/usePlayer.ts";
-import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
+import { PlayerPanel } from "./PlayerPanel/PlayerPanel.tsx";
+import { Game } from "@/types/game";
 
 export const PlayerSection = () => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
   const { player, isLoading } = usePlayer(game);
   const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();
@@ -38,8 +31,7 @@ export const PlayerSection = () => {
               </Stack>
             </Overlay>
           )}
-          {game === "maimai" && <MaimaiPlayerPanel player={player as MaimaiPlayerProps} />}
-          {game === "chunithm" && <ChunithmPlayerPanel player={player as ChunithmPlayerProps} />}
+          {player && <PlayerPanel player={player} />}
         </Card>
       )}
     </Card>

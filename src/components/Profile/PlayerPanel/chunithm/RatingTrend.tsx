@@ -2,14 +2,15 @@ import { Card, Flex, Group, Text } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { Area, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export interface MaimaiRatingTrendProps {
-  total: number;
-  standard_total: number;
-  dx_total: number;
+export interface ChunithmRatingTrendProps {
+  rating: number;
+  bests_rating: number;
+  selections: number;
+  recents_rating: number;
   date: string | number;
 }
 
-const RatingTrendChart = ({ trend }: { trend: MaimaiRatingTrendProps[] }) => {
+const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
   trend = trend.map((item) => {
     return {
       ...item,
@@ -21,7 +22,7 @@ const RatingTrendChart = ({ trend }: { trend: MaimaiRatingTrendProps[] }) => {
     <ResponsiveContainer width="100%" height={250}>
       <ComposedChart data={trend}>
         <defs>
-          <linearGradient id="dx_rating" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="rating" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
             <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
           </linearGradient>
@@ -40,21 +41,22 @@ const RatingTrendChart = ({ trend }: { trend: MaimaiRatingTrendProps[] }) => {
           return (
             <Card p="xs" withBorder fz="sm">
               <Text>{new Date(payload.date).toLocaleDateString()}</Text>
-              <Text c="#8884d8">DX Rating: {payload.total}</Text>
+              <Text c="#8884d8">Rating: {payload.rating}</Text>
               <Group gap="xs">
-                <Text c="#FD7E14">B35: {payload.standard_total}</Text>
-                <Text c="#228BE6">B15: {payload.dx_total}</Text>
+                <Text c="#FD7E14">Best 30: {payload.bests_rating}</Text>
+                <Text>Selection 10: {payload.selections}</Text>
+                <Text c="#228BE6">Recent 10 (MAX): {payload.recents_rating}</Text>
               </Group>
             </Card>
           )
         }} />
-        <Area dataKey="total" stroke="#8884d8" fillOpacity={1} fill="url(#dx_rating)" />
+        <Area dataKey="total" stroke="#8884d8" fillOpacity={1} fill="url(#rating)" />
       </ComposedChart>
     </ResponsiveContainer>
   )
 }
 
-export const MaimaiRatingTrend = ({ trend }: { trend: MaimaiRatingTrendProps[] | null }) => {
+export const ChunithmRatingTrend = ({ trend }: { trend: ChunithmRatingTrendProps[] | null }) => {
   if (!trend || trend.length < 2) {
     return (
       <Flex gap="xs" align="center" direction="column" c="dimmed">
@@ -63,8 +65,10 @@ export const MaimaiRatingTrend = ({ trend }: { trend: MaimaiRatingTrendProps[] |
       </Flex>
     )
   }
+
   return <>
     <RatingTrendChart trend={trend} />
-    <Text fz="xs" c="dimmed">※ 该数据由历史同步成绩推出，而非玩家的历史 DX Rating，结果仅供参考。</Text>
+    <Text fz="xs" c="dimmed">※ Recent 10 均为 Best #1 曲目，最终结果为理论不推分最高 Rating。</Text>
+    <Text fz="xs" c="dimmed">※ 该数据由历史同步成绩推出，而非玩家的历史 Rating，结果仅供参考。</Text>
   </>
 }

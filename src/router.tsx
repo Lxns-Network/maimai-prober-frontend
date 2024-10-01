@@ -20,8 +20,7 @@ const NotFound = lazy(() => import('./pages/public/NotFound'));
 const Vote = lazy(() => import('./pages/alias/Vote'));
 const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
 const DeveloperInfo = lazy(() => import('./pages/developer/Info'));
-const Users = lazy(() => import('./pages/admin/Users'));
-const Developers = lazy(() => import('./pages/admin/Developers'));
+const AdminPanel = lazy(() => import('./pages/admin/Panel'));
 
 const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
   if (!isTokenUndefined() && isTokenExpired()) {
@@ -70,8 +69,7 @@ const routesConfig = (
     <Route path="/admin" element={<ProtectedRoute extra_validation={
       () => checkPermission(UserPermission.Administrator)}
     />}>
-      <Route path="users" element={<Users />} />
-      <Route path="developers" element={<Developers />} />
+      <Route path="panel" element={<AdminPanel />} />
     </Route>
     <Route path="*" element={<NotFound />} />
   </Route>
