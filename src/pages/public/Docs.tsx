@@ -62,7 +62,7 @@ function Leaf({ level, node, expanded, hasChildren, elementProps, tree }: Render
         {hasChildren && (
           <IconChevronDown
             size={14}
-            style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
           />
         )}
       </Group>
