@@ -1,10 +1,11 @@
 import { create } from 'zustand'
 import { AliasList } from "../utils/api/alias.ts";
+import { Game } from "@/types/game";
 
 interface AliasListState {
   maimai: AliasList,
   chunithm: AliasList,
-  getAliasList: (game: 'maimai' | 'chunithm') => AliasList,
+  getAliasList: (game: Game) => AliasList,
   fetchAliasList: () => Promise<void>,
 }
 
@@ -16,7 +17,7 @@ const useAliasListStore = create<AliasListState>((set, get) => ({
     await Promise.all([get().maimai.fetch(), get().chunithm.fetch()]);
 
     set({
-      getAliasList: (game: 'maimai' | 'chunithm') => get()[game],
+      getAliasList: (game: Game) => get()[game],
     });
   },
 }))

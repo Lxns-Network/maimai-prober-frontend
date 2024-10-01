@@ -9,6 +9,7 @@ import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { useAliases } from "@/hooks/swr/useAliases.ts";
 import { useAliasVotes } from "@/hooks/swr/useAliasVotes.ts";
+import { Game } from "@/types/game";
 
 const sortKeys = [
   { name: '别名', key: 'alias' },
@@ -17,7 +18,7 @@ const sortKeys = [
 ];
 
 const AliasVoteContent = () => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
   const [opened, setOpened] = useState(false);
   const [onlyNotApproved, toggleOnlyNotApproved] = useToggle();
 

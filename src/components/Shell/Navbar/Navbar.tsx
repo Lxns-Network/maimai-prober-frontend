@@ -6,7 +6,7 @@ import { checkPermission, UserPermission } from "@/utils/session.ts";
 import { logoutUser } from "@/utils/api/user.ts";
 import {
   IconCards, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome, IconLogout,
-  IconMusic, IconSettings2, IconTable, IconTableOptions, IconTransferIn, IconUserCircle
+  IconMusic, IconSettings2, IconTable, IconTransferIn, IconUserCircle
 } from "@tabler/icons-react";
 import classes from './Navbar.module.css';
 
@@ -17,7 +17,7 @@ interface NavbarProps {
 
 export default function Navbar({ style, onClose }: NavbarProps) {
   const [active, setActive] = useState('');
-  const isLoggedOut = !Boolean(localStorage.getItem("token"));
+  const isLoggedOut = !localStorage.getItem("token");
   const location = useLocation();
 
   const navbarData = [
@@ -35,10 +35,8 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       enabled: (!isLoggedOut && checkPermission(UserPermission.Developer)) },
     { label: '申请成为开发者', icon: <IconCode stroke={1.5} />, to: '/developer/apply',
       enabled: !(isLoggedOut || checkPermission(UserPermission.Developer)) },
-    { label: '管理用户', icon: <IconTable stroke={1.5} />, to: '/admin/users',
+    { label: '管理面板', icon: <IconTable stroke={1.5} />, to: '/admin/panel',
       enabled: checkPermission(UserPermission.Administrator), divider: true },
-    { label: '管理开发者', icon: <IconTableOptions stroke={1.5} />, to: '/admin/developers',
-      enabled: checkPermission(UserPermission.Administrator) },
   ];
 
   useEffect(() => {

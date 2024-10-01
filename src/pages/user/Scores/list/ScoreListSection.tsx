@@ -16,6 +16,7 @@ import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSection.tsx";
 import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/StatisticsSection.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
 
 const sortKeys = {
   maimai: [
@@ -38,7 +39,7 @@ const sortKeys = {
 
 export const ScoreListSection = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
 
   const { scores, isLoading, mutate } = useScores(game);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);

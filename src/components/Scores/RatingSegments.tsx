@@ -3,9 +3,10 @@ import { IconLoader3 } from '@tabler/icons-react';
 import classes from './RatingSegments.module.css';
 import { useLocalStorage } from "@mantine/hooks";
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
+import { Game } from "@/types/game";
 
 export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBestsProps }) {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: "maimai" });
+  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: "maimai" });
 
   const data = []
 

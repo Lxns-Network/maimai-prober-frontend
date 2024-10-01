@@ -1,8 +1,9 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
 import { AliasListProps } from "@/types/alias";
+import { Game } from "@/types/game";
 
-export const useAliases = (game: "maimai" | "chunithm", page: number, approved: boolean = false, sort: string = "alias_id", order: string = "desc", songId: number = 0) => {
+export const useAliases = (game: Game, page: number, approved: boolean = false, sort: string = "alias_id", order: string = "desc", songId: number = 0) => {
   const params = new URLSearchParams({
     page: String(page),
     sort: `${sort} ${order}`,

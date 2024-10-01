@@ -1,8 +1,9 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
 
-export const useScores = (game: "maimai" | "chunithm") => {
+export const useScores = (game: Game) => {
   const {
     data,
     error,

@@ -70,7 +70,7 @@ export class MaimaiSongList {
   }
 
   find(id: number) {
-    return this.songs.find((song: any) => song.id === id);
+    return this.songs.find((song: MaimaiSongProps) => song.id === id);
   }
 
   push(...songs: MaimaiSongProps[]) {

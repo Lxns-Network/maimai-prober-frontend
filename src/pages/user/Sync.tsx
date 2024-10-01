@@ -19,10 +19,11 @@ import { CopyButtonWithIcon } from "@/components/Sync/CopyButtonWithIcon.tsx";
 import { WechatOAuthLink } from "@/components/Sync/WechatOAuthLink.tsx";
 import { ScoresChangesModal } from "@/components/Sync/ScoresChangesModal.tsx";
 import { Page } from "@/components/Page/Page.tsx";
+import { Game } from "@/types/game";
 
 interface ScoreChangeDetailProps {
-  new: any;
-  old: any;
+  new: unknown;
+  old: unknown;
 }
 
 export interface ScoreChangesProps {
@@ -45,7 +46,7 @@ export interface ScoreChangesProps {
 }
 
 interface CrawlStatusProps {
-  game: "maimai" | "chunithm";
+  game: Game;
   friend_code: number;
   status: string;
   create_time: string;
@@ -61,11 +62,11 @@ const SyncContent = () => {
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [resultOpened, setResultOpened] = useState(false);
   const [step, setStep] = useState(0);
-  const [game, setGame] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game, setGame] = useLocalStorage<Game>({ key: 'game' });
   const navigate = useNavigate();
   const idle = useIdle(60000);
 
-  const isLoggedOut = !Boolean(localStorage.getItem("token"));
+  const isLoggedOut = !localStorage.getItem("token");
 
   const getUserCrawlTokenHandler = async () => {
     try {
@@ -264,7 +265,7 @@ const SyncContent = () => {
             <RadioCardGroup data={[
               { name: '舞萌 DX', description: '爬取玩家信息、成绩与收藏品', value: 'maimai' },
               { name: '中二节奏', description: '爬取玩家信息、成绩与收藏品', value: 'chunithm' },
-            ]} value={game} onChange={(value) => setGame(value as "maimai" | "chunithm")} />
+            ]} value={game} onChange={(value) => setGame(value as Game)} />
           </Stack>
         } />
         <Stepper.Step label="步骤 3" description={

@@ -3,21 +3,20 @@ import {
 } from "@mantine/core";
 import { ScoreChangesProps } from "@/pages/user/Sync.tsx";
 import { DataTable } from "mantine-datatable";
-import {
-  IconArrowRight, IconDatabaseOff, IconHelp,
-} from "@tabler/icons-react";
+import { IconArrowRight, IconDatabaseOff, IconHelp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { Marquee } from "../Marquee.tsx";
+import { Game } from "@/types/game";
 
 interface ScoresChangesModalProps {
-  game: "maimai" | "chunithm";
+  game: Game;
   scores: ScoreChangesProps[];
   opened: boolean;
   onClose: () => void;
 }
 
-const MusicIconChangeCell = ({ game, icon }: { game: "maimai" | "chunithm", icon: { old?: string, new?: string } }) => {
+const MusicIconChangeCell = ({ game, icon }: { game: Game, icon: { old?: string, new?: string } }) => {
   if (icon.new !== undefined && icon.new !== null) {
     if (game === "chunithm") {
       return <Group gap={0} h={0} ml={-3} wrap="nowrap">
@@ -61,7 +60,7 @@ const MusicIconChangeCell = ({ game, icon }: { game: "maimai" | "chunithm", icon
 }
 
 function containsOld(obj: any): boolean {
-  for (let key in obj) {
+  for (const key in obj) {
     if (typeof obj[key] === 'object' && obj[key] !== null) {
       if (containsOld(obj[key])) {
         return true;
@@ -73,7 +72,7 @@ function containsOld(obj: any): boolean {
   return false;
 }
 
-const ScoresChangesTable = ({ game, scores }: { game: "maimai" | "chunithm", scores: ScoreChangesProps[] }) => {
+const ScoresChangesTable = ({ game, scores }: { game: Game, scores: ScoreChangesProps[] }) => {
   const PAGE_SIZES = [10, 15, 20];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);

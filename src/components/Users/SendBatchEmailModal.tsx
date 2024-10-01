@@ -1,8 +1,8 @@
 import { useForm } from "@mantine/form";
 import { Button, Group, Modal, Text, Textarea, TextInput } from "@mantine/core";
-import { UserProps } from "@/pages/admin/Users.tsx";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { sendBatchEmail } from "@/utils/api/user.ts";
+import { UserProps } from "@/types/user";
 
 export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps[], opened: boolean, close(): void }) => {
   const form = useForm({

@@ -1,4 +1,5 @@
 import { fetchAPI } from "./api.ts";
+import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
 
 export async function getPlayerRatingTrend(game: string, version: number) {
   return fetchAPI(`user/${game}/player/trend?version=${version}`, { method: "GET" });
@@ -26,4 +27,14 @@ export async function getPlateList(game: string, required: boolean) {
 
 export async function getPlateById(game: string, id: number) {
   return fetchAPI(`${game}/plate/${id}`, { method: "GET" });
+}
+
+export function isMaimaiPlayerProps(obj: unknown): obj is MaimaiPlayerProps {
+  if (!obj) return false;
+  return typeof obj === 'object' && 'course_rank' in obj;
+}
+
+export function isChunithmPlayerProps(obj: unknown): obj is ChunithmPlayerProps {
+  if (!obj) return false;
+  return typeof obj === 'object' && 'over_power' in obj;
 }

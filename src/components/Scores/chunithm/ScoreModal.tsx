@@ -29,7 +29,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps } from "@/types/score";
-import {RatingHistoryModal} from "@/components/Scores/RatingHistoryModal.tsx";
+import { RatingHistoryModal } from "@/components/Scores/RatingHistoryModal.tsx";
 
 export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScoreProps, song: ChunithmSongProps }) => {
   const { songList } = useSongListStore(

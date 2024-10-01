@@ -6,7 +6,7 @@ import { deleteUser, updateUser } from "@/utils/api/user.ts";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { Button, Group, Modal, MultiSelect, Space, TextInput } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
-import { UserProps } from "@/pages/admin/Users.tsx";
+import { UserProps } from "@/types/user";
 
 export const EditUserModal = ({ user, opened, close }: { user: UserProps | null, opened: boolean, close(): void }) => {
   const form = useForm({

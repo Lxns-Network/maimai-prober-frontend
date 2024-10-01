@@ -16,6 +16,7 @@ import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { ASSET_URL } from "@/main.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
+import { Game } from "@/types/game";
 
 interface CreateAliasModalProps {
   defaultSongId?: number;
@@ -28,7 +29,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   const [readonly, setReadonly] = useState(false);
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-  const [game] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game' });
+  const [game] = useLocalStorage<Game>({ key: 'game' });
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const form = useForm({

@@ -1,17 +1,10 @@
-import { MaimaiSongList } from "./maimai.ts";
-import { ChunithmSongList } from "./chunithm.ts";
+import { fetchAPI } from "@/utils/api/api.ts";
+import { Game } from "@/types/game";
 
-export class SongList {
-  maimai: MaimaiSongList;
-  chunithm: ChunithmSongList;
-
-  constructor() {
-    this.maimai = new MaimaiSongList();
-    this.chunithm = new ChunithmSongList();
-  }
-
-  async fetch() {
-    await this.maimai.fetch();
-    await this.chunithm.fetch();
-  }
+export async function getSong(game: Game, id: number, version: number) {
+  const res = await fetchAPI(`${game}/song/${id}?version=${version}`, {
+      method: "GET",
+  });
+  if (res.status === 404) return null;
+  return await res.json();
 }

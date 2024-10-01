@@ -11,6 +11,7 @@ import { useAutoAnimate } from "@formkit/auto-animate/react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
 
 interface SongDifficultyProps {
   song: MaimaiSongProps | ChunithmSongProps;
@@ -71,7 +72,7 @@ interface SongDifficultiesProps {
 }
 
 export const SongDifficultyList = ({ song, scores, setScores, style }: SongDifficultiesProps) => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<Game>({ key: 'game' });
   const [difficulties, setDifficulties] = useState<(MaimaiDifficultyProps | ChunithmDifficultyProps)[]>([]);
   const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
   const [opened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);

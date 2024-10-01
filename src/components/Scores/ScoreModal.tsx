@@ -19,9 +19,10 @@ import { useIntersection } from "@mantine/hooks";
 import { Marquee } from "../Marquee.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
 
 interface ScoreModalProps {
-  game: "maimai" | "chunithm";
+  game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
   opened: boolean;
   onClose: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
@@ -116,12 +117,12 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     getPlayerScoreHistory(score);
   }, [score]);
 
-  function isMaimaiScoreProps(obj: any): obj is MaimaiScoreProps {
+  function isMaimaiScoreProps(obj: unknown): obj is MaimaiScoreProps {
     if (!obj) return false;
     return typeof obj === 'object' && 'achievements' in obj;
   }
 
-  function isChunithmScoreProps(obj: any): obj is ChunithmScoreProps {
+  function isChunithmScoreProps(obj: unknown): obj is ChunithmScoreProps {
     if (!obj) return false;
     return typeof obj === 'object' && 'score' in obj;
   }

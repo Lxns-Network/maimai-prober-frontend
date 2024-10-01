@@ -1,8 +1,9 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
 import { ConfigProps } from "@/types/user";
+import { Game } from "@/types/game";
 
-export const useUserConfig = (game: "maimai" | "chunithm") => {
+export const useUserConfig = (game: Game) => {
   const {
     data,
     error,

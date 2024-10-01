@@ -8,6 +8,7 @@ import classes from "../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { useUserConfig } from "@/hooks/swr/useUserConfig.ts";
+import { Game } from "@/types/game";
 
 const crawlConfigData = {
   maimai: [{
@@ -158,11 +159,11 @@ const crawlConfigData = {
 }
 
 const SettingsContent = () => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
   const { config, isLoading, mutate } = useUserConfig(game);
   const navigate = useNavigate();
 
-  const updateUserConfigHandler = async (key: string, value: any) => {
+  const updateUserConfigHandler = async (key: string, value: unknown) => {
     const newConfig = {
       ...config,
       [key]: value,
@@ -231,7 +232,7 @@ const SettingsContent = () => {
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
           设置每次爬取「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」的方式与获取的数据
         </Text>
-        <SettingList onChange={updateUserConfigHandler} value={config} data={(crawlConfigData as any)[game ? game : 'maimai']} />
+        <SettingList onChange={updateUserConfigHandler} value={config} data={(crawlConfigData as never)[game ? game : 'maimai']} />
       </Card>
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />

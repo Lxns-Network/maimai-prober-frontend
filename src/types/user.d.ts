@@ -6,6 +6,8 @@ export interface UserProps {
   register_time: string;
   bind: UserBindProps;
   token?: string;
+  // extra
+  deleted?: boolean;
 }
 
 export interface UserBindProps {

@@ -14,20 +14,22 @@ import { SongCard } from "@/components/Songs/SongCard.tsx";
 import { SongDifficultyList } from "@/components/Songs/SongDifficultyList.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Page } from "@/components/Page/Page.tsx";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
 
 const SongsContent = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<Game>({ key: 'game' });
 
   const [createAliasOpened, createAlias] = useDisclosure();
   const [defaultSongId, setDefaultSongId] = useState<number>(0)
   const [songId, setSongId] = useState<number>(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-  const [scores, setScores] = useState<any[]>([]);
+  const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const getSongList = useSongListStore((state) => state.getSongList);
-  const isLoggedOut = !Boolean(localStorage.getItem("token"));
+  const isLoggedOut = !localStorage.getItem("token");
   const location = useLocation();
 
   const getPlayerSongBestsHandler = async (type?: string) => {
@@ -60,7 +62,7 @@ const SongsContent = () => {
     if (searchParams.has("song_id")) {
       setDefaultSongId(parseInt(searchParams.get("song_id") || "0"));
     }
-  }, []);
+  }, [location.state, searchParams]);
 
   useEffect(() => {
     if (!game) return;
@@ -82,7 +84,7 @@ const SongsContent = () => {
 
     if (songList instanceof MaimaiSongList) {
       const s = song as MaimaiSongProps;
-      let types = [];
+      const types: string[] = [];
       if (s.difficulties.dx.length) types.push("dx");
       if (s.difficulties.standard.length) types.push("standard");
 
@@ -134,7 +136,7 @@ const SongsContent = () => {
       <Space h="md" />
       <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mb="md" radius="md" />
       <Transition
-        mounted={!Boolean(songId && song)}
+        mounted={!(songId && song)}
         transition="pop"
         enterDelay={250}
       >

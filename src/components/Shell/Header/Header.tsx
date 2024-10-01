@@ -1,9 +1,4 @@
-import {
-  Group,
-  Burger,
-  Menu, UnstyledButton, Text, Stack,
-  Transition
-} from '@mantine/core';
+import { Group, Burger, Menu, UnstyledButton, Text, Stack, Transition } from '@mantine/core';
 import Logo from "./Logo";
 import { IconChevronDown } from "@tabler/icons-react";
 import classes from './Header.module.css';
@@ -11,6 +6,7 @@ import { useLocalStorage } from "@mantine/hooks";
 import React from "react";
 import { ColorSchemeToggle } from "./ColorSchemeToggle.tsx";
 import { GameTabs } from "./GameTabs.tsx";
+import { Game } from "@/types/game";
 
 interface HeaderProps {
   navbarOpened: boolean;
@@ -37,7 +33,7 @@ const translateY = {
 };
 
 export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, headerRef }: HeaderProps) {
-  const [game, setGame] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game', defaultValue: 'maimai' });
+  const [game, setGame] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
 
   return (
     <div className={classes.header} ref={headerRef}>
@@ -58,7 +54,7 @@ export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, 
 
               <Menu.Dropdown>
                 {games.map((item) => (
-                  <Menu.Item key={item.id} onClick={() => setGame(item.id as 'maimai' | 'chunithm')}>
+                  <Menu.Item key={item.id} onClick={() => setGame(item.id as Game)}>
                     {item.name}{' '}
                     <Text span c="dimmed" fz="xs">
                       ({item.version})
@@ -76,7 +72,7 @@ export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, 
             <GameTabs
               tabs={games}
               activeTab={game}
-              onTabChange={(tab) => setGame(tab as 'maimai' | 'chunithm')}
+              onTabChange={(tab) => setGame(tab as Game)}
               style={styles}
             />
           )}

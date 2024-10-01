@@ -4,9 +4,10 @@ import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { useBests } from "@/hooks/swr/useBests.ts";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { RatingSegments } from "@/components/Scores/RatingSegments.tsx";
+import { Game } from "@/types/game";
 
 export const ScoreBestsSection = () => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
 
   const { bests, isLoading } = useBests(game);
 

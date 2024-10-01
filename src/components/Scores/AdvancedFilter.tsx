@@ -10,6 +10,7 @@ import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
 
 interface AdvancedFilterProps {
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
@@ -64,7 +65,7 @@ const filterData = {
 }
 
 export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<Game>({ key: 'game' });
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
 
@@ -82,7 +83,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
   const getSongList = useSongListStore((state) => state.getSongList);
   const small = useMediaQuery('(max-width: 30rem)');
 
-  const resetFilter = (game?: "maimai" | "chunithm") => {
+  const resetFilter = (game?: Game) => {
     if (!game) return;
 
     setRating(filterData[game].rating);

@@ -1,6 +1,6 @@
 import { fetchAPI } from "./api.ts";
 
-export async function updateUserProfile(data: any) {
+export async function updateUserProfile(data: unknown) {
   return fetchAPI("user/profile", { method: "POST", body: data });
 }
 
@@ -12,11 +12,11 @@ export async function getCrawlStatus() {
   return fetchAPI("user/crawl/status", { method: "GET" });
 }
 
-export async function updateUserConfig(game: string, data: any) {
+export async function updateUserConfig(game: string, data: unknown) {
   return fetchAPI(`user/${game}/config`, { method: "POST", body: data });
 }
 
-export async function updateUserBind(data: any) {
+export async function updateUserBind(data: unknown) {
   return fetchAPI("user/bind", { method: "POST", body: data });
 }
 
@@ -36,15 +36,15 @@ export async function getUsers() {
   return fetchAPI("user/admin/users", { method: "GET" });
 }
 
-export async function deleteUsers(data: any) {
+export async function deleteUsers(data: unknown) {
   return fetchAPI("user/admin/users", { method: "DELETE", body: data });
 }
 
-export async function sendBatchEmail(data: any) {
+export async function sendBatchEmail(data: unknown) {
   return fetchAPI("user/admin/email", { method: "POST", body: data });
 }
 
-export async function updateUser(userId: number, data: any) {
+export async function updateUser(userId: number, data: unknown) {
   return fetchAPI(`user/admin/user/${userId}`, { method: "POST", body: data });
 }
 

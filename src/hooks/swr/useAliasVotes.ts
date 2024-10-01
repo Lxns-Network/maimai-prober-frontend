@@ -1,8 +1,9 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
 import { VoteProps } from "@/types/alias";
+import { Game } from "@/types/game";
 
-export const useAliasVotes = (game: "maimai" | "chunithm") => {
+export const useAliasVotes = (game: Game) => {
   const {
     data,
     error,

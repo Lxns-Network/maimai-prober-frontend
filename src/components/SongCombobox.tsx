@@ -9,6 +9,7 @@ import { toHiragana } from 'wanakana';
 import { useLocalStorage } from "@mantine/hooks";
 import useSongListStore from "../hooks/useSongListStore.ts";
 import useAliasListStore from "../hooks/useAliasListStore.ts";
+import { Game } from "@/types/game";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   value?: number;
@@ -68,7 +69,7 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
 export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSubmit, ...others }: SongComboboxProps) => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [aliases, setAliases] = useState<{ song_id: number; aliases: string[] }[]>([]);
-  const [game] = useLocalStorage<'maimai' | 'chunithm'>({ key: 'game' });
+  const [game] = useLocalStorage<Game>({ key: 'game' });
   const [search, setSearch] = useState('');
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
 

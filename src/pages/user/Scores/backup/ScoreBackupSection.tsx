@@ -9,6 +9,7 @@ import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.
 import { API_URL } from "@/main.tsx";
 import React from "react";
 import classes from "./ScoreBackupSection.module.css"
+import { Game } from "@/types/game";
 
 interface CardButtonProps {
   icon: React.ReactNode;
@@ -38,7 +39,7 @@ const CardButton = ({ icon, title, description, disabled, onClick }: CardButtonP
 }
 
 export const ScoreBackupSection = () => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
 
   const { scores, isLoading, mutate } = useScores(game);
   const small = useMediaQuery('(max-width: 30rem)');

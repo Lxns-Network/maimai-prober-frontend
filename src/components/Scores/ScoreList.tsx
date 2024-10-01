@@ -14,6 +14,7 @@ import { ASSET_URL } from "@/main.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
 
 interface ScoreProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
@@ -73,7 +74,7 @@ interface ScoreListProps {
 }
 
 export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
-  const [game] = useLocalStorage<"maimai" | "chunithm">({ key: 'game' });
+  const [game] = useLocalStorage<Game>({ key: 'game' });
   const [ref] = useAutoAnimate();
   const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
   const [opened, { open: openScoreModal, close: closeScoreModal }] = useDisclosure(false);
