@@ -2,6 +2,12 @@
 
 ---
 
+## 2024/10/1
+
+- 中二节奏现在支持查询玩家 Rating 趋势
+- 优化了舞萌 DX 玩家 DX Rating 趋势获取速度
+- 中二节奏新增接口：[获取玩家 Rating 趋势](/docs/api/chunithm#get-apiv0chunithmplayerfriend_codetrend)
+
 ## 2024/9/29
 
 - 优化了右滑打开侧边栏的体验，现在只有在页面左侧 10% 的区域内滑动才会触发

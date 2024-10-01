@@ -257,6 +257,34 @@ JSON 格式的玩家成绩：
 
 [SimpleScore[]](#simplescore)
 
+### GET `/api/v0/chunithm/player/{friend_code}/trend`
+
+获取玩家 Rating 趋势。
+
+#### 权限
+
+- `allow_third_party_fetch_history`
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+::: info 提示
+指定 `version` 参数时，将会返回指定版本范围内的 Rating 趋势。
+:::
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 响应体
+
+[RatingTrend[]](#ratingtrend)
+
 ### GET `/api/v0/chunithm/player/{friend_code}/score/history`
 
 获取玩家成绩上传历史记录。
@@ -404,7 +432,7 @@ JSON 格式的玩家成绩：
 | `character` | [`Character`](#collection) | 值可空，角色 |
 | `name_plate` | [`NamePlate`](#collection) | 值可空，名牌版 |
 | `map_icon` | [`MapIcon`](#collection) | 值可空，地图头像 |
-| `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
+| `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0chunithmplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
 
 ### ClassEmblem
 
@@ -452,6 +480,22 @@ Recent 10 列表里成绩的 `clear` 字段可能为空。
 | `full_combo` | [`FullComboType`](#fullcombotype) | 值可空，FULL COMBO 类型 |
 | `full_chain` | [`FullChainType`](#fullchaintype) | 值可空，FULL CHAIN 类型 |
 | `rank` | [`RankType`](#ranktype) | 评级类型 |
+
+### RatingTrend
+
+Rating 趋势
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `rating` | `float` | 总平均 Rating |
+| `bests_rating` | `float` | Best 30 平均 Rating |
+| `selections_rating` | `float` | Selection 10 平均 Rating |
+| `recents_rating` | `float` | Recent 10（MAX）平均 Rating |
+| `date` | `string` | 日期 |
+
+::: info 提示
+Recent 10 均为 Best #1 曲目，`rating` 的最终结果为理论不推分最高 Rating。
+:::
 
 ### Song
 
