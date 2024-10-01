@@ -3,15 +3,14 @@ import {
   Card, Text, Group, Loader, Anchor, UnstyledButton, UnstyledButtonProps, Badge, Button, Flex, Pagination, Stack
 } from '@mantine/core';
 import { getDevelopers, revokeDeveloper } from "@/utils/api/developer.ts";
-import { UserProps } from "./Users";
 import { useDisclosure } from "@mantine/hooks";
 import { permissionToList, UserPermission } from "@/utils/session.ts";
 import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-react";
-import classes from "./Developers.module.css";
+import classes from "./AdminDevelopersSection.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { Page } from "@/components/Page/Page.tsx";
+import { UserProps } from "@/types/user";
 
 interface DeveloperProps {
   id: number;
@@ -205,14 +204,8 @@ const AdminDevelopersContent = () => {
   );
 }
 
-export default function AdminDevelopers() {
+export const AdminDevelopersSection = () => {
   return (
-    <Page
-      meta={{
-        title: "管理开发者",
-        description: "查看并管理 maimai DX 查分器的开发者",
-      }}
-      children={<AdminDevelopersContent />}
-    />
+    <AdminDevelopersContent />
   )
 }

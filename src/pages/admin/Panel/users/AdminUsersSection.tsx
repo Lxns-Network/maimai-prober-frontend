@@ -4,21 +4,12 @@ import { deleteUsers, getUsers } from "@/utils/api/user.ts";
 import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
 import { IconDatabaseOff, IconSearch, IconSend, IconTrash } from "@tabler/icons-react";
-import classes from "../Page.module.css";
+import classes from "@/pages/Page.module.css";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
 import { SendBatchEmailModal } from "@/components/Users/SendBatchEmailModal.tsx";
 import { permissionToList, UserPermission } from "@/utils/session.ts";
-import { Page } from "@/components/Page/Page.tsx";
-
-export interface UserProps {
-  id: number;
-  name: string;
-  email: string;
-  permission: number;
-  register_time: string;
-  deleted?: boolean;
-}
+import { UserProps } from "@/types/user";
 
 function filterData(data: UserProps[], search: string) {
   const query = search.toLowerCase().trim();
@@ -67,7 +58,7 @@ const AdminUsersContent = () => {
   const PAGE_SIZES = [10, 15, 20];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);
-  const [displayUsers, setDisplayUsers] = useState<any[]>([]);
+  const [displayUsers, setDisplayUsers] = useState<UserProps[]>([]);
 
   const [sortedUsers, setSortedUsers] = useState(users);
   const [sortStatus, setSortStatus] = useState<DataTableSortStatus<UserProps>>({
@@ -191,7 +182,9 @@ const AdminUsersContent = () => {
             </Button>
           </Group>
         </Card.Section>
-        <DataTable highlightOnHover striped
+        <DataTable
+          highlightOnHover
+          striped
           verticalSpacing="xs"
           mih={displayUsers.length === 0 ? 150 : 0}
           emptyState={
@@ -290,14 +283,8 @@ const AdminUsersContent = () => {
   )
 }
 
-export default function AdminUsers() {
+export const AdminUsersSection = () => {
   return (
-    <Page
-      meta={{
-        title: "管理用户",
-        description: "查看并管理 maimai DX 查分器的用户",
-      }}
-      children={<AdminUsersContent />}
-    />
+    <AdminUsersContent />
   )
 }
