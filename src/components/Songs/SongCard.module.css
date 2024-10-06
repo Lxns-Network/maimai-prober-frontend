@@ -5,7 +5,7 @@
 
     &::before {
         content: "";
-        inset: calc(-1.25rem* var(--mantine-scale));
+        inset: calc(var(--scale) * -1.25rem * var(--mantine-scale));
         z-index: -1;
         position: absolute;
         background-image: linear-gradient(-45deg, var(--primary-color) 50%, var(--secondary-color) 0);

@@ -9,16 +9,20 @@ import {
 import { useToggle } from "@mantine/hooks";
 import { useAudio } from "react-use";
 import React, { useEffect } from "react";
+import { HTMLMediaProps } from "react-use/lib/factory/createHTMLMediaHook";
 
 interface AudioPlayerProps extends React.ComponentPropsWithoutRef<typeof Container> {
   src: string;
-  audioProps?: any;
-  others?: any;
+  onFrequencyChange?: (frequency: Uint8Array) => void;
+  audioProps?: HTMLMediaProps;
+  others?: unknown;
 }
 
-export const AudioPlayer = ({ src, audioProps, ...others }: AudioPlayerProps) => {
-  const [audio, state, controls] = useAudio({
+export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: AudioPlayerProps) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [audio, state, controls]: any = useAudio({
     src,
+    crossOrigin: "anonymous",
     ...audioProps
   });
   const [isPlaying, toggleIsPlaying] = useToggle();
@@ -45,6 +49,31 @@ export const AudioPlayer = ({ src, audioProps, ...others }: AudioPlayerProps) =>
       toggleIsPlaying();
     }
   }, [state.time]);
+
+  useEffect(() => {
+    if (!audio.ref.current) return;
+
+    audio.ref.current.addEventListener('canplaythrough', function(){
+      const context =  new AudioContext();
+      const analyser = context.createAnalyser();
+      const source = context.createMediaElementSource(audio.ref.current);
+
+      source.connect(analyser);
+      analyser.connect(context.destination);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const frequencyData = new Uint8Array(bufferLength);
+
+      const renderFrame = () => {
+        analyser.getByteFrequencyData(frequencyData);
+        requestAnimationFrame(renderFrame);
+
+        onFrequencyChange && onFrequencyChange(frequencyData);
+      }
+
+      renderFrame();
+    });
+  }, [audio.ref.current]);
 
   return (
     <Container w="100%" p="md" {...others}>
