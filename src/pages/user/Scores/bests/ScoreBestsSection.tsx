@@ -7,11 +7,11 @@ import { RatingSegments } from "@/components/Scores/RatingSegments.tsx";
 import { Game } from "@/types/game";
 
 export const ScoreBestsSection = () => {
-  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useLocalStorage<Game>({ key: 'game' });
 
   const { bests, isLoading } = useBests(game);
 
-  if (isLoading) {
+  if (isLoading || !game) {
     return (
       <Group justify="center" mt="md" mb="md">
         <Loader />

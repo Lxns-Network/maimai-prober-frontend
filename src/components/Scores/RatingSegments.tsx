@@ -6,7 +6,7 @@ import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
 import { Game } from "@/types/game";
 
 export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBestsProps }) {
-  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: "maimai" });
+  const [game] = useLocalStorage<Game>({ key: 'game' });
 
   const data = []
 
@@ -48,8 +48,8 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
             {"standard_total" in bests && "dx_total" in bests && (
               <NumberFormatter value={bests.standard_total + bests.dx_total} />
             )}
-            {"bests" in bests && (
-              <NumberFormatter value={Math.round((data[0].count * bests.bests.length + data[1].count * bests.recents.length) / 40 * 100) / 100} />
+            {"bests" in bests && data.length === 3 && (
+              <NumberFormatter value={Math.round((data[0].count * bests.bests.length + data[2].count * bests.recents.length) / 40 * 100) / 100} />
             )}
           </Text>
         </Group>
