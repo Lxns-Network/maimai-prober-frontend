@@ -6,7 +6,7 @@ import { MaimaiScoreProps } from "@/types/score";
 
 const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   const ticks = useMemo(() => {
-    let ticks = [80, 90, 94, 97, 98, 99, 99.5, 100.5, 101];
+    const ticks = [80, 90, 94, 97, 98, 99, 99.5, 100.5, 101];
     let min = 101;
     scores.forEach((score) => {
       if (score.achievements < min) {
@@ -50,12 +50,15 @@ const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   )
 }
 
-export const MaimaiScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) => {
+export const MaimaiScoreHistory = ({ scores, minAchievements }: {
+  scores: MaimaiScoreProps[],
+  minAchievements: number,
+}) => {
   const scoresLength = scores.length;
 
   if (scores) {
     scores = scores.filter((score) => {
-      return score.achievements >= 80;
+      return score.achievements >= minAchievements;
     });
   }
 
@@ -70,6 +73,8 @@ export const MaimaiScoreHistory = ({ scores }: { scores: MaimaiScoreProps[] }) =
 
   return <>
     <ScoreHistoryChart scores={scores} />
-    {scores.length < scoresLength && <Text fz="xs" c="dimmed">※ 为了方便观察达成率变化，图表过滤了 {scoresLength - scores.length} 条达成率过低的成绩。</Text>}
+    {scores.length < scoresLength && <Text fz="xs" c="dimmed">
+      ※ 为了方便观察达成率变化，图表过滤了 {scoresLength - scores.length} 条达成率低于 {minAchievements}% 的成绩。
+    </Text>}
   </>
 }

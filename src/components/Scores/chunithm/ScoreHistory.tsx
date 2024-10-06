@@ -51,12 +51,15 @@ const ScoreHistoryChart = ({ scores }: { scores: ChunithmScoreProps[] }) => {
   )
 }
 
-export const ChunithmScoreHistory = ({ scores }: { scores: ChunithmScoreProps[] }) => {
+export const ChunithmScoreHistory = ({ scores, minScore }: {
+  scores: ChunithmScoreProps[],
+  minScore: number,
+}) => {
   const scoresLength = scores.length;
 
   if (scores) {
     scores = scores.filter((score) => {
-      return score.score >= 800000;
+      return score.score >= minScore;
     });
   }
 
@@ -71,6 +74,8 @@ export const ChunithmScoreHistory = ({ scores }: { scores: ChunithmScoreProps[] 
 
   return <>
     <ScoreHistoryChart scores={scores} />
-    {scores.length < scoresLength && <Text fz="xs" c="dimmed">※ 为了方便观察分数变化，图表过滤了 {scoresLength - scores.length} 条分数过低的成绩。</Text>}
+    {scores.length < scoresLength && <Text fz="xs" c="dimmed">
+      ※ 为了方便观察分数变化，图表过滤了 {scoresLength - scores.length} 条分数低于 <NumberFormatter value={minScore} thousandSeparator /> 的成绩。
+    </Text>}
   </>
 }

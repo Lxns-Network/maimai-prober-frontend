@@ -1,7 +1,10 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import ScoreContext from "@/utils/context.ts";
 import { fetchAPI } from "@/utils/api/api.ts";
-import { Accordion, Avatar, Center, Container, Group, Loader, Modal, Space, Text, Transition } from "@mantine/core";
+import {
+  Accordion, ActionIcon, Avatar, Center, CheckIcon, Combobox, Container, Group, Loader, Modal, Space, Text, Transition,
+  useCombobox
+} from "@mantine/core";
 import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
 import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmDifficultyProps, ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
@@ -14,7 +17,7 @@ import classes from "./ScoreModal.module.css"
 import { ChunithmChart } from "./chunithm/Chart.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import { ASSET_URL } from "@/main.tsx";
-import { IconPhotoOff } from "@tabler/icons-react";
+import { IconDots, IconPhotoOff } from "@tabler/icons-react";
 import { useIntersection } from "@mantine/hooks";
 import { Marquee } from "../Marquee.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -28,12 +31,41 @@ interface ScoreModalProps {
   onClose: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
 }
 
+const rankData = {
+  maimai: {
+    "SSS+": 100.5,
+    "SSS": 100,
+    "SS+": 99.5,
+    "SS": 99,
+    "S+": 98,
+    "S": 97,
+    "AAA": 94,
+    "AA": 90,
+    "A": 80,
+  },
+  chunithm: {
+    "SSS+": 1009000,
+    "SSS": 1007500,
+    "SS+": 1005000,
+    "SS": 1000000,
+    "S+": 990000,
+    "S": 975000,
+    "AAA": 950000,
+    "AA": 925000,
+    "A": 900000,
+  }
+}
+
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [historyScores, setHistoryScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [fetching, setFetching] = useState(true);
   const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | ChunithmDifficultyProps | null>(null);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
+  const [minRank, setMinRank] = useState<string>("A");
+  const combobox = useCombobox({
+    onDropdownClose: () => combobox.resetSelectedOption(),
+  });
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const scoreContext = useContext(ScoreContext);
@@ -52,16 +84,23 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     setSong(data);
   }
 
-  const getPlayerScoreHistory = async (score: any) => {
-    if ((game === "maimai" && score.achievements < 0) ||
-      (game === "chunithm" && score.score < 0)) {
+  const getPlayerScoreHistory = async (score: MaimaiScoreProps | ChunithmScoreProps) => {
+    if ((game === "maimai" && "achievements" in score && score.achievements < 0) ||
+      (game === "chunithm" && "score" in score && score.score < 0)) {
       setHistoryScores([]);
       setFetching(false);
       return;
     }
     setFetching(true);
     try {
-      const res = await fetchAPI(`user/${game}/player/score/history?song_id=${score.id}&song_type=${score.type}&level_index=${score.level_index}`, {
+      const params = new URLSearchParams({
+        song_id: `${score.id}`,
+        level_index: `${score.level_index}`,
+      });
+      if (game === "maimai" && "achievements" in score) {
+        params.append("song_type", `${score.type}`);
+      }
+      const res = await fetchAPI(`user/${game}/player/score/history?${params.toString()}`, {
         method: "GET",
       })
       const data = await res.json();
@@ -69,7 +108,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
         throw new Error(data.message);
       }
       if (data.data) {
-        setHistoryScores(data.data.sort((a: any, b: any) => {
+        setHistoryScores(data.data.sort((a: MaimaiScoreProps | ChunithmScoreProps, b: MaimaiScoreProps | ChunithmScoreProps) => {
           const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
 
           if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
@@ -96,11 +135,11 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
     let difficulty;
     if (songList instanceof MaimaiSongList) {
-      score = score as MaimaiScoreProps;
-      difficulty = songList.getDifficulty(song as MaimaiSongProps, score.type, score.level_index);
+      const s = score as MaimaiScoreProps;
+      difficulty = songList.getDifficulty(song as MaimaiSongProps, s.type, s.level_index);
     } else if (songList instanceof ChunithmSongList) {
-      score = score as ChunithmScoreProps;
-      difficulty = songList.getDifficulty(song as ChunithmSongProps, score.level_index);
+      const s = score as ChunithmScoreProps;
+      difficulty = songList.getDifficulty(song as ChunithmSongProps, s.level_index);
     }
     difficulty && setDifficulty(difficulty);
   }, [song]);
@@ -175,15 +214,54 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
           <Space h="md" />
           <Accordion className={classes.accordion} chevronPosition="left" variant="filled" radius={0} defaultValue="history">
             <Accordion.Item value="history">
-              <Accordion.Control>上传历史记录</Accordion.Control>
+              <Center>
+                <Accordion.Control>上传历史记录</Accordion.Control>
+                <Combobox
+                  shadow="md"
+                  position="bottom-end"
+                  width={200}
+                  store={combobox}
+                  onOptionSubmit={(val) => {
+                    setMinRank(val);
+                    combobox.closeDropdown();
+                  }}
+                  transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+                >
+                  <Combobox.Target>
+                    <ActionIcon className={classes.actionIcon} variant="subtle" mr="xs" onClick={() => combobox.toggleDropdown()}>
+                      <IconDots size={18} stroke={1.5} />
+                    </ActionIcon>
+                  </Combobox.Target>
+                  <Combobox.Dropdown>
+                    <Combobox.Group label="最低评级">
+                      <Combobox.Options>
+                        {rankData[game] && Object.keys(rankData[game]).map((rank) => (
+                          <Combobox.Option value={rank} key={`${game}:${rank}`} active={minRank === rank}>
+                            <Group gap="sm">
+                              {minRank === rank && <CheckIcon color="gray" size={12}/>}
+                              <span>{rank}</span>
+                            </Group>
+                          </Combobox.Option>
+                        ))}
+                      </Combobox.Options>
+                    </Combobox.Group>
+                  </Combobox.Dropdown>
+                </Combobox>
+              </Center>
               <Accordion.Panel>
                 {fetching ? (
                   <Center>
                     <Loader />
                   </Center>
                 ) : (game === "maimai" ?
-                  <MaimaiScoreHistory scores={historyScores as MaimaiScoreProps[]} /> :
-                  <ChunithmScoreHistory scores={historyScores as ChunithmScoreProps[]} />
+                  <MaimaiScoreHistory
+                    scores={historyScores as MaimaiScoreProps[]}
+                    minAchievements={rankData.maimai[minRank as keyof typeof rankData.maimai]}
+                  /> :
+                  <ChunithmScoreHistory
+                    scores={historyScores as ChunithmScoreProps[]}
+                    minScore={rankData.chunithm[minRank as keyof typeof rankData.chunithm]}
+                  />
                 )}
               </Accordion.Panel>
             </Accordion.Item>
