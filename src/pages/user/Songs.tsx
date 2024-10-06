@@ -62,7 +62,7 @@ const SongsContent = () => {
     if (searchParams.has("song_id")) {
       setDefaultSongId(parseInt(searchParams.get("song_id") || "0"));
     }
-  }, [location.state, searchParams]);
+  }, []);
 
   useEffect(() => {
     if (!game) return;

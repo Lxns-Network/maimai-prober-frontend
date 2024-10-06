@@ -4,6 +4,8 @@ import { useState } from "react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 
+type NotesType = "tap" | "hold" | "slide" | "touch" | "break";
+
 // 基础权重
 const basic = {
   perfect: {
@@ -46,14 +48,19 @@ const break_bonus = {
 };
 
 const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
-  if (!notes) return <Center mt="xs" mb="md">
-    <Loader />
-  </Center>;
-
   const [mode, setMode] = useState("101-");
+
+  if (!notes) return (
+    <Center mt="xs" mb="md">
+      <Loader />
+    </Center>
+  );
+
   const total = notes.tap + notes.touch + 2 * notes.hold + 3 * notes.slide + 5 * notes.break;
 
   const rows = keys(notes).map((key) => {
+    key = key as NotesType | "total";
+
     if (key === "touch" && notes[key] === 0) {
       return <Table.Tr key={`${mode}:${key}`}>
         <Table.Td>TOUCH</Table.Td>
@@ -209,7 +216,7 @@ export const MaimaiChart = ({ difficulty }: { difficulty: MaimaiDifficultyProps 
           />
         </Center>
         <Space h={4} />
-        <ChartNotes notes={difficulty.notes[side as keyof MaimaiNotesProps] as any} />
+        <ChartNotes notes={difficulty.notes[side] as MaimaiNotesProps} />
       </>
     ) : (
       <ChartNotes notes={difficulty.notes} />

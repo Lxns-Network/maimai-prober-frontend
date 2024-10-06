@@ -1,11 +1,11 @@
-import { Card, Flex, Group, Text } from "@mantine/core";
+import { Card, Flex, Text } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { Area, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export interface ChunithmRatingTrendProps {
   rating: number;
   bests_rating: number;
-  selections: number;
+  selections_rating: number;
   recents_rating: number;
   date: string | number;
 }
@@ -32,7 +32,9 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
           day: "numeric",
         })} fontSize={14} />
         <YAxis width={40} domain={([dataMin, dataMax]) => {
-          return [Math.floor(dataMin), Math.floor(dataMax)];
+          dataMin -= 0.01;
+          dataMax += 0.01;
+          return [Math.round(dataMin*100)/100, Math.round(dataMax*100)/100];
         }} fontSize={14} />
         <CartesianGrid strokeDasharray="3 3" />
         <Tooltip content={(props) => {
@@ -41,16 +43,14 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
           return (
             <Card p="xs" withBorder fz="sm">
               <Text>{new Date(payload.date).toLocaleDateString()}</Text>
-              <Text c="#8884d8">Rating: {payload.rating}</Text>
-              <Group gap="xs">
-                <Text c="#FD7E14">Best 30: {payload.bests_rating}</Text>
-                <Text>Selection 10: {payload.selections}</Text>
-                <Text c="#228BE6">Recent 10 (MAX): {payload.recents_rating}</Text>
-              </Group>
+              <Text c="#8884d8">Rating: {Math.round(payload.rating*100)/100}</Text>
+              <Text c="#FD7E14">Best 30: {Math.round(payload.bests_rating*100)/100}</Text>
+              <Text>Selection 10: {Math.round(payload.selections_rating*100)/100}</Text>
+              <Text c="#228BE6">Recent 10 (MAX): {Math.round(payload.recents_rating*100)/100}</Text>
             </Card>
           )
         }} />
-        <Area dataKey="total" stroke="#8884d8" fillOpacity={1} fill="url(#rating)" />
+        <Area dataKey="rating" stroke="#8884d8" fillOpacity={1} fill="url(#rating)" />
       </ComposedChart>
     </ResponsiveContainer>
   )

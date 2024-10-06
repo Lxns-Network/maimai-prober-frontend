@@ -86,8 +86,13 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
 
     setFilteredSongs([]);
     setSongList(getSongList(game));
-    setAliases(getAliasList(game).aliases);
   }, [game]);
+
+  useEffect(() => {
+    if (!game) return;
+
+    setAliases(getAliasList(game).aliases);
+  }, [game, getAliasList]);
 
   useEffect(() => {
     if (!songList) return;

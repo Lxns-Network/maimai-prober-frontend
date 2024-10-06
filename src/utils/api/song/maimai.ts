@@ -20,6 +20,9 @@ export interface MaimaiNotesProps {
   slide: number;
   touch: number;
   break: number;
+
+  left?: MaimaiNotesProps;
+  right?: MaimaiNotesProps;
 }
 
 export interface MaimaiDifficultiesProps {

@@ -139,14 +139,13 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
                   <Text fz="xs" c="dimmed">DX 分数</Text>
                   <Group wrap="nowrap" h={12} gap={0}>
                     {(() => {
-                      if (!difficulty || !difficulty.notes) return null;
+                      if (!difficulty || !difficulty.notes) return;
 
                       let percentage: number;
                       if (difficulty.notes.total) {
                         percentage = Math.floor((score.dx_score / (difficulty.notes.total * 3)) * 100);
                       } else {
-                        // @ts-ignore
-                        percentage = Math.floor((score.dx_score / ((difficulty.notes.left.total + difficulty.notes.right.total) * 3)) * 100);
+                        percentage = Math.floor((score.dx_score / (((difficulty.notes.left?.total || 0) + (difficulty.notes.right?.total || 0)) * 3)) * 100);
                       }
                       let count = 0;
                       let rate = 1;
@@ -175,8 +174,8 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
                 {difficulty && difficulty.notes ? <Text>
                   {score.dx_score}
                   <span style={{ fontSize: 12, marginLeft: 4 }}>
-                    / { // @ts-ignore
-                      (difficulty.notes.total || difficulty.notes.left.total + difficulty.notes.right.total) * 3
+                    / {
+                      (difficulty.notes.total || (difficulty.notes.left?.total || 0) + (difficulty.notes.right?.total || 0)) * 3
                     }
                   </span>
                 </Text> : <Text>{score.dx_score}</Text>}

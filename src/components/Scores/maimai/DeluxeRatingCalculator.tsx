@@ -1,8 +1,4 @@
-import {
-  Chip,
-  Group,
-  Modal, NumberInput, ScrollArea, Stack, Table, Text,
-} from "@mantine/core";
+import { Chip, Group, Modal, NumberInput, ScrollArea, Stack, Table, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
 import classes from "./DeluxeRatingCalculator.module.css";
 
@@ -11,7 +7,7 @@ interface RatingHistoryModalProps {
   defaultDeluxeRating?: number;
   defaultLevelValue?: number;
   opened: boolean;
-  onClose: (score?: any) => void;
+  onClose: () => void;
 }
 
 type CoefficientDict = { [key: number]: number };
@@ -57,15 +53,21 @@ function calculateRating(chartConstant: number, achievementRate: number): number
   return achievementRateCoefficient * levelCoefficient * chartConstant;
 }
 
+interface RowProps {
+  levelValue: number;
+  achievements: number;
+  deluxeRating: number;
+}
+
 export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue, defaultDeluxeRating, opened, onClose }: RatingHistoryModalProps) => {
   const [achievements, setAchievements] = useState(defaultAchievements);
   const [deluxeRating, setDeluxeRating] = useState(defaultDeluxeRating);
   const [levelValue, setLevelValue] = useState(defaultLevelValue);
-  const [rows, setRows] = useState([] as any[]);
+  const [rows, setRows] = useState<RowProps[]>([]);
   const [method, setMethod] = useState("level_value");
 
   useEffect(() => {
-    const newRows = [] as any[];
+    const newRows = [];
     if (method === "level_value") {
       for (const achievements of Object.keys(coefficientDict).map(Number)) {
         newRows.push({
@@ -89,7 +91,7 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
         if (calculateRating(i/10, 101) < (deluxeRating || 0)) continue;
         let l = 0, r = 1010000, ans = r;
         while (r >= l) {
-          let mid = Math.floor((r + l) / 2);
+          const mid = Math.floor((r + l) / 2);
           if (calculateRating(i/10, mid/10000) >= (deluxeRating || 0)) {
             ans = mid;
             r = mid - 1;
@@ -181,16 +183,16 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
                       <Table.Td>{row.levelValue.toFixed(1)}</Table.Td>
                       {method != "dx_rating" && rows[index+1] ? (
                         <Table.Td className={classes.changeLabel} fw={500} data-label={
-                          `+ ${(parseInt(row.deluxeRating)-parseInt(rows[index+1].deluxeRating))}`
+                          `+ ${(parseInt(row.deluxeRating.toString())-parseInt(rows[index+1].deluxeRating.toString()))}`
                         }>
-                          {parseInt(row.deluxeRating)}
+                          {parseInt(row.deluxeRating.toString())}
                           <Text span c="gray" size="sm">
                             .{row.deluxeRating.toFixed(2).split(".")[1]}
                           </Text>
                         </Table.Td>
                       ) : (
                         <Table.Td fw={500}>
-                          {parseInt(row.deluxeRating)}
+                          {parseInt(row.deluxeRating.toString())}
                           <Text span c="gray" size="sm">
                             .{row.deluxeRating.toFixed(2).split(".")[1]}
                           </Text>

@@ -10,8 +10,8 @@ export function Panel() {
         description: "管理 maimai DX 查分器的用户和开发者",
       }}
       tabs={[
-        { id: "list", name: "用户列表", children: <AdminUsersSection /> },
-        { id: "bests", name: "开发者列表", children: <AdminDevelopersSection />},
+        { id: "users", name: "用户列表", children: <AdminUsersSection /> },
+        { id: "developers", name: "开发者列表", children: <AdminDevelopersSection />},
       ]}
     />
   );

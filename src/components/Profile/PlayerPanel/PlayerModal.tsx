@@ -23,7 +23,7 @@ interface ModalProps {
   onClose: () => void;
 }
 
-const versions = {
+const versionData = {
   maimai: [{
     title: "舞萌DX 2024",
     version: 24000,
@@ -49,7 +49,7 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
   });
 
   const getPlayerRatingTrendHandler = useCallback(async () => {
-    if (!version || versions[game].map((item) => item.version).indexOf(version) === -1) {
+    if (!version || versionData[game].map((item) => item.version).indexOf(version) === -1) {
       return;
     }
 
@@ -75,8 +75,12 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
   useEffect(() => {
     if (!opened || trend.length > 0) return;
 
-    setVersion(versions[game][0].version);
+    setVersion(versionData[game][0].version);
   }, [opened, game, trend.length]);
+
+  useEffect(() => {
+    setTrend([]);
+  }, [game]);
 
   return (
     <Modal.Root opened={opened} onClose={() => onClose()} centered>
@@ -120,7 +124,7 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
                   <Combobox.Dropdown>
                     <Combobox.Group label="游戏版本">
                       <Combobox.Options>
-                        {versions[game].map((item) => {
+                        {versionData[game].map((item) => {
                           return (
                             <Combobox.Option value={item.version.toString()} key={item.version} active={item.version === version}>
                               <Group gap="sm">
