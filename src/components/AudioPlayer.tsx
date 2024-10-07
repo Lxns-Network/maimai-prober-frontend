@@ -1,9 +1,6 @@
 import { ActionIcon, Container, Group, Slider, Text, Tooltip } from "@mantine/core";
 import {
-  IconDownload,
-  IconPlayerPauseFilled,
-  IconPlayerPlayFilled,
-  IconPlayerTrackNextFilled,
+  IconDownload, IconPlayerPauseFilled, IconPlayerPlayFilled, IconPlayerTrackNextFilled,
   IconPlayerTrackPrevFilled, IconRepeat, IconRepeatOff, IconVolume, IconVolumeOff
 } from "@tabler/icons-react";
 import { useToggle } from "@mantine/hooks";
@@ -53,12 +50,17 @@ export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: A
   useEffect(() => {
     if (!audio.ref.current) return;
 
-    audio.ref.current.addEventListener('canplaythrough', function(){
+    audio.ref.current.addEventListener('canplaythrough', () => {
       const context =  new AudioContext();
       const analyser = context.createAnalyser();
-      const source = context.createMediaElementSource(audio.ref.current);
 
-      source.connect(analyser);
+      try {
+        const source = context.createMediaElementSource(audio.ref.current);
+        source.connect(analyser);
+      } catch {
+        return;
+      }
+
       analyser.connect(context.destination);
 
       const bufferLength = analyser.frequencyBinCount;
@@ -72,7 +74,7 @@ export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: A
       }
 
       renderFrame();
-    });
+    }, { once: true });
   }, [audio.ref.current]);
 
   return (
