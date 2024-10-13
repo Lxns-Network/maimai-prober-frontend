@@ -2,7 +2,21 @@ import { useContext, useEffect, useRef, useState } from "react";
 import ScoreContext from "@/utils/context.ts";
 import { fetchAPI } from "@/utils/api/api.ts";
 import {
-  Accordion, ActionIcon, Avatar, Center, CheckIcon, Combobox, Container, Group, Loader, Modal, Space, Text, Transition,
+  Accordion,
+  ActionIcon,
+  Avatar,
+  Center,
+  CheckIcon,
+  Combobox,
+  Container,
+  Group,
+  Loader,
+  Modal,
+  ScrollArea,
+  Space,
+  Stack,
+  Text,
+  Transition,
   useCombobox
 } from "@mantine/core";
 import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
@@ -18,11 +32,13 @@ import { ChunithmChart } from "./chunithm/Chart.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import { ASSET_URL } from "@/main.tsx";
 import { IconDots, IconPhotoOff } from "@tabler/icons-react";
-import { useIntersection } from "@mantine/hooks";
+import { useIntersection, useMediaQuery } from "@mantine/hooks";
 import { Marquee } from "../Marquee.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { Game } from "@/types/game";
+import { ScoreRanking } from "./ScoreRanking.tsx";
+import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 
 interface ScoreModalProps {
   game: Game;
@@ -54,6 +70,29 @@ const rankData = {
     "AA": 925000,
     "A": 900000,
   }
+};
+
+const difficultyLabelData = {
+  maimai: ["BASIC", "ADVANCED", "EXPERT", "MASTER", "Re:MASTER", "U·TA·GE"],
+  chunithm: ["BASIC", "ADVANCED", "EXPERT", "MASTER", "ULTIMA", "WORLD'S END"],
+}
+
+function getDifficultyLabel(game: Game, difficulty: MaimaiDifficultyProps | ChunithmDifficultyProps) {
+  if ("type" in difficulty && difficulty.type === "utage") {
+    return `${difficultyLabelData[game][5]} ${difficulty.level}`;
+  } else if (game === "chunithm" && difficulty.kanji) {
+    return `${difficultyLabelData[game][5]} ${difficulty.kanji}`;
+  }
+  return `${difficultyLabelData[game][difficulty.difficulty]} ${difficulty.level_value}`;
+}
+
+function getDifficultyColor(game: Game, difficulty: MaimaiDifficultyProps | ChunithmDifficultyProps) {
+  if ("type" in difficulty && difficulty.type === "utage") {
+    return getScoreCardBackgroundColor(game, 5);
+  } else if (game === "chunithm" && difficulty.kanji) {
+    return getScoreCardBackgroundColor(game, 5);
+  }
+  return getScoreCardBackgroundColor(game, difficulty.difficulty);
 }
 
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
@@ -66,6 +105,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
+  const small = useMediaQuery('(max-width: 30rem)');
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const scoreContext = useContext(ScoreContext);
@@ -167,7 +207,14 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   }
 
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered size="lg">
+    <Modal.Root
+      size="lg"
+      opened={opened}
+      onClose={onClose}
+      fullScreen={small}
+      scrollAreaComponent={ScrollArea.Autosize}
+      centered
+    >
       <Modal.Overlay />
       <Modal.Content ref={containerRef}>
         <Modal.Header mah={60}>
@@ -193,9 +240,14 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                   <Avatar src={song ? `${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png!webp` : null} size={28} radius="md">
                     <IconPhotoOff />
                   </Avatar>
-                  <Marquee>
-                    <Text>{song?.title}</Text>
-                  </Marquee>
+                  <Stack gap={0}>
+                    <Marquee>
+                      <Text>{song?.title}</Text>
+                    </Marquee>
+                    <Text size="sm" fw="700" c={getDifficultyColor(game, difficulty!)}>
+                      {getDifficultyLabel(game, difficulty!)}
+                    </Text>
+                  </Stack>
                 </Group>
               )}
             </Transition>
@@ -263,6 +315,12 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                     minScore={rankData.chunithm[minRank as keyof typeof rankData.chunithm]}
                   />
                 )}
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value="ranking">
+              <Accordion.Control>排行榜</Accordion.Control>
+              <Accordion.Panel>
+                <ScoreRanking game={game} score={score} />
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="chart">

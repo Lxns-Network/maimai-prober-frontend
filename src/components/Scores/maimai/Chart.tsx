@@ -3,6 +3,7 @@ import { Box, Center, Group, keys, Loader, SegmentedControl, Select, Space, Tabl
 import { useState } from "react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
+import {useWindowSize} from "react-use";
 
 type NotesType = "tap" | "hold" | "slide" | "touch" | "break";
 
@@ -48,6 +49,7 @@ const break_bonus = {
 };
 
 const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
+  const { width } = useWindowSize();
   const [mode, setMode] = useState("101-");
 
   if (!notes) return (
@@ -143,7 +145,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
     </Table.Tr>;
   });
 
-  return <Table.ScrollContainer minWidth={440}>
+  return <Table.ScrollContainer minWidth={400} maw={width-32}>
     <Table mb={-12} horizontalSpacing={0}>
       <Table.Thead>
         <Table.Tr>

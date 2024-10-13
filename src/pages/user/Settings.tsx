@@ -269,6 +269,23 @@ const SettingsContent = () => {
         }]}
         />
       </Card>
+      <Card withBorder radius="md" className={classes.card} mb="md">
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+        <Text fz="lg" fw={700}>
+          公开设置
+        </Text>
+        <Text fz="xs" c="dimmed" mt={3} mb="lg">
+          控制是否公开展示你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」数据
+        </Text>
+        <SettingList onChange={updateUserConfigHandler} value={config} data={[{
+          key: "show_player_name_in_score_ranking",
+          title: "在成绩排行榜中显示玩家名",
+          description: "关闭后，你的玩家名将不会在其他用户的成绩排行榜中显示。",
+          optionType: "switch",
+          defaultValue: false,
+        }]}
+        />
+      </Card>
       <Card withBorder radius="md" className={classes.card}>
         <Text fz="lg" fw={700}>
           其它设置
