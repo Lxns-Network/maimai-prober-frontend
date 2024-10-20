@@ -797,7 +797,7 @@ DX Rating 趋势
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `difficulties` | `int[]` | 值可空，要求的谱面难度 |
+| `difficulties` | [`LevelIndex[]`](#levelindex) | 值可空，要求的谱面难度，长度为 0 时代表任意难度 |
 | `rate` | [`RateType`](#ratetype) | 值可空，要求的评级类型 |
 | `fc` | [`FCType`](#fctype) | 值可空，要求的 FULL COMBO 类型 |
 | `fs` | [`FSType`](#fstype) | 值可空，要求的 FULL SYNC 类型 |
@@ -814,7 +814,7 @@ DX Rating 趋势
 | `title` | `string` | 曲名 |
 | `type` | [`SongType`](#songtype) | 谱面类型 |
 | `completed` | `bool` | 值可空，要求的曲目是否完成 |
-| `completed_difficulties` | `int[]` | 值可空，已完成的难度 |
+| `completed_difficulties` | [`LevelIndex[]`](#levelindex) | 值可空，已完成的难度 |
 
 ### CollectionGenre
 

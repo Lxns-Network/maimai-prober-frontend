@@ -423,7 +423,7 @@ JSON 格式的玩家成绩：
 | `friend_code` | `int` | 好友码 |
 | `class_emblem` | [`ClassEmblem`](#classemblem) | CLASS 勋章 |
 | `reborn_count` | `int` | 玩家等级突破次数 |
-| `over_power` | `float` | OVER POWER |
+| `over_power` | `float` | 总 OVER POWER |
 | `over_power_progress` | `float` | OVER POWER 总进度 |
 | `currency` | `int` | 当前金币数 |
 | `total_currency` | `int` | 总金币数 |
@@ -455,6 +455,7 @@ CLASS 勋章
 | `level_index` | [`LevelIndex`](#levelindex) | 难度 |
 | `score` | `int` | 分数 |
 | `rating` | `float` | 仅获取 `Score` 时返回，Rating |
+| `over_power` | `float` | 仅获取 `Score` 时返回，OVER POWER |
 | `clear` | [`ClearType`](#cleartype) | CLEAR 类型 |
 | `full_combo` | [`FullComboType`](#fullcombotype) | 值可空，FULL COMBO 类型 |
 | `full_chain` | [`FullChainType`](#fullchaintype) | 值可空，FULL CHAIN 类型 |
@@ -463,7 +464,7 @@ CLASS 勋章
 | `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |
 
 ::: info 提示
-Recent 10 列表里成绩的 `clear` 字段可能为空。
+由于 Recent 10 列表算法尚不明确，Recent 10 列表里成绩的 `clear` 字段可能为空。
 :::
 
 ### SimpleScore
