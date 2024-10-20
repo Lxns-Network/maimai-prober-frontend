@@ -1,20 +1,6 @@
 import {
-  AspectRatio,
-  Avatar,
-  Box, Button,
-  Card,
-  Center,
-  Flex,
-  Grid,
-  Group,
-  Image,
-  NumberFormatter,
-  Paper,
-  Rating,
-  rem,
-  Stack,
-  Text,
-  Tooltip
+  AspectRatio, Avatar, Box, Button, Card, Center, Flex, Grid, Group, Image, NumberFormatter, Paper, Rating, rem, Stack,
+  Text, Tooltip
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "@/utils/api/song/chunithm.ts";
@@ -154,7 +140,7 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
               <Paper className={classes.subParameters}>
                 <Text fz="xs" c="dimmed">Over Power</Text>
                 <Text fz="md">
-                  {!score.over_power ? "-" : `${Math.floor(score.over_power * 100) / 100}%`}
+                  {!score.over_power ? "-" : Math.floor(score.over_power * 100) / 100}
                 </Text>
               </Paper>
             </Grid.Col>

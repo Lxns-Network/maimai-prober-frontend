@@ -1,20 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
-  ActionIcon,
-  Badge,
-  Box,
-  Card, Center, Flex,
-  Grid,
-  Group,
-  Image,
-  LoadingOverlay, Pagination,
-  rem, RingProgress,
-  SegmentedControl,
-  SimpleGrid,
-  Space,
-  Text,
-  ThemeIcon
+  ActionIcon, Badge, Box, Card, Center, Flex, Grid, Group, Image, LoadingOverlay, Pagination, rem, RingProgress,
+  SegmentedControl, SimpleGrid, Space, Text, ThemeIcon
 } from "@mantine/core";
 import classes from "../../pages/Page.module.css";
 import { IconCheck } from "@tabler/icons-react";
@@ -53,6 +41,7 @@ const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
         completed += (song.completed_difficulties || []).length;
       });
     });
+    if (total === 0) return 0;
     return Math.round(completed / total * 100);
   }
 
@@ -178,15 +167,27 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
         </Box>
       </Flex>
       <Space h="md" />
-      <Text fz="xs" c="dimmed" mb={4}>要求难度</Text>
-      <SegmentedControl orientation={
-        small && difficulties.length > 4 ? "vertical" : "horizontal"
-      } size="xs" data={[
-        ...difficulties.map((difficulty) => ({
-          label: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'][difficulty],
-          value: difficulty.toString(),
-        })),
-      ]} value={difficulty.toString()} onChange={(value) => setDifficulty(parseInt(value))} />
+      <Text fz="xs" c="dimmed">要求难度</Text>
+      {difficulties.length === 0 && (
+        <Text fz="sm">
+          任意难度
+        </Text>
+      )}
+      <SegmentedControl
+        orientation={
+          small && difficulties.length > 4 ? "vertical" : "horizontal"
+        }
+        size="xs"
+        mt={4}
+        data={[
+          ...difficulties.map((difficulty) => ({
+            label: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'][difficulty],
+            value: difficulty.toString(),
+          })),
+        ]}
+        value={difficulty.toString()}
+        onChange={(value) => setDifficulty(parseInt(value))}
+      />
       <Space h="md" />
       <Text fz="xs" c="dimmed">已完成 {difficultyProgress.completed} / {difficultyProgress.total} 首：</Text>
       <Space h="xs" />
@@ -218,9 +219,15 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
           </Group>
         ))}
       </SimpleGrid>
-      <Space h="md" />
       <Center>
-        <Pagination hideWithOnePage size="sm" total={Math.ceil(filteredRecords.length / pageSize)} value={page} onChange={(page) => setPage(page)} />
+        <Pagination
+          hideWithOnePage
+          size="sm"
+          mt="md"
+          total={Math.ceil(filteredRecords.length / pageSize)}
+          value={page}
+          onChange={(page) => setPage(page)}
+        />
       </Center>
     </Card>
   )

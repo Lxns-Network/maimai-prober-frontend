@@ -3,8 +3,8 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { fetchAPI } from "@/utils/api/api.ts";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { useEffect, useState } from "react";
-import {Badge, Center, Divider, Flex, Group, Loader, NumberFormatter, Paper, rem, Stack, Text} from "@mantine/core";
-import {IconDatabaseOff} from "@tabler/icons-react";
+import { Badge, Center, Divider, Flex, Group, Loader, NumberFormatter, Paper, rem, Stack, Text } from "@mantine/core";
+import { IconDatabaseOff } from "@tabler/icons-react";
 
 interface RankingScoreProps {
   ranking: number;
@@ -73,19 +73,25 @@ export const ScoreRanking = ({ game, score }: {
   return (
     <Stack gap="xs">
       {rankingScores.map((rankingScore, index) => {
-        let badgeColor = "blue";
-        if (index === 0) {
-          badgeColor = "yellow";
-        } else if (index === 1) {
-          badgeColor = "gray";
-        } else if (index === 2) {
-          badgeColor = "orange";
+        let badgeColor: string;
+        switch (rankingScore.ranking) {
+          case 1:
+            badgeColor = "yellow";
+            break;
+          case 2:
+            badgeColor = "gray";
+            break;
+          case 3:
+            badgeColor = "orange";
+            break;
+          default:
+            badgeColor = "blue";
         }
 
         return (
           <>
             {rankingScore.ranking > 11 && (
-              <Divider variant="dashed" labelPosition="center" label={`相差 ${rankingScore.ranking - 10} 名`} />
+              <Divider variant="dashed" labelPosition="center" label={`相差 ${rankingScore.ranking - rankingScores[index - 1].ranking} 名`} />
             )}
             <Paper key={index} radius="md" withBorder style={{
               position: rankingScore.ranking > 10 ? "sticky" : "static",
@@ -117,7 +123,7 @@ export const ScoreRanking = ({ game, score }: {
           </>
         );
       })}
-      <Text fz="xs" c="dimmed">※ 该排行榜基于落雪咖啡屋 maimai DX 查分器数据，仅供参考</Text>
+      <Text fz="xs" c="dimmed">※ 该排行榜基于落雪咖啡屋 maimai DX 查分器数据，结果仅供参考。</Text>
     </Stack>
   );
 }
