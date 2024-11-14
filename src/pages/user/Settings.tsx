@@ -290,7 +290,7 @@ const SettingsContent = () => {
         <Text fz="lg" fw={700}>
           其它设置
         </Text>
-        <Text fz="xs" c="dimmed" mt={3} mb="xl">
+        <Text fz="xs" c="dimmed" mt={3} mb="lg">
           重置密码、删除数据等敏感操作
         </Text>
         <SettingList data={[{

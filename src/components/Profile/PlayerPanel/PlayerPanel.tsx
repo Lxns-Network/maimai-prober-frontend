@@ -67,7 +67,7 @@ const PlayerButton = ({ player, onClick, ...others }: PlayerButtonProps & Unstyl
   );
 }
 
-export const PlayerPanel = ({ player }: { player: MaimaiPlayerProps | ChunithmPlayerProps }) => {
+export const PlayerPanel = ({ player }: { player?: MaimaiPlayerProps | ChunithmPlayerProps }) => {
   const { width } = useViewportSize();
   const [game] = useLocalStorage<Game>({ key: "game", defaultValue: "maimai" });
   const [opened, setOpened] = useState(false);

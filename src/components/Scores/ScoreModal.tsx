@@ -102,6 +102,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | ChunithmDifficultyProps | null>(null);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [minRank, setMinRank] = useState<string>("A");
+  const isLoggedOut = !localStorage.getItem("token");
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -193,7 +194,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     getSongDetailHandler(score.id);
 
     setHistoryScores([]);
-    getPlayerScoreHistory(score);
+    if (!isLoggedOut) getPlayerScoreHistory(score);
   }, [score]);
 
   function isMaimaiScoreProps(obj: unknown): obj is MaimaiScoreProps {

@@ -31,7 +31,7 @@ export const PlayerSection = () => {
               </Stack>
             </Overlay>
           )}
-          {player && <PlayerPanel player={player} />}
+          <PlayerPanel player={player} />
         </Card>
       )}
     </Card>
