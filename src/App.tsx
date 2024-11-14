@@ -41,11 +41,11 @@ export default function App() {
   const { onTouchStart, onTouchEnd } = useTouchEvents(ref);
   let startX = 0;
 
-  onTouchStart((event) => {
+  onTouchStart((event: TouchEvent) => {
     startX = event.touches[0].clientX;
   });
 
-  onTouchEnd((event) => {
+  onTouchEnd((event: TouchEvent) => {
     if (startX / window.innerWidth > 0.1) return;
 
     const endX = event.changedTouches[0].clientX;
