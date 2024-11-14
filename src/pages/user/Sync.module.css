@@ -14,3 +14,9 @@
         border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
     }
 }
+
+.subParameters {
+    background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+    padding: 6px 12px;
+    border-radius: var(--mantine-radius-md);
+}

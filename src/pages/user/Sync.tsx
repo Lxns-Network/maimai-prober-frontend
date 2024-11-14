@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  Accordion, Button, Code, Card, Flex, Group, Loader, Text, ThemeIcon, Alert, Stepper, Divider, Space, Stack, SimpleGrid
+  Accordion, Button, Code, Card, Flex, Group, Loader, Text, ThemeIcon, Alert, Stepper, Divider, Space, Stack,
+  SimpleGrid, Paper
 } from '@mantine/core';
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
@@ -20,6 +21,7 @@ import { WechatOAuthLink } from "@/components/Sync/WechatOAuthLink.tsx";
 import { ScoresChangesModal } from "@/components/Sync/ScoresChangesModal.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { Game } from "@/types/game";
+import { getCrawlStatistic } from "@/utils/api/misc.ts";
 
 interface ScoreChangeDetailProps {
   new: unknown;
@@ -55,9 +57,15 @@ interface CrawlStatusProps {
   failed_difficulties: number[];
 }
 
+interface CrawlStatisticProps {
+  success_rate: number;
+  average_crawl_time: number;
+}
+
 const SyncContent = () => {
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const [crawlStatistic, setCrawlStatistic] = useState<CrawlStatisticProps | null>(null);
   const [crawlToken, setCrawlToken] = useState<string | null>(null);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [resultOpened, setResultOpened] = useState(false);
@@ -85,6 +93,23 @@ const SyncContent = () => {
   useEffect(() => {
     if (!isLoggedOut) getUserCrawlTokenHandler();
   }, []);
+
+  useEffect(() => {
+    const getCrawlStatisticHandler = async () => {
+      try {
+        const res = await getCrawlStatistic(game);
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message);
+        }
+        setCrawlStatistic(data.data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    if (game) getCrawlStatisticHandler();
+  }, [game]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -258,14 +283,36 @@ const SyncContent = () => {
           </Group>
         } loading={!proxyAvailable} />
         <Stepper.Step label="步骤 2" description={
-          <Stack gap="xs" w={stepperRect.width - 54} mb="md">
+          <Stack gap="xs" w={stepperRect.width - 54}>
             <Text fz="sm">
               选择需要爬取的游戏
             </Text>
             <RadioCardGroup data={[
-              { name: '舞萌 DX', description: '爬取玩家信息、成绩与收藏品', value: 'maimai' },
-              { name: '中二节奏', description: '爬取玩家信息、成绩与收藏品', value: 'chunithm' },
-            ]} value={game} onChange={(value) => setGame(value as Game)} />
+              {name: '舞萌 DX', description: '爬取玩家信息、成绩与收藏品', value: 'maimai'},
+              {name: '中二节奏', description: '爬取玩家信息、成绩与收藏品', value: 'chunithm'},
+            ]} value={game} onChange={(value) => setGame(value as Game)}/>
+            <Card className={classes.card} withBorder radius="md" mt="xs" mb="lg">
+              <Text fz="lg" fw={700}>
+                服务器状态
+              </Text>
+              <Text fz="xs" c="dimmed" mt={3} mb="md">
+                查询「{game === "maimai" ? "舞萌 DX" : "中二节奏"}」最近的爬取统计
+              </Text>
+              <Group grow gap="xs">
+                <Paper className={classes.subParameters}>
+                  <Text fz="xs" c="dimmed">近期爬取成功率</Text>
+                  <Text fz="md">
+                    {crawlStatistic ? `${crawlStatistic.success_rate * 100}%` : "N/A"}
+                  </Text>
+                </Paper>
+                <Paper className={classes.subParameters}>
+                  <Text fz="xs" c="dimmed">平均爬取耗时</Text>
+                  <Text>
+                    {crawlStatistic ? `${crawlStatistic.average_crawl_time / 1000} 秒` : "N/A"}
+                  </Text>
+                </Paper>
+              </Group>
+            </Card>
           </Stack>
         } />
         <Stepper.Step label="步骤 3" description={
