@@ -1,13 +1,14 @@
 import { Flex, Image, Text } from '@mantine/core'
+import { Link } from "react-router-dom";
 
 export default function Logo() {
   return (
     <Flex
-      component="a"
+      component={Link}
       id="logo"
-      href="/"
+      to="/"
       style={{
-        color: 'black',
+        color: 'var(--text-color)',
         textDecoration: 'none',
       }}
       align="center"
