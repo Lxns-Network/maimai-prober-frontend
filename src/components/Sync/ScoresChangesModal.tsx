@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { Marquee } from "../Marquee.tsx";
 import { Game } from "@/types/game";
+import useSongListStore from "@/hooks/useSongListStore.ts";
+import { useShallow } from "zustand/react/shallow";
 
 interface ScoresChangesModalProps {
   game: Game;
@@ -77,6 +79,10 @@ const ScoresChangesTable = ({ game, scores }: { game: Game, scores: ScoreChanges
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);
   const [displayScores, setDisplayScores] = useState<any[]>([]);
+
+  const { songList } = useSongListStore(
+    useShallow((state) => ({ songList: state.chunithm })),
+  )
 
   useEffect(() => {
     const start = (page - 1) * pageSize;
@@ -205,10 +211,19 @@ const ScoresChangesTable = ({ game, scores }: { game: Game, scores: ScoreChanges
         accessor: 'level',
         title: '难度',
         width: 20,
-        render: ({ level, level_index }) => {
+        render: ({ id, level, level_index }) => {
+          let text = level;
+          if (id >= 8000) {
+            const song = songList.find(id);
+            if (!song) {
+              text = "未知";
+            } else {
+              text = song.difficulties[0].kanji;
+            }
+          }
           return <Text size="sm" fw="700" c={
             getScoreCardBackgroundColor(game, level_index)
-          }>{level}</Text>;
+          }>{text}</Text>;
         },
       },
       {
