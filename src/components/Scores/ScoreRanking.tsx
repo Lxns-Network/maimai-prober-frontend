@@ -21,6 +21,7 @@ export const ScoreRanking = ({ game, score }: {
 }) => {
   const [rankingScores, setRankingScores] = useState<RankingScoreProps[]>([]);
   const [fetching, setFetching] = useState(false);
+  const isLoggedOut = !localStorage.getItem("token");
 
   const getPlayerScoreRanking = async (score: MaimaiScoreProps | ChunithmScoreProps) => {
     setFetching(true);
@@ -50,7 +51,7 @@ export const ScoreRanking = ({ game, score }: {
   useEffect(() => {
     if (!score) return;
 
-    getPlayerScoreRanking(score);
+    if (!isLoggedOut) getPlayerScoreRanking(score);
   }, [score]);
 
   if (fetching) {
@@ -58,6 +59,15 @@ export const ScoreRanking = ({ game, score }: {
       <Center>
         <Loader />
       </Center>
+    );
+  }
+
+  if (isLoggedOut) {
+    return (
+      <Flex gap="xs" align="center" direction="column" c="dimmed">
+        <IconDatabaseOff size={64} stroke={1.5} />
+        <Text fz="sm">请登录后查看排行</Text>
+      </Flex>
     );
   }
 

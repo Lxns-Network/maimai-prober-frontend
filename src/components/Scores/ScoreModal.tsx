@@ -2,22 +2,8 @@ import { useContext, useEffect, useRef, useState } from "react";
 import ScoreContext from "@/utils/context.ts";
 import { fetchAPI } from "@/utils/api/api.ts";
 import {
-  Accordion,
-  ActionIcon,
-  Avatar,
-  Center,
-  CheckIcon,
-  Combobox,
-  Container,
-  Group,
-  Loader,
-  Modal,
-  ScrollArea,
-  Space,
-  Stack,
-  Text,
-  Transition,
-  useCombobox
+  Accordion, ActionIcon, Avatar, Center, CheckIcon, Combobox, Container, Flex, Group, Loader, Modal, ScrollArea, Space,
+  Stack, Text, Transition, useCombobox
 } from "@mantine/core";
 import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
 import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
@@ -31,7 +17,7 @@ import classes from "./ScoreModal.module.css"
 import { ChunithmChart } from "./chunithm/Chart.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import { ASSET_URL } from "@/main.tsx";
-import { IconDots, IconPhotoOff } from "@tabler/icons-react";
+import { IconDatabaseOff, IconDots, IconPhotoOff } from "@tabler/icons-react";
 import { useIntersection, useMediaQuery } from "@mantine/hooks";
 import { Marquee } from "../Marquee.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -302,7 +288,12 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 </Combobox>
               </Center>
               <Accordion.Panel>
-                {fetching ? (
+                {isLoggedOut ? (
+                  <Flex gap="xs" align="center" direction="column" c="dimmed">
+                    <IconDatabaseOff size={64} stroke={1.5} />
+                    <Text fz="sm">请登录后查看历史记录</Text>
+                  </Flex>
+                ) : (fetching ? (
                   <Center>
                     <Loader />
                   </Center>
@@ -315,7 +306,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                     scores={historyScores as ChunithmScoreProps[]}
                     minScore={rankData.chunithm[minRank as keyof typeof rankData.chunithm]}
                   />
-                )}
+                ))}
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="ranking">
