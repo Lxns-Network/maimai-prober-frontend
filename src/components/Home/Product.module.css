@@ -1,0 +1,16 @@
+.product {
+    height: 100%;
+    padding: var(--mantine-spacing-xl);
+    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+
+    flex-direction: row;
+    align-items: center;
+
+    row-gap: var(--mantine-spacing-md);
+    column-gap: var(--mantine-spacing-md);
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+    }
+}

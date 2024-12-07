@@ -1,21 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import {
-  Title,
-  Text,
-  Image,
-  Button,
-  Container,
-  rem,
-  SimpleGrid,
-  ThemeIcon,
-  Flex,
-  Avatar, Card, Center, Stack, AspectRatio
+  Title, Text, Image, Button, Container, rem, SimpleGrid, ThemeIcon, Center, AspectRatio
 } from '@mantine/core';
-import { Carousel } from "@mantine/carousel";
 import { useNavigate } from "react-router-dom";
 import { IconChartBar, IconCode, IconGavel, IconHandStop, IconHistory } from "@tabler/icons-react";
+import { ProductCarousel } from "@/components/Home/ProductCarousel.tsx";
 import { Footer } from "../../components/Shell/Footer/Footer";
-import Autoplay from "embla-carousel-autoplay";
 import classes from './Home.module.css';
 
 interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -69,7 +59,6 @@ const features = [
 ];
 
 export default function Home() {
-  const autoplay = useRef(Autoplay({ delay: 2000 }));
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -100,7 +89,7 @@ export default function Home() {
         <Container p={0} size={600}>
           <Text size="lg" c="dimmed" className={classes.description}>
             一个简单的{' '}
-            <Text className={classes.highlight} inherit fw={700}>
+            <Text className={classes.highlight} fw={700} component="span" inherit>
               舞萌 DX & 中二节奏
             </Text>{' '}
             国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。
@@ -152,62 +141,7 @@ export default function Home() {
               </Text>
             </div>
           </Center>
-          <Carousel
-            slideSize={{ base: '100%', sm: '80%' }}
-            slideGap="md"
-            loop
-            plugins={[autoplay.current]}
-            onMouseEnter={autoplay.current.stop}
-            onMouseLeave={autoplay.current.reset}
-          >
-            <Carousel.Slide>
-              <Card className={classes.adCard} withBorder radius="md">
-                <Flex className={classes.adCardInner} gap="md">
-                  <Stack align="flex-start" justify="space-between" style={{ flex: 1 }}>
-                    <div>
-                      <Title order={2} mb={7}>使用 LxBot 查询成绩</Title>
-                      <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
-                        你可以通过我们提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的{' '}
-                        <Text className={classes.highlight} inherit fw={700}>
-                          舞萌 DX & 中二节奏
-                        </Text>{' '}游戏数据，使用我们精心设计的图片查询样式。
-                      </Text>
-                    </div>
-                    <Button className={classes.control} variant="default" size="lg" onClick={() =>
-                      window.open("https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029", "_blank")
-                    }>
-                      添加
-                    </Button>
-                  </Stack>
-                  <Avatar src="./lxbot.webp" h="auto" w={96} radius="md" />
-                </Flex>
-              </Card>
-            </Carousel.Slide>
-            <Carousel.Slide>
-              <Card className={classes.adCard} withBorder radius="md">
-                <Flex className={classes.adCardInner} gap="md">
-                  <Stack align="flex-start" justify="space-between" style={{ flex: 1 }}>
-                    <div>
-                      <Title order={2} mb={7}>Telegram Bot「秋葉」</Title>
-                      <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
-                        秋葉是由 ☆ 开发的 Telegram 机器人，支持查询你在 maimai DX 查分器中的{' '}
-                        <Text className={classes.highlight} inherit fw={700}>
-                          舞萌 DX & 中二节奏
-                        </Text>{' '}
-                        游戏数据并绘制最佳成绩图，也具有包括 maimai、CHUNITHM、Arcaea 在内的各种功能。
-                      </Text>
-                    </div>
-                    <Button className={classes.control} variant="default" size="lg" onClick={() =>
-                      window.open("https://t.me/AkihaBot", "_blank")
-                    }>
-                      添加
-                    </Button>
-                  </Stack>
-                  <Avatar src="./akihabot.webp" h="auto" w={96} radius="md" />
-                </Flex>
-              </Card>
-            </Carousel.Slide>
-          </Carousel>
+          <ProductCarousel />
         </Container>
       </Container>
       <Footer />

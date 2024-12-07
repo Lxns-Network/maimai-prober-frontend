@@ -84,21 +84,3 @@
 .featureTitle {
     color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
 }
-
-.adCard {
-    height: 100%;
-    padding: var(--mantine-spacing-xl);
-    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
-}
-
-.adCardInner {
-    height: 100%;
-    word-break: break-all;
-    overflow-wrap: anywhere;
-    align-items: center;
-
-    @mixin smaller-than $mantine-breakpoint-xs {
-        flex-direction: column-reverse;
-        align-items: flex-start;
-    }
-}

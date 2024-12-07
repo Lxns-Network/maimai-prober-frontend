@@ -1,0 +1,42 @@
+[
+  {
+    "title": "软糖酱 @LxBot",
+    "tags": ["QQ 机器人", "舞萌 DX", "中二节奏"],
+    "description": "你可以通过落雪咖啡屋提供的 LxBot QQ 机器人，查询你在 maimai DX 查分器中的游戏数据，使用我们精心设计的图片查询样式。",
+    "image": "lxbot",
+    "button": "添加",
+    "url": "https://qun.qq.com/qunpro/robot/qunshare?robot_appid=102072150&robot_uin=2854207029"
+  },
+  {
+    "title": "秋葉 @AkihaBot",
+    "tags": ["Telegram 机器人", "舞萌 DX", "中二节奏"],
+    "description": "秋葉是由 ☆ 开发的 Telegram 机器人，支持查询你在 maimai DX 查分器中的游戏数据并绘制最佳成绩图，也具有包括 maimai、CHUNITHM、Arcaea 在内的各种功能。",
+    "image": "akihabot",
+    "button": "添加",
+    "url": "https://t.me/AkihaBot"
+  },
+  {
+    "title": "FindMaimaiDX",
+    "tags": ["手机应用", "舞萌 DX"],
+    "description": "FindMaimaiDX 是由 Spasol 开发的一款以寻找附近机厅为主要功能的软件，支持 Best 50 歌曲信息具体查看，店铺“附近商店”及“导航”和“可视化地图”等多项功能。",
+    "image": "findmaimaidx",
+    "button": "了解更多",
+    "url": "https://github.com/Spaso1/FindMaimaiDX_Phone"
+  },
+  {
+    "title": "MaiProberPlus",
+    "tags": ["手机应用", "舞萌 DX", "中二节奏"],
+    "description": "基于 Android VpnService 的分数上传器，旨在帮助用户在各种环境下更方便的上传分数至目标查分器。查分器还支持本地分数个性化管理，Best 50 生成。",
+    "image": "maiproberplus",
+    "button": "了解更多",
+    "url": "https://github.com/SkyDynamic/MaiproberPlus"
+  },
+  {
+    "title": "妖梦 @youmu-bot",
+    "tags": ["QQ 机器人", "舞萌 DX"],
+    "description": "基于 NapCat + OverFlow 的机器人，提供了舞萌玩家最常用的一些功能。",
+    "image": "youmubot",
+    "button": "了解更多",
+    "url": "https://youmu.kagg886.top"
+  }
+]
