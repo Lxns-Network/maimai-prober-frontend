@@ -5,7 +5,7 @@ import {
 } from '@mantine/core';
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
-import { useIdle, useLocalStorage, useMediaQuery, useResizeObserver } from '@mantine/hooks';
+import { useIdle, useLocalStorage, useMediaQuery } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "@/utils/api/user.ts";
 import { IconAlertCircle, IconDownload, IconRepeat } from "@tabler/icons-react";
@@ -22,6 +22,7 @@ import { ScoresChangesModal } from "@/components/Sync/ScoresChangesModal.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { Game } from "@/types/game";
 import { getCrawlStatistic } from "@/utils/api/misc.ts";
+import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
 
 interface ScoreChangeDetailProps {
   new: unknown;
@@ -173,8 +174,17 @@ const SyncContent = () => {
     };
   }, [crawlStatus, proxyAvailable]);
 
-  const [stepper, stepperRect] = useResizeObserver();
+  const { width } = useShellViewportSize();
+  const [containerWidth, setContainerWidth] = useState(width);
   const small = useMediaQuery('(max-width: 600px)');
+
+  useEffect(() => {
+    if (width > 692) {
+      setContainerWidth(606);
+    } else {
+      setContainerWidth(width - 86);
+    }
+  }, [width]);
 
   return (
     <div>
@@ -202,9 +212,9 @@ const SyncContent = () => {
             crawlStatus.status !== "pending" ? 4 : 3
           ) : 2
         ) : 0
-      } orientation="vertical" allowNextStepsSelect={false} ref={stepper}>
+      } orientation="vertical" allowNextStepsSelect={false}>
         <Stepper.Step label="步骤 1" description={
-          <Group gap="xs" w={stepperRect.width - 54}>
+          <Group gap="xs" w={containerWidth}>
             <Text fz="sm">
               配置 HTTP 代理
             </Text>
@@ -283,7 +293,7 @@ const SyncContent = () => {
           </Group>
         } loading={!proxyAvailable} />
         <Stepper.Step label="步骤 2" description={
-          <Stack gap="xs" w={stepperRect.width - 54}>
+          <Stack gap="xs" w={containerWidth}>
             <Text fz="sm">
               选择需要爬取的游戏
             </Text>
@@ -302,13 +312,13 @@ const SyncContent = () => {
                 <Paper className={classes.subParameters}>
                   <Text fz="xs" c="dimmed">近期爬取成功率</Text>
                   <Text fz="md">
-                    {crawlStatistic ? `${crawlStatistic.success_rate * 100}%` : "N/A"}
+                    {crawlStatistic ? `${(crawlStatistic.success_rate * 100).toFixed(2)}%` : "N/A"}
                   </Text>
                 </Paper>
                 <Paper className={classes.subParameters}>
                   <Text fz="xs" c="dimmed">平均爬取耗时</Text>
                   <Text>
-                    {crawlStatistic ? `${crawlStatistic.average_crawl_time / 1000} 秒` : "N/A"}
+                    {crawlStatistic ? `${(crawlStatistic.average_crawl_time / 1000).toFixed(2)} 秒` : "N/A"}
                   </Text>
                 </Paper>
               </Group>
@@ -316,7 +326,7 @@ const SyncContent = () => {
           </Stack>
         } />
         <Stepper.Step label="步骤 3" description={
-          <Stack gap="xs" w={stepperRect.width - 54}>
+          <Stack gap="xs" w={containerWidth}>
             <Text fz="sm">
               复制微信 OAuth 链接，发送至安全的聊天中并打开
             </Text>
