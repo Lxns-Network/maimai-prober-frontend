@@ -311,6 +311,37 @@ JSON 格式的玩家成绩：
 
 [Score[]](#score)
 
+### POST `/api/v0/chunithm/player/{friend_code}/html`
+
+通过 NET 的 HTML 源代码上传玩家数据。
+
+#### 权限
+
+- `allow_third_party_write_data`
+
+#### 请求体
+
+文本格式的 HTML 源代码。
+
+::: warning 注意
+目前仅支持以下页面的 HTML 源代码：
+- 玩家信息：`home/playerData`
+- 收藏品：
+    - 角色：`collection/`
+    - 名牌版：`collection/nameplate/`
+    - 地图头像：`collection/mapIcon/`
+- 最近游玩记录：`record/playlog`
+- Recent 10 列表：`home/playerData/ratingDetailRecent`
+- 最佳成绩：
+  - BASIC ~ ULTIMA：`record/musicGenre`
+  - WORLD'S END：`record/worldsEndList/`
+
+:::
+
+::: warning 注意
+不支持流式传输，上传的 HTML 源代码应当完整。
+:::
+
 ## 个人 API
 
 个人 API 的所有请求均需要在请求头加入**个人 API 密钥**，如果没有，请前往[账号详情](/user/profile)生成。
@@ -408,6 +439,10 @@ JSON 格式的玩家成绩：
 - 曲绘：`/jacket/{song_id}.png`
 - 音频：`/music/{song_id}.mp3`
 
+::: info 提示
+WORLD'S END 难度的 `song_id` 为 [SongDifficulty](#songdifficulty) 中 `origin_id` 字段的值。
+:::
+
 ## 结构体
 
 ### Player
@@ -495,7 +530,7 @@ Rating 趋势
 | `date` | `string` | 日期 |
 
 ::: info 提示
-Recent 10 均为 Best #1 曲目，`rating` 的最终结果为理论不推分最高 Rating。
+Recent 10 均为 Best #1 曲目，`rating` 字段的最终结果为理论不推分最高 Rating。
 :::
 
 ### Song
@@ -530,6 +565,7 @@ Recent 10 均为 Best #1 曲目，`rating` 的最终结果为理论不推分最�
 | `note_designer` | `string` | 谱师 |
 | `version` | `int` | 谱面首次出现版本 |
 | `notes` | [`Notes`](#notes) | 值可空，谱面物量 |
+| `origin_id` | `int` | 仅 WORLD'S END 难度，原曲 ID |
 | `kanji` | `string` | 仅 WORLD'S END 难度，谱面属性 |
 | `star` | `int` | 仅 WORLD'S END 难度，谱面星级 |
 

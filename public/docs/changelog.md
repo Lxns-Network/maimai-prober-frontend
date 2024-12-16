@@ -2,6 +2,12 @@
 
 ---
 
+## 2024/12/16
+
+- 舞萌 DX 新增接口：[通过 NET 的 HTML 源代码上传玩家数据](/docs/api/maimai#post-apiv0maimaiplayerfriend_codehtml)
+- 中二节奏新增接口：[通过 NET 的 HTML 源代码上传玩家数据](/docs/api/chunithm#post-apiv0chunithmplayerfriend_codehtml)
+- 现在由系统发送的邮件会使用模板样式
+
 ## 2024/12/3
 
 - 修复中二节奏同步成绩时分数低于最佳分数，但 CLEAR 类型不一致时成绩无法上传的问题
@@ -23,7 +29,7 @@
 
 - 新增成绩排行榜功能，现在可以在成绩详情查看你在全站玩家的成绩排行
 
-::: tip 注意
+::: info 提示
 你需要在[账号设置](/user/settings)中开启**在成绩排行榜中显示玩家名**才能在排行榜中显示玩家名（而不是 `[已隐藏]`）。
 :::
 

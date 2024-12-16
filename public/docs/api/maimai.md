@@ -343,6 +343,37 @@ JSON 格式的玩家成绩：
 
 [Plate](#collection)
 
+### POST `/api/v0/maimai/player/{friend_code}/html`
+
+通过 NET 的 HTML 源代码上传玩家数据。
+
+#### 权限
+
+- `allow_third_party_write_data`
+
+#### 请求体
+
+文本格式的 HTML 源代码。
+
+::: warning 注意
+目前仅支持以下页面的 HTML 源代码：
+- 玩家信息：`friend/userFriendCode/`
+- 收藏品：
+  - 头像：`collection/`
+  - 姓名框：`collection/nameplate/`
+  - 背景：`collection/frame/`
+- 最近游玩记录：`record/`
+- 最佳成绩：
+  - BASIC ~ Re:MASTER：`record/musicSort/search/?search=V&sort=1&playCheck=on&diff={level_index}`
+    > 请保持筛选条件不变，否则可能导致曲目解析不准确。
+  - 宴会场：`record/musicGenre/search/?genre=99&diff=10`
+
+:::
+
+::: warning 注意
+不支持流式传输，上传的 HTML 源代码应当完整。
+:::
+
 ## 个人 API
 
 个人 API 的所有请求均需要在请求头加入**个人 API 密钥**，如果没有，请前往[账号详情](/user/profile)生成。
