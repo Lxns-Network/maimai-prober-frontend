@@ -124,7 +124,15 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
   }, [form.values.type]);
 
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
+    <Modal.Root
+      opened={opened}
+      onClose={onClose}
+      onExitTransitionEnd={() => {
+        setSong(null);
+        form.reset();
+      }}
+      centered
+    >
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>

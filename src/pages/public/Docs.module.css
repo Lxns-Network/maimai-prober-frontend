@@ -92,6 +92,10 @@
     padding-left: calc(2em*var(--mantine-scale)) !important;
 }
 
+.listItem {
+    margin-bottom: var(--mantine-spacing-xs);
+}
+
 .tableCell {
     color: var(--mantine-color-text) !important;
     border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));

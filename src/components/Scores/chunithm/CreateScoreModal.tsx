@@ -116,7 +116,15 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
   }, [song]);
 
   return (
-    <Modal.Root opened={opened} onClose={onClose} centered>
+    <Modal.Root
+      opened={opened}
+      onClose={onClose}
+      onExitTransitionEnd={() => {
+        setSong(null);
+        form.reset();
+      }}
+      centered
+    >
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>

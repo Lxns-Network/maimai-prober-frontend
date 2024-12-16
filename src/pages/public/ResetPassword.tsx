@@ -21,7 +21,7 @@ export default function ResetPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "重置密码 | maimai DX 查分器";
+    document.title = "重置密码－maimai DX 查分器";
 
     if (!new URLSearchParams(window.location.search).get("token")) {
       navigate("/login");

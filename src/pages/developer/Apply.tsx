@@ -34,7 +34,7 @@ export default function DeveloperApply() {
   }
 
   useEffect(() => {
-    document.title = "申请成为开发者 | maimai DX 查分器";
+    document.title = "申请成为开发者－maimai DX 查分器";
 
     getDeveloperApplyHandler();
   }, [])

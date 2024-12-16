@@ -185,6 +185,9 @@ const Content = ({ markdown }: { markdown: string }) => {
         ol({ children }) {
           return <ol className={classes.list}>{children}</ol>;
         },
+        li({ children }) {
+          return <li className={classes.listItem}>{children}</li>;
+        },
         div({ className, children, ...props }) {
           const classesName = className ? className.split(" ") : [];
 
@@ -313,7 +316,7 @@ export default function Docs() {
     <Flex>
       <Helmet
         defaultTitle="maimai DX 查分器"
-        titleTemplate="%s | maimai DX 查分器"
+        titleTemplate="%s－maimai DX 查分器"
       >
         <title>{title}</title>
         <meta name="description" content={description} />

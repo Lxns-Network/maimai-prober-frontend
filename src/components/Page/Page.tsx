@@ -25,7 +25,7 @@ export const Page = (props: PageProps) => {
     } as React.CSSProperties}>
       <Helmet
         defaultTitle="maimai DX 查分器"
-        titleTemplate="%s | maimai DX 查分器"
+        titleTemplate="%s－maimai DX 查分器"
       >
         {props.meta.title && <title>{props.meta.title}</title>}
         {props.meta.description && <meta name="description" content={props.meta.description} />}
