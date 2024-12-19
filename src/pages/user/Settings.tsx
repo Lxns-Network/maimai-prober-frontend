@@ -2,13 +2,12 @@ import { Text, Card, LoadingOverlay, Mark, Anchor } from '@mantine/core';
 import { deletePlayerScores, unbindPlayer } from "@/utils/api/player.ts";
 import { deleteSelfUser, updateUserConfig } from "@/utils/api/user.ts";
 import { SettingList } from '../../components/Settings/SettingList.tsx';
-import { useLocalStorage } from "@mantine/hooks";
 import { Link, useNavigate } from "react-router-dom";
 import classes from "../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { useUserConfig } from "@/hooks/swr/useUserConfig.ts";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 const crawlConfigData = {
   maimai: [{
@@ -159,7 +158,7 @@ const crawlConfigData = {
 }
 
 const SettingsContent = () => {
-  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useGame();
   const { config, isLoading, mutate } = useUserConfig(game);
   const navigate = useNavigate();
 

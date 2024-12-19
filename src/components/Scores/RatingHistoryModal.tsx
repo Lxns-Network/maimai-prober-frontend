@@ -2,10 +2,10 @@ import { AspectRatio, Divider, Flex, Group, Image, Modal, ScrollArea, Stack, Tex
 import { useCallback, useEffect, useState } from "react";
 import { MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { IconArrowBigDownFilled, IconArrowBigRightFilled, IconArrowBigUpFilled } from "@tabler/icons-react";
-import { useLocalStorage, useScrollIntoView } from "@mantine/hooks";
+import { useScrollIntoView } from "@mantine/hooks";
 import { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { getSong } from "@/utils/api/song/song.tsx";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 interface RatingHistoryModalProps {
   song?: MaimaiSongProps | ChunithmSongProps | null;
@@ -20,7 +20,7 @@ const HISTORY_VERSION_LIST = {
 };
 
 export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: RatingHistoryModalProps) => {
-  const [game] = useLocalStorage<Game>({ key: "game", defaultValue: "maimai" });
+  const [game] = useGame();
   const { scrollIntoView, targetRef, scrollableRef } = useScrollIntoView<
     HTMLDivElement,
     HTMLDivElement

@@ -1,14 +1,13 @@
 import { Button, Card, Overlay, Stack, Text, useComputedColorScheme } from "@mantine/core";
-import { useLocalStorage } from "@mantine/hooks";
 import { PlayerPanelSkeleton } from "./PlayerPanel/Skeleton.tsx";
 import { useNavigate } from "react-router-dom";
 import classes from "./Profile.module.css";
 import { usePlayer } from "@/hooks/swr/usePlayer.ts";
 import { PlayerPanel } from "./PlayerPanel/PlayerPanel.tsx";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 export const PlayerSection = () => {
-  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useGame();
   const { player, isLoading } = usePlayer(game);
   const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();

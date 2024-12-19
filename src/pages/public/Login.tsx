@@ -7,7 +7,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { API_URL, RECAPTCHA_SITE_KEY } from '@/main';
 import { useForm } from "@mantine/form";
 import { validatePassword, validateUserName } from "@/utils/validator.ts";
-import { useLocalStorage } from "@mantine/hooks";
 import { IconAlertCircle, IconLock, IconUser } from "@tabler/icons-react";
 import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
@@ -16,7 +15,6 @@ import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 
 export default function Login() {
   const [visible, setVisible] = useState(false);
-  const [game, setGame] = useLocalStorage({ key: 'game' });
   const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,6 +56,7 @@ export default function Login() {
     setVisible(true);
     try {
       const recaptchaToken = await recaptcha.getToken();
+
       const res = await fetch(`${API_URL}/user/login?captcha=${recaptchaToken}`, {
         method: 'POST',
         headers: {
@@ -69,8 +68,9 @@ export default function Login() {
       if (!data.success) {
         throw new Error(data.message);
       }
+
       localStorage.setItem("token", data.data.token);
-      if (!game) setGame("maimai");
+
       if (state && state.redirect) {
         navigate(state.redirect, { replace: true });
       } else {

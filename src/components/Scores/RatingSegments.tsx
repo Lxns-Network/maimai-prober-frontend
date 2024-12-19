@@ -1,12 +1,11 @@
 import { Box, Text, Group, Paper, SimpleGrid, NumberFormatter} from '@mantine/core';
 import { IconLoader3 } from '@tabler/icons-react';
 import classes from './RatingSegments.module.css';
-import { useLocalStorage } from "@mantine/hooks";
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBestsProps }) {
-  const [game] = useLocalStorage<Game>({ key: 'game' });
+  const [game] = useGame();
 
   const data = []
 

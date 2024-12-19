@@ -1,17 +1,16 @@
-import { useLocalStorage } from "@mantine/hooks";
 import { Box, Flex, Group, Loader, Space, Text, Title } from "@mantine/core";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { useBests } from "@/hooks/swr/useBests.ts";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { RatingSegments } from "@/components/Scores/RatingSegments.tsx";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 export const ScoreBestsSection = () => {
-  const [game] = useLocalStorage<Game>({ key: 'game' });
+  const [game] = useGame();
 
   const { bests, isLoading } = useBests(game);
 
-  if (isLoading || !game) {
+  if (isLoading) {
     return (
       <Group justify="center" mt="md" mb="md">
         <Loader />

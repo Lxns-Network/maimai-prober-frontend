@@ -5,7 +5,7 @@ import {
 } from '@mantine/core';
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
-import { useIdle, useLocalStorage, useMediaQuery } from '@mantine/hooks';
+import { useIdle, useMediaQuery } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "@/utils/api/user.ts";
 import { IconAlertCircle, IconDownload, IconRepeat } from "@tabler/icons-react";
@@ -23,6 +23,7 @@ import { Page } from "@/components/Page/Page.tsx";
 import { Game } from "@/types/game";
 import { getCrawlStatistic } from "@/utils/api/misc.ts";
 import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
+import useGame from "@/hooks/useGame.ts";
 
 interface ScoreChangeDetailProps {
   new: unknown;
@@ -71,7 +72,7 @@ const SyncContent = () => {
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [resultOpened, setResultOpened] = useState(false);
   const [step, setStep] = useState(0);
-  const [game, setGame] = useLocalStorage<Game>({ key: 'game' });
+  const [game, setGame] = useGame();
   const navigate = useNavigate();
   const idle = useIdle(60000);
 

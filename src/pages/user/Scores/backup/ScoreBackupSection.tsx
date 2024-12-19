@@ -1,4 +1,4 @@
-import { useLocalStorage, useMediaQuery } from "@mantine/hooks";
+import { useMediaQuery } from "@mantine/hooks";
 import { useScores } from "@/hooks/swr/useScores.ts";
 import {
   Box, Card, Flex, Mark, SimpleGrid, Space, Text, ThemeIcon, Title, UnstyledButton
@@ -9,7 +9,7 @@ import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.
 import { API_URL } from "@/main.tsx";
 import React from "react";
 import classes from "./ScoreBackupSection.module.css"
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 interface CardButtonProps {
   icon: React.ReactNode;
@@ -39,7 +39,7 @@ const CardButton = ({ icon, title, description, disabled, onClick }: CardButtonP
 }
 
 export const ScoreBackupSection = () => {
-  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useGame();
 
   const { scores, isLoading, mutate } = useScores(game);
   const small = useMediaQuery('(max-width: 30rem)');

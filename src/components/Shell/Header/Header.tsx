@@ -2,11 +2,11 @@ import { Group, Burger, Menu, UnstyledButton, Text, Stack, Transition } from '@m
 import Logo from "./Logo";
 import { IconChevronDown } from "@tabler/icons-react";
 import classes from './Header.module.css';
-import { useLocalStorage } from "@mantine/hooks";
 import React from "react";
 import { ColorSchemeToggle } from "./ColorSchemeToggle.tsx";
 import { GameTabs } from "./GameTabs.tsx";
 import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 interface HeaderProps {
   navbarOpened: boolean;
@@ -33,7 +33,7 @@ const translateY = {
 };
 
 export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, headerRef }: HeaderProps) {
-  const [game, setGame] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
+  const [game, setGame] = useGame();
 
   return (
     <div className={classes.header} ref={headerRef}>

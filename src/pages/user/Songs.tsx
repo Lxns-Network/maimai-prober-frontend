@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Text, Flex, Anchor, Space, Transition } from "@mantine/core";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { useDisclosure, useLocalStorage } from "@mantine/hooks";
+import { useDisclosure } from "@mantine/hooks";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
@@ -15,11 +15,11 @@ import { SongDifficultyList } from "@/components/Songs/SongDifficultyList.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Page } from "@/components/Page/Page.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 const SongsContent = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [game] = useLocalStorage<Game>({ key: 'game' });
+  const [game] = useGame();
 
   const [createAliasOpened, createAlias] = useDisclosure();
   const [defaultSongId, setDefaultSongId] = useState<number>(0)
@@ -65,8 +65,6 @@ const SongsContent = () => {
   }, []);
 
   useEffect(() => {
-    if (!game) return;
-
     setSongList(getSongList(game));
     setScores([]);
 

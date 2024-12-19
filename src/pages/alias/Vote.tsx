@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, Checkbox, Flex, Group, Loader, Pagination, Space, Text } from '@mantine/core';
-import { useLocalStorage, useMediaQuery, useToggle } from "@mantine/hooks";
+import { useMediaQuery, useToggle } from "@mantine/hooks";
 import { AliasList } from "@/components/Alias/AliasList.tsx";
 import { CreateAliasModal } from "@/components/Alias/CreateAliasModal.tsx";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
@@ -9,7 +9,7 @@ import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { useAliases } from "@/hooks/swr/useAliases.ts";
 import { useAliasVotes } from "@/hooks/swr/useAliasVotes.ts";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 const sortKeys = [
   { name: '别名', key: 'alias' },
@@ -18,7 +18,7 @@ const sortKeys = [
 ];
 
 const AliasVoteContent = () => {
-  const [game] = useLocalStorage<Game>({ key: 'game', defaultValue: 'maimai' });
+  const [game] = useGame();
   const [opened, setOpened] = useState(false);
   const [onlyNotApproved, toggleOnlyNotApproved] = useToggle();
 
@@ -54,8 +54,6 @@ const AliasVoteContent = () => {
   };
 
   useEffect(() => {
-    if (!game) return;
-
     setSongId(0);
     setPage(1);
   }, [game]);

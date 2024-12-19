@@ -1,13 +1,13 @@
 import { Divider, Group, ScrollArea, Text, UnstyledButton, UnstyledButtonProps } from "@mantine/core";
 import { useState } from "react";
-import { useLocalStorage, useViewportSize } from "@mantine/hooks";
+import { useViewportSize } from "@mantine/hooks";
 import classes from "./PlayerPanel.module.css"
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
 import { PlayerModal } from "./PlayerModal.tsx";
-import { Game } from "@/types/game";
 import { MaimaiPlayerContent } from "./maimai/PlayerContent.tsx";
 import { ChunithmPlayerContent } from "./chunithm/PlayerContent.tsx";
 import { isChunithmPlayerProps, isMaimaiPlayerProps } from "@/utils/api/player.ts";
+import useGame from "@/hooks/useGame.ts";
 
 const examplePlayer = {
   maimai: {
@@ -69,7 +69,7 @@ const PlayerButton = ({ player, onClick, ...others }: PlayerButtonProps & Unstyl
 
 export const PlayerPanel = ({ player }: { player?: MaimaiPlayerProps | ChunithmPlayerProps }) => {
   const { width } = useViewportSize();
-  const [game] = useLocalStorage<Game>({ key: "game", defaultValue: "maimai" });
+  const [game] = useGame();
   const [opened, setOpened] = useState(false);
 
   if (!player) player = examplePlayer[game];

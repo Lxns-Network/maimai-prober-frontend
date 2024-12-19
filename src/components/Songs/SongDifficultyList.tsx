@@ -5,13 +5,13 @@ import { ChunithmSongDifficulty } from "./chunithm/SongDifficulty.tsx";
 import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
 import React, { useEffect, useState } from "react";
 import { ScoreModal } from "../Scores/ScoreModal.tsx";
-import { useDisclosure, useLocalStorage } from "@mantine/hooks";
+import { useDisclosure } from "@mantine/hooks";
 import { Stack } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 interface SongDifficultyProps {
   song: MaimaiSongProps | ChunithmSongProps;
@@ -72,14 +72,14 @@ interface SongDifficultiesProps {
 }
 
 export const SongDifficultyList = ({ song, scores, setScores, style }: SongDifficultiesProps) => {
-  const [game] = useLocalStorage<Game>({ key: 'game' });
+  const [game] = useGame();
   const [difficulties, setDifficulties] = useState<(MaimaiDifficultyProps | ChunithmDifficultyProps)[]>([]);
   const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
   const [opened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [ref] = useAutoAnimate();
 
   useEffect(() => {
-    if (!song || !game) return;
+    if (!song) return;
 
     if (game === "maimai") {
       const difficulties: MaimaiDifficultyProps[] = [];

@@ -10,13 +10,12 @@ import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
 import { createAlias } from "@/utils/api/alias.ts";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
-import { useLocalStorage } from "@mantine/hooks";
 import { PhotoView } from "react-photo-view";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { ASSET_URL } from "@/main.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
-import { Game } from "@/types/game";
+import useGame from "@/hooks/useGame.ts";
 
 interface CreateAliasModalProps {
   defaultSongId?: number;
@@ -29,7 +28,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   const [readonly, setReadonly] = useState(false);
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-  const [game] = useLocalStorage<Game>({ key: 'game' });
+  const [game] = useGame();
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const form = useForm({
