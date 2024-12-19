@@ -1,8 +1,15 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
-import { isTokenUndefined } from "@/utils/session.ts";
+import {isTokenExpired, isTokenUndefined} from "@/utils/session.ts";
 
 export const useUserToken = () => {
+  const {
+    data,
+    error,
+    isLoading,
+    mutate
+  } = useSWR(`user/refresh`, fetcher);
+
   if (isTokenUndefined()) {
     return {
       token: "",
@@ -12,12 +19,14 @@ export const useUserToken = () => {
     };
   }
 
-  const {
-    data,
-    error,
-    isLoading,
-    mutate
-  } = useSWR(`user/refresh`, fetcher);
+  if (!isTokenExpired()) {
+    return {
+      token: localStorage.getItem("token") || "",
+      isLoading: false,
+      error: null,
+      mutate: () => {},
+    };
+  }
 
   if (data) {
     localStorage.setItem("token", data.token);
