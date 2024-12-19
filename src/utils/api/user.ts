@@ -51,20 +51,3 @@ export async function updateUser(userId: number, data: unknown) {
 export async function deleteUser(userId: number) {
   return fetchAPI(`user/admin/user/${userId}`, { method: "DELETE" });
 }
-
-export function refreshToken() {
-  return new Promise((resolve, reject) => {
-    fetchAPI("user/refresh", { method: "GET" })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.success) {
-          reject(data.message);
-        }
-        localStorage.setItem("token", data.data.token);
-        resolve(data.data);
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
-}

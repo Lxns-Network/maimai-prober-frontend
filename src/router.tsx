@@ -1,8 +1,8 @@
 import { lazy } from "react";
 import { createBrowserRouter, createRoutesFromElements, Navigate, Outlet, Route } from "react-router-dom";
-import { checkPermission, isTokenExpired, isTokenUndefined, logout, UserPermission } from "./utils/session";
-import { refreshToken } from "./utils/api/user.ts";
+import { checkPermission, isTokenExpired, isTokenUndefined, UserPermission } from "./utils/session";
 import App from "./App";
+import { useUserToken } from "@/hooks/swr/useUserToken.ts";
 
 const Home = lazy(() => import('./pages/public/Home'));
 const Login = lazy(() => import('./pages/public/Login'));
@@ -23,16 +23,14 @@ const DeveloperInfo = lazy(() => import('./pages/developer/Info'));
 const AdminPanel = lazy(() => import('./pages/admin/Panel'));
 
 const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
-  if (!isTokenUndefined() && isTokenExpired()) {
-    // 切换页面时若 token 过期则尝试刷新 token
-    refreshToken().catch(() => {
-      logout();
-      return <Navigate to="/login" state={{ expired: true }} replace />;
-    });
-  } else if (isTokenUndefined()) {
+  const { mutate } = useUserToken();
+
+  if (isTokenUndefined()) {
     return <Navigate to="/login" state={{
       redirect: window.location.pathname + window.location.search
     }} replace />;
+  } else if (isTokenExpired()) {
+    mutate();
   }
   if (extra_validation && !extra_validation()) {
     return <Navigate to="/" replace />;

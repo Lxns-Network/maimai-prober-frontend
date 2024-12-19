@@ -1,24 +1,27 @@
 import { Suspense, useEffect, useRef, useState } from "react";
-import { Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from '@mantine/core';
+import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
 import { ModalsProvider } from "@mantine/modals";
-import { Notifications } from "@mantine/notifications";
-import { isTokenUndefined, logout } from "./utils/session";
-import { refreshToken } from "./utils/api/user.ts";
-import RouterTransition from "./components/RouterTransition";
-import classes from "./App.module.css";
+import { notifications, Notifications } from "@mantine/notifications";
+import { isTokenUndefined, logout } from "@/utils/session";
+import RouterTransition from "@/components/RouterTransition";
 
 import { ErrorBoundary } from "react-error-boundary";
-import { Fallback } from "./pages/public/Fallback.tsx";
+import { Fallback } from "@/pages/public/Fallback.tsx";
 import { PhotoProvider } from "react-photo-view";
-import 'react-photo-view/dist/react-photo-view.css';
-import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
-import { useFullscreen, useLocalStorage } from "@mantine/hooks";
-import useSongListStore from "./hooks/useSongListStore.ts";
+import { useFullscreen } from "@mantine/hooks";
 import { useShallow } from "zustand/react/shallow";
-import useAliasListStore from "./hooks/useAliasListStore.ts";
-import Shell from "./components/Shell/Shell.tsx";
 import useTouchEvents from "beautiful-react-hooks/useTouchEvents";
+import Shell from "@/components/Shell/Shell.tsx";
+import useSongListStore from "@/hooks/useSongListStore.ts";
+import useAliasListStore from "@/hooks/useAliasListStore.ts";
+import { useSiteConfig } from "@/hooks/swr/useSiteConfig.ts";
+import { useUserToken } from "@/hooks/swr/useUserToken.ts";
+
+import 'react-photo-view/dist/react-photo-view.css';
+import classes from "./App.module.css";
+import useGame from "@/hooks/useGame.ts";
 
 const theme = createTheme({
   focusRing: 'never',
@@ -29,14 +32,15 @@ const theme = createTheme({
 export const NAVBAR_BREAKPOINT = 992;
 
 export default function App() {
+  const { config, isLoading: isSiteConfigLoading } = useSiteConfig();
+  const { error: userTokenError } = useUserToken();
   const { toggle, fullscreen } = useFullscreen();
   const [opened, setOpened] = useState(window.innerWidth > NAVBAR_BREAKPOINT);
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const viewport = useRef<HTMLDivElement>(null);
 
-  // 右滑打开侧边栏
+  // 侧边栏手势
   const ref = useRef<HTMLDivElement>(null);
   const { onTouchStart, onTouchEnd } = useTouchEvents(ref);
   let startX = 0;
@@ -55,32 +59,15 @@ export default function App() {
     }
   });
 
-  const [getSongList, fetchSongList] = useSongListStore(
-    useShallow((state) => [state.getSongList, state.fetchSongList]),
-  )
-  const [fetchAliasList] = useAliasListStore(
-    useShallow((state) => [state.fetchAliasList]),
-  )
-  const [game, setGame] = useLocalStorage({ key: 'game' });
-
-  const handleResize = () => {
-    setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
-  };
-
+  // 侧边栏开关
   const toggleNavbarOpened = () => {
     if (window.innerWidth <= NAVBAR_BREAKPOINT) setOpened(!opened);
   };
 
   useEffect(() => {
-    if (!isTokenUndefined()) {
-      // 进入页面时刷新一次 token，不论有效期
-      refreshToken().catch(() => {
-        logout();
-        if (location.pathname !== '/login') {
-          navigate('/login', { state: { expired: true, redirect: location.pathname } });
-        }
-      });
-    }
+    const handleResize = () => {
+      setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
+    };
 
     window.addEventListener('resize', handleResize);
 
@@ -89,6 +76,29 @@ export default function App() {
     };
   }, []);
 
+  const [getSongList, fetchSongList] = useSongListStore(
+    useShallow((state) => [state.getSongList, state.fetchSongList]),
+  )
+  const [fetchAliasList] = useAliasListStore(
+    useShallow((state) => [state.fetchAliasList]),
+  )
+  const [game] = useGame();
+
+  useEffect(() => {
+    if (userTokenError) {
+      if (location.pathname !== '/login') {
+        navigate('/login', {
+          state: {
+            expired: !isTokenUndefined(),
+            redirect: location.pathname,
+          }
+        });
+      }
+
+      logout();
+    }
+  }, [userTokenError]);
+
   useEffect(() => {
     if (viewport.current) {
       viewport.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -96,24 +106,21 @@ export default function App() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (game !== "maimai" && game !== "chunithm") {
-      let defaultGame = "maimai";
-      if (/maimai|chunithm/.test(searchParams.get("game") || "")) {
-        defaultGame = searchParams.get("game") || defaultGame;
-      }
-      setGame(defaultGame);
-      return;
-    }
+    if (isSiteConfigLoading || !config) return;
 
     if (getSongList(game).songs.length === 0) {
       Promise.all([
-        fetchSongList(),
+        fetchSongList(config.resource_hashes),
         fetchAliasList(),
       ]).catch((error) => {
-        console.log(error);
+        notifications.show({
+          title: "获取曲目数据失败",
+          message: error.message,
+          color: "red",
+        });
       });
     }
-  }, [game]);
+  }, [game, isSiteConfigLoading]);
 
   return (
     <MantineProvider theme={theme} defaultColorScheme="auto">
