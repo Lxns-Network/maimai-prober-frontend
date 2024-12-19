@@ -60,16 +60,34 @@ export class MaimaiSongList {
   genres: MaimaiGenreProps[] = [];
   versions: MaimaiVersionProps[] = [];
 
-  async fetch() {
-    if (this.songs.length === 0) {
-      const res = await fetchAPI('maimai/song/list', { method: "GET" });
-      const data = await res?.json();
-      this.songs = data.songs;
-      this.genres = data.genres;
-      this.versions = data.versions;
+  async fetch(hash?: string): Promise<MaimaiSongList["songs"]> {
+    const cachedHash = localStorage.getItem("maimai_songs_hash");
+    const cachedData = localStorage.getItem("maimai_songs");
+
+    if (hash && cachedHash === hash && cachedData) {
+      const parsedData = JSON.parse(cachedData) as MaimaiSongList;
+      if (parsedData.songs?.length) {
+        this.updateData(parsedData);
+        return this.songs;
+      }
+    }
+
+    const res = await fetchAPI("maimai/song/list", { method: "GET" });
+    const data = (await res.json()) as MaimaiSongList;
+
+    if (data?.songs?.length) {
+      localStorage.setItem("maimai_songs", JSON.stringify(data));
+      localStorage.setItem("maimai_songs_hash", hash || "");
+      this.updateData(data);
     }
 
     return this.songs;
+  }
+
+  private updateData(data: MaimaiSongList): void {
+    this.songs = data.songs;
+    this.genres = data.genres;
+    this.versions = data.versions;
   }
 
   find(id: number) {

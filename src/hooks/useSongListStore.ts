@@ -7,15 +7,22 @@ type SongListState = {
   maimai: MaimaiSongList,
   chunithm: ChunithmSongList,
   getSongList: (game: Game) => MaimaiSongList | ChunithmSongList,
-  fetchSongList: () => Promise<void>,
+  fetchSongList: (hashes?: {
+    [key: string]: {
+      [key: string]: string;
+    }
+  }) => Promise<void>,
 }
 
 const useSongListStore = create<SongListState>((set, get) => ({
   maimai: new MaimaiSongList(),
   chunithm: new ChunithmSongList(),
   getSongList: (game) => get()[game],
-  fetchSongList: async () => {
-    await Promise.all([get().maimai.fetch(), get().chunithm.fetch()]);
+  fetchSongList: async (hashes) => {
+    await Promise.all([
+      get().maimai.fetch(hashes?.maimai.songs),
+      get().chunithm.fetch(hashes?.chunithm.songs),
+    ]);
 
     set((state) => ({
       getSongList: (game: Game) => state[game],
