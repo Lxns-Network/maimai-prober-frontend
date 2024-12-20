@@ -42,7 +42,7 @@ const Setting = ({ data, value, onChange }: {
         }
       }} style={{
         cursor: data.optionType === 'group' ? 'pointer' : 'default',
-      }}>
+      }} component="div">
         <Flex justify="space-between" align="center" columnGap="md" rowGap="xs" wrap="wrap">
           <Box style={{ flex: 1 }}>
             <Text>{data.title}</Text>
@@ -105,7 +105,11 @@ export const SettingList = memo(({ data, value, onChange }: {
   value?: any;
   onChange?: (key: string, value: any) => void;
 }) => {
-  return data.map((item) => (
-    <Setting key={item.key} data={item} value={value} onChange={onChange} />
-  ));
+  return (
+    <Box>
+      {data.map((item) => (
+        <Setting key={item.key} data={item} value={value} onChange={onChange} />
+      ))}
+    </Box>
+  );
 });

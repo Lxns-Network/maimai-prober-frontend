@@ -71,7 +71,7 @@ export default function Login() {
 
       localStorage.setItem("token", data.data.token);
 
-      if (state && state.redirect) {
+      if (state && state.redirect && state.redirect !== "/login") {
         navigate(state.redirect, { replace: true });
       } else {
         navigate("/", { replace: true })

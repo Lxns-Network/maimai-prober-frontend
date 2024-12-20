@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
-import {isTokenExpired, isTokenUndefined} from "@/utils/session.ts";
+import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
 
 export const useUserToken = () => {
   const {
