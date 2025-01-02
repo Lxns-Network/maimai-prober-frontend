@@ -1,0 +1,105 @@
+.jacket {
+    position: relative;
+
+    &::before {
+        content: "";
+        inset: calc(1.25rem * var(--mantine-scale));
+        position: absolute;
+        background-image: linear-gradient(-45deg, var(--primary-color) 50%, var(--secondary-color) 0);
+        filter: blur(72px);
+    }
+}
+
+.timeline {
+    display: flex;
+    flex-direction: column;
+}
+
+.timelineMonth {
+    display: flex;
+    flex-direction: column;
+    width: calc(50% + 3px);
+    align-items: center;
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        width: 100%;
+    }
+}
+
+.timelineMonthTitle {
+    font-size: 18px;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    border-bottom: 2px solid var(--mantine-primary-color-filled);
+}
+
+.timelineMonthContent {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    font-size: 2em;
+}
+
+.timelineMonth:nth-child(odd) {
+    align-self: flex-end;
+    align-items: flex-start;
+    border-left: 6px dotted var(--mantine-primary-color-filled);
+    padding-left: 20px;
+    box-sizing: border-box;
+    margin-bottom: 4px;
+
+    .timelineMonthTitle {
+        margin-left: -22px;
+        padding-left: 22px;
+    }
+
+    .timelineMonthContent {
+        justify-content: flex-start;
+    }
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        align-self: flex-start;
+    }
+}
+
+.timelineMonth:nth-child(even) {
+    align-self: flex-start;
+    align-items: flex-end;
+    border-right: 6px dotted var(--mantine-primary-color-filled);
+    padding-right: 20px;
+    box-sizing: border-box;
+    margin-bottom: 4px;
+
+    .timelineMonthTitle {
+        margin-right: -22px;
+        padding-right: 22px;
+    }
+
+    .timelineMonthContent {
+        justify-content: flex-end;
+    }
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        align-items: flex-start;
+        border-left: 6px dotted var(--mantine-primary-color-filled);
+        border-right: none;
+        padding-left: 20px;
+        padding-right: 0;
+        box-sizing: border-box;
+
+        .timelineMonthTitle {
+            margin-left: -22px;
+            margin-right: 0;
+            padding-left: 22px;
+            padding-right: 0;
+        }
+
+        .timelineMonthContent {
+            justify-content: flex-start;
+        }
+    }
+}

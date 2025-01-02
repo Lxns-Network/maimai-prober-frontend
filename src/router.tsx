@@ -10,6 +10,7 @@ const Register = lazy(() => import('./pages/public/Register'));
 const ForgotPassword = lazy(() => import('./pages/public/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/public/ResetPassword'));
 const Docs = lazy(() => import('./pages/public/Docs.tsx'));
+const YearInReview = lazy(() => import('./pages/public/YearInReview'));
 const Profile = lazy(() => import('./pages/user/Profile'));
 const Sync = lazy(() => import('./pages/user/Sync'));
 const Scores = lazy(() => import('./pages/user/Scores'));
@@ -49,6 +50,7 @@ const routesConfig = (
     <Route path="/songs" element={<Songs />} />
     <Route path="/plates" element={<Plates />} />
     <Route path="/docs/*" element={<Docs />} />
+    <Route path="/year-in-review/2024/*" element={<YearInReview />} />
     <Route path="/user/sync" element={<Sync />} />
     <Route path="/user" element={<ProtectedRoute />}>
       <Route index element={<Home />} />

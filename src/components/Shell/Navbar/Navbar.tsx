@@ -5,8 +5,8 @@ import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "@/utils/session.ts";
 import { logoutUser } from "@/utils/api/user.ts";
 import {
-  IconCards, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome, IconLogout,
-  IconMusic, IconSettings2, IconTable, IconTransferIn, IconUserCircle
+  IconCalendar, IconCards, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome,
+  IconLogout, IconMusic, IconSettings2, IconTable, IconTransferIn, IconUserCircle
 } from "@tabler/icons-react";
 import classes from './Navbar.module.css';
 
@@ -21,7 +21,8 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const location = useLocation();
 
   const navbarData = [
-    { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true },
+    { label: '2024 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2024', is_new: true, enabled: !isLoggedOut },
+    { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true, divider: !isLoggedOut },
     { label: '同步游戏数据', icon: <IconCloudUpload stroke={1.5} />, to: '/sync', enabled: true },
     { label: '账号详情', icon: <IconUserCircle stroke={1.5} />, to: '/user/profile', enabled: !isLoggedOut },
     { label: '成绩管理', icon: <IconChartBar stroke={1.5} />, to: '/user/scores', enabled: !isLoggedOut },
@@ -41,7 +42,11 @@ export default function Navbar({ style, onClose }: NavbarProps) {
 
   useEffect(() => {
     const currentPath = location.pathname;
-    const activeNavItem = navbarData.find(item => item.to.startsWith(currentPath));
+
+    const activeNavItem = navbarData.find((item) => {
+      const pattern = new RegExp(`^${item.to}(/|$)`);
+      return pattern.test(currentPath);
+    });
 
     if (activeNavItem) {
       setActive(activeNavItem.label);

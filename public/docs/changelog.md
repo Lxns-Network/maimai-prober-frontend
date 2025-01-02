@@ -2,6 +2,12 @@
 
 ---
 
+## 2024/12/31
+
+- 新增舞萌 DX、中二节奏的玩家 2024 年度总结
+- 修复曲目详情页无法读取 URL 参数的问题
+- 修复成绩详情跳转曲目详情时，无法显示曲目详情的问题
+
 ## 2024/12/16
 
 - 舞萌 DX 新增接口：[通过 NET 的 HTML 源代码上传玩家数据](/docs/api/maimai#post-apiv0maimaiplayerfriend_codehtml)

@@ -5,29 +5,30 @@ import { getRatingGradient, getTrophyColor } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
 
-export const ChunithmPlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
-  let characterColor = "normal";
-  if (player.character && player.character.level) {
-    if (player.character.level >= 100) {
-      characterColor = "holographic";
-    } else if (player.character.level >= 50) {
-      characterColor = "rainbow";
-    } else if (player.character.level >= 25) {
-      characterColor = "platina";
-    } else if (player.character.level >= 15) {
-      characterColor = "gold";
-    } else if (player.character.level >= 10) {
-      characterColor = "silver";
-    } else if (player.character.level >= 5) {
-      characterColor = "copper";
-    }
+export function getChunithmCharacterColor(level: number) {
+  if (level >= 100) {
+    return "holographic";
+  } else if (level >= 50) {
+    return "rainbow";
+  } else if (level >= 25) {
+    return "platina";
+  } else if (level >= 15) {
+    return "gold";
+  } else if (level >= 10) {
+    return "silver";
+  } else if (level >= 5) {
+    return "copper";
+  } else {
+    return "normal";
   }
+}
 
+export const ChunithmPlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
   return (
     <Group wrap="nowrap">
       <Avatar src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`} size={94} p={5} radius="md" style={{
         backgroundSize: 94,
-        backgroundImage: `url(/assets/chunithm/character/${characterColor}.webp)`,
+        backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(player.level)}.webp)`,
       }}>
         <IconPhotoOff />
       </Avatar>

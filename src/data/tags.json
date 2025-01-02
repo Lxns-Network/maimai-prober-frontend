@@ -1,0 +1,237 @@
+{
+    "tags": [
+        {
+            "id": 3,
+            "localized_name": {
+                "zh-Hans": "转圈"
+            },
+            "localized_description": {
+                "zh-Hans": "一般指需要完成大于等于8个键的顺时针或逆时针转圈（小于8个键可能会被算为扫键）\n\n~~隔壁叔叔玩洗衣机有时候手臂还能玩脱臼，你可千万不要成为那样~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 4,
+            "localized_name": {
+                "zh-Hans": "绝赞段"
+            },
+            "localized_description": {
+                "zh-Hans": "掉分神器，不得不品尝"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 6,
+            "localized_name": {
+                "zh-Hans": "扫键"
+            },
+            "localized_description": {
+                "zh-Hans": "指需要快速扫过2个或以上键。\n\n~~铁手养成模拟器~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 7,
+            "localized_name": {
+                "zh-Hans": "散打"
+            },
+            "localized_description": {
+                "zh-Hans": "需要完成具有较大范围的位移的高密度Tap。\n\n~~少林武功，唯快不破~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 8,
+            "localized_name": {
+                "zh-Hans": "交互"
+            },
+            "localized_description": {
+                "zh-Hans": "交替击打两个键。\n\n~~教我打胶~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 9,
+            "localized_name": {
+                "zh-Hans": "反手"
+            },
+            "localized_description": {
+                "zh-Hans": "需要将手臂交叉才可以完成的配置。\n\n~~最强章鱼哥~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 10,
+            "localized_name": {
+                "zh-Hans": "一笔画"
+            },
+            "localized_description": {
+                "zh-Hans": "由多个星星组成，在完成星星头后等一拍、在完成星星条的同时需要完成下一个星星头并由相同速度继续向下完成星星条，以此类推。\n\n代表作品：だんだん早くなる Re:MASTER"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 16,
+            "localized_name": {
+                "zh-Hans": "底力谱"
+            },
+            "localized_description": {
+                "zh-Hans": "底力特训谱"
+            },
+            "group_id": 3
+        },
+        {
+            "id": 11,
+            "localized_name": {
+                "zh-Hans": "水"
+            },
+            "localized_description": {
+                "zh-Hans": "~~隔壁三岁小孩都能顺手AP~~"
+            },
+            "group_id": 2
+        },
+        {
+            "id": 1,
+            "localized_name": {
+                "zh-Hans": "错位"
+            },
+            "localized_description": {
+                "zh-Hans": "错位是指从击打星星头后、直到可以正常滑动星星条前的时间内，需要完成其他音符。在完成其他音符后，再回来开始完成星星条的一种配置。\n\n~~海底谭AP了吗~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 17,
+            "localized_name": {
+                "zh-Hans": "跳拍"
+            },
+            "localized_description": {
+                "zh-Hans": "~~检验人体节拍器的时刻到了~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 18,
+            "localized_name": {
+                "zh-Hans": "纵连"
+            },
+            "localized_description": {
+                "zh-Hans": "~~机厅老板：我没意见~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 19,
+            "localized_name": {
+                "zh-Hans": "爆发"
+            },
+            "localized_description": {
+                "zh-Hans": "~~心肺功能特训~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 20,
+            "localized_name": {
+                "zh-Hans": "拆弹"
+            },
+            "localized_description": {
+                "zh-Hans": "~~敢用1速打么~~"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 21,
+            "localized_name": {
+                "zh-Hans": "体力谱"
+            },
+            "localized_description": {
+                "zh-Hans": "🦍🦍🦍"
+            },
+            "group_id": 3
+        },
+        {
+            "id": 22,
+            "localized_name": {
+                "zh-Hans": "高物量"
+            },
+            "localized_description": {
+                "zh-Hans": "~~排山倒海~~"
+            },
+            "group_id": 3
+        },
+        {
+            "id": 13,
+            "localized_name": {
+                "zh-Hans": "诈称谱"
+            },
+            "localized_description": {
+                "zh-Hans": "~~打了就是死~~"
+            },
+            "group_id": 2
+        },
+        {
+            "id": 15,
+            "localized_name": {
+                "zh-Hans": "键盘谱"
+            },
+            "localized_description": {
+                "zh-Hans": "指含有很多Tap/Hold（而非星星）的谱"
+            },
+            "group_id": 3
+        },
+        {
+            "id": 14,
+            "localized_name": {
+                "zh-Hans": "星星谱"
+            },
+            "localized_description": {
+                "zh-Hans": "指含有很多需要技巧才可以Perfect完成的星星的谱"
+            },
+            "group_id": 3
+        },
+        {
+            "id": 23,
+            "localized_name": {
+                "zh-Hans": "定拍"
+            },
+            "localized_description": {
+                "zh-Hans": "定拍"
+            },
+            "group_id": 1
+        },
+        {
+            "id": 24,
+            "localized_name": {
+                "zh-Hans": "大位移"
+            },
+            "localized_description": {
+                "zh-Hans": "~~出勤扭到腰了算工伤么~~"
+            },
+            "group_id": 1
+        }
+    ],
+    "tagGroups": [
+        {
+            "id": 1,
+            "localized_name": {
+                "zh-Hans": "配置"
+            },
+            "color": "#7dd3fc"
+        },
+        {
+            "id": 3,
+            "localized_name": {
+                "zh-Hans": "评价"
+            },
+            "color": "#f0abfc"
+        },
+        {
+            "id": 2,
+            "localized_name": {
+                "zh-Hans": "难度"
+            },
+            "color": "#a5b4fc"
+        }
+    ]
+}
