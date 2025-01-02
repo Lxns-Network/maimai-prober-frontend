@@ -15,7 +15,7 @@ export default function ForgotPassword() {
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "forgot");
 
   useEffect(() => {
-    document.title = "忘记密码－maimai DX 查分器";
+    document.title = "忘记密码 | maimai DX 查分器";
 
     recaptcha.render();
 

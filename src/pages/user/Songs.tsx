@@ -67,15 +67,18 @@ const SongsContent = () => {
   useEffect(() => {
     setSongList(getSongList(game));
     setScores([]);
+    setSearchParams({});
+    setSongId(0);
+  }, [game]);
+
+  useEffect(() => {
+    setScores([]);
 
     if (defaultSongId) {
       setSongId(defaultSongId);
       setDefaultSongId(0);
-    } else {
-      setSearchParams({});
-      setSongId(0);
     }
-  }, [game]);
+  }, [defaultSongId]);
 
   useEffect(() => {
     if (!song || isLoggedOut) return;

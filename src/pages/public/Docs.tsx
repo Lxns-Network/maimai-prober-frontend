@@ -316,7 +316,7 @@ export default function Docs() {
     <Flex>
       <Helmet
         defaultTitle="maimai DX 查分器"
-        titleTemplate="%s－maimai DX 查分器"
+        titleTemplate="%s | maimai DX 查分器"
       >
         <title>{title}</title>
         <meta name="description" content={description} />

@@ -22,7 +22,7 @@ const games = [{
 }, {
   id: 'chunithm',
   name: '中二节奏',
-  version: 20500
+  version: 22000
 }]
 
 const translateY = {
