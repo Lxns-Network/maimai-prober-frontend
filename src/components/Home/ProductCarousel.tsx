@@ -55,6 +55,7 @@ export const ProductCarousel = () => {
       onMouseLeave={autoplay.current.reset}
       style={{ maxWidth: containerWidth }}
       ref={ref}
+      data-nosnippet
     >
       {products.map((product, index) => (
         <Carousel.Slide key={index}>

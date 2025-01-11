@@ -1,4 +1,5 @@
 import { fetchAPI } from "../api.ts";
+import { notifications } from "@mantine/notifications";
 
 export interface MaimaiDifficultyProps {
   type: string;
@@ -79,6 +80,10 @@ export class MaimaiSongList {
       localStorage.setItem("maimai_songs", JSON.stringify(data));
       localStorage.setItem("maimai_songs_hash", hash || "");
       this.updateData(data);
+      notifications.show({
+        title: "已更新曲目列表",
+        message: "检测到「舞萌 DX」曲目列表更新，已更新本地缓存。",
+      });
     }
 
     return this.songs;
