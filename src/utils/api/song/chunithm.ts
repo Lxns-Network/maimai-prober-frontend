@@ -1,4 +1,5 @@
 import { fetchAPI } from "../api.ts";
+import {notifications} from "@mantine/notifications";
 
 export interface ChunithmDifficultyProps {
   difficulty: number;
@@ -68,6 +69,10 @@ export class ChunithmSongList {
       localStorage.setItem("chunithm_songs", JSON.stringify(data));
       localStorage.setItem("chunithm_songs_hash", hash || "");
       this.updateData(data);
+      notifications.show({
+        title: "已更新曲目列表",
+        message: "检测到「中二节奏」曲目列表更新，已更新本地缓存。",
+      });
     }
 
     return this.songs;

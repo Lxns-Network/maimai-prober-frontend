@@ -19,6 +19,10 @@ export const useUserToken = () => {
     };
   }
 
+  if (data) {
+    localStorage.setItem("token", data.token);
+  }
+
   if (!isTokenExpired()) {
     return {
       token: localStorage.getItem("token") || "",
@@ -26,10 +30,6 @@ export const useUserToken = () => {
       error: null,
       mutate: () => {},
     };
-  }
-
-  if (data) {
-    localStorage.setItem("token", data.token);
   }
 
   return {

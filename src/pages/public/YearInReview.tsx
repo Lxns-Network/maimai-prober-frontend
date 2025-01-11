@@ -355,19 +355,27 @@ ${url}`);
                   size={small ? "md" : "lg"}
                   onClick={() => setAgree(true)}
                   rightSection={<IconArrowRight />}
-                  disabled={new Date("2025-01-01 00:00:00").getTime() > new Date().getTime()}
+                  disabled={new Date(`${year+1}-01-01 00:00:00`).getTime() > new Date().getTime()}
                 >
                   生成数据
                 </Button>
-                {new Date("2025-01-01 00:00:00").getTime() > new Date().getTime() && (
+                {new Date(`${year+1}-01-01 00:00:00`).getTime() > new Date().getTime() && (
                   <Text c="dimmed">
-                    {new Date("2025-01-01").toLocaleDateString()} 后可生成数据
+                    {new Date(`${year+1}-01-01`).toLocaleDateString()} 后可生成数据
                   </Text>
                 )}
               </Group>
             ) : (
               <Alert variant="light" icon={<IconAlertCircle />} title="数据加载失败" color="red" mt={50}>
-                {error.message}
+                {(() => {
+                  if (error.message === "player not found") {
+                    return "未找到对应的玩家数据，请先同步游戏数据。";
+                  }
+                  if (error.message === "score not found") {
+                    return `您在 ${year} 年内没有上传过谱面成绩。`;
+                  }
+                  return error.message;
+                })()}
               </Alert>
             )}
           </Container>
