@@ -98,42 +98,54 @@ const TableOfContents = ({ headings }: any) => {
     multiple: false,
   });
 
-  const data: TreeNodeData[] = [];
-  const parentStack: TreeNodeData[] = [];
+  const [data, setData] = useState<TreeNodeData[]>([]);
+  const [parentStack, setParentStack] = useState<TreeNodeData[]>([]);
 
-  headings.forEach((heading: any) => {
-    const node: TreeNodeData = {
-      label: heading.value,
-      value: heading.data.id,
-      children: []
-    };
+  useEffect(() => {
+    const data: TreeNodeData[] = [];
+    const parentStack: TreeNodeData[] = [];
 
-    if (heading.depth === 1) {
-      data.push(node);
-      parentStack.length = 0;
-      parentStack.push(node);
-    } else if (heading.depth < parentStack.length) {
-      parentStack[heading.depth - 1] = node;
-      parentStack.length = heading.depth;
-      parentStack[heading.depth - 2].children?.push(node);
-    } else {
-      if (parentStack.length >= heading.depth) {
-        parentStack[heading.depth - 1] = node;
-      } else {
+    headings.forEach((heading: any) => {
+      const node: TreeNodeData = {
+        label: heading.value,
+        value: heading.data.id,
+        children: []
+      };
+
+      if (heading.depth === 1) {
+        data.push(node);
+        parentStack.length = 0;
         parentStack.push(node);
-      }
+      } else if (heading.depth < parentStack.length) {
+        parentStack[heading.depth - 1] = node;
+        parentStack.length = heading.depth;
+        parentStack[heading.depth - 2].children?.push(node);
+      } else {
+        if (parentStack.length >= heading.depth) {
+          parentStack[heading.depth - 1] = node;
+        } else {
+          parentStack.push(node);
+        }
 
-      if (parentStack.length >= 2) {
-        const parent = parentStack[parentStack.length - 2];
-        parent.children?.push(node);
+        if (parentStack.length >= 2) {
+          const parent = parentStack[parentStack.length - 2];
+          parent.children?.push(node);
+        }
       }
-    }
-  });
+    });
+
+    setData(data);
+    setParentStack(parentStack);
+  }, [headings]);
 
   /*
    * 目录激活状态
    */
   const [active, setActive] = useState<number>(-1);
+  const handleScroll = () => {
+    const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)"));
+    setActive(getActiveElement(nodes.map((node) => node.getBoundingClientRect())));
+  }
 
   function findParentValue(node: TreeNodeData, targetValue: string): string | null {
     if (!node.children) return null;
@@ -186,16 +198,15 @@ const TableOfContents = ({ headings }: any) => {
   }, [active]);
 
   useEffect(() => {
+    handleScroll();
+  }, [data]);
+
+  useEffect(() => {
     const scrollArea = document.querySelector(
       "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport"
     )
 
     if (!scrollArea) return;
-
-    const handleScroll = () => {
-      const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)"));
-      setActive(getActiveElement(nodes.map((node) => node.getBoundingClientRect())));
-    }
 
     scrollArea.addEventListener('scroll', handleScroll);
 
