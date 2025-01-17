@@ -1,6 +1,6 @@
 import {
   ActionIcon, Container, CopyButton, Flex, Group, Loader, ScrollArea, Space, Text, Title, Tooltip,
-  TypographyStylesProvider, Image, Box, Center, Anchor, Alert, TreeNodeData, Tree, RenderTreeNodePayload
+  TypographyStylesProvider, Image, Box, Center, Anchor, Alert, TreeNodeData, Tree, RenderTreeNodePayload, useTree
 } from "@mantine/core";
 import classes from "./Docs.module.css"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -42,7 +42,29 @@ const scrollTo = (id: string) => {
   }
 }
 
-function Leaf({ level, node, expanded, hasChildren, elementProps, tree }: RenderTreeNodePayload) {
+const getActiveElement = (rects: DOMRect[]) => {
+  if (rects.length === 0) {
+    return -1;
+  }
+
+  const closest = rects.reduce(
+    (acc, item, index) => {
+      if (Math.abs(acc.position) < Math.abs(item.y)) {
+        return acc;
+      }
+
+      return {
+        index,
+        position: item.y,
+      };
+    },
+    { index: 0, position: rects[0].y }
+  );
+
+  return closest.index;
+}
+
+const Leaf = ({ level, node, expanded, hasChildren, elementProps, tree }: RenderTreeNodePayload) => {
   useEffect(() => {
     if (level === 1) tree.expand(node.value);
   }, [level]);
@@ -50,6 +72,7 @@ function Leaf({ level, node, expanded, hasChildren, elementProps, tree }: Render
   return (
     <div
       className={[elementProps.className, classes.tableOfContentsLink].join(" ")}
+      data-selected={elementProps["data-selected"]}
       onClick={(event) => {
         event.preventDefault();
         scrollTo(node.value);
@@ -71,8 +94,11 @@ function Leaf({ level, node, expanded, hasChildren, elementProps, tree }: Render
 }
 
 const TableOfContents = ({ headings }: any) => {
-  const data: TreeNodeData[] = [];
+  const tree = useTree({
+    multiple: false,
+  });
 
+  const data: TreeNodeData[] = [];
   const parentStack: TreeNodeData[] = [];
 
   headings.forEach((heading: any) => {
@@ -104,13 +130,87 @@ const TableOfContents = ({ headings }: any) => {
     }
   });
 
+  /*
+   * 目录激活状态
+   */
+  const [active, setActive] = useState<number>(-1);
+
+  function findParentValue(node: TreeNodeData, targetValue: string): string | null {
+    if (!node.children) return null;
+
+    for (let child of node.children) {
+      if (child.value === targetValue) {
+        return node.value;
+      }
+
+      if (child.children) {
+        const result = findParentValue(child, targetValue);
+        if (result !== null) {
+          return result;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  useEffect(() => {
+    if (active === -1) {
+      return;
+    }
+
+    const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)"));
+    const id = nodes[active].id;
+
+    tree.select(id);
+
+    parentStack.forEach((node) => {
+      if (node.value === id) return;
+
+      let parentValue = findParentValue(node, id);
+
+      if (parentValue && tree.expandedState[parentValue]) {
+        return;
+      }
+
+      while (parentValue) {
+        const lastParentValue = parentValue;
+        parentValue = findParentValue(node, parentValue);
+
+        if (parentValue && tree.expandedState[parentValue]) {
+          tree.select(lastParentValue);
+          break;
+        }
+      }
+    });
+  }, [active]);
+
+  useEffect(() => {
+    const scrollArea = document.querySelector(
+      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport"
+    )
+
+    if (!scrollArea) return;
+
+    const handleScroll = () => {
+      const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)"));
+      setActive(getActiveElement(nodes.map((node) => node.getBoundingClientRect())));
+    }
+
+    scrollArea.addEventListener('scroll', handleScroll);
+
+    return () => {
+      scrollArea.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
     <ScrollArea h="100%" type="never">
       <Group mb="md" mt="2rem">
         <IconListSearch size={18} stroke={1.5} />
         <Text mb={0}>目录</Text>
       </Group>
-      <Tree data={data} levelOffset="md" renderNode={(payload) => <Leaf {...payload} />} />
+      <Tree data={data} tree={tree} levelOffset="md" renderNode={(payload) => <Leaf {...payload} />} />
       <Space h="2rem" />
     </ScrollArea>
   );
@@ -337,7 +437,7 @@ export default function Docs() {
             <Loader type="dots" size="xl" />
           </Group>
         ) : (
-          <TypographyStylesProvider p={0}>
+          <TypographyStylesProvider id="content" p={0}>
             <Content markdown={markdown} />
           </TypographyStylesProvider>
         )}

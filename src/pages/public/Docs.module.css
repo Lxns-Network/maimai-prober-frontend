@@ -31,12 +31,22 @@
     border-top-right-radius: var(--mantine-radius-sm);
     border-bottom-right-radius: var(--mantine-radius-sm);
     border-left: rem(1px) solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
-    color: var(--mantine-color-text) !important;
-    text-decoration: none !important;
+    color: var(--mantine-color-text);
+    text-decoration: none;
     word-break: break-all;
 
     &:hover {
         background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+    }
+
+    &[data-selected='true'] {
+        color: light-dark(var(--mantine-primary-color-8), var(--mantine-primary-color-1));
+        background-color: var(--mantine-primary-color-light);
+        border-left: rem(1px) solid light-dark(var(--mantine-primary-color-8), var(--mantine-primary-color-1));
+
+        &:hover {
+            background-color: var(--mantine-primary-color-light-hover);
+        }
     }
 }
 
