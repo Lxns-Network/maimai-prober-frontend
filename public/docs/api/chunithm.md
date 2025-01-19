@@ -287,7 +287,11 @@ JSON 格式的玩家成绩：
 
 ### GET `/api/v0/chunithm/player/{friend_code}/score/history`
 
-获取玩家成绩上传历史记录。
+获取玩家成绩游玩历史记录。
+
+::: warning 注意
+该接口仅返回带有 `play_time` 的成绩。
+:::
 
 #### 权限
 
@@ -497,6 +501,7 @@ CLASS 勋章
 | `rank` | [`RankType`](#ranktype) | 仅获取 `Score` 时返回，评级类型 |
 | `play_time` | `string` | 值可空，游玩的 UTC 时间，精确到分钟 |
 | `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |
+| `last_played_time` | `string` | 仅[获取成绩列表](#get-apiv0chunithmplayerfriend_codescores)、[获取最佳成绩](#get-apiv0chunithmplayerfriend_codebest)时返回，谱面最后游玩的 UTC 时间 |
 
 ::: info 提示
 由于 Recent 10 列表算法尚不明确，Recent 10 列表里成绩的 `clear` 字段可能为空。
