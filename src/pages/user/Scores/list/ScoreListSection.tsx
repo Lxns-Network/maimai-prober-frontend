@@ -25,7 +25,8 @@ const sortKeys = {
     { name: '定数', key: 'level_value' },
     { name: '达成率', key: 'achievements' },
     { name: 'DX Rating', key: 'dx_rating' },
-    { name: '上传时间', key: 'upload_time' },
+    // { name: '上传时间', key: 'upload_time' },
+    { name: '最后游玩时间', key: 'last_played_time' },
   ],
   chunithm: [
     { name: '曲目 ID', key: 'id' },
@@ -33,7 +34,8 @@ const sortKeys = {
     { name: '定数', key: 'level_value' },
     { name: '成绩', key: 'score' },
     { name: 'Rating', key: 'rating' },
-    { name: '上传时间', key: 'upload_time' },
+    // { name: '上传时间', key: 'upload_time' },
+    { name: '最后游玩时间', key: 'last_played_time' },
   ]
 };
 
@@ -135,6 +137,9 @@ export const ScoreListSection = () => {
         a = difficultyA;
         b = difficultyB;
       }
+      if (!a[key] || !b[key]) {
+        return 0;
+      }
       if (typeof a[key] === 'string') {
         return reversed ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
       } else {
@@ -181,7 +186,7 @@ export const ScoreListSection = () => {
           </div>
         </Group>
         <Flex m="md" gap="md" mt={0} wrap="wrap">
-          {(sortKeys[game] || sortKeys.maimai).map((item) => (
+          {sortKeys[game].map((item) => (
             <Button
               key={item.key}
               onClick={() => sort(item.key)}
