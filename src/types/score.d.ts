@@ -12,6 +12,7 @@ export interface MaimaiScoreProps {
   type: string;
   play_time?: string;
   upload_time: string;
+  last_played_time?: string;
 }
 
 export interface ChunithmScoreProps {
@@ -28,6 +29,7 @@ export interface ChunithmScoreProps {
   rank: string;
   play_time?: string;
   upload_time: string;
+  last_played_time?: string;
 }
 
 export interface MaimaiBestsProps {

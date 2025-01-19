@@ -254,7 +254,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
           <Accordion className={classes.accordion} chevronPosition="left" variant="filled" radius={0} defaultValue="history">
             <Accordion.Item value="history">
               <Center>
-                <Accordion.Control>上传历史记录</Accordion.Control>
+                <Accordion.Control>游玩历史记录</Accordion.Control>
                 <Combobox
                   shadow="md"
                   position="bottom-end"

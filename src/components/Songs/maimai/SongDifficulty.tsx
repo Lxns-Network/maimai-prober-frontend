@@ -61,11 +61,11 @@ const UtageSongDifficulty = ({ difficulty, score, versions, onClick }: SongProps
             </Box>
           </Group>
           <Group mt="xs" gap="sm">
-            {score.play_time && (
+            {score.last_played_time && (
               <Box mr={16}>
-                <Text fz="xs" c="dimmed">游玩时间</Text>
+                <Text fz="xs" c="dimmed">最后游玩时间</Text>
                 <Text fz="md">
-                  {new Date(score.play_time || "").toLocaleString()}
+                  {new Date(score.last_played_time || "").toLocaleString()}
                 </Text>
               </Box>
             )}
@@ -159,11 +159,11 @@ export const MaimaiSongDifficulty = ({ difficulty, score, versions, onClick }: S
                 {parseInt(String(score.dx_rating))}
               </Text>
             </Box>
-            {score.play_time && (
+            {score.last_played_time && (
               <Box mr={16}>
-                <Text fz="xs" c="dimmed">游玩时间</Text>
+                <Text fz="xs" c="dimmed">最后游玩时间</Text>
                 <Text fz="md">
-                  {new Date(score.play_time || "").toLocaleString()}
+                  {new Date(score.last_played_time || "").toLocaleString()}
                 </Text>
               </Box>
             )}

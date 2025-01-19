@@ -181,11 +181,11 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
                 </Text> : <Text>{score.dx_score}</Text>}
               </Paper>
             </Grid.Col>
-            {score.play_time && (
+            {score.last_played_time && (
               <Grid.Col span={small ? 12 : 6}>
                 <Paper className={classes.subParameters}>
-                  <Text fz="xs" c="dimmed">游玩时间</Text>
-                  <Text>{new Date(score.play_time || "").toLocaleString()}</Text>
+                  <Text fz="xs" c="dimmed">最后游玩时间</Text>
+                  <Text>{new Date(score.last_played_time || "").toLocaleString()}</Text>
                 </Paper>
               </Grid.Col>
             )}

@@ -96,11 +96,11 @@ export const ChunithmSongDifficulty = ({ difficulty, score, versions, onClick }:
                 {difficulty?.star ? "-" : Math.floor(score.rating * 100) / 100}
               </Text>
             </Box>
-            {score.play_time && (
+            {score.last_played_time && (
               <Box mr={16}>
-                <Text fz="xs" c="dimmed">游玩时间</Text>
+                <Text fz="xs" c="dimmed">最后游玩时间</Text>
                 <Text fz="md">
-                  {new Date(score.play_time || "").toLocaleString()}
+                  {new Date(score.last_played_time || "").toLocaleString()}
                 </Text>
               </Box>
             )}
