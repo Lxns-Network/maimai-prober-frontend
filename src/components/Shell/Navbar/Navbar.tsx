@@ -21,7 +21,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const location = useLocation();
 
   const navbarData = [
-    { label: '2024 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2024', is_new: true, enabled: !isLoggedOut },
+    { label: '2024 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2024', enabled: !isLoggedOut },
     { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true, divider: !isLoggedOut },
     { label: '同步游戏数据', icon: <IconCloudUpload stroke={1.5} />, to: '/sync', enabled: true },
     { label: '账号详情', icon: <IconUserCircle stroke={1.5} />, to: '/user/profile', enabled: !isLoggedOut },
