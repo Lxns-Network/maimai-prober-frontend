@@ -66,7 +66,7 @@ export const MaimaiScoreHistory = ({ scores, minAchievements }: {
     return (
       <Flex gap="xs" align="center" direction="column" c="dimmed">
         <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">历史记录不足，无法生成图表</Text>
+        <Text fz="sm">游玩记录不足，无法生成图表</Text>
       </Flex>
     )
   }
