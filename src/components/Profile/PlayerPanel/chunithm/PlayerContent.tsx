@@ -28,7 +28,7 @@ export const ChunithmPlayerContent = ({ player }: { player: ChunithmPlayerProps 
     <Group wrap="nowrap">
       <Avatar src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`} size={94} p={5} radius="md" style={{
         backgroundSize: 94,
-        backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(player.level)}.webp)`,
+        backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(player.character?.level || 0)}.webp)`,
       }}>
         <IconPhotoOff />
       </Avatar>
