@@ -45,13 +45,14 @@ export const ScoreListSection = () => {
 
   const { scores, isLoading, mutate } = useScores(game);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
+  const [sortedScores, setSortedScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [displayScores, setDisplayScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]); // 用于分页显示的成绩列表
 
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
   const [searchedScores, setSearchedScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [songId, setSongId] = useState<number>(0);
 
-  const [sortBy, setSortBy] = useState();
+  const [sortBy, setSortBy] = useState<string | null>();
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
   const PAGE_SIZE = 20;
@@ -86,34 +87,22 @@ export const ScoreListSection = () => {
   }, [filteredScores, filteredSongs]);
 
   useEffect(() => {
-    if (!searchedScores) return;
-
-    sort(sortBy, false);
-    setTotalPages(Math.ceil(searchedScores.length / PAGE_SIZE));
-  }, [searchedScores]);
-
-  useEffect(() => {
     const start = (page - 1) * PAGE_SIZE;
     const end = start + PAGE_SIZE;
 
-    if (searchedScores) {
-      setDisplayScores(searchedScores.slice(start, end));
+    if (sortedScores) {
+      setDisplayScores(sortedScores.slice(start, end));
     }
-  }, [page]);
+  }, [sortedScores, page]);
 
-  const sort = (key: any, autoChangeReverse = true) => {
-    let reversed = reverseSortDirection;
-    if (autoChangeReverse) {
-      reversed = key === sortBy ? !reverseSortDirection : false;
-      setReverseSortDirection(reversed);
-    }
-    setSortBy(key);
-
+  useEffect(() => {
     if (!searchedScores) return;
 
-    const sortedElements = searchedScores.sort((a: any, b: any) => {
-      if (!songList) return 0;
-      if (key === 'level_value') {
+    setTotalPages(Math.ceil(searchedScores.length / PAGE_SIZE));
+
+    const sortedScores = searchedScores.sort((a: any, b: any) => {
+      if (!songList || !sortBy) return 0;
+      if (sortBy === 'level_value') {
         let songA = songList.find(a.id);
         let songB = songList.find(b.id);
         if (!songA || !songB) {
@@ -137,19 +126,23 @@ export const ScoreListSection = () => {
         a = difficultyA;
         b = difficultyB;
       }
-      if (!a[key] || !b[key]) {
-        return 0;
+      if (!a[sortBy] || !b[sortBy]) {
+        if (!a[sortBy] && !b[sortBy]) return 0;
+        return !a[sortBy] ? 1 : -1;
       }
-      if (typeof a[key] === 'string') {
-        return reversed ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
+      if (typeof a[sortBy] === 'string') {
+        return reverseSortDirection ? a[sortBy].localeCompare(b[sortBy]) : b[sortBy].localeCompare(a[sortBy]);
       } else {
-        return reversed ? a[key] - b[key] : b[key] - a[key];
+        return reverseSortDirection
+          ? a[sortBy] - b[sortBy] || a.dx_rating - b.dx_rating
+          : b[sortBy] - a[sortBy] || a.dx_rating - b.dx_rating;
       }
     });
 
-    setDisplayScores(sortedElements.slice(0, PAGE_SIZE));
+    setDisplayScores(sortedScores.slice(0, PAGE_SIZE));
+    setSortedScores(sortedScores);
     setPage(1);
-  };
+  }, [searchedScores, reverseSortDirection, sortBy]);
 
   const renderSortIndicator = (key: any) => {
     if (sortBy === key) {
@@ -189,7 +182,11 @@ export const ScoreListSection = () => {
           {sortKeys[game].map((item) => (
             <Button
               key={item.key}
-              onClick={() => sort(item.key)}
+              onClick={() => {
+                const reversed = item.key === sortBy ? !reverseSortDirection : false;
+                setReverseSortDirection(reversed);
+                setSortBy(item.key);
+              }}
               size="xs"
               variant="light"
               radius="xl"
