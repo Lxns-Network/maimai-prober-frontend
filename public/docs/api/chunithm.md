@@ -10,6 +10,10 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 - [个人 API](#个人-api)
 - [公共 API](#公共-api)
 
+::: warning 注意
+个人 API 密钥不能用于开发者 API，开发者 API 密钥不能用于个人 API，请提前根据需求使用对应的 API 密钥。
+:::
+
 ## 开发者 API
 
 开发者 API 的所有请求均需要在请求头加入**开发者 API 密钥**，如果没有，请[申请成为开发者](/developer/apply)获取。
@@ -138,10 +142,6 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 获取玩家缓存的 Best 30、Selection 10 与 Recent 10。
 
-::: info 提示
-Selection 10 为 Best 31 至 40。
-:::
-
 #### 权限
 
 - `allow_third_party_fetch_scores`
@@ -156,9 +156,13 @@ Selection 10 为 Best 31 至 40。
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `bests` | [`Score[]`](#score) | Best 30 列表 |
-| `selections` | [`Score[]`](#score) | Selection 10 列表 |
-| `recents` | [`Score[]`](#score) | Recent 10 列表 |
+| `bests` | [`Score[]`](#score) | Best 30 列表，即最佳曲目 |
+| `selections` | [`Score[]`](#score) | Selection 10 列表，即候选最佳曲目 |
+| `recents` | [`Score[]`](#score) | Recent 10 列表，即最近游玩的最佳曲目 |
+
+::: info 提示
+Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩。
+:::
 
 ### GET `/api/v0/chunithm/player/{friend_code}/bests`
 
@@ -180,6 +184,46 @@ Selection 10 为 Best 31 至 40。
 |-|-|-|
 | `song_id` | `int` | 曲目 ID，与 `song_name` 冲突 |
 | `song_name` | `string` | 曲名，与 `song_id` 冲突 |
+
+### POST `/api/v0/chunithm/player/{friend_code}/bests/recents`
+
+上传玩家 Recent 10 列表。
+
+#### 权限
+
+- `allow_third_party_write_data`
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 请求体
+
+JSON 格式的 Recent 10 列表：
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `recents` | [`Score[]`](#score) | Recent 10 列表 |
+
+::: warning 注意
+Recent 10 列表超过 10 条时，查分器会自动截取前 10 条。
+:::
+
+#### 请求示例
+
+```json
+{
+    "recents": [
+        {
+            "id": 3,
+            "level_index": 4,
+            "score": 1010000
+        }
+    ]
+}
+```
 
 ### POST `/api/v0/chunithm/player/{friend_code}/scores`
 
@@ -213,8 +257,8 @@ JSON 格式的玩家成绩：
             "level_index": 4,
             "score": 1010000,
             "clear": "clear",
-            "full_combo": "alljustice",
-            "full_chain": "fullchain2",
+            "full_combo": "alljusticecritical",
+            "full_chain": null,
             "play_time": "2024-01-09T16:00:00Z"
         }
     ]
@@ -327,7 +371,7 @@ JSON 格式的玩家成绩：
 
 文本格式的 HTML 源代码。
 
-::: warning 注意
+::: info 提示
 目前仅支持以下页面的 HTML 源代码：
 - 玩家信息：`home/playerData`
 - 收藏品：
@@ -505,6 +549,10 @@ CLASS 勋章
 
 ::: info 提示
 由于 Recent 10 列表算法尚不明确，Recent 10 列表里成绩的 `clear` 字段可能为空。
+:::
+
+::: warning 注意
+上传 Recent 10 列表时，成绩仅需要上传 `id`、`level_index`、`score` 字段，其他字段会根据现有数据自动填充。
 :::
 
 ### SimpleScore

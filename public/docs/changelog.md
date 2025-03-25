@@ -2,6 +2,36 @@
 
 ---
 
+## 2025/3/25
+
+- 舞萌 DX 曲目的所属区域现在仅显示该曲目作为课题曲或完美挑战曲的区域
+- 修复中二节奏成绩同步结果不会显示 ALL JUSTICE 到 AJC 变化的问题
+- 修复曲目查询切换游戏时可能会导致页面报错的问题
+- 修复 API 报错可能返回非法 JSON 的问题
+
+## 2025/2/10
+
+- 中二节奏新增接口：[上传玩家 Recent 10 列表](/docs/api/chunithm#post-apiv0chunithmplayerfriend_codebestsrecents)
+
+## 2025/2/9
+
+- 舞萌 DX、中二节奏通过 API 创建成绩时，现在会有更详细的错误信息返回：
+
+```json
+{
+    "success": false,
+    "code": 400,
+    "message": "invalid score (id: 1553, type: dx, level_index: 3): achievements out of range"
+}
+```
+
+::: info 提示
+目前仅会返回成绩相关的错误信息，若曲目或谱面难度不存在则会跳过该成绩。
+:::
+
+- 修复中二节奏 Selection 10 会包含理论 Rating 也不能进入 Best 30 成绩的问题
+- 修复帮助文档切换页面时可能报错的问题
+
 ## 2025/1/22
 
 - 修复成绩列表排序结果可能不正确的问题
