@@ -468,20 +468,20 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@mantine/carousel@^7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/carousel/-/carousel-7.16.0.tgz"
-  integrity sha512-/4Czppo9jsoZ7UwWD6upxi58+7g1O5Z6pvW7VzfcE71sMuZmEi/aVEjqFgmOCaN65Y2Up7zFXreghyKLabBSZg==
+"@mantine/carousel@^7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/carousel/-/carousel-7.17.2.tgz"
+  integrity sha512-qoBQG5+ASHn3Xl7uyLsTHqCVE0j9QiUDyW0KyGsduQwD8rj55vutf6DmjX1+ofPlVqvwSfQ230tUgF0lcNLnog==
 
-"@mantine/charts@^7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/charts/-/charts-7.16.0.tgz"
-  integrity sha512-wA/HfCc52giNDnCyvFiBSz0nvinLiKeQT02vmnmBoT2VUp5D5lHI8Klqiw1QGoH3dG/4TL2LJk4zAinJLpmjzA==
+"@mantine/charts@^7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/charts/-/charts-7.17.2.tgz"
+  integrity sha512-ckB23pIqRjzysUz2EiWZD9AVyf7t0r7o7zfJbl01nzOezFgYq5RGeRoxvpcsfBC+YoSbB/43rjNcXtYhtA7QzA==
 
-"@mantine/core@^7.16.0", "@mantine/core@>=7.11", "@mantine/core@7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/core/-/core-7.16.0.tgz"
-  integrity sha512-lYYwa4Itz77uC8zQzdiKiKdz9Q01NBOYPZsotIKsP/Zqij0qhpsVxoJ8MK3P8IqFyLfThTMmR4sT1qlGfLTA9Q==
+"@mantine/core@^7.17.2", "@mantine/core@>=7.11", "@mantine/core@7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/core/-/core-7.17.2.tgz"
+  integrity sha512-R6MYhitJ0JEgrhadd31Nw9FhRaQwDHjXUs5YIlitKH/fTOz9gKSxKjzmNng3bEBQCcbEDOkZj3FRcBgTUh/F0Q==
   dependencies:
     "@floating-ui/react" "^0.26.28"
     clsx "^2.1.1"
@@ -490,55 +490,55 @@
     react-textarea-autosize "8.5.6"
     type-fest "^4.27.0"
 
-"@mantine/dates@^7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/dates/-/dates-7.16.0.tgz"
-  integrity sha512-BVPA/3itdAjuX11GMebeS1c5VNruwkkRhCUVVv1F4lBhZqSeL/d8yPb8Iyfdw0tMGIkdxHKT9winG+bXAoF0Kw==
+"@mantine/dates@^7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/dates/-/dates-7.17.2.tgz"
+  integrity sha512-7bB992j8f+uEi280jab0/8i5yfsN/3oSrMDFwatZ+7XSDUwiP0YFib/FVX0pNSSqdFpbXhUmsZEECX71QtHw+Q==
   dependencies:
     clsx "^2.1.1"
 
-"@mantine/form@^7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/form/-/form-7.16.0.tgz"
-  integrity sha512-PUxX5v8XMoNwjFdZbns4dDcQf8U9lIfagFsDGz3KKStgsuBcgnn97/MDP6SpsOHV3g7AGEJoF65+ax1fMOkkNA==
+"@mantine/form@^7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/form/-/form-7.17.2.tgz"
+  integrity sha512-MxZPKXXhaZ7M1ZJOpS2wifhh186DMvNjcXa2bP04Tp9TdvTlbLAJZxKjZkQnGGgt8Atsf6/3gdeJMfG704Km6g==
   dependencies:
     fast-deep-equal "^3.1.3"
     klona "^2.0.6"
 
-"@mantine/hooks@^7.16.0", "@mantine/hooks@>=7.11", "@mantine/hooks@7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/hooks/-/hooks-7.16.0.tgz"
-  integrity sha512-8KxrhckesbrV6tyOndm6fJ+jSKA4KX/67ppDFlfYMMbV6Yh+s0zRO4KLi2uCtl6tgckQd2/zDzX3kQk+VYKqDA==
+"@mantine/hooks@^7.17.2", "@mantine/hooks@>=7.11", "@mantine/hooks@7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/hooks/-/hooks-7.17.2.tgz"
+  integrity sha512-tbErVcGZu0E4dSmE6N0k6Tv1y9R3SQmmQgwqorcc+guEgKMdamc36lucZGlJnSGUmGj+WLUgELkEQ0asdfYBDA==
 
-"@mantine/modals@^7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/modals/-/modals-7.16.0.tgz"
-  integrity sha512-2AUFqwuz9JhEnNNjf7Oly4oj1nePKn6QcMKJOQx6Kr1eBcSZRsZ4EmlSONFvfTz/9UJDvm30Hk4HPOPoi0i5fQ==
+"@mantine/modals@^7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/modals/-/modals-7.17.2.tgz"
+  integrity sha512-Ms8MYLJCZcxRnGfIQr4riGK2g5mpklxiEAU84vbptoAlQ2d5Iqu+CQ0XpDfamCQl/ltmPmYJYkrq52zhQWIS3w==
 
-"@mantine/notifications@^7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/notifications/-/notifications-7.16.0.tgz"
-  integrity sha512-ofwpMLoe/QaXTEqrLNA2vEq4KblacKHLg1xJn7a40irt6uQ6GSlFoLveKjOupiG0xUa+gIbevA1uv3tHJuJ6uA==
+"@mantine/notifications@^7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/notifications/-/notifications-7.17.2.tgz"
+  integrity sha512-vg0L8cmihz0ODg4WJ9MAyK06WPt/6g67ksIUFxd4F8RfdJbIMLTsNG9yWoSfuhtXenUg717KaA917IWLjDSaqw==
   dependencies:
-    "@mantine/store" "7.16.0"
+    "@mantine/store" "7.17.2"
     react-transition-group "4.4.5"
 
-"@mantine/nprogress@^7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/nprogress/-/nprogress-7.16.0.tgz"
-  integrity sha512-sRstsylGkJqL6BkSNfjHGuDWZefh8yn0BBlIm28BtcnJSFsKICCeNRYUEbZ1QZDMH5Y0B3VzuJJo7Ye+kUPMxw==
+"@mantine/nprogress@^7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/nprogress/-/nprogress-7.17.2.tgz"
+  integrity sha512-Sot4f63wvUUCEcPAXW/w5duodR1ykR1CmMZk6QYQqnY3q1qbqgscenOtaOFiN6+nNpmkwj1/MiL1C56Q85yWcg==
   dependencies:
-    "@mantine/store" "7.16.0"
+    "@mantine/store" "7.17.2"
 
-"@mantine/store@7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/store/-/store-7.16.0.tgz"
-  integrity sha512-IeeKk8w+a5Z5sctMUYrLBVVA9173B2oKPP4Rh656eoXH+vz/KCpL/ITnFWrt0Cv9Fyv/V+zm1UyAnUWRdQ6uXA==
+"@mantine/store@7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/store/-/store-7.17.2.tgz"
+  integrity sha512-UoMUYQK/z58hMueCkpDIXc49gPgrVO/zcpb0k+B7MFU51EIUiFzHLxLFBmWrgCAM6rzJORqN8JjyCd/PB9j4aw==
 
-"@mantine/tiptap@^7.16.0":
-  version "7.16.0"
-  resolved "https://registry.npmjs.org/@mantine/tiptap/-/tiptap-7.16.0.tgz"
-  integrity sha512-gYiFLoyQ8MSIDPMmi0DG1Ze3kCJHO8tHqbK0yUIKqe8r1Lnzdl86tERqLfUAFlDrQUg2vnNFgpZ8WVfiTHKZgw==
+"@mantine/tiptap@^7.17.2":
+  version "7.17.2"
+  resolved "https://registry.npmjs.org/@mantine/tiptap/-/tiptap-7.17.2.tgz"
+  integrity sha512-R1/KwaRoX7LdYiEiulT9/8ITsxQsAEFKhkoZWqFrEw3Ft0f/sv2/CPmw/pqmW/OKvD0s39Q/V6szNz7oVyPa7Q==
 
 "@mdi/js@^7.4.47":
   version "7.4.47"
