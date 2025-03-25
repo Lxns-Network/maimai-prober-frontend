@@ -18,7 +18,7 @@ export const UserBindSection = () => {
     },
 
     validate: {
-      qq: (value) => /^\d{5,11}$/.test(value) ? null : "QQ 号格式不正确",
+      qq: (value: string) => /^\d{5,11}$/.test(value) ? null : "QQ 号格式不正确",
     },
 
     transformValues: (values) => ({

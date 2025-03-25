@@ -88,7 +88,7 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
           <Box mr={12}>
             <Text fz="xs" c="dimmed">分类</Text>
             <Text fz="sm">
-              {(songList.genres.find((genre) => genre.genre === song.genre) as MaimaiGenreProps).title || song.genre}
+              {game === "maimai" ? (songList.genres as MaimaiGenreProps[]).find((genre) => genre.genre === song.genre)?.title : song.genre}
             </Text>
           </Box>
           <Box mr={12}>
