@@ -143,7 +143,8 @@ const TableOfContents = ({ headings }: any) => {
    */
   const [active, setActive] = useState<number>(-1);
   const handleScroll = () => {
-    const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)"));
+    const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)") as NodeListOf<HTMLElement>);
+    if (nodes.length === 0) return;
     setActive(getActiveElement(nodes.map((node) => node.getBoundingClientRect())));
   }
 
@@ -167,11 +168,10 @@ const TableOfContents = ({ headings }: any) => {
   }
 
   useEffect(() => {
-    if (active === -1) {
-      return;
-    }
+    if (active === -1) return;
 
     const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)"));
+    if (nodes.length === 0) return;
     const id = nodes[active].id;
 
     tree.select(id);
