@@ -50,18 +50,18 @@ export default function App() {
   // 侧边栏手势
   const ref = useRef<HTMLDivElement>(null);
   const { onTouchStart, onTouchEnd } = useTouchEvents(ref);
-  let startX = 0;
+  const [touchStartX, setTouchStartX] = useState(0);
 
   onTouchStart((event: TouchEvent) => {
-    startX = event.touches[0].clientX;
+    setTouchStartX(event.touches[0].clientX);
   });
 
   onTouchEnd((event: TouchEvent) => {
-    if (startX / window.innerWidth > 0.1) return;
+    if (touchStartX / window.innerWidth > 0.1) return;
 
-    const endX = event.changedTouches[0].clientX;
+    const touchEndX = event.changedTouches[0].clientX;
 
-    if (endX - startX > 100) {
+    if (touchEndX - touchStartX > 100) {
       setOpened(true);
     }
   });
