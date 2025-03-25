@@ -30,8 +30,8 @@ export const UserSection = () => {
     },
 
     validate: {
-      name: (value) => (value.length === 0 || validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value) => (value.length === 0 || validateEmail(value) ? null : "邮箱格式不正确"),
+      name: (value: string) => (value.length === 0 || validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value: string) => (value.length === 0 || validateEmail(value) ? null : "邮箱格式不正确"),
     },
   });
 

@@ -44,13 +44,13 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
     },
 
     validate: {
-      id: (value) => value !== null && value !== 0 ? null : "请选择曲目",
-      type: (value) => value !== null ? null : "请选择谱面类型",
-      difficulty: (value) => value !== null ? null : "请选择难度",
-      achievements: (value) => value !== null ? null : "请输入达成率",
-      fc: (value) => value !== null ? null : "请选择 Full Combo",
-      fs: (value) => value !== null ? null : "请选择 Full Sync",
-      play_time: (value) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
+      id: (value: number | null) => value !== null && value !== 0 ? null : "请选择曲目",
+      type: (value: string | null) => value !== null ? null : "请选择谱面类型",
+      difficulty: (value: string | null) => value !== null ? null : "请选择难度",
+      achievements: (value: number | null) => value !== null ? null : "请输入达成率",
+      fc: (value: string | null) => value !== null ? null : "请选择 Full Combo",
+      fs: (value: string | null) => value !== null ? null : "请选择 Full Sync",
+      play_time: (value: Date | null) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
     },
   });
 

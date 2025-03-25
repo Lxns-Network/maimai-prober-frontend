@@ -43,13 +43,13 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
     },
 
     validate: {
-      id: (value) => value !== null && value !== 0 ? null : "请选择曲目",
-      difficulty: (value) => value !== null ? null : "请选择难度",
-      score: (value) => value !== null ? null : "请输入分数",
-      clear: (value) => value !== null ? null : "请选择 Clear 类型",
-      full_combo: (value) => value !== null ? null : "请选择 Full Combo",
-      full_chain: (value) => value !== null ? null : "请选择 Full Chain",
-      play_time: (value) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
+      id: (value: number | null) => value !== null && value !== 0 ? null : "请选择曲目",
+      difficulty: (value: string | null) => value !== null ? null : "请选择难度",
+      score: (value: number | null) => value !== null ? null : "请输入分数",
+      clear: (value: string | null) => value !== null ? null : "请选择 Clear 类型",
+      full_combo: (value: string | null) => value !== null ? null : "请选择 Full Combo",
+      full_chain: (value: string | null) => value !== null ? null : "请选择 Full Chain",
+      play_time: (value: Date | null) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
     },
   });
 

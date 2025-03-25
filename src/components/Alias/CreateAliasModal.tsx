@@ -39,13 +39,15 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
     },
 
     validate: {
-      songId: (value) => value !== null ? null : "请选择曲目",
-      alias: (value, values) => {
+      songId: (value: number | null) => value !== null ? null : "请选择曲目",
+      alias: (value: string, values: {
+        songId: number | null;
+      }) => {
         if (value.trim() === "") return "请输入曲目别名";
         if (!/^.{1,32}$/.test(value)) return "别名长度不符合要求";
         if (values.songId && songList?.find(values.songId)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
       },
-      agree: (value) => value ? null : "请阅读并同意曲目别名命名规则",
+      agree: (value: boolean) => value ? null : "请阅读并同意曲目别名命名规则",
     },
   });
 

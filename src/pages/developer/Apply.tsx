@@ -47,9 +47,9 @@ export default function DeveloperApply() {
     },
 
     validate: {
-      name: (value) => (value.length > 0 ? null : "项目名称不能为空"),
-      url: (value) => (/^http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/.test(value) ? null : "项目地址格式不正确"),
-      reason: (value) => (value.length > 0 ? null : "申请理由不能为空"),
+      name: (value: string) => (value.length > 0 ? null : "项目名称不能为空"),
+      url: (value: string) => (/^http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/.test(value) ? null : "项目地址格式不正确"),
+      reason: (value: string) => (value.length > 0 ? null : "申请理由不能为空"),
     },
   });
 

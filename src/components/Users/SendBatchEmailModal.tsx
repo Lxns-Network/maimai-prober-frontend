@@ -20,8 +20,8 @@ export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps
     },
 
     validate: {
-      subject: (value) => (value == "" ? "主题不能为空" : null),
-      content: (value) => (value == "" ? "正文不能为空" : null),
+      subject: (value: string) => (value == "" ? "主题不能为空" : null),
+      content: (value: string) => (value == "" ? "正文不能为空" : null),
     },
   });
 

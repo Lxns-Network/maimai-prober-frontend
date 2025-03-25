@@ -47,8 +47,8 @@ export default function Login() {
     },
 
     validate: {
-      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
-      password: (value) => (validatePassword(value) ? null : "密码格式不正确"),
+      name: (value: string) => (validateUserName(value) ? null : "用户名格式不正确"),
+      password: (value: string) => (validatePassword(value) ? null : "密码格式不正确"),
     },
   });
 

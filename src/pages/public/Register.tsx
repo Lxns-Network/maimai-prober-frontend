@@ -34,10 +34,12 @@ export default function Register() {
     },
 
     validate: {
-      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value) => (validateEmail(value) ? null : "邮箱格式不正确"),
-      password: (value) => (validatePassword(value) ? null : "密码格式不正确"),
-      confirmPassword: (value, values) => (value === values.password ? null : "两次输入的密码不一致"),
+      name: (value: string) => (validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value: string) => (validateEmail(value) ? null : "邮箱格式不正确"),
+      password: (value: string) => (validatePassword(value) ? null : "密码格式不正确"),
+      confirmPassword: (value: string, values: {
+        password: string;
+      }) => (value === values.password ? null : "两次输入的密码不一致"),
     },
   });
 

@@ -17,9 +17,9 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     },
 
     validate: {
-      name: (value) => (value == "" || validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value) => (value == "" || validateEmail(value) ? null : "邮箱格式不正确"),
-      permissions: (value) => value.length > 0 ? null : "请选择权限",
+      name: (value: string) => (value == "" || validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value: string) => (value == "" || validateEmail(value) ? null : "邮箱格式不正确"),
+      permissions: (value: string[]) => value.length > 0 ? null : "请选择权限",
     },
 
     transformValues: (values) => ({
