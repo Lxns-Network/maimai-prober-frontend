@@ -1,4 +1,4 @@
-import { Box, Text, Group, Paper, SimpleGrid, NumberFormatter} from '@mantine/core';
+import {Box, Text, Group, Paper, SimpleGrid, NumberFormatter, Divider, Flex, ScrollArea} from '@mantine/core';
 import { IconLoader3 } from '@tabler/icons-react';
 import classes from './RatingSegments.module.css';
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
@@ -11,54 +11,114 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
 
   if (game === 'maimai') {
     bests = bests as MaimaiBestsProps;
-    const parts = bests.standard_total + bests.dx_total;
-    data.push({ label: 'BEST 35', count: bests.standard_total, part: Math.round(bests.standard_total / parts * 100), color: '#228be6' });
-    data.push({ label: 'BEST 15', count: bests.dx_total, part: Math.round((parts - bests.standard_total) / parts * 100), color: '#fd7e14' });
+    data.push({
+      label: 'B35',
+      count: bests.standard_total,
+      color: '#228be6',
+      min: bests.standard[bests.standard.length - 1].dx_rating,
+      avg: Math.floor(bests.standard.reduce((acc, score) => acc + score.dx_rating, 0) / bests.standard.length * 100) / 100 || 0,
+      max: bests.standard[0].dx_rating
+    });
+    data.push({
+      label: 'B15',
+      count: bests.dx_total,
+      color: '#fd7e14',
+      min: bests.dx[bests.dx.length - 1].dx_rating,
+      avg: Math.floor(bests.dx.reduce((acc, score) => acc + score.dx_rating, 0) / bests.dx.length * 100) / 100 || 0,
+      max: bests.dx[0].dx_rating
+    });
   } else if (game === 'chunithm') {
     bests = bests as ChunithmBestsProps;
-    const bestsAvg = Math.floor(bests.bests.reduce((acc, score) => acc + score.rating, 0) / bests.bests.length * 100) / 100 || 0;
-    const selectionsAvg = Math.floor(bests.selections.reduce((acc, score) => acc + score.rating, 0) / bests.selections.length * 100) / 100 || 0;
-    const recentsAvg = Math.floor(bests.recents.reduce((acc, score) => acc + score.rating, 0) / bests.recents.length * 100) / 100 || 0;
-    data.push({ label: 'BEST 30', count: bestsAvg, part: Math.round(bestsAvg / (bestsAvg + recentsAvg) * 100), color: '#228be6' });
-    data.push({ label: 'SELECTION 10', count: selectionsAvg, part: 0 });
-    data.push({ label: 'RECENT 10', count: recentsAvg, part: Math.round(recentsAvg / (bestsAvg + recentsAvg) * 100), color: '#fd7e14' });
+    data.push({
+      label: 'B30',
+      count: Math.floor(bests.bests.reduce((acc, score) => acc + score.rating, 0) / bests.bests.length * 100) / 100 || 0,
+      color: '#228be6',
+      min: bests.bests[bests.bests.length - 1].rating,
+      max: bests.bests[0].rating
+    });
+    data.push({
+      label: 'S10',
+      count: Math.floor(bests.selections.reduce((acc, score) => acc + score.rating, 0) / bests.selections.length * 100) / 100 || 0,
+      color: '#228be6',
+      min: bests.selections[bests.selections.length - 1].rating,
+      max: bests.selections[0].rating
+    });
+    data.push({
+      label: 'R10',
+      count: Math.floor(bests.recents.reduce((acc, score) => acc + score.rating, 0) / bests.recents.length * 100) / 100 || 0,
+      color: '#228be6',
+      min: bests.recents[bests.recents.length - 1].rating,
+      max: bests.recents[0].rating
+    });
   }
 
   const descriptions = data.map((stat) => (
-    <Box key={stat.label} style={{ borderBottomColor: stat.color }} className={classes.stat}>
-      <Text tt="uppercase" fz="xs" c="dimmed" fw={700}>
-        {stat.label}
-      </Text>
-
-      <Group justify="space-between" align="flex-end" gap={0}>
-        <Text fw={700}>{stat.count}</Text>
-        <Text c={stat.color} fw={700} size="sm" className={classes.statCount}>
-          {stat.part}%
-        </Text>
-      </Group>
-    </Box>
+    <Group className={classes.subParameters} key={stat.label} gap="xs">
+      <ScrollArea>
+        <Flex align="center" columnGap="lg">
+          <Group align="center" gap="xs" wrap="nowrap">
+            <IconLoader3 size="1.5rem" className={classes.icon} stroke={1.5} />
+            <Box>
+              <Text fz="xs" c="dimmed" fw={700}>
+                {stat.label}
+              </Text>
+              <Group gap={0}>
+                <Text className={classes.ratingNumberSubtotal}>
+                  {"0".repeat(5 - stat.count.toString().length)}
+                  <Text className={classes.ratingNumberSubtotal} c={stat.color} span>
+                    {stat.count}
+                  </Text>
+                </Text>
+              </Group>
+            </Box>
+          </Group>
+          <Divider orientation="vertical" />
+          <Box>
+            <Text fz="xs" c="dimmed">MIN</Text>
+            {game === 'maimai' ? (
+              <Text fz="md">{parseInt(stat.min.toString())}</Text>
+            ) : (
+              <Text fz="md">{Math.floor((stat.min) * 100) / 100}</Text>
+            )}
+          </Box>
+          {stat.avg && (
+            <Box>
+              <Text fz="xs" c="dimmed">AVG</Text>
+              <Text fz="md">{parseInt(stat.avg.toString())}</Text>
+            </Box>
+          )}
+          <Box>
+            <Text fz="xs" c="dimmed">MAX</Text>
+            {game === 'maimai' ? (
+              <Text fz="md">{parseInt(stat.max.toString())}</Text>
+            ) : (
+              <Text fz="md">{Math.floor((stat.max) * 100) / 100}</Text>
+            )}
+          </Box>
+        </Flex>
+      </ScrollArea>
+    </Group>
   ));
 
   return (
     <Paper withBorder p="md" radius="md">
-      <Group justify="space-between">
-        <Group align="flex-end" gap="xs">
-          <Text fz="xl" fw={700}>
-            {"standard_total" in bests && "dx_total" in bests && (
-              <NumberFormatter value={bests.standard_total + bests.dx_total} />
-            )}
-            {"bests" in bests && data.length === 3 && (
-              <NumberFormatter value={Math.round((data[0].count * bests.bests.length + data[2].count * bests.recents.length) / 40 * 100) / 100} />
-            )}
-          </Text>
-        </Group>
-        <IconLoader3 size="1.5rem" className={classes.icon} stroke={1.5} />
+      <Group align="flex-end" gap="xs">
+        <Text className={classes.ratingNumberTotal}>
+          {"standard_total" in bests && "dx_total" in bests && (
+            <>
+              {bests.standard_total + bests.dx_total}
+            </>
+          )}
+          {"bests" in bests && data.length === 3 && (
+            <NumberFormatter value={Math.round((data[0].count * bests.bests.length + data[2].count * bests.recents.length) / 40 * 100) / 100} />
+          )}
+        </Text>
       </Group>
 
       <Text c="dimmed" fz="sm">
         {game === 'maimai' ? 'DX Rating 总和' : 'Rating 均值'}
       </Text>
-      <SimpleGrid cols={{ base: 1, xs: 3 }} mt="md">
+      <SimpleGrid cols={{ base: 1, xs: 2 }} mt="md">
         {descriptions}
       </SimpleGrid>
     </Paper>

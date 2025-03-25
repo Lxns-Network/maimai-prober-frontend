@@ -1,6 +1,7 @@
-.stat {
-    border-bottom: rem(3px) solid;
-    padding-bottom: rem(5px);
+.subParameters {
+    background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+    padding: 6px 12px;
+    border-radius: var(--mantine-radius-md);
 }
 
 .statCount {
@@ -13,5 +14,20 @@
 }
 
 .icon {
-    color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
+    color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
+}
+
+.ratingNumberTotal {
+    font-size: var(--mantine-h2-font-size);
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-weight: 700;
+    line-height: var(--mantine-h2-line-height);
+}
+
+.ratingNumberSubtotal {
+    color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
+    font-size: var(--mantine-h4-font-size);
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-weight: 700;
+    line-height: var(--mantine-h4-line-height);
 }

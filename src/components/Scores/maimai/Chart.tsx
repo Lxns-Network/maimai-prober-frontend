@@ -3,7 +3,7 @@ import { Box, Center, Group, keys, Loader, SegmentedControl, Select, Space, Tabl
 import { useState } from "react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
-import {useWindowSize} from "react-use";
+import { useWindowSize } from "react-use";
 
 type NotesType = "tap" | "hold" | "slide" | "touch" | "break";
 
@@ -224,6 +224,6 @@ export const MaimaiChart = ({ difficulty }: { difficulty: MaimaiDifficultyProps 
       <ChartNotes notes={difficulty.notes} />
     )}
     <Space h={4} />
-    <Text fz="xs" c="dimmed">※ 该表格代表每个 Note 不同评价在达成率中所占的比例，结果仅供参考。</Text>
+    <Text fz="xs" c="dimmed">※ 该表格代表每个 Note 不同判定在达成率中所占的比例，结果仅供参考。</Text>
   </>;
 }
