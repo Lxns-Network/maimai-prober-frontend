@@ -7,6 +7,7 @@ import { ColorSchemeToggle } from "./ColorSchemeToggle.tsx";
 import { GameTabs } from "./GameTabs.tsx";
 import { Game } from "@/types/game";
 import useGame from "@/hooks/useGame.ts";
+import { useSearchParams } from "react-router-dom";
 
 interface HeaderProps {
   navbarOpened: boolean;
@@ -34,6 +35,12 @@ const translateY = {
 
 export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, headerRef }: HeaderProps) {
   const [game, setGame] = useGame();
+  const [_, setSearchParams] = useSearchParams();
+
+  function handleGameChange(game: Game) {
+    setSearchParams({});
+    setGame(game);
+  }
 
   return (
     <div className={classes.header} ref={headerRef}>
@@ -54,7 +61,7 @@ export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, 
 
               <Menu.Dropdown>
                 {games.map((item) => (
-                  <Menu.Item key={item.id} onClick={() => setGame(item.id as Game)}>
+                  <Menu.Item key={item.id} onClick={() => handleGameChange(item.id as Game)}>
                     {item.name}{' '}
                     <Text span c="dimmed" fz="xs">
                       ({item.version})
@@ -72,7 +79,7 @@ export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, 
             <GameTabs
               tabs={games}
               activeTab={game}
-              onTabChange={(tab) => setGame(tab as Game)}
+              onTabChange={(tab) => handleGameChange(tab as Game)}
               style={styles}
             />
           )}
