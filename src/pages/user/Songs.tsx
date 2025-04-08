@@ -100,7 +100,10 @@ const SongsContent = () => {
   }, [song]);
 
   useEffect(() => {
-    if (!songId) return;
+    if (songId === 0) {
+      setSearchParams({});
+      return;
+    }
 
     const song = songList?.songs.find((song) => song.id === songId);
     if (!song) return;
@@ -129,6 +132,7 @@ const SongsContent = () => {
         mounted={Boolean(songId && song)}
         transition="pop"
         timingFunction="ease"
+        enterDelay={250}
       >
         {(styles) => (
           <SongCard song={song} onCreateAlias={() => createAlias.open()} style={styles} />
@@ -139,7 +143,7 @@ const SongsContent = () => {
       <Transition
         mounted={!(songId && song)}
         transition="pop"
-        enterDelay={250}
+        enterDelay={300}
       >
         {(styles) => (
           <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl" style={styles}>
@@ -151,6 +155,7 @@ const SongsContent = () => {
       <Transition
         mounted={Boolean(songId && song)}
         transition="pop"
+        enterDelay={0}
       >
         {(styles) => (
           <SongDifficultyList song={song} scores={scores} setScores={setScores} style={styles} />

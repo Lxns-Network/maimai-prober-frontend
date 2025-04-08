@@ -199,6 +199,9 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
       opened={opened}
       onClose={onClose}
       fullScreen={small}
+      transitionProps={{
+        transition: small ? 'pop' : 'fade-down',
+      }}
       scrollAreaComponent={ScrollArea.Autosize}
       centered
     >

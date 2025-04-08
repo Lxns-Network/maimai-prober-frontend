@@ -6,7 +6,7 @@ import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
 import React, { useEffect, useState } from "react";
 import { ScoreModal } from "../Scores/ScoreModal.tsx";
 import { useDisclosure } from "@mantine/hooks";
-import { Stack } from "@mantine/core";
+import { Chip, Group, Stack } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
@@ -71,31 +71,59 @@ interface SongDifficultiesProps {
   style?: React.CSSProperties;
 }
 
+const maimaiDifficultyTypeData = [{
+  value: "standard",
+  label: "标准",
+  color: "blue",
+}, {
+  value: "dx",
+  label: "DX",
+  color: "orange",
+}, {
+  value: "utage",
+  label: "宴会场",
+  color: "pink",
+}]
+
 export const SongDifficultyList = ({ song, scores, setScores, style }: SongDifficultiesProps) => {
   const [game] = useGame();
   const [difficulties, setDifficulties] = useState<(MaimaiDifficultyProps | ChunithmDifficultyProps)[]>([]);
+  const [difficultyType, setDifficultyType] = useState<"standard" | "dx" | "utage">();
   const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
   const [opened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [ref] = useAutoAnimate();
 
   useEffect(() => {
-    if (!song) return;
+    setDifficulties([]);
+  }, [game]);
 
-    if (game === "maimai") {
-      const difficulties: MaimaiDifficultyProps[] = [];
-      ["standard", "dx", "utage"].forEach((type) => {
-        const d = song.difficulties as MaimaiDifficultiesProps;
-        const t = type as keyof MaimaiDifficultiesProps;
-        if (!d || !d[t]) return null;
-        return d[t].slice().reverse().map((difficulty) => (
-          difficulties.push(difficulty)
-        ));
+  useEffect(() => {
+    if (!song || !song.difficulties) return;
+
+    if ("standard" in song.difficulties) {
+      song = song as MaimaiSongProps;
+      Object.keys(song.difficulties).forEach((type) => {
+        const s = song as MaimaiSongProps;
+        const d = s.difficulties[type as keyof MaimaiDifficultiesProps];
+        if (d && d.length > 0) {
+          setDifficultyType(type as "standard" | "dx" | "utage");
+          return;
+        }
       });
-      setDifficulties(difficulties);
-    } else if (Array.isArray(song.difficulties)) {
+    } else {
       setDifficulties((song.difficulties as ChunithmDifficultyProps[]).slice().reverse());
     }
-  }, [song, game]);
+  }, [song]);
+
+  useEffect(() => {
+    if (!song || !song.difficulties) return;
+
+    if ("standard" in song.difficulties) {
+      if (difficultyType && difficultyType in song.difficulties) {
+        setDifficulties((song.difficulties as MaimaiDifficultiesProps)[difficultyType || "standard"].slice().reverse());
+      }
+    }
+  }, [song, difficultyType]);
 
   return (
     <>
@@ -119,6 +147,18 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
         }}
       />
       <Stack ref={ref} style={style}>
+        {game === "maimai" && song && song.difficulties && (
+          <Chip.Group multiple={false} value={difficultyType} onChange={(value) => setDifficultyType(value as "standard" | "dx" | "utage")}>
+            <Group justify="center">
+              {maimaiDifficultyTypeData.map((type) => {
+                const s = song as MaimaiSongProps;
+                const d = s.difficulties[type.value as keyof MaimaiDifficultiesProps]
+                if (!d || d.length === 0) return null;
+                return <Chip key={type.value} value={type.value} color={type.color}>{type.label}</Chip>
+              })}
+            </Group>
+          </Chip.Group>
+        )}
         {difficulties.map((difficulty) => {
           if (!song) return null;
           if (game === "maimai" && "type" in difficulty) {

@@ -29,7 +29,7 @@ const UtageSongDifficulty = ({ difficulty, score, versions, onClick }: SongProps
             {difficulty.level}
           </Title>
         </Text>
-        <Flex mr="xs">
+        <Flex>
           <Image
             src={`/assets/maimai/music_icon/${score && score.fc || "blank"}.webp`}
             w={rem(30)}
@@ -40,7 +40,7 @@ const UtageSongDifficulty = ({ difficulty, score, versions, onClick }: SongProps
           />
         </Flex>
         {difficulty.is_buddy && (
-          <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">BUDDY</Badge>
+          <Badge variant="filled" color="rgb(73, 9, 10)" size="sm" ml="xs">BUDDY</Badge>
         )}
       </Flex>
       {score ? (
@@ -119,7 +119,7 @@ export const MaimaiSongDifficulty = ({ difficulty, score, versions, onClick }: S
             {difficulty.level_value.toFixed(1)}
           </Title>
         </Text>
-        <Flex mr="xs">
+        <Flex>
           <Image
             src={`/assets/maimai/music_icon/${score && score.fc || "blank"}.webp`}
             w={rem(30)}
@@ -129,11 +129,6 @@ export const MaimaiSongDifficulty = ({ difficulty, score, versions, onClick }: S
             w={rem(30)}
           />
         </Flex>
-        {difficulty.type === "standard" ? (
-          <Badge variant="filled" color="blue">标准</Badge>
-        ) : (
-          <Badge variant="filled" color="orange">DX</Badge>
-        )}
       </Flex>
       {score ? (
         <Card w="100%" radius="md" p="1rem" pt="xs" pb="xs" style={{ color: "var(--mantine-text-dark)", backgroundColor: "#424242" }}>
