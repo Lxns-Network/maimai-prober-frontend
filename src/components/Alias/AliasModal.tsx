@@ -23,6 +23,37 @@ interface AliasModalProps {
   onClose: () => void;
 }
 
+export function calculateNewAliasWeight(
+  alias: AliasProps,
+  vote: boolean // true: 支持, false: 反对
+): AliasProps {
+  let { up, down, total } = alias.weight;
+  const current = alias.vote?.weight;
+  const isUpvote = vote;
+
+  if (current === 0) {
+    if (isUpvote) { up++; total++; }
+    else { down++; total++; }
+  } else if (current === 1) {
+    if (isUpvote) { up--; total--; } // 取消支持
+    else { up--; down++; } // 改为反对
+  } else if (current === -1) {
+    if (!isUpvote) { down--; total--; } // 取消反对
+    else { down--; up++; } // 改为支持
+  }
+
+  const newWeight = (current === (isUpvote ? 1 : -1)) ? 0 : (isUpvote ? 1 : -1);
+
+  return {
+    ...alias,
+    weight: { up, down, total },
+    vote: {
+      ...alias.vote,
+      weight: newWeight,
+    }
+  };
+}
+
 const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (alias: AliasProps) => void }) => {
   if (!alias) return null;
 
@@ -39,13 +70,11 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
   useEffect(() => {
     setSong(songList.find(alias.song.id) || null);
     setProgress((alias.weight.up / alias.weight.total) * 100);
-
-    if (!alias.vote) return;
-
-    setWeight(alias.vote.weight);
   }, []);
 
   useEffect(() => {
+    if (alias.vote) setWeight(alias.vote.weight);
+
     if (alias.weight.total === 0) {
       setProgress(0);
     } else {
@@ -65,34 +94,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
       if (!data.success) {
         throw new Error(data.message);
       }
-      let weightProps;
-      if (weight === 0) { // 没有投票
-        weightProps = {
-          up: alias.weight.up + (vote ? 1 : 0),
-          down: alias.weight.down + (vote ? 0 : 1),
-          total: alias.weight.total + 1,
-        }
-      } else if (weight === 1) { // 取消支持
-        weightProps = {
-          up: alias.weight.up - 1,
-          down: alias.weight.down + (vote ? 0 : 1),
-          total: alias.weight.total + (vote ? -1 : 0),
-        }
-      } else if (weight === -1) { // 取消反对
-        weightProps = {
-          down: alias.weight.down - 1,
-          up: alias.weight.up + (vote ? 1 : 0),
-          total: alias.weight.total + (vote ? 0 : -1),
-        }
-      }
-      setAlias({
-        weight: weightProps,
-        vote: {
-          ...alias.vote,
-          weight: (weight === (vote ? 1 : -1)) ? 0 : (vote ? 1 : -1),
-        }
-      } as AliasProps);
-      setWeight((weight === (vote ? 1 : -1)) ? 0 : (vote ? 1 : -1))
+      setAlias(calculateNewAliasWeight(alias, vote));
     } catch (err) {
       openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote))
     } finally {

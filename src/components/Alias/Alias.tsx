@@ -16,7 +16,7 @@ import { AliasProps } from "@/types/alias";
 interface AliasCardProps {
   alias: AliasProps;
   onClick: () => void;
-  onVote: () => void;
+  onVote: (vote: boolean) => void;
   onDelete: () => void;
 }
 
@@ -39,26 +39,7 @@ export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
       if (!data.success) {
         throw new Error(data.message);
       }
-      if (weight === 0) { // 没有投票
-        alias.weight.up += vote ? 1 : 0;
-        alias.weight.down += vote ? 0 : 1;
-        alias.weight.total += 1;
-      } else if (weight === 1) { // 取消支持
-        alias.weight.up -= 1;
-        alias.weight.down += vote ? 0 : 1;
-        alias.weight.total += vote ? -1 : 0;
-      } else if (weight === -1) { // 取消反对
-        alias.weight.down -= 1;
-        alias.weight.up += vote ? 1 : 0;
-        alias.weight.total += vote ? 0 : -1;
-      }
-      if (alias.weight.total === 0) {
-        setProgress(0);
-      } else {
-        setProgress((alias.weight.up / alias.weight.total) * 100);
-      }
-      setWeight((weight === (vote ? 1 : -1)) ? 0 : (vote ? 1 : -1))
-      onVote();
+      onVote(vote);
     } catch (err) {
       openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote))
     } finally {
@@ -85,13 +66,12 @@ export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
   }
 
   useEffect(() => {
+    if (alias.vote) setWeight(alias.vote.weight);
+
     if (alias.weight.total === 0) {
       setProgress(0);
     } else {
       setProgress((alias.weight.up / alias.weight.total) * 100);
-    }
-    if (alias.vote) {
-      setWeight(alias.vote.weight);
     }
   }, [alias]);
 

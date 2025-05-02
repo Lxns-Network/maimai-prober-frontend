@@ -1,7 +1,7 @@
 import { Box, SimpleGrid } from "@mantine/core";
 import { Alias } from "./Alias.tsx";
 import { useSetState } from "@mantine/hooks";
-import { AliasModal } from "./AliasModal.tsx";
+import {AliasModal, calculateNewAliasWeight} from "./AliasModal.tsx";
 import { useEffect, useState } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { AliasProps } from "@/types/alias";
@@ -53,7 +53,10 @@ export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
               setAlias(alias);
               setOpened(true);
             }}
-            onVote={() => onVote()}
+            onVote={(vote) => {
+              setAlias(calculateNewAliasWeight(alias, vote));
+              onVote();
+            }}
             onDelete={onDelete}
           />
         ))}
