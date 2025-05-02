@@ -25,6 +25,7 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { Game } from "@/types/game";
 import { ScoreRanking } from "./ScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
+import { ChartComment } from "./ChartComment.tsx";
 
 interface ScoreModalProps {
   game: Game;
@@ -153,6 +154,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   }
 
   useEffect(() => {
+    onClose();
     setSong(null);
     setSongList(getSongList(game));
   }, [game]);
@@ -323,6 +325,12 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
               <Accordion.Panel>
                 {isMaimaiScoreProps(score) && <MaimaiChart difficulty={difficulty as MaimaiDifficultyProps} />}
                 {isChunithmScoreProps(score) && <ChunithmChart difficulty={difficulty as ChunithmDifficultyProps} />}
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value="comment">
+              <Accordion.Control>评分与评论</Accordion.Control>
+              <Accordion.Panel>
+                <ChartComment game={game} score={score} />
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>

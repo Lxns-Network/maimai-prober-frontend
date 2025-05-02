@@ -1,0 +1,12 @@
+.actionIcon {
+    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+
+    &:hover {
+        color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+        background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+    }
+}
+
+.textarea {
+    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+}
