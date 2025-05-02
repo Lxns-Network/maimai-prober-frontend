@@ -54,7 +54,7 @@ export const ScoreRanking = ({ game, score }: {
     if (!isLoggedOut) getPlayerScoreRanking(score);
   }, [score]);
 
-  if (fetching) {
+  if (!score || fetching) {
     return (
       <Center>
         <Loader />
@@ -99,7 +99,7 @@ export const ScoreRanking = ({ game, score }: {
         }
 
         return (
-          <>
+          <div key={`${game}:${score.id}:${"type" in score && score.type}:${score.level_index}:${index}`}>
             {rankingScore.ranking > 11 && (
               <Divider variant="dashed" labelPosition="center" label={`相差 ${rankingScore.ranking - rankingScores[index - 1].ranking} 名`} />
             )}
@@ -130,7 +130,7 @@ export const ScoreRanking = ({ game, score }: {
                 )}
               </Group>
             </Paper>
-          </>
+          </div>
         );
       })}
       <Text fz="xs" c="dimmed">※ 该排行榜基于落雪咖啡屋 maimai DX 查分器数据，结果仅供参考。</Text>

@@ -3,7 +3,7 @@ import {
   Card, Text, Group, Loader, Anchor, UnstyledButton, UnstyledButtonProps, Badge, Button, Flex, Pagination, Stack
 } from '@mantine/core';
 import { getDevelopers, revokeDeveloper } from "@/utils/api/developer.ts";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { permissionToList, UserPermission } from "@/utils/session.ts";
 import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import classes from "./AdminDevelopersSection.module.css";
@@ -140,6 +140,8 @@ const AdminDevelopersContent = () => {
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
+  const small = useMediaQuery('(max-width: 30rem)');
+
   const getDevelopersHandler = async () => {
     try {
       const res = await getDevelopers();
@@ -180,7 +182,7 @@ const AdminDevelopersContent = () => {
     <div>
       <EditUserModal user={activeUser as UserProps} opened={opened} close={() => close()} />
       <Stack align="center">
-        <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} />
+        <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} size={small ? "sm" : "md"} />
         <Stack w="100%" ref={parent}>
           {fetching && (
             <Group justify="center">
@@ -198,7 +200,7 @@ const AdminDevelopersContent = () => {
             />
           ))}
         </Stack>
-        <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} />
+        <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} size={small ? "sm" : "md"} />
       </Stack>
     </div>
   );

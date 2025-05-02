@@ -1,5 +1,5 @@
 import { useDisclosure } from "@mantine/hooks";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BackgroundImage, Box, Card, SimpleGrid, useComputedColorScheme } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { MaimaiScoreContent } from "./maimai/Score.tsx";
@@ -78,6 +78,10 @@ export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
   const [ref] = useAutoAnimate();
   const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
   const [opened, { open: openScoreModal, close: closeScoreModal }] = useDisclosure(false);
+
+  useEffect(() => {
+    setScore(null);
+  }, [game]);
 
   return (
     <Box w="100%">

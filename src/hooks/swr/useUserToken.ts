@@ -8,16 +8,7 @@ export const useUserToken = () => {
     error,
     isLoading,
     mutate
-  } = useSWR(`user/refresh`, fetcher);
-
-  if (isTokenUndefined()) {
-    return {
-      token: "",
-      isLoading: false,
-      error: null,
-      mutate: () => {},
-    };
-  }
+  } = useSWR(!isTokenUndefined() && `user/refresh`, fetcher);
 
   if (data) {
     localStorage.setItem("token", data.token);
