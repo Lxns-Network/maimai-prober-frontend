@@ -88,6 +88,7 @@ const SongsContent = () => {
       const types: string[] = [];
       if (s.difficulties.dx.length) types.push("dx");
       if (s.difficulties.standard.length) types.push("standard");
+      if (s.difficulties.utage && s.difficulties.utage.length) types.push("utage");
 
       Promise.all(types.map((type) => getPlayerSongBestsHandler(type))).then((data) => {
         setScores(data.flat().filter((record) => record));
