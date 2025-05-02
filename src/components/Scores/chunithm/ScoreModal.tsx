@@ -1,10 +1,10 @@
 import {
-  AspectRatio, Avatar, Box, Button, Card, Center, Flex, Grid, Group, Image, NumberFormatter, Paper, Rating, rem, Stack,
-  Text, Tooltip
+  AspectRatio, Avatar, Badge, Box, Button, Card, Center, Flex, Grid, Group, Image, NumberFormatter, Paper, Rating,
+  rem, Stack, Text, Tooltip
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { getDifficulty, ChunithmSongProps, ChunithmDifficultyProps } from "@/utils/api/song/chunithm.ts";
-import { IconPhotoOff } from "@tabler/icons-react";
+import { IconNumber, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
 import classes from "../ScoreModal.module.css";
@@ -51,12 +51,14 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
           </PhotoView>
         </SongDisabledIndicator>
         <div style={{ flex: 1 }}>
+          <Group gap={8}>
+            <Badge variant="light" color="gray" size="sm" leftSection={<IconNumber size={18} />}>{song.id}</Badge>
+          </Group>
           <Marquee>
-            <Text fz="lg" fw={500}>{song.title}</Text>
+            <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
           </Marquee>
-          <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>
-          {difficulty?.origin_id && <Text fz="xs" c="dimmed">原曲 ID：{difficulty?.origin_id}</Text>}
-          <Flex columnGap="xs" rowGap={8} wrap="wrap" mt={8}>
+          <Text fz="xs" c="dimmed" mb={8}>{song.artist}</Text>
+          <Flex columnGap="xs" rowGap={8} wrap="wrap">
             <AspectRatio ratio={132 / 24}>
               <Image
                 src={`/assets/chunithm/music_icon/${score.full_combo || "fullcombo_blank"}.webp`}

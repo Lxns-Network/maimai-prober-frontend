@@ -1,7 +1,7 @@
 import { AspectRatio, Avatar, Badge, Box, Button, Grid, Group, Image, Paper, rem, Text, Tooltip } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { getDifficulty, MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { IconChevronRight, IconPhotoOff } from "@tabler/icons-react";
+import { IconChevronRight, IconNumber, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
@@ -66,14 +66,17 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
           </PhotoView>
         </SongDisabledIndicator>
         <div style={{ flex: 1 }}>
-          {score.type === "standard" && <Badge variant="filled" color="blue" size="sm">标准</Badge>}
-          {score.type === "dx" && <Badge variant="filled" color="orange" size="sm">DX</Badge>}
-          {difficulty?.is_buddy && <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">BUDDY</Badge>}
+          <Group gap={8}>
+            {score.type === "standard" && <Badge variant="filled" color="blue" size="sm">标准</Badge>}
+            {score.type === "dx" && <Badge variant="filled" color="orange" size="sm">DX</Badge>}
+            {difficulty?.is_buddy && <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">BUDDY</Badge>}
+            <Badge variant="light" color="gray" size="sm" leftSection={<IconNumber size={18} />}>{song.id}</Badge>
+          </Group>
           <Marquee>
             <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
           </Marquee>
-          <Text fz="xs" c="dimmed" mb={2}>曲目 ID：{song.id}</Text>
-          <Group gap={0} ml={-3}>
+          <Text fz="xs" c="dimmed" mb={2}>{song.artist}</Text>
+          <Group gap={0} ml={-3} mb={-3}>
             <AspectRatio ratio={1}>
               <Image
                 src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`}
@@ -120,18 +123,29 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
           </Group>
           <Grid mt="md">
             <Grid.Col span={6}>
-              <Paper className={[classes.subParameters, classes.subParametersButton].join(' ')} onClick={() => setCalculatorOpened(true)}>
-                <Group>
-                  <div style={{ flex: 1 }}>
-                    <Text fz="xs" c="dimmed">DX Rating</Text>
-                    <Text>
-                      {score.type === "utage" ? "-" : parseInt(String(score.dx_rating))}
-                    </Text>
-                  </div>
+              {score.type === "utage" ? (
+                <Paper className={classes.subParameters}>
+                  <Group>
+                    <div style={{ flex: 1 }}>
+                      <Text fz="xs" c="dimmed">DX Rating</Text>
+                      <Text>-</Text>
+                    </div>
+                  </Group>
+                </Paper>
+              ) : (
+                <Paper className={[classes.subParameters, classes.subParametersButton].join(' ')} onClick={() => setCalculatorOpened(true)}>
+                  <Group>
+                    <div style={{ flex: 1 }}>
+                      <Text fz="xs" c="dimmed">DX Rating</Text>
+                      <Text>
+                        {parseInt(String(score.dx_rating))}
+                      </Text>
+                    </div>
 
-                  <IconChevronRight size={16} color="gray" />
-                </Group>
-              </Paper>
+                    <IconChevronRight size={16} color="gray" />
+                  </Group>
+                </Paper>
+              )}
             </Grid.Col>
             <Grid.Col span={6}>
               <Paper className={classes.subParameters}>

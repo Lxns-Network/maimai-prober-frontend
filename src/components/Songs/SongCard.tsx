@@ -5,7 +5,7 @@ import { ActionIcon, Avatar, Badge, Box, Card, CopyButton, Flex, Group, Stack, T
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
 import { PhotoView } from "react-photo-view";
 import { ASSET_URL } from "@/main.tsx";
-import { IconPhotoOff, IconPlus } from "@tabler/icons-react";
+import { IconNumber, IconPhotoOff, IconPlus } from "@tabler/icons-react";
 import { openAlertModal } from "@/utils/modal.tsx";
 import { AudioPlayer } from "../AudioPlayer.tsx";
 import classes from "./SongCard.module.css";
@@ -59,7 +59,9 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
             </SongDisabledIndicator>
           </Box>
           <Stack gap={3} style={{ flex: 1 }}>
-            <Text fz="xs" c="dimmed">曲目 ID：{song.id}</Text>
+            <Group gap={8} mb={3}>
+              <Badge variant="light" color="gray" size="sm" leftSection={<IconNumber size={18} />}>{song.id}</Badge>
+            </Group>
             <CopyButton value={song.title}>
               {({ copy }) => (
                 <Title size="1.25rem" onClick={() => {
