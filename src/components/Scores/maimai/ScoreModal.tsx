@@ -1,6 +1,6 @@
 import { AspectRatio, Avatar, Badge, Box, Button, Grid, Group, Image, Paper, rem, Text, Tooltip } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
-import { getDifficulty, MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { getDifficulty, MaimaiDifficultyProps, MaimaiNotesProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { IconChevronRight, IconNumber, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
@@ -13,7 +13,48 @@ import { useShallow } from "zustand/react/shallow";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { RatingHistoryModal } from "../RatingHistoryModal.tsx";
 import { DeluxeRatingCalculator } from "./DeluxeRatingCalculator.tsx";
+import { DeluxeScoreDetail } from "./DeluxeScoreDetail.tsx";
 import { MaimaiScoreProps } from "@/types/score";
+
+export function getTotalNotes(notes: MaimaiNotesProps) {
+  if (notes.total) {
+    return notes.total;
+  }
+  return (notes.left?.total || 0) + (notes.right?.total || 0);
+}
+
+export function getDeluxeScoreStars(deluxeScore: number, notes: MaimaiNotesProps) {
+  const totalNotes = getTotalNotes(notes);
+  const percentage = Math.floor((deluxeScore / (totalNotes * 3)) * 100);
+
+  let count = 0;
+  let rate: 1 | 2 | 3 = 1;
+
+  if (percentage >= 97) {
+    count = 5;
+    rate = 3;
+  } else if (percentage >= 95) {
+    count = 4;
+    rate = 2;
+  } else if (percentage >= 93) {
+    count = 3;
+    rate = 2;
+  } else if (percentage >= 90) {
+    count = 2;
+  } else if (percentage >= 85) {
+    count = 1;
+  }
+
+  return { count, rate };
+}
+
+export const DeluxeScoreStars = ({ deluxeScore, notes }: { deluxeScore: number, notes: MaimaiNotesProps }) => {
+  const { count, rate } = getDeluxeScoreStars(deluxeScore, notes);
+
+  return Array.from({ length: count }).map((_, index) => (
+    <Image key={index} src={`/assets/maimai/dx_score/${rate}.webp`} h="100%" />
+  ));
+}
 
 export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScoreProps, song: MaimaiSongProps }) => {
   const { songList } = useSongListStore(
@@ -23,6 +64,7 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
   const [level, setLevel] = useState(score.level);
   const [ratingHistoryOpened, setRatingHistoryOpened] = useState(false);
   const [calculatorOpened, setCalculatorOpened] = useState(false);
+  const [deluxeScoreOpened, setDeluxeScoreOpened] = useState(false);
 
   const levelIndex = score.type !== "utage" ? score.level_index : 5;
   const small = useMediaQuery('(max-width: 30rem)');
@@ -57,6 +99,12 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
         opened={calculatorOpened}
         onClose={() => setCalculatorOpened(false)}
       />
+      <DeluxeScoreDetail
+        deluxeScore={score.dx_score || 0}
+        notes={difficulty?.notes}
+        opened={deluxeScoreOpened}
+        onClose={() => setDeluxeScoreOpened(false)}
+      />
       <Group wrap="nowrap">
         <SongDisabledIndicator disabled={song.disabled}>
           <PhotoView src={`${ASSET_URL}/maimai/jacket/${songList.getSongResourceId(song.id)}.png`}>
@@ -73,9 +121,9 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
             <Badge variant="light" color="gray" size="sm" leftSection={<IconNumber size={18} />}>{song.id}</Badge>
           </Group>
           <Marquee>
-            <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+            <Text fz="lg" fw={500} mt={4}>{song.title}</Text>
           </Marquee>
-          <Text fz="xs" c="dimmed" mb={2}>{song.artist}</Text>
+          <Text fz="xs" c="dimmed" mb={4}>{song.artist}</Text>
           <Group gap={0} ml={-3} mb={-3}>
             <AspectRatio ratio={1}>
               <Image
@@ -148,51 +196,29 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
               )}
             </Grid.Col>
             <Grid.Col span={6}>
-              <Paper className={classes.subParameters}>
-                <Group wrap="nowrap" gap="xs">
-                  <Text fz="xs" c="dimmed">DX 分数</Text>
-                  <Group wrap="nowrap" h={12} gap={0}>
-                    {(() => {
-                      if (!difficulty || !difficulty.notes) return;
-
-                      let percentage: number;
-                      if (difficulty.notes.total) {
-                        percentage = Math.floor((score.dx_score / (difficulty.notes.total * 3)) * 100);
-                      } else {
-                        percentage = Math.floor((score.dx_score / (((difficulty.notes.left?.total || 0) + (difficulty.notes.right?.total || 0)) * 3)) * 100);
+              <Paper className={[classes.subParameters, classes.subParametersButton].join(' ')} onClick={() => setDeluxeScoreOpened(true)}>
+                <Group>
+                  <div style={{ flex: 1 }}>
+                    <Group wrap="nowrap" gap="xs">
+                      <Text fz="xs" c="dimmed">DX 分数</Text>
+                      <Group wrap="nowrap" h={12} gap={0}>
+                        {difficulty && difficulty.notes && (
+                          <DeluxeScoreStars deluxeScore={score.dx_score} notes={difficulty.notes}/>
+                        )}
+                      </Group>
+                    </Group>
+                    {difficulty && difficulty.notes ? <Text>
+                      {score.dx_score}
+                      <span style={{fontSize: 12, marginLeft: 4}}>
+                  / {
+                        (difficulty.notes.total || (difficulty.notes.left?.total || 0) + (difficulty.notes.right?.total || 0)) * 3
                       }
-                      let count = 0;
-                      let rate = 1;
+                </span>
+                    </Text> : <Text>{score.dx_score}</Text>}
+                  </div>
 
-                      if (percentage >= 97) {
-                        count = 5;
-                        rate = 3;
-                      } else if (percentage >= 95) {
-                        count = 4;
-                        rate = 2;
-                      } else if (percentage >= 93) {
-                        count = 3;
-                        rate = 2;
-                      } else if (percentage >= 90) {
-                        count = 2;
-                      } else if (percentage >= 85) {
-                        count = 1;
-                      }
-
-                      return Array.from({ length: count }).map((_, index) => (
-                        <Image key={index} src={`/assets/maimai/dx_score/${rate}.webp`} h="100%" />
-                      ));
-                    })()}
-                  </Group>
+                  <IconChevronRight size={16} color="gray"/>
                 </Group>
-                {difficulty && difficulty.notes ? <Text>
-                  {score.dx_score}
-                  <span style={{ fontSize: 12, marginLeft: 4 }}>
-                    / {
-                      (difficulty.notes.total || (difficulty.notes.left?.total || 0) + (difficulty.notes.right?.total || 0)) * 3
-                    }
-                  </span>
-                </Text> : <Text>{score.dx_score}</Text>}
               </Paper>
             </Grid.Col>
             {score.last_played_time && (
