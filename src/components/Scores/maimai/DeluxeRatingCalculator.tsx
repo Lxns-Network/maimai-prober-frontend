@@ -2,7 +2,7 @@ import { Chip, Group, Modal, NumberInput, ScrollArea, Stack, Table, Text } from 
 import { useEffect, useState } from "react";
 import classes from "./DeluxeRatingCalculator.module.css";
 
-interface RatingHistoryModalProps {
+interface DeluxeRatingCalculatorProps {
   defaultAchievements?: number;
   defaultDeluxeRating?: number;
   defaultLevelValue?: number;
@@ -59,7 +59,7 @@ interface RowProps {
   deluxeRating: number;
 }
 
-export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue, defaultDeluxeRating, opened, onClose }: RatingHistoryModalProps) => {
+export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue, defaultDeluxeRating, opened, onClose }: DeluxeRatingCalculatorProps) => {
   const [achievements, setAchievements] = useState(defaultAchievements);
   const [deluxeRating, setDeluxeRating] = useState(defaultDeluxeRating);
   const [levelValue, setLevelValue] = useState(defaultLevelValue);
@@ -167,7 +167,7 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
               onChange={(value) => setDeluxeRating(value as number)}
             />}
             <ScrollArea h={300}>
-              <Table stickyHeader>
+              <Table stickyHeader horizontalSpacing={0}>
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>达成率</Table.Th>
@@ -203,7 +203,6 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
                 </Table.Tbody>
               </Table>
             </ScrollArea>
-            <Text fz="xs" c="dimmed">※ 该 DX Rating 计算器仍在测试中，计算结果仅供参考。</Text>
           </Stack>
         </Modal.Body>
       </Modal.Content>

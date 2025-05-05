@@ -67,7 +67,7 @@ const SongsContent = () => {
   useEffect(() => {
     setSongList(getSongList(game));
     setScores([]);
-    setSearchParams({});
+    setSearchParams({}, { replace: true });
     setSongId(0);
   }, [game]);
 
@@ -102,7 +102,7 @@ const SongsContent = () => {
 
   useEffect(() => {
     if (songId === 0) {
-      setSearchParams({});
+      setSearchParams({}, { replace: true });
       return;
     }
 
@@ -112,7 +112,7 @@ const SongsContent = () => {
     setSearchParams({
       "game": game,
       "song_id": songId.toString(),
-    });
+    }, { replace: true });
     setSong(song);
     setScores([]);
   }, [songId, songList?.songs]);

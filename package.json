@@ -42,6 +42,7 @@
     "hast-util-from-html-isomorphic": "^2.0.0",
     "immer": "^10.1.1",
     "mantine-datatable": "^7.12.4",
+    "motion": "^12.9.4",
     "node-vibrant": "^3.2.1-alpha.1",
     "postcss-mixins": "^9.0.4",
     "postcss-nested": "^6.0.1",

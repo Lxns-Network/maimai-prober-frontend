@@ -74,6 +74,7 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
                 }} style={{
                   display: "contents",
                   cursor: "pointer",
+                  wordBreak: 'break-all',
                 }}>{song.title}</Title>
               )}
             </CopyButton>

@@ -101,7 +101,12 @@ export const ScoreRanking = ({ game, score }: {
         return (
           <div key={`${game}:${score.id}:${"type" in score && score.type}:${score.level_index}:${index}`}>
             {rankingScore.ranking > 11 && (
-              <Divider variant="dashed" labelPosition="center" label={`相差 ${rankingScore.ranking - rankingScores[index - 1].ranking} 名`} />
+              <Divider
+                variant="dashed"
+                labelPosition="center"
+                label={`相差 ${rankingScore.ranking - rankingScores[index - 1].ranking} 名`}
+                mb="xs"
+              />
             )}
             <Paper key={index} radius="md" withBorder style={{
               position: rankingScore.ranking > 10 ? "sticky" : "static",

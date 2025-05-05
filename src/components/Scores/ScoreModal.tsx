@@ -314,12 +314,6 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 ))}
               </Accordion.Panel>
             </Accordion.Item>
-            <Accordion.Item value="ranking">
-              <Accordion.Control>排行榜</Accordion.Control>
-              <Accordion.Panel>
-                <ScoreRanking game={game} score={score} />
-              </Accordion.Panel>
-            </Accordion.Item>
             <Accordion.Item value="chart">
               <Accordion.Control>谱面详情</Accordion.Control>
               <Accordion.Panel>
@@ -331,6 +325,12 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
               <Accordion.Control>评分与评论</Accordion.Control>
               <Accordion.Panel>
                 <ChartComment game={game} score={score} />
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value="ranking">
+              <Accordion.Control>排行榜</Accordion.Control>
+              <Accordion.Panel>
+                <ScoreRanking game={game} score={score} />
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>

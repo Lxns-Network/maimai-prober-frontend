@@ -1,6 +1,7 @@
 import { Children, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Group } from "@mantine/core";
-import { useHoverDirty, useInterval } from "react-use";
+import { useHoverDirty } from "react-use";
+import { useAnimationFrame } from "motion/react"
 
 interface MarqueeProps {
   speed?: number;
@@ -15,33 +16,34 @@ export const Marquee = ({ speed = 0.5, startDelay = 1000, intervalDelay = 1000, 
   const [isScrolling, setIsScrolling] = useState(false); // 是否需要滚动
   const [isPaused, setIsPaused] = useState(false); // 是否暂停滚动
   const [translateX, setTranslateX] = useState(0);
-  const [direction, setDirection] = useState(1);
-  const [delay, setDelay] = useState(startDelay); // 滚动延迟
+
+  const directionRef = useRef(1);
+  const delayUntilRef = useRef(0);
+
   const ref = useRef<HTMLDivElement>(null);
   const isHovering = useHoverDirty(ref); // 是否鼠标悬停
 
-  useInterval(
-    () => {
-      setDelay(10);
-      setTranslateX((prev) => {
-        if (!ref.current) return 0;
+  useAnimationFrame((time) => {
+    if (!isScrolling || isPaused) return;
 
-        const newTranslateX = prev - direction * speed;
-        const maxTranslateX = ref.current.scrollWidth - ref.current.clientWidth;
+    // 若处于延迟期，不滚动
+    if (delayUntilRef.current && time < delayUntilRef.current) return;
 
-        if (newTranslateX <= -maxTranslateX - speed || newTranslateX >= speed) {
-          setDirection((prev) => -prev);
-        }
+    if (!ref.current) return;
 
-        return newTranslateX;
-      });
-    },
-    isScrolling && !isPaused ? delay : null
-  );
+    setTranslateX((prev) => {
+      const newTranslateX = prev - directionRef.current * speed;
+      const maxTranslateX = ref.current!.scrollWidth - ref.current!.clientWidth;
 
-  useEffect(() => {
-    setDelay(intervalDelay);
-  }, [direction]);
+      if (newTranslateX <= -maxTranslateX - speed || newTranslateX >= speed) {
+        directionRef.current = -directionRef.current; // 反转方向
+        delayUntilRef.current = time + intervalDelay; // 设置延迟截止时间
+        return prev; // 暂停这一帧，等下次再移动
+      }
+
+      return newTranslateX;
+    });
+  });
 
   useEffect(() => {
     if (!isScrolling) {
@@ -57,17 +59,18 @@ export const Marquee = ({ speed = 0.5, startDelay = 1000, intervalDelay = 1000, 
     if (ref.current && ref.current.scrollWidth > ref.current.clientWidth) {
       setTimeout(() => {
         setIsScrolling(true);
-      }, delay);
+      }, startDelay);
     } else {
       setIsScrolling(false);
     }
   });
 
-  return <Group ref={ref} style={{overflowX: "hidden"}} {...props}>
+  return <Group ref={ref} style={{ overflowX: "hidden" }} {...props}>
     {Children.map(children, (child) => (
       <div style={{
         flexShrink: 0,
-        transform: `translateX(${translateX}px)`
+        transform: `translateX(${translateX}px)`,
+        wordBreak: 'break-all'
       }}>{child}</div>
     ))}
   </Group>

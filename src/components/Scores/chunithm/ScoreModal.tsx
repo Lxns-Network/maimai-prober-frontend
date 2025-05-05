@@ -55,9 +55,9 @@ export const ChunithmScoreModalContent = ({ score, song }: { score: ChunithmScor
             <Badge variant="light" color="gray" size="sm" leftSection={<IconNumber size={18} />}>{song.id}</Badge>
           </Group>
           <Marquee>
-            <Text fz="lg" fw={500} mt={2}>{song.title}</Text>
+            <Text fz="lg" fw={500} mt={4}>{song.title}</Text>
           </Marquee>
-          <Text fz="xs" c="dimmed" mb={8}>{song.artist}</Text>
+          <Text fz="xs" c="dimmed" mb={10}>{song.artist}</Text>
           <Flex columnGap="xs" rowGap={8} wrap="wrap">
             <AspectRatio ratio={132 / 24}>
               <Image
