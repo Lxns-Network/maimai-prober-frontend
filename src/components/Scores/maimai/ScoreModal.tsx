@@ -1,4 +1,6 @@
-import { AspectRatio, Avatar, Badge, Box, Button, Grid, Group, Image, Paper, rem, Text, Tooltip } from "@mantine/core";
+import {
+  AspectRatio, Avatar, Badge, Box, Button, Grid, Group, Image, NumberFormatter, Paper, rem, Text, Tooltip
+} from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { getDifficulty, MaimaiDifficultyProps, MaimaiNotesProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { IconChevronRight, IconNumber, IconPhotoOff } from "@tabler/icons-react";
@@ -207,14 +209,14 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
                         )}
                       </Group>
                     </Group>
-                    {difficulty && difficulty.notes ? <Text>
-                      {score.dx_score}
-                      <span style={{fontSize: 12, marginLeft: 4}}>
-                  / {
-                        (difficulty.notes.total || (difficulty.notes.left?.total || 0) + (difficulty.notes.right?.total || 0)) * 3
-                      }
-                </span>
-                    </Text> : <Text>{score.dx_score}</Text>}
+                    <Text>
+                      <NumberFormatter value={score.dx_score} thousandSeparator />
+                      {difficulty && difficulty.notes && (
+                        <span style={{fontSize: 12, marginLeft: 4}}>
+                          / <NumberFormatter value={getTotalNotes(difficulty.notes) * 3} thousandSeparator />
+                        </span>
+                      )}
+                    </Text>
                   </div>
 
                   <IconChevronRight size={16} color="gray"/>

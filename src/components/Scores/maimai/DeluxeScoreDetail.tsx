@@ -1,4 +1,4 @@
-import { Group, Modal, Stack, Table, Text } from "@mantine/core";
+import { Group, Modal, NumberFormatter, Stack, Table, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { MaimaiNotesProps } from "@/utils/api/song/maimai.ts";
 import { DeluxeScoreStars, getDeluxeScoreStars, getTotalNotes } from "@/components/Scores/maimai/ScoreModal.tsx";
@@ -64,7 +64,7 @@ export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: Delux
                   />
                 </Group>
                 <Text size="sm">
-                  还差 {nextDeluxeScore - deluxeScore} 分
+                  还差 <NumberFormatter value={nextDeluxeScore - deluxeScore} thousandSeparator /> 分
                 </Text>
               </Group>
             ) : (
@@ -92,9 +92,13 @@ export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: Delux
                     {rows[index+1] ? (
                       <Table.Td className={classes.changeLabel} data-label={
                         `+ ${rows[index+1].deluxeScore - row.deluxeScore}`
-                      }>{row.deluxeScore}</Table.Td>
+                      }>
+                        <NumberFormatter value={row.deluxeScore} thousandSeparator />
+                      </Table.Td>
                     ) : (
-                      <Table.Td>{row.deluxeScore}</Table.Td>
+                      <Table.Td>
+                        <NumberFormatter value={row.deluxeScore} thousandSeparator />
+                      </Table.Td>
                     )}
                   </Table.Tr>
                 })}
