@@ -50,17 +50,8 @@ export const ScoreRanking = ({ game, score }: {
 
   useEffect(() => {
     if (!score) return;
-
     if (!isLoggedOut) getPlayerScoreRanking(score);
   }, [score]);
-
-  if (!score || fetching) {
-    return (
-      <Center>
-        <Loader />
-      </Center>
-    );
-  }
 
   if (isLoggedOut) {
     return (
@@ -68,6 +59,14 @@ export const ScoreRanking = ({ game, score }: {
         <IconDatabaseOff size={64} stroke={1.5} />
         <Text fz="sm">请登录后查看排行</Text>
       </Flex>
+    );
+  }
+
+  if (!score || fetching) {
+    return (
+      <Center>
+        <Loader />
+      </Center>
     );
   }
 

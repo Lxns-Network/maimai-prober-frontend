@@ -2,22 +2,19 @@ import { useContext, useEffect, useRef, useState } from "react";
 import ScoreContext from "@/utils/context.ts";
 import { fetchAPI } from "@/utils/api/api.ts";
 import {
-  Accordion, ActionIcon, Avatar, Center, CheckIcon, Combobox, Container, Flex, Group, Loader, Modal, ScrollArea, Space,
-  Stack, Text, Transition, useCombobox
+  Accordion, ActionIcon, Avatar, Badge, Center, CheckIcon, Combobox, Container, Group, Modal, ScrollArea, Space, Stack,
+  Text, Transition, useCombobox
 } from "@mantine/core";
-import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
 import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmDifficultyProps, ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { MaimaiScoreModalContent } from "./maimai/ScoreModal.tsx";
 import { ChunithmScoreModalContent } from "./chunithm/ScoreModal.tsx";
-import { ChunithmScoreHistory } from "./chunithm/ScoreHistory.tsx";
 import { MaimaiChart } from "./maimai/Chart.tsx";
-import { openRetryModal } from "@/utils/modal.tsx";
 import classes from "./ScoreModal.module.css"
 import { ChunithmChart } from "./chunithm/Chart.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
 import { ASSET_URL } from "@/main.tsx";
-import { IconDatabaseOff, IconDots, IconPhotoOff } from "@tabler/icons-react";
+import { IconDots, IconPhotoOff } from "@tabler/icons-react";
 import { useIntersection, useMediaQuery } from "@mantine/hooks";
 import { Marquee } from "../Marquee.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -26,6 +23,7 @@ import { Game } from "@/types/game";
 import { ScoreRanking } from "./ScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { ChartComment } from "./ChartComment.tsx";
+import { rankData, ScoreHistory } from "./ScoreHistory.tsx";
 
 interface ScoreModalProps {
   game: Game;
@@ -33,31 +31,6 @@ interface ScoreModalProps {
   opened: boolean;
   onClose: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
 }
-
-const rankData = {
-  maimai: {
-    "SSS+": 100.5,
-    "SSS": 100,
-    "SS+": 99.5,
-    "SS": 99,
-    "S+": 98,
-    "S": 97,
-    "AAA": 94,
-    "AA": 90,
-    "A": 80,
-  },
-  chunithm: {
-    "SSS+": 1009000,
-    "SSS": 1007500,
-    "SS+": 1005000,
-    "SS": 1000000,
-    "S+": 990000,
-    "S": 975000,
-    "AAA": 950000,
-    "AA": 925000,
-    "A": 900000,
-  }
-};
 
 const difficultyLabelData = {
   maimai: ["BASIC", "ADVANCED", "EXPERT", "MASTER", "Re:MASTER", "U·TA·GE"],
@@ -84,12 +57,8 @@ function getDifficultyColor(game: Game, difficulty: MaimaiDifficultyProps | Chun
 
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [historyScores, setHistoryScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
-  const [fetching, setFetching] = useState(true);
   const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | ChunithmDifficultyProps | null>(null);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-  const [minRank, setMinRank] = useState<string>("A");
-  const isLoggedOut = !localStorage.getItem("token");
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -104,53 +73,18 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     threshold: 0.95,
   });
 
+  // ScoreHistory
+  const [minRank, setMinRank] = useState<string>("A");
+
+  // ChartComment
+  const [commentCount, setCommentCount] = useState<number>(0);
+
   const getSongDetailHandler = async (id: number) => {
     const res = await fetchAPI(`${game}/song/${id}`, {
       method: "GET",
     });
     const data = await res.json();
     setSong(data);
-  }
-
-  const getPlayerScoreHistory = async (score: MaimaiScoreProps | ChunithmScoreProps) => {
-    if ((game === "maimai" && "achievements" in score && score.achievements < 0) ||
-      (game === "chunithm" && "score" in score && score.score < 0)) {
-      setHistoryScores([]);
-      setFetching(false);
-      return;
-    }
-    setFetching(true);
-    try {
-      const params = new URLSearchParams({
-        song_id: `${score.id}`,
-        level_index: `${score.level_index}`,
-      });
-      if (game === "maimai" && "achievements" in score) {
-        params.append("song_type", `${score.type}`);
-      }
-      const res = await fetchAPI(`user/${game}/player/score/history?${params.toString()}`, {
-        method: "GET",
-      })
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      if (data.data) {
-        setHistoryScores(data.data.sort((a: MaimaiScoreProps | ChunithmScoreProps, b: MaimaiScoreProps | ChunithmScoreProps) => {
-          const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
-
-          if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
-            return new Date(a.play_time).getTime() - new Date(b.play_time).getTime();
-          }
-
-          return uploadTimeDiff;
-        }));
-      }
-    } catch (error) {
-      openRetryModal("历史记录获取失败", `${error}`, () => getPlayerScoreHistory(score))
-    } finally {
-      setFetching(false);
-    }
   }
 
   useEffect(() => {
@@ -180,9 +114,6 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
     setSong(songList?.find(score.id) || null);
     getSongDetailHandler(score.id);
-
-    setHistoryScores([]);
-    if (!isLoggedOut) getPlayerScoreHistory(score);
   }, [score]);
 
   function isMaimaiScoreProps(obj: unknown): obj is MaimaiScoreProps {
@@ -293,25 +224,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 </Combobox>
               </Center>
               <Accordion.Panel>
-                {isLoggedOut ? (
-                  <Flex gap="xs" align="center" direction="column" c="dimmed">
-                    <IconDatabaseOff size={64} stroke={1.5} />
-                    <Text fz="sm">请登录后查看历史记录</Text>
-                  </Flex>
-                ) : (fetching ? (
-                  <Center>
-                    <Loader />
-                  </Center>
-                ) : (game === "maimai" ?
-                  <MaimaiScoreHistory
-                    scores={historyScores as MaimaiScoreProps[]}
-                    minAchievements={rankData.maimai[minRank as keyof typeof rankData.maimai]}
-                  /> :
-                  <ChunithmScoreHistory
-                    scores={historyScores as ChunithmScoreProps[]}
-                    minScore={rankData.chunithm[minRank as keyof typeof rankData.chunithm]}
-                  />
-                ))}
+                <ScoreHistory game={game} score={score} minRank={minRank} />
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="chart">
@@ -322,9 +235,14 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="comment">
-              <Accordion.Control>评分与评论</Accordion.Control>
+              <Accordion.Control>
+                <Group>
+                  <span>评分与评论</span>
+                  <Badge color="gray" variant="light">{commentCount}</Badge>
+                </Group>
+              </Accordion.Control>
               <Accordion.Panel>
-                <ChartComment game={game} score={score} />
+                <ChartComment game={game} score={score} setCommentCount={setCommentCount} />
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="ranking">

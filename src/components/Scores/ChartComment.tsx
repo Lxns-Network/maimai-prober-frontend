@@ -1,11 +1,28 @@
 import {
-  ActionIcon, Avatar, Box, Button, Center, Divider, Flex, Group, Loader, Menu, NumberFormatter, Pagination, Paper,
-  Rating, Stack, Text, Textarea, ThemeIcon
+  ActionIcon,
+  Avatar,
+  Box,
+  Button,
+  Center,
+  Divider,
+  Flex,
+  Group,
+  Image,
+  Loader,
+  Menu,
+  NumberFormatter,
+  Pagination,
+  Paper,
+  Rating,
+  Stack,
+  Text,
+  Textarea,
+  ThemeIcon
 } from "@mantine/core";
 import { Game } from "@/types/game";
 import { ASSET_URL } from "@/main.tsx";
 import {
-  IconDots, IconFlag2Filled, IconHeart, IconHeartFilled, IconMenu2, IconPhotoOff, IconTrash
+  IconDots, IconFlag2Filled, IconHeart, IconHeartFilled, IconMenu2, IconMessage, IconPhotoOff, IconTrash
 } from "@tabler/icons-react";
 import classes from "./ChartComment.module.css";
 import { useForm } from "@mantine/form";
@@ -248,9 +265,10 @@ const CommentItem = ({ game, comment, onUpdate, onDelete }: {
   )
 }
 
-export const ChartComment = ({ game, score }: {
+export const ChartComment = ({ game, score, setCommentCount }: {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
+  setCommentCount?: (count: number) => void;
 }) => {
   const [sortedComments, setSortedComments] = useState<Comment[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -298,14 +316,12 @@ export const ChartComment = ({ game, score }: {
 
   useEffect(() => {
     if (!score) return;
-
     if (!isLoggedOut) getComments(score);
   }, [score]);
 
   useEffect(() => {
-    if (comments.length === 0) return;
-
-    sortComments(sort);
+    setCommentCount && setCommentCount(comments.length);
+    if (comments.length !== 0) sortComments(sort);
   }, [sort, comments]);
 
   const getTotalRating = () => {
@@ -318,6 +334,9 @@ export const ChartComment = ({ game, score }: {
   return (
     <Stack>
       <Group>
+        <ThemeIcon variant="subtle" color="gray">
+          <IconMessage style={{ width: '100%', height: '100%' }} stroke={1.5} />
+        </ThemeIcon>
         <Stack gap={2} style={{ flex: 1 }}>
           <Text size="lg">评论</Text>
           <Text size="xs" c="dimmed">
@@ -328,7 +347,7 @@ export const ChartComment = ({ game, score }: {
           variant="subtle"
           color="gray"
           size="compact-xs"
-          leftSection={<IconMenu2 size={16} />}
+          leftSection={<IconMenu2 size={16} stroke={1.5} />}
           onClick={() => toggleSort()}
         >
           按{SORT_OPTIONS.find((option) => option.value === sort)?.label}
@@ -367,11 +386,12 @@ export const ChartComment = ({ game, score }: {
         ) : (
           <>
             {comments.length === 0 ? (
-              <Center w="100%">
+              <Stack gap="xs" align="center">
+                <Image src="/empty.webp" w={240} />
                 <Text c="dimmed" fz="sm">
                   {isLoggedOut ? "请登录后查看玩家评论" : "还没有人发表看法呢~"}
                 </Text>
-              </Center>
+              </Stack>
             ) : (
               <Paper w="100%" p="md" radius="sm" withBorder>
                 <Stack>
