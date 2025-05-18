@@ -18,6 +18,7 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import useAliasListStore from "@/hooks/useAliasListStore.ts";
 import { useSiteConfig } from "@/hooks/swr/useSiteConfig.ts";
 import { useUserToken } from "@/hooks/swr/useUserToken.ts";
+import { useVersionChecker } from "@/hooks/useVersionChecker.tsx";
 
 import 'react-photo-view/dist/react-photo-view.css';
 import classes from "./App.module.css";
@@ -46,6 +47,9 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const viewport = useRef<HTMLDivElement>(null);
+
+  // 版本检查
+  useVersionChecker();
 
   // 侧边栏手势
   const ref = useRef<HTMLDivElement>(null);
