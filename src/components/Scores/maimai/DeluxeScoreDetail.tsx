@@ -1,4 +1,4 @@
-import { Group, Modal, NumberFormatter, Stack, Table, Text } from "@mantine/core";
+import { Chip, Divider, Group, Modal, NumberFormatter, Stack, Table, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { MaimaiNotesProps } from "@/utils/api/song/maimai.ts";
 import { DeluxeScoreStars, getDeluxeScoreStars, getTotalNotes } from "@/components/Scores/maimai/ScoreModal.tsx";
@@ -20,6 +20,7 @@ interface RowProps {
 
 export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: DeluxeScoreDetailProps) => {
   const [rows, setRows] = useState<RowProps[]>([]);
+  const [mode, setMode] = useState("+");
 
   useEffect(() => {
     if (!notes) return;
@@ -72,7 +73,17 @@ export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: Delux
                 已达到最高星级
               </Text>
             )}
-            <Table horizontalSpacing={0}>
+            <Divider />
+            <Group>
+              <Text size="sm" fw={500}>显示类型</Text>
+              <Chip.Group value={mode} onChange={(value) => setMode(value as string)}>
+                <Group>
+                  <Chip size="xs" value="+">+ 型</Chip>
+                  <Chip size="xs" value="-">- 型</Chip>
+                </Group>
+              </Chip.Group>
+            </Group>
+            <Table horizontalSpacing={0} layout="fixed">
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>星级</Table.Th>
@@ -93,11 +104,11 @@ export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: Delux
                       <Table.Td className={classes.changeLabel} data-label={
                         `+ ${rows[index+1].deluxeScore - row.deluxeScore}`
                       }>
-                        <NumberFormatter value={row.deluxeScore} thousandSeparator />
+                        <NumberFormatter value={row.deluxeScore - (mode === "+" ? 0 : getTotalNotes(notes) * 3)} thousandSeparator />
                       </Table.Td>
                     ) : (
                       <Table.Td>
-                        <NumberFormatter value={row.deluxeScore} thousandSeparator />
+                        <NumberFormatter value={row.deluxeScore - (mode === "+" ? 0 : getTotalNotes(notes) * 3)} thousandSeparator />
                       </Table.Td>
                     )}
                   </Table.Tr>

@@ -167,12 +167,12 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
               onChange={(value) => setDeluxeRating(value as number)}
             />}
             <ScrollArea h={300}>
-              <Table stickyHeader horizontalSpacing={0}>
+              <Table stickyHeader horizontalSpacing={0} layout="fixed">
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>达成率</Table.Th>
-                    <Table.Th>定数</Table.Th>
-                    <Table.Th>DX Rating</Table.Th>
+                    <Table.Th w={10}>达成率</Table.Th>
+                    <Table.Th w={5}>定数</Table.Th>
+                    <Table.Th w={10}>DX Rating</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>

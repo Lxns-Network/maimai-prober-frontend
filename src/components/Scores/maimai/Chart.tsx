@@ -145,36 +145,38 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
     </Table.Tr>;
   });
 
-  return <Table.ScrollContainer minWidth={400} maw={width-32}>
-    <Table mb={-12} horizontalSpacing={0}>
-      <Table.Thead>
-        <Table.Tr>
-          <Table.Th>
-            <Select
-              variant="unstyled"
-              size="xs"
-              w={56}
-              data={['0+', '100-', '101-']}
-              defaultValue="101-"
-              value={mode}
-              onChange={(value) => setMode(value as string)}
-              withCheckIcon={false}
-              comboboxProps={{
-                shadow: 'md',
-                transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' }
-              }}
-            />
-          </Table.Th>
-          <Table.Th>物量</Table.Th>
-          <Table.Th c="orange">PERFECT</Table.Th>
-          <Table.Th c="pink">GREAT</Table.Th>
-          <Table.Th c="green">GOOD</Table.Th>
-          <Table.Th c="gray">MISS</Table.Th>
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>{rows}</Table.Tbody>
-    </Table>
-  </Table.ScrollContainer>;
+  return (
+    <Table.ScrollContainer minWidth={400} maw={width-32}>
+      <Table mb={-12} horizontalSpacing={0} layout="fixed">
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th w={8} p={0}>
+              <Select
+                variant="unstyled"
+                size="xs"
+                w={56}
+                data={['0+', '100-', '101-']}
+                defaultValue="101-"
+                value={mode}
+                onChange={(value) => setMode(value as string)}
+                withCheckIcon={false}
+                comboboxProps={{
+                  shadow: 'md',
+                  transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' }
+                }}
+              />
+            </Table.Th>
+            <Table.Th w={6}>物量</Table.Th>
+            <Table.Th w={10} c="orange">PERFECT</Table.Th>
+            <Table.Th w={10} c="pink">GREAT</Table.Th>
+            <Table.Th w={10} c="green">GOOD</Table.Th>
+            <Table.Th w={10} c="gray">MISS</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>{rows}</Table.Tbody>
+      </Table>
+    </Table.ScrollContainer>
+  );
 }
 
 export const MaimaiChart = ({ difficulty }: { difficulty: MaimaiDifficultyProps }) => {
