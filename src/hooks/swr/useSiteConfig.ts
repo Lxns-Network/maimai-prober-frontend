@@ -2,6 +2,9 @@ import useSWR from "swr";
 import { fetcher } from "@/hooks/swr/fetcher.ts";
 
 interface ConfigProps {
+  resource_version: {
+    [key: string]: number;
+  },
   resource_hashes: {
     [key: string]: {
       [key: string]: string;

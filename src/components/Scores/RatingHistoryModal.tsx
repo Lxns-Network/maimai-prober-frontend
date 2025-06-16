@@ -15,7 +15,7 @@ interface RatingHistoryModalProps {
 }
 
 const HISTORY_VERSION_LIST = {
-  maimai: [20000, 21000, 22000, 23000, 24000],
+  maimai: [20000, 21000, 22000, 23000, 24000, 25000],
   chunithm: [20000, 20500, 22000],
 };
 

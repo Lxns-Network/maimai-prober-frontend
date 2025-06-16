@@ -15,17 +15,17 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
       label: 'B35',
       count: bests.standard_total,
       color: '#228be6',
-      min: bests.standard[bests.standard.length - 1].dx_rating,
+      min: bests.standard.length > 0 ? bests.standard[bests.standard.length - 1].dx_rating : 0,
       avg: Math.floor(bests.standard.reduce((acc, score) => acc + score.dx_rating, 0) / bests.standard.length * 100) / 100 || 0,
-      max: bests.standard[0].dx_rating
+      max: bests.standard.length > 0 ? bests.standard[0].dx_rating : 0
     });
     data.push({
       label: 'B15',
       count: bests.dx_total,
       color: '#fd7e14',
-      min: bests.dx[bests.dx.length - 1].dx_rating,
+      min: bests.dx.length > 0 ? bests.dx[bests.dx.length - 1].dx_rating : 0,
       avg: Math.floor(bests.dx.reduce((acc, score) => acc + score.dx_rating, 0) / bests.dx.length * 100) / 100 || 0,
-      max: bests.dx[0].dx_rating
+      max: bests.dx.length > 0 ? bests.dx[0].dx_rating : 0
     });
   } else if (game === 'chunithm') {
     bests = bests as ChunithmBestsProps;
@@ -33,22 +33,22 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
       label: 'B30',
       count: Math.floor(bests.bests.reduce((acc, score) => acc + score.rating, 0) / bests.bests.length * 100) / 100 || 0,
       color: '#228be6',
-      min: bests.bests[bests.bests.length - 1].rating,
-      max: bests.bests[0].rating
+      min: bests.bests.length > 0 ? bests.bests[bests.bests.length - 1].rating : 0,
+      max: bests.bests.length > 0 ? bests.bests[0].rating : 0
     });
     data.push({
       label: 'S10',
       count: Math.floor(bests.selections.reduce((acc, score) => acc + score.rating, 0) / bests.selections.length * 100) / 100 || 0,
       color: '#228be6',
-      min: bests.selections[bests.selections.length - 1].rating,
-      max: bests.selections[0].rating
+      min: bests.selections.length > 0 ? bests.selections[bests.selections.length - 1].rating : 0,
+      max: bests.selections.length > 0 ? bests.selections[0].rating : 0
     });
     data.push({
       label: 'R10',
       count: Math.floor(bests.recents.reduce((acc, score) => acc + score.rating, 0) / bests.recents.length * 100) / 100 || 0,
       color: '#228be6',
-      min: bests.recents[bests.recents.length - 1].rating,
-      max: bests.recents[0].rating
+      min: bests.recents.length > 0 ? bests.recents[bests.recents.length - 1].rating : 0,
+      max: bests.recents.length > 0 ? bests.recents[0].rating : 0
     });
   }
 

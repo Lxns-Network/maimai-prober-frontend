@@ -25,6 +25,9 @@ interface ModalProps {
 
 const versionData = {
   maimai: [{
+    title: "舞萌DX 2025",
+    version: 25000,
+  }, {
     title: "舞萌DX 2024",
     version: 24000,
   }, {

@@ -19,11 +19,9 @@ interface HeaderProps {
 const games = [{
   id: 'maimai',
   name: '舞萌 DX',
-  version: 24000
 }, {
   id: 'chunithm',
   name: '中二节奏',
-  version: 22000
 }]
 
 const translateY = {
@@ -64,7 +62,7 @@ export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible, 
                   <Menu.Item key={item.id} onClick={() => handleGameChange(item.id as Game)}>
                     {item.name}{' '}
                     <Text span c="dimmed" fz="xs">
-                      ({item.version})
+                      ({localStorage.getItem(`${item.id}_version`)})
                     </Text>
                   </Menu.Item>
                 ))}

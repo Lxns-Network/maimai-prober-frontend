@@ -119,6 +119,9 @@ export default function App() {
   useEffect(() => {
     if (isSiteConfigLoading || !config) return;
 
+    localStorage.setItem("maimai_version", (config.resource_version.maimai || 25000).toString());
+    localStorage.setItem("chunithm_version", (config.resource_version.chunithm || 22000).toString());
+
     if (getSongList(game).songs.length === 0) {
       Promise.all([
         fetchSongList(config.resource_hashes),
