@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
-  Title, Text, Image, Button, Container, rem, SimpleGrid, ThemeIcon, Center, AspectRatio
+  Title, Text, Button, Container, rem, SimpleGrid, ThemeIcon, Center, AspectRatio
 } from '@mantine/core';
 import { useNavigate } from "react-router-dom";
 import { IconChartBar, IconCode, IconGavel, IconHandStop, IconHistory } from "@tabler/icons-react";
@@ -30,9 +30,68 @@ function Feature({ icon, title, description, ...others }: FeatureProps) {
   );
 }
 
+function LogoParallax() {
+  const foregroundRef = useRef<HTMLDivElement>(null);
+  const backgroundRef = useRef<HTMLDivElement>(null);
+  const logoParallaxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleMouseMove(e: MouseEvent) {
+      if (!logoParallaxRef.current) return;
+
+      const parallaxRect = logoParallaxRef.current.getBoundingClientRect();
+
+      // 图片中心点坐标（相对于视口）
+      const centerX = parallaxRect.left + parallaxRect.width / 2;
+      const centerY = parallaxRect.top + parallaxRect.height / 2;
+
+      // 鼠标当前位置
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+
+      // 鼠标相对图片中心的距离
+      const dx = (mouseX - centerX) / (parallaxRect.width / 2); // -1 ~ 1
+      const dy = (mouseY - centerY) / (parallaxRect.height / 2); // -1 ~ 1
+
+      // 控制最大偏移量
+      const maxOffsetX = 0.5; // px
+      const maxOffsetY = 0.5; // px
+
+      const offsetX = dx * maxOffsetX;
+      const offsetY = dy * maxOffsetY;
+
+      if (foregroundRef.current) {
+        foregroundRef.current.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      }
+      if (backgroundRef.current) {
+        backgroundRef.current.style.transform = `translate(${-offsetX}px, ${-offsetY}px)`;
+      }
+    }
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
+
+  return (
+    <AspectRatio
+      className={classes.logoWrapper}
+      ratio={1200 / 735}
+      mb="md"
+    >
+      <div ref={logoParallaxRef} className={classes.logoParallax}>
+        <div ref={backgroundRef} className={classes.background}/>
+        <div ref={foregroundRef} className={classes.foreground}/>
+      </div>
+    </AspectRatio>
+  );
+}
+
 const features = [
   {
-    icon: <IconHandStop stroke={1.5} />,
+    icon: <IconHandStop stroke={1.5}/>,
     title: '易于同步成绩',
     description: '摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。',
   },
@@ -68,15 +127,7 @@ export default function Home() {
   return (
     <>
       <Container className={classes.root}>
-        <AspectRatio ratio={1200 / 863}>
-          <Image
-            src="/logo.webp"
-            alt="落雪咖啡屋 maimai DX 查分器"
-            maw={600}
-            mx="auto"
-            mb="md"
-          />
-        </AspectRatio>
+        <LogoParallax />
 
         <Title className={classes.title}>
           落雪咖啡屋{' '}

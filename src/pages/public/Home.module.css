@@ -14,6 +14,71 @@
     }
 }
 
+.logoWrapper {
+    position: relative;
+    overflow: hidden;
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        max-width: calc(100% + 32px);
+        margin-left: -16px;
+        margin-right: -16px;
+    }
+}
+
+.logo {
+    opacity: 0 !important;
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        position: relative;
+        width: calc(100% + 48px);
+        left: -24px;
+    }
+}
+
+.logoParallax {
+    position: relative;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 700px;
+    width: 100%;
+
+    @mixin smaller-than $mantine-breakpoint-xs {
+        width: calc(100% + 48px);
+    }
+}
+
+.background {
+    opacity: light-dark(1, 0.5);
+    width: 100%;
+    height: 100%;
+    background-image: url('/logo_background.webp');
+    background-size: cover;
+}
+
+.foreground {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/logo_foreground.webp');
+    background-size: cover;
+
+    /* 使用mask让后续内容只显示在图片轮廓 */
+    mask-image: url('/logo_foreground.webp');
+    mask-size: cover;
+    -webkit-mask-image: url('/logo_foreground.webp');
+    -webkit-mask-size: cover;
+
+    &:after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: light-dark(rgba(0, 0, 0, 0), alpha(var(--mantine-color-dark-4), 0.2));
+        pointer-events: none;
+    }
+}
+
 .title {
     text-align: center;
     font-weight: 800;
