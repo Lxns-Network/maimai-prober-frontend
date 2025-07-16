@@ -1,5 +1,5 @@
 import { AspectRatio, Divider, Flex, Group, Image, Modal, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core";
-import { useCallback, useEffect, useState } from "react";
+import { Ref, useCallback, useEffect, useState } from "react";
 import { MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { IconArrowBigDownFilled, IconArrowBigRightFilled, IconArrowBigUpFilled } from "@tabler/icons-react";
 import { useScrollIntoView } from "@mantine/hooks";
@@ -93,7 +93,7 @@ export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: Rating
             <Flex mb="xs" justify="center">
               {versions.map((version, index) => (
                 <Stack key={version} gap="xs" ref={
-                  index === versions.length - 1 ? targetRef : null
+                  index === versions.length - 1 ? (targetRef as Ref<HTMLDivElement>) : undefined
                 }>
                   {ratings[index] ? <>
                     <AspectRatio ratio={ratio}>

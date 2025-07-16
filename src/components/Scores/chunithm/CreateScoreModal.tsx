@@ -241,12 +241,12 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
             <Divider my="xs" label="以下为选填参数" labelPosition="center" />
             <Grid mb="xs">
               <Grid.Col span={12}>
-                <DatesProvider settings={{ locale: 'zh-cn', firstDayOfWeek: 0, weekendDays: [0, 6], timezone: 'Asia/Shanghai' }}>
+                <DatesProvider settings={{ locale: 'zh-cn', firstDayOfWeek: 0, weekendDays: [0, 6] }}>
                   <DateTimePicker
                     label="游玩时间"
                     placeholder="请选择游玩时间"
                     valueFormat="YYYY-MM-DD HH:mm:ss"
-                    excludeDate={(date) => date > new Date()}
+                    excludeDate={(date) => new Date(date) > new Date()}
                     clearable
                     {...form.getInputProps("play_time")}
                   />

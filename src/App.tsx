@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon, Portal } from '@mantine/core';
+import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from '@mantine/core';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
 import { ModalsProvider } from "@mantine/modals";
 import { notifications, Notifications } from "@mantine/notifications";
@@ -28,13 +28,6 @@ const theme = createTheme({
   focusRing: 'never',
   cursorType: 'pointer',
   activeClassName: classes.active,
-  components: {
-    Portal: Portal.extend({
-      defaultProps: {
-        reuseTargetNode: true,
-      },
-    }),
-  },
 });
 
 export const NAVBAR_BREAKPOINT = 992;

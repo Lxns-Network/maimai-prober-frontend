@@ -1,4 +1,5 @@
-import { Carousel, Embla } from "@mantine/carousel";
+import { Carousel } from "@mantine/carousel";
+import { EmblaCarouselType } from "embla-carousel";
 import { useInViewport } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
 import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
@@ -19,7 +20,7 @@ export const ProductCarousel = () => {
   const { ref, inViewport } = useInViewport();
   const { width } = useShellViewportSize();
   const [containerWidth, setContainerWidth] = useState(width);
-  const [embla, setEmbla] = useState<Embla | null>(null);
+  const [embla, setEmbla] = useState<EmblaCarouselType | null>(null);
 
   useEffect(() => {
     if (width < 576) {
@@ -47,7 +48,7 @@ export const ProductCarousel = () => {
     <Carousel
       slideSize={{ base: '100%', sm: '80%' }}
       slideGap="md"
-      loop
+      emblaOptions={{ loop: true }}
       draggable={isTouchScreen()}
       getEmblaApi={setEmbla}
       plugins={[autoplay.current]}

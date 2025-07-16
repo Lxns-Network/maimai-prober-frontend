@@ -302,17 +302,19 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
       </Grid.Col>
       <Grid.Col span={6}>
         <Text fz="xs" c="dimmed" mb={3}>筛选上传时间</Text>
-        <DatesProvider settings={{ locale: 'zh-cn', firstDayOfWeek: 0, weekendDays: [0, 6], timezone: 'Asia/Shanghai' }}>
+        <DatesProvider settings={{ locale: 'zh-cn', firstDayOfWeek: 0, weekendDays: [0, 6] }}>
           <DatePickerInput
             type="range"
             allowSingleDateInRange={true}
-            excludeDate={(date) => date > new Date()}
+            excludeDate={(date) => new Date(date) > new Date()}
             variant="filled"
             placeholder="请选择上传时间范围"
             labelSeparator=" ~ "
             valueFormat="YYYY/M/D"
             value={uploadTime}
-            onChange={setUploadTime}
+            onChange={([startDate, endDate]) => {
+              setUploadTime([new Date(startDate as string), new Date(endDate as string)])
+            }}
             clearable
           />
         </DatesProvider>
