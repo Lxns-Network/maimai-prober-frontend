@@ -375,7 +375,7 @@ export default function Docs() {
 
   const pageHandler = async (page: string) => {
     const fetchPage = async (path: string) => {
-      const response = await fetch(path);
+      const response = await fetch(path + '?_t=' + Date.now());
       if (response.ok) {
         return await response.text();
       }
@@ -384,7 +384,7 @@ export default function Docs() {
 
     const text = await fetchPage(`/docs/${page}.md`) || await fetchPage(`/docs/${page}/index.md`);
     if (!text) {
-      navigate("/404");
+      navigate("/404", { replace: true });
       return;
     }
 

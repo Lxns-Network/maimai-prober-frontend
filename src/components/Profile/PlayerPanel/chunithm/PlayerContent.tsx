@@ -53,7 +53,7 @@ export const ChunithmPlayerContent = ({ player }: { player: ChunithmPlayerProps 
         <Text fz="lg" fw={500}>
           {player.name}
         </Text>
-        <Divider mt={5} mb={10} variant="dashed" />
+        <Divider mt={4} mb={10} variant="dashed" />
         <Group wrap="nowrap">
           <Center h={28} w={28} c="dark" fz="md" fw={500} mr={-16} style={{
             backgroundSize: "contain",

@@ -39,6 +39,9 @@ function LogoParallax() {
     function handleMouseMove(e: MouseEvent) {
       if (!logoParallaxRef.current) return;
 
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      if (isTouchDevice) return;
+
       const parallaxRect = logoParallaxRef.current.getBoundingClientRect();
 
       // 图片中心点坐标（相对于视口）
