@@ -32,11 +32,27 @@
     "url": "https://github.com/SkyDynamic/MaiproberPlus"
   },
   {
-    "title": "妖梦 @youmu-bot",
+    "title": "DXRating",
+    "tags": ["网页应用", "舞萌 DX"],
+    "description": "支持通过 SEGA ID 导入日服/国际服数据、在线生成 Best 50 图片与多服务器历史定数数据等的工具站。",
+    "image": "dxrating",
+    "button": "立即使用",
+    "url": "https://dxrating.net"
+  },
+  {
+    "title": "Salt",
+    "tags": ["Discord 机器人", "舞萌 DX", "中二节奏"],
+    "description": "支持从落雪等查分器生成 GEKI/CHU/MAI 成绩图、谱面详情和一些其他东西。",
+    "image": "salt",
+    "button": "添加",
+    "url": "https://maimaidx.cab/invite"
+  },
+  {
+    "title": "Reisasol",
     "tags": ["QQ 机器人", "舞萌 DX"],
-    "description": "基于 NapCat + OverFlow 的机器人，提供了舞萌玩家最常用的一些功能。",
-    "image": "youmubot",
-    "button": "了解更多",
-    "url": "https://youmu.kagg886.top"
+    "description": "Reisasol 是由 Reisa⭐ 开发的通用 Best 50、PC 50 查分器，支持成绩更新和三端互传等独特功能，同样支持账号备份等操作。",
+    "image": "reisasol",
+    "button": "添加",
+    "url": "https://bot.q.qq.com/s/c2mloqdgv?id=102172520"
   }
 ]
