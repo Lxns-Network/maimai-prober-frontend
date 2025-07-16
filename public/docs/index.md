@@ -26,6 +26,7 @@
 
 - [舞萌 DX API 文档](/docs/api/maimai)
 - [中二节奏 API 文档](/docs/api/chunithm)
+- [首页项目展示](/docs/project-showcase)
 
 ## 其它
 

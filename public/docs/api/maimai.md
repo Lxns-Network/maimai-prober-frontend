@@ -55,7 +55,9 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
     "name": "Ｌｘｎｓ",
     "rating": 11307,
     "friend_code": 123456789000000,
-    "trophy_name": "つあメン覚醒電鉄　準急",
+    "trophy": {
+        "id": 300022
+    },
     "course_rank": 0,
     "class_rank": 0,
     "star": 82,
@@ -639,18 +641,17 @@ JSON 格式的玩家成绩：
 | `name` | `string` | 游戏内名称 |
 | `rating` | `int` | 玩家 DX Rating |
 | `friend_code` | `int` | 好友码 |
-| `trophy` | [`Trophy`](#collection) | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，称号 |
-| `trophy_name` | `string` | 仅[创建玩家信息](#post-apiv0maimaiplayer)必选，称号 |
 | `course_rank` | `int` | 段位 ID |
 | `class_rank` | `int` | 阶级 ID |
 | `star` | `int` | 搭档觉醒数 |
+| `trophy` | [`Trophy`](#collection) | 值可空，称号 |
 | `icon` | [`Icon`](#collection) | 值可空，头像 |
 | `name_plate` | [`NamePlate`](#collection) | 值可空，姓名框 |
 | `frame` | [`Frame`](#collection) | 值可空，背景 |
 | `upload_time` | `string` | 仅[获取玩家信息](#get-apiv0maimaiplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
 
-::: warning 注意
-`trophy_name` 参数可能会在后续变更，请开发者注意。
+::: info 提示
+若玩家设置的是随机分类的收藏品（头像、姓名框、背景），则开发者每次请求玩家信息时，收藏品都会在随机范围内随机变化。
 :::
 
 ### Score
