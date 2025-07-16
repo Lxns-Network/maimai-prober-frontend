@@ -1,10 +1,11 @@
-import { Group, Loader, Space } from '@mantine/core';
-import { PlayerSection } from '../../components/Profile/PlayerSection';
-import { UserSection } from '../../components/Profile/UserSection';
-import { UserBindSection } from '../../components/Profile/UserBindSection';
-import { UserTokenSection } from "../../components/Profile/UserTokenSection.tsx";
+import { Group, Loader, Stack } from '@mantine/core';
+import { PlayerSection } from '@/components/Profile/PlayerSection';
+import { UserSection } from '@/components/Profile/UserSection';
+import { UserBindSection } from '@/components/Profile/UserBindSection';
+import { UserTokenSection } from "@/components/Profile/UserTokenSection.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { useUser } from "@/hooks/swr/useUser.ts";
+import { PlayerHeatmapSection } from "@/components/Profile/PlayerHeatmapSection.tsx";
 
 const ProfileContent = () => {
   const { isLoading } = useUser();
@@ -18,15 +19,13 @@ const ProfileContent = () => {
   }
 
   return (
-    <div>
+    <Stack gap="md">
       <PlayerSection />
-      <Space h="md" />
+      <PlayerHeatmapSection />
       <UserSection />
-      <Space h="md" />
       <UserBindSection />
-      <Space h="md" />
       <UserTokenSection />
-    </div>
+    </Stack>
   )
 }
 
