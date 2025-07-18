@@ -42,5 +42,7 @@ export interface ChunithmPlayerProps {
 interface CollectionProps {
   id: number;
   name: string;
+  genre?: string;
   level?: number;
+  is_favorite?: boolean;
 }

@@ -10,6 +10,13 @@ export async function getPlayerRatingTrend(game: Game, version: number) {
   return fetchAPI(`user/${game}/player/trend?version=${version}`, { method: "GET" });
 }
 
+export async function updatePlayerData(game: Game, player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>) {
+  return fetchAPI(`user/${game}/player`, {
+    method: "PUT",
+    body: player,
+  });
+}
+
 export async function unbindPlayer(game: Game) {
   return fetchAPI(`user/${game}/player`, { method: "DELETE" });
 }

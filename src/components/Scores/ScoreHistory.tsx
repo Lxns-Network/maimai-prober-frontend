@@ -1,12 +1,12 @@
-import {MaimaiScoreHistory} from "@/components/Scores/maimai/ScoreHistory.tsx";
-import {ChunithmScoreProps, MaimaiScoreProps} from "@/types/score";
-import {ChunithmScoreHistory} from "@/components/Scores/chunithm/ScoreHistory.tsx";
-import {Game} from "@/types/game";
-import {Center, Flex, Loader, Text} from "@mantine/core";
-import {IconDatabaseOff} from "@tabler/icons-react";
-import {useEffect, useState} from "react";
-import {fetchAPI} from "@/utils/api/api.ts";
-import {openRetryModal} from "@/utils/modal.tsx";
+import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
+import { ChunithmScoreHistory } from "./chunithm/ScoreHistory.tsx";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
+import { Center, Flex, Loader, Text } from "@mantine/core";
+import { IconDatabaseOff } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { fetchAPI } from "@/utils/api/api.ts";
+import { openRetryModal } from "@/utils/modal.tsx";
 
 export const rankData = {
   maimai: {

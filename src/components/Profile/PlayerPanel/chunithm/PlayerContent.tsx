@@ -1,9 +1,11 @@
 import { ChunithmPlayerProps } from "@/types/player";
-import { Avatar, Badge, Divider, Flex, Group, rem, Text, Image, Center, NumberFormatter } from "@mantine/core";
+import { Avatar, Badge, Divider, Flex, Group, rem, Text, Image, Center, NumberFormatter, Box } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
+import { EditAvatarButton } from "../PlayerModal.tsx";
+import { Collection } from "../EditCollectionModal.tsx";
 
 export function getChunithmCharacterColor(level: number) {
   if (level >= 100) {
@@ -23,16 +25,26 @@ export function getChunithmCharacterColor(level: number) {
   }
 }
 
-export const ChunithmPlayerContent = ({ player }: { player: ChunithmPlayerProps }) => {
+interface PlayerContentProps {
+  player: ChunithmPlayerProps;
+  onCollectionEdit?: (collectionType: Collection, defaultValue: number) => void;
+  editable: boolean;
+}
+
+export const ChunithmPlayerContent = ({ player, onCollectionEdit, editable }: PlayerContentProps) => {
   return (
     <Group wrap="nowrap">
-      <Avatar src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`} size={94} p={5} radius="md" style={{
-        backgroundSize: 94,
-        backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(player.character?.level || 0)}.webp)`,
-      }}>
-        <IconPhotoOff />
-      </Avatar>
-      <div>
+      <EditAvatarButton onClick={() => {
+        editable && onCollectionEdit && onCollectionEdit("characters", player.character?.id || 0)
+      }} disabled={!editable}>
+        <Avatar src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`} size={94} p={5} radius="md" style={{
+          backgroundSize: 94,
+          backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(player.character?.level || 0)}.webp)`,
+        }}>
+          <IconPhotoOff />
+        </Avatar>
+      </EditAvatarButton>
+      <Box pr="md">
         <Flex gap="xs" mb={8}>
           {player.trophy && (
             <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color)} children={
@@ -53,8 +65,8 @@ export const ChunithmPlayerContent = ({ player }: { player: ChunithmPlayerProps 
         <Text fz="lg" fw={500}>
           {player.name}
         </Text>
-        <Divider mt={4} mb={10} variant="dashed" />
-        <Group wrap="nowrap">
+        <Divider mb={10} variant="dashed" />
+        <Group wrap="nowrap" h={40}>
           <Center h={28} w={28} c="dark" fz="md" fw={500} mr={-16} style={{
             backgroundSize: "contain",
             backgroundImage: `url(/assets/chunithm/reborn_star.webp)`,
@@ -102,7 +114,7 @@ export const ChunithmPlayerContent = ({ player }: { player: ChunithmPlayerProps 
             </Text>
           </div>
         </Group>
-      </div>
+      </Box>
     </Group>
   )
 }

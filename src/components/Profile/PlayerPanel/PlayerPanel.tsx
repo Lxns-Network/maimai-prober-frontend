@@ -3,10 +3,7 @@ import { useState } from "react";
 import { useViewportSize } from "@mantine/hooks";
 import classes from "./PlayerPanel.module.css"
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
-import { PlayerModal } from "./PlayerModal.tsx";
-import { MaimaiPlayerContent } from "./maimai/PlayerContent.tsx";
-import { ChunithmPlayerContent } from "./chunithm/PlayerContent.tsx";
-import { isChunithmPlayerProps, isMaimaiPlayerProps } from "@/utils/api/player.ts";
+import { PlayerContent, PlayerModal } from "./PlayerModal.tsx";
 import useGame from "@/hooks/useGame.ts";
 
 const examplePlayer = {
@@ -61,8 +58,7 @@ interface PlayerButtonProps {
 const PlayerButton = ({ player, onClick, ...others }: PlayerButtonProps & UnstyledButtonProps) => {
   return (
     <UnstyledButton className={classes.playerButton} onClick={onClick} {...others}>
-      {isMaimaiPlayerProps(player) && <MaimaiPlayerContent player={player} />}
-      {isChunithmPlayerProps(player) && <ChunithmPlayerContent player={player} />}
+      <PlayerContent player={player} editable={false} />
     </UnstyledButton>
   );
 }

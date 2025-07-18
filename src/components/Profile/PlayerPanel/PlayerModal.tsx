@@ -1,20 +1,91 @@
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { MaimaiRatingTrend, MaimaiRatingTrendProps } from "./maimai/RatingTrend.tsx";
 import { ChunithmRatingTrend, ChunithmRatingTrendProps } from "./chunithm/RatingTrend.tsx";
 import {
-  Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Group, Loader, Modal, ScrollArea, useCombobox
+  Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Group, Loader, Modal, Paper, ScrollArea, useCombobox,
+  Text, LoadingOverlay, UnstyledButton
 } from "@mantine/core";
-import { getPlayerRatingTrend } from "@/utils/api/player.ts";
+import { getPlayerRatingTrend, updatePlayerData } from "@/utils/api/player.ts";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { MaimaiPlayerContent } from "./maimai/PlayerContent.tsx";
 import classes from "./PlayerModal.module.css";
-import { IconDots } from "@tabler/icons-react";
+import { IconDots, IconEdit } from "@tabler/icons-react";
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
 import { MaimaiPlayerModalContent } from "./maimai/PlayerModal.tsx";
 import { Game } from "@/types/game";
 import { ChunithmPlayerModalContent } from "./chunithm/PlayerModal.tsx";
 import { ChunithmPlayerContent } from "./chunithm/PlayerContent.tsx";
 import { isChunithmPlayerProps, isMaimaiPlayerProps } from "@/utils/api/player.ts";
+import { Collection, EditCollectionModal } from "./EditCollectionModal.tsx";
+import { Marquee } from "@/components/Marquee.tsx";
+import { useHover, useMediaQuery } from "@mantine/hooks";
+import { usePlayer } from "@/hooks/swr/usePlayer.ts";
+
+interface EditAvatarButtonProps {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+export const EditAvatarButton = ({ children, onClick, disabled }: EditAvatarButtonProps) => {
+  const { hovered, ref } = useHover();
+
+  return (
+    <UnstyledButton pos="relative" className={classes.editAvatarButton} ref={ref} onClick={() => !disabled && onClick()}>
+      <LoadingOverlay
+        visible={hovered && !disabled}
+        loaderProps={{
+          children: <IconEdit />
+        }}
+        overlayProps={{ radius: "sm" }}
+        styles={{
+          overlay: { borderRadius: 6 },
+          loader: { height: 24 },
+        }}
+      />
+      {children}
+    </UnstyledButton>
+  )
+}
+
+interface EditButtonProps {
+  title: string;
+  description: string;
+  onClick: () => void;
+}
+
+export const EditButton = ({ title, description, onClick }: EditButtonProps) => {
+  return (
+    <Paper className={[classes.subParameters, classes.subParametersButton].join(' ')} onClick={onClick}>
+      <Group justify="space-between" wrap="nowrap" gap="xs">
+        <div>
+          <Text fz="xs" c="dimmed">{title}</Text>
+          <Text fz="sm">
+            <Marquee>{description}</Marquee>
+          </Text>
+        </div>
+
+        <IconEdit size={20} color="gray" />
+      </Group>
+    </Paper>
+  )
+}
+
+interface PlayerContentProps {
+  player: MaimaiPlayerProps | ChunithmPlayerProps;
+  onCollectionEdit?: (collectionType: Collection, defaultValue: number) => void;
+  editable: boolean;
+}
+
+export const PlayerContent = ({ player, onCollectionEdit, editable }: PlayerContentProps) => {
+  const props = { onCollectionEdit, editable };
+  return (
+    <Container>
+      {isMaimaiPlayerProps(player) && <MaimaiPlayerContent player={player} {...props} />}
+      {isChunithmPlayerProps(player) && <ChunithmPlayerContent player={player} {...props} />}
+    </Container>
+  )
+}
 
 interface ModalProps {
   game: Game;
@@ -44,12 +115,31 @@ const versionData = {
 };
 
 export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
+  const { mutate } = usePlayer(game);
   const [trend, setTrend] = useState<(MaimaiRatingTrendProps | ChunithmRatingTrendProps)[]>([]);
   const [fetching, setFetching] = useState(true);
   const [version, setVersion] = useState<number>(0);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
+  const small = useMediaQuery('(max-width: 30rem)');
+
+  const [editCollectionOpened, setEditCollectionOpened] = useState(false);
+  const [editCollectionType, setEditCollectionType] = useState<Collection>("icons");
+  const [editCollectionValue, setEditCollectionValue] = useState<number>(0);
+
+  const updatePlayerDataHandler = useCallback(async (player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>) => {
+    try {
+      const res = await updatePlayerData(game, player);
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      await mutate();
+    } catch (error) {
+      openRetryModal("更新失败", `${error}`, () => updatePlayerDataHandler(player));
+    }
+  }, [game]);
 
   const getPlayerRatingTrendHandler = useCallback(async () => {
     if (!version || versionData[game].map((item) => item.version).indexOf(version) === -1) {
@@ -86,7 +176,16 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
   }, [game]);
 
   return (
-    <Modal.Root opened={opened} onClose={() => onClose()} centered>
+    <Modal.Root
+      size="lg"
+      opened={opened}
+      onClose={() => onClose()}
+      fullScreen={small}
+      transitionProps={{
+        transition: small ? 'pop' : 'fade-down',
+      }}
+      centered
+    >
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>
@@ -94,14 +193,50 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
           <Modal.CloseButton />
         </Modal.Header>
         <Modal.Body p={0}>
+          <EditCollectionModal
+            game={game}
+            type={editCollectionType}
+            defaultValue={editCollectionValue}
+            opened={editCollectionOpened}
+            onCancel={() => setEditCollectionOpened(false)}
+            onSubmit={(key, id) => {
+              updatePlayerDataHandler({
+                [key]: { id },
+              });
+              setEditCollectionOpened(false);
+            }}
+          />
           <ScrollArea pb="md">
-            <Container>
-              {isMaimaiPlayerProps(player) && <MaimaiPlayerContent player={player} />}
-              {isChunithmPlayerProps(player) && <ChunithmPlayerContent player={player} />}
-            </Container>
+            <PlayerContent
+              player={player}
+              onCollectionEdit={(collectionType, defaultValue) => {
+                setEditCollectionType(collectionType);
+                setEditCollectionValue(defaultValue);
+                setEditCollectionOpened(true);
+              }}
+              editable={true}
+            />
           </ScrollArea>
-          {isMaimaiPlayerProps(player) && <MaimaiPlayerModalContent player={player} />}
-          {isChunithmPlayerProps(player) && <ChunithmPlayerModalContent player={player} />}
+          {isMaimaiPlayerProps(player) && (
+            <MaimaiPlayerModalContent
+              player={player}
+              onCollectionEdit={(collectionType, defaultValue) => {
+                setEditCollectionType(collectionType);
+                setEditCollectionValue(defaultValue);
+                setEditCollectionOpened(true);
+              }}
+            />
+          )}
+          {isChunithmPlayerProps(player) && (
+            <ChunithmPlayerModalContent
+              player={player}
+              onCollectionEdit={(collectionType, defaultValue) => {
+                setEditCollectionType(collectionType);
+                setEditCollectionValue(defaultValue);
+                setEditCollectionOpened(true);
+              }}
+            />
+          )}
           <Accordion chevronPosition="left" variant="filled" radius={0} defaultValue="history">
             <Accordion.Item value="history">
               <Center>

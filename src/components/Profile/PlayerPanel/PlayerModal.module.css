@@ -5,3 +5,15 @@
     padding: 6px 12px;
     border-radius: var(--mantine-radius-md);
 }
+
+.subParametersButton {
+    cursor: pointer;
+
+    &:hover {
+        background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+    }
+}
+
+.editAvatarButton {
+    cursor: pointer;
+}
