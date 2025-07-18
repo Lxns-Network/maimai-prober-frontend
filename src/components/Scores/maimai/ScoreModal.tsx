@@ -54,7 +54,7 @@ export const DeluxeScoreStars = ({ deluxeScore, notes }: { deluxeScore: number, 
   const { count, rate } = getDeluxeScoreStars(deluxeScore, notes);
 
   return Array.from({ length: count }).map((_, index) => (
-    <Image key={index} src={`/assets/maimai/dx_score/${rate}.webp`} h="100%" />
+    <Image key={index} src={`/assets/maimai/dx_score/${rate}.webp`} h="100%" w="auto" />
   ));
 }
 
