@@ -10,6 +10,10 @@ import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 
+interface FormValues {
+  email: string;
+}
+
 export default function ForgotPassword() {
   const [visible, setVisible] = useState(false);
   const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "forgot");
@@ -24,18 +28,19 @@ export default function ForgotPassword() {
     }
   }, [])
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
-      email: '',
+      email: "",
     },
 
     validate: {
-      email: (value: string) => (validateEmail(value) ? null : "邮箱格式不正确"),
+      email: (value) => (validateEmail(value) ? null : "邮箱格式不正确"),
     },
   });
 
-  const forgotPassword = async (values: any) => {
+  const forgotPasswordHandler = async (values: FormValues) => {
     setVisible(true);
+
     try {
       const recaptchaToken = await recaptcha.getToken();
       const res = await fetch(`${API_URL}/user/forgot-password?captcha=${recaptchaToken}`, {
@@ -55,7 +60,7 @@ export default function ForgotPassword() {
       }
       openAlertModal("发送成功", "请前往你的邮箱查看重置邮件。");
     } catch (error) {
-      openRetryModal("发送失败", `${error}`, () => forgotPassword(values));
+      openRetryModal("发送失败", `${error}`, () => forgotPasswordHandler(values));
     } finally {
       setVisible(false);
     }
@@ -71,7 +76,7 @@ export default function ForgotPassword() {
       </Text>
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
-        <form onSubmit={form.onSubmit((values) => forgotPassword(values))}>
+        <form onSubmit={form.onSubmit(forgotPasswordHandler)}>
           <TextInput
             name="email"
             label="邮箱"

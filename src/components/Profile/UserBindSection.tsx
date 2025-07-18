@@ -1,5 +1,5 @@
 import { Button, Card, Group, Switch, Text, TextInput } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { TransformedValues, useForm } from "@mantine/form";
 import { updateUserBind } from "@/utils/api/user.ts";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff } from "@mdi/js";
@@ -8,35 +8,39 @@ import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { useUser } from "@/hooks/swr/useUser.ts";
 
+interface FormValues {
+  qq: string | number;
+}
+
 export const UserBindSection = () => {
   const { user, mutate } = useUser();
   const [visible, visibleHandler] = useDisclosure(false)
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
-      qq: '',
+      qq: "",
     },
 
     validate: {
-      qq: (value: string) => /^\d{5,11}$/.test(value) ? null : "QQ 号格式不正确",
+      qq: (value) => /^\d{5,11}$/.test(value as string) ? null : "QQ 号格式不正确",
     },
 
     transformValues: (values) => ({
-      qq: parseInt(values.qq),
+      qq: parseInt(values.qq as string),
     })
   });
 
-  const updateUserBindHandler = async () => {
+  const updateUserBindHandler = async (values: TransformedValues<typeof form>) => {
     try {
-      const res = await updateUserBind(form.getTransformedValues())
-      const data = await res.json()
+      const res = await updateUserBind(values);
+      const data = await res.json();
       if (!data.success) {
-        throw new Error(data.message)
+        throw new Error(data.message);
       }
       openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");
-      mutate({ ...user, bind: { ...(user?.bind || {}), qq: parseInt(form.values.qq)} } as any, false);
+      mutate({ ...user, bind: { ...(user?.bind || {}), qq: values.qq} } as any, false);
     } catch (error) {
-      openRetryModal("绑定失败", `${error}`, updateUserBindHandler);
+      openRetryModal("绑定失败", `${error}`, () => updateUserBindHandler(values));
     } finally {
       form.reset();
     }
@@ -61,7 +65,7 @@ export const UserBindSection = () => {
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
       </Group>
-      <form onSubmit={form.onSubmit(() => updateUserBindHandler())}>
+      <form onSubmit={form.onSubmit(updateUserBindHandler)}>
         <TextInput
           label="QQ"
           placeholder={(user?.bind && user?.bind.qq && (visible ? user?.bind.qq.toString() :

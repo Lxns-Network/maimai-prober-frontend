@@ -1,23 +1,6 @@
 import {
-  ActionIcon,
-  Avatar,
-  Box,
-  Button,
-  Center,
-  Divider,
-  Flex,
-  Group,
-  Image,
-  Loader,
-  Menu,
-  NumberFormatter,
-  Pagination,
-  Paper,
-  Rating,
-  Stack,
-  Text,
-  Textarea,
-  ThemeIcon
+  ActionIcon, Avatar, Box, Button, Center, Divider, Flex, Group, Image, Loader, Menu, NumberFormatter, Pagination,
+  Paper, Rating, Stack, Text, Textarea, ThemeIcon
 } from "@mantine/core";
 import { Game } from "@/types/game";
 import { ASSET_URL } from "@/main.tsx";
@@ -32,6 +15,11 @@ import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { useToggle } from "@mantine/hooks";
 import { createComment, deleteComment, getCommentList, likeComment, unlikeComment } from "@/utils/api/comment.ts";
+
+interface FormValues {
+  comment: string;
+  rating: number;
+}
 
 interface Comment {
   comment_id: number;
@@ -62,14 +50,14 @@ const ChartCommentForm = ({ game, score, comment, onSubmit }: {
   comment?: Comment;
   onSubmit: () => void;
 }) => {
-  const form = useForm({
-    mode: "controlled",
+  const form = useForm<FormValues>({
     initialValues: {
-      comment: "" as string,
-      rating: 0 as number,
+      comment: "",
+      rating: 0,
     },
+
     validate: {
-      comment: (value: string, values: { rating: number }) => {
+      comment: (value, values) => {
         if (value.length > MAX_COMMENT_LENGTH) {
           return `评论长度超过 ${MAX_COMMENT_LENGTH} 字`;
         }
@@ -78,24 +66,22 @@ const ChartCommentForm = ({ game, score, comment, onSubmit }: {
         }
         return null;
       },
-      rating: (value: number, values: { comment: string }) => {
-        if (value === 0 && values.comment.length < 1) {
-          return "请至少输入一条评论或评分";
-        }
+      rating: (value, values) => {
+        if (value === 0 && values.comment.length < 1) return "请至少输入一条评论或评分";
         return null;
-      }
+      },
     },
   });
   const isLoggedOut = !localStorage.getItem("token");
 
-  const submitComment = async () => {
+  const submitCommentHandler = async (values: FormValues) => {
     try {
       const comment = {
         song_id: score?.id,
         song_type: null as string | null,
         difficulty: score?.level_index,
-        comment: form.values.comment,
-        rating: form.values.rating,
+        comment: values.comment,
+        rating: values.rating,
       };
       if (score && "achievements" in score) {
         comment.song_type = score.type;
@@ -107,7 +93,7 @@ const ChartCommentForm = ({ game, score, comment, onSubmit }: {
       }
       onSubmit();
     } catch (error) {
-      openRetryModal("评论提交失败", `${error}`, submitComment);
+      openRetryModal("评论提交失败", `${error}`, () => submitCommentHandler(values));
     }
   }
 
@@ -153,7 +139,7 @@ const ChartCommentForm = ({ game, score, comment, onSubmit }: {
                 title = "编辑评论";
                 message = "编辑评论后，你的原评论将被替换，确定要编辑这条评论吗？";
               }
-              openConfirmModal(title, message, submitComment)
+              openConfirmModal(title, message, () => submitCommentHandler(form.values));
             }}
           >
             {comment ? "编辑" : "提交"}

@@ -2,7 +2,7 @@ import {
   Avatar, Button, Chip, Divider, Flex, Grid, Group, Input, Modal, NumberInput, Select, Text
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { useForm } from "@mantine/form";
+import { TransformedValues, useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
@@ -16,10 +16,21 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps } from "@/types/score";
 
+interface FormValues {
+  id: number | null;
+  difficulty?: string | null;
+  level_index: number | null;
+  score: number | null;
+  clear: string | null;
+  full_combo: string | null;
+  full_chain: string | null;
+  play_time: Date | string | null;
+}
+
 interface CreateScoreModalProps {
   score?: ChunithmScoreProps | null;
   opened: boolean;
-  onClose: (score?: any) => void;
+  onClose: (score?: FormValues) => void;
 }
 
 export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScoreModalProps) => {
@@ -31,47 +42,49 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
   const [difficulties, setDifficulties] = useState<ChunithmDifficultyProps[] | null>(null);
   const computedColorScheme = useComputedColorScheme('light');
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
       id: score ? score.id : null,
       difficulty: score ? score.level_index.toString() : null,
-      score: null as number | null,
-      clear: null as string | null,
-      full_combo: null as string | null,
-      full_chain: null as string | null,
-      play_time: null as Date | null,
+      level_index: score ? score.level_index : null,
+      score: null,
+      clear: null,
+      full_combo: null,
+      full_chain: null,
+      play_time: null,
     },
 
     validate: {
-      id: (value: number | null) => value !== null && value !== 0 ? null : "请选择曲目",
-      difficulty: (value: string | null) => value !== null ? null : "请选择难度",
-      score: (value: number | null) => value !== null ? null : "请输入分数",
-      clear: (value: string | null) => value !== null ? null : "请选择 Clear 类型",
-      full_combo: (value: string | null) => value !== null ? null : "请选择 Full Combo",
-      full_chain: (value: string | null) => value !== null ? null : "请选择 Full Chain",
-      play_time: (value: Date | null) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
+      id: (value) => value !== null && value !== 0 ? null : "请选择曲目",
+      difficulty: (value) => value !== null ? null : "请选择难度",
+      score: (value) => value !== null ? null : "请输入分数",
+      clear: (value) => value !== null ? null : "请选择 Clear 类型",
+      full_combo: (value) => value !== null ? null : "请选择 Full Combo",
+      full_chain: (value) => value !== null ? null : "请选择 Full Chain",
+      play_time: (value) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
     },
+
+    transformValues: (values) => ({
+      id: values.id,
+      level_index: parseInt(values.difficulty as string),
+      score: values.score,
+      clear: values.clear,
+      full_combo: values.full_combo !== "nofullcombo" ? values.full_combo : null,
+      full_chain: values.full_chain !== "nofullchain" ? values.full_chain : null,
+      play_time: values.play_time ? (values.play_time as Date).toISOString().split('.')[0]+"Z" : null,
+    }),
   });
 
-  const createScoreHandler = async (values: any) => {
+  const createScoreHandler = async (values: TransformedValues<typeof form>) => {
     setUploading(true);
+
     try {
-      const score = {
-        id: parseInt(values.id),
-        type: values.type,
-        level_index: parseInt(values.difficulty),
-        score: values.score,
-        clear: values.clear,
-        full_combo: values.full_combo !== "nofullcombo" ? values.full_combo : null,
-        full_chain: values.full_chain !== "nofullchain" ? values.full_chain : null,
-        play_time: values.play_time ? values.play_time.toISOString().split('.')[0]+"Z" : null,
-      }
-      const res = await createPlayerScores("chunithm", [score]);
+      const res = await createPlayerScores("chunithm", [values]);
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);
       }
-      openAlertModal("成绩创建成功", "你的成绩已经成功创建。")
+      openAlertModal("成绩创建成功", "你的成绩已经成功创建。");
       form.setValues({
         id: null,
         difficulty: null,
@@ -81,7 +94,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
         full_chain: null,
         play_time: null,
       });
-      onClose(score);
+      onClose(values);
     } catch (error) {
       openRetryModal("成绩创建失败", `${error}`, () => createScoreHandler(values));
     } finally {
@@ -216,7 +229,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
               </Grid.Col>
               <Grid.Col span={12}>
                 <Input.Wrapper label="Full Combo" withAsterisk {...form.getInputProps("full_combo")}>
-                  <Chip.Group onChange={(value) => form.setValues({ full_combo: value as any })}>
+                  <Chip.Group onChange={(value) => form.setValues({ full_combo: value as string })}>
                     <Flex wrap="wrap" columnGap="md" rowGap="xs">
                       <Chip size="xs" value="nofullcombo">无</Chip>
                       <Chip size="xs" value="fullcombo">FC</Chip>
@@ -228,7 +241,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
               </Grid.Col>
               <Grid.Col span={12}>
                 <Input.Wrapper label="Full Chain" mb="md" withAsterisk {...form.getInputProps("full_chain")}>
-                  <Chip.Group onChange={(value) => form.setValues({ full_chain: value as any })}>
+                  <Chip.Group onChange={(value) => form.setValues({ full_chain: value as string })}>
                     <Flex wrap="wrap" columnGap="md" rowGap="xs">
                       <Chip size="xs" value="nofullchain">无</Chip>
                       <Chip size="xs" value="fullchain">铂</Chip>
@@ -255,7 +268,7 @@ export const ChunithmCreateScoreModal = ({ score, opened, onClose }: CreateScore
             </Grid>
             <Text size="xs" mb="sm" c="gray">成绩保存后，你的玩家 Rating 将会自动更新。</Text>
             <Group justify="flex-end">
-              <Button variant="default" onClick={onClose}>取消</Button>
+              <Button variant="default" onClick={() => onClose()}>取消</Button>
               <Button type="submit" loading={uploading} disabled={song?.disabled}>保存</Button>
             </Group>
           </form>

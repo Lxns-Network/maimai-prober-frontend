@@ -2,12 +2,17 @@ import { Alert, Button, Card, Group, Switch, Text, TextInput } from "@mantine/co
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
-import { useForm } from "@mantine/form";
+import { TransformedValues, useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "@/utils/validator";
 import { updateUserProfile } from "@/utils/api/user.ts";
 import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { useUser } from "@/hooks/swr/useUser.ts";
+
+interface FormValues {
+  name: string;
+  email: string;
+}
 
 export const UserSection = () => {
   const { user } = useUser();
@@ -23,21 +28,21 @@ export const UserSection = () => {
     )
   }
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
       name: "",
       email: "",
     },
 
     validate: {
-      name: (value: string) => (value.length === 0 || validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value: string) => (value.length === 0 || validateEmail(value) ? null : "邮箱格式不正确"),
+      name: (value) => (value.length === 0 || validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value) => (value.length === 0 || validateEmail(value) ? null : "邮箱格式不正确"),
     },
   });
 
-  const updateUserProfileHandler = async () => {
+  const updateUserProfileHandler = async (values: TransformedValues<typeof form>) => {
     try {
-      const res = await updateUserProfile(form.getTransformedValues())
+      const res = await updateUserProfile(values)
       const data = await res.json()
       if (!data.success) {
         throw new Error(data.message)
@@ -46,7 +51,7 @@ export const UserSection = () => {
       user.name = form.values.name || user.name;
       user.email = form.values.email || user.email;
     } catch (error) {
-      openRetryModal("保存失败", `${error}`, updateUserProfileHandler)
+      openRetryModal("保存失败", `${error}`, () => updateUserProfileHandler(values))
     } finally {
       form.reset();
     }
@@ -71,7 +76,7 @@ export const UserSection = () => {
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
       </Group>
-      <form onSubmit={form.onSubmit(() => updateUserProfileHandler())}>
+      <form onSubmit={form.onSubmit(updateUserProfileHandler)}>
         <TextInput
           label="用户名"
           variant="filled"

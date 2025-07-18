@@ -2,7 +2,7 @@ import {
   Avatar, Button, Chip, Divider, Flex, Grid, Group, Input, Modal, NumberInput, Select, Text
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { useForm } from "@mantine/form";
+import { TransformedValues, useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import { MaimaiDifficultyProps, MaimaiDifficultiesProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
@@ -16,10 +16,21 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { MaimaiScoreProps } from "@/types/score";
 
+interface FormValues {
+  id: number | null;
+  type: string | null;
+  difficulty?: string | null;
+  achievements: number | null;
+  fc: string | null;
+  fs: string | null;
+  dx_score: number | null;
+  play_time: Date | string | null;
+}
+
 interface CreateScoreModalProps {
   score?: MaimaiScoreProps | null;
   opened: boolean;
-  onClose: (score?: any) => void;
+  onClose: (score?: FormValues) => void;
 }
 
 export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreModalProps) => {
@@ -31,43 +42,44 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
   const [difficulties, setDifficulties] = useState<MaimaiDifficultyProps[] | null>(null);
 
   const computedColorScheme = useComputedColorScheme('light');
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
       id: score ? score.id : null,
       type: score ? score.type : null,
       difficulty: score ? score.level_index.toString() : null,
-      achievements: null as number | null,
-      fc: null as string | null,
-      fs: null as string | null,
-      dx_score: null as number | null,
-      play_time: null as Date | null,
+      achievements: null,
+      fc: null,
+      fs: null,
+      dx_score: null,
+      play_time: null,
     },
 
     validate: {
-      id: (value: number | null) => value !== null && value !== 0 ? null : "请选择曲目",
-      type: (value: string | null) => value !== null ? null : "请选择谱面类型",
-      difficulty: (value: string | null) => value !== null ? null : "请选择难度",
-      achievements: (value: number | null) => value !== null ? null : "请输入达成率",
-      fc: (value: string | null) => value !== null ? null : "请选择 Full Combo",
-      fs: (value: string | null) => value !== null ? null : "请选择 Full Sync",
-      play_time: (value: Date | null) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
+      id: (value) => value !== null && value !== 0 ? null : "请选择曲目",
+      type: (value) => value !== null ? null : "请选择谱面类型",
+      difficulty: (value) => value !== null ? null : "请选择难度",
+      achievements: (value) => value !== null ? null : "请输入达成率",
+      fc: (value) => value !== null ? null : "请选择 Full Combo",
+      fs: (value) => value !== null ? null : "请选择 Full Sync",
+      play_time: (value) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
     },
+
+    transformValues: (values) => ({
+      id: values.id,
+      type: values.type,
+      level_index: parseInt(values.difficulty as string),
+      achievements: values.achievements,
+      fc: values.fc !== "nofc" ? values.fc : null,
+      fs: values.fs !== "nofs" ? values.fs : null,
+      dx_score: values.dx_score || 0,
+      play_time: values.play_time ? (values.play_time as Date).toISOString().split('.')[0]+"Z" : null,
+    })
   });
 
-  const createScoreHandler = async (values: any) => {
+  const createScoreHandler = async (values: TransformedValues<typeof form>) => {
     setUploading(true);
     try {
-      const score = {
-        id: parseInt(values.id),
-        type: values.type,
-        level_index: parseInt(values.difficulty),
-        achievements: values.achievements,
-        fc: values.fc !== "nofc" ? values.fc : null,
-        fs: values.fs !== "nofs" ? values.fs : null,
-        dx_score: values.dx_score || 0,
-        play_time: values.play_time ? values.play_time.toISOString().split('.')[0]+"Z" : null,
-      }
-      const res = await createPlayerScores("maimai", [score]);
+      const res = await createPlayerScores("maimai", [values]);
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);
@@ -83,7 +95,7 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
         dx_score: null,
         play_time: null,
       });
-      onClose(score);
+      onClose(values);
     } catch (error) {
       openRetryModal("成绩创建失败", `${error}`, () => createScoreHandler(values));
     } finally {
@@ -209,7 +221,7 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
               </Grid.Col>
             </Grid>
             <Input.Wrapper label="Full Combo" mb="xs" withAsterisk {...form.getInputProps("fc")}>
-              <Chip.Group onChange={(value) => form.setValues({ fc: value as any })}>
+              <Chip.Group onChange={(value) => form.setValues({ fc: value as string })}>
                 <Flex wrap="wrap" columnGap="md" rowGap="xs">
                   <Chip size="xs" value="nofc">无</Chip>
                   <Chip size="xs" value="fc">FC</Chip>
@@ -220,7 +232,7 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
               </Chip.Group>
             </Input.Wrapper>
             <Input.Wrapper label="Full Sync" mb="md" withAsterisk {...form.getInputProps("fs")}>
-              <Chip.Group onChange={(value) => form.setValues({ fs: value as any })}>
+              <Chip.Group onChange={(value) => form.setValues({ fs: value as string })}>
                 <Flex wrap="wrap" columnGap="md" rowGap="xs">
                   <Chip size="xs" value="nofs">无</Chip>
                   <Chip size="xs" value="sync">SYNC</Chip>
@@ -258,7 +270,7 @@ export const MaimaiCreateScoreModal = ({ score, opened, onClose }: CreateScoreMo
             </Grid>
             <Text size="xs" mb="sm" c="gray">成绩保存后，你的玩家 DX Rating 将会自动更新。</Text>
             <Group justify="flex-end">
-              <Button variant="default" onClick={onClose}>取消</Button>
+              <Button variant="default" onClick={() => onClose()}>取消</Button>
               <Button type="submit" loading={uploading} disabled={song?.disabled}>保存</Button>
             </Group>
           </form>

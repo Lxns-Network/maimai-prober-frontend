@@ -13,6 +13,11 @@ import classes from "../Form.module.css";
 import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 
+interface FormValues {
+  name: string;
+  password: string;
+}
+
 export default function Login() {
   const [visible, setVisible] = useState(false);
   const computedColorScheme = useComputedColorScheme('light');
@@ -40,27 +45,28 @@ export default function Login() {
     }
   }, [])
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
-      name: '',
-      password: '',
+      name: "",
+      password: "",
     },
 
     validate: {
-      name: (value: string) => (validateUserName(value) ? null : "用户名格式不正确"),
-      password: (value: string) => (validatePassword(value) ? null : "密码格式不正确"),
+      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
+      password: (value) => (validatePassword(value) ? null : "密码格式不正确"),
     },
   });
 
-  const loginHandler = async (values: any) => {
+  const loginHandler = async (values: FormValues) => {
     setVisible(true);
+
     try {
       const recaptchaToken = await recaptcha.getToken();
 
       const res = await fetch(`${API_URL}/user/login?captcha=${recaptchaToken}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(values),
       });
@@ -98,7 +104,7 @@ export default function Login() {
       }
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
-        <form onSubmit={form.onSubmit((values) => loginHandler(values))}>
+        <form onSubmit={form.onSubmit(loginHandler)}>
           <TextInput
             name="name"
             label="用户名"

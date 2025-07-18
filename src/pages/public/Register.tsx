@@ -10,6 +10,13 @@ import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 
+interface FormValues {
+  name: string;
+  email: string;
+  password: string;
+  confirm_password: string;
+}
+
 export default function Register() {
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
@@ -25,32 +32,31 @@ export default function Register() {
     }
   }, [])
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
+      name: "",
+      email: "",
+      password: "",
+      confirm_password: "",
     },
 
     validate: {
-      name: (value: string) => (validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value: string) => (validateEmail(value) ? null : "邮箱格式不正确"),
-      password: (value: string) => (validatePassword(value) ? null : "密码格式不正确"),
-      confirmPassword: (value: string, values: {
-        password: string;
-      }) => (value === values.password ? null : "两次输入的密码不一致"),
+      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value) => (validateEmail(value) ? null : "邮箱格式不正确"),
+      password: (value) => (validatePassword(value) ? null : "密码格式不正确"),
+      confirm_password: (value, values) => (value === values.password ? null : "两次输入的密码不一致"),
     },
   });
 
-  const registerHandler = async (values: any) => {
+  const registerHandler = async (values: FormValues) => {
     setVisible(true);
+
     try {
       const recaptchaToken = await recaptcha.getToken();
       const res = await fetch(`${API_URL}/user/register?captcha=${recaptchaToken}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(values),
       });
@@ -76,7 +82,7 @@ export default function Register() {
       </Text>
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
-        <form onSubmit={form.onSubmit((values) => registerHandler(values))}>
+        <form onSubmit={form.onSubmit(registerHandler)}>
           <TextInput
             name="name"
             label="用户名"
@@ -114,7 +120,7 @@ export default function Register() {
             placeholder="请再次输入你的密码"
             mb="sm"
             leftSection={<IconLock size={20} stroke={1.5} />}
-            {...form.getInputProps('confirmPassword')}
+            {...form.getInputProps('confirm_password')}
           />
           <Text c="dimmed" size="xs" ta="left" mt="sm">
             注册即代表你同意我们的<Anchor href="/docs/terms-of-use">服务条款</Anchor>和<Anchor href="/docs/privacy-policy">隐私政策</Anchor>，请在注册后根据指引绑定你的游戏账号。

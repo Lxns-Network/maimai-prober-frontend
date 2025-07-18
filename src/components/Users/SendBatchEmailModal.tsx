@@ -12,16 +12,21 @@ import { Highlight } from "@tiptap/extension-highlight";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { IconPhoto } from "@tabler/icons-react";
 
+interface FormValues {
+  subject: string;
+  content: string;
+}
+
 export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps[], opened: boolean, close(): void }) => {
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
-      subject: '',
-      content: '',
+      subject: "",
+      content: "",
     },
 
     validate: {
-      subject: (value: string) => (value == "" ? "主题不能为空" : null),
-      content: (value: string) => (value == "" ? "正文不能为空" : null),
+      subject: (value) => (value == "" ? "主题不能为空" : null),
+      content: (value) => (value == "" ? "正文不能为空" : null),
     },
   });
 
@@ -30,42 +35,42 @@ export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps
       StarterKit.configure({
         paragraph: {
           HTMLAttributes: {
-            style: 'font-size: 16px; line-height: 1.6;'
+            style: "font-size: 16px; line-height: 1.6;"
           }
         },
         code: {
           HTMLAttributes: {
-            style: 'background-color: #F8F9FA; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;'
+            style: "background-color: #F8F9FA; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;"
           }
         },
         horizontalRule: {
           HTMLAttributes: {
-            style: 'border: 0; border-top: 1px solid #DEE2E6; margin: 16px 0;'
+            style: "border: 0; border-top: 1px solid #DEE2E6; margin: 16px 0;"
           }
         },
         blockquote: {
           HTMLAttributes: {
-            style: 'margin: 0; border-left: 3px solid #DEE2E6; padding-left: 16px;'
+            style: "margin: 0; border-left: 3px solid #DEE2E6; padding-left: 16px;"
           }
         }
       }),
       Underline,
       Link.configure({
         HTMLAttributes: {
-          style: 'color: #007BFF;'
+          style: "color: #007BFF;"
         }
       }),
       Image.configure({
         HTMLAttributes: {
-          style: 'max-width: 100%;'
+          style: "max-width: 100%;"
         }
       }),
       Highlight.configure({
         HTMLAttributes: {
-          style: 'background-color: #FFEC99;'
+          style: "background-color: #FFEC99;"
         }
       }),
-      TextAlign.configure({ types: ['heading', 'paragraph'] })
+      TextAlign.configure({ types: ["heading", "paragraph"] })
     ],
     content: form.values.content,
     onUpdate: ({ editor }: { editor: any }) => {
@@ -73,7 +78,7 @@ export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps
     },
   });
 
-  const sendBatchEmailHandler = async (values: any) => {
+  const sendBatchEmailHandler = async (values: FormValues) => {
     try {
       const res = await sendBatchEmail({
         emails: users.map((user) => user.email),

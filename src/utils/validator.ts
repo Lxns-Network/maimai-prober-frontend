@@ -7,5 +7,5 @@ export const validateUserName = (name: string) => {
 }
 
 export const validatePassword = (password: string) => {
-  return password.length >= 6 || password.length <= 16;
+  return password.length >= 6 && password.length <= 16;
 }

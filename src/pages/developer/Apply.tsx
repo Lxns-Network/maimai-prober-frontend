@@ -9,6 +9,12 @@ import classes from "../Form.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { useNavigate } from "react-router-dom";
 
+interface FormValues {
+  name: string;
+  url: string;
+  reason: string;
+}
+
 export default function DeveloperApply() {
   const [applied, setApplied] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -39,22 +45,23 @@ export default function DeveloperApply() {
     getDeveloperApplyHandler();
   }, [])
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
-      name: '',
-      url: '',
-      reason: '',
+      name: "",
+      url: "",
+      reason: "",
     },
 
     validate: {
-      name: (value: string) => (value.length > 0 ? null : "项目名称不能为空"),
-      url: (value: string) => (/^http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/.test(value) ? null : "项目地址格式不正确"),
-      reason: (value: string) => (value.length > 0 ? null : "申请理由不能为空"),
+      name: (value) => (value.length > 0 ? null : "项目名称不能为空"),
+      url: (value) => (/^http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/.test(value) ? null : "项目地址格式不正确"),
+      reason: (value) => (value.length > 0 ? null : "申请理由不能为空"),
     },
   });
 
-  const sendDeveloperApplyHandler = async (values: any) => {
+  const sendDeveloperApplyHandler = async (values: FormValues) => {
     setVisible(true);
+
     try {
       const res = await sendDeveloperApply(values);
       const data = await res.json();
@@ -80,7 +87,7 @@ export default function DeveloperApply() {
       </Text>
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
-        <form onSubmit={form.onSubmit((values) => sendDeveloperApplyHandler(values))}>
+        <form onSubmit={form.onSubmit(sendDeveloperApplyHandler)}>
           <TextInput
             name="name"
             label="项目名称"

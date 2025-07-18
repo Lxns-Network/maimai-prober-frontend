@@ -1,4 +1,4 @@
-import { useForm } from "@mantine/form";
+import { TransformedValues, useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "@/utils/validator.ts";
 import { useEffect } from "react";
 import { listToPermission, permissionToList, UserPermission } from "@/utils/session.ts";
@@ -8,47 +8,53 @@ import { Button, Group, Modal, MultiSelect, Space, TextInput } from "@mantine/co
 import { IconTrash } from "@tabler/icons-react";
 import { UserProps } from "@/types/user";
 
+interface FormValues {
+  name: string;
+  email: string;
+  permissions?: string[];
+  permission: number;
+}
+
 export const EditUserModal = ({ user, opened, close }: { user: UserProps | null, opened: boolean, close(): void }) => {
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
       name: "",
       email: "",
-      permissions: [] as string[],
+      permissions: [],
+      permission: user ? user.permission : UserPermission.User,
     },
 
     validate: {
-      name: (value: string) => (value == "" || validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value: string) => (value == "" || validateEmail(value) ? null : "邮箱格式不正确"),
-      permissions: (value: string[]) => value.length > 0 ? null : "请选择权限",
+      name: (value) => (value == "" || validateUserName(value) ? null : "用户名格式不正确"),
+      email: (value) => (value == "" || validateEmail(value) ? null : "邮箱格式不正确"),
+      permissions: (value) => (value || []).length > 0 ? null : "请选择权限",
     },
 
     transformValues: (values) => ({
-      name: values.name || user?.name,
-      email: values.email || user?.email,
-      permission: listToPermission(values.permissions.map((permission) => parseInt(permission))),
+      name: values.name || user?.name || "",
+      email: values.email || user?.email || "",
+      permission: listToPermission((values.permissions || []).map((permission) => parseInt(permission))),
     }),
   });
 
-  const updateUserHandler = async () => {
+  const updateUserHandler = async (values: TransformedValues<typeof form>) => {
     if (!user) return;
 
     try {
-      const res = await updateUser(user.id, form.getTransformedValues());
+      const res = await updateUser(user.id, values);
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);
       }
 
-      user.name = form.values.name || user.name;
-      user.email = form.values.email || user.email;
-      user.permission = listToPermission(form.values.permissions.map((permission) => parseInt(permission)));
+      user.name = values.name || user.name;
+      user.email = values.email || user.email;
+      user.permission = values.permission;
 
-      form.setValues({
-        name: "",
-        email: "",
-      });
+      form.resetField("name");
+      form.resetField("email");
     } catch (err) {
-      openRetryModal("保存失败", `${err}`, () => updateUserHandler());
+      openRetryModal("保存失败", `${err}`, () => updateUserHandler(values));
     } finally {
       close();
     }
@@ -67,7 +73,6 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     } catch (err) {
       openRetryModal("删除失败", `${err}`, deleteUserHandler);
     } finally {
-      form.reset();
       close();
     }
   }
@@ -80,7 +85,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
 
   return (
     <Modal opened={opened} onClose={close} title="编辑用户" centered>
-      <form onSubmit={form.onSubmit(() => updateUserHandler())}>
+      <form onSubmit={form.onSubmit(updateUserHandler)}>
         <TextInput label="用户名" placeholder={user?.name} mb="xs" {...form.getInputProps("name")} />
         <TextInput label="邮箱" placeholder={user?.email} mb="xs" {...form.getInputProps("email")} />
         <MultiSelect
@@ -100,11 +105,9 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
               variant="outline"
               color="red"
               leftSection={<IconTrash size={20} />}
-              onClick={() => {
-                openConfirmModal("删除用户", "你确定要删除该用户吗？", deleteUserHandler, {
-                  confirmProps: { color: 'red' }
-                });
-              }}
+              onClick={() => openConfirmModal("删除用户", "你确定要删除该用户吗？", deleteUserHandler, {
+                confirmProps: { color: 'red' }
+              })}
             >
               删除用户
             </Button>

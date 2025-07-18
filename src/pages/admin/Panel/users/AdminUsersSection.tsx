@@ -220,15 +220,17 @@ const AdminUsersContent = () => {
               title: '权限',
               width: 150,
               render: ({ permission }) => {
-                return <Group gap="xs">
-                  {permissionToList(permission-UserPermission.User).map((permission) => (
-                    <Badge variant="default" key={permission}>{{
-                      1: '普通用户',
-                      2: '开发者',
-                      4: '管理员',
-                    }[permission]}</Badge>
-                  ))}
-                </Group>;
+                return (
+                  <Group gap="xs">
+                    {permissionToList(permission-UserPermission.User).map((permission) => (
+                      <Badge variant="default" key={permission}>{{
+                        1: '普通用户',
+                        2: '开发者',
+                        4: '管理员',
+                      }[permission]}</Badge>
+                    ))}
+                  </Group>
+                );
               },
               sortable: true,
             },

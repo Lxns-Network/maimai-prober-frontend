@@ -5,7 +5,7 @@ import {
 import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
-import { useForm } from "@mantine/form";
+import {TransformedValues, useForm} from "@mantine/form";
 import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
 import { createAlias } from "@/utils/api/alias.ts";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
@@ -17,10 +17,16 @@ import { ASSET_URL } from "@/main.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import useGame from "@/hooks/useGame.ts";
 
+interface FormValues {
+  song_id: number | null;
+  alias: string;
+  agree?: boolean;
+}
+
 interface CreateAliasModalProps {
   defaultSongId?: number;
   opened: boolean;
-  onClose: (alias?: any) => void;
+  onClose: (alias?: FormValues) => void;
 }
 
 export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAliasModalProps) => {
@@ -31,34 +37,34 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   const [game] = useGame();
 
   const getSongList = useSongListStore((state) => state.getSongList);
-  const form = useForm({
+  const form = useForm<FormValues>({
     initialValues: {
-      songId: null as number | null,
+      song_id: null,
       alias: "",
       agree: false,
     },
 
     validate: {
-      songId: (value: number | null) => value !== null ? null : "请选择曲目",
-      alias: (value: string, values: {
-        songId: number | null;
-      }) => {
+      song_id: (value) => value !== null ? null : "请选择曲目",
+      alias: (value, values) => {
         if (value.trim() === "") return "请输入曲目别名";
         if (!/^.{1,32}$/.test(value)) return "别名长度不符合要求";
-        if (values.songId && songList?.find(values.songId)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
+        if (values.song_id && songList?.find(values.song_id)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
       },
-      agree: (value: boolean) => value ? null : "请阅读并同意曲目别名命名规则",
+      agree: (value) => value ? null : "请阅读并同意曲目别名命名规则",
     },
+
+    transformValues: (values) => ({
+      song_id: values.song_id ? parseInt(values.song_id.toString()) : null,
+      alias: values.alias.trim(),
+    }),
   });
 
-  const createAliasHandler = async (values: any) => {
+  const createAliasHandler = async (values: TransformedValues<typeof form>) => {
     setUploading(true);
+
     try {
-      const alias = {
-        song_id: parseInt(values.songId),
-        alias: values.alias.trim(),
-      }
-      const res = await createAlias(game, alias);
+      const res = await createAlias(game, values);
       if (res.status === 409) {
         openAlertModal("别名创建失败", "别名已存在，请输入其它曲目别名。");
         setUploading(false);
@@ -69,10 +75,8 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
         throw new Error(data.message);
       }
       openAlertModal("别名创建成功", "快去邀请你的小伙伴投票吧。")
-      form.setValues({
-        alias: "",
-      });
-      onClose(alias);
+      form.resetField("alias");
+      onClose(values);
     } catch (error) {
       openRetryModal("别名创建失败", `${error}`, () => createAliasHandler(values));
     } finally {
@@ -85,18 +89,18 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
   }, [game]);
 
   useEffect(() => {
-    if (form.values.songId) {
-      const song = songList?.find(form.values.songId);
+    if (form.values.song_id) {
+      const song = songList?.find(form.values.song_id);
       song && setSong(song);
     } else {
       setSong(null);
     }
-  }, [form.values.songId]);
+  }, [form.values.song_id]);
 
   useEffect(() => {
     if (defaultSongId) {
       form.setValues({
-        songId: defaultSongId,
+        song_id: defaultSongId,
       });
       setReadonly(true);
     }
@@ -115,7 +119,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
           <Modal.CloseButton />
         </Modal.Header>
         <Modal.Body>
-          <form onSubmit={form.onSubmit((values) => createAliasHandler(values))}>
+          <form onSubmit={form.onSubmit(createAliasHandler)}>
             <Flex align="center" gap="md">
               {song ? (
                 <PhotoView src={`${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png`}>
@@ -129,22 +133,22 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
               <div style={{ flex: 1 }}>
                 <Flex align="center" gap="xs">
                   <SongCombobox
-                    value={form.values.songId || 0}
+                    value={form.values.song_id || 0}
                     onOptionSubmit={(value) => {
-                      form.setValues({ songId: value });
+                      form.setValues({ song_id: value });
                     }}
                     disabled={readonly}
                     label="曲目"
                     mb="sm"
                     withAsterisk
-                    error={form.errors.id}
+                    error={form.errors.song_id}
                     style={{ flex: 1 }}
                   />
                   <Tooltip label="随机一首曲目" withinPortal>
                     <ActionIcon variant="default" size={24} onClick={() => {
                       const song = songList?.songs[Math.floor(Math.random() * songList?.songs.length)];
                       form.setValues({
-                        songId: song?.id,
+                        song_id: song?.id,
                       });
                     }} mt={14} disabled={songList?.songs.length === 0 || readonly}>
                       <IconArrowsShuffle size={16} />
@@ -160,7 +164,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
               </div>
             </Flex>
             <Space h="md" />
-            {Boolean(form.values.songId) && ((game === "maimai" && form.values.songId! >= 100000) || (game === "chunithm" && form.values.songId! >= 8000)) && (
+            {Boolean(form.values.song_id) && ((game === "maimai" && form.values.song_id! >= 100000) || (game === "chunithm" && form.values.song_id! >= 8000)) && (
               <Alert color="yellow" variant="light" icon={<IconAlertCircle />} title="特殊曲目注意" mb="md">
                 <Text size="sm">
                   你目前选中的是「{game === "maimai" ? "宴会场曲目" : "WORLD'S END 曲目"}」，请确认你要提交的是原曲还是特殊曲目。
@@ -196,7 +200,7 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
             </Paper>
             <Space h="lg" />
             <Group justify="flex-end">
-              <Button variant="default" onClick={onClose}>取消</Button>
+              <Button variant="default" onClick={() => onClose()}>取消</Button>
               <Button type="submit" loading={uploading}>提交</Button>
             </Group>
           </form>
