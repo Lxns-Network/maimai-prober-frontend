@@ -1,7 +1,7 @@
 import { Card, Loader, Overlay, ScrollArea, Text, useComputedColorScheme } from "@mantine/core";
 import { Heatmap } from "@mantine/charts";
 import classes from "@/components/Profile/Profile.module.css";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getPlayerHeatmap } from "@/utils/api/player.ts";
 import useGame from "@/hooks/useGame.ts";
 import { Game } from "@/types/game";
@@ -30,7 +30,7 @@ export const PlayerHeatmapSection = () => {
   const endDate = new Date();
   const startDate = new Date(endDate.getFullYear() - 1, endDate.getMonth(), endDate.getDate());
 
-  const getPlayerHeatmapData = async (game: Game) => {
+  const getPlayerHeatmapData = useCallback(async (game: Game) => {
     setFetching(true);
     try {
       const res = await getPlayerHeatmap(game);
@@ -46,7 +46,7 @@ export const PlayerHeatmapSection = () => {
     } catch (error) {
       openRetryModal("玩家热力图获取失败", `${error}`, () => getPlayerHeatmapData(game))
     }
-  }
+  }, [game]);
 
   useEffect(() => {
     getPlayerHeatmapData(game);
