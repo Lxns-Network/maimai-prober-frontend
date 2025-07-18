@@ -28,6 +28,10 @@ export async function logoutUser() {
   return fetchAPI("user/logout", { method: "POST" });
 }
 
+export async function editUserPassword(data: unknown) {
+  return fetchAPI("user/password", { method: "POST", body: data });
+}
+
 export async function deleteSelfUser() {
   return fetchAPI("user", { method: "DELETE" });
 }

@@ -2,12 +2,14 @@ import { Text, Card, LoadingOverlay, Mark, Anchor } from '@mantine/core';
 import { deletePlayerScores, unbindPlayer } from "@/utils/api/player.ts";
 import { deleteSelfUser, updateUserConfig } from "@/utils/api/user.ts";
 import { SettingList } from '../../components/Settings/SettingList.tsx';
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import classes from "../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "../../utils/modal.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { useUserConfig } from "@/hooks/swr/useUserConfig.ts";
 import useGame from "@/hooks/useGame.ts";
+import { EditPasswordModal } from "@/components/Settings/EditPasswordModal.tsx";
+import { useDisclosure } from "@mantine/hooks";
 
 const crawlConfigData = {
   maimai: [{
@@ -159,8 +161,8 @@ const crawlConfigData = {
 
 const SettingsContent = () => {
   const [game] = useGame();
+  const [editPasswordModalOpened, editPasswordModal] = useDisclosure(false);
   const { config, isLoading, mutate } = useUserConfig(game);
-  const navigate = useNavigate();
 
   const updateUserConfigHandler = async (key: string, value: unknown) => {
     const newConfig = {
@@ -223,6 +225,7 @@ const SettingsContent = () => {
 
   return (
     <div>
+      <EditPasswordModal opened={editPasswordModalOpened} close={() => editPasswordModal.close()} />
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
@@ -290,15 +293,15 @@ const SettingsContent = () => {
           其它设置
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          重置密码、删除数据等敏感操作
+          修改密码、删除数据等敏感操作
         </Text>
         <SettingList data={[{
           key: "reset_password",
-          title: "重置密码",
-          description: "重置你的查分器账号密码。",
-          placeholder: "重置",
+          title: "修改密码",
+          description: "修改你的查分器账号密码。",
+          placeholder: "修改",
           optionType: "button",
-          onClick: () => navigate("/forgot-password"),
+          onClick: () => editPasswordModal.open(),
         }, {
           key: "unbind_account",
           title: "解绑游戏账号",
