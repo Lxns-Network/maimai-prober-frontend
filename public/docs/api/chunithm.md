@@ -301,6 +301,24 @@ JSON 格式的玩家成绩：
 
 [SimpleScore[]](#simplescore)
 
+### GET `/api/v0/chunithm/player/{friend_code}/heatmap`
+
+获取玩家成绩上传热力图。
+
+#### 权限
+
+- `allow_third_party_fetch_history`
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 响应体
+
+日期与成绩数量的映射，键为日期（格式为 `YYYY-MM-DD`），值为该日期上传的成绩数量。
+
 ### GET `/api/v0/chunithm/player/{friend_code}/trend`
 
 获取玩家 Rating 趋势。
@@ -484,11 +502,17 @@ JSON 格式的玩家成绩：
 
 路径：
 - 角色：`/character/{character_id}.png`
+- 名牌版：`/plate/{plate_id}.png`
+- 地图头像：`/icon/{icon_id}.png`
 - 曲绘：`/jacket/{song_id}.png`
 - 音频：`/music/{song_id}.mp3`
 
 ::: info 提示
 WORLD'S END 难度的 `song_id` 为 [SongDifficulty](#songdifficulty) 中 `origin_id` 字段的值。
+:::
+
+::: warning 注意
+游戏资源的访问频率有限制，请勿频繁请求。
 :::
 
 ## 结构体

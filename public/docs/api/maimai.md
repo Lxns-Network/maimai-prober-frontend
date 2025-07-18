@@ -276,6 +276,24 @@ JSON 格式的玩家成绩：
 
 [SimpleScore[]](#simplescore)
 
+### GET `/api/v0/maimai/player/{friend_code}/heatmap`
+
+获取玩家成绩上传热力图。
+
+#### 权限
+
+- `allow_third_party_fetch_history`
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+
+#### 响应体
+
+日期与成绩数量的映射，键为日期（格式为 `YYYY-MM-DD`），值为该日期上传的成绩数量。
+
 ### GET `/api/v0/maimai/player/{friend_code}/trend`
 
 获取玩家 DX Rating 趋势。
@@ -627,8 +645,13 @@ JSON 格式的玩家成绩：
 路径：
 - 头像：`/icon/{icon_id}.png`
 - 姓名框：`/plate/{plate_id}.png`
+- 背景：`/frame/{frame_id}.png`
 - 曲绘：`/jacket/{song_id}.png`
 - 音频：`/music/{song_id}.mp3`
+
+::: warning 注意
+游戏资源的访问频率有限制，请勿频繁请求。
+:::
 
 ## 结构体
 
