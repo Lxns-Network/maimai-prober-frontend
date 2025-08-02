@@ -34,7 +34,7 @@ export default function ForgotPassword() {
     },
 
     validate: {
-      email: (value) => (validateEmail(value) ? null : "邮箱格式不正确"),
+      email: (value) => validateEmail(value, { allowEmpty: false }),
     },
   });
 

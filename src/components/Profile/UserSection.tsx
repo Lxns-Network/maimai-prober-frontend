@@ -20,7 +20,7 @@ export const UserSection = () => {
 
   if (!user) {
     return (
-      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red" mb="md">
+      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red">
         <Text size="sm">
           可能是网络连接已断开，请检查你的网络连接是否正常。
         </Text>
@@ -35,8 +35,8 @@ export const UserSection = () => {
     },
 
     validate: {
-      name: (value) => (value.length === 0 || validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value) => (value.length === 0 || validateEmail(value) ? null : "邮箱格式不正确"),
+      name: (value) => validateUserName(value, { allowEmpty: true }),
+      email: (value) => validateEmail(value, { allowEmpty: true }),
     },
   });
 

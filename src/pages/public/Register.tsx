@@ -41,10 +41,10 @@ export default function Register() {
     },
 
     validate: {
-      name: (value) => (validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value) => (validateEmail(value) ? null : "邮箱格式不正确"),
-      password: (value) => (validatePassword(value) ? null : "密码格式不正确"),
-      confirm_password: (value, values) => (value === values.password ? null : "两次输入的密码不一致"),
+      name: (value) => validateUserName(value, { allowEmpty: false }),
+      email: (value) => validateEmail(value, { allowEmpty: false }),
+      password: (value) => validatePassword(value, { allowEmpty: false }),
+      confirm_password: (value, values) => value === values.password ? null : "两次输入的密码不一致",
     },
   });
 

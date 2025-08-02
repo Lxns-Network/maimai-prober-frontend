@@ -15,7 +15,7 @@ interface FormValues {
   permission: number;
 }
 
-export const EditUserModal = ({ user, opened, close }: { user: UserProps | null, opened: boolean, close(): void }) => {
+export const EditUserModal = ({ user, opened, onClose }: { user: UserProps | null, opened: boolean, onClose(): void }) => {
   const form = useForm<FormValues>({
     initialValues: {
       name: "",
@@ -25,8 +25,8 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     },
 
     validate: {
-      name: (value) => (value == "" || validateUserName(value) ? null : "用户名格式不正确"),
-      email: (value) => (value == "" || validateEmail(value) ? null : "邮箱格式不正确"),
+      name: (value) => validateUserName(value, { allowEmpty: true }),
+      email: (value) => validateEmail(value, { allowEmpty: true }),
       permissions: (value) => (value || []).length > 0 ? null : "请选择权限",
     },
 
@@ -56,7 +56,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     } catch (err) {
       openRetryModal("保存失败", `${err}`, () => updateUserHandler(values));
     } finally {
-      close();
+      onClose();
     }
   }
 
@@ -73,7 +73,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
     } catch (err) {
       openRetryModal("删除失败", `${err}`, deleteUserHandler);
     } finally {
-      close();
+      onClose();
     }
   }
 
@@ -84,7 +84,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
   }, [user]);
 
   return (
-    <Modal opened={opened} onClose={close} title="编辑用户" centered>
+    <Modal opened={opened} onClose={onClose} title="编辑用户" centered>
       <form onSubmit={form.onSubmit(updateUserHandler)}>
         <TextInput label="用户名" placeholder={user?.name} mb="xs" {...form.getInputProps("name")} />
         <TextInput label="邮箱" placeholder={user?.email} mb="xs" {...form.getInputProps("email")} />
@@ -113,7 +113,7 @@ export const EditUserModal = ({ user, opened, close }: { user: UserProps | null,
             </Button>
           </Group>
           <Group>
-            <Button variant="default" onClick={close}>取消</Button>
+            <Button variant="default" onClick={onClose}>取消</Button>
             <Button color="blue" type="submit">保存</Button>
           </Group>
         </Group>

@@ -41,8 +41,8 @@ export default function ResetPassword() {
     },
 
     validate: {
-      password: (value) => (validatePassword(value) ? null : "密码格式不正确"),
-      confirm_password: (value, values) => (value === values.password ? null : "两次输入的密码不一致"),
+      password: (value) => validatePassword(value, { allowEmpty: false }),
+      confirm_password: (value, values) => value === values.password ? null : "两次输入的密码不一致",
     },
   });
 

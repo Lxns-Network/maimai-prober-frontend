@@ -19,9 +19,9 @@ export const EditPasswordModal = ({ opened, close }: { opened: boolean, close():
     },
 
     validate: {
-      current_password: (value) => (validatePassword(value) ? null : "原密码格式不正确"),
-      new_password: (value) => (validatePassword(value) ? null : "新密码格式不正确"),
-      confirm_new_password: (value, values) => (value === values.new_password ? null : "两次输入的新密码不一致"),
+      current_password: (value) => validatePassword(value, { allowEmpty: false, passwordLabel: "原密码" }),
+      new_password: (value) => validatePassword(value, { allowEmpty: false, passwordLabel: "新密码" }),
+      confirm_new_password: (value, values) => value === values.new_password ? null : "两次输入的新密码不一致",
     },
 
     transformValues: (values) => ({
