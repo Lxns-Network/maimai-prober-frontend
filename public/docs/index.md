@@ -12,6 +12,7 @@
 - 💻 不受设备限制，支持多平台同步、管理游戏数据
 - 🚀 快速的游戏数据同步体验
 - 🤩 易于使用的成绩、曲目与姓名框查询功能
+- ⚖️ 独立的曲目别名系统，支持提交和投票
 - 🌐 开放的 API 接口，支持第三方开发者对接
 - 🌈 支持暗色与自动主题
 
@@ -26,6 +27,8 @@
 
 - [舞萌 DX API 文档](/docs/api/maimai)
 - [中二节奏 API 文档](/docs/api/chunithm)
+- [OAuth 接入指南](/docs/oauth-guide)
+- [OAuth API 文档](/docs/api/oauth)
 - [首页项目展示](/docs/project-showcase)
 
 ## 其它

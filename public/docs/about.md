@@ -8,7 +8,7 @@
 
 QQ 群：
 - 用户交流群：**597413470**
-- 开发者交流群：**991669419**
+- 开发者交流群：**897487115**
 
 GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 

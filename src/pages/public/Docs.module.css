@@ -122,10 +122,7 @@
 .codeBlock {
     position: relative;
     margin: var(--mantine-spacing-lg) 0;
-    padding: var(--mantine-spacing-xs);
-    padding-right: var(--mantine-spacing-xl);
-    border-radius: var(--mantine-radius-sm);
-    overflow: auto;
+    border-radius: var(--mantine-radius-md);
     font-size: var(--mantine-font-size-sm);
     line-height: var(--mantine-line-height);
     background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
@@ -135,6 +132,12 @@
     position: absolute;
     top: var(--mantine-spacing-xs);
     right: var(--mantine-spacing-xs);
+    z-index: 1;
+    background-color: alpha(light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8)), 0.8);
+
+    &:hover {
+        background-color: alpha(light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-7)), 0.8);
+    }
 }
 
 .code {

@@ -1,6 +1,6 @@
 import {
-  ActionIcon, Container, CopyButton, Flex, Group, Loader, ScrollArea, Space, Text, Title, Tooltip,
-  TypographyStylesProvider, Image, Box, Center, Anchor, Alert, TreeNodeData, Tree, RenderTreeNodePayload, useTree
+  ActionIcon, Alert, Anchor, Box, Center, Container, CopyButton, Flex, Group, Image, Loader, RenderTreeNodePayload,
+  ScrollArea, Space, Text, Title, Tooltip, Tree, TreeNodeData, TypographyStylesProvider, useTree
 } from "@mantine/core";
 import classes from "./Docs.module.css"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -21,6 +21,21 @@ import {
 import LazyLoad from 'react-lazyload';
 import { PhotoView } from "react-photo-view";
 import { Helmet } from "react-helmet";
+import { CodeHighlight, CodeHighlightAdapterProvider, createShikiAdapter } from "@mantine/code-highlight";
+
+async function loadShiki() {
+  const { createHighlighterCore } = await import('@shikijs/core');
+  const { createJavaScriptRegexEngine } = await import('@shikijs/engine-javascript');
+  return await createHighlighterCore({
+    langs: [
+      import('@shikijs/langs/python'),
+      import('@shikijs/langs/json'),
+    ],
+    engine: createJavaScriptRegexEngine()
+  });
+}
+
+const shikiAdapter = createShikiAdapter(loadShiki);
 
 const scrollTo = (id: string) => {
   if (!id) return;
@@ -319,7 +334,20 @@ const Content = ({ markdown }: { markdown: string }) => {
               child => React.isValidElement(child) && child.props.className?.includes('remark-container-title')
             ) as React.ReactElement;
 
-            return <Alert className={classes.alert} radius="md" mt="md" variant="light" color={color} title={titleChild?.props.children} icon={icon}>
+            return <Alert
+              className={classes.alert}
+              radius="md"
+              mt="md"
+              variant="light"
+              color={color}
+              title={titleChild?.props.children}
+              icon={icon}
+              styles={{
+                body: {
+                  width: "0",
+                }
+              }}
+            >
               {childrenArray.filter(
                 (child) => !React.isValidElement(child) || !child.props.className?.includes('remark-container-title')
               )}
@@ -348,7 +376,18 @@ const Content = ({ markdown }: { markdown: string }) => {
                 </Tooltip>
               )}
             </CopyButton>
-            {children}
+            <CodeHighlight
+              code={children.props.children}
+              language={children.props.className?.replace("language-", "") || "text"}
+              withCopyButton={false}
+              styles={{
+                pre: {
+                  overflow: "unset",
+                  width: "0",
+                },
+              }}
+              radius="md"
+            />
           </div>
         },
         code({ children }) {
@@ -448,9 +487,11 @@ export default function Docs() {
             <Loader type="dots" size="xl" />
           </Group>
         ) : (
-          <TypographyStylesProvider id="content" p={0}>
-            <Content markdown={markdown} />
-          </TypographyStylesProvider>
+          <CodeHighlightAdapterProvider adapter={shikiAdapter}>
+            <TypographyStylesProvider id="content" p={0}>
+              <Content markdown={markdown} />
+            </TypographyStylesProvider>
+          </CodeHighlightAdapterProvider>
         )}
       </Container>
       <Container ml={0} className={classes.tableOfContents}>
