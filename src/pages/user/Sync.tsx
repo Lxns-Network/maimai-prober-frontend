@@ -346,9 +346,9 @@ const SyncContent = () => {
           </Text>
         } loading={proxyAvailable && crawlStatus?.status === "pending"} />
       </Stepper>
-      <LoginAlert content="你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。" mt="-lg" radius="md" />
+      <LoginAlert content="你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。" mt="xs" radius="md" />
       {!isLoggedOut && (
-        <Card withBorder radius="md" className={classes.card} p="md" mt="-lg">
+        <Card withBorder radius="md" className={classes.card} p="md" mt="xs">
           <Card.Section className={classes.section}>
             <Text size="xs" c="dimmed">
               数据同步状态

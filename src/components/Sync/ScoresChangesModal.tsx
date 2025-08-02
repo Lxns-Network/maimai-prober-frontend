@@ -25,6 +25,7 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game, icon: { old?: string,
         <Image
           src={`/assets/${game}/music_icon/${icon.old || "blank"}_xs.webp`}
           h={rem(24)}
+          w={rem(24)}
         />
         <ThemeIcon variant="subtle" color="gray" size={20}>
           <IconArrowRight />
@@ -32,6 +33,7 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game, icon: { old?: string,
         <Image
           src={`/assets/${game}/music_icon/${icon.new || "blank"}_xs.webp`}
           h={rem(24)}
+          w={rem(24)}
         />
       </Group>;
     }
@@ -39,6 +41,7 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game, icon: { old?: string,
       <Image
         src={`/assets/${game}/music_icon/${icon.old || "blank"}.webp`}
         h={rem(24)}
+        w={rem(24)}
       />
       <ThemeIcon variant="subtle" color="gray" size={20}>
         <IconArrowRight />
@@ -46,6 +49,7 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game, icon: { old?: string,
       <Image
         src={`/assets/${game}/music_icon/${icon.new || "blank"}.webp`}
         h={rem(24)}
+        w={rem(24)}
       />
     </Group>;
   }
@@ -130,9 +134,13 @@ const ScoresChangesTable = ({ game, scores }: { game: Game, scores: ScoreChanges
         render: ({ song_name, type }) => {
           return <Flex align="center">
             {type === "standard" ? (
-              <Badge variant="filled" color="blue" size="xs" w={40}>标准</Badge>
+              <Badge variant="filled" color="blue" size="xs" w={33} style={{
+                flexShrink: 0,
+              }}>标准</Badge>
             ) : (
-              <Badge variant="filled" color="orange" size="xs" w={40}>DX</Badge>
+              <Badge variant="filled" color="orange" size="xs" w={33} style={{
+                flexShrink: 0,
+              }}>DX</Badge>
             )}
             <Space w={8} />
             <Marquee>{song_name}</Marquee>
