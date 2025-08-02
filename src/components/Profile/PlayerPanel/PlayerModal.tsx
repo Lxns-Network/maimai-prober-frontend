@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MaimaiRatingTrend, MaimaiRatingTrendProps } from "./maimai/RatingTrend.tsx";
 import { ChunithmRatingTrend, ChunithmRatingTrendProps } from "./chunithm/RatingTrend.tsx";
 import {
   Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Group, Loader, Modal, Paper, ScrollArea, useCombobox,
-  Text, LoadingOverlay, UnstyledButton
+  Text,
 } from "@mantine/core";
 import { getPlayerRatingTrend, updatePlayerData } from "@/utils/api/player.ts";
 import { openRetryModal } from "@/utils/modal.tsx";
@@ -18,35 +18,8 @@ import { ChunithmPlayerContent } from "./chunithm/PlayerContent.tsx";
 import { isChunithmPlayerProps, isMaimaiPlayerProps } from "@/utils/api/player.ts";
 import { Collection, EditCollectionModal } from "./EditCollectionModal.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
-import { useHover, useMediaQuery } from "@mantine/hooks";
+import { useMediaQuery } from "@mantine/hooks";
 import { usePlayer } from "@/hooks/swr/usePlayer.ts";
-
-interface EditAvatarButtonProps {
-  children: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-}
-
-export const EditAvatarButton = ({ children, onClick, disabled }: EditAvatarButtonProps) => {
-  const { hovered, ref } = useHover();
-
-  return (
-    <UnstyledButton pos="relative" className={classes.editAvatarButton} ref={ref} onClick={() => !disabled && onClick()}>
-      <LoadingOverlay
-        visible={hovered && !disabled}
-        loaderProps={{
-          children: <IconEdit />
-        }}
-        overlayProps={{ radius: "sm" }}
-        styles={{
-          overlay: { borderRadius: 6 },
-          loader: { height: 24 },
-        }}
-      />
-      {children}
-    </UnstyledButton>
-  )
-}
 
 interface EditButtonProps {
   title: string;

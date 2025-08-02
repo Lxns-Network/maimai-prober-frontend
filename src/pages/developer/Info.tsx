@@ -1,22 +1,23 @@
-import { useEffect, useState } from 'react';
 import {
   Group, Text, Loader, Card, Switch, ActionIcon, Tooltip, CopyButton, Anchor, Divider, useMantineTheme, Button,
-  TextInput
+  TextInput, Stack, Flex, Alert
 } from '@mantine/core';
-import { getDeveloperApply, resetDeveloperApiKey } from "@/utils/api/developer.ts";
+import { resetDeveloperApiKey } from "@/utils/api/developer.ts";
 import Icon from "@mdi/react";
-import { mdiEye, mdiEyeOff } from "@mdi/js";
-import { useDisclosure, useSetState } from "@mantine/hooks";
-import { useNavigate } from "react-router-dom";
+import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
+import { useDisclosure }  from "@mantine/hooks";
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 import classes from "../Page.module.css";
 import { useComputedColorScheme } from "@mantine/core";
 import { Page } from "@/components/Page/Page.tsx";
+import { DeveloperOAuthSection } from "@/components/Developer/DeveloperOAuthSection.tsx";
+import { useDeveloper } from "@/hooks/swr/useDeveloper.ts";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const DeveloperInfoContent = () => {
-  const [developerData, setDeveloperData] = useSetState<any>(null);
+  const { developer, isLoading, error, mutate } = useDeveloper();
   const [visible, visibleHandler] = useDisclosure(false);
-  const [isLoaded, setIsLoaded] = useState(false);
   const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();
   const theme = useMantineTheme();
@@ -28,45 +29,39 @@ const DeveloperInfoContent = () => {
       if (!data.success) {
         throw new Error(data.message);
       }
-      setDeveloperData({ api_key: data.data.api_key });
+      await mutate((prevData) => {
+        if (!prevData) return prevData;
+        return {
+          ...prevData,
+          api_key: data.data.api_key,
+        };
+      })
     } catch (err) {
       console.error(err);
-    }
-  }
-
-  const getDeveloperApplyHandler = async () => {
-    try {
-      const res = await getDeveloperApply();
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      if (!data.data || !data.data.api_key) {
-        navigate("/developer/apply");
-      }
-      setDeveloperData(data.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoaded(true);
     }
   }
 
   useEffect(() => {
-    getDeveloperApplyHandler();
-  }, []);
+    if (isLoading) return;
 
-  if (!isLoaded) {
+    if (!developer|| !developer.api_key) {
+      navigate("/developer/apply");
+    }
+  }, [isLoading, developer]);
+
+  if (error) {
     return (
-      <Group justify="center" mt="xl">
-        <Loader />
-      </Group>
+      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title={`没有获取到开发者数据`} color="red" mb="md">
+        <Text size="sm">
+          可能是网络连接已断开，请检查你的网络连接是否正常。
+        </Text>
+      </Alert>
     )
   }
 
   return (
-    <div>
-      <Card withBorder radius="md" className={classes.card} mb="md">
+    <Stack gap="md">
+      <Card withBorder radius="md" className={classes.card}>
         <Text fz="lg" fw={700}>
           我的申请信息
         </Text>
@@ -74,29 +69,39 @@ const DeveloperInfoContent = () => {
           查看你的开发者申请信息
         </Text>
         <Divider mt="md" mb="md" color={computedColorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
-        <Group>
-          <Text fz="xs" c="dimmed">项目名称</Text>
-          <Text fz="sm">{developerData.name}</Text>
-        </Group>
-        <Group mt="xs">
-          <Text fz="xs" c="dimmed">项目地址</Text>
-          <Text fz="sm">
-            <Anchor href={developerData.url} target="_blank" fz="sm">{developerData.url.replace(/(^\w+:|^)\/\//, '')}</Anchor>
-          </Text>
-        </Group>
-        <Group mt="xs">
-          <Text fz="xs" c="dimmed">申请时间</Text>
-          <Text fz="sm">
-            {new Date(developerData.apply_time).toLocaleString()}
-          </Text>
-        </Group>
-        <Group mt="xs">
-          <Text fz="xs" c="dimmed">申请理由</Text>
-          <Text fz="sm">
-            {developerData.reason}
-          </Text>
-        </Group>
+        {isLoading && (
+          <Group justify="center" m="xs">
+            <Loader />
+          </Group>
+        )}
+        {developer && (
+          <Stack gap="xs">
+            <Flex align="center" columnGap="md" wrap="wrap">
+              <Text fz="xs" c="dimmed" w={60}>开发者名称</Text>
+              <Text fz="sm">{developer.name}</Text>
+            </Flex>
+            <Flex align="center" columnGap="md" wrap="wrap">
+              <Text fz="xs" c="dimmed" w={60}>开发者地址</Text>
+              <Text fz="sm">
+                <Anchor href={developer.url} target="_blank" fz="sm">{developer.url.replace(/(^\w+:|^)\/\//, '')}</Anchor>
+              </Text>
+            </Flex>
+            <Flex align="center" columnGap="md" wrap="wrap">
+              <Text fz="xs" c="dimmed" w={60}>申请时间</Text>
+              <Text fz="sm">
+                {new Date(developer.apply_time).toLocaleString()}
+              </Text>
+            </Flex>
+            <Flex align="center" columnGap="md" wrap="wrap">
+              <Text fz="xs" c="dimmed" w={60}>申请理由</Text>
+              <Text fz="sm">
+                {developer.reason}
+              </Text>
+            </Flex>
+          </Stack>
+        )}
       </Card>
+
       <Card withBorder radius="md" className={classes.card}>
         <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
           <div>
@@ -104,7 +109,7 @@ const DeveloperInfoContent = () => {
               开发者 API 密钥
             </Text>
             <Text fz="xs" c="dimmed" mt={3}>
-              用于访问 maimai DX 查分器 API
+              用于访问 maimai DX 查分器开发者 API
             </Text>
           </div>
           <Switch
@@ -115,29 +120,38 @@ const DeveloperInfoContent = () => {
             offLabel={<Icon path={mdiEyeOff} size={0.8} />}
           />
         </Group>
-        <TextInput
-          variant="filled"
-          value={visible ? developerData.api_key : developerData.api_key.replace(/./g, '•')}
-          rightSection={
-            <CopyButton value={developerData.api_key} timeout={2000}>
-              {({ copied, copy }) => (
-                <Tooltip label={copied ? '已复制' : '复制'} withArrow position="right">
-                  <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
-                    {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </CopyButton>
-          }
-          readOnly
-        />
+        {isLoading && (
+          <Group justify="center">
+            <Loader />
+          </Group>
+        )}
+        {developer && (
+          <TextInput
+            variant="filled"
+            value={visible ? developer.api_key : developer.api_key.replace(/./g, '•')}
+            rightSection={
+              <CopyButton value={developer.api_key} timeout={2000}>
+                {({ copied, copy }) => (
+                  <Tooltip label={copied ? '已复制' : '复制'} withArrow position="right">
+                    <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
+                      {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </CopyButton>
+            }
+            readOnly
+          />
+        )}
         <Group justify="flex-end" mt="md">
           <Button variant="default" size="sm" leftSection={<IconRefresh size={20} />} onClick={resetDeveloperApiKeyHandler}>
             重置 API 密钥
           </Button>
         </Group>
       </Card>
-    </div>
+
+      <DeveloperOAuthSection />
+    </Stack>
   )
 }
 

@@ -11,12 +11,13 @@ const ForgotPassword = lazy(() => import('./pages/public/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/public/ResetPassword'));
 const Docs = lazy(() => import('./pages/public/Docs.tsx'));
 const YearInReview = lazy(() => import('./pages/public/YearInReview'));
-const Profile = lazy(() => import('./pages/user/Profile'));
+const Profile = lazy(() => import('./pages/user/Profile/Profile.tsx'));
 const Sync = lazy(() => import('./pages/user/Sync'));
 const Scores = lazy(() => import('./pages/user/Scores'));
 const Songs = lazy(() => import('./pages/user/Songs'));
 const Plates = lazy(() => import('./pages/user/Plates'));
 const Settings = lazy(() => import('./pages/user/Settings'));
+const OAuthAuthorize = lazy(() => import('./pages/user/OAuth/Authorize.tsx'));
 const NotFound = lazy(() => import('./pages/public/NotFound'));
 const Vote = lazy(() => import('./pages/alias/Vote'));
 const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
@@ -57,6 +58,9 @@ const routesConfig = (
       <Route path="profile" element={<Profile />} />
       <Route path="scores" element={<Scores />} />
       <Route path="settings" element={<Settings />} />
+    </Route>
+    <Route path="/oauth" element={<ProtectedRoute />}>
+      <Route path="authorize" element={<OAuthAuthorize />} />
     </Route>
     <Route path="/alias" element={<ProtectedRoute />}>
       <Route index element={<Home />} />

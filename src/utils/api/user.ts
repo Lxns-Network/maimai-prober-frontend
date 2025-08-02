@@ -55,3 +55,11 @@ export async function updateUser(userId: number, data: unknown) {
 export async function deleteUser(userId: number) {
   return fetchAPI(`user/admin/user/${userId}`, { method: "DELETE" });
 }
+
+export async function confirmUserOAuthAuthorize(data: unknown) {
+  return fetchAPI("user/oauth/authorize/confirm", { method: "POST", body: data });
+}
+
+export async function revokeUserOAuthApp(clientId: string) {
+  return fetchAPI(`user/oauth/authorize/app/${clientId}`, { method: "DELETE" });
+}

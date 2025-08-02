@@ -4,8 +4,8 @@ import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
-import { EditAvatarButton } from "../PlayerModal.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
+import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
 export function getChunithmCharacterColor(level: number) {
   if (level >= 100) {

@@ -4,8 +4,8 @@ import { IconPhotoOff } from "@tabler/icons-react";
 import { getDeluxeRatingGradient, getTrophyColor } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
-import { EditAvatarButton } from "../PlayerModal.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
+import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
 interface PlayerContentProps {
   player: MaimaiPlayerProps;

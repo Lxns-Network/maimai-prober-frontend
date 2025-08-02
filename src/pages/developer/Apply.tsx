@@ -4,10 +4,12 @@ import { Container, rem } from '@mantine/core';
 import Icon from "@mdi/react";
 import { mdiCodeTags, mdiLink } from "@mdi/js";
 import { useForm } from "@mantine/form";
-import { getDeveloperApply, sendDeveloperApply } from "@/utils/api/developer.ts";
+import { sendDeveloperApply } from "@/utils/api/developer.ts";
 import classes from "../Form.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { useNavigate } from "react-router-dom";
+import { validateText, validateUrl } from "@/utils/validator.ts";
+import { useDeveloper } from "@/hooks/swr/useDeveloper.ts";
 
 interface FormValues {
   name: string;
@@ -16,34 +18,10 @@ interface FormValues {
 }
 
 export default function DeveloperApply() {
+  const { developer, isLoading } = useDeveloper();
+  const [submitting, setSubmitting] = useState(false);
   const [applied, setApplied] = useState(false);
-  const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
-
-  const getDeveloperApplyHandler = async () => {
-    try {
-      const res = await getDeveloperApply();
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      if (data.data) {
-        if (data.data.api_key) {
-          navigate("/developer", { replace: true });
-        }
-        form.setValues(data.data);
-        setApplied(true);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  useEffect(() => {
-    document.title = "申请成为开发者 | maimai DX 查分器";
-
-    getDeveloperApplyHandler();
-  }, [])
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -53,14 +31,14 @@ export default function DeveloperApply() {
     },
 
     validate: {
-      name: (value) => (value.length > 0 ? null : "项目名称不能为空"),
-      url: (value) => (/^http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/.test(value) ? null : "项目地址格式不正确"),
-      reason: (value) => (value.length > 0 ? null : "申请理由不能为空"),
+      name: (value) => validateText(value, { allowEmpty: false, textLabel: "开发者名称" }),
+      url: (value) => validateUrl(value, { allowEmpty: false, urlLabel: "开发者地址" }),
+      reason: (value) => validateText(value, { allowEmpty: false, textLabel: "申请理由" }),
     },
   });
 
-  const sendDeveloperApplyHandler = async (values: FormValues) => {
-    setVisible(true);
+  const handleSubmit = async (values: FormValues) => {
+    setSubmitting(true);
 
     try {
       const res = await sendDeveloperApply(values);
@@ -71,11 +49,30 @@ export default function DeveloperApply() {
       setApplied(true);
       openAlertModal("提交成功", "申请成功，我们将尽快审核您的申请。")
     } catch (error) {
-      openRetryModal("提交失败", `${error}`, () => sendDeveloperApplyHandler(values));
+      openRetryModal("提交失败", `${error}`, () => handleSubmit(values));
     } finally {
-      setVisible(false);
+      setSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    document.title = "申请成为开发者 | maimai DX 查分器";
+  }, [])
+
+  useEffect(() => {
+    if (!developer) return;
+
+    if (developer.api_key) {
+      navigate("/developer", { replace: true });
+    } else {
+      form.setValues({
+        name: developer.name || "",
+        url: developer.url || "",
+        reason: developer.reason || "",
+      });
+      setApplied(true);
+    }
+  }, [developer]);
 
   return (
     <Container className={classes.root} size={420}>
@@ -83,16 +80,16 @@ export default function DeveloperApply() {
         申请成为开发者
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt="sm">
-        提交申请，通过审核后即可获取 API 访问权限
+        提交申请，通过审核后即可获取开发者 API 访问权限
       </Text>
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
-        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
-        <form onSubmit={form.onSubmit(sendDeveloperApplyHandler)}>
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+        <form onSubmit={form.onSubmit(handleSubmit)}>
           <TextInput
             name="name"
-            label="项目名称"
+            label="开发者名称"
             variant="filled"
-            placeholder="请输入你的项目名称"
+            placeholder="请输入你本人或组织的名称"
             mb="sm"
             leftSection={<Icon path={mdiCodeTags} size={rem(16)} />}
             disabled={applied}
@@ -100,14 +97,17 @@ export default function DeveloperApply() {
           />
           <TextInput
             name="url"
-            label="项目地址"
+            label="开发者地址"
             variant="filled"
-            placeholder="请输入你的项目地址"
-            mb="sm"
+            placeholder="请输入你本人或组织的地址"
+            mb={4}
             leftSection={<Icon path={mdiLink} size={rem(16)} />}
             disabled={applied}
             {...form.getInputProps('url')}
           />
+          <Text c="dimmed" size="xs" ta="left" mb="sm">
+            可以是个人主页、GitHub 主页或组织主页等
+          </Text>
           <Textarea
             name="reason"
             label="申请理由"
@@ -123,7 +123,7 @@ export default function DeveloperApply() {
                 <Text size="xs" c="dimmed">你的申请正在受理中</Text>
               )}
             </div>
-            <Button size="sm" type="submit" disabled={applied}>提交申请</Button>
+            <Button size="sm" type="submit" loading={submitting} disabled={applied}>提交申请</Button>
           </Group>
         </form>
       </Card>
