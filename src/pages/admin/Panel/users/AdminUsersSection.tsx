@@ -143,7 +143,7 @@ const AdminUsersContent = () => {
 
   return (
     <div style={{position:"relative"}}>
-      <EditUserModal user={activeUser as UserProps} opened={editUserModalOpened} close={() => {
+      <EditUserModal user={activeUser as UserProps} opened={editUserModalOpened} onClose={() => {
         const index = users.findIndex((user) => user.id === activeUser?.id);
         users.splice(index, 1);
         if (activeUser?.deleted != true) {

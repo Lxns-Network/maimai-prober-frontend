@@ -180,7 +180,7 @@ const AdminDevelopersContent = () => {
 
   return (
     <div>
-      <EditUserModal user={activeUser as UserProps} opened={opened} close={() => close()} />
+      <EditUserModal user={activeUser as UserProps} opened={opened} onClose={() => close()} />
       <Stack align="center">
         <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} size={small ? "sm" : "md"} />
         <Stack w="100%" ref={parent}>
