@@ -77,7 +77,7 @@ export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: Rating
   useEffect(() => {
     setTimeout(() => {
       scrollIntoView();
-    }, 50);
+    }, 0);
   }, [ratings, scrollIntoView]);
 
   return (
@@ -90,11 +90,13 @@ export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: Rating
         </Modal.Header>
         <Modal.Body>
           <ScrollArea viewportRef={scrollableRef}>
-            <Flex mb="xs" justify="center">
+            <Flex mb="xs" justify="center" w={versions.length * 100}>
               {versions.map((version, index) => (
-                <Stack key={version} gap="xs" ref={
-                  index === versions.length - 1 ? (targetRef as Ref<HTMLDivElement>) : undefined
-                }>
+                <Stack
+                  key={version}
+                  gap="xs"
+                  ref={index === versions.length - 1 ? (targetRef as Ref<HTMLDivElement>) : undefined}
+                >
                   {ratings[index] ? <>
                     <AspectRatio ratio={ratio}>
                       <Image w={100} src={`/assets/${game}/version/${version}.webp`} />
