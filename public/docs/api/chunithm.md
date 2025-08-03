@@ -496,6 +496,150 @@ JSON 格式的玩家成绩：
 |-|-|-|
 | `aliases` | [Alias[]](#alias) | 曲目别名列表 |
 
+### GET `/api/v0/chunithm/trophy/list`
+
+获取称号列表。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `trophies` | [Trophy[]](#collection) | 称号列表 |
+
+### GET `/api/v0/chunithm/trophy/{trophy_id}`
+
+获取称号信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `trophy_id` | `int` | 称号 ID |
+
+#### 响应体
+
+[Trophy](#collection)
+
+### GET `/api/v0/chunithm/character/list`
+
+获取角色列表。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `characters` | [Character[]](#collection) | 角色列表 |
+
+### GET `/api/v0/chunithm/character/{character_id}`
+
+获取角色信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `character_id` | `int` | 角色 ID |
+
+#### 响应体
+
+[Character](#collection)
+
+### GET `/api/v0/chunithm/plate/list`
+
+获取名牌版列表。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `plates` | [Plate[]](#collection) | 名牌版列表 |
+
+### GET `/api/v0/chunithm/plate/{plate_id}`
+
+获取名牌版信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `plate_id` | `int` | 名牌版 ID |
+
+#### 响应体
+
+[Plate](#collection)
+
+### GET `/api/v0/chunithm/icon/list`
+
+获取地图头像列表。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `icons` | [MapIcon[]](#collection) | 地图头像列表 |
+
+### GET `/api/v0/chunithm/icon/{map_icon_id}`
+
+获取地图头像信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `map_icon_id` | `int` | 地图头像 ID |
+
+#### 响应体
+
+[MapIcon](#collection)
+
 ## 游戏资源
 
 基础 URL：`https://assets2.lxns.net/chunithm`
@@ -503,7 +647,7 @@ JSON 格式的玩家成绩：
 路径：
 - 角色：`/character/{character_id}.png`
 - 名牌版：`/plate/{plate_id}.png`
-- 地图头像：`/icon/{icon_id}.png`
+- 地图头像：`/icon/{map_icon_id}.png`
 - 曲绘：`/jacket/{song_id}.png`
 - 音频：`/music/{song_id}.mp3`
 
@@ -535,7 +679,7 @@ WORLD'S END 难度的 `song_id` 为 [SongDifficulty](#songdifficulty) 中 `origi
 | `currency` | `int` | 当前金币数 |
 | `total_currency` | `int` | 总金币数 |
 | `total_play_count` | `int` | 总游玩次数 |
-| `trophy` | [`Trophy`](#collection) | 称号 |
+| `trophy` | [`Trophy`](#collection) | 仅上传时可空，称号 |
 | `character` | [`Character`](#collection) | 值可空，角色 |
 | `name_plate` | [`NamePlate`](#collection) | 值可空，名牌版 |
 | `map_icon` | [`MapIcon`](#collection) | 值可空，地图头像 |

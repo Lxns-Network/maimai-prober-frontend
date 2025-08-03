@@ -306,7 +306,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 
 ::: info 提示
 指定 `version` 参数时，将会返回指定版本范围内的 DX Rating 趋势。
@@ -450,7 +450,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 | `notes` | `bool` | 值可空，是否包含谱面物量，默认值为 `false` |
 
 #### 响应体
@@ -469,7 +469,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 
 #### URL 参数
 
@@ -491,6 +491,43 @@ JSON 格式的玩家成绩：
 |-|-|-|
 | `aliases` | [Alias[]](#alias) | 曲目别名列表 |
 
+### GET `/api/v0/maimai/trophy/list`
+
+获取称号列表。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
+| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
+
+#### 响应体
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `trophies` | [Trophy[]](#collection) | 称号列表 |
+
+### GET `/api/v0/maimai/trophy/{trophy_id}`
+
+获取称号信息。
+
+#### 查询参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `trophy_id` | `int` | 称号 ID |
+
+#### 响应体
+
+[Trophy](#collection)
+
 ### GET `/api/v0/maimai/icon/list`
 
 获取头像列表。
@@ -499,7 +536,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 | `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
 
 #### 响应体
@@ -516,7 +553,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 
 #### URL 参数
 
@@ -536,7 +573,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 | `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
 
 #### 响应体
@@ -553,7 +590,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 
 #### URL 参数
 
@@ -573,7 +610,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 | `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
 
 #### 响应体
@@ -590,7 +627,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 
 #### URL 参数
 
@@ -610,13 +647,13 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 
 #### 响应体
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `collectionGenres` | [CollectionGenre[]](#collectiongenre) | 背景列表 |
+| `collectionGenres` | [CollectionGenre[]](#collectiongenre) | 收藏品分类列表 |
 
 ### GET `/api/v0/maimai/collection-genre/{collection_genre_id}`
 
@@ -626,7 +663,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `24000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 
 #### URL 参数
 
@@ -667,7 +704,7 @@ JSON 格式的玩家成绩：
 | `course_rank` | `int` | 段位 ID |
 | `class_rank` | `int` | 阶级 ID |
 | `star` | `int` | 搭档觉醒数 |
-| `trophy` | [`Trophy`](#collection) | 值可空，称号 |
+| `trophy` | [`Trophy`](#collection) | 仅上传时可空，称号 |
 | `icon` | [`Icon`](#collection) | 值可空，头像 |
 | `name_plate` | [`NamePlate`](#collection) | 值可空，姓名框 |
 | `frame` | [`Frame`](#collection) | 值可空，背景 |
