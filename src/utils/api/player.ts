@@ -29,16 +29,12 @@ export async function createPlayerScores(game: Game, scores: any) {
   return fetchAPI(`user/${game}/player/scores`, { method: "POST", body: { scores } });
 }
 
-export async function getPlayerPlateById(game: Game, id: number) {
-  return fetchAPI(`user/${game}/player/plate/${id}`, { method: "GET" });
+export async function getPlayerCollectionById(game: Game, collectionType: string, id: number) {
+  return fetchAPI(`user/${game}/player/${collectionType}/${id}`, { method: "GET" });
 }
 
-export async function getPlateList(game: Game, required: boolean) {
-  return fetchAPI(`${game}/plate/list?required=${required}`, { method: "GET" });
-}
-
-export async function getPlateById(game: Game, id: number) {
-  return fetchAPI(`${game}/plate/${id}`, { method: "GET" });
+export async function getCollectionById(game: Game, collectionType: string, id: number) {
+  return fetchAPI(`${game}/${collectionType}/${id}`, { method: "GET" });
 }
 
 export function isMaimaiPlayerProps(obj: unknown): obj is MaimaiPlayerProps {

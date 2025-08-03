@@ -1,44 +1,39 @@
 import { useEffect, useState } from "react";
 import {
-  CloseButton,
-  Combobox,
-  InputBase,
-  ScrollArea,
-  Text,
-  useCombobox,
-  InputBaseProps,
-  ElementProps, Loader
+  CloseButton, Combobox, InputBase, ScrollArea, Text, useCombobox, InputBaseProps, ElementProps, Loader
 } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
-import { PlateDataProps } from "../../pages/user/Plates.tsx";
+import { CollectionProps } from "@/types/player";
 
-interface PlateComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
-  plates: PlateDataProps[];
+interface CollectionComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
+  collections: CollectionProps[];
   value?: number;
   onOptionSubmit?: (value: number) => void;
 }
 
-export const PlateCombobox = ({ plates, value, onOptionSubmit, ...others }: PlateComboboxProps) => {
+export const CollectionCombobox = ({ collections, value, onOptionSubmit, ...others }: CollectionComboboxProps) => {
   const [search, setSearch] = useState('');
-  const [filteredPlates, setFilteredPlates] = useState<PlateDataProps[]>([]);
+  const [filteredCollections, setFilteredCollections] = useState<CollectionProps[]>([]);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
 
+  const MAX_COLLECTIONS = 100;
+
   useEffect(() => {
     setSearch('');
-  }, [plates]);
+  }, [collections]);
 
   useEffect(() => {
-    setFilteredPlates(plates.filter((plate) => {
+    setFilteredCollections(collections.filter((collection) => {
       if (search === '') return true;
-      return plate.name.toLowerCase().includes(search.toLowerCase()) || plate.description.toLowerCase().includes(search.toLowerCase());
+      return collection.name.toLowerCase().includes(search.toLowerCase()) || (collection.description || "").toLowerCase().includes(search.toLowerCase());
     }));
-  }, [plates, search]);
+  }, [collections, search]);
 
   useEffect(() => {
-    const plate = plates.find((plate) => plate.id === value);
-    setSearch(plate?.name || '');
+    const collection = collections.find((collection) => collection.id === value);
+    setSearch(collection?.name || '');
   }, [value]);
 
   return (
@@ -48,17 +43,17 @@ export const PlateCombobox = ({ plates, value, onOptionSubmit, ...others }: Plat
       store={combobox}
       onOptionSubmit={(value) => {
         onOptionSubmit && onOptionSubmit(parseInt(value));
-        setSearch(plates.find((plate) => plate.id === parseInt(value))?.name || '');
+        setSearch(collections.find((collection) => collection.id === parseInt(value))?.name || '');
         combobox.closeDropdown();
       }}
       transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
     >
       <Combobox.Target>
         <InputBase
-          placeholder="请选择姓名框"
+          placeholder="请选择收藏品"
           leftSection={<IconSearch size={18} />}
           rightSection={
-            !plates ? (
+            !collections ? (
               <Loader size={18} />
             ) : search.length !== 0 ? (
               <CloseButton
@@ -75,7 +70,7 @@ export const PlateCombobox = ({ plates, value, onOptionSubmit, ...others }: Plat
           }
           rightSectionPointerEvents={search.length !== 0 ? 'auto' : 'none'}
           value={search}
-          disabled={plates.length === 0}
+          disabled={collections.length === 0}
           onChange={(event) => {
             combobox.openDropdown();
             combobox.updateSelectedOptionIndex();
@@ -94,10 +89,10 @@ export const PlateCombobox = ({ plates, value, onOptionSubmit, ...others }: Plat
       <Combobox.Dropdown>
         <Combobox.Options>
           <ScrollArea.Autosize mah={200} type="scroll">
-            {filteredPlates.length === 0 && (
-              <Combobox.Empty>没有找到符合条件的姓名框</Combobox.Empty>
+            {filteredCollections.length === 0 && (
+              <Combobox.Empty>没有找到符合条件的收藏品</Combobox.Empty>
             )}
-            {filteredPlates.map((plate) => (
+            {filteredCollections.slice(0, MAX_COLLECTIONS).map((plate) => (
               <Combobox.Option value={plate.id.toString()} key={plate.id}>
                 <Text fz="sm" fw={500}>
                   {plate.name}
@@ -109,6 +104,11 @@ export const PlateCombobox = ({ plates, value, onOptionSubmit, ...others }: Plat
             ))}
           </ScrollArea.Autosize>
         </Combobox.Options>
+        <Combobox.Footer>
+          <Text fz="xs" c="dimmed">
+            最多显示 {MAX_COLLECTIONS} 条结果
+          </Text>
+        </Combobox.Footer>
       </Combobox.Dropdown>
     </Combobox>
   )

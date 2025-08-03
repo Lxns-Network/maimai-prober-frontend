@@ -15,7 +15,7 @@ const Profile = lazy(() => import('./pages/user/Profile/Profile.tsx'));
 const Sync = lazy(() => import('./pages/user/Sync'));
 const Scores = lazy(() => import('./pages/user/Scores'));
 const Songs = lazy(() => import('./pages/user/Songs'));
-const Plates = lazy(() => import('./pages/user/Plates'));
+const Collections = lazy(() => import('./pages/user/Collections.tsx'));
 const Settings = lazy(() => import('./pages/user/Settings'));
 const OAuthAuthorize = lazy(() => import('./pages/user/OAuth/Authorize.tsx'));
 const NotFound = lazy(() => import('./pages/public/NotFound'));
@@ -49,7 +49,7 @@ const routesConfig = (
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/sync" element={<Sync />} />
     <Route path="/songs" element={<Songs />} />
-    <Route path="/plates" element={<Plates />} />
+    <Route path="/collections" element={<Collections />} />
     <Route path="/docs/*" element={<Docs />} />
     <Route path="/year-in-review/2024/*" element={<YearInReview />} />
     <Route path="/user/sync" element={<Sync />} />

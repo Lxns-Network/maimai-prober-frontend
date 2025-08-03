@@ -6,18 +6,18 @@ import {
 } from "@mantine/core";
 import classes from "../../pages/Page.module.css";
 import { IconCheck } from "@tabler/icons-react";
-import { PlateDataProps } from "../../pages/user/Plates.tsx";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../Marquee.tsx";
 import { ASSET_URL } from "../../main.tsx";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { CollectionProps } from "@/types/player";
 
-const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
-  if (!plate || !plate.required) {
+const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps }) => {
+  if (!collection || !collection.required) {
     return;
   }
 
-  if (plate.required.every((required) => required.completed)) {
+  if (collection.required.every((required) => required.completed)) {
     return (
       <RingProgress
         sections={[{ value: 100, color: 'teal' }]}
@@ -35,7 +35,7 @@ const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
   const calculateCompletion = () => {
     let total = 0;
     let completed = 0;
-    (plate.required || []).forEach((required) => {
+    (collection.required || []).forEach((required) => {
       required.songs.forEach((song) => {
         total += required.difficulties.length;
         completed += (song.completed_difficulties || []).length;
@@ -58,8 +58,8 @@ const RequiredSongRingProgress = ({ plate }: { plate: PlateDataProps }) => {
   );
 }
 
-export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps | null, records: any[], style?: React.CSSProperties; }) => {
-  if (!plate) return null;
+export const RequiredSong = ({ collection, records, style }: { collection: CollectionProps | null, records: any[], style?: React.CSSProperties; }) => {
+  if (!collection) return null;
 
   const { height, ref } = useElementSize();
 
@@ -75,17 +75,17 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
 
   useEffect(() => {
     setPage(1);
-    if (plate.required) {
-      setDifficulties(plate.required.map((required) => required.difficulties).flat());
+    if (collection.required) {
+      setDifficulties(collection.required.map((required) => required.difficulties).flat());
     }
-  }, [plate]);
+  }, [collection]);
 
   useEffect(() => {
     if (difficulty === 4) {
       setPage(1);
     }
     setFilteredRecords(records.filter((record) => {
-      return plate.required && plate.required.every((required) => {
+      return collection.required && collection.required.every((required) => {
         if (required.difficulties.includes(difficulty || 0)) {
           return required.songs.some((song) => {
             return song.title === record.title && song.type === record.type;
@@ -98,7 +98,12 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
 
   useEffect(() => {
     // 防止动画导致 SegmentedControl 无法正常渲染
-    setTimeout(() => setDifficulty(difficulties.length - 1), 250);
+    setTimeout(() => {
+      setDifficulty(0);
+      setTimeout(() => {
+        setDifficulty(difficulties.length - 1)
+      }, 0);
+    }, 250);
   }, [difficulties]);
 
   useEffect(() => {
@@ -107,7 +112,7 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
     setDisplayRecords(filteredRecords.slice(start, end));
   }, [page, filteredRecords]);
 
-  const difficultyProgress = (plate.required || []).reduce((acc, req) => {
+  const difficultyProgress = (collection.required || []).reduce((acc, req) => {
     if (difficulty === undefined) return acc;
     if (!req.difficulties.includes(difficulty)) return acc;
 
@@ -130,44 +135,45 @@ export const RequiredSong = ({ plate, records, style }: { plate: PlateDataProps 
             要求曲目
           </Text>
           <Text c="dimmed" size="xs">
-            查询姓名框要求曲目的完成度
+            查询收藏品要求曲目的完成度
           </Text>
           <Space h="md" />
-          <Grid grow h={height}>
+          <Grid grow>
             <Grid.Col span={6} ref={ref}>
               <Text fz="xs" c="dimmed">曲目范围</Text>
               <Marquee>
-                <Text fz="sm">{((plate && plate.description) || "").split("/")[0]}</Text>
+                <Text fz="sm">{((collection && collection.description) || "").split("/")[0]}</Text>
               </Marquee>
             </Grid.Col>
-            <Grid.Col span={6}>
-              {plate && plate.required && plate.required[0].fc && (
-                <div>
-                  <Text fz="xs" c="dimmed">FULL COMBO 要求</Text>
-                  <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${plate.required[0].fc}.webp`} />
-                </div>
-              )}
-              {plate && plate.required && plate.required[0].fs && (
-                <div>
-                  <Text fz="xs" c="dimmed">FULL SYNC 要求</Text>
-                  <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${plate.required[0].fs}.webp`} />
-                </div>
-              )}
-              {plate && plate.required && plate.required[0].rate && (
-                <div>
-                  <Text fz="xs" c="dimmed">达成率要求</Text>
-                  <Image w={rem(64)} ml={-8} src={`/assets/maimai/music_rank/${plate.required[0].rate}.webp`} />
-                </div>
-              )}
-            </Grid.Col>
+            {collection && collection.required && (
+              <Grid.Col span={6} h={height}>
+                {collection.required[0].fc && (
+                  <div>
+                    <Text fz="xs" c="dimmed">全连要求</Text>
+                    <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${collection.required[0].fc}.webp`} />
+                  </div>
+                )}
+                {collection.required[0].fs && (
+                  <div>
+                    <Text fz="xs" c="dimmed">全同步要求</Text>
+                    <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${collection.required[0].fs}.webp`} />
+                  </div>
+                )}
+                {collection.required[0].rate && (
+                  <div>
+                    <Text fz="xs" c="dimmed">达成率要求</Text>
+                    <Image w={rem(64)} ml={-8} src={`/assets/maimai/music_rank/${collection.required[0].rate}.webp`} />
+                  </div>
+                )}
+              </Grid.Col>
+            )}
           </Grid>
         </div>
         <Box h={height}>
-          <RequiredSongRingProgress plate={plate} />
+          <RequiredSongRingProgress collection={collection} />
         </Box>
       </Flex>
-      <Space h="md" />
-      <Text fz="xs" c="dimmed">要求难度</Text>
+      <Text fz="xs" c="dimmed" mt="md">要求难度</Text>
       {difficulties.length === 0 && (
         <Text fz="sm">
           任意难度

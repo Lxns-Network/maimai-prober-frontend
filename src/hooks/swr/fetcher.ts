@@ -8,3 +8,12 @@ export const fetcher = async (url: string) => {
   }
   return data.data;
 }
+
+export const resourceFetcher = async (url: string) => {
+  const res = await fetchAPI(url, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message);
+  }
+  return data;
+}

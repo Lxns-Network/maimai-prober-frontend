@@ -29,7 +29,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '成绩管理', icon: <IconChartBar stroke={1.5} />, to: '/user/scores', enabled: !isLoggedOut },
     { label: '账号设置', icon: <IconSettings2 stroke={1.5} />, to: '/user/settings', enabled: !isLoggedOut },
     { label: '曲目查询', icon: <IconMusic stroke={1.5} />, to: '/songs', enabled: true },
-    { label: '姓名框查询', icon: <IconCards stroke={1.5} />, to: '/plates', enabled: true },
+    { label: '收藏品查询', icon: <IconCards stroke={1.5} />, to: '/collections', enabled: true },
     { label: '登录账号', icon: <IconDoorEnter stroke={1.5} />, to: '/login', enabled: isLoggedOut, divider: true },
     { label: '新用户注册', icon: <IconTransferIn stroke={1.5} />, to: '/register', enabled: isLoggedOut },
     { label: '曲目别名投票', icon: <IconGavel stroke={1.5} />, to: '/alias/vote', enabled: !isLoggedOut, divider: true },
