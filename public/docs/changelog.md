@@ -2,6 +2,11 @@
 
 ---
 
+## 2025/8/3
+
+- 姓名框查询变更为[收藏品查询](/collections)，可以查询舞萌 DX 收藏品（姓名框、称号、头像、背景）的获取进度
+- 舞萌 DX 获取玩家姓名框进度的接口变更为：[获取玩家收藏品进度](/docs/api/maimai#get-apiv0maimaiplayerfriend_codecollection_typecollection_id)
+
 ## 2025/8/1
 
 - 支持通过 OAuth 2.0 协议获取用户授权，并通过 API 接口访问用户的游戏数据等信息

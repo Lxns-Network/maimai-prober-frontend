@@ -353,9 +353,9 @@ JSON 格式的玩家成绩：
 
 [Score[]](#score)
 
-### GET `/api/v0/maimai/player/{friend_code}/plate/{plate_id}`
+### GET `/api/v0/maimai/player/{friend_code}/{collection_type}/{collection_id}`
 
-获取玩家姓名框进度。
+获取玩家收藏品进度。
 
 #### 权限
 
@@ -366,11 +366,12 @@ JSON 格式的玩家成绩：
 | 参数名 | 类型 | 说明 |
 |-|-|-|
 | `friend_code` | `int` | 好友码 |
-| `plate_id` | `int` | 姓名框 ID |
+| `collection_type` | `string` | 收藏品类型，值为 `trophy`、`icon`、`plate` 或 `frame` |
+| `collection_id` | `int` | 收藏品 ID |
 
 #### 响应体
 
-[Plate](#collection)
+[Collection](#collection)
 
 ### POST `/api/v0/maimai/player/{friend_code}/html`
 
