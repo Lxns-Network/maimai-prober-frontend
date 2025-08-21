@@ -1,9 +1,9 @@
 @import "./ScoreModalMenu.module.css";
 
 .subParameters {
-    background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+    background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6)) !important;
     padding: 6px 12px;
-    border-radius: var(--mantine-radius-md);
+    border-radius: var(--mantine-radius-md) !important;
 }
 
 .subParametersButton {
@@ -11,7 +11,7 @@
 }
 
 .subParametersButton:hover {
-    background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+    background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5)) !important;
 }
 
 .worldsEndText {

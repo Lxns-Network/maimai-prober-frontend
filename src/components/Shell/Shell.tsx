@@ -5,6 +5,9 @@ import classes from "./Shell.module.css";
 import React, { useEffect, useRef, useState } from "react";
 import { NAVBAR_BREAKPOINT } from "../../App.tsx";
 import { useScroll, useWindowSize } from "react-use";
+import { CreateScoreModalProvider } from "../ModalProvider/CreateScoreModalProvider.tsx";
+import { ScoreModalProvider } from "../ModalProvider/ScoreModalProvider.tsx";
+import { CreateAliasModalProvider } from "../ModalProvider/CreateAliasModalProvider.tsx";
 
 interface ShellProps {
   navbarOpened: boolean;
@@ -74,12 +77,14 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
       <Transition mounted={navbarOpened} transition="slide-right" duration={300} timingFunction="ease">
         {(styles) => <Navbar style={styles} onClose={onNavbarToggle} />}
       </Transition>
+
       <Header
         navbarOpened={navbarOpened}
         onNavbarToggle={onNavbarToggle}
         gameTabsVisible={!scrollDirection || scrollDirection === 'up'}
         headerRef={headerRef}
       />
+
       <ScrollArea className={classes.routesWrapper} style={{
         paddingLeft: window.innerWidth > NAVBAR_BREAKPOINT ? rem(300) : 0,
       }} type="scroll" viewportRef={viewportRef}>
@@ -88,6 +93,10 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
         </Transition>
         {children}
       </ScrollArea>
+
+      <ScoreModalProvider />
+      <CreateScoreModalProvider />
+      <CreateAliasModalProvider />
     </div>
   );
 }

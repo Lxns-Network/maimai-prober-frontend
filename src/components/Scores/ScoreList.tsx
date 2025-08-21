@@ -1,9 +1,6 @@
-import { useDisclosure } from "@mantine/hooks";
-import { useEffect, useState } from "react";
 import { BackgroundImage, Box, Card, SimpleGrid, useComputedColorScheme } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { MaimaiScoreContent } from "./maimai/Score.tsx";
-import { ScoreModal } from "./ScoreModal.tsx";
 import { ChunithmScoreContent } from "./chunithm/Score.tsx";
 import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
@@ -15,6 +12,7 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
+import useScoreStore from "@/hooks/useScoreStore.ts";
 
 interface ScoreProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
@@ -76,24 +74,21 @@ interface ScoreListProps {
 export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
   const [game] = useGame();
   const [ref] = useAutoAnimate();
-  const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
-  const [opened, { open: openScoreModal, close: closeScoreModal }] = useDisclosure(false);
 
-  useEffect(() => {
-    setScore(null);
-  }, [game]);
+  const { openModal: openScoreModal } = useScoreStore();
+
+  const handleOpenScoreModal = (score: MaimaiScoreProps | ChunithmScoreProps) => {
+    openScoreModal({
+      game,
+      score,
+      onClose: (score) => {
+        score && onScoreChange && onScoreChange(score);
+      }
+    });
+  }
 
   return (
     <Box w="100%">
-      <ScoreModal
-        game={game}
-        score={score}
-        opened={opened}
-        onClose={(score) => {
-          closeScoreModal();
-          if (score) onScoreChange && onScoreChange(score);
-        }}
-      />
       <SimpleGrid
         type="container"
         cols={{ base: 1, '400px': 2 }}
@@ -104,10 +99,7 @@ export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
           <Score
             key={`${score.id}:${"type" in score && score.type}:${score.level_index}`}
             score={score}
-            onClick={() => {
-              setScore(score);
-              openScoreModal();
-            }}
+            onClick={() => handleOpenScoreModal(score)}
           />
         ))}
       </SimpleGrid>

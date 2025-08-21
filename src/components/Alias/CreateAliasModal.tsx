@@ -15,7 +15,7 @@ import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { ASSET_URL } from "@/main.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
-import useGame from "@/hooks/useGame.ts";
+import { Game } from "@/types/game";
 
 interface FormValues {
   song_id: number | null;
@@ -24,17 +24,17 @@ interface FormValues {
 }
 
 interface CreateAliasModalProps {
+  game: Game;
   defaultSongId?: number;
   opened: boolean;
   onClose: (alias?: FormValues) => void;
 }
 
-export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAliasModalProps) => {
+export const CreateAliasModal = ({ game, defaultSongId, opened, onClose }: CreateAliasModalProps) => {
   const [uploading, setUploading] = useState(false);
   const [readonly, setReadonly] = useState(false);
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-  const [game] = useGame();
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const form = useForm<FormValues>({
@@ -103,6 +103,9 @@ export const CreateAliasModal = ({ defaultSongId, opened, onClose }: CreateAlias
         song_id: defaultSongId,
       });
       setReadonly(true);
+    } else {
+      form.reset();
+      setReadonly(false);
     }
   }, [defaultSongId]);
 

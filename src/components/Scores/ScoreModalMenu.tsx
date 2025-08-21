@@ -3,11 +3,12 @@ import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.
 import { ActionIcon, Menu } from "@mantine/core";
 import classes from "./ScoreModalMenu.module.css";
 import { IconClearAll, IconDots, IconMusic, IconPlus, IconTrash } from "@tabler/icons-react";
-import { useContext, useEffect, useState } from "react";
-import ScoreContext from "@/utils/context.ts";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
+import useScoreStore from "@/hooks/useScoreStore.ts";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
@@ -15,10 +16,11 @@ interface ScoreModalActionMenuProps {
 }
 
 export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
+  const { openModal: openCreateScoreModal } = useCreateScoreStore();
+  const { closeModal: closeScoreModal } = useScoreStore();
   const [params, setParams] = useState(new URLSearchParams());
   const [game] = useFixedGame();
   const navigate = useNavigate();
-  const context = useContext(ScoreContext);
 
   const DeletePlayerScoreHandler = async () => {
     try {
@@ -76,17 +78,17 @@ export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) =>
         <Menu.Label>更多操作</Menu.Label>
         <Menu.Item leftSection={<IconPlus size={20} stroke={1.5} />} onClick={() => {
           onClose && onClose();
-          if (Object.keys(context).length !== 0) {
-            context.setCreateScoreOpened(true);
-          } else {
-            navigate("/user/scores");
-          }
+          openCreateScoreModal({
+            game,
+            score,
+          });
         }}>
           创建新成绩
         </Menu.Item>
         {location.pathname !== "/songs" && (
           <Menu.Item leftSection={<IconMusic size={20} stroke={1.5} />} onClick={() => {
             navigate(`/songs`, { state: { songId: score.id } });
+            closeScoreModal();
           }}>
             查看曲目详情
           </Menu.Item>

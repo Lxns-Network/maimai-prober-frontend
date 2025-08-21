@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Button, Card, Checkbox, Flex, Group, Loader, Pagination, Space, Text } from '@mantine/core';
 import { useMediaQuery, useToggle } from "@mantine/hooks";
 import { AliasList } from "@/components/Alias/AliasList.tsx";
-import { CreateAliasModal } from "@/components/Alias/CreateAliasModal.tsx";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
 import classes from "../Page.module.css"
 import { SongCombobox } from "@/components/SongCombobox.tsx";
@@ -10,6 +9,7 @@ import { Page } from "@/components/Page/Page.tsx";
 import { useAliases } from "@/hooks/swr/useAliases.ts";
 import { useAliasVotes } from "@/hooks/swr/useAliasVotes.ts";
 import useGame from "@/hooks/useGame.ts";
+import useAliasStore from "@/hooks/useAliasStore.ts";
 
 const sortKeys = [
   { name: '别名', key: 'alias' },
@@ -19,8 +19,9 @@ const sortKeys = [
 
 const AliasVoteContent = () => {
   const [game] = useGame();
-  const [opened, setOpened] = useState(false);
   const [onlyNotApproved, toggleOnlyNotApproved] = useToggle();
+
+  const { openModal: openCreateAliasModal } = useAliasStore();
 
   // 排序相关
   const [sortBy, setSortBy] = useState();
@@ -35,11 +36,7 @@ const AliasVoteContent = () => {
   const small = useMediaQuery('(max-width: 30rem)');
 
   const {
-    aliases,
-    pageCount,
-    pageSize,
-    isLoading,
-    mutate
+    aliases, pageCount, pageSize, isLoading, mutate
   } = useAliases(game, page, onlyNotApproved, sortBy, reverseSortDirection ? 'asc' : 'desc', songId);
   const { votes, mutate: mutateVote } = useAliasVotes(game);
 
@@ -81,12 +78,18 @@ const AliasVoteContent = () => {
     return null;
   };
 
+  const handleCreateAlias = () => {
+    openCreateAliasModal({
+      game: game,
+      songId: songId,
+      onClose: (values) => {
+        values && mutate();
+      },
+    });
+  }
+
   return (
     <div>
-      <CreateAliasModal opened={opened} onClose={(alias) => {
-        if (alias) mutate();
-        setOpened(false);
-      }} />
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group m="md" justify="space-between">
           <div>
@@ -122,7 +125,7 @@ const AliasVoteContent = () => {
           style={{ flex: 1 }}
           radius="md"
         />
-        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => setOpened(true)}>
+        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={handleCreateAlias}>
           创建曲目别名
         </Button>
       </Flex>

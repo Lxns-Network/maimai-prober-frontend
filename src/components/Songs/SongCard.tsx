@@ -16,14 +16,12 @@ import useAliasListStore from "@/hooks/useAliasListStore.ts";
 import { ColorExtractor } from 'react-color-extractor'
 import { notifications } from "@mantine/notifications";
 import { HTMLMediaProps } from "react-use/lib/factory/createHTMLMediaHook";
+import useAliasStore from "@/hooks/useAliasStore.ts";
 
-interface SongCardProps {
+export const SongCard = ({ song, style }: {
   song: MaimaiSongProps | ChunithmSongProps | null;
-  onCreateAlias?: () => void;
   style?: React.CSSProperties;
-}
-
-export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
+}) => {
   const [game] = useFixedGame();
   const { songList } = useSongListStore(
     useShallow((state) => ({ songList: state[game] })),
@@ -35,7 +33,16 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
   const [colors, setColors] = useState<string[]>([]);
   const isLoggedOut = !localStorage.getItem("token");
 
+  const { openModal: openCreateAliasModal } = useAliasStore();
+
   if (!song) return null;
+
+  const handleCreateAlias = () => {
+    openCreateAliasModal({
+      game,
+      songId: song.id,
+    });
+  }
 
   return (
     <Card mt="md" radius="md" p={0} withBorder className={classes.card} style={style}>
@@ -119,7 +126,7 @@ export const SongCard = ({ song, onCreateAlias, style }: SongCardProps) => {
               if (isLoggedOut) {
                 openAlertModal("登录提示", "你需要登录查分器账号才能创建曲目别名。");
               } else {
-                onCreateAlias && onCreateAlias();
+                handleCreateAlias();
               }
             }}>
               <IconPlus size={18} />

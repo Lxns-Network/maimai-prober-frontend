@@ -1,17 +1,10 @@
-import { useState } from 'react';
-import ScoreContext from "@/utils/context.ts";
 import { Page } from "@/components/Page/Page.tsx";
 import { ScoreBestsSection } from "./bests/ScoreBestsSection.tsx";
 import { ScoreBackupSection } from "./backup/ScoreBackupSection.tsx";
 import { ScoreListSection } from "./list/ScoreListSection.tsx";
-import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 export function Scores() {
-  const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
-  const [createScoreOpened, setCreateScoreOpened] = useState(false);
-
   return (
-    <ScoreContext.Provider value={{ score, setScore, createScoreOpened, setCreateScoreOpened }}>
       <Page
         meta={{
           title: "成绩管理",
@@ -23,6 +16,5 @@ export function Scores() {
           { id: "backup", name: "备份成绩", children: <ScoreBackupSection />}
         ]}
       />
-    </ScoreContext.Provider>
   );
 }

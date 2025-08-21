@@ -1,13 +1,10 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useMediaQuery } from "@mantine/hooks";
 import { useScores } from "@/hooks/swr/useScores.ts";
-import ScoreContext from "@/utils/context.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
-import { MaimaiCreateScoreModal } from "@/components/Scores/maimai/CreateScoreModal.tsx";
-import { ChunithmCreateScoreModal } from "@/components/Scores/chunithm/CreateScoreModal.tsx";
 import { Accordion, Button, Card, Flex, Group, Loader, Pagination, Space, Text } from "@mantine/core";
 import classes from "@/pages/Page.module.css";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter.tsx";
@@ -17,6 +14,7 @@ import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSe
 import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/StatisticsSection.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
+import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 
 const sortKeys = {
   maimai: [
@@ -52,21 +50,19 @@ export const ScoreListSection = () => {
   const [searchedScores, setSearchedScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [songId, setSongId] = useState<number>(0);
 
-  const [sortBy, setSortBy] = useState<string | null>();
+  const [sortBy, setSortBy] = useState<string | null>(null);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
   const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
-  const scoreContext = useContext(ScoreContext);
+  const { openModal: openCreateScoreModal } = useCreateScoreStore();
   const getSongList = useSongListStore((state) => state.getSongList);
   const small = useMediaQuery('(max-width: 30rem)');
 
   useEffect(() => {
     setSongList(getSongList(game));
-    scoreContext.setScore(null);
-
     setSongId(0);
   }, [game]);
 
@@ -155,18 +151,6 @@ export const ScoreListSection = () => {
 
   return (
     <div>
-      {game === "maimai" && (
-        <MaimaiCreateScoreModal score={scoreContext.score} opened={scoreContext.createScoreOpened} onClose={(score) => {
-          if (score) mutate();
-          scoreContext.setCreateScoreOpened(false);
-        }} />
-      )}
-      {game === "chunithm" && (
-        <ChunithmCreateScoreModal score={scoreContext.score} opened={scoreContext.createScoreOpened} onClose={(score) => {
-          if (score) mutate();
-          scoreContext.setCreateScoreOpened(false);
-        }} />
-      )}
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group justify="space-between" m="md">
           <div>
@@ -218,7 +202,14 @@ export const ScoreListSection = () => {
           radius="md"
           style={{ flex: 1 }}
         />
-        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => scoreContext.setCreateScoreOpened(true)}>
+        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => {
+          openCreateScoreModal({
+            game,
+            onClose: (values) => {
+              values && mutate()
+            }
+          })
+        }}>
           创建成绩
         </Button>
       </Flex>
@@ -236,7 +227,7 @@ export const ScoreListSection = () => {
       <Group justify="center">
         <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
         <ScoreList scores={displayScores} onScoreChange={(score) => {
-          if (score) mutate();
+          score && mutate();
         }} />
         <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
       </Group>

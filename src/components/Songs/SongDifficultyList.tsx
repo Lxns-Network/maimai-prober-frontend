@@ -4,14 +4,13 @@ import { MaimaiDifficultiesProps, MaimaiDifficultyProps, MaimaiSongProps } from 
 import { ChunithmSongDifficulty } from "./chunithm/SongDifficulty.tsx";
 import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
 import React, { useEffect, useState } from "react";
-import { ScoreModal } from "../Scores/ScoreModal.tsx";
-import { useDisclosure } from "@mantine/hooks";
 import { Chip, Group, Stack } from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
+import useScoreStore from "@/hooks/useScoreStore.ts";
 
 interface SongDifficultyProps {
   song: MaimaiSongProps | ChunithmSongProps;
@@ -89,9 +88,9 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
   const [game] = useGame();
   const [difficulties, setDifficulties] = useState<(MaimaiDifficultyProps | ChunithmDifficultyProps)[]>([]);
   const [difficultyType, setDifficultyType] = useState<"standard" | "dx" | "utage">();
-  const [score, setScore] = useState<MaimaiScoreProps | ChunithmScoreProps | null>(null);
-  const [opened, { open: openScoreAlert, close: closeScoreAlert }] = useDisclosure(false);
   const [ref] = useAutoAnimate();
+
+  const { openModal: openScoreModal } = useScoreStore();
 
   useEffect(() => {
     setDifficulties([]);
@@ -125,68 +124,63 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
     }
   }, [song, difficultyType]);
 
-  return (
-    <>
-      <ScoreModal
-        game={game}
-        score={score}
-        opened={opened}
-        onClose={(score) => {
-          closeScoreAlert();
-          if (score) {
-            setScores((prev: any[]) => {
-              const index = prev.findIndex((record) => record.id === score.id && record.level_index === score.level_index);
-              if (index >= 0) {
-                prev[index] = score;
-                return [...prev];
-              } else {
-                return [...prev, score];
-              }
-            });
+  const handleOpenScoreModal = (score: MaimaiScoreProps | ChunithmScoreProps) => {
+    openScoreModal({
+      game,
+      score,
+      onClose: (score) => {
+        score && setScores((prev: any[]) => {
+          const index = prev.findIndex((record) => record.id === score.id && record.level_index === score.level_index);
+          if (index >= 0) {
+            prev[index] = score;
+            return [...prev];
+          } else {
+            return [...prev, score];
           }
-        }}
-      />
-      <Stack ref={ref} style={style}>
-        {game === "maimai" && song && song.difficulties && (
-          <Chip.Group multiple={false} value={difficultyType} onChange={(value) => setDifficultyType(value as "standard" | "dx" | "utage")}>
-            <Group justify="center">
-              {maimaiDifficultyTypeData.map((type) => {
-                const s = song as MaimaiSongProps;
-                const d = s.difficulties[type.value as keyof MaimaiDifficultiesProps]
-                if (!d || d.length === 0) return null;
-                return <Chip key={type.value} value={type.value} color={type.color}>{type.label}</Chip>
-              })}
-            </Group>
-          </Chip.Group>
-        )}
-        {difficulties.map((difficulty) => {
-          if (!song) return null;
-          if (game === "maimai" && "type" in difficulty) {
-            return <SongDifficulty
+        });
+      }
+    });
+  }
+
+  return (
+    <Stack ref={ref} style={style}>
+      {game === "maimai" && song && song.difficulties && (
+        <Chip.Group multiple={false} value={difficultyType} onChange={(value) => setDifficultyType(value as "standard" | "dx" | "utage")}>
+          <Group justify="center">
+            {maimaiDifficultyTypeData.map((type) => {
+              const s = song as MaimaiSongProps;
+              const d = s.difficulties[type.value as keyof MaimaiDifficultiesProps]
+              if (!d || d.length === 0) return null;
+              return <Chip key={type.value} value={type.value} color={type.color}>{type.label}</Chip>
+            })}
+          </Group>
+        </Chip.Group>
+      )}
+      {difficulties.map((difficulty) => {
+        if (!song) return null;
+        if (game === "maimai" && "type" in difficulty) {
+          return (
+            <SongDifficulty
               key={`${song.id}:${difficulty.type}:${difficulty.difficulty}`}
               song={song}
               difficulty={difficulty}
               score={scores.find((record) =>
                 (record as MaimaiScoreProps).type === difficulty.type && record.level_index === difficulty.difficulty)}
-              onClick={(score) => {
-                setScore(score);
-                openScoreAlert();
-              }}
+              onClick={handleOpenScoreModal}
             />
-          } else if (game === "chunithm") {
-            return <SongDifficulty
+          )
+        } else if (game === "chunithm") {
+          return (
+            <SongDifficulty
               key={`${song.id}:${difficulty.difficulty}`}
               song={song}
               difficulty={difficulty}
               score={scores.find((record) => record.level_index === difficulty.difficulty)}
-              onClick={(score) => {
-                setScore(score);
-                openScoreAlert();
-              }}
+              onClick={handleOpenScoreModal}
             />
-          }
-        })}
-      </Stack>
-    </>
+          )
+        }
+      })}
+    </Stack>
   );
 }

@@ -1,5 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import ScoreContext from "@/utils/context.ts";
+import { useEffect, useRef, useState } from "react";
 import { fetchAPI } from "@/utils/api/api.ts";
 import {
   Accordion, ActionIcon, Avatar, Badge, Center, CheckIcon, Combobox, Container, Group, Modal, ScrollArea, Space, Stack,
@@ -62,10 +61,9 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
-  const small = useMediaQuery('(max-width: 30rem)');
 
   const getSongList = useSongListStore((state) => state.getSongList);
-  const scoreContext = useContext(ScoreContext);
+  const small = useMediaQuery('(max-width: 30rem)');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const { ref, entry } = useIntersection({
@@ -88,7 +86,6 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   }
 
   useEffect(() => {
-    onClose();
     setSong(null);
     setSongList(getSongList(game));
   }, [game]);
@@ -109,8 +106,6 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
   useEffect(() => {
     if (!score) return;
-
-    Object.keys(scoreContext).length !== 0 && scoreContext.setScore(score);
 
     setSong(songList?.find(score.id) || null);
     getSongDetailHandler(score.id);
