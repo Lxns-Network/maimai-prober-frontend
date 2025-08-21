@@ -1,42 +1,103 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { getCollectionById, getPlayerCollectionById } from "@/utils/api/player.ts";
-import {
-  Text, Card, Image, Space, Checkbox, Flex, Transition, AspectRatio, Group, Select, Badge, Center
-} from "@mantine/core";
-import { useToggle } from "@mantine/hooks";
-import classes from "../Page.module.css"
-import { RequiredSong } from "@/components/Plates/RequiredSong";
-import { CollectionCombobox } from "@/components/Plates/CollectionCombobox.tsx";
+import { Text, Space, Checkbox, Flex, Transition, Group, Select } from "@mantine/core";
+import {usePrevious, useToggle} from "@mantine/hooks";
+import { RequiredSong } from "@/components/Collections/RequiredSong";
+import { CollectionCombobox } from "@/components/Collections/CollectionCombobox.tsx";
 import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { LoginAlert } from "@/components/LoginAlert";
 import { Page } from "@/components/Page/Page.tsx";
 import { useCollectionList } from "@/hooks/swr/useCollectionList.ts";
-import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
-import { getTrophyColor } from "@/utils/color.ts";
-import { Marquee } from "@/components/Marquee.tsx";
+import { CollectionProps } from "@/types/player";
+import { useSearchParams } from "react-router-dom";
+import useGame from "@/hooks/useGame.ts";
+import { Game } from "@/types/game";
+import { CollectionCard } from "@/components/Collections/CollectionCard.tsx";
 
-const collectionTypeData = [
-  { label: "姓名框", value: "plate" },
-  { label: "称号", value: "trophy" },
-  { label: "头像", value: "icon" },
-  { label: "背景", value: "frame" },
-];
+const collectionTypeData: Record<Game, { label: string; value: string }[]> = {
+  maimai: [
+    { label: "姓名框", value: "plate" },
+    { label: "称号", value: "trophy" },
+    { label: "头像", value: "icon" },
+    { label: "背景", value: "frame" },
+  ],
+  chunithm: [
+    { label: "称号", value: "trophy" },
+    { label: "角色", value: "character" },
+    { label: "名牌版", value: "plate" },
+    { label: "地图头像", value: "icon" },
+  ],
+};
+
+interface State {
+  collectionType: string | null;
+  collectionId: number | null;
+}
+
+type Action =
+  | { type: "SET_FROM_URL"; payload: { collectionType: string | null; collectionId: number | null } }
+  | { type: "SET_FROM_USER"; payload: { collectionType: string | null; collectionId: number | null } }
+  | { type: "SET_FROM_SELECT"; payload: { collectionType: string | null } }
+  | { type: "RESET_COLLECTION_ID" };
+
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "SET_FROM_URL":
+      return {
+        ...state,
+        collectionType: action.payload.collectionType,
+        collectionId: action.payload.collectionId,
+      };
+    case "SET_FROM_USER":
+      return {
+        ...state,
+        collectionType: action.payload.collectionType,
+        collectionId: action.payload.collectionId,
+      };
+    case "SET_FROM_SELECT":
+      return {
+        ...state,
+        collectionType: action.payload.collectionType,
+        collectionId: null, // Reset collectionId when collectionType changes from Select
+      };
+    case "RESET_COLLECTION_ID":
+      return {
+        ...state,
+        collectionId: null,
+      };
+    default:
+      return state;
+  }
+};
 
 const CollectionsContent = () => {
-  const [collectionType, setCollectionType] = useState<string>("plate");
-  const [displayCollectionType, setDisplayCollectionType] = useState<string>("plate");
-  const isLoggedOut = !Boolean(localStorage.getItem("token"));
-  const game = "maimai";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [game] = useGame();
+  const prevGame = usePrevious(game);
+  const [state, dispatch] = useReducer(reducer, {
+    collectionType: (() => {
+      const type = searchParams.get("collection_type");
+      if (type && collectionTypeData[game].some(item => item.value === type)) return type;
+      return game === "maimai" ? "plate" : "trophy";
+    })(),
+    collectionId: (() => {
+      const id = searchParams.get("collection_id");
+      return id && !isNaN(parseInt(id)) ? parseInt(id) : null;
+    })(),
+  });
 
+  const { collectionType, collectionId } = state;
   const { collections } = useCollectionList(game, collectionType);
+  const [displayCollectionType, setDisplayCollectionType] = useState<string | null>(null);
   const [filteredCollections, setFilteredCollections] = useState<CollectionProps[]>([]);
-  const [collectionId, setCollectionId] = useState<number | null>(null);
   const [collection, setCollection] = useState<CollectionProps | null>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [onlyRequired, toggleOnlyRequired] = useToggle();
+  const isLoggedOut = !Boolean(localStorage.getItem("token"));
 
   const getCollectionHandler = async (id: number) => {
+    if (!collectionType) return;
     try {
       const res = await getCollectionById(game, collectionType, id);
       const data = await res.json();
@@ -47,6 +108,7 @@ const CollectionsContent = () => {
   }
 
   const getPlayerCollectionHandler = async (id: number) => {
+    if (!collectionType) return;
     try {
       const res = await getPlayerCollectionById(game, collectionType, id);
       const data = await res.json();
@@ -61,11 +123,16 @@ const CollectionsContent = () => {
   }
 
   useEffect(() => {
-    setFilteredCollections(collections);
-  }, [collections]);
+    if (prevGame !== undefined && prevGame !== game) {
+      setFilteredCollections([]);
+      setSearchParams({}, { replace: true });
+      dispatch({ type: "RESET_COLLECTION_ID" });
+      dispatch({ type: "SET_FROM_SELECT", payload: { collectionType: game === "maimai" ? "plate" : "trophy" } });
+    }
+  }, [game]);
 
   useEffect(() => {
-    if (!collectionId) return;
+    if (collectionId === null) return;
 
     setRecords([]); // 清空记录
 
@@ -77,55 +144,65 @@ const CollectionsContent = () => {
   }, [collectionId]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setDisplayCollectionType(collectionType);
+    const timer = setTimeout(() => {
+      setDisplayCollectionType(state.collectionType);
     }, 300);
+
+    return () => clearTimeout(timer);
   }, [collectionType]);
 
   useEffect(() => {
-    if (!collection || !collection.required) {
+    if (!collection) {
       setRecords([]);
       return;
     }
 
-    let mergedRequiredSongs = collection.required.map((required) => required.songs).flat();
+    setSearchParams({
+      game: game,
+      collection_type: collectionType || "",
+      collection_id: collection.id.toString(),
+    }, { replace: true });
+
+    if (!collection.required) {
+      setRecords([]);
+      return;
+    }
+
+    let mergedRequiredSongs = collection.required.flatMap(required => required.songs);
+
     // 去重并合并 completed_difficulties
-    mergedRequiredSongs = mergedRequiredSongs.reduce((acc: CollectionRequiredSongProps[], song) => {
-      const existing = acc.find((existingSong) => {
-        return existingSong.id === song.id && existingSong.type === song.type;
-      })
-      if (existing) {
-        if (!existing.completed_difficulties) existing.completed_difficulties = [];
+    const songMap = new Map();
+    mergedRequiredSongs.forEach(song => {
+      const key = `${song.id}-${song.type}`;
+      if (songMap.has(key)) {
+        const existing = songMap.get(key);
         existing.completed_difficulties = [
-          ...new Set([...existing.completed_difficulties, ...(song.completed_difficulties || [])]),
+          ...new Set([
+            ...(existing.completed_difficulties || []),
+            ...(song.completed_difficulties || [])
+          ])
         ];
-        return acc;
+      } else {
+        songMap.set(key, { ...song });
       }
-      return [...acc, song];
-    }, []);
+    });
 
-    const convertedRecords = [
-      ...(mergedRequiredSongs && mergedRequiredSongs.length > 0
-        ? mergedRequiredSongs.map((song) => {
-          if (!song.completed_difficulties) return song;
+    const convertedRecords = Array.from(songMap.values()).map(song => {
+      if (!song.completed_difficulties) return song;
 
-          const record = { ...song };
-          song.completed_difficulties.forEach((difficulty) => {
-            // @ts-ignore
-            record[`difficulty_${difficulty}`] = true;
-          });
-          return record;
-        })
-        : []),
-    ];
+      const record = { ...song };
+      song.completed_difficulties.forEach((difficulty: number) => {
+        record[`difficulty_${difficulty}`] = true;
+      });
+      return record;
+    });
 
     setRecords(convertedRecords);
   }, [collection]);
 
   useEffect(() => {
     setFilteredCollections(collections.filter((collection) => {
-      const description = collection.description || "";
-      if (onlyRequired) return description.split("/").length === 3 && !description.includes("覚醒");
+      if (onlyRequired) return collection.required && collection.required.length > 0;
       return true;
     }));
   }, [collections, onlyRequired]);
@@ -134,11 +211,14 @@ const CollectionsContent = () => {
     <div>
       <Group gap="xs" mb="xs">
         <Select
-          data={collectionTypeData}
+          data={collectionTypeData[game]}
           value={collectionType}
           onChange={(value) => {
-            setCollectionType(value as string);
-            setCollectionId(null);
+            dispatch({
+              type: "SET_FROM_SELECT",
+              payload: { collectionType: value },
+            });
+            setSearchParams({ collection_type: value || "" }, { replace: true });
             setFilteredCollections([]);
           }}
           allowDeselect={false}
@@ -151,7 +231,14 @@ const CollectionsContent = () => {
         />
         <CollectionCombobox
           collections={filteredCollections}
-          onOptionSubmit={(value) => setCollectionId(value)}
+          value={collectionId ?? undefined}
+          onOptionSubmit={(value) => {
+            if (value === null) {
+              dispatch({ type: "RESET_COLLECTION_ID" });
+              return;
+            }
+            dispatch({ type: "SET_FROM_USER", payload: { collectionType, collectionId: value } });
+          }}
           radius="md"
           style={{ flex: 1 }}
         />
@@ -162,59 +249,18 @@ const CollectionsContent = () => {
         onChange={() => toggleOnlyRequired()}
       />
       <Transition
-        mounted={Boolean(collectionId && collection)}
+        mounted={Boolean(collectionId !== null && collection)}
         transition="pop"
         enterDelay={0}
       >
         {(styles) => (
-          <Card radius="md" mt="md" p="md" withBorder className={classes.card} style={styles}>
-            <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
-              {collection && collection.description}
-            </Text>
-            <Text fw={700} size="xl">
-              {collection && collection.name}
-            </Text>
-            {collection && (
-              <Center>
-                {displayCollectionType === "plate" && (
-                  <AspectRatio ratio={720 / 116} mt="md">
-                    <Image src={`https://assets2.lxns.net/${game}/plate/${collection.id}.png`} w="100%" />
-                  </AspectRatio>
-                )}
-                {displayCollectionType === "trophy" && (
-                  <Badge
-                    variant="light" size="xl" radius="xl" w="100%" mt="md"
-                    color={getTrophyColor(collection.color || "normal")}
-                    children={
-                      <Marquee>
-                        <Text fz="xl" style={{
-                          whiteSpace: "pre-wrap"
-                        }}>
-                          {collection.name}
-                        </Text>
-                      </Marquee>
-                    }
-                  />
-                )}
-                {displayCollectionType === "icon" && (
-                  <AspectRatio ratio={1} mt="md">
-                    <Image src={`https://assets2.lxns.net/${game}/icon/${collection.id}.png`} w={128} />
-                  </AspectRatio>
-                )}
-                {displayCollectionType === "frame" && collection.id !== 1 && (
-                  <AspectRatio ratio={270 / 113} mt="md">
-                    <Image src={`https://assets2.lxns.net/${game}/frame/${collection.id}.png`} w="100%" />
-                  </AspectRatio>
-                )}
-              </Center>
-            )}
-          </Card>
+          <CollectionCard collection={collection} collectionType={displayCollectionType} style={styles} />
         )}
       </Transition>
       <Space h="md" />
       <LoginAlert content="你需要登录查分器账号才能查看你的收藏品获取进度。" mb="md" radius="md" />
       <Transition
-        mounted={Boolean(collectionId && collection && collection.required)}
+        mounted={Boolean(collectionId !== null && collection && collection.required)}
         transition="pop"
         enterDelay={0}
       >
@@ -223,7 +269,7 @@ const CollectionsContent = () => {
         )}
       </Transition>
       <Transition
-        mounted={!collectionId}
+        mounted={collectionId === null}
         transition="pop"
         enterDelay={300}
       >
@@ -235,7 +281,7 @@ const CollectionsContent = () => {
         )}
       </Transition>
       <Transition
-        mounted={Boolean(collectionId && collection && !collection.required)}
+        mounted={Boolean(collectionId !== null && collection && !collection.required)}
         transition="pop"
         enterDelay={300}
       >
@@ -255,7 +301,7 @@ export default function Collections() {
     <Page
       meta={{
         title: "收藏品查询",
-        description: "查询「舞萌 DX」收藏品与你的收藏品获取进度",
+        description: "查询「舞萌 DX」与「中二节奏」的收藏品详情",
       }}
       children={<CollectionsContent />}
     />

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
-  ActionIcon, Badge, Box, Card, Center, Flex, Grid, Group, Image, LoadingOverlay, Pagination, rem, RingProgress,
+  ActionIcon, Anchor, Badge, Box, Card, Center, Flex, Grid, Group, Image, LoadingOverlay, Pagination, rem, RingProgress,
   SegmentedControl, SimpleGrid, Space, Text, ThemeIcon
 } from "@mantine/core";
 import classes from "../../pages/Page.module.css";
@@ -11,6 +11,9 @@ import { Marquee } from "../Marquee.tsx";
 import { ASSET_URL } from "../../main.tsx";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { CollectionProps } from "@/types/player";
+import { Link } from "react-router-dom";
+import useFixedGame from "@/hooks/useFixedGame.ts";
+import { Game } from "@/types/game";
 
 const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps }) => {
   if (!collection || !collection.required) {
@@ -58,12 +61,18 @@ const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps 
   );
 }
 
+const difficultyData: Record<Game, string[]> = {
+  maimai: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'],
+  chunithm: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'ULTIMA'],
+}
+
 export const RequiredSong = ({ collection, records, style }: { collection: CollectionProps | null, records: any[], style?: React.CSSProperties; }) => {
   if (!collection) return null;
 
   const { height, ref } = useElementSize();
 
   const [animationRef] = useAutoAnimate();
+  const [game] = useFixedGame();
   const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
   const [difficulty, setDifficulty] = useState<number>(0);
   const small = useMediaQuery(`(max-width: 450px)`);
@@ -97,11 +106,12 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
   }, [difficulty]);
 
   useEffect(() => {
+    if (difficulties.length === 0) return;
     // 防止动画导致 SegmentedControl 无法正常渲染
     setTimeout(() => {
       setDifficulty(0);
       setTimeout(() => {
-        setDifficulty(difficulties.length - 1)
+        setDifficulty(difficulties[difficulties.length - 1]);
       }, 0);
     }, 250);
   }, [difficulties]);
@@ -114,7 +124,7 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
 
   const difficultyProgress = (collection.required || []).reduce((acc, req) => {
     if (difficulty === undefined) return acc;
-    if (!req.difficulties.includes(difficulty)) return acc;
+    if (!(req.difficulties || []).includes(difficulty) && req.difficulties.length != 0) return acc;
 
     const songsTotal = req.songs.length;
     const songsCompleted = req.songs.filter(song =>
@@ -142,10 +152,11 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
             <Grid.Col span={6} ref={ref}>
               <Text fz="xs" c="dimmed">曲目范围</Text>
               <Marquee>
-                <Text fz="sm">{((collection && collection.description) || "").split("/")[0]}</Text>
+                <Text fz="sm">{(collection?.description || "没有描述").split("/")[0]}</Text>
               </Marquee>
             </Grid.Col>
-            {collection && collection.required && (
+            {collection?.required?.[0] &&
+              (['fc', 'fs', 'rate', 'full_combo', 'full_chain', 'rank'] as const).some(key => collection.required![0][key]) && (
               <Grid.Col span={6} h={height}>
                 {collection.required[0].fc && (
                   <div>
@@ -165,6 +176,24 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
                     <Image w={rem(64)} ml={-8} src={`/assets/maimai/music_rank/${collection.required[0].rate}.webp`} />
                   </div>
                 )}
+                {collection.required[0].full_combo && (
+                  <div>
+                    <Text fz="xs" c="dimmed">全连要求</Text>
+                    <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_icon/${collection.required[0].full_combo}.webp`} />
+                  </div>
+                )}
+                {collection.required[0].full_chain && (
+                  <div>
+                    <Text fz="xs" c="dimmed">全同步要求</Text>
+                    <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_icon/${collection.required[0].full_chain}.webp`} />
+                  </div>
+                )}
+                {collection.required[0].rank && (
+                  <div>
+                    <Text fz="xs" c="dimmed">分数要求</Text>
+                    <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_rank/${collection.required[0].rank}.webp`} />
+                  </div>
+                )}
               </Grid.Col>
             )}
           </Grid>
@@ -174,26 +203,24 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
         </Box>
       </Flex>
       <Text fz="xs" c="dimmed" mt="md">要求难度</Text>
-      {difficulties.length === 0 && (
+      {difficulties.length === 0 ? (
         <Text fz="sm">
           任意难度
         </Text>
+      ) : (
+        <SegmentedControl
+          orientation={small && difficulties.length > 4 ? "vertical" : "horizontal"}
+          size="xs" mt={4}
+          data={[
+            ...difficulties.map((difficulty) => ({
+              label: difficultyData[game][difficulty],
+              value: difficulty.toString(),
+            })),
+          ]}
+          value={difficulty.toString()}
+          onChange={(value) => setDifficulty(parseInt(value))}
+        />
       )}
-      <SegmentedControl
-        orientation={
-          small && difficulties.length > 4 ? "vertical" : "horizontal"
-        }
-        size="xs"
-        mt={4}
-        data={[
-          ...difficulties.map((difficulty) => ({
-            label: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'][difficulty],
-            value: difficulty.toString(),
-          })),
-        ]}
-        value={difficulty.toString()}
-        onChange={(value) => setDifficulty(parseInt(value))}
-      />
       <Space h="md" />
       <Text fz="xs" c="dimmed">已完成 {difficultyProgress.completed} / {difficultyProgress.total} 首：</Text>
       <Space h="xs" />
@@ -208,18 +235,28 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
                   <IconCheck />
                 </ThemeIcon>
               )}} zIndex={1} />
-              <PhotoView src={`${ASSET_URL}/maimai/jacket/${record.id}.png`}>
-                <Image h={40} w={40} radius="sm" src={`${ASSET_URL}/maimai/jacket/${record.id}.png!webp`} />
+              <PhotoView src={`${ASSET_URL}/${game}/jacket/${record.id}.png`}>
+                <Image h={40} w={40} radius="sm" src={`${ASSET_URL}/${game}/jacket/${record.id}.png!webp`} />
               </PhotoView>
             </Box>
             <div>
-              <Text size="sm" fw={500} lineClamp={1}>
+              <Anchor
+                size="sm" fw={500} lineClamp={1} component={Link}
+                to={`/songs?game=${game}&song_id=${record.id}`}
+                style={{
+                  color: "var(--mantine-color-text)"
+                }}
+              >
                 {record.title}
-              </Text>
-              {record.type === "standard" ? (
-                <Badge variant="filled" color="blue" size="sm">标准</Badge>
-              ) : (
-                <Badge variant="filled" color="orange" size="sm">DX</Badge>
+              </Anchor>
+              {game === "maimai" && (
+                <>
+                  {record.type === "standard" ? (
+                    <Badge variant="filled" color="blue" size="sm">标准</Badge>
+                  ) : (
+                    <Badge variant="filled" color="orange" size="sm">DX</Badge>
+                  )}
+                </>
               )}
             </div>
           </Group>

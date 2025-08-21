@@ -50,9 +50,14 @@ interface CollectionRequiredSongProps {
 interface CollectionRequiredProps {
   completed: boolean;
   difficulties: number[];
+  // maimai
   fc: string;
   fs: string;
   rate: string;
+  // chunithm
+  full_combo: string;
+  full_chain: string;
+  rank: string;
   songs: CollectionRequiredSongProps[];
 }
 

@@ -8,7 +8,7 @@ import { CollectionProps } from "@/types/player";
 interface CollectionComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   collections: CollectionProps[];
   value?: number;
-  onOptionSubmit?: (value: number) => void;
+  onOptionSubmit?: (value: number | null) => void;
 }
 
 export const CollectionCombobox = ({ collections, value, onOptionSubmit, ...others }: CollectionComboboxProps) => {
@@ -34,7 +34,7 @@ export const CollectionCombobox = ({ collections, value, onOptionSubmit, ...othe
   useEffect(() => {
     const collection = collections.find((collection) => collection.id === value);
     setSearch(collection?.name || '');
-  }, [value]);
+  }, [collections, value]);
 
   return (
     <Combobox
@@ -61,7 +61,7 @@ export const CollectionCombobox = ({ collections, value, onOptionSubmit, ...othe
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   setSearch('')
-                  onOptionSubmit && onOptionSubmit(0);
+                  onOptionSubmit && onOptionSubmit(null);
                 }}
               />
             ) : (
@@ -97,9 +97,11 @@ export const CollectionCombobox = ({ collections, value, onOptionSubmit, ...othe
                 <Text fz="sm" fw={500}>
                   {plate.name}
                 </Text>
-                <Text fz="xs" opacity={0.6}>
-                  {plate.description}
-                </Text>
+                {plate.description !== "-" && (
+                  <Text fz="xs" opacity={0.6}>
+                    {plate.description}
+                  </Text>
+                )}
               </Combobox.Option>
             ))}
           </ScrollArea.Autosize>

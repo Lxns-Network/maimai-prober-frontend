@@ -3,7 +3,7 @@ import { resourceFetcher } from "@/hooks/swr/fetcher.ts";
 import { CollectionProps } from "@/types/player";
 import { Game } from "@/types/game";
 
-export const useCollectionList = (game: Game, collectionType: string, required: boolean = false) => {
+export const useCollectionList = (game: Game, collectionType: string | null, required: boolean = false) => {
   const {
     data,
     error,
@@ -11,7 +11,7 @@ export const useCollectionList = (game: Game, collectionType: string, required: 
     mutate
   } = useSWR<{
     [key: string]: CollectionProps[];
-  }>(`${game}/${collectionType}/list?required=${required}`, resourceFetcher);
+  }>(collectionType ? `${game}/${collectionType}/list?required=${required}` : null, resourceFetcher);
 
   return {
     collections: data ? data[Object.keys(data)[0]] || [] : [],
