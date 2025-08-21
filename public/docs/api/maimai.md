@@ -4,37 +4,13 @@
 
 在本查分器中，同一首曲目的**标准、DX 谱面的曲目 ID 一致**，不存在大于 10000 的曲目 ID（如有，请在请求前对 10000 取余处理）。宴会场曲目为例外，不分标准、DX 谱面，曲目 ID 大于 100000。
 
-API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:00:00Z`，代表北京时间上午 8 时。
-
 ## API 类型
 
 - [开发者 API](#开发者-api)
 - [个人 API](#个人-api)
 - [公共 API](#公共-api)
 
-::: warning 注意
-个人 API 密钥不能用于开发者 API，开发者 API 密钥不能用于个人 API，请提前根据需求使用对应的 API 密钥。
-:::
-
 ## 开发者 API
-
-开发者 API 的所有请求均需要在请求头加入**开发者 API 密钥**，如果没有，请[申请成为开发者](/developer/apply)获取。
-
-请求头示例：
-```
-Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
-```
-
-### 响应结构
-
-结果将会以 JSON 格式响应：
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `success` | `bool` | 请求是否成功处理 |
-| `code` | `int` | HTTP 状态码，通常为 `200` |
-| `message` | `string` | 值可空，请求失败理由 |
-| `data` | `dict` 或 `list` | 值可空，请求结果 |
 
 ### POST `/api/v0/maimai/player`
 
@@ -406,12 +382,7 @@ JSON 格式的玩家成绩：
 
 ## 个人 API
 
-个人 API 的所有请求均需要在请求头加入**个人 API 密钥**，如果没有，请前往[账号详情](/user/profile)生成。
-
-请求头示例：
-```
-X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
-```
+仅列举部分 API 接口，完整接口请参考前端调用。
 
 ### GET `/api/v0/user/maimai/player`
 
@@ -492,9 +463,9 @@ JSON 格式的玩家成绩：
 |-|-|-|
 | `aliases` | [Alias[]](#alias) | 曲目别名列表 |
 
-### GET `/api/v0/maimai/trophy/list`
+### GET `/api/v0/maimai/{collection_type}/list`
 
-获取称号列表。
+获取收藏品列表。
 
 #### 查询参数
 
@@ -503,15 +474,24 @@ JSON 格式的玩家成绩：
 | `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
 | `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
 
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `collection_type` | `string` | 收藏品类型，值为 `trophy`、`icon`、`plate` 或 `frame` |
+
 #### 响应体
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `trophies` | [Trophy[]](#collection) | 称号列表 |
+| `trophies` | [Collection[]](#collection) | 仅收藏品类型为 `trophy`，称号列表 |
+| `icons` | [Collection[]](#collection) | 仅收藏品类型为 `icon`，头像列表 |
+| `plates` | [Collection[]](#collection) | 仅收藏品类型为 `plate`，姓名框列表 |
+| `frames` | [Collection[]](#collection) | 仅收藏品类型为 `frame`，背景列表 |
 
-### GET `/api/v0/maimai/trophy/{trophy_id}`
+### GET `/api/v0/maimai/{collection_type}/{collection_id}`
 
-获取称号信息。
+获取收藏品信息。
 
 #### 查询参数
 
@@ -523,122 +503,12 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `trophy_id` | `int` | 称号 ID |
+| `collection_type` | `string` | 收藏品类型，值为 `trophy`、`icon`、`plate` 或 `frame` |
+| `collection_id` | `int` | 收藏品 ID |
 
 #### 响应体
 
-[Trophy](#collection)
-
-### GET `/api/v0/maimai/icon/list`
-
-获取头像列表。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
-| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
-
-#### 响应体
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `icons` | [Icon[]](#collection) | 头像列表 |
-
-### GET `/api/v0/maimai/icon/{icon_id}`
-
-获取头像信息。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
-
-#### URL 参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `icon_id` | `int` | 头像 ID |
-
-#### 响应体
-
-[Icon](#collection)
-
-### GET `/api/v0/maimai/plate/list`
-
-获取姓名框列表。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
-| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
-
-#### 响应体
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `plates` | [Plate[]](#collection) | 姓名框列表 |
-
-### GET `/api/v0/maimai/plate/{plate_id}`
-
-获取姓名框信息。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
-
-#### URL 参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `plate_id` | `int` | 姓名框 ID |
-
-#### 响应体
-
-[Plate](#collection)
-
-### GET `/api/v0/maimai/frame/list`
-
-获取背景列表。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
-| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
-
-#### 响应体
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `frames` | [Frame[]](#collection) | 背景列表 |
-
-### GET `/api/v0/maimai/frame/{frame_id}`
-
-获取背景信息。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `25000` |
-
-#### URL 参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `frame_id` | `int` | 背景 ID |
-
-#### 响应体
-
-[Frame](#collection)
+[Collection](#collection)
 
 ### GET `/api/v0/maimai/collection-genre/list`
 
@@ -729,6 +599,7 @@ JSON 格式的玩家成绩：
 | `fc` | [`FCType`](#fctype) | 值可空，FULL COMBO 类型 |
 | `fs` | [`FSType`](#fstype) | 值可空，FULL SYNC 类型 |
 | `dx_score` | `int` | DX 分数 |
+| `dx_star` | `int` | DX 星级，最大值为 5 |
 | `dx_rating` | `float` | 仅获取 `Score` 时返回，DX Rating，计算时需要向下取整 |
 | `rate` | [`RateType`](#ratetype) | 仅获取 `Score` 时返回，评级类型 |
 | `type` | [`SongType`](#songtype) | 谱面类型 |

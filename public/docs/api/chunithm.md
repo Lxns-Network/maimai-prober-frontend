@@ -2,37 +2,13 @@
 
 ---
 
-API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:00:00Z`，代表北京时间上午 8 时。
-
 ## API 类型
 
 - [开发者 API](#开发者-api)
 - [个人 API](#个人-api)
 - [公共 API](#公共-api)
 
-::: warning 注意
-个人 API 密钥不能用于开发者 API，开发者 API 密钥不能用于个人 API，请提前根据需求使用对应的 API 密钥。
-:::
-
 ## 开发者 API
-
-开发者 API 的所有请求均需要在请求头加入**开发者 API 密钥**，如果没有，请[申请成为开发者](/developer/apply)获取。
-
-请求头示例：
-```
-Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
-```
-
-### 响应结构
-
-结果将会以 JSON 格式响应：
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `success` | `bool` | 请求是否成功处理 |
-| `code` | `int` | HTTP 状态码，通常为 `200` |
-| `message` | `string` | 值可空，请求失败理由 |
-| `data` | `dict` 或 `list` | 值可空，请求结果 |
 
 ### POST `/api/v0/chunithm/player`
 
@@ -142,6 +118,10 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 获取玩家缓存的 Best 30、Selection 10 与 Recent 10。
 
+::: warning 注意
+在中二节奏 2026 中，玩家的 Rating 算法发生了变更，由旧版本 Best 35 和当前版本 Best 15 组成。
+:::
+
 #### 权限
 
 - `allow_third_party_fetch_scores`
@@ -156,9 +136,10 @@ Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `bests` | [`Score[]`](#score) | Best 30 列表，即最佳曲目 |
+| `bests` | [`Score[]`](#score) | Best 30 列表（将在中二节奏 2026 变更为旧版本 Best 35 列表），即最佳曲目 |
 | `selections` | [`Score[]`](#score) | Selection 10 列表，即候选最佳曲目 |
-| `recents` | [`Score[]`](#score) | Recent 10 列表，即最近游玩的最佳曲目 |
+| `recents` | [`Score[]`](#score) | Recent 10 列表（将在中二节奏 2026 移除），即最近游玩的最佳曲目 |
+| `currents` | [`Score[]`](#score) | 当前版本 Best 15 列表（将在中二节奏 2026 加入） |
 
 ::: info 提示
 Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩。
@@ -377,6 +358,26 @@ JSON 格式的玩家成绩：
 
 [Score[]](#score)
 
+### GET `/api/v0/chunithm/player/{friend_code}/{collection_type}/{collection_id}`
+
+获取玩家收藏品进度。
+
+#### 权限
+
+- `allow_third_party_fetch_scores`
+
+#### URL 参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `friend_code` | `int` | 好友码 |
+| `collection_type` | `string` | 收藏品类型，值为 `trophy`、`character`、`plate` 或 `icon` |
+| `collection_id` | `int` | 收藏品 ID |
+
+#### 响应体
+
+[Collection](#collection)
+
 ### POST `/api/v0/chunithm/player/{friend_code}/html`
 
 通过 NET 的 HTML 源代码上传玩家数据。
@@ -410,12 +411,7 @@ JSON 格式的玩家成绩：
 
 ## 个人 API
 
-个人 API 的所有请求均需要在请求头加入**个人 API 密钥**，如果没有，请前往[账号详情](/user/profile)生成。
-
-请求头示例：
-```
-X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
-```
+仅列举部分 API 接口，完整接口请参考前端调用。
 
 ### GET `/api/v0/user/chunithm/player`
 
@@ -496,25 +492,9 @@ JSON 格式的玩家成绩：
 |-|-|-|
 | `aliases` | [Alias[]](#alias) | 曲目别名列表 |
 
-### GET `/api/v0/chunithm/trophy/list`
+### GET `/api/v0/chunithm/{collection_type}/list`
 
-获取称号列表。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
-
-#### 响应体
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `trophies` | [Trophy[]](#collection) | 称号列表 |
-
-### GET `/api/v0/chunithm/trophy/{trophy_id}`
-
-获取称号信息。
+获取收藏品列表。
 
 #### 查询参数
 
@@ -526,31 +506,20 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `trophy_id` | `int` | 称号 ID |
-
-#### 响应体
-
-[Trophy](#collection)
-
-### GET `/api/v0/chunithm/character/list`
-
-获取角色列表。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+| `collection_type` | `string` | 收藏品类型，值为 `trophy`、`character`、`plate` 或 `icon` |
 
 #### 响应体
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `characters` | [Character[]](#collection) | 角色列表 |
+| `trophies` | [Collection[]](#collection) | 仅收藏品类型为 `trophy`，称号列表 |
+| `characters` | [Collection[]](#collection) | 仅收藏品类型为 `character`，角色列表 |
+| `plates` | [Collection[]](#collection) | 仅收藏品类型为 `plate`，名牌版列表 |
+| `icons` | [Collection[]](#collection) | 仅收藏品类型为 `icon`，地图头像列表 |
 
-### GET `/api/v0/chunithm/character/{character_id}`
+### GET `/api/v0/chunithm/{collection_type}/{collection_id}`
 
-获取角色信息。
+获取收藏品信息。
 
 #### 查询参数
 
@@ -562,83 +531,12 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `character_id` | `int` | 角色 ID |
+| `collection_type` | `string` | 收藏品类型，值为 `trophy`、`character`、`plate` 或 `icon` |
+| `collection_id` | `int` | 收藏品 ID |
 
 #### 响应体
 
-[Character](#collection)
-
-### GET `/api/v0/chunithm/plate/list`
-
-获取名牌版列表。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
-
-#### 响应体
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `plates` | [Plate[]](#collection) | 名牌版列表 |
-
-### GET `/api/v0/chunithm/plate/{plate_id}`
-
-获取名牌版信息。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
-
-#### URL 参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `plate_id` | `int` | 名牌版 ID |
-
-#### 响应体
-
-[Plate](#collection)
-
-### GET `/api/v0/chunithm/icon/list`
-
-获取地图头像列表。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
-
-#### 响应体
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `icons` | [MapIcon[]](#collection) | 地图头像列表 |
-
-### GET `/api/v0/chunithm/icon/{map_icon_id}`
-
-获取地图头像信息。
-
-#### 查询参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
-
-#### URL 参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `map_icon_id` | `int` | 地图头像 ID |
-
-#### 响应体
-
-[MapIcon](#collection)
+[Collection](#collection)
 
 ## 游戏资源
 
@@ -841,6 +739,36 @@ Recent 10 均为 Best #1 曲目，`rating` 字段的最终结果为理论不推�
 | `name` | `string` | 收藏品名称 |
 | `color` | `string` | 值可空，仅玩家称号，称号颜色 |
 | `level` | `int` | 值可空，仅玩家角色，角色等级 |
+| `required` | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求 |
+
+::: warning 注意
+在中二节奏 2026 中，`color` 字段删除 `copper`，并新增 `image`，表示称号需要使用图片展示（比如 Legend of LUMINOUS PLUS）。
+:::
+
+### CollectionRequired
+
+收藏品要求
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `difficulties` | [`LevelIndex[]`](#levelindex) | 值可空，要求的谱面难度，长度为 0 时代表任意难度 |
+| `rank` | [`RankType`](#ranktype) | 值可空，要求的评级类型 |
+| `full_combo` | [`FullComboType`](#fullcombotype) | 值可空，要求的 FULL COMBO 类型 |
+| `full_chain` | [`FullChainType`](#fullchaintype) | 值可空，要求的 FULL CHAIN 类型 |
+| `songs` | [`CollectionRequiredSong[]`](#collectionrequiredsong) | 值可空，要求的曲目列表 |
+| `completed` | `bool` | 值可空，要求是否全部完成 |
+
+### CollectionRequiredSong
+
+收藏品要求曲目
+
+| 字段名 | 类型 | 说明 |
+|-|-|-|
+| `id` | `int` | 曲目 ID |
+| `title` | `string` | 曲名 |
+| `type` | [`SongType`](#songtype) | 谱面类型 |
+| `completed` | `bool` | 值可空，要求的曲目是否完成 |
+| `completed_difficulties` | [`LevelIndex[]`](#levelindex) | 值可空，已完成的难度 |
 
 ## 枚举类型
 
@@ -866,6 +794,7 @@ CLEAR 类型
 | `catastrophy` | `string` | CATASTROPHY |
 | `absolutep` | `string` | ABSOLUTE+ |
 | `absolute` | `string` | ABSOLUTE |
+| `brave` | `string` | BRAVE（将在中二节奏 2026 添加） |
 | `hard` | `string` | HARD |
 | `clear` | `string` | CLEAR |
 | `failed` | `string` | FAILED |
