@@ -6,7 +6,7 @@ import useSWR from 'swr';
 const fetcher = (url: string) =>
   fetch(url + '?_t=' + Date.now()).then((res) => res.json());
 
-export function useVersionChecker(interval = 10000) {
+export function useVersionChecker(interval = 60000) {
   const currentVersionRef = useRef<string | null>(null);
   const notifiedRef = useRef(false);
 

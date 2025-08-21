@@ -25,17 +25,18 @@ import { getCrawlStatistic } from "@/utils/api/misc.ts";
 import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
 import useGame from "@/hooks/useGame.ts";
 
-interface ScoreChangeDetailProps {
+export interface ScoreChangeDetailProps {
   new: unknown;
   old: unknown;
 }
 
 export interface ScoreChangesProps {
   id: number;
+  song_name: string;
   level: string;
   level_index: number;
-  type: string;
   // maimai
+  type: string;
   achievements: ScoreChangeDetailProps;
   dx_rating: ScoreChangeDetailProps;
   dx_score: ScoreChangeDetailProps;

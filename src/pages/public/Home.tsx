@@ -39,7 +39,7 @@ function LogoParallax() {
     function handleMouseMove(e: MouseEvent) {
       if (!logoParallaxRef.current) return;
 
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isTouchDevice = 'ontouchstart' in window;
       if (isTouchDevice) return;
 
       const parallaxRect = logoParallaxRef.current.getBoundingClientRect();

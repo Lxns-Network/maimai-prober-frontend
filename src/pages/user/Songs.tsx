@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { Text, Flex, Anchor, Space, Transition } from "@mantine/core";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, usePrevious } from "@mantine/hooks";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
@@ -17,17 +17,47 @@ import { Page } from "@/components/Page/Page.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 
+interface State {
+  songId: number | null;
+}
+
+type Action =
+  | { type: "SET_FROM_URL"; payload: { songId: number | null } }
+  | { type: "SET_FROM_LOCATION"; payload: { songId: number | null } }
+  | { type: "SET_FROM_USER"; payload: { songId: number | null } }
+  | { type: "RESET_SONG_ID" };
+
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "SET_FROM_URL":
+      return { ...state, songId: action.payload.songId };
+    case "SET_FROM_LOCATION":
+      return { ...state, songId: action.payload.songId };
+    case "SET_FROM_USER":
+      return { ...state, songId: action.payload.songId };
+    case "RESET_SONG_ID":
+      return { ...state, songId: null };
+    default:
+      return state;
+  }
+}
+
 const SongsContent = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useGame();
+  const prevGame = usePrevious(game);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [state, dispatch] = useReducer(reducer, {
+    songId: (() => {
+      const id = searchParams.get("song_id");
+      return id && !isNaN(parseInt(id)) ? parseInt(id) : null;
+    })(),
+  });
 
+  const { songId } = state;
   const [createAliasOpened, createAlias] = useDisclosure();
-  const [defaultSongId, setDefaultSongId] = useState<number>(0)
-  const [songId, setSongId] = useState<number>(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
-
-  const [searchParams, setSearchParams] = useSearchParams();
   const getSongList = useSongListStore((state) => state.getSongList);
   const isLoggedOut = !localStorage.getItem("token");
   const location = useLocation();
@@ -53,35 +83,36 @@ const SongsContent = () => {
   useEffect(() => {
     if (location.state) {
       if (location.state.songId) {
-        setDefaultSongId(location.state.songId);
+        const songId = parseInt(location.state.songId as string);
+        if (!isNaN(songId)) {
+          dispatch({ type: "SET_FROM_LOCATION", payload: { songId } });
+          return;
+        }
         window.history.replaceState({}, '');
         return;
       }
-    }
-
-    if (searchParams.has("song_id")) {
-      setDefaultSongId(parseInt(searchParams.get("song_id") || "0"));
     }
   }, []);
 
   useEffect(() => {
     setSongList(getSongList(game));
-    setScores([]);
-    setSearchParams({}, { replace: true });
-    setSongId(0);
+
+    if (prevGame !== undefined && prevGame !== game) {
+      setScores([]);
+      setSearchParams({}, { replace: true });
+      dispatch({ type: "RESET_SONG_ID" });
+    }
   }, [game]);
 
   useEffect(() => {
-    setScores([]);
+    if (!song) return;
 
-    if (defaultSongId) {
-      setSongId(defaultSongId);
-      setDefaultSongId(0);
-    }
-  }, [defaultSongId]);
+    setSearchParams({
+      game: game,
+      song_id: song.id.toString(),
+    }, { replace: true });
 
-  useEffect(() => {
-    if (!song || isLoggedOut) return;
+    if (isLoggedOut) return;
 
     if (songList instanceof MaimaiSongList) {
       const s = song as MaimaiSongProps;
@@ -101,28 +132,30 @@ const SongsContent = () => {
   }, [song]);
 
   useEffect(() => {
-    if (songId === 0) {
-      setSearchParams({}, { replace: true });
-      return;
-    }
-
     const song = songList?.songs.find((song) => song.id === songId);
     if (!song) return;
 
-    setSearchParams({
-      "game": game,
-      "song_id": songId.toString(),
-    }, { replace: true });
     setSong(song);
     setScores([]);
   }, [songId, songList?.songs]);
 
   return (
     <div>
-      <CreateAliasModal defaultSongId={songId} opened={createAliasOpened} onClose={() => createAlias.close()} />
+      <CreateAliasModal
+        defaultSongId={songId ?? undefined}
+        opened={createAliasOpened}
+        onClose={() => createAlias.close()}
+      />
       <SongCombobox
-        value={songId}
-        onOptionSubmit={(value) => setSongId(value)}
+        value={songId ?? undefined}
+        onOptionSubmit={(value) => {
+          if (value === 0) {
+            setSearchParams({}, { replace: true });
+            dispatch({ type: "RESET_SONG_ID" });
+            return;
+          }
+          dispatch({ type: "SET_FROM_USER", payload: { songId: value } });
+        }}
         radius="md"
         mb={4}
       />
