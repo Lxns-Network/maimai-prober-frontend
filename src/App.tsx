@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from '@mantine/core';
+import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon, Stack, Button } from '@mantine/core';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
 import { ModalsProvider } from "@mantine/modals";
 import { notifications, Notifications } from "@mantine/notifications";
@@ -107,6 +107,43 @@ export default function App() {
     if (viewport.current) {
       viewport.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // 赞助提示
+    if (isTokenUndefined()) return;
+
+    const usageKey = "app_usage_count";
+    const sponsorKey = "sponsor_notification_last_shown";
+
+    const usageCount = Number(localStorage.getItem(usageKey)) || 0;
+    const lastShown = Number(localStorage.getItem(sponsorKey)) || 0;
+
+    localStorage.setItem(usageKey, String(usageCount + 1));
+
+    if ((usageCount + 1) % 5 === 0 && Date.now() - lastShown > 3 * 24 * 60 * 60 * 1000) {
+      setTimeout(() => {
+        notifications.show({
+          title: "💖 支持我们",
+          message: (
+            <Stack gap="xs" align="flex-start">
+              <span>如果查分器对你有帮助，请考虑赞助支持我们的开发工作！</span>
+              <Button
+                size="xs"
+                variant="light"
+                color="violet"
+                onClick={() => window.open("https://afdian.com/a/lxnssama", "_blank")}
+              >
+                爱发电
+              </Button>
+            </Stack>
+          ),
+          color: "violet",
+          autoClose: 10000,
+          withCloseButton: true,
+        });
+
+        localStorage.setItem(sponsorKey, String(Date.now()));
+      }, 2000);
+    }
   }, [location.pathname]);
 
   useEffect(() => {
@@ -163,7 +200,9 @@ export default function App() {
             <Notifications />
             <RouterTransition />
             <Shell navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} viewportRef={viewport}>
-              <div ref={ref}>
+              <div ref={ref} style={{
+                minHeight: 'calc(100vh - var(--header-height))',
+              }}>
                 <Suspense fallback={(
                   <Group justify="center" p={rem(80)}>
                     <Loader type="dots" size="xl" />
