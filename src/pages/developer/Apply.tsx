@@ -83,7 +83,7 @@ export default function DeveloperApply() {
         提交申请，通过审核后即可获取开发者 API 访问权限
       </Text>
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
-        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={2} />
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <TextInput
             name="name"

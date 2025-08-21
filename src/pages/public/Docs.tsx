@@ -30,6 +30,7 @@ async function loadShiki() {
     langs: [
       import('@shikijs/langs/python'),
       import('@shikijs/langs/json'),
+      import('@shikijs/langs/bash'),
     ],
     engine: createJavaScriptRegexEngine()
   });

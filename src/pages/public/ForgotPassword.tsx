@@ -75,7 +75,7 @@ export default function ForgotPassword() {
         重置你的 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号密码
       </Text>
       <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
-        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={2} />
         <form onSubmit={form.onSubmit(forgotPasswordHandler)}>
           <TextInput
             name="email"

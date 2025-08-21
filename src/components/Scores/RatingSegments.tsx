@@ -1,8 +1,26 @@
-import {Box, Text, Group, Paper, SimpleGrid, NumberFormatter, Divider, Flex, ScrollArea} from '@mantine/core';
+import { Box, Text, Group, Paper, SimpleGrid, Divider, Flex, ScrollArea, Badge, Stack } from '@mantine/core';
 import { IconLoader3 } from '@tabler/icons-react';
 import classes from './RatingSegments.module.css';
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
+import { getDeluxeRatingGradient, getRatingGradient } from "@/utils/color.ts";
+
+const RatingBadge = ({ game, rating }: { game: string, rating: number }) => {
+  let gradient = getRatingGradient(rating);
+  if (game === "maimai") {
+    gradient = getDeluxeRatingGradient(rating);
+  }
+  return (
+    <Badge
+      className={classes.ratingNumberTotal}
+      variant="gradient"
+      gradient={gradient}
+      size="xl"
+    >
+      {rating}
+    </Badge>
+  )
+}
 
 export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBestsProps }) {
   const [game] = useGame();
@@ -102,22 +120,17 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
 
   return (
     <Paper withBorder p="md" radius="md">
-      <Group align="flex-end" gap="xs">
-        <Text className={classes.ratingNumberTotal}>
-          {"standard_total" in bests && "dx_total" in bests && (
-            <>
-              {bests.standard_total + bests.dx_total}
-            </>
-          )}
-          {"bests" in bests && data.length === 3 && (
-            <NumberFormatter value={Math.round((data[0].count * bests.bests.length + data[2].count * bests.recents.length) / 40 * 100) / 100} />
-          )}
+      <Stack align="center" gap={4}>
+        <Text fw={500}>
+          {game === 'maimai' ? 'DX 评分总和' : 'Rating 均值'}
         </Text>
-      </Group>
-
-      <Text c="dimmed" fz="sm">
-        {game === 'maimai' ? 'DX Rating 总和' : 'Rating 均值'}
-      </Text>
+        {"standard_total" in bests && "dx_total" in bests && (
+          <RatingBadge game="maimai" rating={bests.standard_total + bests.dx_total} />
+        )}
+        {"bests" in bests && data.length === 3 && (
+          <RatingBadge game="chunithm" rating={Math.round((data[0].count * bests.bests.length + data[2].count * bests.recents.length) / 40 * 100) / 100} />
+        )}
+      </Stack>
       <SimpleGrid cols={{ base: 1, xs: 2 }} mt="md">
         {descriptions}
       </SimpleGrid>
