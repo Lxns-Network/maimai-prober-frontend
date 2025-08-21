@@ -1,24 +1,27 @@
 import { useEffect, useState } from "react";
 import {
-  Title, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Alert, useComputedColorScheme, Card
+  Title, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Alert, useComputedColorScheme,
+  Card, SegmentedControl, Center
 } from '@mantine/core';
 import { Container } from '@mantine/core';
 import { useLocation, useNavigate } from "react-router-dom";
 import { API_URL, RECAPTCHA_SITE_KEY } from '@/main';
 import { useForm } from "@mantine/form";
-import { validatePassword, validateUserName } from "@/utils/validator.ts";
-import { IconAlertCircle, IconLock, IconUser } from "@tabler/icons-react";
+import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
+import { IconAlertCircle, IconLock, IconMail, IconUser } from "@tabler/icons-react";
 import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
 import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 
 interface FormValues {
-  name: string;
+  name?: string;
+  email?: string;
   password: string;
 }
 
 export default function Login() {
+  const [method, setMethod] = useState<'name' | 'email'>('name');
   const [visible, setVisible] = useState(false);
   const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();
@@ -48,12 +51,44 @@ export default function Login() {
   const form = useForm<FormValues>({
     initialValues: {
       name: "",
+      email: "",
       password: "",
     },
 
-    validate: {
-      name: (value) => validateUserName(value, { allowEmpty: false }),
-      password: (value) => validatePassword(value, { allowEmpty: false }),
+    validate: (values) => {
+      const errors: Record<string, string | null> = {};
+
+      if (!values.name && !values.email) {
+        errors.name = "用户名不能为空";
+        errors.email = "邮箱不能为空";
+      } else {
+        if (values.name && validateUserName(values.name, { allowEmpty: false })) {
+          errors.name = validateUserName(values.name, { allowEmpty: false });
+        }
+        if (values.email && validateEmail(values.email, { allowEmpty: false })) {
+          errors.email = validateEmail(values.email, { allowEmpty: false });
+        }
+      }
+
+      if (validatePassword(values.password, { allowEmpty: false })) {
+        errors.password = validatePassword(values.password, { allowEmpty: false });
+      }
+
+      return errors;
+    },
+
+    transformValues: (values) => {
+      if (method === 'name') {
+        return {
+          name: values.name,
+          password: values.password,
+        }
+      } else {
+        return {
+          email: values.email,
+          password: values.password,
+        }
+      }
     },
   });
 
@@ -98,21 +133,59 @@ export default function Login() {
         请使用 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号登录
       </Text>
       {!isTokenUndefined() && !isTokenExpired() &&
-        <Alert variant="light" color="blue" icon={<IconAlertCircle />} mt="xl">
+        <Alert variant="light" color="blue" icon={<IconAlertCircle />} mt="xl" radius="md">
           你已登录，如果想要切换账号，请先登出。
         </Alert>
       }
-      <Card className={classes.card} withBorder shadow="md" p={30} mt={30} radius="md">
-        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+      <SegmentedControl
+        fullWidth mt={30} radius="md"
+        data={[{
+          label: (
+            <Center style={{ gap: 10 }}>
+              <IconUser size={16} />
+              <span>用户名登录</span>
+            </Center>
+          ),
+          value: "name"
+        }, {
+          label:  (
+            <Center style={{ gap: 10 }}>
+              <IconMail size={16} />
+              <span>邮箱登录</span>
+            </Center>
+          ),
+          value: "email"
+        }]}
+        value={method}
+        onChange={(value) => {
+          setMethod(value as 'name' | 'email');
+          form.setFieldValue('name', '');
+          form.setFieldValue('email', '');
+        }}
+      />
+      <Card className={classes.card} withBorder shadow="md" p={30} mt="md">
+        <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={2} />
         <form onSubmit={form.onSubmit(loginHandler)}>
-          <TextInput
-            name="name"
-            label="用户名"
-            variant="filled"
-            placeholder="请输入你的用户名"
-            leftSection={<IconUser size={20} stroke={1.5} />}
-            {...form.getInputProps('name')}
-          />
+          {method === 'name' && (
+            <TextInput
+              name="name"
+              label="用户名"
+              variant="filled"
+              placeholder="请输入你的用户名"
+              leftSection={<IconUser size={20} stroke={1.5} />}
+              {...form.getInputProps('name')}
+            />
+          )}
+          {method === 'email' && (
+            <TextInput
+              name="email"
+              label="邮箱"
+              variant="filled"
+              placeholder="请输入你的邮箱"
+              leftSection={<IconMail size={20} stroke={1.5} />}
+              {...form.getInputProps('email')}
+            />
+          )}
           <Group justify="space-between" mt="md">
             <Text component="label" htmlFor="password" size="sm" fw={500}>密码</Text>
             <Anchor onClick={() => navigate("/forgot-password")} style={(theme) => ({
