@@ -7,6 +7,7 @@ export interface MaimaiScoreProps {
   fc: string;
   fs: string;
   dx_score: number;
+  dx_star: number;
   dx_rating: number;
   rate: string;
   type: string;

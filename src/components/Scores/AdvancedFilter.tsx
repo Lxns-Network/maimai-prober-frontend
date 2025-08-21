@@ -1,22 +1,17 @@
 import {
-  Button, Chip, Flex, Grid, Group, MultiSelect, NumberInput, RangeSlider, Space, Switch, Text
+  Button, Chip, Flex, Grid, Group, Image, MultiSelect, NumberInput, RangeSlider, Space, Switch, Text
 } from "@mantine/core";
 import { IconReload } from "@tabler/icons-react";
-import { MaimaiDifficultiesProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { useDisclosure, useMediaQuery } from "@mantine/hooks";
-import { useEffect, useState } from "react";
+import { useMediaQuery } from "@mantine/hooks";
+import React, { useEffect, useState } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { Game } from "@/types/game";
 import useGame from "@/hooks/useGame.ts";
-
-interface AdvancedFilterProps {
-  scores: (MaimaiScoreProps | ChunithmScoreProps)[];
-  onChange: (filteredScores: (MaimaiScoreProps | ChunithmScoreProps)[]) => void;
-}
+import { useScoreFilters } from "@/hooks/useScoreFilters.ts";
 
 const filterData = {
   maimai: {
@@ -65,39 +60,51 @@ const filterData = {
   }
 }
 
-export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
+const FilterChips = ({ title, value, onChange, options }: {
+  title: string;
+  value: string[];
+  onChange: (value: string[]) => void;
+  options: { value: string; label: React.ReactNode }[];
+}) => {
+  return (
+    <div>
+      <Text fz="xs" c="dimmed" mb={3}>{title}</Text>
+      <Flex rowGap="xs" columnGap="md" wrap="wrap">
+        <Chip.Group multiple value={value} onChange={onChange}>
+          {options.map((opt) => (
+            <Chip key={opt.value} variant="filled" size="xs" value={opt.value}>
+              {opt.label}
+            </Chip>
+          ))}
+        </Chip.Group>
+      </Flex>
+    </div>
+  );
+}
+
+export const AdvancedFilter = ({ scores, onChange }: {
+  scores: (MaimaiScoreProps | ChunithmScoreProps)[];
+  onChange: (filteredScores: (MaimaiScoreProps | ChunithmScoreProps)[]) => void;
+}) => {
   const [game] = useGame();
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
 
-  const [difficulty, setDifficulty] = useState<string[]>([]);
-  const [type, setType] = useState<string[]>([]);
-  const [rating, setRating] = useState<[number, number]>([0, 0]);
-  const [endRating, setEndRating] = useState<[number, number]>([0, 0]);
-  const [genre, setGenre] = useState<string[]>([]);
-  const [version, setVersion] = useState<number[]>([]);
-  const [fullCombo, setFullCombo] = useState<string[]>([]);
-  const [fullSync, setFullSync] = useState<string[]>([]);
-  const [showUnplayed, { toggle: toggleShowUnplayed }] = useDisclosure(false);
-  const [uploadTime, setUploadTime] = useState<[Date | null, Date | null]>([null, null]);
+  const { filters, setFilter, resetFilters, isDefault } = useScoreFilters({
+    rating: filterData[game].rating,
+    endRating: filterData[game].rating,
+  });
+  const {
+    difficulty, type, genre, version, rating, endRating,
+    fullCombo, fullSync, deluxeStar, uploadTime, showUnplayed,
+  } = filters;
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const small = useMediaQuery('(max-width: 30rem)');
 
-  const resetFilter = (game: Game) => {
-    setRating(filterData[game].rating);
-    setDifficulty([]);
-    setGenre([]);
-    setVersion([]);
-    setFullCombo([]);
-    setFullSync([]);
-    setType([]);
-    setUploadTime([null, null]);
-  }
-
   useEffect(() => {
     setSongList(getSongList(game));
-    resetFilter(game);
+    resetFilters();
   }, [game]);
 
   useEffect(() => {
@@ -106,6 +113,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
 
   useEffect(() => {
     if (!scores) return;
+    if (rating !== endRating) return;
 
     let filteredData = [...scores];
 
@@ -115,25 +123,17 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
           filteredData.map((item) => `${item.id}-${(item as MaimaiScoreProps).type}-${item.level_index}`));
 
         songList.songs.forEach((song) => {
-          ["dx", "standard", "utage"].forEach((type) => {
-            const difficulties = song.difficulties[type as keyof MaimaiDifficultiesProps];
+          Object.entries(song.difficulties).forEach(([type, difficulties]) => {
             if (!difficulties) return;
-
-            difficulties.forEach((difficulty) => {
+            difficulties.forEach((difficulty: MaimaiDifficultyProps) => {
               if (!scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`)) filteredData.push({
                 id: song.id,
                 song_name: song.title,
                 level: difficulty.level,
                 level_index: difficulty.difficulty,
                 achievements: -1,
-                fc: "",
-                fs: "",
-                dx_score: -1,
-                dx_rating: -1,
-                rate: "",
-                type: type,
-                upload_time: ""
-              });
+                type,
+              } as MaimaiScoreProps);
             });
           });
         });
@@ -149,22 +149,14 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
               level: difficulty.level,
               level_index: difficulty.difficulty,
               score: -1,
-              clear: "",
-              full_combo: "",
-              full_chain: "",
-              over_power: 0,
-              rank: "",
-              rating: 0,
-              upload_time: ""
-            });
+            } as ChunithmScoreProps);
           });
         });
       }
     }
 
     // 如果没有任何筛选条件，直接返回
-    if (difficulty.length + type.length + fullCombo.length + fullSync.length + genre.length + version.length === 0 &&
-      rating.every((v, i)=> v === filterData[game].rating[i]) && uploadTime.every((v) => v === null)) {
+    if (isDefault) {
       setFilteredScores(filteredData);
       return;
     }
@@ -184,6 +176,9 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
         if (fullSync.includes("nofs")) { // 过滤 Full Sync
           if (score.fs) return false;
         } else if (fullSync.length > 0 && !fullSync.includes(score.fs)) {
+          return false;
+        }
+        if (deluxeStar.length > 0 && !deluxeStar.includes(score.dx_star)) { // 过滤 DX 星级
           return false;
         }
         // 宴谱的 level_index 基本都是 0，需要提前过滤
@@ -206,10 +201,14 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
       return difficulty.includes(score.level_index.toString()) || difficulty.length === 0 // 过滤难度
     })
 
+    // 过滤乐曲分类、版本和定数
     filteredData = filteredData.filter((score) => {
       if (!songList) return false;
+
       let song = songList.find(score.id);
       if (!song) return false;
+
+      let matchGenre, matchVersion, matchRating;
 
       if (songList instanceof MaimaiSongList) {
         song = song as MaimaiSongProps;
@@ -218,12 +217,12 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
         const difficulty = songList.getDifficulty(song, score.type, score.level_index);
         if (!difficulty) return false;
 
-        return ((genre.some((selected) =>
-            songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre)) || genre.length === 0) // 过滤乐曲分类
-          && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
-            songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 1000)) || version.length === 0) // 过滤版本
-          && ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
-            rating.every((v, i)=> v === filterData[game].rating[i]) && score.type === "utage")); // 过滤定数
+        matchGenre = (genre.some((selected) =>
+          songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre)) || genre.length === 0; // 过滤乐曲分类
+        matchVersion = (version.some((selected) => difficulty.version >= selected && difficulty.version < (
+          songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 1000)) || version.length === 0); // 过滤版本
+        matchRating = ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
+          rating.every((v, i)=> v === filterData[game].rating[i]) && score.type === "utage")); // 过滤定数
       } else {
         song = song as ChunithmSongProps;
         score = score as ChunithmScoreProps;
@@ -231,31 +230,30 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
         const difficulty = songList.getDifficulty(song, score.level_index);
         if (!difficulty) return false;
 
-        return ((genre.some((selected) =>
-            songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre)) || genre.length === 0) // 过滤乐曲分类
-          && (version.some((selected) => difficulty.version >= selected && difficulty.version < (
-            songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 500)) || version.length === 0) // 过滤版本
-          && ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
-            rating.every((v, i)=> v === filterData[game].rating[i]) && score.level_index === 5)); // 过滤定数
+        matchGenre = (genre.some((selected) =>
+          songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre)) || genre.length === 0; // 过滤乐曲分类
+        matchVersion  = (version.some((selected) => difficulty.version >= selected && difficulty.version < (
+          songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 500)) || version.length === 0); // 过滤版本
+        matchRating = ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
+          rating.every((v, i)=> v === filterData[game].rating[i]) && score.level_index === 5)); // 过滤定数
       }
+
+      return matchGenre && matchVersion && matchRating;
     })
 
-    if (uploadTime[0] !== null) {
-      filteredData = filteredData.filter((score) => {
-        return new Date(score.upload_time) >= uploadTime[0]!;
-      });
-    }
-    if (uploadTime[1] !== null) {
-      const endDate = new Date(uploadTime[1]!);
-      endDate.setDate(endDate.getDate() + 1);
+    // 过滤上传时间
+    const startTime = uploadTime[0] ? new Date(uploadTime[0]).getTime() : null;
+    const endTime = uploadTime[1] ? new Date(uploadTime[1]).getTime() : null;
 
-      filteredData = filteredData.filter((score) => {
-        return new Date(score.upload_time) < endDate;
-      });
-    }
+    filteredData = filteredData.filter(score => {
+      const t = Date.parse(score.upload_time);
+      if (startTime && t < startTime) return false;
+      if (endTime && t >= endTime + 24 * 60 * 60 * 1000) return false;
+      return true;
+    });
 
     setFilteredScores(filteredData);
-  }, [showUnplayed, difficulty, type, genre, version, endRating, fullCombo, fullSync, uploadTime]);
+  }, [filters]);
 
   if (!songList) return null;
 
@@ -268,7 +266,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
           data={(filterData[game] || {}).difficulties}
           placeholder="请选择难度"
           value={difficulty}
-          onChange={(value) => setDifficulty(value)}
+          onChange={(value) => setFilter("difficulty", value)}
           comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
         />
       </Grid.Col>
@@ -282,7 +280,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
           }))}
           placeholder="请选择乐曲分类"
           value={genre}
-          onChange={(value) => setGenre(value)}
+          onChange={(value) => setFilter("genre", value)}
           comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
         />
       </Grid.Col>
@@ -296,7 +294,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
           })).reverse()}
           placeholder="请选择版本"
           value={version.map((item) => item.toString())}
-          onChange={(value) => setVersion(value.map((item) => parseInt(item)))}
+          onChange={(value) => setFilter("version", value.map((item) => parseInt(item)))}
           comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
         />
       </Grid.Col>
@@ -312,9 +310,7 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
             labelSeparator=" ~ "
             valueFormat="YYYY/M/D"
             value={uploadTime}
-            onChange={([startDate, endDate]) => {
-              setUploadTime([new Date(startDate as string), new Date(endDate as string)])
-            }}
+            onChange={(value) => setFilter("uploadTime", value)}
             clearable
           />
         </DatesProvider>
@@ -335,8 +331,8 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
               if (typeof value !== "number" || isNaN(value)) return;
               if (value > rating[1]) return;
               value = Math.floor(value * 10) / 10;
-              setRating([value, rating[1]])
-              setEndRating([value, rating[1]])
+              setFilter("rating", [value, rating[1]]);
+              setFilter("endRating", [value, rating[1]]);
             }}
             stepHoldDelay={500}
             stepHoldInterval={100}
@@ -355,8 +351,8 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
                 value: index + 1,
                 label: String(index + 1),
               }))}
-              onChange={setRating}
-              onChangeEnd={setEndRating}
+              onChange={(value) => setFilter("rating", value as [number, number])}
+              onChangeEnd={(value) => setFilter("endRating", value as [number, number])}
               mb={24}
             />
           )}
@@ -372,8 +368,8 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
             onChange={(value) => {
               if (typeof value !== "number" || isNaN(value)) return;
               if (value < rating[0]) return;
-              setRating([rating[0], value])
-              setEndRating([rating[0], value])
+              setFilter("rating", [rating[0], value]);
+              setFilter("endRating", [rating[0], value]);
             }}
             stepHoldDelay={500}
             stepHoldInterval={100}
@@ -384,63 +380,97 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
       {songList instanceof MaimaiSongList && (
         <>
           <Grid.Col span={12}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选 FULL COMBO</Text>
-            <Flex rowGap="xs" columnGap="md" wrap="wrap">
-              <Chip.Group multiple value={fullCombo} onChange={setFullCombo}>
-                <Chip variant="filled" size="xs" value="nofc">无</Chip>
-                <Chip variant="filled" size="xs" value="fc">FC</Chip>
-                <Chip variant="filled" size="xs" value="fcp">FC+</Chip>
-                <Chip variant="filled" size="xs" value="ap">AP</Chip>
-                <Chip variant="filled" size="xs" value="app">AP+</Chip>
-              </Chip.Group>
-            </Flex>
+            <FilterChips
+              title="筛选 DX 星级"
+              value={deluxeStar.map(String)}
+              onChange={(val) => setFilter("deluxeStar", val.map(Number))}
+              options={[
+                { value: "0", label: "无" },
+                ...[1, 2, 3, 4, 5].map((count) => {
+                  const rate = count <= 2 ? 1 : count <= 4 ? 2 : 3;
+                  return ({
+                    value: count.toString(),
+                    label: <>
+                      <Image
+                        src={`/assets/maimai/dx_score/${rate}.webp`}
+                        h={16} w="auto" mr={4}
+                        style={{ display: "inline", verticalAlign: "middle", position: "relative", top: "-0.1em" }}
+                      />
+                      <span>{count}</span>
+                    </>,
+                  });
+                }),
+              ]}
+            />
           </Grid.Col>
           <Grid.Col span={12}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选 FULL SYNC</Text>
-            <Flex rowGap="xs" columnGap="md" wrap="wrap">
-              <Chip.Group multiple value={fullSync} onChange={setFullSync}>
-                <Chip variant="filled" size="xs" value="nofs">无</Chip>
-                <Chip variant="filled" size="xs" value="sync">SYNC</Chip>
-                <Chip variant="filled" size="xs" value="fs">FS</Chip>
-                <Chip variant="filled" size="xs" value="fsp">FS+</Chip>
-                <Chip variant="filled" size="xs" value="fsd">FDX</Chip>
-                <Chip variant="filled" size="xs" value="fsdp">FDX+</Chip>
-              </Chip.Group>
-            </Flex>
+            <FilterChips
+              title="筛选全连击"
+              value={fullCombo}
+              onChange={(val) => setFilter("fullCombo", val)}
+              options={[
+                { value: "nofc", label: "无" },
+                { value: "fc", label: "FC" },
+                { value: "fcp", label: "FC+" },
+                { value: "ap", label: "AP" },
+                { value: "app", label: "AP+" },
+              ]}
+            />
+          </Grid.Col>
+          <Grid.Col span={12}>
+            <FilterChips
+              title="筛选全同步"
+              value={fullSync}
+              onChange={(val) => setFilter("fullSync", val)}
+              options={[
+                { value: "nofs", label: "无" },
+                { value: "sync", label: "SYNC" },
+                { value: "fs", label: "FS" },
+                { value: "fsp", label: "FS+" },
+                { value: "fsd", label: "FDX" },
+                { value: "fsdp", label: "FDX+" },
+              ]}
+            />
           </Grid.Col>
           <Grid.Col span={6}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选谱面类型</Text>
-            <Flex rowGap="xs" columnGap="md" wrap="wrap">
-              <Chip.Group multiple value={type} onChange={setType}>
-                <Chip variant="filled" size="xs" value="standard" color="blue">标准</Chip>
-                <Chip variant="filled" size="xs" value="dx" color="orange">DX</Chip>
-              </Chip.Group>
-            </Flex>
+            <FilterChips
+              title="筛选谱面类型"
+              value={type}
+              onChange={(val) => setFilter("type", val)}
+              options={[
+                { value: "standard", label: "标准" },
+                { value: "dx", label: "DX" },
+              ]}
+            />
           </Grid.Col>
         </>
       )}
       {songList instanceof ChunithmSongList && (
         <>
           <Grid.Col span={12}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选 FULL COMBO</Text>
-            <Flex rowGap="xs" columnGap="md" wrap="wrap">
-              <Chip.Group multiple value={fullCombo} onChange={setFullCombo}>
-                <Chip variant="filled" size="xs" value="nofullcombo">无</Chip>
-                <Chip variant="filled" size="xs" value="fullcombo">FC</Chip>
-                <Chip variant="filled" size="xs" value="alljustice">AJ</Chip>
-                <Chip variant="filled" size="xs" value="alljusticecritical">AJC</Chip>
-              </Chip.Group>
-            </Flex>
+            <FilterChips
+              title="筛选 FULL COMBO"
+              value={fullCombo}
+              onChange={(value) => setFilter("fullCombo", value)}
+              options={[
+                { value: "nofullcombo", label: "无" },
+                { value: "fullcombo", label: "FC" },
+                { value: "alljustice", label: "AJ" },
+                { value: "alljusticecritical", label: "AJC" },
+              ]}
+            />
           </Grid.Col>
           <Grid.Col span={12}>
-            <Text fz="xs" c="dimmed" mb={3}>筛选 FULL CHAIN</Text>
-            <Flex rowGap="xs" columnGap="md" wrap="wrap">
-              <Chip.Group multiple value={fullSync} onChange={setFullSync}>
-                <Chip variant="filled" size="xs" value="nofullchain">无</Chip>
-                <Chip variant="filled" size="xs" value="fullchain">铂</Chip>
-                <Chip variant="filled" size="xs" value="fullchain2">金</Chip>
-              </Chip.Group>
-            </Flex>
+            <FilterChips
+              title="筛选 FULL CHAIN"
+              value={fullSync}
+              onChange={(value) => setFilter("fullSync", value)}
+              options={[
+                { value: "nofullchain", label: "无" },
+                { value: "fullchain", label: "铂" },
+                { value: "fullchain2", label: "金" },
+              ]}
+            />
           </Grid.Col>
         </>
       )}
@@ -449,10 +479,10 @@ export const AdvancedFilter = ({ scores, onChange }: AdvancedFilterProps) => {
     <Group justify="space-between">
       <Switch
         label="显示未游玩谱面"
-        defaultChecked={showUnplayed}
-        onChange={toggleShowUnplayed}
+        checked={showUnplayed}
+        onChange={() => setFilter("showUnplayed", !showUnplayed)}
       />
-      <Button leftSection={<IconReload size={20} />} variant="light" onClick={() => resetFilter(game)}>
+      <Button leftSection={<IconReload size={20} />} variant="light" onClick={() => resetFilters()}>
         重置筛选条件
       </Button>
     </Group>
