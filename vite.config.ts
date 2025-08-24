@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import * as fs from "node:fs";
@@ -13,7 +14,14 @@ export default defineConfig({
         const version = Date.now().toString();
         fs.writeFileSync(path.resolve(__dirname, 'dist/version.json'), JSON.stringify({ version }));
       }
-    }
+    },
+    sentryVitePlugin({
+      org: "lxns-network",
+      project: "maimai-prober-frontend",
+      sourcemaps: {
+        filesToDeleteAfterUpload: "dist/assets/*.map",
+      }
+    })
   ],
   resolve: {
     alias: {
@@ -34,7 +42,17 @@ export default defineConfig({
         assetFileNames: `assets/[hash].[ext]`,
       }
     },
+    chunkSizeWarningLimit: 2000,
     reportCompressedSize: false,
-    sourcemap: false,
+    sourcemap: true,
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:7000',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   }
 })
