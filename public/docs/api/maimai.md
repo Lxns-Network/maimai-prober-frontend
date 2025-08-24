@@ -647,6 +647,7 @@ DX Rating 趋势
 | `map` | `string` | 值可空，曲目所属区域 |
 | `version` | `int` | 曲目首次出现版本 |
 | `rights` | `string` | 值可空，曲目版权信息 |
+| `locked` | `bool` | 值可空，是否需要解锁，默认值为 `false` |
 | `disabled` | `bool` | 值可空，是否被禁用，默认值为 `false` |
 | `difficulties` | [`SongDifficulties`](#songdifficulties) | 谱面难度 |
 

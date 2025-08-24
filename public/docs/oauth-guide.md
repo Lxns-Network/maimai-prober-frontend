@@ -6,6 +6,10 @@
 
 在这里，你将了解如何使用 OAuth 2.0 协议获取用户授权，并通过 API 接口访问用户的游戏数据等信息。
 
+::: warning 注意
+该功能目前处于测试阶段，部分功能可能会有所变动。
+:::
+
 ## 介绍
 
 本查分器推出 OAuth 旨在替代个人 API 密钥，提供更安全、灵活的方式供开发者访问用户数据。
@@ -46,6 +50,10 @@ https://maimai.lxns.net/oauth/authorize?response_type=code&client_id=[应用 ID]
 你可以直接将此链接嵌入到你的应用中，或者通过其他方式分享给用户。如果你想区分不同用户或应用，你可以在链接中添加 `state` 参数来携带额外信息。
 :::
 
+::: info 提示
+如果你是公共客户端，无法存储并使用 `client_secret`，可以使用 [PKCE](#pkce)（Proof Key for Code Exchange） 来增强安全性。
+:::
+
 ### 3. 用户授权
 
 用户点击授权链接后，将被重定向到授权页面。在此页面，用户登录查分器账号后可以查看你的应用信息，并选择是否授权。
@@ -66,25 +74,7 @@ POST /api/v0/oauth/token
 
 #### 请求参数
 
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `client_id` | string | 应用 ID |
-| `client_secret` | string | 应用密钥 |
-| `grant_type` | string | 授权类型，固定为 `authorization_code` |
-| `code` | string | 从回调地址获取的授权码 |
-| `redirect_uri` | string | 回调地址，必须与创建应用时一致 |
-
-#### 请求示例
-
-```json
-{
-    "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
-    "client_secret": "fUluk5OJQ6OF8PGqGxs3TJ2zdZpwgDTs",
-    "grant_type": "authorization_code",
-    "code": "Oze6RZ0nPKy4JSmpI2aYxEIUmhl0l5fU",
-    "redirect_uri": "http://localhost:5000/callback"
-}
-```
+参见[访问令牌请求方式](#访问令牌请求方式)。
 
 #### 响应体
 
@@ -102,10 +92,6 @@ POST /api/v0/oauth/token
 
 ::: warning 注意
 访问令牌有效期为 15 分钟，过期后需使用刷新令牌重新获取。系统将返回新的访问令牌，同时刷新令牌保持有效（除非手动撤销或超过 30 天有效期）。请确保安全存储刷新令牌，以便持续获取新的访问令牌。
-:::
-
-::: warning 注意
-刷新令牌有效期为 30 天。每次使用刷新令牌获取新的访问令牌时，系统将同时颁发一个新的刷新令牌，**旧令牌自动失效**。
 :::
 
 #### 响应示例
@@ -140,12 +126,16 @@ GET /api/v0/user/maimai/player
 POST /api/v0/oauth/token
 ```
 
+::: warning 注意
+刷新令牌有效期为 30 天。每次使用刷新令牌获取新的访问令牌时，系统将同时颁发一个新的刷新令牌，**旧令牌自动失效**。
+:::
+
 #### 请求参数
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
 | `client_id` | string | 应用 ID |
-| `client_secret` | string | 应用密钥 |
+| `client_secret` | string | 应用密钥，PKCE 不需要此参数 |
 | `grant_type` | string | 授权类型，固定为 `refresh_token` |
 | `refresh_token` | string | 从上一步获取的刷新令牌 |
 
@@ -164,9 +154,41 @@ POST /api/v0/oauth/token
 
 响应体与获取访问令牌时相同，将包含新的访问令牌和刷新令牌。
 
-## 示例代码（Python）
+## 访问令牌请求方式
 
-以下是一个使用 Python 的示例代码，演示如何获取访问令牌并访问用户的游戏数据：
+获取访问令牌有两种方式：**应用密钥**和**PKCE**（Proof Key for Code Exchange）。这两种方式适用于不同类型的客户端。
+
+你可以选择其中一种方式来获取访问令牌，也可以根据你的应用类型和安全需求结合使用。
+
+### 应用密钥
+
+如果你的应用是机密客户端（如服务器端应用），你可以使用应用密钥认证来获取访问令牌。此方式需要在请求中提供 `client_secret`。
+
+#### 请求参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `client_id` | string | 应用 ID |
+| `client_secret` | string | 应用密钥 |
+| `grant_type` | string | 授权类型，固定为 `authorization_code` |
+| `code` | string | 从回调地址获取的授权码 |
+| `redirect_uri` | string | 回调地址，必须与创建应用时一致 |
+
+#### 请求示例
+
+```json
+{
+    "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
+    "client_secret": "fUluk5OJQ6OF8PGqGxs3TJ2zdZpwgDTs",
+    "grant_type": "authorization_code",
+    "code": "Oze6RZ0nPKy4JSmpI2aYxEIUmhl0l5fU",
+    "redirect_uri": "http://localhost:5000/callback"
+}
+```
+
+#### 示例代码（Python）
+
+以下是一个使用应用密钥获取访问令牌的示例代码，演示如何处理 OAuth 授权流程：
 
 ```python
 from flask import Flask, request
@@ -217,6 +239,123 @@ def callback():
     # 调用 API
     player = requests.get(PLAYER_API_URL, headers={
         "Authorization": f"Bearer {token}"
+    }).json()
+
+    return player
+
+if __name__ == "__main__":
+    app.run()
+```
+
+### PKCE
+
+PKCE（Proof Key for Code Exchange）是一种增强 OAuth 2.0 安全性的机制，特别适用于公共客户端（如移动应用、单页应用等），可以防止授权码被截获和重放攻击。
+
+PKCE 通过在授权请求中添加一个随机生成的 `code_verifier` 和 `code_challenge` 来实现。以下是 PKCE 的基本流程：
+
+1. **生成 Code Verifier**：客户端生成一个随机字符串，称为 `code_verifier`。
+2. **生成 Code Challenge**：客户端使用 `code_verifier` 生成一个 `code_challenge`，通常是通过 SHA-256 哈希算法。
+3. **发送授权请求**：在授权请求中，客户端将 `code_challenge` 和 `code_challenge_method`（通常为 `S256`）作为参数发送。
+4. **获取授权码**：用户授权后，服务器将 `code` 返回给客户端。
+5. **交换访问令牌**：客户端使用 `code_verifier` 和 `code` 向服务器请求访问令牌。
+
+#### 请求参数
+
+| 参数名 | 类型 | 说明 |
+|-|-|-|
+| `client_id` | string | 应用 ID |
+| `grant_type` | string | 授权类型，固定为 `authorization_code` |
+| `code` | string | 从回调地址获取的授权码 |
+| `redirect_uri` | string | 回调地址，必须与创建应用时一致 |
+| `code_verifier` | string | PKCE 验证码 |
+
+#### 请求示例
+
+```json
+{
+    "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
+    "grant_type": "authorization_code",
+    "code": "Oze6RZ0nPKy4JSmpI2aYxEIUmhl0l5fU",
+    "redirect_uri": "http://localhost:5000/callback",
+    "code_verifier": "randomly_generated_code_verifier"
+}
+```
+
+#### 示例代码（Python）
+
+以下是一个使用 PKCE 的示例代码，演示如何生成 `code_verifier` 和 `code_challenge`，并在授权请求中使用它们：
+
+::: warning 注意
+示例中通过 `state` 参数传递 `code_verifier` 仅用作示范，实际应用中不建议将其暴露在 URL 中。
+:::
+
+```python
+from flask import Flask, request
+import requests
+import urllib.parse
+import secrets
+import hashlib
+import base64
+
+app = Flask(__name__)
+
+# 应用信息（公共客户端，无 secret）
+CLIENT_ID = "e07f2ae3-795b-4368-b55f-5f27b0b3eae0"
+REDIRECT_URI = "http://localhost:5000/callback"
+
+# OAuth 接口地址
+AUTHORIZE_URL = "https://maimai.lxns.net/oauth/authorize"
+TOKEN_URL = "https://maimai.lxns.net/api/v0/oauth/token"
+PLAYER_API_URL = "https://maimai.lxns.net/api/v0/user/maimai/player"
+
+# 生成 code_verifier 和 code_challenge
+def generate_code_verifier():
+    return secrets.token_urlsafe(64)
+
+def generate_code_challenge(verifier):
+    digest = hashlib.sha256(verifier.encode()).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
+
+@app.route("/")
+def home():
+    scope = ["read_player"]
+
+    # 生成随机 code_verifier
+    code_verifier = generate_code_verifier()
+    code_challenge = generate_code_challenge(code_verifier)
+
+    query = {
+        "response_type": "code",
+        "client_id": CLIENT_ID,
+        "redirect_uri": REDIRECT_URI,
+        "scope": " ".join(scope),
+        "code_challenge": code_challenge,
+        "code_challenge_method": "S256",
+        "state": code_verifier
+    }
+    url = f"{AUTHORIZE_URL}?{urllib.parse.urlencode(query)}"
+    return f'<a href="{url}">点击授权</a>'
+
+@app.route("/callback")
+def callback():
+    code = request.args.get("code")
+    if not code:
+        return "授权失败，未获取到授权码", 400
+
+    # 用 code_verifier 换 token
+    resp = requests.post(TOKEN_URL, data={
+        "grant_type": "authorization_code",
+        "code": code,
+        "client_id": CLIENT_ID,
+        "redirect_uri": REDIRECT_URI,
+        "code_verifier": request.args.get("state")
+    })
+    token_data = resp.json()
+    access_token = token_data["data"]["access_token"]
+
+    # 调用 API
+    player = requests.get(PLAYER_API_URL, headers={
+        "Authorization": f"Bearer {access_token}"
     }).json()
 
     return player
