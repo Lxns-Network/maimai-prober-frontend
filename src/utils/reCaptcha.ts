@@ -19,13 +19,12 @@ class ReCaptcha {
   }
 
   async getToken(): Promise<string> {
-    return new Promise<string>((resolve) => {
-      window.grecaptcha.ready(() => {
-        window.grecaptcha.execute(this.siteKey, { action: this.action }).then((token: string) => {
-          resolve(token);
-        });
-      });
-    });
+    try {
+      await new Promise<void>((resolve) => window.grecaptcha.ready(resolve));
+      return await window.grecaptcha.execute(this.siteKey, {action: this.action});
+    } catch (error) {
+      throw new Error(`获取 reCAPTCHA 令牌失败: ${error}`);
+    }
   }
 
   destroy() {

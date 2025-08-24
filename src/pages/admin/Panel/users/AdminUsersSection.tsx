@@ -142,7 +142,7 @@ const AdminUsersContent = () => {
   const { width } = useViewportSize();
 
   return (
-    <div style={{position:"relative"}}>
+    <div style={{ position:"relative" }}>
       <EditUserModal user={activeUser as UserProps} opened={editUserModalOpened} onClose={() => {
         const index = users.findIndex((user) => user.id === activeUser?.id);
         users.splice(index, 1);
