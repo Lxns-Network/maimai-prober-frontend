@@ -45,6 +45,8 @@ export default function Authorize() {
         client_id: params.get("client_id") || "",
         redirect_uri: params.get("redirect_uri") || "",
         scope: params.get("scope") || "",
+        code_challenge: params.get("code_challenge") || "",
+        code_challenge_method: params.get("code_challenge_method") || "",
         state: params.get("state") || "",
       });
       const data = await res.json();
