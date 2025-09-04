@@ -113,7 +113,9 @@ export const AdvancedFilter = ({ scores, onChange }: {
 
   useEffect(() => {
     if (!scores) return;
-    if (rating !== endRating) return;
+    if (!rating.every((v, i)=> v === endRating[i])) {
+      return;
+    }
 
     let filteredData = [...scores];
 
