@@ -93,7 +93,7 @@ export class ChunithmSongList {
   }
 
   getDifficulty(song: ChunithmSongProps, level_index: number) {
-    return song.difficulties.find((d) => d.difficulty === level_index);
+    return song.difficulties.find((d) => d.difficulty === level_index) || null;
   }
 
   getSongResourceId(id: number) {

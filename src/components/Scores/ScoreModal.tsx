@@ -42,7 +42,7 @@ function getDifficultyLabel(game: Game, difficulty: MaimaiDifficultyProps | Chun
   } else if (game === "chunithm" && difficulty.kanji) {
     return `${difficultyLabelData[game][5]} ${difficulty.kanji}`;
   }
-  return `${difficultyLabelData[game][difficulty.difficulty]} ${difficulty.level_value}`;
+  return `${difficultyLabelData[game][difficulty.difficulty]} ${difficulty.level_value.toFixed(1)}`;
 }
 
 function getDifficultyColor(game: Game, difficulty: MaimaiDifficultyProps | ChunithmDifficultyProps) {
@@ -54,10 +54,18 @@ function getDifficultyColor(game: Game, difficulty: MaimaiDifficultyProps | Chun
   return getScoreCardBackgroundColor(game, difficulty.difficulty);
 }
 
+type SongState =
+  | { game: "maimai"; song: MaimaiSongProps | null }
+  | { game: "chunithm"; song: ChunithmSongProps | null };
+
+type DifficultyState =
+  | { game: "maimai"; difficulty: MaimaiDifficultyProps | null }
+  | { game: "chunithm"; difficulty: ChunithmDifficultyProps | null };
+
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [difficulty, setDifficulty] = useState<MaimaiDifficultyProps | ChunithmDifficultyProps | null>(null);
-  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
+  const [songState, setSongState] = useState<SongState | null>(null);
+  const [difficultyState, setDifficultyState] = useState<DifficultyState | null>(null);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -82,34 +90,53 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
       method: "GET",
     });
     const data = await res.json();
-    setSong(data);
+    setSongState((prev => {
+      if (!prev) return prev;
+      return { ...prev, song: data };
+    }));
   }
 
   useEffect(() => {
-    setSong(null);
+    setSongState(null);
     setSongList(getSongList(game));
   }, [game]);
 
   useEffect(() => {
-    if (!song) return;
+    if (!songState?.song || !songList || !score) return;
 
-    let difficulty;
-    if (songList instanceof MaimaiSongList) {
+    if (songState.game === "maimai" && songList instanceof MaimaiSongList) {
       const s = score as MaimaiScoreProps;
-      difficulty = songList.getDifficulty(song as MaimaiSongProps, s.type, s.level_index);
-    } else if (songList instanceof ChunithmSongList) {
-      const s = score as ChunithmScoreProps;
-      difficulty = songList.getDifficulty(song as ChunithmSongProps, s.level_index);
+      const difficulty = songList.getDifficulty(songState.song, s.type, s.level_index);
+      setDifficultyState({ game: "maimai", difficulty });
     }
-    difficulty && setDifficulty(difficulty);
-  }, [song]);
+
+    if (songState.game === "chunithm" && songList instanceof ChunithmSongList) {
+      const s = score as ChunithmScoreProps;
+      const difficulty = songList.getDifficulty(songState.song, s.level_index);
+      setDifficultyState({ game: "chunithm", difficulty });
+    }
+  }, [songState, score, songList]);
 
   useEffect(() => {
-    if (!score) return;
+    if (!score || !songList) {
+      setSongState(null);
+      return;
+    }
 
-    setSong(songList?.find(score.id) || null);
+    const song = songList.find(score.id);
+    if (!song) {
+      setSongState(null);
+      return;
+    }
+
     getSongDetailHandler(score.id);
-  }, [score]);
+
+    if (game === "maimai") {
+      setSongState({ game: "maimai", song: song as MaimaiSongProps });
+    } else if (game === "chunithm") {
+      setSongState({ game: "chunithm", song: song as ChunithmSongProps });
+    }
+  }, [score, songList, game]);
 
   function isMaimaiScoreProps(obj: unknown): obj is MaimaiScoreProps {
     if (!obj) return false;
@@ -152,19 +179,22 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
               transition="slide-right"
               enterDelay={300}
               duration={250}
+              keepMounted
             >
               {(styles) => (
                 <Group wrap="nowrap" gap="xs" style={styles}>
-                  <Avatar src={song ? `${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png!webp` : null} size={28} radius="md">
+                  <Avatar src={songState ? `${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(songState.song!.id)}.png!webp` : null} size={28} radius="md">
                     <IconPhotoOff />
                   </Avatar>
                   <Stack gap={0}>
                     <Marquee>
-                      <Text>{song?.title}</Text>
+                      <Text>{songState?.song?.title}</Text>
                     </Marquee>
-                    <Text size="sm" fw="700" c={getDifficultyColor(game, difficulty!)}>
-                      {getDifficultyLabel(game, difficulty!)}
-                    </Text>
+                    {difficultyState && difficultyState.difficulty && (
+                      <Text size="sm" fw="700" c={getDifficultyColor(game, difficultyState.difficulty)}>
+                        {getDifficultyLabel(game, difficultyState.difficulty)}
+                      </Text>
+                    )}
                   </Stack>
                 </Group>
               )}
@@ -177,10 +207,12 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
           </Group>
         </Modal.Header>
         <Modal.Body p={0}>
-          <Container ref={ref}>
-            {isMaimaiScoreProps(score) && <MaimaiScoreModalContent score={score} song={song as MaimaiSongProps} />}
-            {isChunithmScoreProps(score) && <ChunithmScoreModalContent score={score} song={song as ChunithmSongProps} />}
-          </Container>
+          {songState && songState.song && (
+            <Container ref={ref}>
+              {songState.game === "maimai" && isMaimaiScoreProps(score) && <MaimaiScoreModalContent score={score} song={songState.song} />}
+              {songState.game === "chunithm" && isChunithmScoreProps(score) && <ChunithmScoreModalContent score={score} song={songState.song} />}
+            </Container>
+          )}
           <Space h="md" />
           <Accordion className={classes.accordion} chevronPosition="left" variant="filled" radius={0} defaultValue="history">
             <Accordion.Item value="history">
@@ -222,13 +254,15 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 <ScoreHistory game={game} score={score} minRank={minRank} />
               </Accordion.Panel>
             </Accordion.Item>
-            <Accordion.Item value="chart">
-              <Accordion.Control>谱面详情</Accordion.Control>
-              <Accordion.Panel>
-                {isMaimaiScoreProps(score) && <MaimaiChart difficulty={difficulty as MaimaiDifficultyProps} />}
-                {isChunithmScoreProps(score) && <ChunithmChart difficulty={difficulty as ChunithmDifficultyProps} />}
-              </Accordion.Panel>
-            </Accordion.Item>
+            {difficultyState && difficultyState.difficulty && (
+              <Accordion.Item value="chart">
+                <Accordion.Control>谱面详情</Accordion.Control>
+                <Accordion.Panel>
+                  {difficultyState.game === "maimai" && isMaimaiScoreProps(score) && <MaimaiChart difficulty={difficultyState.difficulty} />}
+                  {difficultyState.game === "chunithm" && isChunithmScoreProps(score) && <ChunithmChart difficulty={difficultyState.difficulty} />}
+                </Accordion.Panel>
+              </Accordion.Item>
+            )}
             <Accordion.Item value="comment">
               <Accordion.Control>
                 <Group>
