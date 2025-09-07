@@ -43,54 +43,56 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
         </ActionIcon>
       </Group>
 
-      <Collapse in={expanded}>
-        <Stack gap="xs">
-          {scopeList.map((scope) => {
-            const scopeInfo = scopeData[scope as keyof typeof scopeData];
+      <div>
+        <Collapse in={expanded}>
+          <Stack gap="xs">
+            {scopeList.map((scope) => {
+              const scopeInfo = scopeData[scope as keyof typeof scopeData];
 
-            return (
-              <Card key={scope} className={classes.oauthScopeCard} padding="xs" withBorder radius="sm">
-                {scopeInfo && (
-                  <Stack gap={4}>
-                    <Text size="sm" fw={500}>
-                      {scopeInfo.title}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {scopeInfo.description}
-                    </Text>
-                  </Stack>
-                )}
-              </Card>
-            );
-          })}
-        </Stack>
-      </Collapse>
+              return (
+                <Card key={scope} className={classes.oauthScopeCard} padding="xs" withBorder radius="sm">
+                  {scopeInfo && (
+                    <Stack gap={4}>
+                      <Text size="sm" fw={500}>
+                        {scopeInfo.title}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {scopeInfo.description}
+                      </Text>
+                    </Stack>
+                  )}
+                </Card>
+              );
+            })}
+          </Stack>
+        </Collapse>
 
-      {!expanded && (
-        <Group gap="xs">
-          {scopeList.slice(0, 3).map((scope) => {
-            const s = scope as keyof typeof scopeData;
-            const scopeInfo = scopeData[s];
-            const isHighRisk = scopeData[s]?.high_risk;
+        {!expanded && (
+          <Group gap="xs">
+            {scopeList.slice(0, 3).map((scope) => {
+              const s = scope as keyof typeof scopeData;
+              const scopeInfo = scopeData[s];
+              const isHighRisk = scopeData[s]?.high_risk;
 
-            return (
-              <Badge
-                key={scope}
-                variant={isHighRisk ? "filled" : "light"}
-                color={isHighRisk ? "orange" : "blue"}
-                size="sm"
-              >
-                {scopeInfo?.title || scope}
+              return (
+                <Badge
+                  key={scope}
+                  variant={isHighRisk ? "filled" : "light"}
+                  color={isHighRisk ? "orange" : "blue"}
+                  size="sm"
+                >
+                  {scopeInfo?.title || scope}
+                </Badge>
+              );
+            })}
+            {scopeList.length > 3 && (
+              <Badge variant="outline" size="sm" color="gray">
+                +{scopeList.length - 3} 更多
               </Badge>
-            );
-          })}
-          {scopeList.length > 3 && (
-            <Badge variant="outline" size="sm" color="gray">
-              +{scopeList.length - 3} 更多
-            </Badge>
-          )}
-        </Group>
-      )}
+            )}
+          </Group>
+        )}
+      </div>
     </Stack>
   );
 };

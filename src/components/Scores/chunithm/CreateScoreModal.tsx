@@ -244,6 +244,7 @@ export const ChunithmCreateScoreModalContent = ({ score, onSubmit, onClose }: Cr
               placeholder="请选择游玩时间"
               valueFormat="YYYY-MM-DD HH:mm:ss"
               excludeDate={(date) => new Date(date) > new Date()}
+              size="sm"
               clearable
               {...form.getInputProps("play_time")}
             />

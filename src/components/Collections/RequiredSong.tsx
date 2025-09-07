@@ -39,7 +39,7 @@ const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps 
     let total = 0;
     let completed = 0;
     (collection.required || []).forEach((required) => {
-      required.songs.forEach((song) => {
+      (required.songs || []).forEach((song) => {
         total += required.difficulties.length;
         completed += (song.completed_difficulties || []).length;
       });
@@ -96,7 +96,7 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
     setFilteredRecords(records.filter((record) => {
       return collection.required && collection.required.every((required) => {
         if (required.difficulties.includes(difficulty || 0)) {
-          return required.songs.some((song) => {
+          return (required.songs || []).some((song) => {
             return song.title === record.title && song.type === record.type;
           });
         }
@@ -126,8 +126,8 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
     if (difficulty === undefined) return acc;
     if (!(req.difficulties || []).includes(difficulty) && req.difficulties.length != 0) return acc;
 
-    const songsTotal = req.songs.length;
-    const songsCompleted = req.songs.filter(song =>
+    const songsTotal = (req.songs || []).length;
+    const songsCompleted = (req.songs || []).filter(song =>
       song.completed_difficulties && song.completed_difficulties.includes(difficulty)
     ).length;
 

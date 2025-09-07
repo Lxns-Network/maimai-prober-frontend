@@ -308,6 +308,7 @@ export const AdvancedFilter = ({ scores, onChange }: {
             allowSingleDateInRange={true}
             excludeDate={(date) => new Date(date) > new Date()}
             variant="filled"
+            size="sm"
             placeholder="请选择上传时间范围"
             labelSeparator=" ~ "
             valueFormat="YYYY/M/D"

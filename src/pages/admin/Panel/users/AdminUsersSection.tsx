@@ -91,7 +91,7 @@ const AdminUsersContent = () => {
       reversed: sortStatus.direction === 'desc',
       search
     }));
-  }, [search, sortStatus]);
+  }, [users, search, sortStatus]);
 
   const getUserHandler = async () => {
     try {
@@ -151,7 +151,6 @@ const AdminUsersContent = () => {
         }
         const newUsers = users.sort((a, b) => a.id - b.id);
         setUsers(newUsers);
-        setSortedUsers(newUsers);
 
         editUserModal.close();
       }} />

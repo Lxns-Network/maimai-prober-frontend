@@ -28,7 +28,7 @@ const ScoreHistoryChart = ({ scores }: { scores: ChunithmScoreProps[] }) => {
           month: "numeric",
           day: "numeric",
         })} fontSize={14} />
-        <YAxis width={40} domain={([dataMin, dataMax]) => {
+        <YAxis width="auto" domain={([dataMin, dataMax]) => {
           return [Math.max(Math.floor(dataMin) - 10000, 800000), Math.min(Math.floor(dataMax) + 10000, 1010000)]
         }} ticks={ticks} fontSize={14} tickFormatter={
           (value) => Math.floor(value / 1000) + "k"

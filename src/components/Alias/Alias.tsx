@@ -76,7 +76,7 @@ export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
   }, [alias]);
 
   return (
-    <Card shadow="xs" h={118.1} p={0} radius="md" withBorder>
+    <Card shadow="xs" p={0} radius="md" withBorder>
       <Container className={classes.section} p={0} w="100%">
         <AliasButton alias={displayAlias} onClick={onClick} pt="xs" pb="xs" pl="sm" pr="sm" />
       </Container>

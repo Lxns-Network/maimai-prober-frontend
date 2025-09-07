@@ -29,7 +29,7 @@ const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
           month: "numeric",
           day: "numeric",
         })} fontSize={14} />
-        <YAxis width={40} domain={([dataMin, dataMax]) => {
+        <YAxis width="auto" domain={([dataMin, dataMax]) => {
           return [Math.max(Math.floor(dataMin) - 1, 80), Math.min(Math.floor(dataMax) + 1, 101)]
         }} ticks={ticks} unit="%" fontSize={14} />
         <CartesianGrid strokeDasharray="3 3" />

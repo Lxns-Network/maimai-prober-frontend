@@ -119,7 +119,7 @@ export default function App() {
 
     localStorage.setItem(usageKey, String(usageCount + 1));
 
-    if ((usageCount + 1) % 5 === 0 && Date.now() - lastShown > 3 * 24 * 60 * 60 * 1000) {
+    if ((usageCount + 1) % 5 === 0 && Date.now() - lastShown > 7 * 24 * 60 * 60 * 1000) {
       setTimeout(() => {
         notifications.show({
           title: "💖 支持我们",

@@ -1,6 +1,6 @@
 import {
   ActionIcon, Alert, Anchor, Box, Center, Container, CopyButton, Flex, Group, Image, Loader, RenderTreeNodePayload,
-  ScrollArea, Space, Text, Title, Tooltip, Tree, TreeNodeData, TypographyStylesProvider, useTree
+  ScrollArea, Space, Text, Title, Tooltip, Tree, TreeNodeData, Typography, useTree
 } from "@mantine/core";
 import classes from "./Docs.module.css"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -489,9 +489,9 @@ export default function Docs() {
           </Group>
         ) : (
           <CodeHighlightAdapterProvider adapter={shikiAdapter}>
-            <TypographyStylesProvider id="content" p={0}>
+            <Typography id="content" p={0}>
               <Content markdown={markdown} />
-            </TypographyStylesProvider>
+            </Typography>
           </CodeHighlightAdapterProvider>
         )}
       </Container>

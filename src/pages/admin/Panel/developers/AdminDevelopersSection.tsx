@@ -183,12 +183,12 @@ const AdminDevelopersContent = () => {
       <EditUserModal user={activeUser as UserProps} opened={opened} onClose={() => close()} />
       <Stack align="center">
         <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} size={small ? "sm" : "md"} />
+        {fetching && (
+          <Group justify="center">
+            <Loader />
+          </Group>
+        )}
         <Stack w="100%" ref={parent}>
-          {fetching && (
-            <Group justify="center">
-              <Loader />
-            </Group>
-          )}
           {displayDevelopers.map((developer) => (
             <DeveloperCard
               key={developer.id}

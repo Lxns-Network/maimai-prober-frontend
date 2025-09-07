@@ -14,25 +14,12 @@ import { useEffect, useState } from "react";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { useToggle } from "@mantine/hooks";
-import { createComment, deleteComment, getCommentList, likeComment, unlikeComment } from "@/utils/api/comment.ts";
+import { createComment, deleteComment, likeComment, unlikeComment } from "@/utils/api/comment.ts";
+import { Comment, useScoreComments } from "@/hooks/swr/useScoreComments.ts";
 
 interface FormValues {
   comment: string;
   rating: number;
-}
-
-interface Comment {
-  comment_id: number;
-  comment?: string;
-  rating?: number;
-  is_liked: boolean;
-  like_count: number;
-  upload_time: string;
-  uploader: {
-    id: number;
-    name: string;
-    avatar_id: number;
-  }
 }
 
 const MAX_COMMENT_LENGTH = 100;
@@ -256,54 +243,39 @@ export const ChartComment = ({ game, score, setCommentCount }: {
   score: MaimaiScoreProps | ChunithmScoreProps | null;
   setCommentCount?: (count: number) => void;
 }) => {
+  const isLoggedOut = !localStorage.getItem("token");
+  const { comments, isLoading, mutate } = useScoreComments({
+    game, params: !isLoggedOut ? {
+      song_id: score ? `${score.id}` : "",
+      level_index: score ? `${score.level_index}` : "",
+      ...(score && "type" in score ? { song_type: score.type } : {})
+    } : undefined
+  })
   const [sortedComments, setSortedComments] = useState<Comment[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [fetching, setFetching] = useState(false);
   const [sort, toggleSort] = useToggle(SORT_OPTIONS.map((option) => option.value));
   const [page, setPage] = useState(1);
-  const isLoggedOut = !localStorage.getItem("token");
-
-  const getComments = async (score: MaimaiScoreProps | ChunithmScoreProps) => {
-    setFetching(true);
-    try {
-      const params = new URLSearchParams({
-        song_id: `${score.id}`,
-        level_index: `${score.level_index}`,
-      });
-      if (game === "maimai" && "achievements" in score) {
-        params.append("song_type", `${score.type}`);
-      }
-      const res = await getCommentList(game, params);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setComments(data.data.comments || []);
-    } catch (error) {
-      openRetryModal("评论获取失败", `${error}`, () => getComments(score))
-    } finally {
-      setPage(1);
-      setFetching(false);
-    }
-  }
 
   const sortComments = (sort: string) => {
-    const sorted = [...comments];
-    sorted.sort((a, b) => b.comment ? 1 : 0 - (a.comment ? 1 : 0));
-    if (sort === "hot") {
-      sorted.sort((a, b) => b.like_count - a.like_count);
-    } else if (sort === "new") {
-      sorted.sort((a, b) => new Date(b.upload_time).getTime() - new Date(a.upload_time).getTime());
-    } else if (sort === "rating") {
-      sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    }
+    const sorted = [...comments].sort((a, b) => {
+      const hasCommentA = !!a.comment;
+      const hasCommentB = !!b.comment;
+      if (hasCommentA !== hasCommentB) {
+        return hasCommentB ? 1 : -1;
+      }
+
+      if (sort === "hot") {
+        return (b.like_count ?? 0) - (a.like_count ?? 0);
+      } else if (sort === "new") {
+        return new Date(b.upload_time).getTime() - new Date(a.upload_time).getTime();
+      } else if (sort === "rating") {
+        return (b.rating ?? 0) - (a.rating ?? 0);
+      }
+
+      return 0;
+    });
+
     setSortedComments(sorted);
   }
-
-  useEffect(() => {
-    if (!score) return;
-    if (!isLoggedOut) getComments(score);
-  }, [score]);
 
   useEffect(() => {
     setCommentCount && setCommentCount(comments.length);
@@ -365,48 +337,44 @@ export const ChartComment = ({ game, score, setCommentCount }: {
         </Stack>
       </Group>
       <Group justify="center">
-        {fetching ? (
+        {isLoading ? (
           <Center>
             <Loader />
           </Center>
+        ) : (comments.length === 0 ? (
+          <Stack gap="xs" align="center">
+            <Image src="/empty.webp" w={240} />
+            <Text c="dimmed" fz="sm">
+              {isLoggedOut ? "请登录后查看玩家评论" : "还没有人发表看法呢~"}
+            </Text>
+          </Stack>
         ) : (
-          <>
-            {comments.length === 0 ? (
-              <Stack gap="xs" align="center">
-                <Image src="/empty.webp" w={240} />
-                <Text c="dimmed" fz="sm">
-                  {isLoggedOut ? "请登录后查看玩家评论" : "还没有人发表看法呢~"}
-                </Text>
-              </Stack>
-            ) : (
-              <Paper w="100%" p="md" radius="sm" withBorder>
-                <Stack>
-                  {sortedComments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((comment, index) => (
-                    <div key={comment.comment_id}>
-                      <CommentItem
-                        game={game}
-                        comment={comment}
-                        onUpdate={(updatedComment) => {
-                          const newComments = [...comments];
-                          const index = newComments.findIndex((c) => c.comment_id === updatedComment.comment_id);
-                          if (index !== -1) {
-                            newComments[index] = updatedComment;
-                            setComments(newComments);
-                          }
-                        }}
-                        onDelete={(deletedComment) => {
-                          const newComments = comments.filter((c) => c.comment_id !== deletedComment.comment_id);
-                          setComments(newComments);
-                        }}
-                      />
-                      {index !== comments.length - 1 && <Divider mt="md" />}
-                    </div>
-                  ))}
-                </Stack>
-              </Paper>
-            )}
-          </>
-        )}
+          <Paper w="100%" p="md" radius="sm" withBorder>
+            <Stack>
+              {sortedComments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((comment, index, array) => (
+                <div key={comment.comment_id}>
+                  <CommentItem
+                    game={game}
+                    comment={comment}
+                    onUpdate={(updatedComment) => {
+                      const newComments = [...comments];
+                      const index = newComments.findIndex((c) => c.comment_id === updatedComment.comment_id);
+                      if (index !== -1) {
+                        newComments[index] = updatedComment;
+                        mutate(newComments, false);
+                      }
+                    }}
+                    onDelete={(deletedComment) => {
+                      const newComments = comments.filter((c) => c.comment_id !== deletedComment.comment_id);
+                      mutate(newComments, false);
+                    }}
+                  />
+                  {index < array.length - 1 && <Divider mt="md" />}
+                </div>
+              ))}
+            </Stack>
+          </Paper>
+        ))}
         <Pagination
           total={Math.ceil(comments.length / PAGE_SIZE)}
           value={page}
@@ -419,9 +387,7 @@ export const ChartComment = ({ game, score, setCommentCount }: {
         game={game}
         score={score}
         comment={comments.find((comment) => comment.uploader.id === getLoginUserId())}
-        onSubmit={async () => {
-          await getComments(score as MaimaiScoreProps | ChunithmScoreProps);
-        }}
+        onSubmit={mutate}
       />
     </Stack>
   )

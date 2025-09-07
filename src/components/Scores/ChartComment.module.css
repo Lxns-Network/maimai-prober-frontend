@@ -1,9 +1,9 @@
 .actionIcon {
-    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1)) !important;
 
     &:hover {
-        color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
-        background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+        color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1)) !important;
+        background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5)) !important;
     }
 }
 

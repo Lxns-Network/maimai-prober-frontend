@@ -134,6 +134,8 @@ const CollectionsContent = () => {
   useEffect(() => {
     if (collectionId === null) return;
 
+    // 先设置为基本信息，等待接口返回完整信息
+    setCollection(collections.find((collection) => collection.id === collectionId) || null);
     setRecords([]); // 清空记录
 
     if (!isLoggedOut) {
@@ -168,7 +170,7 @@ const CollectionsContent = () => {
       return;
     }
 
-    let mergedRequiredSongs = collection.required.flatMap(required => required.songs);
+    let mergedRequiredSongs = collection.required.flatMap(required => (required.songs || []));
 
     // 去重并合并 completed_difficulties
     const songMap = new Map();
