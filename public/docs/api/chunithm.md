@@ -119,7 +119,7 @@
 获取玩家缓存的 Best 30、Selection 10 与 Recent 10。
 
 ::: warning 注意
-在中二节奏 2026 中，玩家的 Rating 算法发生了变更，由旧版本 Best 35 和当前版本 Best 15 组成。
+在中二节奏 2026 中，玩家的 Rating 算法发生了变更，由旧版本 Best 30 和当前版本 Best 20 组成。
 :::
 
 #### 权限
@@ -136,10 +136,10 @@
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `bests` | [`Score[]`](#score) | Best 30 列表（将在中二节奏 2026 变更为旧版本 Best 35 列表），即最佳曲目 |
+| `bests` | [`Score[]`](#score) | Best 30 列表（将在中二节奏 2026 变更为旧版本 Best 30 列表），即最佳曲目 |
 | `selections` | [`Score[]`](#score) | Selection 10 列表，即候选最佳曲目 |
 | `recents` | [`Score[]`](#score) | Recent 10 列表（将在中二节奏 2026 移除），即最近游玩的最佳曲目 |
-| `currents` | [`Score[]`](#score) | 当前版本 Best 15 列表（将在中二节奏 2026 加入） |
+| `currents` | [`Score[]`](#score) | 当前版本 Best 20 列表（将在中二节奏 2026 加入） |
 
 ::: info 提示
 Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩。

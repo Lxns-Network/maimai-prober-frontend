@@ -12,6 +12,7 @@ import remarkToc from "remark-toc";
 import remarkHeadings from "@vcarl/remark-headings";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeRaw from "rehype-raw";
 import remarkSlug from "remark-slug";
 import remarkFlexibleContainers from "remark-flexible-containers";
 import { useListState } from "@mantine/hooks";
@@ -22,6 +23,7 @@ import LazyLoad from 'react-lazyload';
 import { PhotoView } from "react-photo-view";
 import { Helmet } from "react-helmet";
 import { CodeHighlight, CodeHighlightAdapterProvider, createShikiAdapter } from "@mantine/code-highlight";
+import clsx from "clsx";
 
 async function loadShiki() {
   const { createHighlighterCore } = await import('@shikijs/core');
@@ -251,6 +253,7 @@ const Content = ({ markdown }: { markdown: string }) => {
       remarkPlugins={[remarkGfm, remarkFlexibleContainers]}
       rehypePlugins={[
         rehypeSlug,
+        rehypeRaw,
         [rehypeAutolinkHeadings, {
           behavior: 'wrap',
           properties: {
@@ -264,20 +267,26 @@ const Content = ({ markdown }: { markdown: string }) => {
         },
         a({ children, href, ...props }) {
           if (href && href.startsWith("http")) {
-            return <a className={classes.externalLink} href={href} target="_blank" rel="noreferrer" {...props}>
-              {children}
-            </a>;
+            return (
+              <a className={clsx(classes.link, {
+                [classes.externalLink]: typeof children === "string"
+              })} href={href} target="_blank" rel="noreferrer" {...props}>
+                {children}
+              </a>
+            );
           }
-          return <a href={href} onClick={(event) => {
-            event.preventDefault();
-            if (href && href.startsWith("#")) {
-              scrollTo(decodeURIComponent(href.slice(1)));
-              return;
-            }
-            href && navigate(href);
-          }} {...props}>
-            {children}
-          </a>;
+          return (
+            <a className={classes.link} href={href} onClick={(event) => {
+              event.preventDefault();
+              if (href && href.startsWith("#")) {
+                scrollTo(decodeURIComponent(href.slice(1)));
+                return;
+              }
+              href && navigate(href);
+            }} {...props}>
+              {children}
+            </a>
+          );
         },
         h1({ children, ...props }: any) {
           return <Title className={classes.heading1} {...props}>{children}</Title>;

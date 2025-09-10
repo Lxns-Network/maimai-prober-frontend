@@ -130,9 +130,9 @@ export default function App() {
                 size="xs"
                 variant="light"
                 color="violet"
-                onClick={() => window.open("https://afdian.com/a/lxnssama", "_blank")}
+                onClick={() => navigate("/docs/about#赞助")}
               >
-                爱发电
+                了解更多
               </Button>
             </Stack>
           ),
