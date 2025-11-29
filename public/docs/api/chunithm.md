@@ -116,14 +116,10 @@
 
 ### GET `/api/v0/chunithm/player/{friend_code}/bests`
 
-获取玩家缓存的 Best 30、Selection 10 与 Recent 10。
-
-::: warning 注意
-在中二节奏 2026 中，玩家的 Rating 算法发生了变更，由旧版本 Best 30 和当前版本 Best 20 组成。
-:::
+获取玩家的 Rating 构成（即 Best 30、Selection 10 和 New 20 列表）。
 
 #### 权限
-
+s
 - `allow_third_party_fetch_scores`
 
 #### URL 参数
@@ -136,10 +132,9 @@
 
 | 字段名 | 类型 | 说明 |
 |-|-|-|
-| `bests` | [`Score[]`](#score) | Best 30 列表（将在中二节奏 2026 变更为旧版本 Best 30 列表），即最佳曲目 |
-| `selections` | [`Score[]`](#score) | Selection 10 列表，即候选最佳曲目 |
-| `recents` | [`Score[]`](#score) | Recent 10 列表（将在中二节奏 2026 移除），即最近游玩的最佳曲目 |
-| `currents` | [`Score[]`](#score) | 当前版本 Best 20 列表（将在中二节奏 2026 加入） |
+| `bests` | [`Score[]`](#score) | 旧版本 Best 30 列表，即评分对象曲（最高） |
+| `selections` | [`Score[]`](#score) | 旧版本 Selection 10 列表，即候选评分对象曲（最高） |
+| `new_bests` | [`Score[]`](#score) | 当前版本 Best 20 列表，即评分对象曲（新曲） |
 
 ::: info 提示
 Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩。
@@ -165,46 +160,6 @@ Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩�
 |-|-|-|
 | `song_id` | `int` | 曲目 ID，与 `song_name` 冲突 |
 | `song_name` | `string` | 曲名，与 `song_id` 冲突 |
-
-### POST `/api/v0/chunithm/player/{friend_code}/bests/recents`
-
-上传玩家 Recent 10 列表。
-
-#### 权限
-
-- `allow_third_party_write_data`
-
-#### URL 参数
-
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `friend_code` | `int` | 好友码 |
-
-#### 请求体
-
-JSON 格式的 Recent 10 列表：
-
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `recents` | [`Score[]`](#score) | Recent 10 列表 |
-
-::: warning 注意
-Recent 10 列表超过 10 条时，查分器会自动截取前 10 条。
-:::
-
-#### 请求示例
-
-```json
-{
-    "recents": [
-        {
-            "id": 3,
-            "level_index": 4,
-            "score": 1010000
-        }
-    ]
-}
-```
 
 ### POST `/api/v0/chunithm/player/{friend_code}/scores`
 
@@ -312,7 +267,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `23000` |
 
 ::: info 提示
 指定 `version` 参数时，将会返回指定版本范围内的 Rating 趋势。
@@ -394,14 +349,14 @@ JSON 格式的玩家成绩：
 目前仅支持以下页面的 HTML 源代码：
 - 玩家信息：`home/playerData`
 - 收藏品：
-    - 角色：`collection/`
-    - 名牌版：`collection/nameplate/`
-    - 地图头像：`collection/mapIcon/`
+    - 角色：`collection`
+    - 名牌版：`collection/nameplate`
+    - 地图头像：`collection/mapIcon`
+    - 主称号（仅图片称号可用）：`collection/trophy/setMain`
 - 最近游玩记录：`record/playlog`
-- Recent 10 列表：`home/playerData/ratingDetailRecent`
 - 最佳成绩：
   - BASIC ~ ULTIMA：`record/musicGenre`
-  - WORLD'S END：`record/worldsEndList/`
+  - WORLD'S END：`record/worldsEndList`
 
 :::
 
@@ -451,7 +406,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `23000` |
 | `notes` | `bool` | 值可空，是否包含谱面物量，默认值为 `false` |
 
 #### 响应体
@@ -470,7 +425,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `23000` |
 
 #### URL 参数
 
@@ -500,7 +455,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `23000` |
 
 #### URL 参数
 
@@ -525,7 +480,7 @@ JSON 格式的玩家成绩：
 
 | 参数名 | 类型 | 说明 |
 |-|-|-|
-| `version` | `int` | 值可空，游戏版本，默认值为 `22000` |
+| `version` | `int` | 值可空，游戏版本，默认值为 `23000` |
 
 #### URL 参数
 
@@ -544,6 +499,7 @@ JSON 格式的玩家成绩：
 
 路径：
 - 角色：`/character/{character_id}.png`
+- 称号（仅图片）：`/trophy/{trophy_id}.png`
 - 名牌版：`/plate/{plate_id}.png`
 - 地图头像：`/icon/{map_icon_id}.png`
 - 曲绘：`/jacket/{song_id}.png`
@@ -613,14 +569,6 @@ CLASS 勋章
 | `upload_time` | `string` | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间 |
 | `last_played_time` | `string` | 仅[获取成绩列表](#get-apiv0chunithmplayerfriend_codescores)、[获取最佳成绩](#get-apiv0chunithmplayerfriend_codebest)时返回，谱面最后游玩的 UTC 时间 |
 
-::: info 提示
-由于 Recent 10 列表算法尚不明确，Recent 10 列表里成绩的 `clear` 字段可能为空。
-:::
-
-::: warning 注意
-上传 Recent 10 列表时，成绩仅需要上传 `id`、`level_index`、`score` 字段，其他字段会根据现有数据自动填充。
-:::
-
 ### SimpleScore
 
 游玩成绩（简化）
@@ -645,7 +593,8 @@ Rating 趋势
 | `rating` | `float` | 总平均 Rating |
 | `bests_rating` | `float` | Best 30 平均 Rating |
 | `selections_rating` | `float` | Selection 10 平均 Rating |
-| `recents_rating` | `float` | Recent 10（MAX）平均 Rating |
+| `recents_rating` | `float` | 中二节奏 2026 及以后可空，Recent 10（MAX）平均 Rating |
+| `new_bests_rating` | `float` | 中二节奏 2026 前可空，Best 20（新曲）平均 Rating |
 | `date` | `string` | 日期 |
 
 ::: info 提示
@@ -671,7 +620,7 @@ Recent 10 均为 Best #1 曲目，`rating` 字段的最终结果为理论不推�
 | `difficulties` | [`SongDifficulty[]`](#songdifficulty) | 谱面难度 |
 
 ::: info 提示
-`disabled` 为 `true` 时，该曲目不会出现在 Best 30、Selection 10 中。
+`disabled` 为 `true` 时，该曲目不会出现在 Rating 构成中。
 :::
 
 ### SongDifficulty
@@ -710,7 +659,7 @@ Recent 10 均为 Best #1 曲目，`rating` 字段的最终结果为理论不推�
 | 字段名 | 类型 | 说明 |
 |-|-|-|
 | `id` | `int` | 内部 ID |
-| `genre` | `string` | 分类标题（日文） |
+| `genre` | `string` | 分类标题 |
 
 ### Version
 
@@ -739,12 +688,12 @@ Recent 10 均为 Best #1 曲目，`rating` 字段的最终结果为理论不推�
 |-|-|-|
 | `id` | `int` | 收藏品 ID |
 | `name` | `string` | 收藏品名称 |
-| `color` | `string` | 值可空，仅玩家称号，称号颜色 |
+| `color` | [`TrophyColor`](#trophycolor) | 值可空，仅玩家称号，称号颜色 |
 | `level` | `int` | 值可空，仅玩家角色，角色等级 |
 | `required` | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求 |
 
 ::: warning 注意
-在中二节奏 2026 中，`color` 字段删除 `copper`，并新增 `image`，表示称号需要使用图片展示（比如 Legend of LUMINOUS PLUS）。
+`color` 字段为 `image` 时，表示称号需要使用图片展示（比如 Legend of LUMINOUS）。
 :::
 
 ### CollectionRequired
@@ -794,9 +743,8 @@ CLEAR 类型
 | 值 | 类型 | 说明 |
 |-|-|-|
 | `catastrophy` | `string` | CATASTROPHY |
-| `absolutep` | `string` | ABSOLUTE+ |
 | `absolute` | `string` | ABSOLUTE |
-| `brave` | `string` | BRAVE（将在中二节奏 2026 添加） |
+| `brave` | `string` | BRAVE |
 | `hard` | `string` | HARD |
 | `clear` | `string` | CLEAR |
 | `failed` | `string` | FAILED |
@@ -840,3 +788,15 @@ FULL CHAIN 类型
 | `b` | `string` | B |
 | `c` | `string` | C |
 | `d` | `string` | D |
+
+### TrophyColor
+
+| 值 | 类型 | 说明 |
+|-|-|-|
+| `normal` | `string` | 普通 |
+| `copper` | `string` | 铜（已弃用，仅作保留） |
+| `silver` | `string` | 银 |
+| `gold` | `string` | 金 |
+| `platinum` | `string` | 铂金 |
+| `rainbow` | `string` | 虹 |
+| `image` | `string` | 图片，目前仅版本制霸称号 |

@@ -10,7 +10,7 @@
 
 QQ 群：
 - 用户交流群：**597413470**
-- 开发者交流群：**897487115**
+- 开发者交流群：[https://qm.qq.com/q/6mHqGzRO6I](https://qm.qq.com/q/6mHqGzRO6I)
 
 GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 
@@ -25,5 +25,3 @@ GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 查分器的维护及运营需要费用，您可以通过以下方式支持查分器的可持续运行：
 
 [![爱发电](/docs/assets/afdian.svg)](https://ifdian.net/a/lxnssama)
-
-<img src="/docs/assets/wechat.webp" alt="微信" width="200" height="200" />

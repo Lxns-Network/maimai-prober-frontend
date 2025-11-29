@@ -761,7 +761,7 @@ DX Rating 趋势
 |-|-|-|
 | `id` | `int` | 收藏品 ID |
 | `name` | `string` | 收藏品名称 |
-| `color` | `string` | 值可空，仅玩家称号，称号颜色 |
+| `color` | [`TrophyColor`](#trophycolor) | 值可空，仅玩家称号，称号颜色 |
 | `description` | `string` | 值可空，收藏品说明 |
 | `genre` | `string` | 值可空，除玩家称号，收藏品分类（日文） |
 | `required` | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求 |
@@ -876,3 +876,13 @@ FULL SYNC 类型
 ::: info 提示
 仅宴会场曲目（曲目 ID 大于 100000）为 `utage` 类型。
 :::
+
+### TrophyColor
+
+| 值 | 类型 | 说明 |
+|-|-|-|
+| `normal` | `string` | 普通 |
+| `bronze` | `string` | 铜 |
+| `silver` | `string` | 银 |
+| `gold` | `string` | 金 |
+| `rainbow` | `string` | 虹 |
