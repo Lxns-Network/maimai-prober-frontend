@@ -197,11 +197,11 @@ export const ChunithmCreateScoreModalContent = ({ score, onSubmit, onClose }: Cr
               label: "HARD",
               value: "hard",
             }, {
+              label: "BRAVE",
+              value: "brave",
+            }, {
               label: "ABSOLUTE",
               value: "absolute",
-            }, {
-              label: "ABSOLUTE+",
-              value: "absolutep",
             }, {
               label: "CATASTROPHY",
               value: "catastrophy",

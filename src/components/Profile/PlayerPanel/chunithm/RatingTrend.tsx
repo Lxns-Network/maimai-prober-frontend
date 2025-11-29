@@ -6,7 +6,8 @@ export interface ChunithmRatingTrendProps {
   rating: number;
   bests_rating: number;
   selections_rating: number;
-  recents_rating: number;
+  recents_rating?: number;
+  new_bests_rating?: number;
   date: string | number;
 }
 
@@ -46,7 +47,8 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
               <Text c="#8884d8">Rating: {Math.round(payload.rating*100)/100}</Text>
               <Text c="#FD7E14">Best 30: {Math.round(payload.bests_rating*100)/100}</Text>
               <Text>Selection 10: {Math.round(payload.selections_rating*100)/100}</Text>
-              <Text c="#228BE6">Recent 10 (MAX): {Math.round(payload.recents_rating*100)/100}</Text>
+              {payload.recents_rating && <Text c="#228BE6">Recent 10 (MAX): {Math.round(payload.recents_rating*100)/100}</Text>}
+              {payload.new_bests_rating && <Text c="#15AABF">Best 30 (New): {Math.round(payload.new_bests_rating*100)/100}</Text>}
             </Card>
           )
         }} />
@@ -68,7 +70,9 @@ export const ChunithmRatingTrend = ({ trend }: { trend: ChunithmRatingTrendProps
 
   return <>
     <RatingTrendChart trend={trend} />
-    <Text fz="xs" c="dimmed">※ Recent 10 均为 Best #1 曲目，最终结果为理论不推分最高 Rating。</Text>
+    {trend[0].recents_rating && (
+      <Text fz="xs" c="dimmed">※ Recent 10 均为 Best #1 曲目，最终结果为理论不推分最高 Rating。</Text>
+    )}
     <Text fz="xs" c="dimmed">※ 该数据由历史同步成绩推出，而非玩家的历史 Rating，结果仅供参考。</Text>
   </>
 }

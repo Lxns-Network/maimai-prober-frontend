@@ -48,22 +48,22 @@ export const ScoreBestsSection = () => {
       {"bests" in bests && (
         <Box mb="md">
           <Title order={3}>Best 30</Title>
-          <Text fz="sm" c="dimmed" mb="md">最佳曲目</Text>
+          <Text fz="sm" c="dimmed" mb="md">评分对象曲（最高）</Text>
           <ScoreList scores={bests.bests} />
         </Box>
       )}
       {"selections" in bests && (
         <Box mb="md">
           <Title order={3}>Selection 10</Title>
-          <Text fz="sm" c="dimmed" mb="md">候选最佳曲目</Text>
+          <Text fz="sm" c="dimmed" mb="md">候选评分对象曲（最高）</Text>
           <ScoreList scores={bests.selections} />
         </Box>
       )}
-      {"recents" in bests && (
+      {"new_bests" in bests && (
         <Box>
-          <Title order={3}>Recent 10</Title>
-          <Text fz="sm" c="dimmed" mb="md">最近游玩的最佳曲目</Text>
-          <ScoreList scores={bests.recents} />
+          <Title order={3}>New 20</Title>
+          <Text fz="sm" c="dimmed" mb="md">评分对象曲（新曲）</Text>
+          <ScoreList scores={bests.new_bests} />
         </Box>
       )}
     </>

@@ -43,5 +43,6 @@ export interface MaimaiBestsProps {
 export interface ChunithmBestsProps {
   bests: ChunithmScoreProps[];
   selections: ChunithmScoreProps[];
-  recents: ChunithmScoreProps[];
+  new_bests: ChunithmScoreProps[];
+  // recents: ChunithmScoreProps[];
 }

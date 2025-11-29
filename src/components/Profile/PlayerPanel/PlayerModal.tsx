@@ -79,6 +79,9 @@ const versionData = {
     version: 23000,
   }],
   chunithm: [{
+    title: "中二节奏 2026",
+    version: 23000,
+  }, {
     title: "中二节奏 2025",
     version: 22000,
   }, {

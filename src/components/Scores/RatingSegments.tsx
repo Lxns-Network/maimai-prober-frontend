@@ -62,11 +62,11 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
       max: bests.selections.length > 0 ? bests.selections[0].rating : 0
     });
     data.push({
-      label: 'R10',
-      count: Math.floor(bests.recents.reduce((acc, score) => acc + score.rating, 0) / bests.recents.length * 100) / 100 || 0,
+      label: 'N20',
+      count: Math.floor(bests.new_bests.reduce((acc, score) => acc + score.rating, 0) / bests.new_bests.length * 100) / 100 || 0,
       color: '#228be6',
-      min: bests.recents.length > 0 ? bests.recents[bests.recents.length - 1].rating : 0,
-      max: bests.recents.length > 0 ? bests.recents[0].rating : 0
+      min: bests.new_bests.length > 0 ? bests.new_bests[bests.new_bests.length - 1].rating : 0,
+      max: bests.new_bests.length > 0 ? bests.new_bests[0].rating : 0
     });
   }
 
@@ -128,7 +128,7 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
           <RatingBadge game="maimai" rating={bests.standard_total + bests.dx_total} />
         )}
         {"bests" in bests && data.length === 3 && (
-          <RatingBadge game="chunithm" rating={Math.round((data[0].count * bests.bests.length + data[2].count * bests.recents.length) / 40 * 100) / 100} />
+          <RatingBadge game="chunithm" rating={Math.round((data[0].count * bests.bests.length + data[2].count * bests.new_bests.length) / 50 * 100) / 100} />
         )}
       </Stack>
       <SimpleGrid cols={{ base: 1, xs: 2 }} mt="md">
