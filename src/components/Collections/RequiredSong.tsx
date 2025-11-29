@@ -152,7 +152,15 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
             <Grid.Col span={6} ref={ref}>
               <Text fz="xs" c="dimmed">曲目范围</Text>
               <Marquee>
-                <Text fz="sm">{(collection?.description || "没有描述").split("/")[0]}</Text>
+                <Text fz="sm">
+                  {(() => {
+                    const result = /(.+)の全ての譜面/.exec(collection?.description || "");
+                    if (result) {
+                      return result[1];
+                    }
+                    return (collection?.description || "没有描述").split("/")[0]
+                  })()}
+                </Text>
               </Marquee>
             </Grid.Col>
             {collection?.required?.[0] &&

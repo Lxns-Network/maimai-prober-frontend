@@ -12,6 +12,34 @@ interface CollectionCardProps {
   style?: React.CSSProperties;
 }
 
+const Trophy = ({ trophy }: { trophy: CollectionProps }) => {
+  const [game] = useFixedGame();
+
+  if (trophy.color === "image") {
+    return (
+      <AspectRatio ratio={608 / 74} mt="md">
+        <Image src={`https://assets2.lxns.net/${game}/trophy/${trophy.id}.png`} />
+      </AspectRatio>
+    )
+  }
+
+  return (
+    <Badge
+      variant="light" size="xl" radius="xl" w="100%" mt="md"
+      color={getTrophyColor(trophy.color || "normal")}
+      children={
+        <Marquee>
+          <Text fz="xl" style={{
+            whiteSpace: "pre-wrap"
+          }}>
+            {trophy.name}
+          </Text>
+        </Marquee>
+      }
+    />
+  )
+}
+
 export const CollectionCard = ({ collection, collectionType, style }: CollectionCardProps) => {
   const [game] = useFixedGame();
 
@@ -32,19 +60,7 @@ export const CollectionCard = ({ collection, collectionType, style }: Collection
           </AspectRatio>
         )}
         {collectionType === "trophy" && (
-          <Badge
-            variant="light" size="xl" radius="xl" w="100%" mt="md"
-            color={getTrophyColor(collection.color || "normal")}
-            children={
-              <Marquee>
-                <Text fz="xl" style={{
-                  whiteSpace: "pre-wrap"
-                }}>
-                  {collection.name}
-                </Text>
-              </Marquee>
-            }
-          />
+          <Trophy trophy={collection} />
         )}
         {collectionType === "icon" && (
           <AspectRatio ratio={1} w={128} mt="md">
