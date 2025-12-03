@@ -11,10 +11,12 @@ import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { LoginAlert } from "@/components/LoginAlert";
 import { SongCard } from "@/components/Songs/SongCard.tsx";
 import { SongDifficultyList } from "@/components/Songs/SongDifficultyList.tsx";
+import { SongCollections } from "@/components/Songs/SongCollections.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Page } from "@/components/Page/Page.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
+import { getSongCollections, SongCollectionItemProps } from "@/utils/api/song/song.tsx";
 
 interface State {
   songId: number | null;
@@ -56,6 +58,7 @@ const SongsContent = () => {
   const { songId } = state;
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
+  const [songCollections, setSongCollections] = useState<SongCollectionItemProps[] | null>(null);
   const getSongList = useSongListStore((state) => state.getSongList);
   const isLoggedOut = !localStorage.getItem("token");
   const location = useLocation();
@@ -78,6 +81,16 @@ const SongsContent = () => {
     }
   }
 
+  const getSongCollectionsHandler = async (songId: number) => {
+    try {
+      const data = await getSongCollections(game, songId);
+      setSongCollections(data);
+    } catch (error) {
+      console.error("获取关联收藏品失败", error);
+      setSongCollections(null);
+    }
+  }
+
   useEffect(() => {
     if (location.state) {
       if (location.state.songId) {
@@ -97,6 +110,7 @@ const SongsContent = () => {
 
     if (prevGame !== undefined && prevGame !== game) {
       setScores([]);
+      setSongCollections(null);
       setSearchParams({}, { replace: true });
       dispatch({ type: "RESET_SONG_ID" });
     }
@@ -135,6 +149,8 @@ const SongsContent = () => {
 
     setSong(song);
     setScores([]);
+    setSongCollections(null);
+    getSongCollectionsHandler(song.id);
   }, [songId, songList?.songs]);
 
   return (
@@ -186,6 +202,15 @@ const SongsContent = () => {
       >
         {(styles) => (
           <SongDifficultyList song={song} scores={scores} setScores={setScores} style={styles} />
+        )}
+      </Transition>
+      <Transition
+        mounted={Boolean(songId && song && songCollections && songCollections.length > 0)}
+        transition="pop"
+        enterDelay={0}
+      >
+        {(styles) => (
+          <SongCollections collections={songCollections} style={{ ...styles, marginTop: "1rem" }} />
         )}
       </Transition>
     </div>

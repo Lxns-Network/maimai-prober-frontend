@@ -113,6 +113,11 @@ const CollectionsContent = () => {
       const res = await getPlayerCollectionById(game, collectionType, id);
       const data = await res.json();
       if (!data.success) {
+        // 如果玩家数据不存在，回退到公共 API
+        if (data.code === 404) {
+          getCollectionHandler(id);
+          return;
+        }
         setCollection(filteredCollections.find((plate) => plate.id === id) || null);
         throw new Error(data.message);
       }

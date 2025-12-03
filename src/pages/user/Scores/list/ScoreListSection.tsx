@@ -15,6 +15,7 @@ import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/Statisti
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
+import { usePlayer } from "@/hooks/swr/usePlayer.ts";
 
 const sortKeys = {
   maimai: [
@@ -41,6 +42,7 @@ export const ScoreListSection = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useGame();
 
+  const { player } = usePlayer(game);
   const { scores, isLoading, mutate } = useScores(game);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [sortedScores, setSortedScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
@@ -96,43 +98,54 @@ export const ScoreListSection = () => {
 
     setTotalPages(Math.ceil(searchedScores.length / PAGE_SIZE));
 
-    const sortedScores = searchedScores.sort((a: any, b: any) => {
+    const getCompareValue = (
+      score: MaimaiScoreProps | ChunithmScoreProps,
+      key: string
+    ): string | number | null => {
+      if (key === 'level_value' && songList) {
+        const song = songList.find(score.id);
+        if (!song) return null;
+        if (songList instanceof MaimaiSongList && 'type' in score) {
+          const difficulty = songList.getDifficulty(song as MaimaiSongProps, score.type, score.level_index);
+          return difficulty?.level_value ?? null;
+        } else if (songList instanceof ChunithmSongList) {
+          const difficulty = songList.getDifficulty(song as ChunithmSongProps, score.level_index);
+          return difficulty?.level_value ?? null;
+        }
+        return null;
+      }
+      if (key in score) {
+        return (score as unknown as Record<string, string | number>)[key];
+      }
+      return null;
+    };
+
+    const sortedScores = searchedScores.sort((a, b) => {
       if (!songList || !sortBy) return 0;
-      if (sortBy === 'level_value') {
-        let songA = songList.find(a.id);
-        let songB = songList.find(b.id);
-        if (!songA || !songB) {
-          return 0;
-        }
-        let difficultyA, difficultyB;
-        if (songList instanceof MaimaiSongList) {
-          songA = songA as MaimaiSongProps;
-          songB = songB as MaimaiSongProps;
-          difficultyA = songList.getDifficulty(songA, a.type, a.level_index);
-          difficultyB = songList.getDifficulty(songB, b.type, b.level_index);
-        } else {
-          songA = songA as ChunithmSongProps;
-          songB = songB as ChunithmSongProps;
-          difficultyA = songList.getDifficulty(songA, a.level_index);
-          difficultyB = songList.getDifficulty(songB, b.level_index);
-        }
-        if (!difficultyA || !difficultyB) {
-          return 0;
-        }
-        a = difficultyA;
-        b = difficultyB;
+
+      const valueA = getCompareValue(a, sortBy);
+      const valueB = getCompareValue(b, sortBy);
+
+      if (valueA === null || valueB === null) {
+        if (valueA === null && valueB === null) return 0;
+        return valueA === null ? 1 : -1;
       }
-      if (!a[sortBy] || !b[sortBy]) {
-        if (!a[sortBy] && !b[sortBy]) return 0;
-        return !a[sortBy] ? 1 : -1;
-      }
-      if (typeof a[sortBy] === 'string') {
-        return reverseSortDirection ? a[sortBy].localeCompare(b[sortBy]) : b[sortBy].localeCompare(a[sortBy]);
-      } else {
+
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
         return reverseSortDirection
-          ? a[sortBy] - b[sortBy] || a.dx_rating - b.dx_rating
-          : b[sortBy] - a[sortBy] || a.dx_rating - b.dx_rating;
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
       }
+
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        const dxRatingA = 'dx_rating' in a ? (a.dx_rating ?? 0) : 0;
+        const dxRatingB = 'dx_rating' in b ? (b.dx_rating ?? 0) : 0;
+        return reverseSortDirection
+          ? valueA - valueB || dxRatingA - dxRatingB
+          : valueB - valueA || dxRatingA - dxRatingB;
+      }
+
+      return 0;
     });
 
     setDisplayScores(sortedScores.slice(0, PAGE_SIZE));
@@ -140,7 +153,7 @@ export const ScoreListSection = () => {
     setPage(1);
   }, [searchedScores, reverseSortDirection, sortBy]);
 
-  const renderSortIndicator = (key: any) => {
+  const renderSortIndicator = (key: string) => {
     if (sortBy === key) {
       return <>
         {reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}
@@ -202,7 +215,7 @@ export const ScoreListSection = () => {
           radius="md"
           style={{ flex: 1 }}
         />
-        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={() => {
+        <Button radius="md" leftSection={<IconPlus size={20} />} disabled={!player} onClick={() => {
           openCreateScoreModal({
             game,
             onClose: (values) => {

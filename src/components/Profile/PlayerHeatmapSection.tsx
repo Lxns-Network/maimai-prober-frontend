@@ -21,11 +21,12 @@ const generateRandomHeatmap = (start: Date, end: Date): Record<string, number> =
 
 export const PlayerHeatmapSection = () => {
   const [game] = useGame();
-  const { player } = usePlayer(game);
   const [fetching, setFetching] = useState(true);
   const [rawHeatmap, setRawHeatmap] = useState<Record<string, number>>({});
   const [scaledHeatmap, setScaledHeatmap] = useState<Record<string, number>>({});
   const computedColorScheme = useComputedColorScheme('light');
+
+  const { player } = usePlayer(game);
 
   const endDate = new Date();
   const startDate = new Date(endDate.getFullYear() - 1, endDate.getMonth(), endDate.getDate());
@@ -49,12 +50,13 @@ export const PlayerHeatmapSection = () => {
   }, [game]);
 
   useEffect(() => {
-    getPlayerHeatmapData(game);
-  }, [game]);
-
-  useEffect(() => {
-    if (!player) setScaledHeatmap(generateRandomHeatmap(startDate, endDate));
-  }, [player]);
+    if (player) {
+      getPlayerHeatmapData(game);
+    } else {
+      setFetching(false);
+      setScaledHeatmap(generateRandomHeatmap(startDate, endDate));
+    }
+  }, [game, player]);
 
   return (
     <Card className={classes.card} withBorder radius="md" p={0}>

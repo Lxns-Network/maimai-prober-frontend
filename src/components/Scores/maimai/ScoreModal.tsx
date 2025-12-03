@@ -82,7 +82,7 @@ export const MaimaiScoreModalContent = ({ score, song }: { score: MaimaiScorePro
     } else {
       setLevel(difficulty.level_value.toFixed(1));
     }
-  }, [song]);
+  }, [song, score]);
 
   if (!song) return;
 

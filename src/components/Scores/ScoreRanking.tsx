@@ -5,6 +5,7 @@ import { openRetryModal } from "@/utils/modal.tsx";
 import { useEffect, useState } from "react";
 import { Badge, Center, Divider, Flex, Group, Loader, NumberFormatter, Paper, rem, Stack, Text } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
+import { usePlayer } from "@/hooks/swr/usePlayer.ts";
 
 interface RankingScoreProps {
   ranking: number;
@@ -22,6 +23,8 @@ export const ScoreRanking = ({ game, score }: {
   const [rankingScores, setRankingScores] = useState<RankingScoreProps[]>([]);
   const [fetching, setFetching] = useState(false);
   const isLoggedOut = !localStorage.getItem("token");
+
+  const { player } = usePlayer(game);
 
   const getPlayerScoreRanking = async (score: MaimaiScoreProps | ChunithmScoreProps) => {
     setFetching(true);
@@ -49,15 +52,15 @@ export const ScoreRanking = ({ game, score }: {
   }
 
   useEffect(() => {
-    if (!score) return;
+    if (!score || !player) return;
     if (!isLoggedOut) getPlayerScoreRanking(score);
-  }, [score]);
+  }, [score, player]);
 
-  if (isLoggedOut) {
+  if (isLoggedOut || !player) {
     return (
       <Flex gap="xs" align="center" direction="column" c="dimmed">
         <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">请登录后查看排行</Text>
+        <Text fz="sm">{isLoggedOut ? "请登录后查看排行" : "请同步游戏数据后查看排行"}</Text>
       </Flex>
     );
   }

@@ -9,6 +9,7 @@ import useFixedGame from "@/hooks/useFixedGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import useScoreStore from "@/hooks/useScoreStore.ts";
+import { usePlayer } from "@/hooks/swr/usePlayer.ts";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
@@ -21,6 +22,8 @@ export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) =>
   const [params, setParams] = useState(new URLSearchParams());
   const [game] = useFixedGame();
   const navigate = useNavigate();
+
+  const { player } = usePlayer(game);
 
   const DeletePlayerScoreHandler = async () => {
     try {
@@ -76,7 +79,7 @@ export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) =>
 
       <Menu.Dropdown>
         <Menu.Label>更多操作</Menu.Label>
-        <Menu.Item leftSection={<IconPlus size={20} stroke={1.5} />} onClick={() => {
+        <Menu.Item disabled={!player} leftSection={<IconPlus size={20} stroke={1.5} />} onClick={() => {
           onClose && onClose();
           openCreateScoreModal({
             game,

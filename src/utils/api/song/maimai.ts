@@ -125,12 +125,16 @@ export class MaimaiSongList {
 }
 
 export function getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
-  if (type === "utage" && "utage" in song.difficulties) {
-      return song.difficulties.utage[level_index]
-  } else if (type === "standard") {
-    return song.difficulties.standard[level_index]
-  } else if (type === "dx") {
-    return song.difficulties.dx[level_index]
+  try {
+    if (type === "utage" && song.difficulties.utage) {
+      return song.difficulties.utage[level_index] ?? null;
+    } else if (type === "standard" && song.difficulties.standard) {
+      return song.difficulties.standard[level_index] ?? null;
+    } else if (type === "dx" && song.difficulties.dx) {
+      return song.difficulties.dx[level_index] ?? null;
+    }
+  } catch {
+    return null;
   }
   return null;
 }
