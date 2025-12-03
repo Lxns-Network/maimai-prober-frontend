@@ -325,17 +325,18 @@ export const AdvancedFilter = ({ scores, onChange }: {
             variant="filled"
             w={60}
             size="xs"
-            min={game && filterData[game].rating[0]}
-            max={game && filterData[game].rating[1]}
+            min={filterData[game].rating[0]}
+            max={filterData[game].rating[1]}
             step={0.1}
             decimalScale={1}
             value={rating[0]}
             onChange={(value) => {
-              if (typeof value !== "number" || isNaN(value)) return;
-              if (value > rating[1]) return;
-              value = Math.floor(value * 10) / 10;
-              setFilter("rating", [value, rating[1]]);
-              setFilter("endRating", [value, rating[1]]);
+              if (value === "" || value === undefined) return;
+              const numValue = typeof value === "string" ? parseFloat(value) : value;
+              if (isNaN(numValue) || numValue > rating[1]) return;
+              const rounded = Math.floor(numValue * 10) / 10;
+              setFilter("rating", [rounded, rating[1]]);
+              setFilter("endRating", [rounded, rating[1]]);
             }}
             stepHoldDelay={500}
             stepHoldInterval={100}
@@ -344,13 +345,13 @@ export const AdvancedFilter = ({ scores, onChange }: {
           {small ? "~" : (
             <RangeSlider
               style={{ flex: 1 }}
-              min={game && filterData[game].rating[0]}
-              max={game && filterData[game].rating[1]}
+              min={filterData[game].rating[0]}
+              max={filterData[game].rating[1]}
               step={0.1}
               minRange={0.1}
               precision={1}
               value={rating}
-              marks={Array.from({ length: game ? filterData[game].rating[1] : 0 }, (_, index) => ({
+              marks={Array.from({ length: filterData[game].rating[1] }, (_, index) => ({
                 value: index + 1,
                 label: String(index + 1),
               }))}
@@ -363,16 +364,18 @@ export const AdvancedFilter = ({ scores, onChange }: {
             variant="filled"
             w={60}
             size="xs"
-            min={game && filterData[game].rating[0]}
-            max={game && filterData[game].rating[1]}
+            min={filterData[game].rating[0]}
+            max={filterData[game].rating[1]}
             step={0.1}
             decimalScale={1}
             value={rating[1]}
             onChange={(value) => {
-              if (typeof value !== "number" || isNaN(value)) return;
-              if (value < rating[0]) return;
-              setFilter("rating", [rating[0], value]);
-              setFilter("endRating", [rating[0], value]);
+              if (value === "" || value === undefined) return;
+              const numValue = typeof value === "string" ? parseFloat(value) : value;
+              if (isNaN(numValue) || numValue < rating[0]) return;
+              const rounded = Math.floor(numValue * 10) / 10;
+              setFilter("rating", [rating[0], rounded]);
+              setFilter("endRating", [rating[0], rounded]);
             }}
             stepHoldDelay={500}
             stepHoldInterval={100}
