@@ -27,11 +27,11 @@ maimai DX 查分器
 ## 调试
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 ## 构建
 
 ```bash
-npm run build
+yarn build
 ```
