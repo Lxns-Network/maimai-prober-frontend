@@ -170,15 +170,15 @@ export const AdvancedFilter = ({ scores, onChange }: {
         if (type.length > 0 && !type.includes(score.type) && score.type !== "utage") { // 过滤谱面类型
           return false;
         }
-        if (fullCombo.includes("nofc")) { // 过滤 Full Combo
-          if (score.fc) return false;
-        } else if (fullCombo.length > 0 && !fullCombo.includes(score.fc)) {
-          return false;
+        if (fullCombo.length > 0) { // 过滤 Full Combo
+          const matchNoFc = fullCombo.includes("nofc") && !score.fc;
+          const matchFc = fullCombo.filter(v => v !== "nofc").includes(score.fc);
+          if (!matchNoFc && !matchFc) return false;
         }
-        if (fullSync.includes("nofs")) { // 过滤 Full Sync
-          if (score.fs) return false;
-        } else if (fullSync.length > 0 && !fullSync.includes(score.fs)) {
-          return false;
+        if (fullSync.length > 0) { // 过滤 Full Sync
+          const matchNoFs = fullSync.includes("nofs") && !score.fs;
+          const matchFs = fullSync.filter(v => v !== "nofs").includes(score.fs);
+          if (!matchNoFs && !matchFs) return false;
         }
         if (deluxeStar.length > 0 && !deluxeStar.includes(score.dx_star)) { // 过滤 DX 星级
           return false;
@@ -189,15 +189,15 @@ export const AdvancedFilter = ({ scores, onChange }: {
         }
       } else {
         score = score as ChunithmScoreProps;
-        if (fullCombo.includes("nofullcombo")) { // 过滤 Full Combo
-          if (score.full_combo) return false;
-        } else if (fullCombo.length > 0 && !fullCombo.includes(score.full_combo)) {
-          return false;
+        if (fullCombo.length > 0) { // 过滤 Full Combo
+          const matchNoFc = fullCombo.includes("nofullcombo") && !score.full_combo;
+          const matchFc = fullCombo.filter(v => v !== "nofullcombo").includes(score.full_combo);
+          if (!matchNoFc && !matchFc) return false;
         }
-        if (fullSync.includes("nofullchain")) { // 过滤 Full Chain
-          if (score.full_chain) return false;
-        } else if (fullSync.length > 0 && !fullSync.includes(score.full_chain)) {
-          return false;
+        if (fullSync.length > 0) { // 过滤 Full Chain
+          const matchNoChain = fullSync.includes("nofullchain") && !score.full_chain;
+          const matchChain = fullSync.filter(v => v !== "nofullchain").includes(score.full_chain);
+          if (!matchNoChain && !matchChain) return false;
         }
       }
       return difficulty.includes(score.level_index.toString()) || difficulty.length === 0 // 过滤难度
