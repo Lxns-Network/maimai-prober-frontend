@@ -11,7 +11,9 @@ import { useAliasVotes } from "@/hooks/swr/useAliasVotes.ts";
 import useGame from "@/hooks/useGame.ts";
 import useAliasStore from "@/hooks/useAliasStore.ts";
 
-const sortKeys = [
+type SortKey = 'alias' | 'total_weight' | 'alias_id';
+
+const sortKeys: { name: string; key: SortKey }[] = [
   { name: '别名', key: 'alias' },
   { name: '总权重', key: 'total_weight' },
   { name: '提交时间', key: 'alias_id' },
@@ -24,7 +26,7 @@ const AliasVoteContent = () => {
   const { openModal: openCreateAliasModal } = useAliasStore();
 
   // 排序相关
-  const [sortBy, setSortBy] = useState();
+  const [sortBy, setSortBy] = useState<SortKey | undefined>(undefined);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
   // 筛选相关
@@ -40,7 +42,7 @@ const AliasVoteContent = () => {
   } = useAliases(game, page, onlyNotApproved, sortBy, reverseSortDirection ? 'asc' : 'desc', songId);
   const { votes, mutate: mutateVote } = useAliasVotes(game);
 
-  const sort = (key: any, autoChangeReverse = true) => {
+  const sort = (key: SortKey, autoChangeReverse = true) => {
     let reversed = reverseSortDirection;
     if (autoChangeReverse) {
       reversed = key === sortBy ? !reverseSortDirection : false;
@@ -67,9 +69,9 @@ const AliasVoteContent = () => {
       page_count: pageCount,
       page_size: pageSize,
     });
-  }, [aliases]);
+  }, [aliases, mutate, pageCount, pageSize, votes]);
 
-  const renderSortIndicator = (key: any) => {
+  const renderSortIndicator = (key: SortKey) => {
     if (sortBy === key) {
       return <>
         {reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}

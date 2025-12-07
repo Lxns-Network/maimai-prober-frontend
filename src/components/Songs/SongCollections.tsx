@@ -52,7 +52,7 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
         return (
           <Center h={26}>
             <AspectRatio ratio={608 / 74}>
-                <Image src={`https://assets2.lxns.net/${game}/trophy/${collection.id}.png`} />
+              <Image src={`https://assets2.lxns.net/${game}/trophy/${collection.id}.png`} />
             </AspectRatio>
           </Center>
         );

@@ -66,7 +66,7 @@ export const ScoreListSection = () => {
   useEffect(() => {
     setSongList(getSongList(game));
     setSongId(0);
-  }, [game]);
+  }, [game, getSongList]);
 
   useEffect(() => {
     setFilteredScores(scores);
@@ -82,7 +82,7 @@ export const ScoreListSection = () => {
     setSearchedScores(filteredScores.filter((score) => {
       return filteredSongs.find((song) => song.id === score.id);
     }));
-  }, [filteredScores, filteredSongs]);
+  }, [filteredScores, filteredSongs, isLoading]);
 
   useEffect(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -151,7 +151,7 @@ export const ScoreListSection = () => {
     setDisplayScores(sortedScores.slice(0, PAGE_SIZE));
     setSortedScores(sortedScores);
     setPage(1);
-  }, [searchedScores, reverseSortDirection, sortBy]);
+  }, [searchedScores, reverseSortDirection, sortBy, songList]);
 
   const renderSortIndicator = (key: string) => {
     if (sortBy === key) {

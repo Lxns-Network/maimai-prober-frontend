@@ -94,7 +94,7 @@ const CollectionsContent = () => {
   const [collection, setCollection] = useState<CollectionProps | null>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [onlyRequired, toggleOnlyRequired] = useToggle();
-  const isLoggedOut = !Boolean(localStorage.getItem("token"));
+  const isLoggedOut = !localStorage.getItem("token");
 
   const getCollectionHandler = async (id: number) => {
     if (!collectionType) return;

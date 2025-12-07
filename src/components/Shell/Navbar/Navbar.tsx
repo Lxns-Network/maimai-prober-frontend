@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Box, Container, Divider, ScrollArea } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "@/utils/session.ts";
 import { logoutUser } from "@/utils/api/user.ts";
 import {
-  IconCards, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome,
+  IconAward, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome,
   IconLogout, IconMusic, IconSettings2, IconTable, IconTransferIn, IconUserCircle
 } from "@tabler/icons-react";
 import classes from './Navbar.module.css';
@@ -20,7 +20,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const isLoggedOut = !localStorage.getItem("token");
   const location = useLocation();
 
-  const navbarData = [
+  const navbarData = useMemo(() => [
     // { label: '2024 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2024', enabled: !isLoggedOut },
     // { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true, divider: !isLoggedOut },
     { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true },
@@ -29,7 +29,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '成绩管理', icon: <IconChartBar stroke={1.5} />, to: '/user/scores', enabled: !isLoggedOut },
     { label: '账号设置', icon: <IconSettings2 stroke={1.5} />, to: '/user/settings', enabled: !isLoggedOut },
     { label: '曲目查询', icon: <IconMusic stroke={1.5} />, to: '/songs', enabled: true },
-    { label: '收藏品查询', icon: <IconCards stroke={1.5} />, to: '/collections', enabled: true },
+    { label: '收藏品查询', icon: <IconAward stroke={1.5} />, to: '/collections', enabled: true },
     { label: '登录账号', icon: <IconDoorEnter stroke={1.5} />, to: '/login', enabled: isLoggedOut, divider: true },
     { label: '新用户注册', icon: <IconTransferIn stroke={1.5} />, to: '/register', enabled: isLoggedOut },
     { label: '曲目别名投票', icon: <IconGavel stroke={1.5} />, to: '/alias/vote', enabled: !isLoggedOut, divider: true },
@@ -39,7 +39,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       enabled: !(isLoggedOut || checkPermission(UserPermission.Developer)) },
     { label: '管理面板', icon: <IconTable stroke={1.5} />, to: '/admin/panel',
       enabled: checkPermission(UserPermission.Administrator), divider: true },
-  ];
+  ], [isLoggedOut]);
 
   useEffect(() => {
     const currentPath = location.pathname;
