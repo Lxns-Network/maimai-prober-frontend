@@ -1,3 +1,5 @@
+import type { RegistrationResponseJSON, AuthenticationResponseJSON } from "@simplewebauthn/browser";
+
 export interface UserProps {
   id: number;
   name: string;
@@ -24,4 +26,28 @@ export interface ConfigProps {
   allow_third_party_fetch_player?: boolean;
   allow_third_party_fetch_scores?: boolean;
   allow_third_party_write_data?: boolean;
+}
+
+export interface PasskeyRegisterData {
+  name?: string;
+  credential: RegistrationResponseJSON;
+}
+
+export interface PasskeyAuthenticateData {
+  credential: AuthenticationResponseJSON;
+}
+
+export interface PasskeyUpdateNameData {
+  name: string;
+}
+
+export interface PasskeyProps {
+  id: number;
+  credential_id: string;
+  name: string | null;
+  aaguid: string;
+  backup_eligible: boolean;
+  backup_state: boolean;
+  create_time: string;
+  last_used_time: string | null;
 }

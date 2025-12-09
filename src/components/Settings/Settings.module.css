@@ -1,3 +1,5 @@
+@import "@/pages/Page.module.css";
+
 .item {
     &:not(:last-child) {
         padding-bottom: var(--mantine-spacing-sm);

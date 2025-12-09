@@ -27,6 +27,7 @@
     "@mdi/react": "^1.6.1",
     "@sentry/react": "^10.5.0",
     "@sentry/vite-plugin": "^4.1.1",
+    "@simplewebauthn/browser": "^13.2.2",
     "@tabler/icons-react": "^2.47.0",
     "@tiptap/extension-highlight": "^2.10.3",
     "@tiptap/extension-image": "^2.10.3",

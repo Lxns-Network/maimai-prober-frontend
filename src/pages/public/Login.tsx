@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Title, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Alert, useComputedColorScheme,
   Card, SegmentedControl, Center
@@ -13,6 +13,7 @@ import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
 import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import { PasskeyLogin } from "@/components/Settings/PasskeyLogin.tsx";
 
 interface FormValues {
   name?: string;
@@ -27,11 +28,13 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state;
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "login");
+  const recaptcha = useMemo(() => new ReCaptcha(RECAPTCHA_SITE_KEY, "login"), []);
 
   useEffect(() => {
     document.title = "登录 | maimai DX 查分器";
+  }, [])
 
+  useEffect(() => {
     if (state) {
       if (state.expired) {
         openAlertModal("你已登出", "登录会话已过期，请重新登录。")
@@ -40,13 +43,15 @@ export default function Login() {
         openAlertModal("重置成功", "请使用新密码登录。");
       }
     }
+  }, [state])
 
+  useEffect(() => {
     recaptcha.render();
 
     return () => {
       recaptcha.destroy();
     }
-  }, [])
+  }, [recaptcha])
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -209,6 +214,7 @@ export default function Login() {
             <Button size="sm" type="submit">登录</Button>
           </Group>
         </form>
+        <PasskeyLogin />
       </Card>
     </Container>
   );

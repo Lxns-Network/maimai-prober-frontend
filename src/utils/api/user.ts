@@ -1,4 +1,9 @@
 import { fetchAPI } from "./api.ts";
+import type { 
+  PasskeyRegisterData, 
+  PasskeyAuthenticateData, 
+  PasskeyUpdateNameData 
+} from "@/types/user";
 
 export async function updateUserProfile(data: unknown) {
   return fetchAPI("user/profile", { method: "POST", body: data });
@@ -62,4 +67,37 @@ export async function confirmUserOAuthAuthorize(data: unknown) {
 
 export async function revokeUserOAuthApp(clientId: string) {
   return fetchAPI(`user/oauth/authorize/app/${clientId}`, { method: "DELETE" });
+}
+
+// Passkey APIs
+export async function registerPasskey(data: PasskeyRegisterData) {
+  return fetchAPI("user/passkeys", { method: "POST", body: data });
+}
+
+export async function getPasskeys() {
+  return fetchAPI("user/passkeys", { method: "GET" });
+}
+
+export async function updatePasskeyName(id: number, data: PasskeyUpdateNameData) {
+  return fetchAPI(`user/passkeys/${id}`, { method: "PUT", body: data });
+}
+
+export async function deletePasskey(id: number) {
+  return fetchAPI(`user/passkeys/${id}`, { method: "DELETE" });
+}
+
+export async function authenticatePasskey(data: PasskeyAuthenticateData) {
+  return fetchAPI("user/passkey/authenticate", { method: "POST", body: data });
+}
+
+export async function getPasskeyChallenge(credentialId: string) {
+  return fetchAPI(`user/passkey/challenge?credential_id=${encodeURIComponent(credentialId)}`, { method: "GET" });
+}
+
+export async function getPasskeyRegisterChallenge() {
+  return fetchAPI("user/passkeys/challenge", { method: "GET" });
+}
+
+export async function getPasskeyLoginChallenge() {
+  return fetchAPI("user/passkey/challenge", { method: "GET" });
 }
