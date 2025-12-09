@@ -151,7 +151,7 @@ export default function Home() {
         </Container>
 
         <Container className={classes.controls} p={0}>
-          {Boolean(localStorage.getItem("token")) ? <>
+          {localStorage.getItem("token") ? <>
             <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
                     onClick={() => navigate("/docs")}>
               帮助文档

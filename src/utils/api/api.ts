@@ -5,7 +5,7 @@ export const API_URL = import.meta.env.VITE_API_URL;
 
 let refreshPromise: Promise<void> | null = null;
 
-export async function fetchAPI(endpoint: string, options: { method: string, body?: any, headers?: Record<string, string> }) {
+export async function fetchAPI(endpoint: string, options: { method: string, body?: unknown, headers?: Record<string, string> }) {
   // 如果 token 过期且不是刷新请求，先等待 token 刷新完成
   if (!isTokenUndefined() && isTokenExpired() && endpoint !== "user/refresh") {
     if (!refreshPromise) {
