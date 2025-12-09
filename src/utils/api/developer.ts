@@ -8,6 +8,10 @@ export async function resetDeveloperApiKey() {
   return fetchAPI("user/developer/reset", { method: "POST" });
 }
 
+export async function updateDeveloperInfo(data: any) {
+  return fetchAPI("user/developer", { method: "PUT", body: data });
+}
+
 export async function uploadOAuthAppLogo(file: File) {
   return uploadFile("user/developer/oauth/upload-app-logo", file);
 }

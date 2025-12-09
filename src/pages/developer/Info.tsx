@@ -6,11 +6,12 @@ import { resetDeveloperApiKey } from "@/utils/api/developer.ts";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure }  from "@mantine/hooks";
-import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import classes from "../Page.module.css";
 import { useComputedColorScheme } from "@mantine/core";
 import { Page } from "@/components/Page/Page.tsx";
 import { DeveloperOAuthSection } from "@/components/Developer/DeveloperOAuthSection.tsx";
+import { EditDeveloperModal } from "@/components/Developer/EditDeveloperModal.tsx";
 import { useDeveloper } from "@/hooks/swr/useDeveloper.ts";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -18,6 +19,7 @@ import { useEffect } from "react";
 const DeveloperInfoContent = () => {
   const { developer, isLoading, error, mutate } = useDeveloper();
   const [visible, visibleHandler] = useDisclosure(false);
+  const [editModalOpened, editModal] = useDisclosure(false);
   const computedColorScheme = useComputedColorScheme('light');
   const navigate = useNavigate();
   const theme = useMantineTheme();
@@ -61,13 +63,33 @@ const DeveloperInfoContent = () => {
 
   return (
     <Stack gap="md">
+      {developer && (
+        <EditDeveloperModal
+          opened={editModalOpened}
+          close={editModal.close}
+          developer={developer}
+          onSuccess={mutate}
+        />
+      )}
       <Card withBorder radius="md" className={classes.card}>
-        <Text fz="lg" fw={700}>
-          我的申请信息
-        </Text>
-        <Text fz="xs" c="dimmed" mt={3}>
-          查看你的开发者申请信息
-        </Text>
+        <Group justify="space-between" wrap="nowrap" gap="xl" align="center">
+          <div>
+            <Text fz="lg" fw={700}>
+              我的申请信息
+            </Text>
+            <Text fz="xs" c="dimmed" mt={3}>
+              查看你的开发者申请信息
+            </Text>
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            leftSection={<IconEdit size={20} />}
+            onClick={editModal.open}
+          >
+            编辑
+          </Button>
+        </Group>
         <Divider mt="md" mb="md" color={computedColorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
         {isLoading && (
           <Group justify="center" m="xs">

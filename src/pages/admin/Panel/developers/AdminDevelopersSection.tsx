@@ -74,11 +74,11 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
       <Card.Section className={classes.section}>
         <Group justify="space-between">
           <div>
-            <Text fz="xs" c="dimmed">项目名称</Text>
+            <Text fz="xs" c="dimmed">开发者名称</Text>
             <Text fz="sm">{developer.name}</Text>
           </div>
           <div>
-            <Text fz="xs" c="dimmed">项目地址</Text>
+            <Text fz="xs" c="dimmed">开发者地址</Text>
             <Text fz="sm">
               <Anchor href={developer.url} target="_blank" fz="sm" style={{
                 wordBreak: "break-all",
