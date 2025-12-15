@@ -46,7 +46,7 @@ export const PasskeyLogin = () => {
 
       localStorage.setItem("token", authData.data.token);
 
-      if (state && state.redirect && state.redirect !== "/login") {
+      if (state?.redirect && state.redirect !== "/login" && state.redirect !== "/register") {
         navigate(state.redirect, { replace: true });
       } else {
         navigate("/", { replace: true });

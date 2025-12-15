@@ -90,16 +90,20 @@ export default function App() {
 
   useEffect(() => {
     if (userTokenError) {
+      const isExpired = !isTokenUndefined();
+      const redirectPath = location.pathname + location.search;
+      
+      logout();
+      
       if (location.pathname !== '/login') {
         navigate('/login', {
+          replace: true,
           state: {
-            expired: !isTokenUndefined(),
-            redirect: location.pathname,
+            expired: isExpired,
+            redirect: redirectPath,
           }
         });
       }
-
-      logout();
     }
   }, [userTokenError]);
 

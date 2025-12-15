@@ -117,10 +117,10 @@ export default function Login() {
 
       localStorage.setItem("token", data.data.token);
 
-      if (state && state.redirect && state.redirect !== "/login") {
+      if (state?.redirect && state.redirect !== "/login" && state.redirect !== "/register") {
         navigate(state.redirect, { replace: true });
       } else {
-        navigate("/", { replace: true })
+        navigate("/", { replace: true });
       }
     } catch (error) {
       openRetryModal("登录失败", `${error}`, () => loginHandler(values));
