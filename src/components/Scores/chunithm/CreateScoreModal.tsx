@@ -24,7 +24,7 @@ interface FormValues {
   clear: string | null;
   full_combo: string | null;
   full_chain: string | null;
-  play_time: Date | string | null;
+  play_time: string | null;
 }
 
 interface CreateScoreModalProps {
@@ -61,7 +61,7 @@ export const ChunithmCreateScoreModalContent = ({ score, onSubmit, onClose }: Cr
       clear: (value) => value !== null ? null : "请选择 Clear 类型",
       full_combo: (value) => value !== null ? null : "请选择 Full Combo",
       full_chain: (value) => value !== null ? null : "请选择 Full Chain",
-      play_time: (value) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
+      play_time: (value) => !value || new Date(value) <= new Date() ? null : "请选择正确的游玩时间",
     },
 
     transformValues: (values) => ({
@@ -71,7 +71,7 @@ export const ChunithmCreateScoreModalContent = ({ score, onSubmit, onClose }: Cr
       clear: values.clear,
       full_combo: values.full_combo !== "nofullcombo" ? values.full_combo : null,
       full_chain: values.full_chain !== "nofullchain" ? values.full_chain : null,
-      play_time: values.play_time ? (values.play_time as Date).toISOString().split('.')[0]+"Z" : null,
+      play_time: values.play_time ? (new Date(values.play_time)).toISOString().split('.')[0]+"Z" : null,
     }),
   });
 

@@ -24,7 +24,7 @@ interface FormValues {
   fc: string | null;
   fs: string | null;
   dx_score: number | null;
-  play_time: Date | string | null;
+  play_time: string | null;
 }
 
 interface CreateScoreModalProps {
@@ -61,7 +61,7 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
       achievements: (value) => value !== null ? null : "请输入达成率",
       fc: (value) => value !== null ? null : "请选择 Full Combo",
       fs: (value) => value !== null ? null : "请选择 Full Sync",
-      play_time: (value) => !value || value <= new Date() ? null : "请选择正确的游玩时间",
+      play_time: (value) => !value || new Date(value) <= new Date() ? null : "请选择正确的游玩时间",
     },
 
     transformValues: (values) => ({
@@ -72,7 +72,7 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
       fc: values.fc !== "nofc" ? values.fc : null,
       fs: values.fs !== "nofs" ? values.fs : null,
       dx_score: values.dx_score || 0,
-      play_time: values.play_time ? (values.play_time as Date).toISOString().split('.')[0]+"Z" : null,
+      play_time: values.play_time ? (new Date(values.play_time)).toISOString().split('.')[0]+"Z" : null,
     })
   });
 
