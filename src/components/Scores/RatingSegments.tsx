@@ -128,7 +128,7 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
           <RatingBadge game="maimai" rating={bests.standard_total + bests.dx_total} />
         )}
         {"bests" in bests && data.length === 3 && (
-          <RatingBadge game="chunithm" rating={Math.round((data[0].count * bests.bests.length + data[2].count * bests.new_bests.length) / 50 * 100) / 100} />
+          <RatingBadge game="chunithm" rating={Math.floor((data[0].count * bests.bests.length + data[2].count * bests.new_bests.length) / 50 * 100) / 100} />
         )}
       </Stack>
       <SimpleGrid cols={{ base: 1, xs: 2 }} mt="md">
