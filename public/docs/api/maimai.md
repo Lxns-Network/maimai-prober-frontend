@@ -108,6 +108,10 @@
 | `level_index` | [`LevelIndex`](#levelindex) | 难度 |
 | `song_type` | [`SongType`](#songtype) | 谱面类型 |
 
+#### 响应体
+
+[Score](#score)
+
 ### GET `/api/v0/maimai/player/{friend_code}/bests`
 
 获取玩家缓存的 Best 50。

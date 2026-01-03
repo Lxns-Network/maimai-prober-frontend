@@ -114,6 +114,10 @@
 | `song_name` | `string` | 曲名，与 `song_id` 冲突 |
 | `level_index` | [`LevelIndex`](#levelindex) | 难度 |
 
+#### 响应体
+
+[Score](#score)
+
 ### GET `/api/v0/chunithm/player/{friend_code}/bests`
 
 获取玩家的 Rating 构成（即 Best 30、Selection 10 和 New 20 列表）。
