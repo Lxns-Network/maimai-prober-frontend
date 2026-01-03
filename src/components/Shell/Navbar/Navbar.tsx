@@ -5,7 +5,7 @@ import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "@/utils/session.ts";
 import { logoutUser } from "@/utils/api/user.ts";
 import {
-  IconAward, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome,
+  IconAward, IconCalendar, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome,
   IconLogout, IconMusic, IconSettings2, IconTable, IconTransferIn, IconUserCircle
 } from "@tabler/icons-react";
 import classes from './Navbar.module.css';
@@ -21,9 +21,9 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const location = useLocation();
 
   const navbarData = useMemo(() => [
-    // { label: '2024 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2024', enabled: !isLoggedOut },
-    // { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true, divider: !isLoggedOut },
-    { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true },
+    { label: '2025 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2025', enabled: !isLoggedOut, is_new: true },
+    { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true, divider: !isLoggedOut },
+    // { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true },
     { label: '同步游戏数据', icon: <IconCloudUpload stroke={1.5} />, to: '/sync', enabled: true },
     { label: '账号详情', icon: <IconUserCircle stroke={1.5} />, to: '/user/profile', enabled: !isLoggedOut },
     { label: '成绩管理', icon: <IconChartBar stroke={1.5} />, to: '/user/scores', enabled: !isLoggedOut },

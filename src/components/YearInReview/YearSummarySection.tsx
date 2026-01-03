@@ -38,23 +38,41 @@ const CardImage = ({ game, image, title, description, percentage }: CardImagePro
   );
 }
 
-const gameChartData = {
-  maimai: [
-    { id: 24000, name: '舞萌 DX 2024 谱面', value: 0, color: 'blue.6' },
-    { id: 23000, name: '舞萌 DX 2023 谱面', value: 0, color: 'grape.6' },
-    { id: 22000, name: '舞萌 DX 2022 谱面', value: 0, color: 'indigo.6' },
-    { id: 21000, name: '舞萌 DX 2021 谱面', value: 0, color: 'red.6' },
-    { id: 20000, name: '舞萌 DX 谱面', value: 0, color: 'yellow.6' },
-    { id: 10000, name: '其它', value: 0, color: 'gray.6' },
-  ],
-  chunithm: [
-    { id: 22000, name: 'LUMINOUS 谱面', value: 0, color: 'pink.6' },
-    { id: 21500, name: 'SUN PLUS 谱面', value: 0, color: 'orange.7' },
-    { id: 21000, name: 'SUN 谱面', value: 0, color: 'orange.6' },
-    { id: 20500, name: 'NEW PLUS 谱面', value: 0, color: 'yellow.7' },
-    { id: 20000, name: 'NEW 谱面', value: 0, color: 'yellow.6' },
-    { id: 10000, name: '其它', value: 0, color: 'gray.6' },
-  ]
+const getGameChartData = (game: Game, year: number) => {
+  const versions: Array<{ id: number; name: string; color: string }> = [];
+
+  if (game === 'maimai') {
+    const baseData = [
+      { id: 24000, name: '舞萌 DX 2024 谱面', value: 0, color: 'blue.6' },
+      { id: 23000, name: '舞萌 DX 2023 谱面', value: 0, color: 'grape.6' },
+      { id: 22000, name: '舞萌 DX 2022 谱面', value: 0, color: 'indigo.6' },
+      { id: 21000, name: '舞萌 DX 2021 谱面', value: 0, color: 'red.6' },
+      { id: 20000, name: '舞萌 DX 谱面', value: 0, color: 'yellow.6' },
+      { id: 10000, name: '其它', value: 0, color: 'gray.6' },
+    ];
+    
+    if (year >= 2025) {
+      versions.push({ id: 25000, name: '舞萌 DX 2025 谱面', color: 'cyan.6' });
+    }
+    
+    return [...versions.map(v => ({ ...v, value: 0 })), ...baseData];
+  } else {
+    const baseData = [
+      { id: 22000, name: 'LUMINOUS 谱面', value: 0, color: 'pink.6' },
+      { id: 21500, name: 'SUN PLUS 谱面', value: 0, color: 'orange.7' },
+      { id: 21000, name: 'SUN 谱面', value: 0, color: 'orange.6' },
+      { id: 20500, name: 'NEW PLUS 谱面', value: 0, color: 'yellow.7' },
+      { id: 20000, name: 'NEW 谱面', value: 0, color: 'yellow.6' },
+      { id: 10000, name: '其它', value: 0, color: 'gray.6' },
+    ];
+    
+    if (year >= 2025) {
+      versions.push({ id: 23000, name: 'VERSE 谱面', color: 'violet.6' });
+      versions.push({ id: 22500, name: 'LUMINOUS PLUS 谱面', color: 'violet.6' });
+    }
+    
+    return [...versions.map(v => ({ ...v, value: 0 })), ...baseData];
+  }
 };
 
 export const YearSummarySection = ({ data }: { data: YearInReviewProps }) => {
@@ -66,6 +84,13 @@ export const YearSummarySection = ({ data }: { data: YearInReviewProps }) => {
     return Math.floor(data.player_upload_days / daysInYear * 100);
   })();
 
+  const calcPercentage = (numerator: number) => {
+    if (!data.prober_total_uploads) {
+      return 0;
+    }
+    return Math.floor((numerator / data.prober_total_uploads) * 1000000) / 10000;
+  };
+
   const cardData = [
     {
       image: data.player_most_uploaded_song.all_version,
@@ -73,7 +98,7 @@ export const YearSummarySection = ({ data }: { data: YearInReviewProps }) => {
         return `全年总计上传 ${playerTotal} 次谱面，堪称劳模！`;
       })(),
       description: '总谱面上传量',
-      percentage: Math.floor(playerTotal / data.prober_total_uploads * 1000000) / 10000,
+      percentage: calcPercentage(playerTotal),
     },
     {
       image: data.player_most_uploaded_song.latest_version,
@@ -87,21 +112,30 @@ export const YearSummarySection = ({ data }: { data: YearInReviewProps }) => {
             return sum;
           }, 0);
         }
-        const gameTitle = data.game === 'maimai' ? '舞萌 DX 2024' : '中二节奏 2025';
+        let gameTitle = '';
+        switch (data.year) {
+          case 2024:
+            gameTitle = data.game === 'maimai' ? '舞萌 DX 2024' : '中二节奏 2025';
+            break;
+          case 2025:
+            gameTitle = data.game === 'maimai' ? '舞萌 DX 2025' : '中二节奏 2026';
+            break;
+        }
         if (!uploads) {
           return `今年你还没有上传过${gameTitle} 新曲谱面，是不是还在等待想要游玩的新曲呢？`;
         }
         return `上传了 ${uploads} 次${gameTitle} 新曲谱面，紧跟潮流！`;
       })(),
       description: '新曲谱面上传量',
-      percentage: Math.floor(data.player_total_uploads[data.latest_version] / data.prober_total_uploads * 1000000) / 10000 || 0,
+      percentage: calcPercentage(data.player_total_uploads[data.latest_version] || 0),
     },
   ];
 
-  const chartData = gameChartData[data.game];
-  chartData.forEach((item) => {
-    item.value = data.player_total_uploads[item.id]
-  });
+  const chartData = getGameChartData(data.game, data.year).map((item) => ({
+    ...item,
+    value: data.player_total_uploads[item.id] || 0,
+  }));
+  const filteredChartData = chartData.filter((item) => item.value > 0);
 
   return (
     <Grid>
@@ -115,12 +149,16 @@ export const YearSummarySection = ({ data }: { data: YearInReviewProps }) => {
               看看你今年上传了多少次谱面吧！
             </Title>
           </div>
-          <DonutChart
-            labelsType="percent"
-            withLabels
-            mx="auto"
-            data={chartData.filter((item) => item.value > 0)}
-          />
+          {filteredChartData.length > 0 ? (
+            <DonutChart
+              labelsType="percent"
+              withLabels
+              mx="auto"
+              data={filteredChartData}
+            />
+          ) : (
+            <Text c="dimmed">暂无上传数据，调整好状态再来试试吧！</Text>
+          )}
         </Card>
       </Grid.Col>
       {cardData.map((item) => (

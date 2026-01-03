@@ -51,7 +51,7 @@ const routesConfig = (
     <Route path="/songs" element={<Songs />} />
     <Route path="/collections" element={<Collections />} />
     <Route path="/docs/*" element={<Docs />} />
-    <Route path="/year-in-review/2024/*" element={<YearInReview />} />
+    <Route path="/year-in-review/:year/*" element={<YearInReview />} />
     <Route path="/user/sync" element={<Sync />} />
     <Route path="/user" element={<ProtectedRoute />}>
       <Route index element={<Home />} />

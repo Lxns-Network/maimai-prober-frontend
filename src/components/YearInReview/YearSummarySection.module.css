@@ -21,9 +21,6 @@
 }
 
 .title {
-    font-family:
-            Greycliff CF,
-            sans-serif;
     font-weight: 900;
     font-size: 32px;
     margin-top: var(--mantine-spacing-xs);

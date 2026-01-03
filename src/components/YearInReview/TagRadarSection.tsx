@@ -1,7 +1,7 @@
 import { YearInReviewProps } from "@/pages/public/YearInReview.tsx";
 import tags from "@/data/tags.json";
 import { BarChart, RadarChart } from "@mantine/charts";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import WordCloud from 'wordcloud';
 import { Center, SegmentedControl, SimpleGrid, Stack } from "@mantine/core";
 import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
@@ -34,6 +34,8 @@ interface TagsProps {
 const WordCloudSection = ({ data }: { data: { name: string, value: number }[] }) => {
   const { width } = useShellViewportSize();
   const [containerWidth, setContainerWidth] = useState(400);
+  const hasRendered = useRef(false);
+  const { ref, inViewport } = useInViewport();
 
   useEffect(() => {
     if (width > 432) {
@@ -44,49 +46,56 @@ const WordCloudSection = ({ data }: { data: { name: string, value: number }[] })
   }, [width]);
 
   useEffect(() => {
+    // 只在进入视口且未渲染过时才渲染
+    if (!inViewport || hasRendered.current) return;
+    
     const container = document.getElementById('word-cloud-container');
-
     const maxValue = Math.max(...data.map((word) => word.value));
 
-    if (container) {
-      WordCloud(container, {
-        list: data.map((word) => [word.name, word.value / maxValue * 100]),
-        gridSize: 8,
-        backgroundColor: 'transparent',
-      });
+    if (container && data.length > 0) {
+      // 使用 setTimeout 确保容器已完全挂载
+      setTimeout(() => {
+        container.innerHTML = '';
+        
+        WordCloud(container, {
+          list: data.map((word) => [word.name, word.value / maxValue * 100]),
+          gridSize: 8,
+          backgroundColor: 'transparent',
+        });
+        
+        hasRendered.current = true;
+      }, 100);
     }
-  }, [data]);
+  }, [inViewport, data]);
 
   return (
-    <div id="word-cloud-container" style={{ width: `${containerWidth}px`, height: '250px' }}>
-      {data.map((word) => (
-        <span key={word.name} data-word-id={word.name}>
-          {word.name}
-        </span>
-      ))}
-    </div>
+    <div ref={ref} id="word-cloud-container" style={{ width: `${containerWidth}px`, height: '250px' }} />
   );
 };
 
 export const TagRadarSection = ({ data }: { data: YearInReviewProps }) => {
   const [tagGroup, setTagGroup] = useState<number>(0);
 
-  const totalTagData: Record<string, number> = {};
-  const groupTagData: Record<string, Record<string, number>> = {};
+  const { groupTagData, wordCloudData } = useMemo(() => {
+    const totalTagData: Record<string, number> = {};
+    const groupTagData: Record<string, Record<string, number>> = {};
 
-  Object.entries(data.player_tags).forEach(([tagId, count]) => {
-    (tags as TagsProps).tags.forEach((tag) => {
-      if (tag.id === Number(tagId)) {
-        totalTagData[tag.localized_name["zh-Hans"]] = count;
-        if (!groupTagData[tag.group_id]) {
-          groupTagData[tag.group_id] = {};
+    Object.entries(data.player_tags).forEach(([tagId, count]) => {
+      (tags as TagsProps).tags.forEach((tag) => {
+        if (tag.id === Number(tagId)) {
+          totalTagData[tag.localized_name["zh-Hans"]] = count;
+          if (!groupTagData[tag.group_id]) {
+            groupTagData[tag.group_id] = {};
+          }
+          groupTagData[tag.group_id][tag.localized_name["zh-Hans"]] = count;
         }
-        groupTagData[tag.group_id][tag.localized_name["zh-Hans"]] = count;
-      }
+      });
     });
-  });
 
-  const wordCloudData = Object.entries(totalTagData).map(([key, value]) => ({ name: key, value: value }));
+    const wordCloudData = Object.entries(totalTagData).map(([key, value]) => ({ name: key, value: value }));
+
+    return { groupTagData, wordCloudData };
+  }, [data.player_tags]);
 
   const { ref, inViewport } = useInViewport();
 

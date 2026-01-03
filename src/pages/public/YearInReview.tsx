@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {
   Title, Text, Button, Container, rem, Center, Group, Avatar, Anchor, useMantineTheme, Transition, Box, Loader,
-  TextInput, Alert
+  TextInput, Alert,
+  Image
 } from '@mantine/core';
 import {
-  IconAlertCircle, IconArrowDown, IconArrowRight, IconDotsVertical, IconPhotoOff, IconShare
+  IconAlertCircle, IconArrowDown, IconArrowRight, IconPhotoOff, IconShare
 } from "@tabler/icons-react";
 import { Footer } from "../../components/Shell/Footer/Footer";
 import classes from './YearInReview.module.css';
@@ -14,6 +15,9 @@ import { SongRankingSection } from "@/components/YearInReview/SongRankingSection
 import { TagRadarSection } from "@/components/YearInReview/TagRadarSection.tsx";
 import { UploadRhythmSection } from "@/components/YearInReview/UploadRhythmSection.tsx";
 import { SongTimelineSection } from "@/components/YearInReview/SongTimelineSection.tsx";
+import { RateDistributionSection } from "@/components/YearInReview/RateDistributionSection.tsx";
+import { DifficultyGenreSection } from "@/components/YearInReview/DifficultyGenreSection.tsx";
+import { RatingGrowthSection } from "@/components/YearInReview/RatingGrowthSection.tsx";
 import { Game } from "@/types/game";
 import { useClipboard, useInViewport, useMediaQuery } from "@mantine/hooks";
 import { openConfirmModal } from "@/utils/modal.tsx";
@@ -22,6 +26,7 @@ import useGame from "@/hooks/useGame.ts";
 import { fetchAPI } from "@/utils/api/api.ts";
 import { notifications } from "@mantine/notifications";
 import { useNavigate, useParams } from "react-router-dom";
+import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
 
 export interface YearInReviewProps {
   game: Game;
@@ -41,6 +46,17 @@ export interface YearInReviewProps {
   player_monthly_uploads: Record<number, number>;
   player_hourly_uploads: Record<number, number>;
   player_song_timeline: Record<number, number[]>;
+  // 仅 2025 年及以后
+  rate_distribute?: Record<string, number>; // maimai
+  rank_distribute?: Record<string, number>; // chunithm
+  full_combo_distribute?: Record<string, number>;
+  rating_growth?: {
+    earliest_bests: MaimaiBestsProps | ChunithmBestsProps;
+    latest_bests: MaimaiBestsProps | ChunithmBestsProps;
+  };
+  difficulty_distribute?: Record<string, number>;
+  most_played_genres?: Record<string, number>;
+  most_played_bpm_ranges?: Record<string, number>;
 }
 
 const LazyLoadSection = ({ children }: { children: React.ReactNode }) => {
@@ -90,7 +106,7 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       <Container className={classes.section} mt={rem(30)} size="lg">
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="xs">全年数据大揭秘</Title>
+            <Title order={1} mb="xs" fw={900}>全年数据大揭秘</Title>
             <Text size="lg" c="dimmed">
               你全年上传了多少谱面？答案比你想的更疯狂！
             </Text>
@@ -104,9 +120,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       <Container className={classes.section} mt={rem(100)}>
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="xs">最爱曲目排行榜</Title>
+            <Title order={1} mb="xs" fw={900}>最爱曲目排行榜</Title>
             <Text size="lg" c="dimmed">
-              你的最爱是它们吗？全年最宠的曲目排行！
+              这一年，你最常上传的曲目有哪些？来看看你的 Top 10 吧！
             </Text>
           </div>
         </Center>
@@ -119,9 +135,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
         <Container className={classes.section} mt={rem(100)}>
           <Center ta="center" mb={16}>
             <div>
-              <Title order={1} mb="xs">谱面标签雷达</Title>
+              <Title order={1} mb="xs" fw={900}>谱面标签雷达</Title>
               <Text size="lg" c="dimmed">
-                标签高能解析：你属于哪种舞萌玩家？
+                你的标签偏好是什么？来看看你的标签雷达吧！
               </Text>
             </div>
           </Center>
@@ -134,9 +150,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       <Container className={classes.section} mt={rem(100)}>
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="xs">每日上传小秘密</Title>
+            <Title order={1} mb="xs" fw={900}>每日上传小秘密</Title>
             <Text size="lg" c="dimmed">
-              今天上传了吗？你每个月的节奏揭晓！
+              你的上传节奏如何？来看看你的一年上传时间线吧！
             </Text>
           </div>
         </Center>
@@ -148,7 +164,7 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       <Container className={classes.section} mt={rem(100)}>
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="xs">月度上传冠军揭晓</Title>
+            <Title order={1} mb="xs" fw={900}>月度上传冠军揭晓</Title>
             <Text size="lg" c="dimmed">
               月度最爱，12 位冠军曲目谁能赢得全年的殊荣？
             </Text>
@@ -159,10 +175,62 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
         </LazyLoadSection>
       </Container>
 
-      <Container className={classes.section} mt={rem(50)}>
+      {data.year >= 2025 && (data.rate_distribute || data.rank_distribute || data.full_combo_distribute) && (
+        <Container className={classes.section} mt={rem(100)}>
+          <Center ta="center" mb={50}>
+            <div>
+              <Title order={1} mb="xs" fw={900}>成绩分布解析</Title>
+              <Text size="lg" c="dimmed">
+                你的{data.game === 'maimai' ? '达成率' : '分数'}与全连水平如何？
+              </Text>
+            </div>
+          </Center>
+          <LazyLoadSection>
+            <RateDistributionSection data={data} />
+          </LazyLoadSection>
+        </Container>
+      )}
+
+      {data.year >= 2025 && data.rating_growth && (
+        <Container className={classes.section} mt={rem(100)}>
+          <Center ta="center" mb={50}>
+            <div>
+              <Title order={1} mb="xs" fw={900}>Rating 成长之路</Title>
+              <Text size="lg" c="dimmed">
+                从年初到年末，你的能力提升了多少？
+              </Text>
+            </div>
+          </Center>
+          <LazyLoadSection>
+            <RatingGrowthSection data={data} />
+          </LazyLoadSection>
+
+          <Text fz="xs" mt="lg" c="dimmed" ta="center">
+            ※ 年初、年末指你在该年度内的首次、最后一次游玩记录所对应的 Rating。
+          </Text>
+        </Container>
+      )}
+
+      {data.year >= 2025 && (data.difficulty_distribute || data.most_played_genres || data.most_played_bpm_ranges) && (
+        <Container className={classes.section} mt={rem(100)}>
+          <Center ta="center" mb={50}>
+            <div>
+              <Title order={1} mb="xs" fw={900}>游玩风格画像</Title>
+              <Text size="lg" c="dimmed">
+                难度、曲风、节奏——看看你的独特偏好！
+              </Text>
+            </div>
+          </Center>
+          <LazyLoadSection>
+            <DifficultyGenreSection data={data} />
+          </LazyLoadSection>
+        </Container>
+      )}
+
+      <Container className={classes.section} mt={rem(100)}>
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="lg">每一步，都是进步的足迹</Title>
+            <Title order={1} mb="lg" fw={900}>每一步，都是进步的足迹</Title>
 
             <Text size="lg" c="dimmed" mb="xs">
               回望这一年，你上传了诸多曲目成绩，创造了属于自己的记录。每一次上传，都是你与音乐之间深刻的对话，每一次数据的刷新，都是你成长的见证。
@@ -179,7 +247,7 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       </Container>
 
       <Center>
-        <IconDotsVertical color="#2B8DE3" size={36} />
+        <Image src="/year-in-review-footer.webp" maw={150} mb={50} />
       </Center>
     </>
   )
@@ -187,8 +255,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
 
 export default function YearInReview() {
   const [game] = useGame();
-  const year = 2024;
-  const { "*": shareToken } = useParams();
+  const params = useParams();
+  const year = params.year ? parseInt(params.year) : new Date().getFullYear() - 1;
+  const shareToken = params["*"];
   const [agree, setAgree] = useState(false);
 
   const { data, isLoading, error } = useYearInReview(game, year, shareToken, agree);
@@ -202,8 +271,13 @@ export default function YearInReview() {
   useEffect(() => {
     if (isLoggedOut && !shareToken) {
       navigate("/login");
+      return;
     }
-  }, []);
+    
+    if (![2024, 2025].includes(year)) {
+      navigate("/404");
+    }
+  }, [year, isLoggedOut, shareToken, navigate]);
 
   useEffect(() => {
     if (data) {
@@ -263,7 +337,7 @@ ${url}`);
 
   const faqData = [{
     title: "年度总结的数据来源是什么？",
-    content: "本页面的数据来源于您在查分器上传的谱面成绩。如果您 2024 年内在查分器上传了谱面成绩，那么您可以在本页面看到您的数据。我们不保证数据的准确性，结果仅供参考。",
+    content: `本页面的数据来源于您在查分器上传的谱面成绩。如果您 ${year} 年内在查分器上传了谱面成绩，那么您可以在本页面看到您的数据。我们不保证数据的准确性，结果仅供参考。`,
   }, {
     title: "本页面统计的次数是什么？",
     content: `本页面统计的次数是您在 ${year} 年内上传的谱面成绩个数，而非单次上传的次数。`,
@@ -305,7 +379,7 @@ ${url}`);
           <Title className={classes.title}>
             {(data ? data.game : game) === 'maimai' ? '舞萌 DX' : '中二节奏'}{' '}
             <Text variant="gradient" component="span" inherit>
-              2024
+              {year}
             </Text>{' '}
             年度总结
           </Title>
@@ -355,10 +429,16 @@ ${url}`);
                   size={small ? "md" : "lg"}
                   onClick={() => setAgree(true)}
                   rightSection={<IconArrowRight />}
-                  disabled={new Date(`${year+1}-01-01 00:00:00`).getTime() > new Date().getTime()}
+                  disabled={new Date(`${year+1}-01-01 00:00:00`).getTime() > new Date().getTime() ||
+                    new Date().getFullYear() > year + 1}
                 >
                   生成数据
                 </Button>
+                {new Date().getFullYear() > year + 1 && (
+                  <Text c="dimmed">
+                    您已超过该年度总结的数据生成期限
+                  </Text>
+                )}
                 {new Date(`${year+1}-01-01 00:00:00`).getTime() > new Date().getTime() && (
                   <Text c="dimmed">
                     {new Date(`${year+1}-01-01`).toLocaleDateString()} 后可生成数据
@@ -409,6 +489,31 @@ ${url}`);
             ))}
           </div>
         </Container>
+
+        {year > 2024 && (
+          <Container className={classes.section} mt={rem(80)}>
+            <Center>
+              <div>
+                <Title order={3} mb="md" ta="center">往年记录</Title>
+                <Center>
+                  <Group gap="md">
+                    {Array.from({ length: year - 2024 }, (_, i) => 2024 + i).map((pastYear) => (
+                      <Button
+                        key={pastYear}
+                        component="a"
+                        href={`/year-in-review/${pastYear}`}
+                        variant="default"
+                        size="md"
+                      >
+                        {pastYear} 年度总结
+                      </Button>
+                    ))}
+                  </Group>
+                </Center>
+              </div>
+            </Center>
+          </Container>
+        )}
       </Container>
       <Footer/>
     </>

@@ -118,9 +118,7 @@ export class MaimaiSongList {
   }
 
   getSongResourceId(id: number) {
-    const song = this.find(id);
-    if (!song) return 0;
-    return song.id % 10000;
+    return id % 10000;
   }
 }
 
