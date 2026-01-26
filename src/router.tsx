@@ -11,6 +11,7 @@ const ForgotPassword = lazy(() => import('./pages/public/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/public/ResetPassword'));
 const Docs = lazy(() => import('./pages/public/Docs.tsx'));
 const YearInReview = lazy(() => import('./pages/public/YearInReview'));
+const Chart = lazy(() => import('./pages/public/Chart'));
 const Profile = lazy(() => import('./pages/user/Profile/Profile.tsx'));
 const Sync = lazy(() => import('./pages/user/Sync'));
 const Scores = lazy(() => import('./pages/user/Scores'));
@@ -24,7 +25,7 @@ const DeveloperApply = lazy(() => import('./pages/developer/Apply'));
 const DeveloperInfo = lazy(() => import('./pages/developer/Info'));
 const AdminPanel = lazy(() => import('./pages/admin/Panel'));
 
-const ProtectedRoute = ({ extra_validation }: { extra_validation?: any }) => {
+const ProtectedRoute = ({ extra_validation }: { extra_validation?: () => boolean }) => {
   const { mutate } = useUserToken();
 
   if (isTokenUndefined()) {
@@ -49,6 +50,7 @@ const routesConfig = (
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/sync" element={<Sync />} />
     <Route path="/songs" element={<Songs />} />
+    <Route path="/chart" element={<Chart />} />
     <Route path="/collections" element={<Collections />} />
     <Route path="/docs/*" element={<Docs />} />
     <Route path="/year-in-review/:year/*" element={<YearInReview />} />

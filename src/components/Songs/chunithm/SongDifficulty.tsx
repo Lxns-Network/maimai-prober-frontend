@@ -3,36 +3,39 @@ import {
   useComputedColorScheme
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
-import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm.ts";
+import { ChunithmDifficultyProps, ChunithmVersionProps } from "@/utils/api/song/chunithm.ts";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { ChunithmScoreProps } from "@/types/score";
 
-interface SongProps {
+interface SongDifficultyProps {
   difficulty: ChunithmDifficultyProps;
   score: ChunithmScoreProps;
-  versions: any[];
+  versions: ChunithmVersionProps[];
   onClick: () => void;
 }
 
-export const ChunithmSongDifficulty = ({ difficulty, score, versions, onClick }: SongProps) => {
+export const ChunithmSongDifficulty = ({ difficulty, score, versions, onClick }: SongDifficultyProps) => {
   const computedColorScheme = useComputedColorScheme('light');
+
+  const isWorldsEnd = !!difficulty?.star;
+  const colorIndex = difficulty.difficulty;
 
   let borderSize = 2;
   const classNameList = [classes.scoreCard];
 
-  if (difficulty?.star) {
+  if (isWorldsEnd) {
     borderSize = 0;
     classNameList.push(classes.scoreWorldsEnd);
   }
 
   return (
     <Card className={classNameList.join(' ')} c="white" mih={82.5} pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
-      border: `${borderSize}px solid ${getScoreSecondaryColor("chunithm", difficulty.difficulty)}`.replace(")", ", 0.95)"),
-      backgroundColor: getScoreCardBackgroundColor("chunithm", difficulty.difficulty).replace(")", ", 0.95)"),
+      border: `${borderSize}px solid ${getScoreSecondaryColor("chunithm", colorIndex)}`.replace(")", ", 0.95)"),
+      backgroundColor: getScoreCardBackgroundColor("chunithm", colorIndex).replace(")", ", 0.95)"),
       opacity: computedColorScheme === 'dark' ? 0.8 : 1,
     }} onClick={onClick}>
       <Flex align="center" ml="0.5rem" mr="0.5rem" mb={5}>
-        {difficulty?.star ? (
+        {isWorldsEnd ? (
           <Text fz="sm" fw={500} style={{ flex: 1 }}>
             WORLD'S END
             <Title component="span" order={3} fw={500} ml="xs">
@@ -113,7 +116,7 @@ export const ChunithmSongDifficulty = ({ difficulty, score, versions, onClick }:
           </Group>
         </Card>
       ) : (
-        <Divider color={getScoreSecondaryColor("chunithm", difficulty.difficulty)} />
+        <Divider color={getScoreSecondaryColor("chunithm", colorIndex)} />
       )}
       <Flex mt={8} ml="0.5rem" rowGap={4} columnGap="xs" wrap="wrap">
         {difficulty.note_designer && difficulty.note_designer != "-" && (

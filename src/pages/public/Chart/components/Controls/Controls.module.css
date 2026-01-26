@@ -1,0 +1,41 @@
+@import '@/pages/Page.module.css';
+
+.separator {
+  width: 1px;
+  height: 24px;
+  background-color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4));
+  margin: 0 4px;
+}
+
+.difficultyButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  min-width: 60px;
+  height: 40px;
+  border-radius: var(--mantine-radius-md);
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+
+.difficultyButton:active {
+  transform: translateY(0);
+}
+
+.difficultyButtonSelected {
+  box-shadow: var(--mantine-shadow-xs)
+}
+
+.difficultyName {
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.difficultyLevel {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}

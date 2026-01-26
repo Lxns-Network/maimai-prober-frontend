@@ -247,7 +247,7 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       </Container>
 
       <Center>
-        <Image src="/year-in-review-footer.webp" maw={150} mb={50} />
+        <Image src="/year_in_review_footer.webp" maw={150} mb={50} />
       </Center>
     </>
   )

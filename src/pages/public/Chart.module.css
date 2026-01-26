@@ -1,0 +1,73 @@
+@import '../Page.module.css';
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: var(--mantine-spacing-md);
+
+  @mixin smaller-than $mantine-breakpoint-md {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sidebar {
+  @mixin smaller-than $mantine-breakpoint-md {
+    order: 2;
+  }
+}
+
+.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.fullscreenControls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.5) 40%, transparent 100%);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 200;
+  touch-action: manipulation;
+}
+
+.fullscreenControls.showControls {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.lockButton {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 200;
+  touch-action: manipulation;
+  min-width: 44px;
+  min-height: 44px;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.lockButton.showButton {
+  opacity: 1;
+  pointer-events: auto;
+}

@@ -2,7 +2,7 @@ import { fetchAPI } from "@/utils/api/api.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { ActionIcon, Menu } from "@mantine/core";
 import classes from "./ScoreModalMenu.module.css";
-import { IconClearAll, IconDots, IconMusic, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconClearAll, IconDots, IconMusic, IconPlayerPlay, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useFixedGame from "@/hooks/useFixedGame.ts";
@@ -10,13 +10,16 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import useScoreStore from "@/hooks/useScoreStore.ts";
 import { usePlayer } from "@/hooks/swr/usePlayer.ts";
+import { MaimaiDifficultyProps } from "@/utils/api/song/maimai";
+import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
+  difficulty?: MaimaiDifficultyProps | ChunithmDifficultyProps;
   onClose?: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
 }
 
-export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) => {
+export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionMenuProps) => {
   const { openModal: openCreateScoreModal } = useCreateScoreStore();
   const { closeModal: closeScoreModal } = useScoreStore();
   const [params, setParams] = useState(new URLSearchParams());
@@ -57,6 +60,14 @@ export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) =>
     }
   }
 
+  const handleChartPreview = (chartId: number, difficulty: number) => {
+    const params = new URLSearchParams({
+      chart_id: String(chartId),
+      difficulty: String(difficulty),
+    });
+    navigate(`/chart?${params.toString()}`);
+  };
+
   useEffect(() => {
     if (!score) return;
 
@@ -64,7 +75,7 @@ export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) =>
       song_id: score.id.toString(),
       level_index: score.level_index.toString()
     });
-    if (game === "maimai" && "type" in score) params.append("song_type", score.type);
+    if ("type" in score) params.append("song_type", score.type);
 
     setParams(params);
   }, [score]);
@@ -79,6 +90,40 @@ export const ScoreModalMenu = ({ score, onClose }: ScoreModalActionMenuProps) =>
 
       <Menu.Dropdown>
         <Menu.Label>更多操作</Menu.Label>
+        {"type" in score && (
+          <>
+            {difficulty && "is_buddy" in difficulty && difficulty.is_buddy ? (
+              <Menu.Sub>
+                <Menu.Sub.Target>
+                  <Menu.Sub.Item leftSection={<IconPlayerPlay size={20} stroke={1.5} />}>谱面预览</Menu.Sub.Item>
+                </Menu.Sub.Target>
+
+                <Menu.Sub.Dropdown>
+                  <Menu.Item onClick={() => {
+                    handleChartPreview(score.id, 0);
+                    closeScoreModal();
+                  }}>
+                    1P 谱面
+                  </Menu.Item>
+                  <Menu.Item onClick={() => {
+                    handleChartPreview(score.id, 1);
+                    closeScoreModal();
+                  }}>
+                    2P 谱面
+                  </Menu.Item>
+                </Menu.Sub.Dropdown>
+              </Menu.Sub>
+            ) : (
+              <Menu.Item leftSection={<IconPlayerPlay size={20} stroke={1.5} />} onClick={() => {
+                const typeOffset = score.type === 'dx' ? 1 : 0;
+                handleChartPreview(score.id, typeOffset * 10000 + score.level_index);
+                closeScoreModal();
+              }}>
+                谱面预览
+              </Menu.Item>
+            )}
+          </>
+        )}
         <Menu.Item disabled={!player} leftSection={<IconPlus size={20} stroke={1.5} />} onClick={() => {
           onClose && onClose();
           openCreateScoreModal({

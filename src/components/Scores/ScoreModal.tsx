@@ -202,7 +202,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
           </Modal.Title>
           <Space w="xs" />
           <Group wrap="nowrap" gap="xs">
-            {score && <ScoreModalMenu score={score} onClose={onClose} />}
+            {score && <ScoreModalMenu score={score} difficulty={difficultyState?.difficulty ?? undefined} onClose={onClose} />}
             <Modal.CloseButton />
           </Group>
         </Modal.Header>

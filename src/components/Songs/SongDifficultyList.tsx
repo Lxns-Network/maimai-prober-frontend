@@ -32,6 +32,7 @@ const SongDifficulty = ({ song, difficulty, score, onClick }: SongDifficultyProp
     return <MaimaiSongDifficulty
       difficulty={difficulty}
       score={score}
+      songId={song.id}
       versions={versions}
       onClick={() => {
         difficulty = difficulty as MaimaiDifficultyProps;
@@ -66,7 +67,7 @@ const SongDifficulty = ({ song, difficulty, score, onClick }: SongDifficultyProp
 interface SongDifficultiesProps {
   song: MaimaiSongProps | ChunithmSongProps | null;
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
-  setScores: (scores: any) => void;
+  setScores: React.Dispatch<React.SetStateAction<(MaimaiScoreProps | ChunithmScoreProps)[]>>;
   style?: React.CSSProperties;
 }
 
@@ -100,7 +101,6 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
     if (!song || !song.difficulties) return;
 
     if ("standard" in song.difficulties) {
-      song = song as MaimaiSongProps;
       Object.keys(song.difficulties).forEach((type) => {
         const s = song as MaimaiSongProps;
         const d = s.difficulties[type as keyof MaimaiDifficultiesProps];
@@ -129,7 +129,7 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
       game,
       score,
       onClose: (score) => {
-        score && setScores((prev: any[]) => {
+        score && setScores((prev: (MaimaiScoreProps | ChunithmScoreProps)[]) => {
           const index = prev.findIndex((record) => record.id === score.id && record.level_index === score.level_index);
           if (index >= 0) {
             prev[index] = score;
