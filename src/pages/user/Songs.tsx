@@ -67,7 +67,13 @@ const SongsContent = () => {
     if (!song) return;
     if (game === "maimai" && !type) return;
     try {
-      const res = await fetchAPI(`user/${game}/player/bests?song_id=${song.id}&song_type=${type}`, { method: "GET" });
+      const params = new URLSearchParams({
+        song_id: song.id.toString()
+      });
+      if (type) {
+        params.append("song_type", type);
+      }
+      const res = await fetchAPI(`user/${game}/player/bests?${params.toString()}`, { method: "GET" });
       const data = await res.json();
       if (!data.success) {
         if (data.code === 404) {

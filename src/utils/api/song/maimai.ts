@@ -50,7 +50,7 @@ export interface MaimaiGenreProps {
   genre: string;
 }
 
-interface MaimaiVersionProps {
+export interface MaimaiVersionProps {
   id: number;
   title: string;
   version: number;

@@ -31,7 +31,12 @@ export default function DeveloperApply() {
     },
 
     validate: {
-      name: (value) => validateText(value, { allowEmpty: false, textLabel: "开发者名称" }),
+      name: (value) => validateText(value, {
+        allowEmpty: false,
+        textLabel: "开发者名称",
+        minLength: 4,
+        maxLength: 16,
+      }),
       url: (value) => validateUrl(value, { allowEmpty: false, urlLabel: "开发者地址" }),
       reason: (value) => validateText(value, { allowEmpty: false, textLabel: "申请理由" }),
     },

@@ -3,6 +3,7 @@ import { updateDeveloperInfo } from "@/utils/api/developer.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { Button, Group, Modal, TextInput } from "@mantine/core";
 import { DeveloperProps } from "@/types/developer";
+import { validateText, validateUrl } from "@/utils/validator.ts";
 
 interface FormValues {
   name: string;
@@ -24,28 +25,17 @@ export const EditDeveloperModal = ({ opened, close, developer, onSuccess }: Edit
     },
 
     validate: {
-      name: (value) => {
-        if (value && value.trim() !== "") {
-          if (value.length < 2) return "开发者名称至少需要 2 个字符";
-          if (value.length > 50) return "开发者名称不能超过 50 个字符";
-        }
-        return null;
-      },
-      url: (value) => {
-        if (value && value.trim() !== "") {
-          try {
-            new URL(value);
-            return null;
-          } catch {
-            return "请输入有效的 URL 地址";
-          }
-        }
-        return null;
-      },
+      name: (value) => validateText(value, {
+        allowEmpty: false,
+        textLabel: "开发者名称",
+        minLength: 4,
+        maxLength: 16,
+      }),
+      url: (value) => validateUrl(value, { allowEmpty: false, urlLabel: "开发者地址" }),
     },
 
     transformValues: (values) => {
-      const data: any = {};
+      const data = { name: "", url: "" };
       if (values.name && values.name.trim() !== "") {
         data.name = values.name.trim();
       }

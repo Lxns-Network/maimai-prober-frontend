@@ -39,7 +39,7 @@ export interface ChunithmGenreProps {
   genre: string;
 }
 
-interface ChunithmVersionProps {
+export interface ChunithmVersionProps {
   id: number;
   title: string;
   version: number;
