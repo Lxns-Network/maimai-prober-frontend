@@ -116,7 +116,7 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
             ) : (
               <Menu.Item leftSection={<IconPlayerPlay size={20} stroke={1.5} />} onClick={() => {
                 const typeOffset = score.type === 'dx' ? 1 : 0;
-                handleChartPreview(score.id, typeOffset * 10000 + score.level_index);
+                handleChartPreview(typeOffset * 10000 + score.id, score.level_index);
                 closeScoreModal();
               }}>
                 谱面预览
