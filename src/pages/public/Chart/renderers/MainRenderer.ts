@@ -539,11 +539,11 @@ export class MainRenderer {
     }
 
     for (const touch of touches) {
-      touch.visibleTouchCount = visibleByPos.get(touch.position as string) || 0;
+      touch.visibleTouchCount = visibleByPos.get(touch.position) || 0;
     }
 
     for (const touch of touches) {
-      const pos = this.touchRenderer.getTouchPosition(touch.position as string);
+      const pos = this.touchRenderer.getTouchPosition(touch.position);
       const isSimultaneous = (touch.simultaneousNoteCount ?? 0) >= 2;
       this.touchRenderer.renderTouchBorder(touch, pos, isSimultaneous);
     }

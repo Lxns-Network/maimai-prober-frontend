@@ -124,7 +124,7 @@ export interface SlideSegment {
 
 export interface BaseNote {
   /** 按钮位置（1-8） */
-  position: ButtonPosition | TouchPosition | string;
+  position: ButtonPosition | TouchPosition;
   /** 时间（拍） */
   timing: number;
   /** 时间（毫秒） */
@@ -219,7 +219,7 @@ export interface SlideNote extends BaseNote {
 
 export interface TouchNote extends BaseNote {
   type: 'touch';
-  position: TouchPosition | string;
+  position: TouchPosition;
   /** 是否有烟花效果 */
   hasFirework?: boolean;
   /** 此位置可见的触摸数量 */
@@ -228,7 +228,7 @@ export interface TouchNote extends BaseNote {
 
 export interface TouchHoldStartNote extends BaseNote {
   type: 'touch-hold-start';
-  position: TouchPosition | string;
+  position: TouchPosition;
   /** 持续时间（拍） */
   duration: number;
   /** 持续时间（毫秒） */
@@ -243,7 +243,7 @@ export interface TouchHoldStartNote extends BaseNote {
 
 export interface TouchHoldEndNote extends BaseNote {
   type: 'touch-hold-end';
-  position: TouchPosition | string;
+  position: TouchPosition;
   /** 对应的 Hold 开始时间（拍） */
   holdStartTiming: number;
   /** 是否有烟花效果 */

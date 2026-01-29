@@ -1,4 +1,4 @@
-import { Point2D, RendererConfig, BpmEvent } from '../types';
+import { Point2D, RendererConfig, BpmEvent, SlidePathType, TouchPosition } from '../types';
 import {
   BASE_ANGLE,
   BUTTON_ANGLE_OFFSET,
@@ -33,10 +33,9 @@ export abstract class BaseRenderer {
     const mode = this.context.config.mirrorMode;
     if (mode === 'none') return position;
 
-    // 位置镜像查找表
-    const mirrorH = [0, 8, 7, 6, 5, 4, 3, 2, 1]; // L↔R: 1↔8, 2↔7, 3↔6, 4↔5
-    const mirrorV = [0, 4, 3, 2, 1, 8, 7, 6, 5]; // U↔D: 1↔4, 2↔3, 5↔8, 6↔7
-    const rotate180 = [0, 5, 6, 7, 8, 1, 2, 3, 4]; // 180°: 1↔5, 2↔6, 3↔7, 4↔8
+    const mirrorH = [0, 8, 7, 6, 5, 4, 3, 2, 1];
+    const mirrorV = [0, 4, 3, 2, 1, 8, 7, 6, 5];
+    const rotate180 = [0, 5, 6, 7, 8, 1, 2, 3, 4];
 
     switch (mode) {
       case 'horizontal': return mirrorH[position];
@@ -44,6 +43,63 @@ export abstract class BaseRenderer {
       case 'rotate180': return rotate180[position];
       default: return position;
     }
+  }
+
+  protected mirrorPathType(pathType: SlidePathType): SlidePathType {
+    const mode = this.context.config.mirrorMode;
+    if (mode === 'none' || mode === 'rotate180') return pathType;
+
+    switch (pathType) {
+      case '>': return '<';
+      case '<': return '>';
+      case 'p': return 'q';
+      case 'q': return 'p';
+      case 'pp': return 'qq';
+      case 'qq': return 'pp';
+      default: return pathType;
+    }
+  }
+
+  protected mirrorTouchPosition(touchPosition: TouchPosition): TouchPosition {
+    const mode = this.context.config.mirrorMode;
+    if (mode === 'none') return touchPosition;
+
+    const region = touchPosition[0];
+    const sensorNum = touchPosition.length > 1 ? parseInt(touchPosition[1]) : 0;
+
+    if (region === 'C') {
+      return touchPosition;
+    }
+
+    const mirrorMaps: Record<string, Record<string, number[]>> = {
+      horizontal: {
+        AB: [0, 8, 7, 6, 5, 4, 3, 2, 1],
+        DE: [0, 1, 8, 7, 6, 5, 4, 3, 2],
+      },
+      vertical: {
+        AB: [0, 4, 3, 2, 1, 8, 7, 6, 5],
+        DE: [0, 5, 4, 3, 2, 1, 8, 7, 6],
+      },
+      rotate180: {
+        ABDE: [0, 5, 6, 7, 8, 1, 2, 3, 4],
+      },
+    };
+
+    const map = mirrorMaps[mode];
+    if (!map) return touchPosition;
+
+    let key: string;
+    if (mode === 'rotate180') {
+      key = 'ABDE';
+    } else {
+      key = (region === 'A' || region === 'B') ? 'AB' : 'DE';
+    }
+
+    const mapping = map[key];
+    if (!mapping) return touchPosition;
+
+    const mirroredSensorNum = mapping[sensorNum];
+    return `${region}${mirroredSensorNum}` as TouchPosition;
   }
 
   protected getButtonAngle(position: number): number {

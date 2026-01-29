@@ -1,5 +1,5 @@
 import { BaseRenderer, RenderContext } from './BaseRenderer';
-import { TouchNote, TouchHoldStartNote, Point2D } from '../types';
+import { TouchNote, TouchHoldStartNote, Point2D, TouchPosition } from '../types';
 import {
   TOUCH_SENSOR_RADII,
   TOUCH_APPROACH_MULTIPLIER,
@@ -19,9 +19,10 @@ export class TouchRenderer extends BaseRenderer {
     super(context);
   }
 
-  getTouchPosition(touchPosition: string): Point2D {
-    const region = touchPosition[0];
-    const sensorNum = touchPosition.length > 1 ? parseInt(touchPosition[1]) : 0;
+  getTouchPosition(touchPosition: TouchPosition): Point2D {
+    const mirroredPosition = this.mirrorTouchPosition(touchPosition);
+    const region = mirroredPosition[0];
+    const sensorNum = mirroredPosition.length > 1 ? parseInt(mirroredPosition[1]) : 0;
 
     // 获取此区域的半径比例
     const radiusRatio = TOUCH_SENSOR_RADII[region] || 0;
@@ -99,7 +100,7 @@ export class TouchRenderer extends BaseRenderer {
       petalDist = closedDist;
     }
 
-    const position = this.getTouchPosition(note.position as string);
+    const position = this.getTouchPosition(note.position);
     const isSimultaneous = (note.simultaneousNoteCount ?? 0) >= 2;
     const isHoldActive = isHold && timeDiff < 0;
     const ctx = this.context.ctx;
