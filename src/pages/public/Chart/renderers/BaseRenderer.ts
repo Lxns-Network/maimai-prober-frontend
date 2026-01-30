@@ -1,4 +1,4 @@
-import { Point2D, RendererConfig, BpmEvent, SlidePathType, TouchPosition } from '../types';
+import { Point2D, RendererConfig, BpmEvent, SlidePathType, TouchPosition, ButtonPosition } from '../types';
 import {
   BASE_ANGLE,
   BUTTON_ANGLE_OFFSET,
@@ -29,7 +29,7 @@ export abstract class BaseRenderer {
     Object.assign(this.context, context);
   }
 
-  protected mirrorPosition(position: number): number {
+  protected mirrorPosition(position: ButtonPosition): ButtonPosition {
     const mode = this.context.config.mirrorMode;
     if (mode === 'none') return position;
 
@@ -38,9 +38,9 @@ export abstract class BaseRenderer {
     const rotate180 = [0, 5, 6, 7, 8, 1, 2, 3, 4];
 
     switch (mode) {
-      case 'horizontal': return mirrorH[position];
-      case 'vertical': return mirrorV[position];
-      case 'rotate180': return rotate180[position];
+      case 'horizontal': return mirrorH[position] as ButtonPosition;
+      case 'vertical': return mirrorV[position] as ButtonPosition;
+      case 'rotate180': return rotate180[position] as ButtonPosition;
       default: return position;
     }
   }
@@ -102,12 +102,12 @@ export abstract class BaseRenderer {
     return `${region}${mirroredSensorNum}` as TouchPosition;
   }
 
-  protected getButtonAngle(position: number): number {
+  protected getButtonAngle(position: ButtonPosition): number {
     const mirroredPos = this.mirrorPosition(position);
     return BASE_ANGLE + BUTTON_ANGLE_OFFSET + (mirroredPos - 1) * BUTTON_ANGLE_STEP;
   }
 
-  protected getButtonPosition(position: number): Point2D {
+  protected getButtonPosition(position: ButtonPosition): Point2D {
     const angle = this.getButtonAngle(position);
     return {
       x: this.context.centerX + Math.cos(angle) * this.context.radius,

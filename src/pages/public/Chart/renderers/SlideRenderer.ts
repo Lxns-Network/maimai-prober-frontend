@@ -169,6 +169,9 @@ export class SlideRenderer extends BaseRenderer {
   ): boolean {
     const startPos = this.noteRenderer.getPositionOnRing(segment.startPos);
     const endPos = this.noteRenderer.getPositionOnRing(segment.endPos);
+    
+    // 镜像路径类型
+    const mirroredType = this.mirrorPathType(segment.type);
 
     this.withContext(() => {
       const ctx = this.context.ctx;
@@ -186,8 +189,8 @@ export class SlideRenderer extends BaseRenderer {
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      // 根据段类型渲染
-      switch (segment.type) {
+      // 根据镜像后的段类型渲染
+      switch (mirroredType) {
         case '-':
           this.renderStraightPath(startPos, endPos, progress);
           break;
@@ -203,11 +206,10 @@ export class SlideRenderer extends BaseRenderer {
           return this.renderVPath(segment.startPos, segment.endPos, progress);
         case 'p':
         case 'pp':
-          this.renderPCurve(segment.startPos, segment.endPos, segment.type === 'pp', progress);
-          break;
         case 'q':
         case 'qq':
-          this.renderQCurve(segment.startPos, segment.endPos, segment.type === 'qq', progress);
+          // 传递原始段类型，让 getPointOnSegment 处理镜像
+          this.renderCurvePath(segment.startPos, segment.endPos, segment.type, progress);
           break;
         case 's':
           this.renderSPath(startPos, endPos, progress);
@@ -247,7 +249,7 @@ export class SlideRenderer extends BaseRenderer {
     while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
     while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-    // 根据起始位置确定弧方向
+    // 使用原始位置判断弧方向
     const isLeftSide = startPos === 1 || startPos === 2 || startPos === 7 || startPos === 8;
     if (isLeftSide) {
       if (angleDiff <= 0) angleDiff += 2 * Math.PI;
@@ -279,7 +281,7 @@ export class SlideRenderer extends BaseRenderer {
     while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
     while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-    // 相反方向的顺时针
+    // 使用原始位置判断弧方向
     const isLeftSide = startPos === 1 || startPos === 2 || startPos === 7 || startPos === 8;
     if (isLeftSide) {
       if (angleDiff >= 0) angleDiff -= 2 * Math.PI;
@@ -505,16 +507,14 @@ export class SlideRenderer extends BaseRenderer {
     this.drawWifiArrowsBatch(arrows, angle);
   }
 
-  private renderPCurve(startPos: ButtonPosition, endPos: ButtonPosition, isDouble: boolean, progress: number): void {
-    // 实现取决于起始/结束位置
-    // 这是一个简化版本 - 完整的实现将匹配旧代码
-    const pathFn = this.calculateCurvePath(startPos, endPos, 'p', isDouble);
-    const length = this.estimatePathLength(pathFn);
-    this.iterateArrowsAlongPath(pathFn, length, progress);
-  }
-
-  private renderQCurve(startPos: ButtonPosition, endPos: ButtonPosition, isDouble: boolean, progress: number): void {
-    const pathFn = this.calculateCurvePath(startPos, endPos, 'q', isDouble);
+  private renderCurvePath(startPos: ButtonPosition, endPos: ButtonPosition, originalType: SlidePathType, progress: number): void {
+    // 使用原始类型创建段，让 getPointOnSegment 处理镜像
+    const segment: SlideSegment = {
+      type: originalType,
+      startPos,
+      endPos,
+    };
+    const pathFn = (t: number) => this.getPointOnSegment(segment, t);
     const length = this.estimatePathLength(pathFn);
     this.iterateArrowsAlongPath(pathFn, length, progress);
   }
@@ -1091,8 +1091,13 @@ export class SlideRenderer extends BaseRenderer {
   getPointOnSegment(segment: SlideSegment, t: number): Point2D {
     const start = this.noteRenderer.getPositionOnRing(segment.startPos);
     const end = this.noteRenderer.getPositionOnRing(segment.endPos);
+    
+    // 镜像路径类型和位置用于正确的路径计算
+    const mirroredType = this.mirrorPathType(segment.type);
+    const mirroredStartPos = this.mirrorPosition(segment.startPos);
+    const mirroredEndPos = this.mirrorPosition(segment.endPos);
 
-    switch (segment.type) {
+    switch (mirroredType) {
       case '-':
         return {
           x: start.x + (end.x - start.x) * t,
@@ -1109,12 +1114,13 @@ export class SlideRenderer extends BaseRenderer {
         while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
         while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-        if (segment.type === '>') {
+        // 使用原始位置判断弧方向
+        if (mirroredType === '>') {
           const isLeft = [1, 2, 7, 8].includes(segment.startPos);
           if (isLeft ? angleDiff <= 0 : angleDiff >= 0) {
             angleDiff += (isLeft ? 1 : -1) * 2 * Math.PI;
           }
-        } else if (segment.type === '<') {
+        } else if (mirroredType === '<') {
           const isLeft = [1, 2, 7, 8].includes(segment.startPos);
           if (isLeft ? angleDiff >= 0 : angleDiff <= 0) {
             angleDiff += (isLeft ? -1 : 1) * 2 * Math.PI;
@@ -1129,7 +1135,7 @@ export class SlideRenderer extends BaseRenderer {
       }
 
       case 'v':
-        if (Math.abs(segment.endPos - segment.startPos) === 4) {
+        if (Math.abs(mirroredEndPos - mirroredStartPos) === 4) {
           return {
             x: start.x + (end.x - start.x) * t,
             y: start.y + (end.y - start.y) * t,
@@ -1223,10 +1229,10 @@ export class SlideRenderer extends BaseRenderer {
       case 'q':
       case 'qq': {
         // 逆时针曲线
-        if (segment.type === 'qq') {
+        if (mirroredType === 'qq') {
           // 双曲线: entry → arc around offset circle → exit
-          const interPos = ((segment.startPos - 1 + 4) % 8 + 1) as ButtonPosition;
-          const interPoint = this.noteRenderer.getPositionOnRing(interPos);
+          const interPos = ((mirroredStartPos - 1 + 4) % 8 + 1) as ButtonPosition;
+          const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
           
           // 入口点在 40% 处靠近中间
           const entryX = start.x + 0.4 * (interPoint.x - start.x);
@@ -1247,8 +1253,8 @@ export class SlideRenderer extends BaseRenderer {
           // 圆上的起始角度
           const startAngle = Math.atan2(entryY - circleY, entryX - circleX);
           
-          // 根据位置差计算扫掠角度
-          const posDiff = (segment.endPos - segment.startPos + 8) % 8;
+          // 根据镜像后的位置差计算扫掠角度
+          const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
           let sweepAngle: number;
           switch (posDiff) {
             case 0: sweepAngle = 1.25 * Math.PI; break;
@@ -1284,8 +1290,8 @@ export class SlideRenderer extends BaseRenderer {
           }
         } else {
           // 单曲线: 围绕中心弧
-          const interPos = ((segment.startPos + 3 - 1) % 8 + 1) as ButtonPosition;
-          const interPoint = this.noteRenderer.getPositionOnRing(interPos);
+          const interPos = ((mirroredStartPos + 3 - 1) % 8 + 1) as ButtonPosition;
+          const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
           
           // 起点和中间点之间的中点
           const midX = (start.x + interPoint.x) / 2;
@@ -1294,8 +1300,8 @@ export class SlideRenderer extends BaseRenderer {
           const circleRadius = Math.sqrt((midX - this.context.centerX) ** 2 + (midY - this.context.centerY) ** 2);
           const startAngle = Math.atan2(midY - this.context.centerY, midX - this.context.centerX);
           
-          // 根据位置差计算扫掠角度
-          const posDiff = (segment.endPos - segment.startPos + 8) % 8;
+          // 根据镜像后的位置差计算扫掠角度
+          const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
           let sweepAngle: number;
           switch (posDiff) {
             case 0: sweepAngle = 1.25 * Math.PI; break;
@@ -1335,10 +1341,10 @@ export class SlideRenderer extends BaseRenderer {
       case 'p':
       case 'pp': {
         // 顺时针曲线
-        if (segment.type === 'pp') {
+        if (mirroredType === 'pp') {
           // 双曲线: 入口 → 围绕偏移圆弧 → 退出
-          const interPos = ((segment.startPos - 1 + 4) % 8 + 1) as ButtonPosition;
-          const interPoint = this.noteRenderer.getPositionOnRing(interPos);
+          const interPos = ((mirroredStartPos - 1 + 4) % 8 + 1) as ButtonPosition;
+          const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
           
           // 入口点在 40% 处靠近中间
           const entryX = start.x + 0.4 * (interPoint.x - start.x);
@@ -1359,8 +1365,8 @@ export class SlideRenderer extends BaseRenderer {
           // 圆上的起始角度
           const startAngle = Math.atan2(entryY - circleY, entryX - circleX);
           
-          // 根据位置差计算扫掠角度 (顺时针为负)
-          const posDiff = (segment.endPos - segment.startPos + 8) % 8;
+          // 根据镜像后的位置差计算扫掠角度 (顺时针为负)
+          const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
           let sweepAngle: number;
           switch (posDiff) {
             case 0: sweepAngle = -1.25 * Math.PI; break;
@@ -1396,8 +1402,8 @@ export class SlideRenderer extends BaseRenderer {
           }
         } else {
           // 单曲线: 围绕中心弧
-          const interPos = ((segment.startPos + 5 - 1) % 8 + 1) as ButtonPosition;
-          const interPoint = this.noteRenderer.getPositionOnRing(interPos);
+          const interPos = ((mirroredStartPos + 5 - 1) % 8 + 1) as ButtonPosition;
+          const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
           
           // 起点和中间点之间的中点
           const midX = (start.x + interPoint.x) / 2;
@@ -1406,8 +1412,8 @@ export class SlideRenderer extends BaseRenderer {
           const circleRadius = Math.sqrt((midX - this.context.centerX) ** 2 + (midY - this.context.centerY) ** 2);
           const startAngle = Math.atan2(midY - this.context.centerY, midX - this.context.centerX);
           
-          // 根据位置差计算扫掠角度 (顺时针为负)
-          const posDiff = (segment.endPos - segment.startPos + 8) % 8;
+          // 根据镜像后的位置差计算扫掠角度 (顺时针为负)
+          const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
           let sweepAngle: number;
           switch (posDiff) {
             case 0: sweepAngle = -1.25 * Math.PI; break;
@@ -1514,23 +1520,6 @@ export class SlideRenderer extends BaseRenderer {
     const p1 = this.getPointOnSegment(lastSeg, 0.99);
     const p2 = this.getPointOnSegment(lastSeg, 1);
     return Math.atan2(p2.y - p1.y, p2.x - p1.x);
-  }
-
-  private calculateCurvePath(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    type: 'p' | 'q',
-    isDouble: boolean
-  ): (t: number) => Point2D {
-    // 创建一个段来使用 getPointOnSegment
-    const segmentType = isDouble ? (type === 'p' ? 'pp' : 'qq') : type;
-    const segment: SlideSegment = {
-      type: segmentType as SlidePathType,
-      startPos,
-      endPos,
-    };
-
-    return (t: number) => this.getPointOnSegment(segment, t);
   }
 
   /**
