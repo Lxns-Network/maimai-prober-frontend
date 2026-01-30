@@ -18,6 +18,7 @@ import {
   SlideSegment,
   SlidePathType,
   ButtonPosition,
+  TouchPosition,
 } from '../../types';
 
 interface ParseNotesResult {
@@ -717,7 +718,7 @@ function parseNoteString(
     }
 
     if (isValidTouch) {
-      const touchPosition = sensorNum ? `${region}${sensorNum}` : region;
+      const touchPosition = (sensorNum ? `${region}${sensorNum}` : region) as TouchPosition;
       const isHold = modifiers.includes('h');
       const hasFirework = modifiers.includes('f');
 
