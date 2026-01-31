@@ -1,3 +1,5 @@
 User-agent: *
 Disallow: /user/
 Allow: /
+
+Sitemap: https://maimai.lxns.net/sitemap.xml
