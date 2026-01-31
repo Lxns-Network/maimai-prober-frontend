@@ -1,5 +1,5 @@
 import { Flex, Image, Text } from '@mantine/core'
-import { Link } from "react-router-dom";
+import { Link } from "@/components/Link";
 
 export default function Logo() {
   return (

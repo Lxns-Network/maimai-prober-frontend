@@ -1,7 +1,7 @@
 import { Alert, Button, Group, Text, Transition } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons-react";
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useVikeNavigation";
 
 interface LoginAlertProps extends React.ComponentPropsWithoutRef<typeof Alert> {
   content: string;
