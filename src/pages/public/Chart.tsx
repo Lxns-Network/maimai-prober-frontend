@@ -1,5 +1,4 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ActionIcon, Text, Title, Kbd, Group, Card, SimpleGrid, Stack, Container, Badge } from '@mantine/core';
 import { IconArrowLeft, IconLock, IconLockOpen } from '@tabler/icons-react';
 import { ChartCanvas } from '@/pages/public/Chart/components/ChartCanvas';
@@ -8,6 +7,7 @@ import { useGameStore } from '@/pages/public/Chart/stores/useGameStore';
 import { parseSimaiChart, getAvailableDifficulties } from '@/pages/public/Chart/core/parser/ChartParser';
 import { ChartDifficulty } from '@/pages/public/Chart/types';
 import classes from './Chart.module.css';
+import { usePageContext } from 'vike-react/usePageContext';
 
 async function fetchChartData(chartId: number): Promise<string | null> {
   try {
@@ -96,8 +96,6 @@ function useKeyboardShortcuts() {
 }
 
 function ChartContent() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const reset = useGameStore((s) => s.reset);
   const setRawSimaiText = useGameStore((s) => s.setRawSimaiText);
   const setMusicUrl = useGameStore((s) => s.setMusicUrl);
@@ -115,8 +113,9 @@ function ChartContent() {
   const chartCanvasRef = useRef<HTMLDivElement>(null);
   const fullscreenElementRef = useRef<HTMLDivElement>(null);
 
-  const chartIdParam = searchParams.get('chart_id');
-  const difficultyParam = searchParams.get('difficulty');
+  const searchParams = usePageContext().urlParsed.search;
+  const chartIdParam = searchParams.chart_id;
+  const difficultyParam = searchParams.difficulty;
   const chartId = chartIdParam ? parseInt(chartIdParam) : null;
   const difficulty = difficultyParam ? (parseInt(difficultyParam) + 2) as ChartDifficulty : null;
 
@@ -187,7 +186,7 @@ function ChartContent() {
 
     const showControlsWithTimeout = () => {
       setShowControls(true);
-      
+
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
@@ -203,7 +202,7 @@ function ChartContent() {
       const target = e.target as HTMLElement;
       const wasOverControls = isOverControls;
       isOverControls = !!(target.closest('.mantine-ActionIcon-root') || target.closest('[class*="fullscreenControls"]'));
-      
+
       if (isOverControls) {
         if (controlsTimeoutRef.current) {
           clearTimeout(controlsTimeoutRef.current);
@@ -226,7 +225,7 @@ function ChartContent() {
 
       const target = e.target as HTMLElement;
       const isTouchingControls = !!(target.closest('[class*="fullscreenControls"]') || target.closest('.mantine-ActionIcon-root'));
-      
+
       if (isTouchingControls) {
         setShowControls(true);
         if (controlsTimeoutRef.current) {
@@ -281,11 +280,11 @@ function ChartContent() {
         mozFullScreenElement?: Element;
         msFullscreenElement?: Element;
       };
-      const isCurrentlyFullscreen = !!(document.fullscreenElement || 
-        doc.webkitFullscreenElement || 
-        doc.mozFullScreenElement || 
+      const isCurrentlyFullscreen = !!(document.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
         doc.msFullscreenElement);
-      
+
       if (isFullscreen && !isCurrentlyFullscreen) {
         setIsFullscreen(false);
       }
@@ -379,7 +378,7 @@ function ChartContent() {
         <Group mb="lg">
           <ActionIcon
             variant="subtle"
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.back()}
             aria-label="返回"
           >
             <IconArrowLeft size={20} />
@@ -437,9 +436,5 @@ function ChartContent() {
 }
 
 export default function Chart() {
-  useEffect(() => {
-    document.title = '谱面预览 | maimai DX 查分器';
-  }, []);
-
   return <ChartContent />;
 }

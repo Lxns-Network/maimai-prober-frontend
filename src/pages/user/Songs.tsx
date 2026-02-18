@@ -7,7 +7,7 @@ import { openRetryModal } from "@/utils/modal.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
 import { fetchAPI } from "@/utils/api/api.ts";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link } from "@/components/Link";
 import { LoginAlert } from "@/components/LoginAlert";
 import { SongCard } from "@/components/Songs/SongCard.tsx";
 import { SongDifficultyList } from "@/components/Songs/SongDifficultyList.tsx";
@@ -17,6 +17,7 @@ import { Page } from "@/components/Page/Page.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import { getSongCollections, SongCollectionItemProps } from "@/utils/api/song/song.tsx";
+import { usePageContext } from "vike-react/usePageContext";
 
 interface State {
   songId: number | null;
@@ -24,7 +25,7 @@ interface State {
 
 type Action =
   | { type: "SET_FROM_URL"; payload: { songId: number | null } }
-  | { type: "SET_FROM_LOCATION"; payload: { songId: number | null } }
+  | { type: "SET_FROM_PAGE_CONTEXT"; payload: { songId: number | null } }
   | { type: "SET_FROM_USER"; payload: { songId: number | null } }
   | { type: "RESET_SONG_ID" };
 
@@ -32,7 +33,7 @@ const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "SET_FROM_URL":
       return { ...state, songId: action.payload.songId };
-    case "SET_FROM_LOCATION":
+    case "SET_FROM_PAGE_CONTEXT":
       return { ...state, songId: action.payload.songId };
     case "SET_FROM_USER":
       return { ...state, songId: action.payload.songId };
@@ -47,7 +48,8 @@ const SongsContent = () => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useGame();
   const prevGame = usePrevious(game);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const pageContext = usePageContext();
+  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const [state, dispatch] = useReducer(reducer, {
     songId: (() => {
       const id = searchParams.get("song_id");
@@ -61,7 +63,6 @@ const SongsContent = () => {
   const [songCollections, setSongCollections] = useState<SongCollectionItemProps[] | null>(null);
   const getSongList = useSongListStore((state) => state.getSongList);
   const isLoggedOut = !localStorage.getItem("token");
-  const location = useLocation();
 
   const getPlayerSongBestsHandler = async (type?: string) => {
     if (!song) return;
@@ -98,18 +99,10 @@ const SongsContent = () => {
   }
 
   useEffect(() => {
-    if (location.state) {
-      if (location.state.songId) {
-        const songId = parseInt(location.state.songId as string);
-        if (!isNaN(songId)) {
-          dispatch({ type: "SET_FROM_LOCATION", payload: { songId } });
-          return;
-        }
-        window.history.replaceState({}, '');
-        return;
-      }
+    if (pageContext.songId) {
+      dispatch({ type: "SET_FROM_PAGE_CONTEXT", payload: { songId: pageContext.songId } });
     }
-  }, []);
+  }, [pageContext.songId]);
 
   useEffect(() => {
     setSongList(getSongList(game));
@@ -117,7 +110,7 @@ const SongsContent = () => {
     if (prevGame !== undefined && prevGame !== game) {
       setScores([]);
       setSongCollections(null);
-      setSearchParams({}, { replace: true });
+      window.history.replaceState(null, '', window.location.pathname);
       dispatch({ type: "RESET_SONG_ID" });
     }
   }, [game]);
@@ -125,10 +118,7 @@ const SongsContent = () => {
   useEffect(() => {
     if (!song) return;
 
-    setSearchParams({
-      game: game,
-      song_id: song.id.toString(),
-    }, { replace: true });
+    window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&song_id=${song.id.toString()}`);
 
     if (isLoggedOut) return;
 
@@ -165,7 +155,7 @@ const SongsContent = () => {
         value={songId ?? undefined}
         onOptionSubmit={(value) => {
           if (value === 0) {
-            setSearchParams({}, { replace: true });
+            window.history.replaceState(null, '', window.location.pathname);
             dispatch({ type: "RESET_SONG_ID" });
             return;
           }

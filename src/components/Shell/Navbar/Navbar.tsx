@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { Box, Container, Divider, ScrollArea } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "@/utils/session.ts";
@@ -17,11 +16,10 @@ interface NavbarProps {
 
 export default function Navbar({ style, onClose }: NavbarProps) {
   const [active, setActive] = useState('');
-  const isLoggedOut = !localStorage.getItem("token");
-  const location = useLocation();
+  const isLoggedOut = typeof window !== 'undefined' ? !localStorage.getItem("token") : true;
 
   const navbarData = useMemo(() => [
-    { label: '2025 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2025', enabled: !isLoggedOut, is_new: true },
+    { label: '2025 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2025', enabled: !isLoggedOut },
     { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true, divider: !isLoggedOut },
     // { label: '首页', icon: <IconHome stroke={1.5} />, to: '/', enabled: true },
     { label: '同步游戏数据', icon: <IconCloudUpload stroke={1.5} />, to: '/sync', enabled: true },
@@ -33,16 +31,22 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     { label: '登录账号', icon: <IconDoorEnter stroke={1.5} />, to: '/login', enabled: isLoggedOut, divider: true },
     { label: '新用户注册', icon: <IconTransferIn stroke={1.5} />, to: '/register', enabled: isLoggedOut },
     { label: '曲目别名投票', icon: <IconGavel stroke={1.5} />, to: '/alias/vote', enabled: !isLoggedOut, divider: true },
-    { label: '开发者面板', icon: <IconCode stroke={1.5} />, to: '/developer',
-      enabled: (!isLoggedOut && checkPermission(UserPermission.Developer)) },
-    { label: '申请成为开发者', icon: <IconCode stroke={1.5} />, to: '/developer/apply',
-      enabled: !(isLoggedOut || checkPermission(UserPermission.Developer)) },
-    { label: '管理面板', icon: <IconTable stroke={1.5} />, to: '/admin/panel',
-      enabled: checkPermission(UserPermission.Administrator), divider: true },
+    {
+      label: '开发者面板', icon: <IconCode stroke={1.5} />, to: '/developer',
+      enabled: (!isLoggedOut && checkPermission(UserPermission.Developer))
+    },
+    {
+      label: '申请成为开发者', icon: <IconCode stroke={1.5} />, to: '/developer/apply',
+      enabled: !(isLoggedOut || checkPermission(UserPermission.Developer))
+    },
+    {
+      label: '管理面板', icon: <IconTable stroke={1.5} />, to: '/admin/panel',
+      enabled: checkPermission(UserPermission.Administrator), divider: true
+    },
   ], [isLoggedOut]);
 
   useEffect(() => {
-    const currentPath = location.pathname;
+    const currentPath = window.location.pathname;
 
     const activeNavItem = navbarData.find((item) => {
       const pattern = new RegExp(`^${item.to}(/|$)`);
@@ -54,7 +58,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     } else {
       setActive('');
     }
-  }, [location.pathname, navbarData]);
+  }, [window.location.pathname, navbarData]);
 
   return (
     <nav className={classes.navbar} style={style}>

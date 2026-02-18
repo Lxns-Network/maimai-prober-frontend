@@ -1,4 +1,4 @@
-import { API_URL } from "../../main.tsx";
+import { API_URL } from "@/main";
 import { Button, Group } from "@mantine/core";
 import { IconExternalLink } from "@tabler/icons-react";
 import { CopyButtonWithIcon } from "./CopyButtonWithIcon.tsx";

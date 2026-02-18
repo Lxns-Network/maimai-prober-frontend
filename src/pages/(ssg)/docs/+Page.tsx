@@ -3,7 +3,6 @@ import {
   ScrollArea, Space, Text, Title, Tooltip, Tree, TreeNodeData, Typography, useTree
 } from "@mantine/core";
 import classes from "./Docs.module.css"
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { remark } from "remark";
@@ -21,9 +20,9 @@ import {
 } from "@tabler/icons-react";
 import LazyLoad from 'react-lazyload';
 import { PhotoView } from "react-photo-view";
-import { Helmet } from "react-helmet";
 import { CodeHighlight, CodeHighlightAdapterProvider, createShikiAdapter } from "@mantine/code-highlight";
 import clsx from "clsx";
+import { useData } from 'vike-react/useData';
 
 async function loadShiki() {
   const { createHighlighterCore } = await import('@shikijs/core');
@@ -43,7 +42,7 @@ const shikiAdapter = createShikiAdapter(loadShiki);
 const scrollTo = (id: string) => {
   if (!id) return;
 
-  if (window.location.hash !== `#${encodeURIComponent(id)}`) {
+  if (typeof window !== 'undefined' && window.location.hash !== `#${encodeURIComponent(id)}`) {
     window.history.pushState(null, "", `${window.location.pathname}#${encodeURIComponent(id)}`);
   }
 
@@ -246,8 +245,6 @@ const TableOfContents = ({ headings }: any) => {
 }
 
 const Content = ({ markdown }: { markdown: string }) => {
-  const navigate = useNavigate();
-
   return (
     <Markdown
       remarkPlugins={[remarkGfm, remarkFlexibleContainers]}
@@ -277,12 +274,12 @@ const Content = ({ markdown }: { markdown: string }) => {
           }
           return (
             <a className={classes.link} href={href} onClick={(event) => {
-              event.preventDefault();
               if (href && href.startsWith("#")) {
+                event.preventDefault();
                 scrollTo(decodeURIComponent(href.slice(1)));
                 return;
               }
-              href && navigate(href);
+              // 对于其他链接，使用默认行为
             }} {...props}>
               {children}
             </a>
@@ -413,39 +410,14 @@ const Content = ({ markdown }: { markdown: string }) => {
   )
 }
 
-export default function Docs() {
-  const { "*": page } = useParams();
-  const [markdown, setMarkdown] = useState("");
+export default function Page() {
+  const data = useData<{ markdown: string; slug: string }>();
+  const { markdown, slug } = data;
   const [headings, handlers] = useListState([]);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const pageHandler = async (page: string) => {
-    const fetchPage = async (path: string) => {
-      const response = await fetch(path + '?_t=' + Date.now());
-      if (response.ok) {
-        return await response.text();
-      }
-      return null;
-    };
-
-    const text = await fetchPage(`/docs/${page}.md`) || await fetchPage(`/docs/${page}/index.md`);
-    if (!text) {
-      navigate("/404", { replace: true });
-      return;
-    }
-
-    setMarkdown(text);
-  }
 
   useEffect(() => {
-    setMarkdown("");
-    pageHandler(page || "index");
-  }, [page]);
+    if (!markdown) return;
 
-  useEffect(() => {
     const file = remark()
       .use(remarkToc)
       .use(remarkSlug as any)
@@ -454,36 +426,27 @@ export default function Docs() {
 
     handlers.setState(file.data.headings as any);
 
-    (file.data.headings as any).forEach((heading: any) => {
-      if (heading.depth === 1) {
-        setTitle(heading.value);
-      }
-    });
-
-    if (markdown) {
-      let d = markdown.split("---")[1] || "";
-      d = d.replace(/\[(.*?)]\(.*?\)/g, "$1");
-      d = d.replace(/[>#*`-]/g, "");
-      d = d.replace(/\s+/g, " ").trim();
-      d = d.slice(0, 150).trim() + (d.length > 150 ? "..." : "");
-      setDescription(d);
+    // 处理 URL hash 滚动
+    if (typeof window !== 'undefined' && window.location.hash) {
+      setTimeout(() => {
+        scrollTo(decodeURIComponent(window.location.hash.slice(1)));
+      }, 100);
     }
-
-    scrollTo(decodeURIComponent(location.hash.slice(1)));
   }, [markdown]);
+
+  if (!markdown) {
+    return (
+      <Group justify="center" mt="xs">
+        <Loader type="dots" size="xl" />
+      </Group>
+    );
+  }
 
   return (
     <Flex>
-      <Helmet
-        defaultTitle="maimai DX 查分器"
-        titleTemplate="%s | maimai DX 查分器"
-      >
-        <title>{title}</title>
-        <meta name="description" content={description} />
-      </Helmet>
       <Container mr={0} className={classes.content}>
-        {markdown && page && (
-          <Anchor component={Link} to="/docs">
+        {slug && slug !== 'index' && (
+          <Anchor href="/docs">
             <Center inline mt="xs">
               <IconArrowLeft size={18} />
               <Box component="span" ml={5}>
@@ -492,17 +455,11 @@ export default function Docs() {
             </Center>
           </Anchor>
         )}
-        {!markdown ? (
-          <Group justify="center" mt="xs">
-            <Loader type="dots" size="xl" />
-          </Group>
-        ) : (
-          <CodeHighlightAdapterProvider adapter={shikiAdapter}>
-            <Typography id="content" p={0}>
-              <Content markdown={markdown} />
-            </Typography>
-          </CodeHighlightAdapterProvider>
-        )}
+        <CodeHighlightAdapterProvider adapter={shikiAdapter}>
+          <Typography id="content" p={0}>
+            <Content markdown={markdown} />
+          </Typography>
+        </CodeHighlightAdapterProvider>
       </Container>
       <Container ml={0} className={classes.tableOfContents}>
         <TableOfContents headings={headings} />

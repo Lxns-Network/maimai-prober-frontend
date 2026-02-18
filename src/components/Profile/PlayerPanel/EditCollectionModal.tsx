@@ -13,7 +13,7 @@ import { mdiWebOff } from "@mdi/js";
 import { useThrottledValue } from "@mantine/hooks";
 import { Marquee } from "@/components/Marquee.tsx";
 import { Game } from "@/types/game";
-import { useNavigate } from "react-router-dom";
+import { navigate } from "vike/client/router";
 
 const collectionMetadata = {
   maimai: {
@@ -187,23 +187,23 @@ const EditCollectionModalContent = (
             value={collectionId.toString()}
             onChange={(value) => setCollectionId(parseInt(value))}
           >
-              {cards.length === 0 ? (
-                <Flex gap="xs" align="center" justify="center" direction="column" c="dimmed">
-                  <IconDatabaseOff size={64} stroke={1.5} />
-                  <Text fz="sm">没有搜索到{metadata.title}，请输入其它关键词</Text>
-                </Flex>
-              ) : (
-                <Stack gap="xs">
-                  <SimpleGrid cols={isAvatar ? 2 : 1}>
-                    {cards}
-                  </SimpleGrid>
-                  {searchedCollections.length < collections.filter(c =>
-                    c.name.toLowerCase().includes(search.toLowerCase())
-                  ).length && (
+            {cards.length === 0 ? (
+              <Flex gap="xs" align="center" justify="center" direction="column" c="dimmed">
+                <IconDatabaseOff size={64} stroke={1.5} />
+                <Text fz="sm">没有搜索到{metadata.title}，请输入其它关键词</Text>
+              </Flex>
+            ) : (
+              <Stack gap="xs">
+                <SimpleGrid cols={isAvatar ? 2 : 1}>
+                  {cards}
+                </SimpleGrid>
+                {searchedCollections.length < collections.filter(c =>
+                  c.name.toLowerCase().includes(search.toLowerCase())
+                ).length && (
                     <Button variant="light" onClick={handleLoadMore}>加载更多</Button>
                   )}
-                </Stack>
-              )}
+              </Stack>
+            )}
           </Radio.Group>
         </ScrollArea.Autosize>
       )}
@@ -234,8 +234,6 @@ interface EditCollectionModalProps {
 export const EditCollectionModal = (
   { game, type, defaultValue, opened, onCancel, onSubmit }: EditCollectionModalProps
 ) => {
-  const navigate = useNavigate();
-
   const metadata = collectionMetadata[game][type as keyof typeof collectionMetadata[Game]];
   const title = metadata?.title || "收藏品";
 

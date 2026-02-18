@@ -7,9 +7,9 @@ import { useForm } from "@mantine/form";
 import { sendDeveloperApply } from "@/utils/api/developer.ts";
 import classes from "../Form.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
-import { useNavigate } from "react-router-dom";
 import { validateText, validateUrl } from "@/utils/validator.ts";
 import { useDeveloper } from "@/hooks/swr/useDeveloper.ts";
+import { navigate } from 'vike/client/router'
 
 interface FormValues {
   name: string;
@@ -21,7 +21,6 @@ export default function DeveloperApply() {
   const { developer, isLoading } = useDeveloper();
   const [submitting, setSubmitting] = useState(false);
   const [applied, setApplied] = useState(false);
-  const navigate = useNavigate();
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -61,14 +60,10 @@ export default function DeveloperApply() {
   }
 
   useEffect(() => {
-    document.title = "申请成为开发者 | maimai DX 查分器";
-  }, [])
-
-  useEffect(() => {
     if (!developer) return;
 
     if (developer.api_key) {
-      navigate("/developer", { replace: true });
+      navigate("/developer", { overwriteLastHistoryEntry: true });
     } else {
       form.setValues({
         name: developer.name || "",

@@ -3,7 +3,7 @@ import {
   Paper, Rating, Stack, Text, Textarea, ThemeIcon
 } from "@mantine/core";
 import { Game } from "@/types/game";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import {
   IconDots, IconFlag2Filled, IconHeart, IconHeartFilled, IconMenu2, IconMessage, IconPhotoOff, IconTrash
 } from "@tabler/icons-react";

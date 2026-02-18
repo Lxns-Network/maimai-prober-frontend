@@ -2,21 +2,22 @@ import { PageProps } from "./Page.tsx";
 import { Tabs } from "@mantine/core";
 import { useState } from "react";
 import classes from "./PageTabs.module.css";
-import { useSearchParams } from "react-router-dom";
+import { usePageContext } from "vike-react/usePageContext";
 
 export const PageTabs = (props: PageProps) => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const pageContext = usePageContext();
+  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || props.tabs?.[0].id);
 
   return (
     <Tabs
       variant="outline"
       value={activeTab}
-      classNames={{ list: classes.tabsList, tab: classes.tab}}
+      classNames={{ list: classes.tabsList, tab: classes.tab }}
       keepMounted={false}
       radius="md"
       onChange={(tab) => {
-        setSearchParams({ tab: tab! });
+        window.history.replaceState(null, '', `${window.location.pathname}?tab=${tab!}`);
         setActiveTab(tab!)
       }}
     >

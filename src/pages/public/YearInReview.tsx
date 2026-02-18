@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { Footer } from "../../components/Shell/Footer/Footer";
 import classes from './YearInReview.module.css';
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { YearSummarySection } from "@/components/YearInReview/YearSummarySection.tsx";
 import { SongRankingSection } from "@/components/YearInReview/SongRankingSection.tsx";
 import { TagRadarSection } from "@/components/YearInReview/TagRadarSection.tsx";
@@ -25,8 +25,10 @@ import { useYearInReview } from "@/hooks/swr/useYearInReview.ts";
 import useGame from "@/hooks/useGame.ts";
 import { fetchAPI } from "@/utils/api/api.ts";
 import { notifications } from "@mantine/notifications";
-import { useNavigate, useParams } from "react-router-dom";
+import { isSupportedYear } from "@/pages/(csr)/year-in-review/config";
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
+import { navigate } from "vike/client/router";
+import { usePageContext } from "vike-react/usePageContext";
 
 export interface YearInReviewProps {
   game: Game;
@@ -255,15 +257,21 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
 
 export default function YearInReview() {
   const [game] = useGame();
-  const params = useParams();
-  const year = params.year ? parseInt(params.year) : new Date().getFullYear() - 1;
-  const shareToken = params["*"];
+  const pageContext = usePageContext();
+  const year = pageContext.routeParams?.year ? parseInt(pageContext.routeParams.year) : new Date().getFullYear() - 1;
+  
+  const getShareTokenFromUrl = () => {
+    if (typeof window === 'undefined') return null;
+    const pathMatch = window.location.pathname.match(/^\/year-in-review\/\d{4}\/([^/]+)\/?$/);
+    return pathMatch ? pathMatch[1] : null;
+  };
+  
+  const shareToken = getShareTokenFromUrl() || pageContext.routeParams?.["*"];
   const [agree, setAgree] = useState(false);
 
   const { data, isLoading, error } = useYearInReview(game, year, shareToken, agree);
   const [shareLink, setShareLink] = useState('');
   const clipboard = useClipboard({ timeout: 500 });
-  const navigate = useNavigate();
   const theme = useMantineTheme();
   const small = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
   const isLoggedOut = !localStorage.getItem("token");
@@ -273,8 +281,8 @@ export default function YearInReview() {
       navigate("/login");
       return;
     }
-    
-    if (![2024, 2025].includes(year)) {
+
+    if (!isSupportedYear(year)) {
       navigate("/404");
     }
   }, [year, isLoggedOut, shareToken, navigate]);
@@ -287,8 +295,6 @@ export default function YearInReview() {
       if (shareToken) {
         setShareLink(`${window.location.origin}/year-in-review/${year}/${shareToken}`);
       }
-    } else {
-      document.title = `${year} 年度总结 | maimai DX 查分器`;
     }
   }, [data]);
 
@@ -341,7 +347,7 @@ ${url}`);
   }, {
     title: "本页面统计的次数是什么？",
     content: `本页面统计的次数是您在 ${year} 年内上传的谱面成绩个数，而非单次上传的次数。`,
-  },{
+  }, {
     title: "别人能看到我的数据吗？",
     content: "本页面的数据仅供您查看，不会被其他人看到。如果您想要分享您的数据，请点击上方的“分享该页面”按钮。生成后会有一个永久链接，别人访问这个链接时可以看到您的数据。",
   }, {
@@ -392,15 +398,15 @@ ${url}`);
 
           {data && (
             <Group mt="lg">
-            {shareLink && (
-              <TextInput
-                size={small ? "md" : "lg"}
-                value={shareLink}
-                onFocus={(e) => e.target.select()}
-                style={{ flex: small ? 1 : 'unset' }}
-                readOnly
-              />
-            )}
+              {shareLink && (
+                <TextInput
+                  size={small ? "md" : "lg"}
+                  value={shareLink}
+                  onFocus={(e) => e.target.select()}
+                  style={{ flex: small ? 1 : 'unset' }}
+                  readOnly
+                />
+              )}
               <Button
                 size={small ? "md" : "lg"}
                 rightSection={<IconShare />}
@@ -429,7 +435,7 @@ ${url}`);
                   size={small ? "md" : "lg"}
                   onClick={() => setAgree(true)}
                   rightSection={<IconArrowRight />}
-                  disabled={new Date(`${year+1}-01-01 00:00:00`).getTime() > new Date().getTime() ||
+                  disabled={new Date(`${year + 1}-01-01 00:00:00`).getTime() > new Date().getTime() ||
                     new Date().getFullYear() > year + 1}
                 >
                   生成数据
@@ -439,9 +445,9 @@ ${url}`);
                     您已超过该年度总结的数据生成期限
                   </Text>
                 )}
-                {new Date(`${year+1}-01-01 00:00:00`).getTime() > new Date().getTime() && (
+                {new Date(`${year + 1}-01-01 00:00:00`).getTime() > new Date().getTime() && (
                   <Text c="dimmed">
-                    {new Date(`${year+1}-01-01`).toLocaleDateString()} 后可生成数据
+                    {new Date(`${year + 1}-01-01`).toLocaleDateString()} 后可生成数据
                   </Text>
                 )}
               </Group>
@@ -515,7 +521,7 @@ ${url}`);
           </Container>
         )}
       </Container>
-      <Footer/>
+      <Footer />
     </>
   );
 }

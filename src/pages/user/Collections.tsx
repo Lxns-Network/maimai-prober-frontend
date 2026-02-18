@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useState } from "react";
 import { getCollectionById, getPlayerCollectionById } from "@/utils/api/player.ts";
 import { Text, Space, Checkbox, Flex, Transition, Group, Select } from "@mantine/core";
-import {usePrevious, useToggle} from "@mantine/hooks";
+import { usePrevious, useToggle } from "@mantine/hooks";
 import { RequiredSong } from "@/components/Collections/RequiredSong";
 import { CollectionCombobox } from "@/components/Collections/CollectionCombobox.tsx";
 import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
@@ -10,10 +10,10 @@ import { LoginAlert } from "@/components/LoginAlert";
 import { Page } from "@/components/Page/Page.tsx";
 import { useCollectionList } from "@/hooks/swr/useCollectionList.ts";
 import { CollectionProps } from "@/types/player";
-import { useSearchParams } from "react-router-dom";
 import useGame from "@/hooks/useGame.ts";
 import { Game } from "@/types/game";
 import { CollectionCard } from "@/components/Collections/CollectionCard.tsx";
+import { usePageContext } from "vike-react/usePageContext";
 
 const collectionTypeData: Record<Game, { label: string; value: string }[]> = {
   maimai: [
@@ -72,7 +72,8 @@ const reducer = (state: State, action: Action): State => {
 };
 
 const CollectionsContent = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const pageContext = usePageContext();
+  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const [game] = useGame();
   const prevGame = usePrevious(game);
   const [state, dispatch] = useReducer(reducer, {
@@ -130,7 +131,7 @@ const CollectionsContent = () => {
   useEffect(() => {
     if (prevGame !== undefined && prevGame !== game) {
       setFilteredCollections([]);
-      setSearchParams({}, { replace: true });
+      window.history.replaceState(null, '', window.location.pathname);
       dispatch({ type: "RESET_COLLECTION_ID" });
       dispatch({ type: "SET_FROM_SELECT", payload: { collectionType: game === "maimai" ? "plate" : "trophy" } });
     }
@@ -164,11 +165,7 @@ const CollectionsContent = () => {
       return;
     }
 
-    setSearchParams({
-      game: game,
-      collection_type: collectionType || "",
-      collection_id: collection.id.toString(),
-    }, { replace: true });
+    window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&collection_type=${collectionType || ""}&collection_id=${collection.id.toString()}`);
 
     if (!collection.required) {
       setRecords([]);
@@ -225,7 +222,7 @@ const CollectionsContent = () => {
               type: "SET_FROM_SELECT",
               payload: { collectionType: value },
             });
-            setSearchParams({ collection_type: value || "" }, { replace: true });
+            window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&collection_type=${value || ""}`);
             setFilteredCollections([]);
           }}
           allowDeselect={false}

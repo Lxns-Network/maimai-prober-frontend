@@ -2,7 +2,7 @@ import React from "react";
 import { PageTabs } from "./PageTabs.tsx";
 import { PageHeader } from "./PageHeader.tsx";
 import { PageRawContent } from "./PageRawContent.tsx";
-import { NAVBAR_BREAKPOINT } from "@/App.tsx";
+import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 import { Helmet } from "react-helmet";
 
 export interface PageProps {

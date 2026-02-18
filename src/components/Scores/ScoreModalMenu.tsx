@@ -4,7 +4,6 @@ import { ActionIcon, Menu } from "@mantine/core";
 import classes from "./ScoreModalMenu.module.css";
 import { IconClearAll, IconDots, IconMusic, IconPlayerPlay, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
@@ -12,6 +11,7 @@ import useScoreStore from "@/hooks/useScoreStore.ts";
 import { usePlayer } from "@/hooks/swr/usePlayer.ts";
 import { MaimaiDifficultyProps } from "@/utils/api/song/maimai";
 import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm";
+import { navigate } from "vike/client/router";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
@@ -24,7 +24,6 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
   const { closeModal: closeScoreModal } = useScoreStore();
   const [params, setParams] = useState(new URLSearchParams());
   const [game] = useFixedGame();
-  const navigate = useNavigate();
 
   const { player } = usePlayer(game);
 
@@ -135,7 +134,7 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
         </Menu.Item>
         {location.pathname !== "/songs" && (
           <Menu.Item leftSection={<IconMusic size={20} stroke={1.5} />} onClick={() => {
-            navigate(`/songs`, { state: { songId: score.id } });
+            navigate(`/songs`, { pageContext: { songId: score.id } });
             closeScoreModal();
           }}>
             查看曲目详情

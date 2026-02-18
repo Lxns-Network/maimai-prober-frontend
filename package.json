@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cap.js/widget": "^0.1.34",
     "@formkit/auto-animate": "^0.9.0",
     "@mantine/carousel": "^8.2.8",
     "@mantine/charts": "^8.2.8",
@@ -76,12 +77,13 @@
     "stylelint": "^16.6.1",
     "stylelint-config-standard-scss": "^13.1.0",
     "swr": "^2.2.5",
+    "vike": "^0.4.253",
+    "vike-react": "^0.6.20",
     "wanakana": "^5.3.1",
     "wordcloud": "^1.2.3",
     "zustand": "^4.5.5"
   },
   "devDependencies": {
-    "@types/grecaptcha": "^3.0.9",
     "@types/node": "^20.13.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -97,7 +99,7 @@
     "postcss-preset-mantine": "^1.15.0",
     "postcss-simple-vars": "^7.0.1",
     "typescript": "^5.4.5",
-    "vite": "^4.5.3"
+    "vite": "^6.3.0"
   },
   "overrides": {
     "react-lazyload": {

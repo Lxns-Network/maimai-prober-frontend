@@ -15,13 +15,13 @@ import {
   UnstyledButton
 } from "@mantine/core";
 import { IconAward } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { getTrophyColor } from "@/utils/color.ts";
 import { Marquee } from "@/components/Marquee.tsx";
 import React, { useMemo } from "react";
 import classes from "@/pages/Page.module.css";
 import scoreClasses from "@/components/Scores/ScoreModal.module.css";
+import { navigate } from "vike/client/router";
 
 interface SongCollectionsComponentProps {
   collections: SongCollectionItemProps[] | null;
@@ -38,7 +38,6 @@ const collectionTypeLabelMap: Record<string, string> = {
 
 const CollectionItem = ({ collection }: { collection: SongCollectionItemProps }) => {
   const [game] = useFixedGame();
-  const navigate = useNavigate();
 
   const handleClick = () => {
     navigate(`/collections?game=${game}&collection_type=${collection.type}&collection_id=${collection.id}`);

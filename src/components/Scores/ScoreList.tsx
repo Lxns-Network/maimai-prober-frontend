@@ -7,7 +7,7 @@ import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import classes from "./Scores.module.css";
 import { getScoreSecondaryColor } from "@/utils/color.ts";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";

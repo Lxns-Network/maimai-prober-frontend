@@ -1,11 +1,11 @@
 import { Suspense, useEffect, useRef, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from '@mantine/core';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
 import { ModalsProvider } from "@mantine/modals";
 import { notifications, Notifications } from "@mantine/notifications";
-import { isTokenUndefined, logout } from "@/utils/session";
-import RouterTransition from "@/components/RouterTransition";
+import { logout } from "@/utils/session";
+import { usePageContext } from 'vike-react/usePageContext';
+import { navigate } from 'vike/client/router';
 
 import { ErrorBoundary } from "react-error-boundary";
 import { Fallback } from "@/pages/public/Fallback.tsx";
@@ -20,9 +20,20 @@ import { useSiteConfig } from "@/hooks/swr/useSiteConfig.ts";
 import { useUserToken } from "@/hooks/swr/useUserToken.ts";
 import { useVersionChecker } from "@/hooks/useVersionChecker.tsx";
 
+import "@mantine/core/styles.css";
+import "@mantine/dates/styles.css";
+import "@mantine/nprogress/styles.css";
+import "@mantine/notifications/styles.css";
+import '@mantine/carousel/styles.css';
+import '@mantine/tiptap/styles.css';
+import '@mantine/charts/styles.css';
+import '@mantine/code-highlight/styles.css';
+import "mantine-datatable/styles.css";
 import 'react-photo-view/dist/react-photo-view.css';
-import classes from "./App.module.css";
+import "@/index.css";
+import classes from "@/App.module.css";
 import useGame from "@/hooks/useGame.ts";
+import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 
 const theme = createTheme({
   focusRing: 'never',
@@ -30,15 +41,12 @@ const theme = createTheme({
   activeClassName: classes.active,
 });
 
-export const NAVBAR_BREAKPOINT = 992;
-
-export default function App() {
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const pageContext = usePageContext();
   const { config, isLoading: isSiteConfigLoading } = useSiteConfig();
   const { error: userTokenError } = useUserToken();
   const { toggle, fullscreen } = useFullscreen();
-  const [opened, setOpened] = useState(window.innerWidth > NAVBAR_BREAKPOINT);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [opened, setOpened] = useState(typeof window !== 'undefined' ? window.innerWidth > NAVBAR_BREAKPOINT : false);
   const viewport = useRef<HTMLDivElement>(null);
 
   // 版本检查
@@ -90,18 +98,11 @@ export default function App() {
 
   useEffect(() => {
     if (userTokenError) {
-      const isExpired = !isTokenUndefined();
-      const redirectPath = location.pathname + location.search;
-      
       logout();
-      
-      if (location.pathname !== '/login') {
+
+      if (pageContext.urlPathname !== '/login') {
         navigate('/login', {
-          replace: true,
-          state: {
-            expired: isExpired,
-            redirect: redirectPath,
-          }
+          overwriteLastHistoryEntry: true,
         });
       }
     }
@@ -111,7 +112,7 @@ export default function App() {
     if (viewport.current) {
       viewport.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [location.pathname]);
+  }, [pageContext.urlPathname]);
 
   useEffect(() => {
     if (isSiteConfigLoading || !config) return;
@@ -165,7 +166,6 @@ export default function App() {
             }}
           >
             <Notifications />
-            <RouterTransition />
             <Shell navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} viewportRef={viewport}>
               <div ref={ref} style={{
                 minHeight: 'calc(100vh - var(--header-height))',
@@ -176,7 +176,7 @@ export default function App() {
                   </Group>
                 )}>
                   <ErrorBoundary FallbackComponent={Fallback}>
-                    <Outlet />
+                    {children}
                   </ErrorBoundary>
                 </Suspense>
               </div>

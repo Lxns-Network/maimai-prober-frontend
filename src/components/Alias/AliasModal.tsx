@@ -10,7 +10,7 @@ import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { PhotoView } from "react-photo-view";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";

@@ -1,19 +1,19 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   Title, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Alert, useComputedColorScheme,
   Card, SegmentedControl, Center
 } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { useLocation, useNavigate } from "react-router-dom";
-import { API_URL, RECAPTCHA_SITE_KEY } from '@/main';
+import { API_URL, CAPTCHA_ENDPOINT } from '@/main';
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
 import { IconAlertCircle, IconLock, IconMail, IconUser } from "@tabler/icons-react";
-import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
 import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { PasskeyLogin } from "@/components/Settings/PasskeyLogin.tsx";
+import { usePageContext } from "vike-react/usePageContext";
+import { navigate } from "vike/client/router";
 
 interface FormValues {
   name?: string;
@@ -25,33 +25,18 @@ export default function Login() {
   const [method, setMethod] = useState<'name' | 'email'>('name');
   const [visible, setVisible] = useState(false);
   const computedColorScheme = useComputedColorScheme('light');
-  const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state;
-  const recaptcha = useMemo(() => new ReCaptcha(RECAPTCHA_SITE_KEY, "login"), []);
+  const pageContext = usePageContext();
 
   useEffect(() => {
-    document.title = "登录 | maimai DX 查分器";
-  }, [])
-
-  useEffect(() => {
-    if (state) {
-      if (state.expired) {
+    if (pageContext.loginState) {
+      if (pageContext.loginState.expired) {
         openAlertModal("你已登出", "登录会话已过期，请重新登录。")
       }
-      if (state.reset) {
+      if (pageContext.loginState.reset) {
         openAlertModal("重置成功", "请使用新密码登录。");
       }
     }
-  }, [state])
-
-  useEffect(() => {
-    recaptcha.render();
-
-    return () => {
-      recaptcha.destroy();
-    }
-  }, [recaptcha])
+  }, [pageContext.loginState])
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -101,9 +86,11 @@ export default function Login() {
     setVisible(true);
 
     try {
-      const recaptchaToken = await recaptcha.getToken();
+      const { default: Cap } = await import("@cap.js/widget");
+      const cap = new Cap({ apiEndpoint: CAPTCHA_ENDPOINT });
+      const { token: captchaToken } = await cap.solve();
 
-      const res = await fetch(`${API_URL}/user/login?captcha=${recaptchaToken}`, {
+      const res = await fetch(`${API_URL}/user/login?captcha=${captchaToken}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -117,14 +104,12 @@ export default function Login() {
 
       localStorage.setItem("token", data.data.token);
 
-      if (state?.redirect && state.redirect !== "/login" && state.redirect !== "/register") {
-        navigate(state.redirect, { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
+      const target = (pageContext.redirect && pageContext.redirect !== "/login" && pageContext.redirect !== "/register")
+        ? pageContext.redirect
+        : "/";
+      window.location.href = target;
     } catch (error) {
       openRetryModal("登录失败", `${error}`, () => loginHandler(values));
-    } finally {
       setVisible(false);
     }
   }
@@ -153,7 +138,7 @@ export default function Login() {
           ),
           value: "name"
         }, {
-          label:  (
+          label: (
             <Center style={{ gap: 10 }}>
               <IconMail size={16} />
               <span>邮箱登录</span>

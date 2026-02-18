@@ -295,12 +295,13 @@ function parseMetadataLine(line: string, metadata: ChartMetadata): void {
     case 'lv_6':
       metadata.level[key as keyof ChartLevels] = value;
       break;
-    case 'bpm':
+    case 'bpm': {
       const bpmVal = parseFloat(value);
       if (!isNaN(bpmVal)) {
         metadata.bpm = bpmVal;
       }
       break;
+    }
   }
 }
 

@@ -7,7 +7,7 @@ import { IconChevronRight, IconNumber, IconPhotoOff } from "@tabler/icons-react"
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
 import classes from "../ScoreModal.module.css";

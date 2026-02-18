@@ -2,7 +2,7 @@ import { Text, Card, LoadingOverlay, Mark } from '@mantine/core';
 import { deletePlayerScores, unbindPlayer } from "@/utils/api/player.ts";
 import { updateUserConfig } from "@/utils/api/user.ts";
 import { SettingList } from '@/components/Settings/SettingList.tsx';
-import { Link } from "react-router-dom";
+import { Link } from "@/components/Link";
 import classes from "../../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { useUserConfig } from "@/hooks/swr/useUserConfig.ts";

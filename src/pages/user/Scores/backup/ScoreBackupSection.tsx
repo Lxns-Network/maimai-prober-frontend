@@ -6,7 +6,7 @@ import {
 import { IconFileExport, IconFileImport } from "@tabler/icons-react";
 import { fetchAPI } from "@/utils/api/api.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
-import { API_URL } from "@/main.tsx";
+import { API_URL } from "@/main";
 import React from "react";
 import classes from "./ScoreBackupSection.module.css"
 import useGame from "@/hooks/useGame.ts";

@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Title, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box, Card } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { API_URL, RECAPTCHA_SITE_KEY } from '@/main';
+import { API_URL, CAPTCHA_ENDPOINT } from '@/main';
 import { validateEmail } from "@/utils/validator.ts";
-import { Link } from "react-router-dom";
+import { Link } from "@/components/Link";
 import { useForm } from "@mantine/form";
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
-import ReCaptcha from "@/utils/reCaptcha.ts";
 import classes from "../Form.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 
@@ -16,17 +15,6 @@ interface FormValues {
 
 export default function ForgotPassword() {
   const [visible, setVisible] = useState(false);
-  const recaptcha = new ReCaptcha(RECAPTCHA_SITE_KEY, "forgot");
-
-  useEffect(() => {
-    document.title = "忘记密码 | maimai DX 查分器";
-
-    recaptcha.render();
-
-    return () => {
-      recaptcha.destroy();
-    }
-  }, [])
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -42,8 +30,10 @@ export default function ForgotPassword() {
     setVisible(true);
 
     try {
-      const recaptchaToken = await recaptcha.getToken();
-      const res = await fetch(`${API_URL}/user/forgot-password?captcha=${recaptchaToken}`, {
+      const { default: Cap } = await import("@cap.js/widget");
+      const cap = new Cap({ apiEndpoint: CAPTCHA_ENDPOINT });
+      const { token: captchaToken } = await cap.solve();
+      const res = await fetch(`${API_URL}/user/forgot-password?captcha=${captchaToken}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -5,7 +5,7 @@ import {
 import { resetDeveloperApiKey } from "@/utils/api/developer.ts";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
-import { useDisclosure }  from "@mantine/hooks";
+import { useDisclosure } from "@mantine/hooks";
 import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import classes from "../Page.module.css";
 import { useComputedColorScheme } from "@mantine/core";
@@ -13,15 +13,14 @@ import { Page } from "@/components/Page/Page.tsx";
 import { DeveloperOAuthSection } from "@/components/Developer/DeveloperOAuthSection.tsx";
 import { EditDeveloperModal } from "@/components/Developer/EditDeveloperModal.tsx";
 import { useDeveloper } from "@/hooks/swr/useDeveloper.ts";
-import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { navigate } from 'vike/client/router';
 
 const DeveloperInfoContent = () => {
   const { developer, isLoading, error, mutate } = useDeveloper();
   const [visible, visibleHandler] = useDisclosure(false);
   const [editModalOpened, editModal] = useDisclosure(false);
   const computedColorScheme = useComputedColorScheme('light');
-  const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const resetDeveloperApiKeyHandler = async () => {
@@ -46,8 +45,8 @@ const DeveloperInfoContent = () => {
   useEffect(() => {
     if (isLoading) return;
 
-    if (!developer|| !developer.api_key) {
-      navigate("/developer/apply");
+    if (!developer || !developer.api_key) {
+      navigate("/developer/apply", { overwriteLastHistoryEntry: true });
     }
   }, [isLoading, developer]);
 

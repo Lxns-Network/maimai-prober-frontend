@@ -2,10 +2,9 @@ import React, { useEffect, useRef } from "react";
 import {
   Title, Text, Button, Container, rem, SimpleGrid, ThemeIcon, Center, AspectRatio
 } from '@mantine/core';
-import { useNavigate } from "react-router-dom";
 import { IconChartBar, IconCode, IconGavel, IconHandStop, IconHistory } from "@tabler/icons-react";
 import { ProductCarousel } from "@/components/Home/ProductCarousel.tsx";
-import { Footer } from "../../components/Shell/Footer/Footer";
+import { Footer } from "@/components/Shell/Footer/Footer";
 import classes from './Home.module.css';
 
 interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -85,8 +84,8 @@ function LogoParallax() {
       mb="md"
     >
       <div ref={logoParallaxRef} className={classes.logoParallax}>
-        <div ref={backgroundRef} className={classes.background}/>
-        <div ref={foregroundRef} className={classes.foreground}/>
+        <div ref={backgroundRef} className={classes.background} />
+        <div ref={foregroundRef} className={classes.foreground} />
       </div>
     </AspectRatio>
   );
@@ -94,7 +93,7 @@ function LogoParallax() {
 
 const features = [
   {
-    icon: <IconHandStop stroke={1.5}/>,
+    icon: <IconHandStop stroke={1.5} />,
     title: '易于同步成绩',
     description: '摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。',
   },
@@ -120,12 +119,8 @@ const features = [
   },
 ];
 
-export default function Home() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = "maimai DX 查分器";
-  });
+export default function Page() {
+  const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem("token");
 
   return (
     <>
@@ -151,22 +146,22 @@ export default function Home() {
         </Container>
 
         <Container className={classes.controls} p={0}>
-          {localStorage.getItem("token") ? <>
+          {isLoggedIn ? <>
             <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
-                    onClick={() => navigate("/docs")}>
+              component="a" href="/docs">
               帮助文档
             </Button>
             <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
-                    onClick={() => navigate("/user/profile")}>
+              component="a" href="/user/profile">
               管理我的查分器账号
             </Button>
           </> : <>
             <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
-                    onClick={() => navigate("/login")}>
+              component="a" href="/login">
               登录
             </Button>
             <Button className={classes.control} size="lg"
-                    onClick={() => navigate("/register")}>
+              component="a" href="/register">
               注册 maimai DX 查分器账号
             </Button>
           </>}

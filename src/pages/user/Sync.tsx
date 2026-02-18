@@ -6,7 +6,6 @@ import {
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useMediaQuery } from '@mantine/hooks';
-import { useNavigate } from 'react-router-dom';
 import { getCrawlStatus, getUserCrawlToken } from "@/utils/api/user.ts";
 import { IconAlertCircle, IconDownload, IconRepeat } from "@tabler/icons-react";
 import { openAlertModal } from "@/utils/modal";
@@ -24,6 +23,7 @@ import { Game } from "@/types/game";
 import { getCrawlStatistic } from "@/utils/api/misc.ts";
 import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
 import useGame from "@/hooks/useGame.ts";
+import { navigate } from 'vike/client/router';
 
 export interface ScoreChangeDetailProps {
   new: unknown;
@@ -74,7 +74,6 @@ const SyncContent = () => {
   const [resultOpened, setResultOpened] = useState(false);
   const [step, setStep] = useState(0);
   const [game, setGame] = useGame();
-  const navigate = useNavigate();
   const idle = useIdle(60000);
 
   const isLoggedOut = !localStorage.getItem("token");
@@ -300,9 +299,9 @@ const SyncContent = () => {
               选择需要爬取的游戏
             </Text>
             <RadioCardGroup data={[
-              {name: '舞萌 DX', description: '爬取玩家信息、成绩与收藏品', value: 'maimai'},
-              {name: '中二节奏', description: '爬取玩家信息、成绩与收藏品', value: 'chunithm'},
-            ]} value={game} onChange={(value) => setGame(value as Game)}/>
+              { name: '舞萌 DX', description: '爬取玩家信息、成绩与收藏品', value: 'maimai' },
+              { name: '中二节奏', description: '爬取玩家信息、成绩与收藏品', value: 'chunithm' },
+            ]} value={game} onChange={(value) => setGame(value as Game)} />
             <Card className={classes.card} withBorder radius="md" mt="xs" mb="lg">
               <Text fz="lg" fw={700}>
                 服务器状态

@@ -1,13 +1,14 @@
-import { Overlay, rem, ScrollArea, Transition } from "@mantine/core";
+import { Overlay, ScrollArea, Transition } from "@mantine/core";
 import Navbar from "./Navbar/Navbar.tsx";
 import Header from "./Header/Header.tsx";
 import classes from "./Shell.module.css";
 import React, { useEffect, useRef, useState } from "react";
-import { NAVBAR_BREAKPOINT } from "../../App.tsx";
 import { useScroll, useWindowSize } from "react-use";
 import { CreateScoreModalProvider } from "../ModalProvider/CreateScoreModalProvider.tsx";
 import { ScoreModalProvider } from "../ModalProvider/ScoreModalProvider.tsx";
 import { CreateAliasModalProvider } from "../ModalProvider/CreateAliasModalProvider.tsx";
+
+export const NAVBAR_BREAKPOINT = 992;
 
 interface ShellProps {
   navbarOpened: boolean;
@@ -18,7 +19,7 @@ interface ShellProps {
 
 export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, children }: ShellProps) {
   const { width } = useWindowSize();
-  const [headerHeight, setHeaderHeight] = useState(56);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const headerRef = useRef<HTMLDivElement>(null);
 
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
@@ -72,7 +73,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   return (
     <div id="shell-root" style={{
       "--navbar-width": "300px",
-      "--header-height": `${headerHeight}px`,
+      "--header-height": headerHeight ? `${headerHeight}px` : undefined,
     } as React.CSSProperties}>
       <Transition mounted={navbarOpened} transition="slide-right" duration={300} timingFunction="ease">
         {(styles) => <Navbar style={styles} onClose={onNavbarToggle} />}
@@ -85,10 +86,8 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
         headerRef={headerRef}
       />
 
-      <ScrollArea className={classes.routesWrapper} style={{
-        paddingLeft: window.innerWidth > NAVBAR_BREAKPOINT ? rem(300) : 0,
-      }} type="scroll" viewportRef={viewportRef}>
-        <Transition mounted={navbarOpened && window.innerWidth <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
+      <ScrollArea className={classes.routesWrapper} type="scroll" viewportRef={viewportRef}>
+        <Transition mounted={navbarOpened && width <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
           {(styles) => <Overlay color="#000" style={styles} onClick={onNavbarToggle} zIndex={100} />}
         </Transition>
         {children}

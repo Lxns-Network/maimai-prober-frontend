@@ -4,7 +4,7 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import classes from './SongRankingSection.module.css';
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { IconPhotoOff } from "@tabler/icons-react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";

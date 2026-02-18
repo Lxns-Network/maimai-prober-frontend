@@ -3,13 +3,13 @@ import {
   Title, Text, Button, Card, List, ThemeIcon, Group, Container, Box, Divider, Anchor, Loader, Alert, Avatar, CopyButton,
   Stack,
 } from "@mantine/core";
-import { useSearchParams } from "react-router-dom";
 import { IconCheck, IconCopy, IconExclamationCircle, IconLink } from "@tabler/icons-react";
 import { confirmUserOAuthAuthorize } from "@/utils/api/user.ts";
 import { openRetryModal } from "@/utils/modal.tsx";
 import classes from "./Authorize.module.css";
 import { useOAuthApps } from "@/hooks/swr/useOAuthApp.ts";
 import { scopeData } from "@/data/scopeData.tsx";
+import { usePageContext } from "vike-react/usePageContext";
 
 function isOOBRedirectUri(redirectUri: string | null): boolean {
   if (!redirectUri) return false;
@@ -17,16 +17,12 @@ function isOOBRedirectUri(redirectUri: string | null): boolean {
 }
 
 export default function Authorize() {
-  const [params] = useSearchParams();
-
+  const pageContext = usePageContext();
+  const params = new URLSearchParams(pageContext.urlParsed.search);
   const { app, isLoading, error } = useOAuthApps(params);
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [code, setCode] = useState("");
-
-  useEffect(() => {
-    document.title = "授权应用 | maimai DX 查分器";
-  }, []);
-
+  
   useEffect(() => {
     if (!app) return;
     if (app.user_authorized && !isOOBRedirectUri(app.redirect_uri)) {

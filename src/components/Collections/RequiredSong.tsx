@@ -8,10 +8,10 @@ import classes from "../../pages/Page.module.css";
 import { IconCheck } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../Marquee.tsx";
-import { ASSET_URL } from "../../main.tsx";
+import { ASSET_URL } from "@/main";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { CollectionProps } from "@/types/player";
-import { Link } from "react-router-dom";
+import { Link } from "@/components/Link";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { Game } from "@/types/game";
 
@@ -165,45 +165,45 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
             </Grid.Col>
             {collection?.required?.[0] &&
               (['fc', 'fs', 'rate', 'full_combo', 'full_chain', 'rank'] as const).some(key => collection.required![0][key]) && (
-              <Grid.Col span={6} h={height}>
-                {collection.required[0].fc && (
-                  <div>
-                    <Text fz="xs" c="dimmed">全连要求</Text>
-                    <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${collection.required[0].fc}.webp`} />
-                  </div>
-                )}
-                {collection.required[0].fs && (
-                  <div>
-                    <Text fz="xs" c="dimmed">全同步要求</Text>
-                    <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${collection.required[0].fs}.webp`} />
-                  </div>
-                )}
-                {collection.required[0].rate && (
-                  <div>
-                    <Text fz="xs" c="dimmed">达成率要求</Text>
-                    <Image w={rem(64)} ml={-8} src={`/assets/maimai/music_rank/${collection.required[0].rate}.webp`} />
-                  </div>
-                )}
-                {collection.required[0].full_combo && (
-                  <div>
-                    <Text fz="xs" c="dimmed">全连要求</Text>
-                    <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_icon/${collection.required[0].full_combo}.webp`} />
-                  </div>
-                )}
-                {collection.required[0].full_chain && (
-                  <div>
-                    <Text fz="xs" c="dimmed">全同步要求</Text>
-                    <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_icon/${collection.required[0].full_chain}.webp`} />
-                  </div>
-                )}
-                {collection.required[0].rank && (
-                  <div>
-                    <Text fz="xs" c="dimmed">分数要求</Text>
-                    <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_rank/${collection.required[0].rank}.webp`} />
-                  </div>
-                )}
-              </Grid.Col>
-            )}
+                <Grid.Col span={6} h={height}>
+                  {collection.required[0].fc && (
+                    <div>
+                      <Text fz="xs" c="dimmed">全连要求</Text>
+                      <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${collection.required[0].fc}.webp`} />
+                    </div>
+                  )}
+                  {collection.required[0].fs && (
+                    <div>
+                      <Text fz="xs" c="dimmed">全同步要求</Text>
+                      <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${collection.required[0].fs}.webp`} />
+                    </div>
+                  )}
+                  {collection.required[0].rate && (
+                    <div>
+                      <Text fz="xs" c="dimmed">达成率要求</Text>
+                      <Image w={rem(64)} ml={-8} src={`/assets/maimai/music_rank/${collection.required[0].rate}.webp`} />
+                    </div>
+                  )}
+                  {collection.required[0].full_combo && (
+                    <div>
+                      <Text fz="xs" c="dimmed">全连要求</Text>
+                      <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_icon/${collection.required[0].full_combo}.webp`} />
+                    </div>
+                  )}
+                  {collection.required[0].full_chain && (
+                    <div>
+                      <Text fz="xs" c="dimmed">全同步要求</Text>
+                      <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_icon/${collection.required[0].full_chain}.webp`} />
+                    </div>
+                  )}
+                  {collection.required[0].rank && (
+                    <div>
+                      <Text fz="xs" c="dimmed">分数要求</Text>
+                      <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_rank/${collection.required[0].rank}.webp`} />
+                    </div>
+                  )}
+                </Grid.Col>
+              )}
           </Grid>
         </div>
         <Box h={height}>
@@ -238,11 +238,13 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
             <Box pos="relative" h={40}>
               <LoadingOverlay overlayProps={{ radius: "sm", backgroundOpacity: 0.9 }} visible={
                 record.completed_difficulties && record.completed_difficulties.includes(difficulty || 0)
-              } loaderProps={{ children: (
-                <ThemeIcon variant="light" color="teal" size={40}>
-                  <IconCheck />
-                </ThemeIcon>
-              )}} zIndex={1} />
+              } loaderProps={{
+                children: (
+                  <ThemeIcon variant="light" color="teal" size={40}>
+                    <IconCheck />
+                  </ThemeIcon>
+                )
+              }} zIndex={1} />
               <PhotoView src={`${ASSET_URL}/${game}/jacket/${record.id}.png`}>
                 <Image h={40} w={40} radius="sm" src={`${ASSET_URL}/${game}/jacket/${record.id}.png!webp`} />
               </PhotoView>

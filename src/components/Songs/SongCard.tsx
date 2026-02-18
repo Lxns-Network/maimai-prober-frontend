@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { ActionIcon, Avatar, Badge, Box, Card, CopyButton, Flex, Group, Stack, Text, Title } from "@mantine/core";
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
 import { PhotoView } from "react-photo-view";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { IconNumber, IconPhotoOff, IconPlus } from "@tabler/icons-react";
 import { openAlertModal } from "@/utils/modal.tsx";
 import { AudioPlayer } from "../AudioPlayer.tsx";

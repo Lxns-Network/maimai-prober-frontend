@@ -1,6 +1,9 @@
 import { logoutUser } from "./api/user.ts";
 
+const isBrowser = () => typeof window !== 'undefined';
+
 const getLoginSessionPayload = () => {
+  if (!isBrowser()) return null;
   const token = localStorage.getItem('token');
   if (!token) {
     return null;
@@ -19,6 +22,7 @@ export const getLoginUserId = () => {
 }
 
 export const isTokenExpired = () => {
+  if (!isBrowser()) return true;
   const token = localStorage.getItem('token');
   if (!token) {
     return true;
@@ -40,6 +44,7 @@ export const isTokenExpired = () => {
 };
 
 export const isTokenUndefined = () => {
+  if (!isBrowser()) return true;
   const token = localStorage.getItem('token');
   return !token;
 }
@@ -49,6 +54,7 @@ export const isTokenValid = () => {
 }
 
 export const logout = () => {
+  if (!isBrowser()) return;
   localStorage.removeItem('token');
   logoutUser();
 }
@@ -60,6 +66,7 @@ export enum UserPermission {
 }
 
 export const checkPermission = (permission: UserPermission) => {
+  if (!isBrowser()) return false;
   const token = localStorage.getItem('token');
   if (!token) {
     return false;

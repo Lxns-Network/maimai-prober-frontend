@@ -1,6 +1,7 @@
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import vike from 'vike/plugin'
 import * as fs from "node:fs";
 import path from "node:path";
 
@@ -8,18 +9,19 @@ import path from "node:path";
 export default defineConfig({
   plugins: [
     react(),
+    vike(),
     {
       name: 'generate-version',
       closeBundle() {
         const version = Date.now().toString();
-        fs.writeFileSync(path.resolve(__dirname, 'dist/version.json'), JSON.stringify({ version }));
+        fs.writeFileSync(path.resolve(__dirname, 'dist/client/version.json'), JSON.stringify({ version }));
       }
     },
     sentryVitePlugin({
       org: "lxns-network",
       project: "maimai-prober-frontend",
       sourcemaps: {
-        filesToDeleteAfterUpload: "dist/assets/*.map",
+        filesToDeleteAfterUpload: "dist/**/*.map",
       }
     })
   ],
@@ -32,19 +34,23 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom'],
-          reactRouter: ['react-router', 'react-router-dom'],
-          mdi: ['@mdi/js'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+            return 'react';
+          }
+          if (id.includes('node_modules/@mdi/js')) {
+            return 'mdi';
+          }
+          if (id.includes('node_modules/@mantine/core')) {
+            return 'mantine-core';
+          }
         },
-        entryFileNames: `assets/[hash].js`,
-        chunkFileNames: `assets/[hash].js`,
-        assetFileNames: `assets/[hash].[ext]`,
       }
     },
     chunkSizeWarningLimit: 2000,
     reportCompressedSize: false,
     sourcemap: true,
+    cssCodeSplit: true,
   },
   server: {
     proxy: {
@@ -54,5 +60,8 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  ssr: {
+    noExternal: ['beautiful-react-hooks', 'react-use'],
   }
 })

@@ -9,7 +9,7 @@ import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
 import classes from "../ScoreModal.module.css";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
 import useSongListStore from "@/hooks/useSongListStore.ts";

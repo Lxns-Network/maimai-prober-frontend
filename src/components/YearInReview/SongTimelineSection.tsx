@@ -1,6 +1,6 @@
 import { YearInReviewProps } from "@/pages/public/YearInReview.tsx";
 import classes from "./SongTimelineSection.module.css";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { Avatar, Box } from "@mantine/core";
 import {useEffect, useState} from "react";

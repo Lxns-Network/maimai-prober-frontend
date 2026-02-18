@@ -9,6 +9,7 @@ import { Product } from "@/components/Home/Product.tsx";
 import products from '@/data/products.json';
 
 const isTouchScreen = () => {
+  if (typeof window === 'undefined') return false;
   return window.matchMedia('(pointer: coarse)').matches;
 };
 

@@ -2,7 +2,7 @@ import { ChunithmPlayerProps } from "@/types/player";
 import { Avatar, Badge, Divider, Flex, Group, rem, Text, Image, Center, NumberFormatter, Box } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient, getTrophyColor } from "@/utils/color.ts";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { Marquee } from "@/components/Marquee.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";

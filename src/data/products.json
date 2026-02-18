@@ -16,12 +16,12 @@
     "url": "https://t.me/AkihaBot"
   },
   {
-    "title": "FindMaimaiDX",
-    "tags": ["手机应用", "舞萌 DX"],
-    "description": "FindMaimaiDX 是由 Spasol 开发的一款以寻找附近机厅为主要功能的软件，支持 Best 50 歌曲信息具体查看，店铺“附近商店”及“导航”和“可视化地图”等多项功能。",
-    "image": "findmaimaidx",
+    "title": "Mizuki Bot",
+    "tags": ["QQ 机器人", "舞萌 DX"],
+    "description": "落雪与水鱼二合一的舞萌 DX 上传机器人，同时支持 PJSK 相关功能。",
+    "image": "mizukibot",
     "button": "了解更多",
-    "url": "https://github.com/Spaso1/FindMaimaiDX_Phone"
+    "url": "https://help.mizuki.top"
   },
   {
     "title": "MaiProberPlus",

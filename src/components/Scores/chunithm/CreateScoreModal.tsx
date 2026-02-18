@@ -11,7 +11,7 @@ import { createPlayerScores } from "@/utils/api/player.ts";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import "dayjs/locale/zh-cn"
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps } from "@/types/score";

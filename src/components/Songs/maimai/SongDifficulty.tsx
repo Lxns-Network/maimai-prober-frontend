@@ -2,12 +2,12 @@ import {
   ActionIcon, Badge, Box, Button, Card, Divider, Flex, Group, Image, Modal, rem, Text, Title, Tooltip, useComputedColorScheme
 } from "@mantine/core";
 import { IconPlayerPlay } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
 import classes from "../SongDifficulty.module.css";
 import { MaimaiDifficultyProps, MaimaiVersionProps } from "@/utils/api/song/maimai.ts";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { MaimaiScoreProps } from "@/types/score";
 import { useState } from "react";
+import { navigate } from "vike/client/router";
 
 interface SongDifficultyProps {
   difficulty: MaimaiDifficultyProps;
@@ -20,7 +20,6 @@ interface SongDifficultyProps {
 export const MaimaiSongDifficulty = ({ difficulty, score, songId, versions, onClick }: SongDifficultyProps) => {
   const [buddyMenuOpened, setBuddyMenuOpened] = useState(false);
   const computedColorScheme = useComputedColorScheme('light');
-  const navigate = useNavigate();
 
   const handleChartPreview = (chartId: number, difficulty: number) => {
     const params = new URLSearchParams({

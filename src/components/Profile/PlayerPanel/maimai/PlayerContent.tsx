@@ -2,7 +2,7 @@ import { MaimaiPlayerProps } from "@/types/player";
 import { Avatar, Badge, Box, Divider, Flex, Group, Image, rem, Text, useComputedColorScheme } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getDeluxeRatingGradient, getTrophyColor } from "@/utils/color.ts";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { Marquee } from "@/components/Marquee.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";

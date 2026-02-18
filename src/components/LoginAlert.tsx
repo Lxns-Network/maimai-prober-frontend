@@ -1,7 +1,7 @@
 import { Alert, Button, Group, Text, Transition } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons-react";
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "@/hooks/useVikeNavigation";
+import { navigate } from "vike/client/router";
 
 interface LoginAlertProps extends React.ComponentPropsWithoutRef<typeof Alert> {
   content: string;
@@ -11,7 +11,6 @@ interface LoginAlertProps extends React.ComponentPropsWithoutRef<typeof Alert> {
 export const LoginAlert = ({ content, ...props }: LoginAlertProps) => {
   const [opened, setOpened] = useState(false);
   const isLoggedOut = !localStorage.getItem("token");
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (isLoggedOut) {
@@ -35,7 +34,7 @@ export const LoginAlert = ({ content, ...props }: LoginAlertProps) => {
             {content}
           </Text>
           <Group>
-            <Button variant="filled" onClick={() => navigate("/login", { replace: true, state: { redirect: window.location.pathname } })}>
+            <Button variant="filled" onClick={() => navigate("/login", { pageContext: { redirect: window.location.pathname } })}>
               登录
             </Button>
             <Button variant="outline" onClick={() => navigate("/register")}>

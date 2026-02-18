@@ -8,3 +8,9 @@
         height: calc(100dvh - var(--header-height));
     }
 }
+
+@media (min-width: 62em) {
+    .routesWrapper {
+        padding-left: var(--navbar-width);
+    }
+}

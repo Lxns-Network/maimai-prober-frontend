@@ -13,7 +13,7 @@ import { SongCombobox } from "../SongCombobox.tsx";
 import { PhotoView } from "react-photo-view";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Game } from "@/types/game";
 

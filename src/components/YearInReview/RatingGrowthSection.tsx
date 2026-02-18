@@ -3,7 +3,7 @@ import { IconTrendingUp, IconTrendingDown, IconArrowRight, IconArrowDown } from 
 import { YearInReviewProps } from "@/pages/public/YearInReview.tsx";
 import { useMemo } from 'react';
 import { ChunithmBestsProps, MaimaiBestsProps } from '@/types/score';
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { useMediaQuery } from '@mantine/hooks';
 
 export const RatingGrowthSection = ({ data }: { data: YearInReviewProps }) => {

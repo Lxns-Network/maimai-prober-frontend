@@ -10,6 +10,14 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
+  --header-height: 88px;
+}
+
+@media (min-width: 36em) {
+  :root {
+    --header-height: 56px;
+  }
 }
 
 button:focus,

@@ -12,7 +12,7 @@ import { MaimaiChart } from "./maimai/Chart.tsx";
 import classes from "./ScoreModal.module.css"
 import { ChunithmChart } from "./chunithm/Chart.tsx";
 import { ScoreModalMenu } from "./ScoreModalMenu.tsx";
-import { ASSET_URL } from "@/main.tsx";
+import { ASSET_URL } from "@/main";
 import { IconDots, IconPhotoOff } from "@tabler/icons-react";
 import { useIntersection, useMediaQuery } from "@mantine/hooks";
 import { Marquee } from "../Marquee.tsx";

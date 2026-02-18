@@ -1,15 +1,8 @@
 import { Container, Title, Text, Button, Group, Center, Image } from '@mantine/core';
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import classes from "./ErrorPage.module.css";
+import { navigate } from 'vike/client/router';
 
 export default function NotFound() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = "页面不存在 | maimai DX 查分器";
-  });
-
   return (
     <Container pt={80} pb={80}>
       <Center>

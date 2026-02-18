@@ -1,16 +1,15 @@
 import { Button, Stack, Divider } from "@mantine/core";
 import { IconFingerprint } from "@tabler/icons-react";
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { authenticatePasskey, getPasskeyLoginChallenge } from "@/utils/api/user";
 import { openAlertModal, openRetryModal } from "@/utils/modal";
 import { startAuthentication } from '@simplewebauthn/browser';
+import { navigate } from "vike/client/router";
+import { usePageContext } from "vike-react/usePageContext";
 
 export const PasskeyLogin = () => {
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state;
+  const pageContext = usePageContext();
 
   const handlePasskeyLogin = async () => {
     setLoading(true);
@@ -46,10 +45,10 @@ export const PasskeyLogin = () => {
 
       localStorage.setItem("token", authData.data.token);
 
-      if (state?.redirect && state.redirect !== "/login" && state.redirect !== "/register") {
-        navigate(state.redirect, { replace: true });
+      if (pageContext.redirect && pageContext.redirect !== "/login" && pageContext.redirect !== "/register") {
+        navigate(pageContext.redirect, { pageContext: { redirect: undefined } });
       } else {
-        navigate("/", { replace: true });
+        navigate("/", { pageContext: { redirect: undefined } });
       }
     } catch (error) {
       if ((error as Error).name === "NotAllowedError") {

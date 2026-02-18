@@ -1,19 +1,21 @@
 import { Game } from "@/types/game";
 import { useLocalStorage } from "@mantine/hooks";
-import { useSearchParams } from "react-router-dom";
+import { usePageContext } from "vike-react/usePageContext";
 
 function useGame(defaultGame: Game = 'maimai'): [Game, (game: Game) => void] {
-  const [searchParams] = useSearchParams();
+  const pageContext = usePageContext();
+  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
 
+  const isBrowser = typeof window !== 'undefined';
   const gameFromSearch = searchParams.get("game");
   const validGames = ["maimai", "chunithm"];
-  const gameFromStorage = localStorage.getItem("game");
+  const gameFromStorage = isBrowser ? localStorage.getItem("game") : null;
 
   const initialGame: Game =
     validGames.includes(gameFromSearch || "") ? (gameFromSearch as Game) :
       (gameFromStorage ? (JSON.parse(gameFromStorage) as Game) : defaultGame);
 
-  if (initialGame !== gameFromStorage) {
+  if (isBrowser && initialGame !== gameFromStorage) {
     localStorage.setItem("game", JSON.stringify(initialGame));
   }
 
