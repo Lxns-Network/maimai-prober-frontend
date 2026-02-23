@@ -25,7 +25,7 @@ export async function deletePlayerScores(game: Game) {
   return fetchAPI(`user/${game}/player/scores`, { method: "DELETE" });
 }
 
-export async function createPlayerScores(game: Game, scores: any) {
+export async function createPlayerScores(game: Game, scores: object[]) {
   return fetchAPI(`user/${game}/player/scores`, { method: "POST", body: { scores } });
 }
 

@@ -1,6 +1,6 @@
 import { fetchAPI, uploadFile } from "./api.ts";
 
-export async function sendDeveloperApply(data: any) {
+export async function sendDeveloperApply(data: object) {
   return fetchAPI(`user/developer/apply`, { method: "POST", body: data });
 }
 
@@ -8,7 +8,7 @@ export async function resetDeveloperApiKey() {
   return fetchAPI("user/developer/reset", { method: "POST" });
 }
 
-export async function updateDeveloperInfo(data: any) {
+export async function updateDeveloperInfo(data: object) {
   return fetchAPI("user/developer", { method: "PUT", body: data });
 }
 
@@ -16,11 +16,11 @@ export async function uploadOAuthAppLogo(file: File) {
   return uploadFile("user/developer/oauth/upload-app-logo", file);
 }
 
-export async function createOAuthApp(data: any) {
+export async function createOAuthApp(data: object) {
   return fetchAPI("user/developer/oauth/app", { method: "POST", body: data });
 }
 
-export async function editOAuthApp(clientId: string, data: any) {
+export async function editOAuthApp(clientId: string, data: object) {
   return fetchAPI(`user/developer/oauth/app/${clientId}`, { method: "POST", body: data });
 }
 
@@ -32,6 +32,6 @@ export async function getDevelopers() {
   return fetchAPI("user/admin/developers", { method: "GET" });
 }
 
-export async function revokeDeveloper(data: any) {
+export async function revokeDeveloper(data: object) {
   return fetchAPI("user/admin/developer", { method: "DELETE", body: data });
 }

@@ -7,6 +7,7 @@ import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { useUser } from "@/hooks/swr/useUser.ts";
+import { UserProps } from "@/types/user";
 
 interface FormValues {
   qq: string | number;
@@ -38,7 +39,7 @@ export const UserBindSection = () => {
         throw new Error(data.message);
       }
       openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");
-      mutate({ ...user, bind: { ...(user?.bind || {}), qq: values.qq} } as any, false);
+      mutate({ ...user, bind: { ...(user?.bind || {}), qq: values.qq} } as UserProps, false);
     } catch (error) {
       openRetryModal("绑定失败", `${error}`, () => updateUserBindHandler(values));
     } finally {

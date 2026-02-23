@@ -1,7 +1,7 @@
 import { Text, Card, LoadingOverlay, Mark } from '@mantine/core';
 import { deletePlayerScores, unbindPlayer } from "@/utils/api/player.ts";
 import { updateUserConfig } from "@/utils/api/user.ts";
-import { SettingList } from '@/components/Settings/SettingList.tsx';
+import { SettingList, SettingValue } from '@/components/Settings/SettingList.tsx';
 import { Link } from "@/components/Link";
 import classes from "../../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
@@ -216,7 +216,7 @@ export const GeneralSettingsSection = () => {
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
           设置每次爬取「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」的方式与获取的数据
         </Text>
-        <SettingList onChange={updateUserConfigHandler} value={config} data={(crawlConfigData as never)[game ? game : 'maimai']} />
+        <SettingList onChange={updateUserConfigHandler} value={config as SettingValue} data={(crawlConfigData as never)[game ? game : 'maimai']} />
       </Card>
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
@@ -226,7 +226,7 @@ export const GeneralSettingsSection = () => {
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
           将影响第三方开发者通过查分器 API 访问你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」数据
         </Text>
-        <SettingList onChange={updateUserConfigHandler} value={config} data={[{
+        <SettingList onChange={updateUserConfigHandler} value={config as SettingValue} data={[{
           key: "allow_third_party_fetch_player",
           title: "允许读取玩家信息",
           description: "关闭后，第三方开发者将无法获取你的玩家信息。",
@@ -261,7 +261,7 @@ export const GeneralSettingsSection = () => {
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
           控制是否公开展示你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」数据
         </Text>
-        <SettingList onChange={updateUserConfigHandler} value={config} data={[{
+        <SettingList onChange={updateUserConfigHandler} value={config as SettingValue} data={[{
           key: "show_player_name_in_score_ranking",
           title: "在成绩排行榜中显示玩家名",
           description: "关闭后，你的玩家名将不会在其他用户的成绩排行榜中显示。",

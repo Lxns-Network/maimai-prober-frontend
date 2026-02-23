@@ -65,10 +65,11 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game, icon: ScoreChangeDeta
   />;
 }
 
-function containsOld(obj: any): boolean {
-  for (const key in obj) {
-    if (typeof obj[key] === 'object' && obj[key] !== null) {
-      if (containsOld(obj[key])) {
+function containsOld(obj: object): boolean {
+  const record = obj as Record<string, unknown>;
+  for (const key in record) {
+    if (typeof record[key] === 'object' && record[key] !== null) {
+      if (containsOld(record[key] as object)) {
         return true;
       }
     } else if (key === 'old') {

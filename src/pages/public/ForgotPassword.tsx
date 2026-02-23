@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Title, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box, Card } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { API_URL, CAPTCHA_ENDPOINT } from '@/main';
+import { API_URL } from '@/main';
+import { solveCaptcha } from '@/utils/captcha';
 import { validateEmail } from "@/utils/validator.ts";
 import { Link } from "@/components/Link";
 import { useForm } from "@mantine/form";
@@ -30,9 +31,7 @@ export default function ForgotPassword() {
     setVisible(true);
 
     try {
-      const { default: Cap } = await import("@cap.js/widget");
-      const cap = new Cap({ apiEndpoint: CAPTCHA_ENDPOINT });
-      const { token: captchaToken } = await cap.solve();
+      const captchaToken = await solveCaptcha();
       const res = await fetch(`${API_URL}/user/forgot-password?captcha=${captchaToken}`, {
         method: 'POST',
         headers: {

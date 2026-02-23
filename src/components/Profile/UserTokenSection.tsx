@@ -9,6 +9,7 @@ import classes from "./Profile.module.css";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
 import { useUser } from "@/hooks/swr/useUser.ts";
+import { UserProps } from "@/types/user";
 
 const GenerateTokenPaper = () => (
   <Paper p="md" withBorder>
@@ -47,7 +48,7 @@ export const UserTokenSection = () => {
       if (!data.success) {
         throw new Error(data.message)
       }
-      mutate({ ...user, token: data.data.token } as any, false);
+      mutate({ ...user, token: data.data.token } as UserProps, false);
     } catch (error) {
       openRetryModal("生成失败", `${error}`, generateUserTokenHandler);
     }

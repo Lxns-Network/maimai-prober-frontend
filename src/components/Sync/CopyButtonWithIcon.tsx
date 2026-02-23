@@ -1,7 +1,12 @@
-import { ActionIcon, CopyButton, TextInput, Tooltip } from "@mantine/core";
+import { ActionIcon, CopyButton, TextInput, TextInputProps, Tooltip } from "@mantine/core";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
 
-export const CopyButtonWithIcon = ({ label, content, ...others }: any) => {
+interface CopyButtonWithIconProps extends Omit<TextInputProps, 'content'> {
+  label: string;
+  content: string;
+}
+
+export const CopyButtonWithIcon = ({ label, content, ...others }: CopyButtonWithIconProps) => {
   return (
     <TextInput
       variant="filled"

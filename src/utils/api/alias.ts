@@ -1,6 +1,6 @@
 import { fetchAPI } from "./api.ts";
 
-export async function createAlias(game: string, data: any) {
+export async function createAlias(game: string, data: object) {
   return fetchAPI(`user/${game}/alias`, { method: "POST", body: data });
 }
 
@@ -20,10 +20,15 @@ export async function approveAlias(game: string, aliasId: number) {
   return fetchAPI(`user/admin/${game}/alias/${aliasId}/approve`, { method: "POST" });
 }
 
+interface AliasEntry {
+  song_id: number;
+  aliases: string[];
+}
+
 export class AliasList {
   game: string = "";
-  aliases: any[] = [];
-  searchMap: any = {};
+  aliases: AliasEntry[] = [];
+  searchMap: Record<string, number[]> = {};
 
   constructor(game: string) {
     this.game = game;

@@ -4,7 +4,7 @@ export async function getCommentList(game: string, params: URLSearchParams) {
   return fetchAPI(`user/${game}/comment/list?${params.toString()}`, { method: "GET" });
 }
 
-export async function createComment(game: string, data: any) {
+export async function createComment(game: string, data: object) {
   return fetchAPI(`user/${game}/comment`, { method: "POST", body: data });
 }
 

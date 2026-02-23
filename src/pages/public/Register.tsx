@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Title, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay, Card, Anchor } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { API_URL, CAPTCHA_ENDPOINT } from "@/main";
+import { API_URL } from "@/main";
+import { solveCaptcha } from "@/utils/captcha";
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
 import { IconLock, IconMail, IconUser } from "@tabler/icons-react";
@@ -39,9 +40,7 @@ export default function Register() {
     setVisible(true);
 
     try {
-      const { default: Cap } = await import("@cap.js/widget");
-      const cap = new Cap({ apiEndpoint: CAPTCHA_ENDPOINT });
-      const { token: captchaToken } = await cap.solve();
+      const captchaToken = await solveCaptcha();
       const res = await fetch(`${API_URL}/user/register?captcha=${captchaToken}`, {
         method: "POST",
         headers: {

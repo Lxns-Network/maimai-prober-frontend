@@ -73,7 +73,7 @@ export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps
       TextAlign.configure({ types: ["heading", "paragraph"] })
     ],
     content: form.values.content,
-    onUpdate: ({ editor }: { editor: any }) => {
+    onUpdate: ({ editor }) => {
       form.setValues({ content: editor.getHTML() });
     },
   });

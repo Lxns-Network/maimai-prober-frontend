@@ -2,7 +2,9 @@ import { modals } from "@mantine/modals";
 import { Text, TextInput } from "@mantine/core";
 import { ReactNode } from "react";
 
-export const openAlertModal = (title: string, content: string | ReactNode, { ...props }: any = {}) => {
+type ModalOverrides = Partial<Parameters<typeof modals.openConfirmModal>[0]>;
+
+export const openAlertModal = (title: string, content: string | ReactNode, { ...props }: ModalOverrides = {}) => {
   modals.openConfirmModal({
     title,
     centered: true,
@@ -18,7 +20,7 @@ export const openAlertModal = (title: string, content: string | ReactNode, { ...
   });
 }
 
-export const openConfirmModal = (title: string, content: string | ReactNode, onConfirm: () => void, { ...props }: any = {}) => {
+export const openConfirmModal = (title: string, content: string | ReactNode, onConfirm: () => void, { ...props }: ModalOverrides = {}) => {
   modals.openConfirmModal({
     title,
     centered: true,
@@ -35,7 +37,7 @@ export const openConfirmModal = (title: string, content: string | ReactNode, onC
   });
 }
 
-export const openRetryModal = (title: string, content: string | ReactNode, onConfirm: () => void, { ...props }: any = {}) => {
+export const openRetryModal = (title: string, content: string | ReactNode, onConfirm: () => void, { ...props }: ModalOverrides = {}) => {
   modals.openConfirmModal({
     title,
     centered: true,
@@ -62,7 +64,7 @@ export const openFormModal = (
     required?: boolean;
   },
   onSubmit: (value: string) => void,
-  { ...props }: any = {}
+  { ...props }: ModalOverrides = {}
 ) => {
   let inputValue = inputProps.defaultValue || '';
 

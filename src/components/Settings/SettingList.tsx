@@ -21,14 +21,17 @@ export interface SettingProps {
   defaultValue?: string | boolean | string[]; // string[] 选项类型为 'multi-select' 时需要
   settings?: SettingProps[]; // 选项类型为 'group' 时需要
   options?: OptionProps[]; // 选项类型为 'select' 或 'multi-select' 时需要
-  onChange?: (value: any) => void; // 选项更改时的回调函数
+  onChange?: (value: string | boolean | string[] | null) => void; // 选项更改时的回调函数
   onClick?: () => void; // 选项类型为 'button' 时需要
 }
 
+export type SettingValue = Record<string, unknown>;
+type SettingOnChange = (key: string, value: string | boolean | string[] | null) => void;
+
 const Setting = ({ data, value, onChange }: {
   data: SettingProps;
-  value?: any;
-  onChange?: (key: string, value: any) => void;
+  value?: SettingValue;
+  onChange?: SettingOnChange;
 }) => {
   const [opened, setOpened] = useState(false);
   const small = useMediaQuery('(max-width: 450px)');
@@ -60,7 +63,7 @@ const Setting = ({ data, value, onChange }: {
                   offLabel="关"
                   className={classes.switch}
                   size="lg"
-                  checked={(Boolean(value) && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue}
+                  checked={(value && data.key in value) ? value[data.key] as boolean : data.defaultValue as boolean}
                   onChange={(event) => onChange && onChange(data.key, event.currentTarget.checked)}
                 />
               )}
@@ -68,7 +71,7 @@ const Setting = ({ data, value, onChange }: {
                 <Select
                   variant="filled"
                   data={data.options || []}
-                  value={(Boolean(value) && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string}
+                  value={(value && data.key in value) ? value[data.key] as string : data.defaultValue as string}
                   comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   onChange={(value) => onChange && onChange(data.key, value)}
                 />
@@ -78,7 +81,7 @@ const Setting = ({ data, value, onChange }: {
                   variant="filled"
                   data={data.options || []}
                   placeholder={data.placeholder}
-                  value={(Boolean(value) && value.hasOwnProperty(data.key)) ? value[data.key] : data.defaultValue as string[]}
+                  value={(value && data.key in value) ? value[data.key] as string[] : data.defaultValue as string[]}
                   comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
                   onChange={(value) => onChange && onChange(data.key, value)}
                 />
@@ -102,8 +105,8 @@ const Setting = ({ data, value, onChange }: {
 
 export const SettingList = memo(({ data, value, onChange }: {
   data: SettingProps[];
-  value?: any;
-  onChange?: (key: string, value: any) => void;
+  value?: SettingValue;
+  onChange?: SettingOnChange;
 }) => {
   return (
     <Box>

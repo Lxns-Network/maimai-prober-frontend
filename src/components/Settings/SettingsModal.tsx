@@ -1,13 +1,13 @@
 import { Modal } from "@mantine/core";
-import { SettingProps, SettingList } from "./SettingList.tsx";
+import { SettingProps, SettingList, SettingValue } from "./SettingList.tsx";
 
 interface SettingsModalProps {
   title: string;
   data: SettingProps[];
-  value?: any;
+  value?: SettingValue;
   opened: boolean;
-  onClose: (value?: any) => void;
-  onChange?: (key: string, value: any) => void;
+  onClose: () => void;
+  onChange?: (key: string, value: string | boolean | string[] | null) => void;
 }
 
 export const SettingsModal = ({ title, data, value, opened, onClose, onChange }: SettingsModalProps) => {
