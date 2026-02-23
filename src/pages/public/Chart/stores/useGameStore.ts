@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { Chart, BpmEvent, ChartDifficulty, AvailableDifficulties, MirrorMode, JudgmentLineDesign } from '../types';
+import { Chart, BpmEvent, ChartDifficulty, AvailableDifficulties } from '../types';
 
 export const playbackTimeRef = { current: 0 };
 
@@ -27,32 +27,10 @@ interface GameState {
   selectedDifficulty: ChartDifficulty | null;
   /** 可用的难度 */
   availableDifficulties: AvailableDifficulties;
-  /** 流速 */
-  hiSpeed: number;
-  /** 滑条起始 Note 是否旋转 */
-  slideRotation: boolean;
-  /** 镜像设置 */
-  mirrorMode: MirrorMode;
-  /** 判定线显示 */
-  judgmentLineDesign: JudgmentLineDesign;
-  /** 滑条起始 Note 是否使用粉色 */
-  pinkSlideStart: boolean;
-  /** 是否高亮保护套 Note */
-  highlightExNotes: boolean;
-  /** 是否使用正常颜色显示绝赞滑条 */
-  normalColorBreakSlide: boolean;
-  /** 是否启用音效 */
-  soundEnabled: boolean;
-  /** 音量 */
-  soundVolume: number;
-  /** 音效偏移 */
-  soundOffset: number;
   /** 音乐 URL */
   musicUrl: string;
   /** 音乐偏移 */
   musicOffset: number;
-  /** 音乐音量 */
-  musicVolume: number;
   /** 音乐是否加载完成 */
   musicLoaded: boolean;
   /** 音乐是否正在加载 */
@@ -100,34 +78,12 @@ interface GameActions {
   setSelectedDifficulty: (difficulty: ChartDifficulty) => void;
   /** 设置可用的难度 */
   setAvailableDifficulties: (difficulties: AvailableDifficulties) => void;
-  /** 设置流速 */
-  setHiSpeed: (speed: number) => void;
-  /** 设置滑条起始 Note 是否旋转 */
-  setSlideRotation: (enabled: boolean) => void;
-  /** 设置镜像模式 */
-  setMirrorMode: (mode: MirrorMode) => void;
-  /** 设置判定线显示 */
-  setJudgmentLineDesign: (design: JudgmentLineDesign) => void;
-  /** 设置滑条起始 Note 是否使用粉色 */
-  setPinkSlideStart: (enabled: boolean) => void;
-  /** 设置是否高亮保护套 Note */
-  setHighlightExNotes: (enabled: boolean) => void;
-  /** 设置是否使用正常颜色显示绝赞滑条 */
-  setNormalColorBreakSlide: (enabled: boolean) => void;
   /** 设置播放速度 */
   setPlaybackSpeed: (speed: number) => void;
-  /** 设置是否启用音效 */
-  setSoundEnabled: (enabled: boolean) => void;
-  /** 设置音量 */
-  setSoundVolume: (volume: number) => void;
-  /** 设置音效偏移 */
-  setSoundOffset: (offset: number) => void;
   /** 设置音乐 URL */
   setMusicUrl: (url: string) => void;
   /** 设置音乐偏移 */
   setMusicOffset: (offset: number) => void;
-  /** 设置音乐音量 */
-  setMusicVolume: (volume: number) => void;
   /** 设置音乐状态 */
   setMusicState: (loaded: boolean, loading: boolean, error: string | null) => void;
   /** 设置等待播放状态 */
@@ -164,19 +120,8 @@ const initialState: GameState = {
   rawSimaiText: '',
   selectedDifficulty: null,
   availableDifficulties: {},
-  hiSpeed: 6,
-  slideRotation: true,
-  mirrorMode: 'none',
-  judgmentLineDesign: 'simple',
-  pinkSlideStart: false,
-  highlightExNotes: false,
-  normalColorBreakSlide: false,
-  soundEnabled: false,
-  soundVolume: 0.5,
-  soundOffset: 0, // Additional offset (ms)
   musicUrl: '',
   musicOffset: 0,
-  musicVolume: 0.8,
   musicLoaded: false,
   musicLoading: false,
   musicError: null,
@@ -476,14 +421,6 @@ export const useGameStore = create<GameStore>()(
     setAvailableDifficulties: (difficulties: AvailableDifficulties) =>
       set({ availableDifficulties: difficulties }),
 
-    setHiSpeed: (speed: number) => set({ hiSpeed: Math.max(3, Math.min(9, speed)) }),
-    setSlideRotation: (enabled: boolean) => set({ slideRotation: enabled }),
-    setMirrorMode: (mode: MirrorMode) => set({ mirrorMode: mode }),
-    setJudgmentLineDesign: (design: JudgmentLineDesign) => set({ judgmentLineDesign: design }),
-    setPinkSlideStart: (enabled: boolean) => set({ pinkSlideStart: enabled }),
-    setHighlightExNotes: (enabled: boolean) => set({ highlightExNotes: enabled }),
-    setNormalColorBreakSlide: (enabled: boolean) => set({ normalColorBreakSlide: enabled }),
-
     setPlaybackSpeed: (speed: number) => {
       const state = get();
       set({ playbackSpeed: Math.max(0.1, Math.min(1.0, speed)) });
@@ -503,10 +440,6 @@ export const useGameStore = create<GameStore>()(
       }
     },
 
-    setSoundEnabled: (enabled: boolean) => set({ soundEnabled: enabled }),
-    setSoundVolume: (volume: number) => set({ soundVolume: Math.max(0, Math.min(1, volume)) }),
-    setSoundOffset: (offset: number) => set({ soundOffset: offset }),
-
     setMusicUrl: (url: string) => {
       if (!url) {
         set({ musicUrl: '', musicLoaded: false, musicLoading: false, musicError: null });
@@ -516,7 +449,6 @@ export const useGameStore = create<GameStore>()(
     },
 
     setMusicOffset: (offset: number) => set({ musicOffset: offset }),
-    setMusicVolume: (volume: number) => set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
     setMusicState: (loaded: boolean, loading: boolean, error: string | null) => {
       const state = get();
       // 如果音乐加载完成且正在等待播放，自动开始播放
@@ -574,11 +506,9 @@ export const selectIsPlaying = (state: GameStore) => state.isPlaying;
 export const selectCurrentMeasure = (state: GameStore) => state.timeline.currentMeasure;
 export const selectTotalMeasures = (state: GameStore) => state.timeline.totalMeasures;
 export const selectChartData = (state: GameStore) => state.chartData;
-export const selectHiSpeed = (state: GameStore) => state.hiSpeed;
 export const selectPlaybackSpeed = (state: GameStore) => state.playbackSpeed;
 export const selectTimeline = (state: GameStore) => state.timeline;
 export const selectMusicUrl = (state: GameStore) => state.musicUrl;
 export const selectMusicOffset = (state: GameStore) => state.musicOffset;
-export const selectMusicVolume = (state: GameStore) => state.musicVolume;
 
 export default useGameStore;

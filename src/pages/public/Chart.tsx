@@ -4,6 +4,7 @@ import { IconArrowLeft, IconLock, IconLockOpen } from '@tabler/icons-react';
 import { ChartCanvas } from '@/pages/public/Chart/components/ChartCanvas';
 import { Controls, PlaybackControls } from '@/pages/public/Chart/components/Controls';
 import { useGameStore } from '@/pages/public/Chart/stores/useGameStore';
+import { useGameSettingsStore } from '@/pages/public/Chart/stores/useGameSettingsStore';
 import { parseSimaiChart, getAvailableDifficulties } from '@/pages/public/Chart/core/parser/ChartParser';
 import { ChartDifficulty } from '@/pages/public/Chart/types';
 import classes from './Chart.module.css';
@@ -54,8 +55,8 @@ function useKeyboardShortcuts() {
   const restart = useGameStore((s) => s.restart);
   const stepMeasure = useGameStore((s) => s.stepMeasure);
   const stepPosition = useGameStore((s) => s.stepPosition);
-  const setHiSpeed = useGameStore((s) => s.setHiSpeed);
-  const hiSpeed = useGameStore((s) => s.hiSpeed);
+  const setHiSpeed = useGameSettingsStore((s) => s.setHiSpeed);
+  const hiSpeed = useGameSettingsStore((s) => s.hiSpeed);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

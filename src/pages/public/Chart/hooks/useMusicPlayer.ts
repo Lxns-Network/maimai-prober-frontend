@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore, playbackTimeRef } from '../stores/useGameStore';
+import { useGameSettingsStore } from '../stores/useGameSettingsStore';
 import { BpmEvent } from '../types';
 
 const LEAD_IN_BEATS = 4;
@@ -75,7 +76,6 @@ export function useMusicPlayer() {
   const {
     musicUrl,
     musicOffset,
-    musicVolume,
     isPlaying,
     playbackSpeed,
     chartData,
@@ -86,7 +86,6 @@ export function useMusicPlayer() {
     useShallow((s) => ({
       musicUrl: s.musicUrl,
       musicOffset: s.musicOffset,
-      musicVolume: s.musicVolume,
       isPlaying: s.isPlaying,
       playbackSpeed: s.playbackSpeed,
       chartData: s.chartData,
@@ -95,6 +94,8 @@ export function useMusicPlayer() {
       setMusicState: s.setMusicState,
     }))
   );
+
+  const musicVolume = useGameSettingsStore((s) => s.musicVolume);
 
   const bpm = chartData?.bpm ?? 120;
   const bpmEvents = chartData?.bpmEvents ?? null;
@@ -198,8 +199,9 @@ export function useMusicPlayer() {
 
   // 清理 AudioContext 和取消加载
   useEffect(() => {
+    const currentState = audioStateRef.current;
     return () => {
-      const state = audioStateRef.current;
+      const state = currentState;
       stopSource();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();

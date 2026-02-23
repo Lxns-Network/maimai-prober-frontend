@@ -30,6 +30,7 @@ import {
   IconMinimize,
 } from '@tabler/icons-react';
 import { useGameStore } from '../../stores/useGameStore';
+import { useGameSettingsStore } from '../../stores/useGameSettingsStore';
 import { parseSimaiChart } from '../../core/parser/ChartParser';
 import { ChartDifficulty, DIFFICULTY_NAMES, DIFFICULTY_COLORS } from '../../types';
 import { NoteCountGraph } from '../NoteCountGraph';
@@ -42,10 +43,12 @@ type PlaybackControlsProps = {
 
 export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackControlsProps) {
   const {
-    isPlaying, soundEnabled, timeline, pendingPlay,
-    togglePlayback, setMeasure, stepMeasure, stepPosition, setSoundEnabled,
+    isPlaying, timeline, pendingPlay,
+    togglePlayback, setMeasure, stepMeasure, stepPosition,
   } = useGameStore(useShallow((state) => state));
-  
+
+  const { soundEnabled, setSoundEnabled } = useGameSettingsStore(useShallow((state) => state));
+
   const { currentMeasure } = timeline;
 
   const restartMeasure = () => setMeasure(currentMeasure);
@@ -168,13 +171,20 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 
 export function Controls() {
   const {
-    hiSpeed, slideRotation, mirrorMode, playbackSpeed, rawSimaiText,
-    judgmentLineDesign, pinkSlideStart, highlightExNotes, normalColorBreakSlide,
-    musicOffset, musicVolume, soundOffset, selectedDifficulty, availableDifficulties, chartData,
-    setHiSpeed, setSlideRotation, setMirrorMode, setPlaybackSpeed,
-    setJudgmentLineDesign, setPinkSlideStart, setHighlightExNotes, setNormalColorBreakSlide,
-    setChartData, setMusicOffset, setMusicVolume, setSoundOffset, setSelectedDifficulty,
+    playbackSpeed, rawSimaiText,
+    musicOffset, selectedDifficulty, availableDifficulties, chartData,
+    setPlaybackSpeed,
+    setChartData, setMusicOffset, setSelectedDifficulty,
   } = useGameStore(useShallow((state) => state));
+
+  const {
+    hiSpeed, slideRotation, mirrorMode,
+    judgmentLineDesign, pinkSlideStart, highlightExNotes, normalColorBreakSlide,
+    musicVolume, soundOffset,
+    setHiSpeed, setSlideRotation, setMirrorMode,
+    setJudgmentLineDesign, setPinkSlideStart, setHighlightExNotes, setNormalColorBreakSlide,
+    setMusicVolume, setSoundOffset,
+  } = useGameSettingsStore(useShallow((state) => state));
 
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);
   const [showMusicSettings, setShowMusicSettings] = useState(false);

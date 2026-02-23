@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useGameStore, playbackTimeRef } from '../../stores/useGameStore';
+import { useGameSettingsStore } from '../../stores/useGameSettingsStore';
 import { MainRenderer } from '../../renderers/MainRenderer';
 import { useAudio } from '../../hooks/useAudio';
 import { useMusicPlayer } from '../../hooks/useMusicPlayer';
@@ -101,26 +102,27 @@ export function ChartCanvas() {
   const chartData = useGameStore((s) => s.chartData);
   const totalMeasures = useGameStore((s) => s.timeline.totalMeasures);
   const beatsPerMeasure = useGameStore((s) => s.timeline.beatsPerMeasure);
-  const hiSpeed = useGameStore((s) => s.hiSpeed);
-  const slideRotation = useGameStore((s) => s.slideRotation);
-  const mirrorMode = useGameStore((s) => s.mirrorMode);
-  const judgmentLineDesign = useGameStore((s) => s.judgmentLineDesign);
-  const pinkSlideStart = useGameStore((s) => s.pinkSlideStart);
-  const highlightExNotes = useGameStore((s) => s.highlightExNotes);
-  const normalColorBreakSlide = useGameStore((s) => s.normalColorBreakSlide);
   const playbackSpeed = useGameStore((s) => s.playbackSpeed);
-  const soundEnabled = useGameStore((s) => s.soundEnabled);
-  const soundVolume = useGameStore((s) => s.soundVolume);
-  const soundOffset = useGameStore((s) => s.soundOffset);
   const setPreciseTime = useGameStore((s) => s.setPreciseTime);
   const pause = useGameStore((s) => s.pause);
+
+  const hiSpeed = useGameSettingsStore((s) => s.hiSpeed);
+  const slideRotation = useGameSettingsStore((s) => s.slideRotation);
+  const mirrorMode = useGameSettingsStore((s) => s.mirrorMode);
+  const judgmentLineDesign = useGameSettingsStore((s) => s.judgmentLineDesign);
+  const pinkSlideStart = useGameSettingsStore((s) => s.pinkSlideStart);
+  const highlightExNotes = useGameSettingsStore((s) => s.highlightExNotes);
+  const normalColorBreakSlide = useGameSettingsStore((s) => s.normalColorBreakSlide);
+  const soundEnabled = useGameSettingsStore((s) => s.soundEnabled);
+  const soundVolume = useGameSettingsStore((s) => s.soundVolume);
+  const soundOffset = useGameSettingsStore((s) => s.soundOffset);
 
   const renderFrame = useCallback((beatsOverride?: number) => {
     const renderer = rendererRef.current;
     const chart = useGameStore.getState().chartData;
     const timeline = useGameStore.getState().timeline;
     const playing = useGameStore.getState().isPlaying;
-    const sound = useGameStore.getState().soundEnabled;
+    const sound = useGameSettingsStore.getState().soundEnabled;
 
     if (!renderer) return;
 
@@ -160,17 +162,17 @@ export function ChartCanvas() {
     if (!canvas) return;
 
     const renderer = new MainRenderer(canvas, chartData?.bpm ?? 120);
-    renderer.setIsPlaying(isPlaying);
+    renderer.setIsPlaying(useGameStore.getState().isPlaying);
     rendererRef.current = renderer;
 
-    const state = useGameStore.getState();
-    renderer.setHiSpeed(state.hiSpeed);
-    renderer.setSlideRotation(state.slideRotation);
-    renderer.setMirrorMode(state.mirrorMode);
-    renderer.setJudgmentLineDesign(state.judgmentLineDesign);
-    renderer.setPinkSlideStart(state.pinkSlideStart);
-    renderer.setHighlightExNotes(state.highlightExNotes);
-    renderer.setNormalColorBreakSlide(state.normalColorBreakSlide);
+    const settingsState = useGameSettingsStore.getState();
+    renderer.setHiSpeed(settingsState.hiSpeed);
+    renderer.setSlideRotation(settingsState.slideRotation);
+    renderer.setMirrorMode(settingsState.mirrorMode);
+    renderer.setJudgmentLineDesign(settingsState.judgmentLineDesign);
+    renderer.setPinkSlideStart(settingsState.pinkSlideStart);
+    renderer.setHighlightExNotes(settingsState.highlightExNotes);
+    renderer.setNormalColorBreakSlide(settingsState.normalColorBreakSlide);
 
     const handleResize = () => {
       renderer.resize();
