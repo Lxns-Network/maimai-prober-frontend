@@ -102,6 +102,7 @@ export function ChartCanvas() {
   const totalMeasures = useGameStore((s) => s.timeline.totalMeasures);
   const beatsPerMeasure = useGameStore((s) => s.timeline.beatsPerMeasure);
   const hiSpeed = useGameStore((s) => s.hiSpeed);
+  const alwaysKeepHiSpeed = useGameStore((s) => s.alwaysKeepHiSpeed);
   const slideRotation = useGameStore((s) => s.slideRotation);
   const mirrorMode = useGameStore((s) => s.mirrorMode);
   const judgmentLineDesign = useGameStore((s) => s.judgmentLineDesign);
@@ -171,6 +172,8 @@ export function ChartCanvas() {
     renderer.setPinkSlideStart(state.pinkSlideStart);
     renderer.setHighlightExNotes(state.highlightExNotes);
     renderer.setNormalColorBreakSlide(state.normalColorBreakSlide);
+    renderer.setAlwaysKeepHiSpeed(state.alwaysKeepHiSpeed);
+    renderer.setPlaybackSpeed(state.playbackSpeed);
 
     const handleResize = () => {
       renderer.resize();
@@ -208,6 +211,20 @@ export function ChartCanvas() {
       renderFrame(playbackTimeRef.current);
     }
   }, [hiSpeed, renderFrame]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setAlwaysKeepHiSpeed(alwaysKeepHiSpeed);
+      renderFrame(playbackTimeRef.current);
+    }
+  }, [alwaysKeepHiSpeed, renderFrame]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setPlaybackSpeed(playbackSpeed);
+      renderFrame(playbackTimeRef.current);
+    }
+  }, [playbackSpeed, renderFrame]);
 
   useEffect(() => {
     if (rendererRef.current) {

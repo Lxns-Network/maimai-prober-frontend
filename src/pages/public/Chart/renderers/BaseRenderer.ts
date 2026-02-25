@@ -116,7 +116,11 @@ export abstract class BaseRenderer {
   }
 
   protected getApproachTimeMs(): number {
-    return this.context.baseApproachTimeMs / this.context.hiSpeed;
+    if(this.context.config.alwaysKeepHiSpeed) {
+      return this.context.baseApproachTimeMs / (this.context.hiSpeed / this.context.config.playbackSpeed);
+    } else {
+      return this.context.baseApproachTimeMs / this.context.hiSpeed;
+    }
   }
 
   protected distanceToCenter(x: number, y: number): number {

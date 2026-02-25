@@ -168,10 +168,10 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 
 export function Controls() {
   const {
-    hiSpeed, slideRotation, mirrorMode, playbackSpeed, rawSimaiText,
+    hiSpeed, alwaysKeepHiSpeed, slideRotation, mirrorMode, playbackSpeed, rawSimaiText,
     judgmentLineDesign, pinkSlideStart, highlightExNotes, normalColorBreakSlide,
     musicOffset, musicVolume, soundOffset, selectedDifficulty, availableDifficulties, chartData,
-    setHiSpeed, setSlideRotation, setMirrorMode, setPlaybackSpeed,
+    setHiSpeed, setAlwaysKeepHiSpeed, setSlideRotation, setMirrorMode, setPlaybackSpeed,
     setJudgmentLineDesign, setPinkSlideStart, setHighlightExNotes, setNormalColorBreakSlide,
     setChartData, setMusicOffset, setMusicVolume, setSoundOffset, setSelectedDifficulty,
   } = useGameStore(useShallow((state) => state));
@@ -361,6 +361,14 @@ export function Controls() {
               <Switch
                 checked={normalColorBreakSlide}
                 onChange={(e) => setNormalColorBreakSlide(e.currentTarget.checked)}
+              />
+            </Group>
+            
+            <Group justify="space-between">
+              <Text size="sm">保持谱面流速</Text>
+              <Switch
+                checked={alwaysKeepHiSpeed}
+                onChange={(e) => setAlwaysKeepHiSpeed(e.currentTarget.checked)}
               />
             </Group>
           </Stack>

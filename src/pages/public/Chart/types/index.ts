@@ -383,6 +383,10 @@ export interface Point2D {
 export interface RendererConfig {
   /** 谱面流速：3-9 */
   hiSpeed: number;
+  /** 保持固定流速 */
+  alwaysKeepHiSpeed: boolean;
+  /** 播放速度：0.1-1.0 */
+  playbackSpeed: number;
   /** 镜像模式：上下反、左右反、全反 */
   mirrorMode: MirrorMode;
   /** 是否高亮保护套 Note */

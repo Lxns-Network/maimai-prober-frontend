@@ -29,6 +29,8 @@ interface GameState {
   availableDifficulties: AvailableDifficulties;
   /** 流速 */
   hiSpeed: number;
+  /** 保持固定流速 */
+  alwaysKeepHiSpeed: boolean;
   /** 滑条起始 Note 是否旋转 */
   slideRotation: boolean;
   /** 镜像设置 */
@@ -102,6 +104,8 @@ interface GameActions {
   setAvailableDifficulties: (difficulties: AvailableDifficulties) => void;
   /** 设置流速 */
   setHiSpeed: (speed: number) => void;
+  /** 设置保持固定流速 */
+  setAlwaysKeepHiSpeed: (enabled: boolean) => void;
   /** 设置滑条起始 Note 是否旋转 */
   setSlideRotation: (enabled: boolean) => void;
   /** 设置镜像模式 */
@@ -165,6 +169,7 @@ const initialState: GameState = {
   selectedDifficulty: null,
   availableDifficulties: {},
   hiSpeed: 6,
+  alwaysKeepHiSpeed: false,
   slideRotation: true,
   mirrorMode: 'none',
   judgmentLineDesign: 'simple',
@@ -217,7 +222,7 @@ function getDivisorAt(chartData: Chart | null, time: number, forStepping: boolea
   }
 
   const events = chartData.divisorEvents;
-  
+
   // 二分查找最后一个 timing <= time 的事件
   let left = 0;
   let right = events.length - 1;
@@ -234,7 +239,7 @@ function getDivisorAt(chartData: Chart | null, time: number, forStepping: boolea
   }
 
   const divisor = result >= 0 ? events[result].divisor : 4;
-  
+
   // 步进时限制最大分拍
   return forStepping ? Math.min(divisor, MAX_STEP_DIVISOR) : divisor;
 }
@@ -301,7 +306,7 @@ export const useGameStore = create<GameStore>()(
       const state = get();
       const { beatsPerMeasure, totalMeasures } = state.timeline;
       const time = playbackTimeRef.current;
-      
+
       // 从 playbackTimeRef 同步当前位置
       const measure = Math.floor(time / beatsPerMeasure);
       const clampedMeasure = Math.max(0, Math.min(measure, totalMeasures - 1));
@@ -452,7 +457,7 @@ export const useGameStore = create<GameStore>()(
 
     setChartData: (chart: Chart | null) => {
       playbackTimeRef.current = 0;
-      
+
       set((state) => ({
         chartData: chart,
         isPlaying: false,
@@ -477,6 +482,7 @@ export const useGameStore = create<GameStore>()(
       set({ availableDifficulties: difficulties }),
 
     setHiSpeed: (speed: number) => set({ hiSpeed: Math.max(3, Math.min(9, speed)) }),
+    setAlwaysKeepHiSpeed: (enabled: boolean) => set({ alwaysKeepHiSpeed: enabled }),
     setSlideRotation: (enabled: boolean) => set({ slideRotation: enabled }),
     setMirrorMode: (mode: MirrorMode) => set({ mirrorMode: mode }),
     setJudgmentLineDesign: (design: JudgmentLineDesign) => set({ judgmentLineDesign: design }),
