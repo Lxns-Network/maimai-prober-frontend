@@ -4,7 +4,6 @@ import {
   Card, SegmentedControl, Center
 } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { API_URL } from '@/main';
 import { solveCaptcha } from '@/utils/captcha';
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
@@ -15,6 +14,7 @@ import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { PasskeyLogin } from "@/components/Settings/PasskeyLogin.tsx";
 import { usePageContext } from "vike-react/usePageContext";
 import { navigate } from "vike/client/router";
+import { useLogin } from "@/hooks/mutations/useAuthMutations.ts";
 
 interface FormValues {
   name?: string;
@@ -27,6 +27,7 @@ export default function Login() {
   const [visible, setVisible] = useState(false);
   const computedColorScheme = useComputedColorScheme('light');
   const pageContext = usePageContext();
+  const { mutate: login } = useLogin();
 
   useEffect(() => {
     if (pageContext.loginState) {
@@ -89,24 +90,20 @@ export default function Login() {
     try {
       const captchaToken = await solveCaptcha();
 
-      const res = await fetch(`${API_URL}/user/login?captcha=${captchaToken}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      login({ values, captchaToken }, {
+        onSuccess: (data) => {
+          localStorage.setItem("token", data.token);
+
+          const target = (pageContext.redirect && pageContext.redirect !== "/login" && pageContext.redirect !== "/register")
+            ? pageContext.redirect
+            : "/";
+          window.location.href = target;
         },
-        body: JSON.stringify(values),
+        onError: (error) => {
+          openRetryModal("登录失败", `${error}`, () => loginHandler(values));
+          setVisible(false);
+        },
       });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-
-      localStorage.setItem("token", data.data.token);
-
-      const target = (pageContext.redirect && pageContext.redirect !== "/login" && pageContext.redirect !== "/register")
-        ? pageContext.redirect
-        : "/";
-      window.location.href = target;
     } catch (error) {
       openRetryModal("登录失败", `${error}`, () => loginHandler(values));
       setVisible(false);

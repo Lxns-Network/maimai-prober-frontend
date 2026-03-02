@@ -1,7 +1,7 @@
 import { useForm } from "@mantine/form";
 import { Button, Group, Modal, ScrollArea, Text, TextInput } from "@mantine/core";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
-import { sendBatchEmail } from "@/utils/api/user.ts";
+import { useSendBatchEmail } from "@/hooks/mutations/useUserMutations.ts";
 import { UserProps } from "@/types/user";
 import { useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -18,6 +18,8 @@ interface FormValues {
 }
 
 export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps[], opened: boolean, close(): void }) => {
+  const { mutate: mutateSendBatchEmail } = useSendBatchEmail();
+
   const form = useForm<FormValues>({
     initialValues: {
       subject: "",
@@ -78,22 +80,19 @@ export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps
     },
   });
 
-  const sendBatchEmailHandler = async (values: FormValues) => {
-    try {
-      const res = await sendBatchEmail({
-        emails: users.map((user) => user.email),
-        subject: values.subject,
-        content: values.content,
-      });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-    } catch (err) {
-      openRetryModal("发送失败", `${err}`, () => sendBatchEmailHandler(values));
-    } finally {
-      close();
-    }
+  const sendBatchEmailHandler = (values: FormValues) => {
+    mutateSendBatchEmail({
+      emails: users.map((user) => user.email),
+      subject: values.subject,
+      content: values.content,
+    }, {
+      onError: (err) => {
+        openRetryModal("发送失败", `${err}`, () => sendBatchEmailHandler(values));
+      },
+      onSettled: () => {
+        close();
+      },
+    });
   }
 
   return (

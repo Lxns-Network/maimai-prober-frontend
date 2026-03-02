@@ -14,8 +14,8 @@ import { useEffect, useState } from "react";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { useToggle } from "@mantine/hooks";
-import { createComment, deleteComment, likeComment, unlikeComment } from "@/utils/api/comment.ts";
-import { Comment, useScoreComments } from "@/hooks/swr/useScoreComments.ts";
+import { Comment, useScoreComments } from "@/hooks/queries/useScoreComments.ts";
+import { useCreateComment, useDeleteComment, useLikeComment, useUnlikeComment } from "@/hooks/mutations/useCommentMutations.ts";
 
 interface FormValues {
   comment: string;
@@ -60,28 +60,23 @@ const ChartCommentForm = ({ game, score, comment, onSubmit }: {
     },
   });
   const isLoggedOut = !localStorage.getItem("token");
+  const { mutate: submitComment } = useCreateComment();
 
-  const submitCommentHandler = async (values: FormValues) => {
-    try {
-      const comment = {
-        song_id: score?.id,
-        song_type: null as string | null,
-        difficulty: score?.level_index,
-        comment: values.comment,
-        rating: values.rating,
-      };
-      if (score && "achievements" in score) {
-        comment.song_type = score.type;
-      }
-      const res = await createComment(game, comment);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      onSubmit();
-    } catch (error) {
-      openRetryModal("评论提交失败", `${error}`, () => submitCommentHandler(values));
+  const submitCommentHandler = (values: FormValues) => {
+    const comment = {
+      song_id: score?.id,
+      song_type: null as string | null,
+      difficulty: score?.level_index,
+      comment: values.comment,
+      rating: values.rating,
+    };
+    if (score && "achievements" in score) {
+      comment.song_type = score.type;
     }
+    submitComment({ game, data: comment }, {
+      onSuccess: () => onSubmit(),
+      onError: (error) => openRetryModal("评论提交失败", `${error}`, () => submitCommentHandler(values)),
+    });
   }
 
   useEffect(() => {
@@ -137,43 +132,47 @@ const ChartCommentForm = ({ game, score, comment, onSubmit }: {
   </>
 }
 
-const CommentItem = ({ game, comment, onUpdate, onDelete }: {
+const CommentItem = ({ game, comment, onUpdate, onDelete, onRevert }: {
   game: Game,
   comment: Comment,
   onUpdate?: (comment: Comment) => void;
   onDelete?: (comment: Comment) => void;
+  onRevert?: () => void;
 }) => {
-  const deleteCommentHandler = async () => {
-    try {
-      const res = await deleteComment(game, comment.comment_id);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      onDelete && onDelete(comment);
-    } catch (error) {
-      openRetryModal("评论删除失败", `${error}`, deleteCommentHandler);
-    }
+  const { mutate: removeComment } = useDeleteComment();
+  const { mutate: like } = useLikeComment();
+  const { mutate: unlike } = useUnlikeComment();
+
+  const deleteCommentHandler = () => {
+    // Optimistic: remove from list immediately
+    onDelete && onDelete(comment);
+    removeComment({ game, commentId: comment.comment_id }, {
+      onError: (error) => {
+        // Revert: refetch from server to restore the comment
+        onRevert && onRevert();
+        openRetryModal("评论删除失败", `${error}`, deleteCommentHandler);
+      },
+    });
   }
 
-  const likeCommentHandler = async (is_liked: boolean) => {
-    try {
-      const res = await (is_liked ? unlikeComment : likeComment)(game, comment.comment_id);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      if (is_liked) {
-        comment.like_count -= 1;
-        comment.is_liked = false;
-      } else {
-        comment.like_count += 1;
-        comment.is_liked = true;
-      }
-      onUpdate && onUpdate(comment);
-    } catch (error) {
-      openRetryModal("评论点赞失败", `${error}`, () => likeCommentHandler(is_liked));
-    }
+  const likeCommentHandler = (is_liked: boolean) => {
+    // Optimistic: update UI immediately
+    const prevComment = { ...comment };
+    const updatedComment = {
+      ...comment,
+      like_count: is_liked ? comment.like_count - 1 : comment.like_count + 1,
+      is_liked: !is_liked,
+    };
+    onUpdate && onUpdate(updatedComment);
+
+    const mutationFn = is_liked ? unlike : like;
+    mutationFn({ game, commentId: comment.comment_id }, {
+      onError: (error) => {
+        // Revert on error
+        onUpdate && onUpdate(prevComment);
+        openRetryModal("评论点赞失败", `${error}`, () => likeCommentHandler(is_liked));
+      },
+    });
   }
 
   return (
@@ -244,7 +243,7 @@ export const ChartComment = ({ game, score, setCommentCount }: {
   setCommentCount?: (count: number) => void;
 }) => {
   const isLoggedOut = !localStorage.getItem("token");
-  const { comments, isLoading, mutate } = useScoreComments({
+  const { comments, isLoading, setData, invalidate } = useScoreComments({
     game, params: !isLoggedOut ? {
       song_id: score ? `${score.id}` : "",
       level_index: score ? `${score.level_index}` : "",
@@ -361,13 +360,14 @@ export const ChartComment = ({ game, score, setCommentCount }: {
                       const index = newComments.findIndex((c) => c.comment_id === updatedComment.comment_id);
                       if (index !== -1) {
                         newComments[index] = updatedComment;
-                        mutate(newComments, false);
+                        setData(newComments);
                       }
                     }}
                     onDelete={(deletedComment) => {
                       const newComments = comments.filter((c) => c.comment_id !== deletedComment.comment_id);
-                      mutate(newComments, false);
+                      setData(newComments);
                     }}
+                    onRevert={invalidate}
                   />
                   {index < array.length - 1 && <Divider mt="md" />}
                 </div>
@@ -387,7 +387,7 @@ export const ChartComment = ({ game, score, setCommentCount }: {
         game={game}
         score={score}
         comment={comments.find((comment) => comment.uploader.id === getLoginUserId())}
-        onSubmit={mutate}
+        onSubmit={() => invalidate()}
       />
     </Stack>
   )

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Title, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box, Card } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { API_URL } from '@/main';
 import { solveCaptcha } from '@/utils/captcha';
 import { validateEmail } from "@/utils/validator.ts";
 import { Link } from "@/components/Link";
@@ -9,6 +8,7 @@ import { useForm } from "@mantine/form";
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 import classes from "../Form.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import { useForgotPassword } from "@/hooks/mutations/useAuthMutations.ts";
 
 interface FormValues {
   email: string;
@@ -16,6 +16,7 @@ interface FormValues {
 
 export default function ForgotPassword() {
   const [visible, setVisible] = useState(false);
+  const { mutate: forgotPassword } = useForgotPassword();
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -32,25 +33,20 @@ export default function ForgotPassword() {
 
     try {
       const captchaToken = await solveCaptcha();
-      const res = await fetch(`${API_URL}/user/forgot-password?captcha=${captchaToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+
+      forgotPassword({ values, captchaToken }, {
+        onSuccess: () => {
+          openAlertModal("发送成功", "请前往你的邮箱查看重置邮件。");
         },
-        body: JSON.stringify(values),
+        onError: (error) => {
+          openRetryModal("发送失败", `${error}`, () => forgotPasswordHandler(values));
+        },
+        onSettled: () => {
+          setVisible(false);
+        },
       });
-      if (res.status === 404) {
-        openAlertModal("发送失败", "该邮箱未注册过 maimai DX 查分器账号。");
-        return;
-      }
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("发送成功", "请前往你的邮箱查看重置邮件。");
     } catch (error) {
       openRetryModal("发送失败", `${error}`, () => forgotPasswordHandler(values));
-    } finally {
       setVisible(false);
     }
   }

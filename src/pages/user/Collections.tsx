@@ -8,7 +8,7 @@ import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { LoginAlert } from "@/components/LoginAlert";
 import { Page } from "@/components/Page/Page.tsx";
-import { useCollectionList } from "@/hooks/swr/useCollectionList.ts";
+import { useCollectionList } from "@/hooks/queries/useCollectionList.ts";
 import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
 import useGame from "@/hooks/useGame.ts";
 import { Game } from "@/types/game";

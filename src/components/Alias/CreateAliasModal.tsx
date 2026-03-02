@@ -5,9 +5,10 @@ import {
 import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import Icon from "@mdi/react";
-import {TransformedValues, useForm} from "@mantine/form";
+import { TransformedValues, useForm } from "@mantine/form";
 import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
-import { createAlias } from "@/utils/api/alias.ts";
+import { useCreateAlias } from "@/hooks/mutations/useAliasMutations.ts";
+import { APIError } from "@/utils/errors.ts";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
 import { PhotoView } from "react-photo-view";
@@ -60,28 +61,28 @@ export const CreateAliasModal = ({ game, defaultSongId, opened, onClose }: Creat
     }),
   });
 
-  const createAliasHandler = async (values: TransformedValues<typeof form>) => {
+  const createAliasMutation = useCreateAlias();
+
+  const createAliasHandler = (values: TransformedValues<typeof form>) => {
     setUploading(true);
 
-    try {
-      const res = await createAlias(game, values);
-      if (res.status === 409) {
-        openAlertModal("别名创建失败", "别名已存在，请输入其它曲目别名。");
+    createAliasMutation.mutate({ game, data: values }, {
+      onSuccess: () => {
+        openAlertModal("别名创建成功", "快去邀请你的小伙伴投票吧。")
+        form.resetField("alias");
+        onClose(values);
+      },
+      onError: (error) => {
+        if (error instanceof APIError && error.code === 409) {
+          openAlertModal("别名创建失败", "别名已存在，请输入其它曲目别名。");
+        } else {
+          openRetryModal("别名创建失败", `${error}`, () => createAliasHandler(values));
+        }
+      },
+      onSettled: () => {
         setUploading(false);
-        return
-      }
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("别名创建成功", "快去邀请你的小伙伴投票吧。")
-      form.resetField("alias");
-      onClose(values);
-    } catch (error) {
-      openRetryModal("别名创建失败", `${error}`, () => createAliasHandler(values));
-    } finally {
-      setUploading(false);
-    }
+      },
+    });
   }
 
   useEffect(() => {

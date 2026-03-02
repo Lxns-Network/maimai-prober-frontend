@@ -21,7 +21,7 @@ import { RatingGrowthSection } from "@/components/YearInReview/RatingGrowthSecti
 import { Game } from "@/types/game";
 import { useClipboard, useInViewport, useMediaQuery } from "@mantine/hooks";
 import { openConfirmModal } from "@/utils/modal.tsx";
-import { useYearInReview } from "@/hooks/swr/useYearInReview.ts";
+import { useYearInReview } from "@/hooks/queries/useYearInReview.ts";
 import useGame from "@/hooks/useGame.ts";
 import { fetchAPI } from "@/utils/api/api.ts";
 import { notifications } from "@mantine/notifications";

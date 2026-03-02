@@ -4,10 +4,10 @@ import {
   Stack,
 } from "@mantine/core";
 import { IconCheck, IconCopy, IconExclamationCircle, IconLink } from "@tabler/icons-react";
-import { confirmUserOAuthAuthorize } from "@/utils/api/user.ts";
 import { openRetryModal } from "@/utils/modal.tsx";
 import classes from "./Authorize.module.css";
-import { useOAuthApps } from "@/hooks/swr/useOAuthApp.ts";
+import { useOAuthApp } from "@/hooks/queries/useOAuthApp.ts";
+import { useConfirmOAuthAuthorize } from "@/hooks/mutations/useUserMutations.ts";
 import { scopeData } from "@/data/scopeData.tsx";
 import { usePageContext } from "vike-react/usePageContext";
 
@@ -19,7 +19,8 @@ function isOOBRedirectUri(redirectUri: string | null): boolean {
 export default function Authorize() {
   const pageContext = usePageContext();
   const params = new URLSearchParams(pageContext.urlParsed.search);
-  const { app, isLoading, error } = useOAuthApps(params);
+  const { app, isLoading, error } = useOAuthApp(params);
+  const confirmOAuthAuthorize = useConfirmOAuthAuthorize();
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [code, setCode] = useState("");
   
@@ -37,7 +38,7 @@ export default function Authorize() {
     if (!app) return;
     setIsAuthorizing(true);
     try {
-      const res = await confirmUserOAuthAuthorize({
+      const data = await confirmOAuthAuthorize.mutateAsync({
         client_id: params.get("client_id") || "",
         redirect_uri: params.get("redirect_uri") || "",
         scope: params.get("scope") || "",
@@ -45,17 +46,13 @@ export default function Authorize() {
         code_challenge_method: params.get("code_challenge_method") || "",
         state: params.get("state") || "",
       });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
       if (isOOBRedirectUri(app.redirect_uri)) {
-        setCode(data.data.code);
+        setCode(data.code);
       } else {
         const redirect = new URL(app.redirect_uri);
-        redirect.searchParams.set("code", data.data.code);
-        if (data.data.state) {
-          redirect.searchParams.set("state", data.data.state);
+        redirect.searchParams.set("code", data.code);
+        if (data.state) {
+          redirect.searchParams.set("state", data.state);
         }
         window.location.href = redirect.toString();
       }

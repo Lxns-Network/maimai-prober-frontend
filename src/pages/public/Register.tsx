@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Title, PasswordInput, TextInput, Text, Group, Button, LoadingOverlay, Card, Anchor } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { API_URL } from "@/main";
 import { solveCaptcha } from "@/utils/captcha";
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
@@ -9,6 +8,7 @@ import { IconLock, IconMail, IconUser } from "@tabler/icons-react";
 import classes from "../Form.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { navigate } from "vike/client/router";
+import { useRegister } from "@/hooks/mutations/useAuthMutations.ts";
 
 interface FormValues {
   name: string;
@@ -19,6 +19,7 @@ interface FormValues {
 
 export default function Register() {
   const [visible, setVisible] = useState(false);
+  const { mutate: register } = useRegister();
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -41,21 +42,20 @@ export default function Register() {
 
     try {
       const captchaToken = await solveCaptcha();
-      const res = await fetch(`${API_URL}/user/register?captcha=${captchaToken}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+
+      register({ values, captchaToken }, {
+        onSuccess: () => {
+          openConfirmModal("注册成功", "请登录你的查分器账号，根据指引绑定你的游戏账号。", () => navigate("/login"));
         },
-        body: JSON.stringify(values),
+        onError: (error) => {
+          openRetryModal("注册失败", `${error}`, () => registerHandler(values));
+        },
+        onSettled: () => {
+          setVisible(false);
+        },
       });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openConfirmModal("注册成功", "请登录你的查分器账号，根据指引绑定你的游戏账号。", () => navigate("/login"));
     } catch (error) {
       openRetryModal("注册失败", `${error}`, () => registerHandler(values));
-    } finally {
       setVisible(false);
     }
   }

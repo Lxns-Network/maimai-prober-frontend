@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useMediaQuery } from "@mantine/hooks";
-import { useScores } from "@/hooks/swr/useScores.ts";
+import { useScores } from "@/hooks/queries/useScores.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
 import { Accordion, Button, Card, Flex, Group, Loader, Pagination, Space, Text } from "@mantine/core";
@@ -15,7 +15,7 @@ import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/Statisti
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
-import { usePlayer } from "@/hooks/swr/usePlayer.ts";
+import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 
 const sortKeys = {
   maimai: [
@@ -39,17 +39,12 @@ const sortKeys = {
 };
 
 export const ScoreListSection = () => {
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useGame();
 
   const { player } = usePlayer(game);
-  const { scores, isLoading, mutate } = useScores(game);
+  const { scores, isLoading, invalidate } = useScores(game);
   const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
-  const [sortedScores, setSortedScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
-  const [displayScores, setDisplayScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]); // 用于分页显示的成绩列表
-
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
-  const [searchedScores, setSearchedScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [songId, setSongId] = useState<number>(0);
 
   const [sortBy, setSortBy] = useState<string | null>(null);
@@ -57,52 +52,37 @@ export const ScoreListSection = () => {
 
   const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
 
   const { openModal: openCreateScoreModal } = useCreateScoreStore();
   const getSongList = useSongListStore((state) => state.getSongList);
+  const songList = getSongList(game);
   const small = useMediaQuery('(max-width: 30rem)');
 
   useEffect(() => {
-    setSongList(getSongList(game));
     setSongId(0);
-  }, [game, getSongList]);
+  }, [game]);
 
   useEffect(() => {
     setFilteredScores(scores);
+    setPage(1);
   }, [scores]);
 
-  useEffect(() => {
-    if (!filteredScores || isLoading) return;
-
-    if (!filteredSongs) {
-      setSearchedScores(filteredScores);
-      return;
-    }
-    setSearchedScores(filteredScores.filter((score) => {
+  const searchedScores = useMemo(() => {
+    if (!filteredScores || isLoading) return [];
+    if (!filteredSongs) return filteredScores;
+    return filteredScores.filter((score) => {
       return filteredSongs.find((song) => song.id === score.id);
-    }));
+    });
   }, [filteredScores, filteredSongs, isLoading]);
 
-  useEffect(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-
-    if (sortedScores) {
-      setDisplayScores(sortedScores.slice(start, end));
-    }
-  }, [sortedScores, page]);
-
-  useEffect(() => {
-    if (!searchedScores) return;
-
-    setTotalPages(Math.ceil(searchedScores.length / PAGE_SIZE));
+  const sortedScores = useMemo(() => {
+    if (!searchedScores.length || !sortBy || !songList) return searchedScores;
 
     const getCompareValue = (
       score: MaimaiScoreProps | ChunithmScoreProps,
       key: string
     ): string | number | null => {
-      if (key === 'level_value' && songList) {
+      if (key === 'level_value') {
         const song = songList.find(score.id);
         if (!song) return null;
         if (songList instanceof MaimaiSongList && 'type' in score) {
@@ -120,9 +100,7 @@ export const ScoreListSection = () => {
       return null;
     };
 
-    const sortedScores = searchedScores.sort((a, b) => {
-      if (!songList || !sortBy) return 0;
-
+    return [...searchedScores].sort((a, b) => {
       const valueA = getCompareValue(a, sortBy);
       const valueB = getCompareValue(b, sortBy);
 
@@ -147,11 +125,10 @@ export const ScoreListSection = () => {
 
       return 0;
     });
-
-    setDisplayScores(sortedScores.slice(0, PAGE_SIZE));
-    setSortedScores(sortedScores);
-    setPage(1);
   }, [searchedScores, reverseSortDirection, sortBy, songList]);
+
+  const totalPages = Math.ceil(sortedScores.length / PAGE_SIZE);
+  const displayScores = sortedScores.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const renderSortIndicator = (key: string) => {
     if (sortBy === key) {
@@ -183,6 +160,7 @@ export const ScoreListSection = () => {
                 const reversed = item.key === sortBy ? !reverseSortDirection : false;
                 setReverseSortDirection(reversed);
                 setSortBy(item.key);
+                setPage(1);
               }}
               size="xs"
               variant="light"
@@ -199,6 +177,7 @@ export const ScoreListSection = () => {
             <Accordion.Panel>
               <AdvancedFilter scores={scores} onChange={(result) => {
                 setFilteredScores(result);
+                setPage(1);
               }} />
             </Accordion.Panel>
           </Accordion.Item>
@@ -210,6 +189,7 @@ export const ScoreListSection = () => {
           value={songId}
           onSongsChange={(filteredSongs) => {
             setFilteredSongs(filteredSongs);
+            setPage(1);
           }}
           placeholder="请输入曲名或曲目别名"
           radius="md"
@@ -219,7 +199,7 @@ export const ScoreListSection = () => {
           openCreateScoreModal({
             game,
             onClose: (values) => {
-              values && mutate()
+              values && invalidate()
             }
           })
         }}>
@@ -240,7 +220,7 @@ export const ScoreListSection = () => {
       <Group justify="center">
         <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
         <ScoreList scores={displayScores} onScoreChange={(score) => {
-          score && mutate();
+          score && invalidate();
         }} />
         <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
       </Group>

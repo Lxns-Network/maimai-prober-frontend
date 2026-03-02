@@ -1,23 +1,19 @@
-import useSWR from "swr";
-import { fetcher } from "@/hooks/swr/fetcher.ts";
+import { useQuery } from "@tanstack/react-query";
 import { Game } from "@/types/game";
 import { CollectionProps } from "@/types/player";
+import { queryKeys } from "./queryKeys.ts";
 
 export const usePlayerCollections = ({ game, type }: {
   game: Game;
   type: "trophies" | "icons" | "plates" | "frames" | "characters";
 }) => {
-  const {
-    data,
-    error,
-    isLoading,
-    mutate
-  } = useSWR<CollectionProps[]>(`user/${game}/player/${type}`, fetcher);
+  const { data, error, isLoading } = useQuery<CollectionProps[]>({
+    queryKey: queryKeys.player.collections(game, type),
+  });
 
   return {
     collections: data || [],
-    isLoading: isLoading,
-    error: error,
-    mutate: mutate,
+    isLoading,
+    error,
   };
 };

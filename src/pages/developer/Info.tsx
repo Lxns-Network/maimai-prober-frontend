@@ -2,7 +2,6 @@ import {
   Group, Text, Loader, Card, Switch, ActionIcon, Tooltip, CopyButton, Anchor, Divider, useMantineTheme, Button,
   TextInput, Stack, Flex, Alert
 } from '@mantine/core';
-import { resetDeveloperApiKey } from "@/utils/api/developer.ts";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
@@ -12,34 +11,26 @@ import { useComputedColorScheme } from "@mantine/core";
 import { Page } from "@/components/Page/Page.tsx";
 import { DeveloperOAuthSection } from "@/components/Developer/DeveloperOAuthSection.tsx";
 import { EditDeveloperModal } from "@/components/Developer/EditDeveloperModal.tsx";
-import { useDeveloper } from "@/hooks/swr/useDeveloper.ts";
+import { useDeveloper } from "@/hooks/queries/useDeveloper.ts";
+import { useResetDeveloperApiKey } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { useEffect } from "react";
 import { navigate } from 'vike/client/router';
 
 const DeveloperInfoContent = () => {
-  const { developer, isLoading, error, mutate } = useDeveloper();
+  const { developer, isLoading, error, setData, invalidate } = useDeveloper();
+  const { mutate: resetApiKey } = useResetDeveloperApiKey();
   const [visible, visibleHandler] = useDisclosure(false);
   const [editModalOpened, editModal] = useDisclosure(false);
   const computedColorScheme = useComputedColorScheme('light');
   const theme = useMantineTheme();
 
-  const resetDeveloperApiKeyHandler = async () => {
-    try {
-      const res = await resetDeveloperApiKey();
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      await mutate((prevData) => {
-        if (!prevData) return prevData;
-        return {
-          ...prevData,
-          api_key: data.data.api_key,
-        };
-      })
-    } catch (err) {
-      console.error(err);
-    }
+  const resetDeveloperApiKeyHandler = () => {
+    resetApiKey(undefined, {
+      onSuccess: (data) => {
+        setData((prev) => prev ? { ...prev, api_key: data.api_key } : prev);
+      },
+      onError: (err) => console.error(err),
+    });
   }
 
   useEffect(() => {
@@ -67,7 +58,7 @@ const DeveloperInfoContent = () => {
           opened={editModalOpened}
           close={editModal.close}
           developer={developer}
-          onSuccess={mutate}
+          onSuccess={invalidate}
         />
       )}
       <Card withBorder radius="md" className={classes.card}>

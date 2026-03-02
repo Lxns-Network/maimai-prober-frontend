@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchAPI } from "@/utils/api/api.ts";
+import { useSongDetail } from "@/hooks/queries/useSongDetail.ts";
 import {
   Accordion, ActionIcon, Avatar, Badge, Center, CheckIcon, Combobox, Container, Group, Modal, ScrollArea, Space, Stack,
   Text, Transition, useCombobox
@@ -85,21 +85,21 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   // ChartComment
   const [commentCount, setCommentCount] = useState<number>(0);
 
-  const getSongDetailHandler = async (id: number) => {
-    const res = await fetchAPI(`${game}/song/${id}`, {
-      method: "GET",
-    });
-    const data = await res.json();
-    setSongState((prev => {
-      if (!prev) return prev;
-      return { ...prev, song: data };
-    }));
-  }
+  const { songDetail } = useSongDetail(game, score?.id ?? null);
 
   useEffect(() => {
     setSongState(null);
     setSongList(getSongList(game));
   }, [game]);
+
+  useEffect(() => {
+    if (!songDetail) return;
+    if (game === "maimai") {
+      setSongState({ game: "maimai", song: songDetail as MaimaiSongProps });
+    } else {
+      setSongState({ game: "chunithm", song: songDetail as ChunithmSongProps });
+    }
+  }, [songDetail, game]);
 
   useEffect(() => {
     if (!songState?.song || !songList || !score) return;
@@ -128,8 +128,6 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
       setSongState(null);
       return;
     }
-
-    getSongDetailHandler(score.id);
 
     if (game === "maimai") {
       setSongState({ game: "maimai", song: song as MaimaiSongProps });

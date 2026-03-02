@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Box, Container, Divider, ScrollArea } from '@mantine/core';
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "@/utils/session.ts";
-import { logoutUser } from "@/utils/api/user.ts";
+import { useLogoutUser } from "@/hooks/mutations/useUserMutations.ts";
 import {
   IconAward, IconCalendar, IconChartBar, IconCloudUpload, IconCode, IconDoorEnter, IconGavel, IconHelp, IconHome,
   IconLogout, IconMusic, IconSettings2, IconTable, IconTransferIn, IconUserCircle
@@ -17,6 +17,7 @@ interface NavbarProps {
 export default function Navbar({ style, onClose }: NavbarProps) {
   const [active, setActive] = useState('');
   const isLoggedOut = typeof window !== 'undefined' ? !localStorage.getItem("token") : true;
+  const { mutate: mutateLogout } = useLogoutUser();
 
   const navbarData = useMemo(() => [
     { label: '2025 年度总结', icon: <IconCalendar stroke={1.5} />, to: '/year-in-review/2025', enabled: !isLoggedOut },
@@ -77,9 +78,11 @@ export default function Navbar({ style, onClose }: NavbarProps) {
           <NavbarButton label="帮助文档" icon={<IconHelp stroke={1.5} />} to="/docs" onClose={onClose} />
           {!isLoggedOut && (
             <NavbarButton label="登出" icon={<IconLogout stroke={1.5} />} to="/" onClose={onClose} onClick={() => {
-              logoutUser().then(() => {
-                localStorage.removeItem('token');
-                window.location.href = "/";
+              mutateLogout(undefined, {
+                onSuccess: () => {
+                  localStorage.removeItem('token');
+                  window.location.href = "/";
+                },
               });
             }} />
           )}

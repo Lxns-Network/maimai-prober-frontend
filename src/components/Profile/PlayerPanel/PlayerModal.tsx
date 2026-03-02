@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { MaimaiRatingTrend, MaimaiRatingTrendProps } from "./maimai/RatingTrend.tsx";
 import { ChunithmRatingTrend, ChunithmRatingTrendProps } from "./chunithm/RatingTrend.tsx";
 import {
   Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Group, Loader, Modal, Paper, ScrollArea, useCombobox,
   Text,
 } from "@mantine/core";
-import { getPlayerRatingTrend, updatePlayerData } from "@/utils/api/player.ts";
 import { openRetryModal } from "@/utils/modal.tsx";
+import { useUpdatePlayerData } from "@/hooks/mutations/usePlayerMutations.ts";
+import { usePlayerRatingTrend } from "@/hooks/queries/usePlayerRatingTrend.ts";
 import { MaimaiPlayerContent } from "./maimai/PlayerContent.tsx";
 import classes from "./PlayerModal.module.css";
 import { IconDots, IconEdit } from "@tabler/icons-react";
@@ -19,7 +20,7 @@ import { isChunithmPlayerProps, isMaimaiPlayerProps } from "@/utils/api/player.t
 import { Collection, EditCollectionModal } from "./EditCollectionModal.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
 import { useMediaQuery } from "@mantine/hooks";
-import { usePlayer } from "@/hooks/swr/usePlayer.ts";
+import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 
 interface EditButtonProps {
   title: string;
@@ -91,10 +92,10 @@ const versionData = {
 };
 
 export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
-  const { mutate } = usePlayer(game);
-  const [trend, setTrend] = useState<(MaimaiRatingTrendProps | ChunithmRatingTrendProps)[]>([]);
-  const [fetching, setFetching] = useState(true);
+  const { invalidate, setData: setPlayerData } = usePlayer(game);
+  const { mutate: updatePlayer } = useUpdatePlayerData();
   const [version, setVersion] = useState<number>(0);
+  const { trend, isLoading: fetching } = usePlayerRatingTrend(game, version);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -104,52 +105,37 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
   const [editCollectionType, setEditCollectionType] = useState<Collection>("icons");
   const [editCollectionValue, setEditCollectionValue] = useState<number>(0);
 
-  const updatePlayerDataHandler = useCallback(async (player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>) => {
-    try {
-      const res = await updatePlayerData(game, player);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      await mutate();
-    } catch (error) {
-      openRetryModal("更新失败", `${error}`, () => updatePlayerDataHandler(player));
-    }
-  }, [game]);
+  const updatePlayerDataHandler = useCallback((playerData: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>) => {
+    const previousPlayer = player;
 
-  const getPlayerRatingTrendHandler = useCallback(async () => {
-    if (!version || versionData[game].map((item) => item.version).indexOf(version) === -1) {
-      return;
+    if (player) {
+      const merged = { ...player } as Record<string, unknown>;
+      for (const [key, value] of Object.entries(playerData)) {
+        if (typeof value === 'object' && value !== null && typeof merged[key] === 'object' && merged[key] !== null) {
+          merged[key] = { ...(merged[key] as Record<string, unknown>), ...value };
+        } else {
+          merged[key] = value;
+        }
+      }
+      setPlayerData(merged as unknown as MaimaiPlayerProps | ChunithmPlayerProps);
     }
 
-    try {
-      const res = await getPlayerRatingTrend(game, version);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setTrend(data.data);
-    } catch (error) {
-      openRetryModal("获取失败", `${error}`, () => getPlayerRatingTrendHandler());
-    } finally {
-      setFetching(false);
-    }
-  }, [game, version]);
+    updatePlayer({ game, player: playerData }, {
+      onSuccess: () => {
+        invalidate();
+      },
+      onError: (error) => {
+        if (previousPlayer) setPlayerData(previousPlayer);
+        openRetryModal("更新失败", `${error}`, () => updatePlayerDataHandler(playerData));
+      },
+    });
+  }, [game, player, updatePlayer, setPlayerData, invalidate]);
 
   useEffect(() => {
-    setFetching(true);
-    getPlayerRatingTrendHandler();
-  }, [version, getPlayerRatingTrendHandler]);
-
-  useEffect(() => {
-    if (!opened || trend.length > 0) return;
+    if (!opened || version > 0) return;
 
     setVersion(versionData[game][0].version);
-  }, [opened, game, trend.length]);
-
-  useEffect(() => {
-    setTrend([]);
-  }, [game]);
+  }, [opened, game, version]);
 
   return (
     <Modal.Root

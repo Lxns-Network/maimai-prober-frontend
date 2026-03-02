@@ -1,5 +1,5 @@
-import { fetchAPI } from "@/utils/api/api.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { useDeletePlayerScore, useDeletePlayerScoreHistory } from "@/hooks/mutations/usePlayerMutations.ts";
 import { ActionIcon, Menu } from "@mantine/core";
 import classes from "./ScoreModalMenu.module.css";
 import { IconClearAll, IconDots, IconMusic, IconPlayerPlay, IconPlus, IconTrash } from "@tabler/icons-react";
@@ -8,7 +8,9 @@ import useFixedGame from "@/hooks/useFixedGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import useScoreStore from "@/hooks/useScoreStore.ts";
-import { usePlayer } from "@/hooks/swr/usePlayer.ts";
+import { usePlayer } from "@/hooks/queries/usePlayer.ts";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/hooks/queries/queryKeys.ts";
 import { MaimaiDifficultyProps } from "@/utils/api/song/maimai";
 import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm";
 import { navigate } from "vike/client/router";
@@ -24,39 +26,35 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
   const { closeModal: closeScoreModal } = useScoreStore();
   const [params, setParams] = useState(new URLSearchParams());
   const [game] = useFixedGame();
+  const queryClient = useQueryClient();
 
   const { player } = usePlayer(game);
 
-  const DeletePlayerScoreHandler = async () => {
-    try {
-      const res = await fetchAPI(`user/${game}/player/score?${params.toString()}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("成绩删除成功", "你的成绩已经成功删除。")
-      onClose && onClose(score);
-    } catch (err) {
-      openRetryModal("成绩删除失败", `${err}`, DeletePlayerScoreHandler)
-    }
+  const deleteScoreMutation = useDeletePlayerScore();
+  const deleteScoreHistoryMutation = useDeletePlayerScoreHistory();
+
+  const deletePlayerScoreHandler = () => {
+    deleteScoreMutation.mutate({ game, params }, {
+      onSuccess: () => {
+        openAlertModal("成绩删除成功", "你的成绩已经成功删除。");
+        onClose && onClose(score);
+      },
+      onError: (err) => {
+        openRetryModal("成绩删除失败", `${err}`, deletePlayerScoreHandler);
+      },
+    });
   }
 
-  const DeletePlayerScoresHandler = async () => {
-    try {
-      const res = await fetchAPI(`user/${game}/player/scores?${params.toString()}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("成绩删除成功", "你的所有历史成绩已经成功删除。")
-      onClose && onClose(score);
-    } catch (err) {
-      openRetryModal("成绩删除失败", `${err}`, DeletePlayerScoresHandler)
-    }
+  const deletePlayerScoresHandler = () => {
+    deleteScoreHistoryMutation.mutate({ game, params }, {
+      onSuccess: () => {
+        openAlertModal("成绩删除成功", "你的所有历史成绩已经成功删除。");
+        onClose && onClose(score);
+      },
+      onError: (err) => {
+        openRetryModal("成绩删除失败", `${err}`, deletePlayerScoresHandler);
+      },
+    });
   }
 
   const handleChartPreview = (chartId: number, difficulty: number) => {
@@ -128,6 +126,12 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
           openCreateScoreModal({
             game,
             score,
+            onClose: (values) => {
+              if (values) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.player.scores(game) });
+                queryClient.invalidateQueries({ queryKey: queryKeys.player.bests(game) });
+              }
+            },
           });
         }}>
           创建新成绩
@@ -146,14 +150,14 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
             <Menu.Divider />
             <Menu.Label>敏感操作</Menu.Label>
             <Menu.Item color="red" leftSection={<IconTrash size={20} stroke={1.5} />} onClick={() => {
-              openConfirmModal("删除成绩", "你确定要删除该成绩吗？", DeletePlayerScoreHandler, {
+              openConfirmModal("删除成绩", "你确定要删除该成绩吗？", deletePlayerScoreHandler, {
                 confirmProps: { color: 'red' }
               })
             }}>
               删除该成绩
             </Menu.Item>
             <Menu.Item color="red" leftSection={<IconClearAll size={20} stroke={1.5} />} onClick={() => {
-              openConfirmModal("删除成绩", "你确定要删除所有历史成绩吗？", DeletePlayerScoresHandler, {
+              openConfirmModal("删除成绩", "你确定要删除所有历史成绩吗？", deletePlayerScoresHandler, {
                 confirmProps: { color: 'red' }
               })
             }}>

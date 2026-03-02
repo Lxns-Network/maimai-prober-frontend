@@ -8,7 +8,6 @@ import {
   PasswordInput, Card
 } from '@mantine/core';
 import { Container } from '@mantine/core';
-import { API_URL } from '../../main';
 import { validatePassword } from "@/utils/validator.ts";
 import { useForm } from "@mantine/form";
 import { IconLock } from "@tabler/icons-react";
@@ -16,6 +15,7 @@ import classes from "../Form.module.css";
 import { openRetryModal } from "../../utils/modal.tsx";
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
+import { useResetPassword } from "@/hooks/mutations/useAuthMutations.ts";
 
 interface FormValues {
   password: string;
@@ -26,6 +26,7 @@ export default function ResetPassword() {
   const [visible, setVisible] = useState(false);
   const token = new URLSearchParams(window.location.search).get("token");
   const pageContext = usePageContext();
+  const { mutate: resetPassword } = useResetPassword();
 
   useEffect(() => {
     if (!token) {
@@ -45,27 +46,20 @@ export default function ResetPassword() {
     },
   });
 
-  const resetPasswordHandler = async (values: FormValues) => {
+  const resetPasswordHandler = (values: FormValues) => {
     setVisible(true);
 
-    try {
-      const res = await fetch(`${API_URL}/user/reset-password?token=${token}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      navigate("/login", { pageContext: { ...pageContext, loginState: { reset: true } } });
-    } catch (error) {
-      openRetryModal("重置失败", `${error}`, () => resetPasswordHandler(values));
-    } finally {
-      setVisible(false);
-    }
+    resetPassword({ token: token!, values }, {
+      onSuccess: () => {
+        navigate("/login", { pageContext: { ...pageContext, loginState: { reset: true } } });
+      },
+      onError: (error) => {
+        openRetryModal("重置失败", `${error}`, () => resetPasswordHandler(values));
+      },
+      onSettled: () => {
+        setVisible(false);
+      },
+    });
   }
 
   return (

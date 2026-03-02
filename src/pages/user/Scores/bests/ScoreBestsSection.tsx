@@ -1,6 +1,6 @@
 import { Box, Flex, Group, Loader, Space, Text, Title } from "@mantine/core";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
-import { useBests } from "@/hooks/swr/useBests.ts";
+import { useBests } from "@/hooks/queries/useBests.ts";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { RatingSegments } from "@/components/Scores/RatingSegments.tsx";
 import useGame from "@/hooks/useGame.ts";

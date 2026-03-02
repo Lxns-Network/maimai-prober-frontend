@@ -4,9 +4,7 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { Game } from "@/types/game";
 import { Center, Flex, Loader, Text } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
-import { fetchAPI } from "@/utils/api/api.ts";
-import { openRetryModal } from "@/utils/modal.tsx";
+import { useScoreHistory } from "@/hooks/queries/useScoreHistory.ts";
 
 export const rankData = {
   maimai: {
@@ -38,57 +36,8 @@ export const ScoreHistory = ({ game, score, minRank }: {
   score: MaimaiScoreProps | ChunithmScoreProps | null;
   minRank: string;
 }) => {
-  const [historyScores, setHistoryScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
-  const [fetching, setFetching] = useState(true);
   const isLoggedOut = !localStorage.getItem("token");
-
-  const getPlayerScoreHistory = async (score: MaimaiScoreProps | ChunithmScoreProps) => {
-    if ((game === "maimai" && "achievements" in score && score.achievements < 0) ||
-      (game === "chunithm" && "score" in score && score.score < 0)) {
-      setHistoryScores([]);
-      setFetching(false);
-      return;
-    }
-    setFetching(true);
-    try {
-      const params = new URLSearchParams({
-        song_id: `${score.id}`,
-        level_index: `${score.level_index}`,
-      });
-      if (game === "maimai" && "achievements" in score) {
-        params.append("song_type", `${score.type}`);
-      }
-      const res = await fetchAPI(`user/${game}/player/score/history?${params.toString()}`, {
-        method: "GET",
-      })
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      if (data.data) {
-        setHistoryScores(data.data.sort((a: MaimaiScoreProps | ChunithmScoreProps, b: MaimaiScoreProps | ChunithmScoreProps) => {
-          const uploadTimeDiff = new Date(a.upload_time).getTime() - new Date(b.upload_time).getTime();
-
-          if (uploadTimeDiff === 0 && a.play_time && b.play_time) {
-            return new Date(a.play_time).getTime() - new Date(b.play_time).getTime();
-          }
-
-          return uploadTimeDiff;
-        }));
-      }
-    } catch (error) {
-      openRetryModal("历史记录获取失败", `${error}`, () => getPlayerScoreHistory(score))
-    } finally {
-      setFetching(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!score) return;
-
-    setHistoryScores([]);
-    if (!isLoggedOut) getPlayerScoreHistory(score);
-  }, [score]);
+  const { historyScores, isLoading } = useScoreHistory(game, score);
 
   if (isLoggedOut) {
     return (
@@ -99,7 +48,7 @@ export const ScoreHistory = ({ game, score, minRank }: {
     );
   }
 
-  if (!score || fetching) {
+  if (!score || isLoading) {
     return (
       <Center>
         <Loader />

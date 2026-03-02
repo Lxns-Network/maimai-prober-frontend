@@ -1,13 +1,14 @@
 import { Text, Card, LoadingOverlay, Mark } from '@mantine/core';
-import { deletePlayerScores, unbindPlayer } from "@/utils/api/player.ts";
-import { updateUserConfig } from "@/utils/api/user.ts";
 import { SettingList, SettingValue } from '@/components/Settings/SettingList.tsx';
 import { Link } from "@/components/Link";
 import classes from "../../Page.module.css"
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
-import { useUserConfig } from "@/hooks/swr/useUserConfig.ts";
+import { useUserConfig } from "@/hooks/queries/useUserConfig.ts";
 import useGame from "@/hooks/useGame.ts";
 import { Anchor } from '@mantine/core';
+import { useUpdateUserConfig } from "@/hooks/mutations/useUserMutations.ts";
+import { useUnbindPlayer, useDeletePlayerScores } from "@/hooks/mutations/usePlayerMutations.ts";
+import { ConfigProps } from "@/types/user";
 
 const crawlConfigData = {
   maimai: [{
@@ -159,51 +160,48 @@ const crawlConfigData = {
 
 export const GeneralSettingsSection = () => {
   const [game] = useGame();
-  const { config, isLoading, mutate } = useUserConfig(game);
+  const { config, isLoading, setData } = useUserConfig(game);
+  const { mutate: updateConfig } = useUpdateUserConfig();
+  const { mutate: unbindPlayerMutate } = useUnbindPlayer();
+  const { mutate: deleteScoresMutate } = useDeletePlayerScores();
 
-  const updateUserConfigHandler = async (key: string, value: unknown) => {
+  const updateUserConfigHandler = (key: string, value: unknown) => {
     const newConfig = {
       ...config,
       [key]: value,
     };
 
-    try {
-      const res = await updateUserConfig(game, newConfig);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-    } catch (error) {
-      openRetryModal("保存设置失败", `${error}`, () => updateUserConfigHandler(key, value));
-    } finally {
-      mutate(newConfig);
-    }
+    const previousConfig = config;
+    setData(newConfig as ConfigProps);
+
+    updateConfig({ game, data: newConfig }, {
+      onError: (error) => {
+        if (previousConfig) setData(previousConfig);
+        openRetryModal("保存设置失败", `${error}`, () => updateUserConfigHandler(key, value));
+      },
+    });
   }
 
-  const unbindPlayerHandler = async () => {
-    try {
-      const res = await unbindPlayer(game);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("解绑成功", `你的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」账号已经被解绑。`)
-    } catch (error) {
-      openRetryModal("解绑失败", `${error}`, unbindPlayerHandler);
-    }
+  const unbindPlayerHandler = () => {
+    unbindPlayerMutate(game, {
+      onSuccess: () => {
+        openAlertModal("解绑成功", `你的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」账号已经被解绑。`)
+      },
+      onError: (error) => {
+        openRetryModal("解绑失败", `${error}`, unbindPlayerHandler);
+      },
+    });
   }
 
-  const deletePlayerScoresHandler = async () => {
-    try {
-      const res = await deletePlayerScores(game);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("删除成功", `你的查分器账号里所有的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」谱面成绩已经被删除。`)
-    } catch (error) {
-      openRetryModal("删除失败", `${error}`, deletePlayerScoresHandler);
-    }
+  const deletePlayerScoresHandler = () => {
+    deleteScoresMutate(game, {
+      onSuccess: () => {
+        openAlertModal("删除成功", `你的查分器账号里所有的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」谱面成绩已经被删除。`)
+      },
+      onError: (error) => {
+        openRetryModal("删除失败", `${error}`, deletePlayerScoresHandler);
+      },
+    });
   }
 
   return (

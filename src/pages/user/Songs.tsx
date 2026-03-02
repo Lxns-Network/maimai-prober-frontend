@@ -3,10 +3,8 @@ import { Text, Flex, Anchor, Space, Transition } from "@mantine/core";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { usePrevious } from "@mantine/hooks";
-import { openRetryModal } from "@/utils/modal.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
-import { fetchAPI } from "@/utils/api/api.ts";
 import { Link } from "@/components/Link";
 import { LoginAlert } from "@/components/LoginAlert";
 import { SongCard } from "@/components/Songs/SongCard.tsx";
@@ -18,6 +16,7 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import { getSongCollections, SongCollectionItemProps } from "@/utils/api/song/song.tsx";
 import { usePageContext } from "vike-react/usePageContext";
+import { useSongBests } from "@/hooks/queries/useSongBests.ts";
 
 interface State {
   songId: number | null;
@@ -62,31 +61,8 @@ const SongsContent = () => {
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [songCollections, setSongCollections] = useState<SongCollectionItemProps[] | null>(null);
   const getSongList = useSongListStore((state) => state.getSongList);
-  const isLoggedOut = !localStorage.getItem("token");
 
-  const getPlayerSongBestsHandler = async (type?: string) => {
-    if (!song) return;
-    if (game === "maimai" && !type) return;
-    try {
-      const params = new URLSearchParams({
-        song_id: song.id.toString()
-      });
-      if (type) {
-        params.append("song_type", type);
-      }
-      const res = await fetchAPI(`user/${game}/player/bests?${params.toString()}`, { method: "GET" });
-      const data = await res.json();
-      if (!data.success) {
-        if (data.code === 404) {
-          return [];
-        }
-        throw new Error(data.message);
-      }
-      return data.data;
-    } catch (error) {
-      openRetryModal("曲目成绩获取失败", `${error}`, () => getPlayerSongBestsHandler(type));
-    }
-  }
+  const { scores: fetchedScores } = useSongBests(game, song);
 
   const getSongCollectionsHandler = async (songId: number) => {
     try {
@@ -117,27 +93,12 @@ const SongsContent = () => {
 
   useEffect(() => {
     if (!song) return;
-
     window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&song_id=${song.id.toString()}`);
+  }, [song, game]);
 
-    if (isLoggedOut) return;
-
-    if (songList instanceof MaimaiSongList) {
-      const s = song as MaimaiSongProps;
-      const types: string[] = [];
-      if (s.difficulties.dx.length) types.push("dx");
-      if (s.difficulties.standard.length) types.push("standard");
-      if (s.difficulties.utage && s.difficulties.utage.length) types.push("utage");
-
-      Promise.all(types.map((type) => getPlayerSongBestsHandler(type))).then((data) => {
-        setScores(data.flat().filter((record) => record));
-      });
-    } else {
-      getPlayerSongBestsHandler().then((data) => {
-        if (data) setScores(data);
-      });
-    }
-  }, [song]);
+  useEffect(() => {
+    setScores(fetchedScores);
+  }, [fetchedScores]);
 
   useEffect(() => {
     const song = songList?.songs.find((song) => song.id === songId);

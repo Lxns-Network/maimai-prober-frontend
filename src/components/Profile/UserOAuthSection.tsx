@@ -7,10 +7,10 @@ import {
 import { useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
 import { scopeData } from "@/data/scopeData.tsx";
-import { useUserOAuthApps } from "@/hooks/swr/useUserOAuthApps.ts";
+import { useUserOAuthApps } from "@/hooks/queries/useUserOAuthApps.ts";
 import classes from "./UserOAuthSection.module.css"
-import {revokeUserOAuthApp} from "@/utils/api/user.ts";
-import {openConfirmModal, openRetryModal} from "@/utils/modal.tsx";
+import { useRevokeUserOAuthApp } from "@/hooks/mutations/useUserMutations.ts";
+import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 
 const ScopeDisplay = ({ scopes }: { scopes: string }) => {
   const [expanded, setExpanded] = useState(false);
@@ -98,23 +98,23 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
 };
 
 const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => void }) => {
+  const { mutate: mutateRevoke } = useRevokeUserOAuthApp();
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return "未知";
     return new Date(dateString).toLocaleDateString('zh-CN');
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!app.client_id) return;
-    try {
-      const res = await revokeUserOAuthApp(app.client_id);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      onRevoke();
-    } catch (error) {
-      openRetryModal("撤销授权失败", `${error}`, handleDelete);
-    }
+    mutateRevoke(app.client_id, {
+      onSuccess: () => {
+        onRevoke();
+      },
+      onError: (error) => {
+        openRetryModal("撤销授权失败", `${error}`, handleDelete);
+      },
+    });
   };
 
   const handleVisitWebsite = () => {
@@ -187,7 +187,7 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => v
 };
 
 export const UserOAuthSection = () => {
-  const { apps, isLoading, mutate } = useUserOAuthApps();
+  const { apps, isLoading, invalidate } = useUserOAuthApps();
 
   return (
     <Card withBorder radius="md" className={classes.card}>
@@ -211,7 +211,7 @@ export const UserOAuthSection = () => {
         ) : apps && apps.length > 0 ? (
           <Stack gap="md">
             {apps.map((app) => (
-              <OAuthAppCard key={app.client_id || app.name} app={app} onRevoke={mutate} />
+              <OAuthAppCard key={app.client_id || app.name} app={app} onRevoke={invalidate} />
             ))}
           </Stack>
         ) : (

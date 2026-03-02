@@ -6,10 +6,10 @@ import {
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useMediaQuery } from '@mantine/hooks';
-import { getCrawlStatus, getUserCrawlToken } from "@/utils/api/user.ts";
 import { IconAlertCircle, IconDownload, IconRepeat } from "@tabler/icons-react";
 import { openAlertModal } from "@/utils/modal";
 import { checkProxy } from "@/utils/checkProxy.ts";
+import { getUserCrawlToken, getCrawlStatus } from "@/utils/api/user.ts";
 import classes from './Sync.module.css';
 
 import { LoginAlert } from "@/components/LoginAlert";

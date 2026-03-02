@@ -2,11 +2,11 @@ import {
   ActionIcon, Badge, Box, Button, Card, CopyButton, Divider, Grid, Group, Stack, Text, TextInput, Tooltip
 } from "@mantine/core";
 import { IconCheck, IconCopy, IconEdit, IconTrash } from "@tabler/icons-react";
-import { useOAuthApps } from "@/hooks/swr/useOAuthApps.ts";
+import { useOAuthApps } from "@/hooks/queries/useOAuthApps.ts";
+import { useDeleteOAuthApp } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { useDisclosure, useViewportSize } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
-import { deleteOAuthApp } from "@/utils/api/developer.ts";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import classes from "@/pages/Page.module.css";
 import { CreateOAuthClientModal } from "@/components/Developer/CreateOAuthClientModal.tsx";
@@ -34,7 +34,8 @@ const TextInputWithCopyButton = ({ label, value }: { label: string, value: strin
 }
 
 export const DeveloperOAuthSection = () => {
-  const { apps, isLoading, mutate } = useOAuthApps();
+  const { apps, isLoading, invalidate } = useOAuthApps();
+  const deleteOAuthAppMutation = useDeleteOAuthApp();
   const { width } = useViewportSize();
 
   const [opened, modal] = useDisclosure(false);
@@ -55,19 +56,15 @@ export const DeveloperOAuthSection = () => {
 
   const deleteAppHandler = async (clientId: string) => {
     try {
-      const res = await deleteOAuthApp(clientId);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      await mutate();
+      await deleteOAuthAppMutation.mutateAsync(clientId);
+      await invalidate();
     } catch (error) {
       openRetryModal("删除失败", `${error}`, () => deleteAppHandler(clientId));
     }
   }
 
   useEffect(() => {
-    if (!opened) mutate();
+    if (!opened) invalidate();
   }, [opened]);
 
   return (

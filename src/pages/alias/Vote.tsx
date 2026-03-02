@@ -6,8 +6,9 @@ import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/i
 import classes from "../Page.module.css"
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { Page } from "@/components/Page/Page.tsx";
-import { useAliases } from "@/hooks/swr/useAliases.ts";
-import { useAliasVotes } from "@/hooks/swr/useAliasVotes.ts";
+import { useAliases } from "@/hooks/queries/useAliases.ts";
+import { useAliasVotes } from "@/hooks/queries/useAliasVotes.ts";
+import { AliasListProps } from "@/types/alias";
 import useGame from "@/hooks/useGame.ts";
 import useAliasStore from "@/hooks/useAliasStore.ts";
 
@@ -38,9 +39,9 @@ const AliasVoteContent = () => {
   const small = useMediaQuery('(max-width: 30rem)');
 
   const {
-    aliases, pageCount, pageSize, isLoading, mutate
+    aliases, pageCount, pageSize, isLoading, setData, invalidate
   } = useAliases(game, page, onlyNotApproved, sortBy, reverseSortDirection ? 'asc' : 'desc', songId);
-  const { votes, mutate: mutateVote } = useAliasVotes(game);
+  const { votes, invalidate: invalidateVotes } = useAliasVotes(game);
 
   const sort = (key: SortKey, autoChangeReverse = true) => {
     let reversed = reverseSortDirection;
@@ -64,12 +65,12 @@ const AliasVoteContent = () => {
       aliases[i] = alias;
     });
 
-    mutate({
+    setData({
       aliases: aliases,
       page_count: pageCount,
       page_size: pageSize,
-    });
-  }, [aliases, mutate, pageCount, pageSize, votes]);
+    } as AliasListProps);
+  }, [aliases, setData, pageCount, pageSize, votes]);
 
   const renderSortIndicator = (key: SortKey) => {
     if (sortBy === key) {
@@ -85,7 +86,7 @@ const AliasVoteContent = () => {
       game: game,
       songId: songId,
       onClose: (values) => {
-        values && mutate();
+        values && invalidate();
       },
     });
   }
@@ -150,7 +151,7 @@ const AliasVoteContent = () => {
       ))}
       <Group justify="center">
         <Pagination total={pageCount} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
-        <AliasList aliases={aliases} onVote={mutateVote} onDelete={mutate} />
+        <AliasList aliases={aliases} onVote={invalidateVotes} onMutate={invalidate} />
         <Pagination total={pageCount} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
       </Group>
     </div>

@@ -4,11 +4,11 @@ import { Container, rem } from '@mantine/core';
 import Icon from "@mdi/react";
 import { mdiCodeTags, mdiLink } from "@mdi/js";
 import { useForm } from "@mantine/form";
-import { sendDeveloperApply } from "@/utils/api/developer.ts";
 import classes from "../Form.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { validateText, validateUrl } from "@/utils/validator.ts";
-import { useDeveloper } from "@/hooks/swr/useDeveloper.ts";
+import { useDeveloper } from "@/hooks/queries/useDeveloper.ts";
+import { useSendDeveloperApply } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { navigate } from 'vike/client/router'
 
 interface FormValues {
@@ -19,6 +19,7 @@ interface FormValues {
 
 export default function DeveloperApply() {
   const { developer, isLoading } = useDeveloper();
+  const { mutate: sendApply } = useSendDeveloperApply();
   const [submitting, setSubmitting] = useState(false);
   const [applied, setApplied] = useState(false);
 
@@ -41,22 +42,21 @@ export default function DeveloperApply() {
     },
   });
 
-  const handleSubmit = async (values: FormValues) => {
+  const handleSubmit = (values: FormValues) => {
     setSubmitting(true);
 
-    try {
-      const res = await sendDeveloperApply(values);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setApplied(true);
-      openAlertModal("提交成功", "申请成功，我们将尽快审核您的申请。")
-    } catch (error) {
-      openRetryModal("提交失败", `${error}`, () => handleSubmit(values));
-    } finally {
-      setSubmitting(false);
-    }
+    sendApply(values, {
+      onSuccess: () => {
+        setApplied(true);
+        openAlertModal("提交成功", "申请成功，我们将尽快审核您的申请。");
+      },
+      onError: (error) => {
+        openRetryModal("提交失败", `${error}`, () => handleSubmit(values));
+      },
+      onSettled: () => {
+        setSubmitting(false);
+      },
+    });
   }
 
   useEffect(() => {

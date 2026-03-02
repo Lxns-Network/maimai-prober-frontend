@@ -1,20 +1,20 @@
 import { Button, Card, Group, Switch, Text, TextInput } from "@mantine/core";
 import { TransformedValues, useForm } from "@mantine/form";
-import { updateUserBind } from "@/utils/api/user.ts";
 import Icon from "@mdi/react";
 import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
-import { useUser } from "@/hooks/swr/useUser.ts";
-import { UserProps } from "@/types/user";
+import { useUser } from "@/hooks/queries/useUser.ts";
+import { useUpdateUserBind } from "@/hooks/mutations/useUserMutations.ts";
 
 interface FormValues {
   qq: string | number;
 }
 
 export const UserBindSection = () => {
-  const { user, mutate } = useUser();
+  const { user, setData } = useUser();
+  const { mutate: updateBind } = useUpdateUserBind();
   const [visible, visibleHandler] = useDisclosure(false)
 
   const form = useForm<FormValues>({
@@ -31,20 +31,17 @@ export const UserBindSection = () => {
     })
   });
 
-  const updateUserBindHandler = async (values: TransformedValues<typeof form>) => {
-    try {
-      const res = await updateUserBind(values);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");
-      mutate({ ...user, bind: { ...(user?.bind || {}), qq: values.qq} } as UserProps, false);
-    } catch (error) {
-      openRetryModal("绑定失败", `${error}`, () => updateUserBindHandler(values));
-    } finally {
-      form.reset();
-    }
+  const updateUserBindHandler = (values: TransformedValues<typeof form>) => {
+    updateBind(values, {
+      onSuccess: () => {
+        openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");
+        setData((prev) => prev ? { ...prev, bind: { ...(prev.bind || {}), qq: values.qq as number } } : prev);
+      },
+      onError: (error) => {
+        openRetryModal("绑定失败", `${error}`, () => updateUserBindHandler(values));
+      },
+      onSettled: () => form.reset(),
+    });
   }
 
   return (
