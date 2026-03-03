@@ -172,18 +172,18 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 export function Controls() {
   const {
     playbackSpeed, rawSimaiText,
-    musicOffset, selectedDifficulty, availableDifficulties, chartData,
+    selectedDifficulty, availableDifficulties, chartData,
     setPlaybackSpeed,
-    setChartData, setMusicOffset, setSelectedDifficulty,
+    setChartData, setSelectedDifficulty,
   } = useGameStore(useShallow((state) => state));
 
   const {
     hiSpeed, slideRotation, mirrorMode,
     judgmentLineDesign, pinkSlideStart, highlightExNotes, normalColorBreakSlide,
-    musicVolume, soundOffset,
+    musicVolume, musicOffset, soundOffset,
     setHiSpeed, setSlideRotation, setMirrorMode,
     setJudgmentLineDesign, setPinkSlideStart, setHighlightExNotes, setNormalColorBreakSlide,
-    setMusicVolume, setSoundOffset,
+    setMusicVolume, setMusicOffset, setSoundOffset,
   } = useGameSettingsStore(useShallow((state) => state));
 
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);

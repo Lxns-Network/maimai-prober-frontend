@@ -14,6 +14,7 @@ export interface GameSettingsState {
   soundVolume: number;
   soundOffset: number;
   musicVolume: number;
+  musicOffset: number;
 }
 
 export interface GameSettingsActions {
@@ -28,6 +29,7 @@ export interface GameSettingsActions {
   setSoundVolume: (volume: number) => void;
   setSoundOffset: (offset: number) => void;
   setMusicVolume: (volume: number) => void;
+  setMusicOffset: (offset: number) => void;
 }
 
 export type GameSettingsStore = GameSettingsState & GameSettingsActions;
@@ -46,6 +48,7 @@ const initialState: GameSettingsState = {
   soundVolume: 0.5,
   soundOffset: 0,
   musicVolume: 0.8,
+  musicOffset: 0,
 };
 
 export const useGameSettingsStore = create<GameSettingsStore>()(
@@ -63,6 +66,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       setSoundVolume: (volume: number) => set({ soundVolume: Math.max(0, Math.min(1, volume)) }),
       setSoundOffset: (offset: number) => set({ soundOffset: offset }),
       setMusicVolume: (volume: number) => set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
+      setMusicOffset: (offset: number) => set({ musicOffset: offset }),
     }),
     {
       name: 'maimai-prober-chart-settings',
@@ -83,6 +87,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
         soundVolume: state.soundVolume,
         soundOffset: state.soundOffset,
         musicVolume: state.musicVolume,
+        musicOffset: state.musicOffset,
       }),
     }
   )

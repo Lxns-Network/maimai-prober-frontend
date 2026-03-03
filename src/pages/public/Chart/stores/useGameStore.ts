@@ -29,8 +29,6 @@ interface GameState {
   availableDifficulties: AvailableDifficulties;
   /** 音乐 URL */
   musicUrl: string;
-  /** 音乐偏移 */
-  musicOffset: number;
   /** 音乐是否加载完成 */
   musicLoaded: boolean;
   /** 音乐是否正在加载 */
@@ -82,8 +80,6 @@ interface GameActions {
   setPlaybackSpeed: (speed: number) => void;
   /** 设置音乐 URL */
   setMusicUrl: (url: string) => void;
-  /** 设置音乐偏移 */
-  setMusicOffset: (offset: number) => void;
   /** 设置音乐状态 */
   setMusicState: (loaded: boolean, loading: boolean, error: string | null) => void;
   /** 设置等待播放状态 */
@@ -121,7 +117,6 @@ const initialState: GameState = {
   selectedDifficulty: null,
   availableDifficulties: {},
   musicUrl: '',
-  musicOffset: 0,
   musicLoaded: false,
   musicLoading: false,
   musicError: null,
@@ -448,7 +443,6 @@ export const useGameStore = create<GameStore>()(
       }
     },
 
-    setMusicOffset: (offset: number) => set({ musicOffset: offset }),
     setMusicState: (loaded: boolean, loading: boolean, error: string | null) => {
       const state = get();
       // 如果音乐加载完成且正在等待播放，自动开始播放
@@ -509,6 +503,5 @@ export const selectChartData = (state: GameStore) => state.chartData;
 export const selectPlaybackSpeed = (state: GameStore) => state.playbackSpeed;
 export const selectTimeline = (state: GameStore) => state.timeline;
 export const selectMusicUrl = (state: GameStore) => state.musicUrl;
-export const selectMusicOffset = (state: GameStore) => state.musicOffset;
 
 export default useGameStore;

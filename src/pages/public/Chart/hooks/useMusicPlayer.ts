@@ -75,7 +75,6 @@ export function useMusicPlayer() {
 
   const {
     musicUrl,
-    musicOffset,
     isPlaying,
     playbackSpeed,
     chartData,
@@ -85,7 +84,6 @@ export function useMusicPlayer() {
   } = useGameStore(
     useShallow((s) => ({
       musicUrl: s.musicUrl,
-      musicOffset: s.musicOffset,
       isPlaying: s.isPlaying,
       playbackSpeed: s.playbackSpeed,
       chartData: s.chartData,
@@ -95,7 +93,9 @@ export function useMusicPlayer() {
     }))
   );
 
-  const musicVolume = useGameSettingsStore((s) => s.musicVolume);
+  const { musicVolume, musicOffset } = useGameSettingsStore(
+    useShallow((s) => ({ musicVolume: s.musicVolume, musicOffset: s.musicOffset }))
+  );
 
   const bpm = chartData?.bpm ?? 120;
   const bpmEvents = chartData?.bpmEvents ?? null;
