@@ -69,7 +69,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       setMusicOffset: (offset: number) => set({ musicOffset: offset }),
     }),
     {
-      name: 'maimai-prober-chart-settings',
+      name: 'maimai_chart_preview_settings',
       version: SETTINGS_STORE_VERSION,
       migrate: (persistedState) => ({
         ...initialState,
