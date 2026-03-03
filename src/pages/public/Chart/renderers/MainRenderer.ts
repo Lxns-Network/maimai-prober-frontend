@@ -166,8 +166,8 @@ export class MainRenderer {
     }
   }
 
-  setAlwaysKeepHiSpeed(alwaysKeepHighSpeed: boolean): void {
-    this.config.alwaysKeepHiSpeed = alwaysKeepHighSpeed;
+  setAlwaysKeepHiSpeed(alwaysKeepHiSpeed: boolean): void {
+    this.config.alwaysKeepHiSpeed = alwaysKeepHiSpeed;
     this.updateRenderersContext();
   }
 
