@@ -47,7 +47,9 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     togglePlayback, setMeasure, stepMeasure, stepPosition,
   } = useGameStore(useShallow((state) => state));
 
-  const { soundEnabled, setSoundEnabled } = useGameSettingsStore(useShallow((state) => state));
+  const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
+    useShallow((state) => ({ soundEnabled: state.soundEnabled, setSoundEnabled: state.setSoundEnabled }))
+  );
 
   const { currentMeasure } = timeline;
 
