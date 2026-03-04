@@ -42,6 +42,8 @@ export class MainRenderer {
 
   private config: RendererConfig = {
     hiSpeed: HI_SPEED_DEFAULT * HI_SPEED_CONVERSION_FACTOR,
+    alwaysKeepHiSpeed: false,
+    playbackSpeed: 1.0,
     mirrorMode: 'none',
     highlightExNotes: false,
     normalColorBreakSlide: false,
@@ -160,6 +162,18 @@ export class MainRenderer {
   setHiSpeed(hiSpeed: number): void {
     if (hiSpeed >= 3 && hiSpeed <= 9) {
       this.config.hiSpeed = hiSpeed * HI_SPEED_CONVERSION_FACTOR;
+      this.updateRenderersContext();
+    }
+  }
+
+  setAlwaysKeepHiSpeed(alwaysKeepHiSpeed: boolean): void {
+    this.config.alwaysKeepHiSpeed = alwaysKeepHiSpeed;
+    this.updateRenderersContext();
+  }
+
+  setPlaybackSpeed(playbackSpeed: number): void {
+    if (playbackSpeed >= 0.1 && playbackSpeed <= 1.0) {
+      this.config.playbackSpeed = playbackSpeed;
       this.updateRenderersContext();
     }
   }

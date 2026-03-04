@@ -4,6 +4,7 @@ import { MirrorMode, JudgmentLineDesign } from '../types';
 
 export interface GameSettingsState {
   hiSpeed: number;
+  alwaysKeepHiSpeed: boolean;
   slideRotation: boolean;
   mirrorMode: MirrorMode;
   judgmentLineDesign: JudgmentLineDesign;
@@ -19,6 +20,7 @@ export interface GameSettingsState {
 
 export interface GameSettingsActions {
   setHiSpeed: (speed: number) => void;
+  setAlwaysKeepHiSpeed: (enabled: boolean) => void;
   setSlideRotation: (enabled: boolean) => void;
   setMirrorMode: (mode: MirrorMode) => void;
   setJudgmentLineDesign: (design: JudgmentLineDesign) => void;
@@ -38,6 +40,7 @@ const SETTINGS_STORE_VERSION = 1;
 
 const initialState: GameSettingsState = {
   hiSpeed: 6,
+  alwaysKeepHiSpeed: false,
   slideRotation: true,
   mirrorMode: 'none',
   judgmentLineDesign: 'simple',
@@ -56,6 +59,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
     (set) => ({
       ...initialState,
       setHiSpeed: (speed: number) => set({ hiSpeed: Math.max(3, Math.min(9, speed)) }),
+      setAlwaysKeepHiSpeed: (enabled: boolean) => set({ alwaysKeepHiSpeed: enabled }),
       setSlideRotation: (enabled: boolean) => set({ slideRotation: enabled }),
       setMirrorMode: (mode: MirrorMode) => set({ mirrorMode: mode }),
       setJudgmentLineDesign: (design: JudgmentLineDesign) => set({ judgmentLineDesign: design }),
@@ -77,6 +81,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       }),
       partialize: (state) => ({
         hiSpeed: state.hiSpeed,
+        alwaysKeepHiSpeed: state.alwaysKeepHiSpeed,
         slideRotation: state.slideRotation,
         mirrorMode: state.mirrorMode,
         judgmentLineDesign: state.judgmentLineDesign,

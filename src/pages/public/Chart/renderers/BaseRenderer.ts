@@ -116,6 +116,10 @@ export abstract class BaseRenderer {
   }
 
   protected getApproachTimeMs(): number {
+    if (this.context.config.alwaysKeepHiSpeed) {
+      return this.context.baseApproachTimeMs / (this.context.hiSpeed / this.context.config.playbackSpeed);
+    }
+
     return this.context.baseApproachTimeMs / this.context.hiSpeed;
   }
 

@@ -157,7 +157,7 @@ function getDivisorAt(chartData: Chart | null, time: number, forStepping: boolea
   }
 
   const events = chartData.divisorEvents;
-  
+
   // 二分查找最后一个 timing <= time 的事件
   let left = 0;
   let right = events.length - 1;
@@ -174,7 +174,7 @@ function getDivisorAt(chartData: Chart | null, time: number, forStepping: boolea
   }
 
   const divisor = result >= 0 ? events[result].divisor : 4;
-  
+
   // 步进时限制最大分拍
   return forStepping ? Math.min(divisor, MAX_STEP_DIVISOR) : divisor;
 }
@@ -241,7 +241,7 @@ export const useGameStore = create<GameStore>()(
       const state = get();
       const { beatsPerMeasure, totalMeasures } = state.timeline;
       const time = playbackTimeRef.current;
-      
+
       // 从 playbackTimeRef 同步当前位置
       const measure = Math.floor(time / beatsPerMeasure);
       const clampedMeasure = Math.max(0, Math.min(measure, totalMeasures - 1));
@@ -392,7 +392,7 @@ export const useGameStore = create<GameStore>()(
 
     setChartData: (chart: Chart | null) => {
       playbackTimeRef.current = 0;
-      
+
       set((state) => ({
         chartData: chart,
         isPlaying: false,
