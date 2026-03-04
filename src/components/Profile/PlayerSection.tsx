@@ -1,7 +1,7 @@
 import { Button, Card, Overlay, Stack, Text, useComputedColorScheme } from "@mantine/core";
 import { PlayerPanelSkeleton } from "./PlayerPanel/Skeleton.tsx";
 import classes from "./Profile.module.css";
-import { usePlayer } from "@/hooks/swr/usePlayer.ts";
+import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { PlayerPanel } from "./PlayerPanel/PlayerPanel.tsx";
 import useGame from "@/hooks/useGame.ts";
 import { navigate } from "vike/client/router";

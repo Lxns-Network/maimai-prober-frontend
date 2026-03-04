@@ -39,7 +39,7 @@ export interface ChunithmPlayerProps {
   upload_time: string;
 }
 
-interface CollectionRequiredSongProps {
+export interface CollectionRequiredSongProps {
   id: number;
   title: string;
   type: string;

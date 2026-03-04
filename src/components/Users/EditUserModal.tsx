@@ -2,7 +2,7 @@ import { TransformedValues, useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "@/utils/validator.ts";
 import { useEffect } from "react";
 import { listToPermission, permissionToList, UserPermission } from "@/utils/session.ts";
-import { deleteUser, updateUser } from "@/utils/api/user.ts";
+import { useDeleteUser, useUpdateUser } from "@/hooks/mutations/useUserMutations.ts";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { Button, Group, Modal, MultiSelect, Space, TextInput } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
@@ -16,6 +16,9 @@ interface FormValues {
 }
 
 export const EditUserModal = ({ user, opened, onClose }: { user: UserProps | null, opened: boolean, onClose(): void }) => {
+  const { mutate: mutateUpdateUser } = useUpdateUser();
+  const { mutate: mutateDeleteUser } = useDeleteUser();
+
   const form = useForm<FormValues>({
     initialValues: {
       name: "",
@@ -37,44 +40,41 @@ export const EditUserModal = ({ user, opened, onClose }: { user: UserProps | nul
     }),
   });
 
-  const updateUserHandler = async (values: TransformedValues<typeof form>) => {
+  const updateUserHandler = (values: TransformedValues<typeof form>) => {
     if (!user) return;
 
-    try {
-      const res = await updateUser(user.id, values);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
+    mutateUpdateUser({ userId: user.id, data: values }, {
+      onSuccess: () => {
+        user.name = values.name || user.name;
+        user.email = values.email || user.email;
+        user.permission = values.permission;
 
-      user.name = values.name || user.name;
-      user.email = values.email || user.email;
-      user.permission = values.permission;
-
-      form.resetField("name");
-      form.resetField("email");
-    } catch (err) {
-      openRetryModal("保存失败", `${err}`, () => updateUserHandler(values));
-    } finally {
-      onClose();
-    }
+        form.resetField("name");
+        form.resetField("email");
+      },
+      onError: (err) => {
+        openRetryModal("保存失败", `${err}`, () => updateUserHandler(values));
+      },
+      onSettled: () => {
+        onClose();
+      },
+    });
   }
 
-  const deleteUserHandler = async () => {
+  const deleteUserHandler = () => {
     if (!user) return;
 
-    try {
-      const res = await deleteUser(user.id);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      user.deleted = true;
-    } catch (err) {
-      openRetryModal("删除失败", `${err}`, deleteUserHandler);
-    } finally {
-      onClose();
-    }
+    mutateDeleteUser(user.id, {
+      onSuccess: () => {
+        user.deleted = true;
+      },
+      onError: (err) => {
+        openRetryModal("删除失败", `${err}`, deleteUserHandler);
+      },
+      onSettled: () => {
+        onClose();
+      },
+    });
   }
 
   useEffect(() => {

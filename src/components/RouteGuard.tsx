@@ -1,6 +1,6 @@
 import { navigate } from 'vike/client/router';
 import { isTokenUndefined, isTokenExpired, checkPermission, UserPermission } from '@/utils/session';
-import { useUserToken } from '@/hooks/swr/useUserToken';
+import { useUserToken } from '@/hooks/queries/useUserToken.ts';
 import { useEffect, useState } from 'react';
 
 interface GuardProps {
@@ -9,7 +9,7 @@ interface GuardProps {
 }
 
 export function RouteGuard({ children, requireAdmin = false }: GuardProps) {
-  const { mutate } = useUserToken();
+  const { refetch } = useUserToken();
   const [isChecking, setIsChecking] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
 
@@ -26,7 +26,7 @@ export function RouteGuard({ children, requireAdmin = false }: GuardProps) {
     }
 
     if (isTokenExpired()) {
-      mutate();
+      refetch();
     }
 
     if (requireAdmin && !checkPermission(UserPermission.Administrator)) {
@@ -36,7 +36,7 @@ export function RouteGuard({ children, requireAdmin = false }: GuardProps) {
 
     setIsAllowed(true);
     setIsChecking(false);
-  }, [mutate, requireAdmin]);
+  }, [refetch, requireAdmin]);
 
   if (isChecking) {
     return null;

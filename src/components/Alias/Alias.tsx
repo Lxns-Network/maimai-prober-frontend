@@ -1,5 +1,5 @@
 import { ActionIcon, Button, Card, Container, Group, Menu, Progress } from "@mantine/core";
-import { approveAlias, deleteAlias, deleteUserAlias, voteAlias } from "@/utils/api/alias.ts";
+import { useApproveAlias, useDeleteAlias, useDeleteUserAlias, useVoteAlias } from "@/hooks/mutations/useAliasMutations.ts";
 import { useSetState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
@@ -12,56 +12,55 @@ import classes from "./Alias.module.css"
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { AliasProps } from "@/types/alias";
+import { APIError } from "@/utils/errors.ts";
 
 interface AliasCardProps {
   alias: AliasProps;
   onClick: () => void;
-  onVote: (vote: boolean) => void;
-  onDelete: () => void;
+  onVote: (vote: boolean) => () => void;
+  onMutate: () => void;
 }
 
-export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
+export const Alias = ({ alias, onClick, onVote, onMutate }: AliasCardProps) => {
   const [game] = useFixedGame();
   const [displayAlias, setDisplayAlias] = useSetState(alias);
   const [weight, setWeight] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [loading, setLoading] = useState(0);
 
-  const voteAliasHandler = async (alias_id: number, vote: boolean) => {
-    setLoading(vote ? 1 : -1);
-    try {
-      const res = await voteAlias(game, alias_id, vote);
-      if (res.status === 429) {
-        openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
-        return
-      }
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      onVote(vote);
-    } catch (err) {
-      openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote))
-    } finally {
-      setLoading(0);
-    }
+  const voteAliasMutation = useVoteAlias();
+  const deleteAliasMutation = useDeleteAlias();
+  const deleteUserAliasMutation = useDeleteUserAlias();
+  const approveAliasMutation = useApproveAlias();
+
+  const voteAliasHandler = (alias_id: number, vote: boolean) => {
+    const revert = onVote(vote);
+
+    voteAliasMutation.mutate({ game, aliasId: alias_id, vote }, {
+      onError: (err) => {
+        revert();
+        if (err instanceof APIError && err.code === 429) {
+          openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
+        } else {
+          openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote));
+        }
+      },
+    });
   }
 
-  const deleteUserAliasHandler = async () => {
-    try {
-      let res;
-      if (checkPermission(UserPermission.Administrator)) {
-        res = await deleteAlias(game, alias.alias_id);
-      } else {
-        res = await deleteUserAlias(game, alias.alias_id);
-      }
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      onDelete();
-    } catch (error) {
-      openRetryModal("曲目别名删除失败", `${error}`, deleteUserAliasHandler)
+  const deleteUserAliasHandler = () => {
+    const mutationOptions = {
+      onSuccess: () => {
+        onMutate();
+      },
+      onError: (error: Error) => {
+        openRetryModal("曲目别名删除失败", `${error}`, deleteUserAliasHandler);
+      },
+    };
+
+    if (checkPermission(UserPermission.Administrator)) {
+      deleteAliasMutation.mutate({ game, aliasId: alias.alias_id }, mutationOptions);
+    } else {
+      deleteUserAliasMutation.mutate({ game, aliasId: alias.alias_id }, mutationOptions);
     }
   }
 
@@ -87,14 +86,14 @@ export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
               (weight === 1) ? <IconThumbUpFilled size={20} /> : <IconThumbUp size={20} stroke={1.5} />
             } onClick={() => {
               voteAliasHandler(alias.alias_id, true);
-            }} loading={loading === 1}>
+            }}>
               {alias.weight.up}
             </Button>
             <Button className={classes.voteButton} variant="default" color="default" size="compact-md" leftSection={
               (weight === -1) ? <IconThumbDownFilled size={20} /> : <IconThumbDown size={20} stroke={1.5} />
             } onClick={() => {
               voteAliasHandler(alias.alias_id, false);
-            }} loading={loading === 1}>
+            }}>
               {alias.weight.down}
             </Button>
           </Button.Group>
@@ -108,7 +107,12 @@ export const Alias = ({ alias, onClick, onVote, onDelete }: AliasCardProps) => {
               <Menu.Label>更多操作</Menu.Label>
               {checkPermission(UserPermission.Administrator) && !alias.approved && (
                 <Menu.Item c="teal" leftSection={<IconCheck size={20} stroke={1.5} />} onClick={() => {
-                  approveAlias(game, alias.alias_id).then(() => setDisplayAlias({ approved: true }));
+                  approveAliasMutation.mutate({ game, aliasId: alias.alias_id }, {
+                    onSuccess: () => {
+                      setDisplayAlias({ approved: true });
+                      onMutate();
+                    },
+                  });
                 }}>批准</Menu.Item>
               )}
               {alias.uploader && alias.uploader.id !== getLoginUserId() && (

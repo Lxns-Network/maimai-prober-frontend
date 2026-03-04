@@ -7,7 +7,7 @@ import { useComputedColorScheme } from "@mantine/core";
 import { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
-import { createPlayerScores } from "@/utils/api/player.ts";
+import { useCreatePlayerScores } from "@/hooks/mutations/usePlayerMutations.ts";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import "dayjs/locale/zh-cn"
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
@@ -37,6 +37,7 @@ export const ChunithmCreateScoreModalContent = ({ score, onSubmit, onClose }: Cr
   const { songList } = useSongListStore(
     useShallow((state) => ({ songList: state.chunithm })),
   )
+  const { mutate: mutateCreateScores } = useCreatePlayerScores();
   const [uploading, setUploading] = useState(false);
   const [song, setSong] = useState<ChunithmSongProps | null>(null);
   const [difficulties, setDifficulties] = useState<ChunithmDifficultyProps[] | null>(null);
@@ -75,31 +76,29 @@ export const ChunithmCreateScoreModalContent = ({ score, onSubmit, onClose }: Cr
     }),
   });
 
-  const createScoreHandler = async (values: TransformedValues<typeof form>) => {
+  const createScoreHandler = (values: TransformedValues<typeof form>) => {
     setUploading(true);
-
-    try {
-      const res = await createPlayerScores("chunithm", [values]);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("成绩创建成功", "你的成绩已经成功创建。");
-      form.setValues({
-        id: null,
-        difficulty: null,
-        score: null,
-        clear: null,
-        full_combo: null,
-        full_chain: null,
-        play_time: null,
-      });
-      onSubmit?.(values);
-    } catch (error) {
-      openRetryModal("成绩创建失败", `${error}`, () => createScoreHandler(values));
-    } finally {
-      setUploading(false);
-    }
+    mutateCreateScores({ game: "chunithm", scores: [values] }, {
+      onSuccess: () => {
+        openAlertModal("成绩创建成功", "你的成绩已经成功创建。");
+        form.setValues({
+          id: null,
+          difficulty: null,
+          score: null,
+          clear: null,
+          full_combo: null,
+          full_chain: null,
+          play_time: null,
+        });
+        onSubmit?.(values);
+      },
+      onError: (error) => {
+        openRetryModal("成绩创建失败", `${error}`, () => createScoreHandler(values));
+      },
+      onSettled: () => {
+        setUploading(false);
+      },
+    });
   }
 
   useEffect(() => {

@@ -1,7 +1,12 @@
 import { Alert, Button, Text } from "@mantine/core";
 import { IconAlertCircle, IconRefresh } from "@tabler/icons-react";
 
-export const CrawlTokenAlert = ({ token, resetHandler }: any) => {
+interface CrawlTokenAlertProps {
+  token: string | null;
+  resetHandler: () => void;
+}
+
+export const CrawlTokenAlert = ({ token, resetHandler }: CrawlTokenAlertProps) => {
   const getExpireTime = (crawlToken: string) => {
     return Math.floor(((JSON.parse(atob(crawlToken.split('.')[1])).exp - new Date().getTime() / 1000)) / 60)
   }

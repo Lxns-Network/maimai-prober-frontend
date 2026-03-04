@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
-  ActionIcon, Anchor, Badge, Box, Card, Center, Flex, Grid, Group, Image, LoadingOverlay, Pagination, rem, RingProgress,
-  SegmentedControl, SimpleGrid, Space, Text, ThemeIcon
+  ActionIcon, Anchor, Badge, Box, Card, Center, Flex, Grid, Group, Image, Loader, LoadingOverlay, Pagination, rem,
+  RingProgress, SegmentedControl, SimpleGrid, Space, Text, ThemeIcon
 } from "@mantine/core";
 import classes from "../../pages/Page.module.css";
 import { IconCheck } from "@tabler/icons-react";
@@ -10,7 +10,7 @@ import { PhotoView } from "react-photo-view";
 import { Marquee } from "../Marquee.tsx";
 import { ASSET_URL } from "@/main";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { CollectionProps } from "@/types/player";
+import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
 import { Link } from "@/components/Link";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { Game } from "@/types/game";
@@ -66,9 +66,7 @@ const difficultyData: Record<Game, string[]> = {
   chunithm: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'ULTIMA'],
 }
 
-export const RequiredSong = ({ collection, records, style }: { collection: CollectionProps | null, records: any[], style?: React.CSSProperties; }) => {
-  if (!collection) return null;
-
+export const RequiredSong = ({ collection, records, loading, style }: { collection: CollectionProps | null, records: CollectionRequiredSongProps[], loading?: boolean, style?: React.CSSProperties; }) => {
   const { height, ref } = useElementSize();
 
   const [animationRef] = useAutoAnimate();
@@ -79,12 +77,12 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
 
   const pageSize = 20;
   const [page, setPage] = useState(1);
-  const [filteredRecords, setFilteredRecords] = useState<any[]>([]);
-  const [displayRecords, setDisplayRecords] = useState<any[]>([]);
+  const [filteredRecords, setFilteredRecords] = useState<CollectionRequiredSongProps[]>([]);
+  const [displayRecords, setDisplayRecords] = useState<CollectionRequiredSongProps[]>([]);
 
   useEffect(() => {
     setPage(1);
-    if (collection.required) {
+    if (collection && collection.required) {
       setDifficulties(collection.required.map((required) => required.difficulties).flat());
     }
   }, [collection]);
@@ -93,6 +91,8 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
     if (difficulty === 4) {
       setPage(1);
     }
+    if (!collection || !collection.required) return;
+    
     setFilteredRecords(records.filter((record) => {
       return collection.required && collection.required.every((required) => {
         if (required.difficulties.includes(difficulty || 0)) {
@@ -121,6 +121,8 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
     const end = start + pageSize;
     setDisplayRecords(filteredRecords.slice(start, end));
   }, [page, filteredRecords]);
+
+  if (!collection) return null;
 
   const difficultyProgress = (collection.required || []).reduce((acc, req) => {
     if (difficulty === undefined) return acc;
@@ -232,6 +234,11 @@ export const RequiredSong = ({ collection, records, style }: { collection: Colle
       <Space h="md" />
       <Text fz="xs" c="dimmed">已完成 {difficultyProgress.completed} / {difficultyProgress.total} 首：</Text>
       <Space h="xs" />
+      {loading && (
+        <Center>
+          <Loader />
+        </Center>
+      )}
       <SimpleGrid cols={2} ref={animationRef}>
         {displayRecords.map((record) => (
           <Group key={record.id} wrap="nowrap" gap="xs">

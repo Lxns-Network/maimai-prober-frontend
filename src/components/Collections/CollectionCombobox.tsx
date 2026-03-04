@@ -7,11 +7,12 @@ import { CollectionProps } from "@/types/player";
 
 interface CollectionComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
   collections: CollectionProps[];
+  loading?: boolean;
   value?: number;
   onOptionSubmit?: (value: number | null) => void;
 }
 
-export const CollectionCombobox = ({ collections, value, onOptionSubmit, ...others }: CollectionComboboxProps) => {
+export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit, ...others }: CollectionComboboxProps) => {
   const [search, setSearch] = useState('');
   const [filteredCollections, setFilteredCollections] = useState<CollectionProps[]>([]);
   const combobox = useCombobox({
@@ -53,7 +54,7 @@ export const CollectionCombobox = ({ collections, value, onOptionSubmit, ...othe
           placeholder="请选择收藏品"
           leftSection={<IconSearch size={18} />}
           rightSection={
-            !collections ? (
+            loading ? (
               <Loader size={18} />
             ) : search.length !== 0 ? (
               <CloseButton

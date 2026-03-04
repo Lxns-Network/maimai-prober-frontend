@@ -7,7 +7,7 @@ import {
 } from "@mantine/core";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 import { useFileDialog } from "@mantine/hooks";
-import { createOAuthApp, editOAuthApp, uploadOAuthAppLogo } from "@/utils/api/developer.ts";
+import { useCreateOAuthApp, useEditOAuthApp, useUploadOAuthAppLogo } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { IconHelp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
@@ -61,6 +61,10 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
     }),
   });
 
+  const uploadOAuthAppLogoMutation = useUploadOAuthAppLogo();
+  const createOAuthAppMutation = useCreateOAuthApp();
+  const editOAuthAppMutation = useEditOAuthApp();
+
   const fileDialog = useFileDialog({
     multiple: false,
     accept: 'image/*',
@@ -71,44 +75,38 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
   });
   const computedColorScheme = useComputedColorScheme('light');
 
-  const logoUploadHandler = async (file: File) => {
-    try {
-      const res = await uploadOAuthAppLogo(file);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      form.setFieldValue("logo_url", data.data.logo_url);
-    } catch (err) {
-      openAlertModal("上传失败", `${err}`);
-    }
+  const logoUploadHandler = (file: File) => {
+    uploadOAuthAppLogoMutation.mutate(file, {
+      onSuccess: (data) => {
+        form.setFieldValue("logo_url", data.logo_url);
+      },
+      onError: (err) => {
+        openAlertModal("上传失败", `${err}`);
+      },
+    });
   }
 
-  const createOAuthClientHandler = async (values: FormValues) => {
-    try {
-      const res = await createOAuthApp(values);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      onClose();
-    } catch (err) {
-      openRetryModal("创建失败", `${err}`, () => createOAuthClientHandler(values));
-    }
+  const createOAuthClientHandler = (values: FormValues) => {
+    createOAuthAppMutation.mutate(values, {
+      onSuccess: () => {
+        onClose();
+      },
+      onError: (err) => {
+        openRetryModal("创建失败", `${err}`, () => createOAuthClientHandler(values));
+      },
+    });
   }
 
-  const editOAuthClientHandler = async (values: FormValues) => {
+  const editOAuthClientHandler = (values: FormValues) => {
     if (!app || !app.client_id) return;
-    try {
-      const res = await editOAuthApp(app.client_id, values);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      onClose();
-    } catch (err) {
-      openRetryModal("编辑失败", `${err}`, () => createOAuthClientHandler(values));
-    }
+    editOAuthAppMutation.mutate({ clientId: app.client_id, data: values }, {
+      onSuccess: () => {
+        onClose();
+      },
+      onError: (err) => {
+        openRetryModal("编辑失败", `${err}`, () => createOAuthClientHandler(values));
+      },
+    });
   }
 
   useEffect(() => {

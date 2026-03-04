@@ -1,12 +1,11 @@
 import { useMediaQuery } from "@mantine/hooks";
-import { useScores } from "@/hooks/swr/useScores.ts";
+import { useScores } from "@/hooks/queries/useScores.ts";
 import {
   Box, Card, Flex, Mark, SimpleGrid, Space, Text, ThemeIcon, Title, UnstyledButton
 } from "@mantine/core";
 import { IconFileExport, IconFileImport } from "@tabler/icons-react";
-import { fetchAPI } from "@/utils/api/api.ts";
+import { fetchAPI, uploadFile } from "@/utils/api/api.ts";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
-import { API_URL } from "@/main";
 import React from "react";
 import classes from "./ScoreBackupSection.module.css"
 import useGame from "@/hooks/useGame.ts";
@@ -41,7 +40,7 @@ const CardButton = ({ icon, title, description, disabled, onClick }: CardButtonP
 export const ScoreBackupSection = () => {
   const [game] = useGame();
 
-  const { scores, isLoading, mutate } = useScores(game);
+  const { scores, isLoading, invalidate } = useScores(game);
   const small = useMediaQuery('(max-width: 30rem)');
 
   return (
@@ -92,16 +91,7 @@ export const ScoreBackupSection = () => {
                 file.onchange = async () => {
                   try {
                     if (!file.files || !file.files[0]) return;
-                    const formData = new FormData();
-                    formData.append('file', file.files[0]);
-                    const res = await fetch(`${API_URL}/user/${game}/player/scores/import`, {
-                      method: 'POST',
-                      credentials: 'include',
-                      headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                      },
-                      body: formData,
-                    });
+                    const res = await uploadFile(`user/${game}/player/scores/import`, file.files[0]);
                     const data = await res.json();
                     if (!data.success) {
                       if (data.code === 400) {
@@ -111,7 +101,7 @@ export const ScoreBackupSection = () => {
                       throw new Error(data.message);
                     }
                     openAlertModal("成绩导入成功", `成绩导入成功，你的 ${game === "maimai" ? "DX Rating" : "Rating"} 已自动更新。`);
-                    mutate();
+                    invalidate();
                   } catch (error) {
                     openRetryModal("成绩导入失败", `${error}`, upload);
                   }

@@ -48,20 +48,21 @@ export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: Rating
       })
     );
 
-    setRatings(data.map((song: MaimaiSongProps | ChunithmSongProps, i: number) => {
-      let previousDifficulties, currentDifficulties;
+    setRatings(data.map((song: MaimaiSongProps | ChunithmSongProps | null, i: number) => {
+      let previousDifficulties: (MaimaiDifficultyProps | ChunithmDifficultyProps)[] | undefined,
+        currentDifficulties: (MaimaiDifficultyProps | ChunithmDifficultyProps)[] | undefined;
       if (game === "maimai") {
         const d = difficulty as MaimaiDifficultyProps;
         song = song as MaimaiSongProps;
-        previousDifficulties = data[i - 1]?.difficulties[d.type];
+        previousDifficulties = (data[i - 1] as MaimaiSongProps | null)?.difficulties[d.type as keyof MaimaiSongProps["difficulties"]];
         currentDifficulties = song?.difficulties[d.type as keyof MaimaiSongProps["difficulties"]];
       } else {
         song = song as ChunithmSongProps;
-        previousDifficulties = data[i - 1]?.difficulties;
+        previousDifficulties = (data[i - 1] as ChunithmSongProps | null)?.difficulties;
         currentDifficulties = song?.difficulties;
       }
 
-      if (!song && data[i-1] && previousDifficulties.length !== 0)
+      if (!song && data[i-1] && previousDifficulties?.[difficulty.difficulty])
         return -Math.abs(previousDifficulties[difficulty.difficulty].level_value); // 设为负数表示删除曲，但保留定数
       if (!song || difficulty.difficulty >= currentDifficulties.length) return 0;
       return currentDifficulties[difficulty.difficulty].level_value;

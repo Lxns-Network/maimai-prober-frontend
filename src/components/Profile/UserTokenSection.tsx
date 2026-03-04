@@ -1,14 +1,14 @@
 import {
   Button, Card, Group, Switch, Text, TextInput, ActionIcon, CopyButton, Tooltip, List, Mark, Paper, rem, Box
 } from "@mantine/core";
-import { generateUserToken } from "@/utils/api/user.ts";
 import Icon from "@mdi/react";
 import { mdiAlertCircle, mdiEye, mdiEyeOff, mdiInformation } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { IconCheck, IconCopy, IconRefresh } from "@tabler/icons-react";
-import { useUser } from "@/hooks/swr/useUser.ts";
+import { useUser } from "@/hooks/queries/useUser.ts";
+import { useGenerateUserToken } from "@/hooks/mutations/useUserMutations.ts";
 
 const GenerateTokenPaper = () => (
   <Paper p="md" withBorder>
@@ -37,20 +37,19 @@ const GenerateTokenPaper = () => (
 )
 
 export const UserTokenSection = () => {
-  const { user, mutate } = useUser();
+  const { user, setData } = useUser();
+  const { mutate: generateToken } = useGenerateUserToken();
   const [visible, visibleHandler] = useDisclosure(false);
 
-  const generateUserTokenHandler = async () => {
-    try {
-      const res = await generateUserToken()
-      const data = await res.json()
-      if (!data.success) {
-        throw new Error(data.message)
-      }
-      mutate({ ...user, token: data.data.token } as any, false);
-    } catch (error) {
-      openRetryModal("生成失败", `${error}`, generateUserTokenHandler);
-    }
+  const generateUserTokenHandler = () => {
+    generateToken(undefined, {
+      onSuccess: (data) => {
+        setData((prev) => prev ? { ...prev, token: data.token } : prev);
+      },
+      onError: (error) => {
+        openRetryModal("生成失败", `${error}`, generateUserTokenHandler);
+      },
+    });
   }
 
   if (!user?.token) {

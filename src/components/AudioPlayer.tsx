@@ -16,8 +16,7 @@ interface AudioPlayerProps extends React.ComponentPropsWithoutRef<typeof Contain
 }
 
 export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: AudioPlayerProps) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [audio, state, controls]: any = useAudio({
+  const [audio, state, controls, ref] = useAudio({
     src,
     crossOrigin: "anonymous",
     ...audioProps
@@ -48,14 +47,14 @@ export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: A
   }, [state.time]);
 
   useEffect(() => {
-    if (!audio.ref.current) return;
+    if (!ref.current) return;
 
-    audio.ref.current.addEventListener('canplaythrough', () => {
+    ref.current.addEventListener('canplaythrough', () => {
       const context =  new AudioContext();
       const analyser = context.createAnalyser();
 
       try {
-        const source = context.createMediaElementSource(audio.ref.current);
+        const source = context.createMediaElementSource(ref.current!);
         source.connect(analyser);
       } catch {
         return;
@@ -75,7 +74,7 @@ export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: A
 
       renderFrame();
     }, { once: true });
-  }, [audio.ref.current]);
+  }, [ref.current]);
 
   return (
     <Container w="100%" p="md" {...others}>

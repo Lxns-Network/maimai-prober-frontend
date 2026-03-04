@@ -9,7 +9,6 @@ interface MarqueeProps {
   intervalDelay?: number; // 滚动间隔
   pauseOnHover?: boolean; // 鼠标悬停暂停滚动
   children: ReactNode;
-  props?: any;
 }
 
 export const Marquee = (

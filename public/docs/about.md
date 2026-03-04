@@ -10,8 +10,8 @@
 
 QQ 群：
 
-- 用户交流群：**597413470**
-- 开发者交流群：[https://qm.qq.com/q/6mHqGzRO6I](https://qm.qq.com/q/6mHqGzRO6I)
+- 用户交流群：[https://qm.qq.com/q/9GGlKX3Qty](https://qm.qq.com/q/9GGlKX3Qty)
+- 开发者交流群（普通用户勿进）：[https://qm.qq.com/q/6mHqGzRO6I](https://qm.qq.com/q/6mHqGzRO6I)
 
 GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 

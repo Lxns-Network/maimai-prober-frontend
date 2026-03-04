@@ -4,10 +4,10 @@ import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import { TransformedValues, useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "@/utils/validator";
-import { updateUserProfile } from "@/utils/api/user.ts";
+import { useUpdateUserProfile } from "@/hooks/mutations/useUserMutations.ts";
 import classes from "./Profile.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
-import { useUser } from "@/hooks/swr/useUser.ts";
+import { useUser } from "@/hooks/queries/useUser.ts";
 
 interface FormValues {
   name: string;
@@ -15,18 +15,10 @@ interface FormValues {
 }
 
 export const UserSection = () => {
-  const { user } = useUser();
+  const { user, setData } = useUser();
   const [visible, visibleHandler] = useDisclosure(false)
 
-  if (!user) {
-    return (
-      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red">
-        <Text size="sm">
-          可能是网络连接已断开，请检查你的网络连接是否正常。
-        </Text>
-      </Alert>
-    )
-  }
+  const { mutate: mutateUpdateProfile } = useUpdateUserProfile();
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -40,21 +32,33 @@ export const UserSection = () => {
     },
   });
 
-  const updateUserProfileHandler = async (values: TransformedValues<typeof form>) => {
-    try {
-      const res = await updateUserProfile(values)
-      const data = await res.json()
-      if (!data.success) {
-        throw new Error(data.message)
-      }
-      openAlertModal("保存成功", "你的账号详情保存成功。");
-      user.name = form.values.name || user.name;
-      user.email = form.values.email || user.email;
-    } catch (error) {
-      openRetryModal("保存失败", `${error}`, () => updateUserProfileHandler(values))
-    } finally {
-      form.reset();
-    }
+  if (!user) {
+    return (
+      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red">
+        <Text size="sm">
+          可能是网络连接已断开，请检查你的网络连接是否正常。
+        </Text>
+      </Alert>
+    )
+  }
+
+  const updateUserProfileHandler = (values: TransformedValues<typeof form>) => {
+    mutateUpdateProfile(values, {
+      onSuccess: () => {
+        openAlertModal("保存成功", "你的账号详情保存成功。");
+        setData((prev) => prev ? {
+          ...prev,
+          name: form.values.name || prev.name,
+          email: form.values.email || prev.email,
+        } : prev);
+      },
+      onError: (error) => {
+        openRetryModal("保存失败", `${error}`, () => updateUserProfileHandler(values));
+      },
+      onSettled: () => {
+        form.reset();
+      },
+    });
   }
 
   return (

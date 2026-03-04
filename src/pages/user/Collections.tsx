@@ -8,8 +8,8 @@ import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { LoginAlert } from "@/components/LoginAlert";
 import { Page } from "@/components/Page/Page.tsx";
-import { useCollectionList } from "@/hooks/swr/useCollectionList.ts";
-import { CollectionProps } from "@/types/player";
+import { useCollectionList } from "@/hooks/queries/useCollectionList.ts";
+import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
 import useGame from "@/hooks/useGame.ts";
 import { Game } from "@/types/game";
 import { CollectionCard } from "@/components/Collections/CollectionCard.tsx";
@@ -89,34 +89,39 @@ const CollectionsContent = () => {
   });
 
   const { collectionType, collectionId } = state;
-  const { collections } = useCollectionList(game, collectionType);
+  const { collections, isLoading: isCollectionListLoading } = useCollectionList(game, collectionType);
   const [displayCollectionType, setDisplayCollectionType] = useState<string | null>(null);
   const [filteredCollections, setFilteredCollections] = useState<CollectionProps[]>([]);
   const [collection, setCollection] = useState<CollectionProps | null>(null);
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<CollectionRequiredSongProps[]>([]);
   const [onlyRequired, toggleOnlyRequired] = useToggle();
+  const [isCollectionLoading, setIsCollectionLoading] = useState(false);
   const isLoggedOut = !localStorage.getItem("token");
 
   const getCollectionHandler = async (id: number) => {
     if (!collectionType) return;
+    setIsCollectionLoading(true);
     try {
       const res = await getCollectionById(game, collectionType, id);
       const data = await res.json();
       setCollection(data);
     } catch (error) {
       openRetryModal("收藏品获取失败", `${error}`, () => getCollectionHandler(id));
+    } finally {
+      setIsCollectionLoading(false);
     }
   }
 
   const getPlayerCollectionHandler = async (id: number) => {
     if (!collectionType) return;
+    setIsCollectionLoading(true);
     try {
       const res = await getPlayerCollectionById(game, collectionType, id);
       const data = await res.json();
       if (!data.success) {
         // 如果玩家数据不存在，回退到公共 API
         if (data.code === 404) {
-          getCollectionHandler(id);
+          await getCollectionHandler(id);
           return;
         }
         setCollection(filteredCollections.find((plate) => plate.id === id) || null);
@@ -125,6 +130,8 @@ const CollectionsContent = () => {
       setCollection(data.data);
     } catch (error) {
       openRetryModal("收藏品获取失败", `${error}`, () => getPlayerCollectionHandler(id));
+    } finally {
+      setIsCollectionLoading(false);
     }
   }
 
@@ -172,7 +179,7 @@ const CollectionsContent = () => {
       return;
     }
 
-    let mergedRequiredSongs = collection.required.flatMap(required => (required.songs || []));
+    const mergedRequiredSongs = collection.required.flatMap(required => (required.songs || []));
 
     // 去重并合并 completed_difficulties
     const songMap = new Map();
@@ -235,6 +242,7 @@ const CollectionsContent = () => {
         />
         <CollectionCombobox
           collections={filteredCollections}
+          loading={isCollectionListLoading}
           value={collectionId ?? undefined}
           onOptionSubmit={(value) => {
             if (value === null) {
@@ -269,7 +277,7 @@ const CollectionsContent = () => {
         enterDelay={0}
       >
         {(styles) => (
-          <RequiredSong collection={collection} records={records} style={styles} />
+          <RequiredSong collection={collection} records={records} loading={isCollectionLoading} style={styles} />
         )}
       </Transition>
       <Transition

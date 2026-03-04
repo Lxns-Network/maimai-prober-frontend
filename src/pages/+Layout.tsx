@@ -7,6 +7,9 @@ import { logout } from "@/utils/session";
 import { usePageContext } from 'vike-react/usePageContext';
 import { navigate } from 'vike/client/router';
 
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { queryClient } from "@/lib/queryClient.ts";
 import { ErrorBoundary } from "react-error-boundary";
 import { Fallback } from "@/pages/public/Fallback.tsx";
 import { PhotoProvider } from "react-photo-view";
@@ -16,8 +19,8 @@ import useTouchEvents from "beautiful-react-hooks/useTouchEvents";
 import Shell from "@/components/Shell/Shell.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import useAliasListStore from "@/hooks/useAliasListStore.ts";
-import { useSiteConfig } from "@/hooks/swr/useSiteConfig.ts";
-import { useUserToken } from "@/hooks/swr/useUserToken.ts";
+import { useSiteConfig } from "@/hooks/queries/useSiteConfig.ts";
+import { useUserToken } from "@/hooks/queries/useUserToken.ts";
 import { useVersionChecker } from "@/hooks/useVersionChecker.tsx";
 
 import "@mantine/core/styles.css";
@@ -41,7 +44,7 @@ const theme = createTheme({
   activeClassName: classes.active,
 });
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+function LayoutInner({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
   const { config, isLoading: isSiteConfigLoading } = useSiteConfig();
   const { error: userTokenError } = useUserToken();
@@ -185,5 +188,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </ModalsProvider>
       </ErrorBoundary>
     </MantineProvider>
+  );
+}
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <LayoutInner>{children}</LayoutInner>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }

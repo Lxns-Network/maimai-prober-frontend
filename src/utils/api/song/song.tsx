@@ -1,8 +1,10 @@
 import { fetchAPI } from "@/utils/api/api.ts";
 import { Game } from "@/types/game";
+import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { CollectionProps } from "@/types/player";
 
-export async function getSong(game: Game, id: number, version: number) {
+export async function getSong(game: Game, id: number, version: number): Promise<MaimaiSongProps | ChunithmSongProps | null> {
   const res = await fetchAPI(`${game}/song/${id}?version=${version}`, {
       method: "GET",
   });

@@ -2,11 +2,12 @@ import {
   ActionIcon, Avatar, Badge, Flex, Group, Modal, Progress, Space, Text, ThemeIcon, Tooltip
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { voteAlias } from "@/utils/api/alias.ts";
+import { useVoteAlias } from "@/hooks/mutations/useAliasMutations.ts";
 import {
   IconCheck, IconNorthStar, IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled
 } from "@tabler/icons-react";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import { APIError } from "@/utils/errors.ts";
 import { PhotoView } from "react-photo-view";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
@@ -28,7 +29,7 @@ export function calculateNewAliasWeight(
   vote: boolean // true: 支持, false: 反对
 ): AliasProps {
   let { up, down, total } = alias.weight;
-  const current = alias.vote?.weight;
+  const current = alias.vote?.weight ?? 0;
   const isUpvote = vote;
 
   if (current === 0) {
@@ -55,11 +56,8 @@ export function calculateNewAliasWeight(
 }
 
 const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (alias: AliasProps) => void }) => {
-  if (!alias) return null;
-
   const [progress, setProgress] = useState(0);
   const [weight, setWeight] = useState(0);
-  const [loading, setLoading] = useState(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [game] = useFixedGame();
 
@@ -82,24 +80,24 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
     }
   }, [alias]);
 
-  const voteAliasHandler = async (alias_id: number, vote: boolean) => {
-    setLoading(vote ? 1 : -1);
-    try {
-      const res = await voteAlias(game, alias_id, vote);
-      if (res.status === 429) {
-        openAlertModal("投票失败", "请求过于频繁，请稍后再试。")
-        return
-      }
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setAlias(calculateNewAliasWeight(alias, vote));
-    } catch (err) {
-      openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote))
-    } finally {
-      setLoading(0);
-    }
+  const voteAliasMutation = useVoteAlias();
+  
+  if (!alias) return null;
+
+  const voteAliasHandler = (alias_id: number, vote: boolean) => {
+    const previousAlias = { ...alias, weight: { ...alias.weight }, vote: alias.vote ? { ...alias.vote } : undefined };
+    setAlias(calculateNewAliasWeight(alias, vote));
+
+    voteAliasMutation.mutate({ game, aliasId: alias_id, vote }, {
+      onError: (err) => {
+        setAlias(previousAlias);
+        if (err instanceof APIError && err.code === 429) {
+          openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
+        } else {
+          openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote));
+        }
+      },
+    });
   }
 
   return (
@@ -185,12 +183,12 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
         <Group>
           <ActionIcon color="teal" size="xl" variant={(weight === 1) ? "filled" : "light"} onClick={() => {
             voteAliasHandler(alias.alias_id, true);
-          }} loading={loading === 1}>
+          }}>
             {(weight === 1) ? <IconThumbUpFilled /> : <IconThumbUp />}
           </ActionIcon>
           <ActionIcon color="red" size="xl" variant={(weight === -1) ? "filled" : "light"} onClick={() => {
             voteAliasHandler(alias.alias_id, false);
-          }} loading={loading === -1}>
+          }}>
             {(weight === -1) ? <IconThumbDownFilled /> : <IconThumbDown />}
           </ActionIcon>
         </Group>

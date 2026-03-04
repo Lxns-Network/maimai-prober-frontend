@@ -9,10 +9,10 @@ import { AliasProps } from "@/types/alias";
 interface AliasListProps {
   aliases: AliasProps[];
   onVote: () => void;
-  onDelete: () => void;
+  onMutate: () => void;
 }
 
-export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
+export const AliasList = ({ aliases, onVote, onMutate }: AliasListProps) => {
   const [parent] = useAutoAnimate();
   const [opened, setOpened] = useState(false);
   const [alias, setAlias] = useSetState<AliasProps>({} as AliasProps);
@@ -24,8 +24,8 @@ export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
 
   useEffect(() => {
     if (alias.alias_id) {
-      const newDisplayAliases = displayAliases;
-      const index = displayAliases.findIndex((a) => a.alias_id === alias.alias_id);
+      const newDisplayAliases = [...displayAliases];
+      const index = newDisplayAliases.findIndex((a) => a.alias_id === alias.alias_id);
       if (index !== -1) {
         newDisplayAliases[index] = alias;
       }
@@ -54,10 +54,12 @@ export const AliasList = ({ aliases, onVote, onDelete }: AliasListProps) => {
               setOpened(true);
             }}
             onVote={(vote) => {
+              const previousAlias = alias;
               setAlias(calculateNewAliasWeight(alias, vote));
               onVote();
+              return () => setAlias(previousAlias);
             }}
-            onDelete={onDelete}
+            onMutate={onMutate}
           />
         ))}
       </SimpleGrid>

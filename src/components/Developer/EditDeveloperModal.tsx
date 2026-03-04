@@ -1,5 +1,5 @@
 import { useForm } from "@mantine/form";
-import { updateDeveloperInfo } from "@/utils/api/developer.ts";
+import { useUpdateDeveloperInfo } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { Button, Group, Modal, TextInput } from "@mantine/core";
 import { DeveloperProps } from "@/types/developer";
@@ -46,27 +46,27 @@ export const EditDeveloperModal = ({ opened, close, developer, onSuccess }: Edit
     },
   });
 
+  const updateDeveloperInfoMutation = useUpdateDeveloperInfo();
+
   const updateDeveloperInfoHandler = async (values: FormValues) => {
     const transformedValues = form.getTransformedValues();
-    
+
     // 如果两个字段都为空，不提交
     if (Object.keys(transformedValues).length === 0) {
       close();
       return;
     }
 
-    try {
-      const res = await updateDeveloperInfo(transformedValues);
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      openAlertModal("修改成功", "开发者信息已更新。");
-      onSuccess();
-      close();
-    } catch (err) {
-      openRetryModal("修改失败", `${err}`, () => updateDeveloperInfoHandler(values));
-    }
+    updateDeveloperInfoMutation.mutate(transformedValues, {
+      onSuccess: () => {
+        openAlertModal("修改成功", "开发者信息已更新。");
+        onSuccess();
+        close();
+      },
+      onError: (err) => {
+        openRetryModal("修改失败", `${err}`, () => updateDeveloperInfoHandler(values));
+      },
+    });
   }
 
   return (

@@ -2,7 +2,7 @@ import {
   Alert, Anchor, Box, Button, Center, Flex, Group, HoverCard, Image, Loader, Mark, Modal, Radio, ScrollArea, SimpleGrid,
   Space, Stack, Text, TextInput, ThemeIcon, Tooltip
 } from "@mantine/core";
-import { usePlayerCollections } from "@/hooks/swr/usePlayerCollections.ts";
+import { usePlayerCollections } from "@/hooks/queries/usePlayerCollections.ts";
 import { useEffect, useState } from "react";
 import classes from "./EditCollectionModal.module.css";
 import LazyLoad from "react-lazyload";
@@ -215,7 +215,7 @@ const EditCollectionModalContent = (
         )}
         <Group justify="flex-end">
           <Button variant="default" onClick={onCancel}>取消</Button>
-          <Button type="submit" onClick={() => onSubmit(metadata.key, collectionId)} disabled={error}>保存</Button>
+          <Button type="submit" onClick={() => onSubmit(metadata.key, collectionId)} disabled={!!error}>保存</Button>
         </Group>
       </Box>
     </Flex>

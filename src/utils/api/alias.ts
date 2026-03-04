@@ -1,29 +1,34 @@
 import { fetchAPI } from "./api.ts";
 
-export async function createAlias(game: string, data: any) {
+export async function createAlias(game: string, data: object): Promise<Response> {
   return fetchAPI(`user/${game}/alias`, { method: "POST", body: data });
 }
 
-export async function voteAlias(game: string, aliasId: number, vote: boolean) {
+export async function voteAlias(game: string, aliasId: number, vote: boolean): Promise<Response> {
   return fetchAPI(`user/${game}/alias/${aliasId}/vote/${vote ? 'up' : 'down'}`, { method: "POST" });
 }
 
-export async function deleteUserAlias(game: string, aliasId: number) {
+export async function deleteUserAlias(game: string, aliasId: number): Promise<Response> {
   return fetchAPI(`user/${game}/alias/${aliasId}`, { method: "DELETE" });
 }
 
-export async function deleteAlias(game: string, aliasId: number) {
+export async function deleteAlias(game: string, aliasId: number): Promise<Response> {
   return fetchAPI(`user/admin/${game}/alias/${aliasId}`, { method: "DELETE" });
 }
 
-export async function approveAlias(game: string, aliasId: number) {
+export async function approveAlias(game: string, aliasId: number): Promise<Response> {
   return fetchAPI(`user/admin/${game}/alias/${aliasId}/approve`, { method: "POST" });
+}
+
+interface AliasEntry {
+  song_id: number;
+  aliases: string[];
 }
 
 export class AliasList {
   game: string = "";
-  aliases: any[] = [];
-  searchMap: any = {};
+  aliases: AliasEntry[] = [];
+  searchMap: Record<string, number[]> = {};
 
   constructor(game: string) {
     this.game = game;

@@ -81,6 +81,25 @@ const getActiveElement = (rects: DOMRect[]) => {
   return closest.index;
 }
 
+function findParentValue(node: TreeNodeData, targetValue: string): string | null {
+  if (!node.children) return null;
+
+  for (const child of node.children) {
+    if (child.value === targetValue) {
+      return node.value;
+    }
+
+    if (child.children) {
+      const result = findParentValue(child, targetValue);
+      if (result !== null) {
+        return result;
+      }
+    }
+  }
+
+  return null;
+}
+
 const Leaf = ({ level, node, expanded, hasChildren, elementProps, tree }: RenderTreeNodePayload) => {
   useEffect(() => {
     if (level === 1) tree.expand(node.value);
@@ -110,7 +129,13 @@ const Leaf = ({ level, node, expanded, hasChildren, elementProps, tree }: Render
   );
 }
 
-const TableOfContents = ({ headings }: any) => {
+interface HeadingData {
+  depth: number;
+  value: string;
+  data: { id: string };
+}
+
+const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
   const tree = useTree({
     multiple: false,
   });
@@ -122,7 +147,7 @@ const TableOfContents = ({ headings }: any) => {
     const data: TreeNodeData[] = [];
     const parentStack: TreeNodeData[] = [];
 
-    headings.forEach((heading: any) => {
+    headings.forEach((heading: HeadingData) => {
       const node: TreeNodeData = {
         label: heading.value,
         value: heading.data.id,
@@ -163,25 +188,6 @@ const TableOfContents = ({ headings }: any) => {
     const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)") as NodeListOf<HTMLElement>);
     if (nodes.length === 0) return;
     setActive(getActiveElement(nodes.map((node) => node.getBoundingClientRect())));
-  }
-
-  function findParentValue(node: TreeNodeData, targetValue: string): string | null {
-    if (!node.children) return null;
-
-    for (let child of node.children) {
-      if (child.value === targetValue) {
-        return node.value;
-      }
-
-      if (child.children) {
-        const result = findParentValue(child, targetValue);
-        if (result !== null) {
-          return result;
-        }
-      }
-    }
-
-    return null;
   }
 
   useEffect(() => {
@@ -285,29 +291,29 @@ const Content = ({ markdown }: { markdown: string }) => {
             </a>
           );
         },
-        h1({ children, ...props }: any) {
+        h1({ children, ...props }) {
           return <Title className={classes.heading1} {...props}>{children}</Title>;
         },
-        h2({ children, ...props }: any) {
+        h2({ children, ...props }) {
           return <Title order={2} className={classes.heading2} {...props}>{children}</Title>;
         },
-        h3({ children, ...props }: any) {
+        h3({ children, ...props }) {
           return <Title order={3} className={classes.heading3} {...props}>{children}</Title>;
         },
-        h4({ children, ...props }: any) {
+        h4({ children, ...props }) {
           return <Title order={4} className={classes.heading4} {...props}>{children}</Title>;
         },
-        h5({ children, ...props }: any) {
+        h5({ children, ...props }) {
           return <Title order={5} className={classes.heading5} {...props}>{children}</Title>;
         },
-        h6({ children, ...props }: any) {
+        h6({ children, ...props }) {
           return <Title order={6} className={classes.heading6} {...props}>{children}</Title>;
         },
-        img({ src, ...props }: any) {
+        img({ src, alt }) {
           return (
             <LazyLoad overflow debounce={100} placeholder={<Loader />}>
               <PhotoView src={src}>
-                <Image radius="md" w="auto" src={src} {...props} />
+                <Image radius="md" w="auto" src={src} alt={alt} />
               </PhotoView>
             </LazyLoad>
           );
@@ -368,9 +374,10 @@ const Content = ({ markdown }: { markdown: string }) => {
         td({ children, ...props }) {
           return <td className={classes.tableCell} {...props}>{children}</td>;
         },
-        pre({ children }: any) {
+        pre({ children }) {
+          const codeElement = children as React.ReactElement<{ children: string; className?: string }>;
           return <div className={classes.codeBlock}>
-            <CopyButton value={children.props.children} timeout={2000}>
+            <CopyButton value={codeElement.props.children} timeout={2000}>
               {({ copied, copy }) => (
                 <Tooltip label={copied ? '已复制' : '复制代码块'} withArrow>
                   <ActionIcon className={classes.codeBlockCopyButton} color={copied ? 'teal' : 'gray'} variant="subtle" onClick={copy}>
@@ -384,8 +391,8 @@ const Content = ({ markdown }: { markdown: string }) => {
               )}
             </CopyButton>
             <CodeHighlight
-              code={children.props.children}
-              language={children.props.className?.replace("language-", "") || "text"}
+              code={codeElement.props.children}
+              language={codeElement.props.className?.replace("language-", "") || "text"}
               withCopyButton={false}
               styles={{
                 pre: {
@@ -413,18 +420,19 @@ const Content = ({ markdown }: { markdown: string }) => {
 export default function Page() {
   const data = useData<{ markdown: string; slug: string }>();
   const { markdown, slug } = data;
-  const [headings, handlers] = useListState([]);
+  const [headings, handlers] = useListState<HeadingData>([]);
 
   useEffect(() => {
     if (!markdown) return;
 
     const file = remark()
       .use(remarkToc)
-      .use(remarkSlug as any)
+      // @ts-expect-error remark-slug uses an older unified plugin type
+      .use(remarkSlug)
       .use(remarkHeadings)
       .processSync(markdown);
 
-    handlers.setState(file.data.headings as any);
+    handlers.setState(file.data.headings as HeadingData[]);
 
     // 处理 URL hash 滚动
     if (typeof window !== 'undefined' && window.location.hash) {

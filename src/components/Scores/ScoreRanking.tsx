@@ -1,60 +1,17 @@
 import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { fetchAPI } from "@/utils/api/api.ts";
-import { openRetryModal } from "@/utils/modal.tsx";
-import { useEffect, useState } from "react";
 import { Badge, Center, Divider, Flex, Group, Loader, NumberFormatter, Paper, rem, Stack, Text } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
-import { usePlayer } from "@/hooks/swr/usePlayer.ts";
-
-interface RankingScoreProps {
-  ranking: number;
-  player_name?: string;
-  achievements?: number;
-  dx_score?: number;
-  score?: number;
-  upload_time: string;
-}
+import { usePlayer } from "@/hooks/queries/usePlayer.ts";
+import { useScoreRanking } from "@/hooks/queries/useScoreRanking.ts";
 
 export const ScoreRanking = ({ game, score }: {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
 }) => {
-  const [rankingScores, setRankingScores] = useState<RankingScoreProps[]>([]);
-  const [fetching, setFetching] = useState(false);
   const isLoggedOut = !localStorage.getItem("token");
-
   const { player } = usePlayer(game);
-
-  const getPlayerScoreRanking = async (score: MaimaiScoreProps | ChunithmScoreProps) => {
-    setFetching(true);
-    try {
-      const params = new URLSearchParams({
-        song_id: `${score.id}`,
-        level_index: `${score.level_index}`,
-      });
-      if (game === "maimai" && "achievements" in score) {
-        params.append("song_type", `${score.type}`);
-      }
-      const res = await fetchAPI(`user/${game}/player/score/ranking?${params.toString()}`, {
-        method: "GET",
-      })
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setRankingScores(data.data || []);
-    } catch (error) {
-      openRetryModal("成绩排行获取失败", `${error}`, () => getPlayerScoreRanking(score))
-    } finally {
-      setFetching(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!score || !player) return;
-    if (!isLoggedOut) getPlayerScoreRanking(score);
-  }, [score, player]);
+  const { rankingScores, isLoading } = useScoreRanking(game, score);
 
   if (isLoggedOut || !player) {
     return (
@@ -65,7 +22,7 @@ export const ScoreRanking = ({ game, score }: {
     );
   }
 
-  if (!score || fetching) {
+  if (!score || isLoading) {
     return (
       <Center>
         <Loader />
