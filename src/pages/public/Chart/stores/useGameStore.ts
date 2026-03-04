@@ -27,8 +27,6 @@ interface GameState {
   selectedDifficulty: ChartDifficulty | null;
   /** 可用的难度 */
   availableDifficulties: AvailableDifficulties;
-  /** 保持固定流速 */
-  alwaysKeepHiSpeed: boolean;
   /** 音乐 URL */
   musicUrl: string;
   /** 音乐是否加载完成 */
@@ -78,8 +76,6 @@ interface GameActions {
   setSelectedDifficulty: (difficulty: ChartDifficulty) => void;
   /** 设置可用的难度 */
   setAvailableDifficulties: (difficulties: AvailableDifficulties) => void;
-  /** 设置保持固定流速 */
-  setAlwaysKeepHiSpeed: (enabled: boolean) => void;
   /** 设置播放速度 */
   setPlaybackSpeed: (speed: number) => void;
   /** 设置音乐 URL */
@@ -120,8 +116,7 @@ const initialState: GameState = {
   rawSimaiText: '',
   selectedDifficulty: null,
   availableDifficulties: {},
-  alwaysKeepHiSpeed: false,
-  musicUrl: ''
+  musicUrl: '',
   musicLoaded: false,
   musicLoading: false,
   musicError: null,
@@ -420,8 +415,6 @@ export const useGameStore = create<GameStore>()(
     setSelectedDifficulty: (difficulty: ChartDifficulty) => set({ selectedDifficulty: difficulty }),
     setAvailableDifficulties: (difficulties: AvailableDifficulties) =>
       set({ availableDifficulties: difficulties }),
-
-    setAlwaysKeepHiSpeed: (enabled: boolean) => set({ alwaysKeepHiSpeed: enabled }),
 
     setPlaybackSpeed: (speed: number) => {
       const state = get();

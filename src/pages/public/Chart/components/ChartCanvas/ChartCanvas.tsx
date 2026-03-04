@@ -103,11 +103,11 @@ export function ChartCanvas() {
   const totalMeasures = useGameStore((s) => s.timeline.totalMeasures);
   const beatsPerMeasure = useGameStore((s) => s.timeline.beatsPerMeasure);
   const playbackSpeed = useGameStore((s) => s.playbackSpeed);
-  const alwaysKeepHiSpeed = useGameStore((s) => s.alwaysKeepHiSpeed);
   const setPreciseTime = useGameStore((s) => s.setPreciseTime);
   const pause = useGameStore((s) => s.pause);
 
   const hiSpeed = useGameSettingsStore((s) => s.hiSpeed);
+  const alwaysKeepHiSpeed = useGameSettingsStore((s) => s.alwaysKeepHiSpeed);
   const slideRotation = useGameSettingsStore((s) => s.slideRotation);
   const mirrorMode = useGameSettingsStore((s) => s.mirrorMode);
   const judgmentLineDesign = useGameSettingsStore((s) => s.judgmentLineDesign);
@@ -168,13 +168,13 @@ export function ChartCanvas() {
 
     const settingsState = useGameSettingsStore.getState();
     renderer.setHiSpeed(settingsState.hiSpeed);
+    renderer.setAlwaysKeepHiSpeed(useGameSettingsStore.getState().alwaysKeepHiSpeed);
     renderer.setSlideRotation(settingsState.slideRotation);
     renderer.setMirrorMode(settingsState.mirrorMode);
     renderer.setJudgmentLineDesign(settingsState.judgmentLineDesign);
     renderer.setPinkSlideStart(settingsState.pinkSlideStart);
     renderer.setHighlightExNotes(settingsState.highlightExNotes);
     renderer.setNormalColorBreakSlide(settingsState.normalColorBreakSlide);
-    renderer.setAlwaysKeepHiSpeed(useGameStore.getState().alwaysKeepHiSpeed);
     renderer.setPlaybackSpeed(useGameStore.getState().playbackSpeed);
 
     const handleResize = () => {
