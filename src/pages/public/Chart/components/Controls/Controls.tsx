@@ -3,13 +3,16 @@ import { useShallow } from 'zustand/react/shallow';
 import {
   ActionIcon,
   Card,
+  Checkbox,
   Collapse,
   Group,
+  HoverCard,
   SegmentedControl,
   Slider,
   Stack,
   Switch,
   Text,
+  ThemeIcon,
   Tooltip,
   UnstyledButton,
 } from '@mantine/core';
@@ -26,6 +29,7 @@ import {
   IconMusic,
   IconChevronDown,
   IconAdjustments,
+  IconHelp,
   IconMaximize,
   IconMinimize,
 } from '@tabler/icons-react';
@@ -241,6 +245,26 @@ export function Controls() {
               <Text size="xs" c="dimmed" ff="monospace">1.0x</Text>
             </Group>
           </div>
+
+          <Group gap="xs" align="center">
+            <Checkbox
+              label="保持谱面流速"
+              checked={alwaysKeepHiSpeed}
+              onChange={(e) => setAlwaysKeepHiSpeed(e.currentTarget.checked)}
+            />
+            <HoverCard width={260} shadow="md" withArrow>
+              <HoverCard.Target>
+                <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: 'pointer' }}>
+                  <IconHelp />
+                </ThemeIcon>
+              </HoverCard.Target>
+              <HoverCard.Dropdown>
+                <Text size="sm">
+                  降低播放速度时，自动提高谱面流速，使音符的视觉速度保持不变。
+                </Text>
+              </HoverCard.Dropdown>
+            </HoverCard>
+          </Group>
         </Stack>
       </Card>
 
@@ -364,13 +388,7 @@ export function Controls() {
               />
             </Group>
             
-            <Group justify="space-between">
-              <Text size="sm">保持谱面流速</Text>
-              <Switch
-                checked={alwaysKeepHiSpeed}
-                onChange={(e) => setAlwaysKeepHiSpeed(e.currentTarget.checked)}
-              />
-            </Group>
+
           </Stack>
         </Collapse>
       </Card>
