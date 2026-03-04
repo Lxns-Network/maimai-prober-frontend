@@ -2,6 +2,12 @@
 
 ---
 
+## 2026/3/4
+
+- 舞萌 DX 谱面预览:
+  - 支持谱面预览设置本地持久化（[#11](https://github.com/Lxns-Network/maimai-prober-frontend/pull/11)）
+  - 保持谱面流速不受播放速度影响（[#12](https://github.com/Lxns-Network/maimai-prober-frontend/pull/12)）
+
 ## 2026/3/3
 
 - 修复中二节奏无法正常创建 WORLD'S END 难度成绩的问题
