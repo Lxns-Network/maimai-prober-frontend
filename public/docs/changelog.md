@@ -2,11 +2,17 @@
 
 ---
 
+## 2026/3/9
+
+- OAuth 应用现在支持使用自定义回调地址（如 `net.lxns.app://callback`），以便在移动端使用第三方浏览器登录后能够正确跳转回应用
+- 修复少部分情况下，用户操作可能会出现内部服务器错误的问题
+
 ## 2026/3/4
 
 - 舞萌 DX 谱面预览:
   - 支持谱面预览设置本地持久化（[#11](https://github.com/Lxns-Network/maimai-prober-frontend/pull/11)）
   - 保持谱面流速不受播放速度影响（[#12](https://github.com/Lxns-Network/maimai-prober-frontend/pull/12)）
+- 修复少部分情况下，使用部分代理客户端或其他方式同步游戏数据时，无法正常爬取成绩的问题
 
 ## 2026/3/3
 
