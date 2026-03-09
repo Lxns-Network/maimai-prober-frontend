@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
+import { getSentryUser, isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
+import * as Sentry from "@sentry/react";
 import { queryKeys } from "./queryKeys.ts";
 
 export const useUserToken = () => {
@@ -14,6 +15,7 @@ export const useUserToken = () => {
   useEffect(() => {
     if (data?.token) {
       localStorage.setItem("token", data.token);
+      Sentry.setUser(getSentryUser());
     }
   }, [data?.token]);
 

@@ -6,6 +6,8 @@ import { openAlertModal, openRetryModal } from "@/utils/modal";
 import { startAuthentication } from '@simplewebauthn/browser';
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
+import * as Sentry from "@sentry/react";
+import { getSentryUser, resolvePostLoginTarget } from "@/utils/session";
 
 export const PasskeyLogin = () => {
   const [loading, setLoading] = useState(false);
@@ -44,12 +46,10 @@ export const PasskeyLogin = () => {
       }
 
       localStorage.setItem("token", authData.data.token);
+      Sentry.setUser(getSentryUser());
 
-      if (pageContext.redirect && pageContext.redirect !== "/login" && pageContext.redirect !== "/register") {
-        navigate(pageContext.redirect, { pageContext: { redirect: undefined } });
-      } else {
-        navigate("/", { pageContext: { redirect: undefined } });
-      }
+      const target = await resolvePostLoginTarget(pageContext.redirect);
+      navigate(target, { pageContext: { redirect: undefined } });
     } catch (error) {
       if ((error as Error).name === "NotAllowedError") {
         return;

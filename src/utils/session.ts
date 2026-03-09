@@ -21,6 +21,16 @@ export const getLoginUserId = () => {
   return payload ? payload.id : null;
 }
 
+export const getSentryUser = () => {
+  const payload = getLoginSessionPayload();
+  if (!payload) return null;
+  return {
+    id: String(payload.id),
+    username: payload.name as string,
+    permission: payload.permission as number,
+  };
+}
+
 export const isTokenExpired = () => {
   if (!isBrowser()) return true;
   const token = localStorage.getItem('token');
@@ -101,3 +111,32 @@ export const listToPermission = (list: UserPermission[]) => {
   }
   return permission;
 }
+
+export const resolvePostLoginTarget = async (redirect?: string | null): Promise<string> => {
+  const EXCLUDED = ['/login', '/register'];
+  if (redirect && !EXCLUDED.includes(redirect)) {
+    return redirect;
+  }
+
+  try {
+    const game = (isBrowser() && localStorage.getItem('game')) || 'maimai';
+    const token = isBrowser() ? localStorage.getItem('token') : null;
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const res = await fetch(`${apiUrl}/user/${game}/player`, {
+      method: 'GET',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (data.success && data.data) {
+      return '/';
+    }
+  } catch {
+    // 网络错误时不阻断登录流程，直接跳首页
+  }
+
+  return '/user/sync';
+};

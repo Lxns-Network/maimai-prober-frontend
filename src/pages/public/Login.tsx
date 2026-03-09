@@ -9,7 +9,8 @@ import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
 import { IconAlertCircle, IconLock, IconMail, IconUser } from "@tabler/icons-react";
 import classes from "../Form.module.css";
-import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
+import { getSentryUser, isTokenExpired, isTokenUndefined, resolvePostLoginTarget } from "@/utils/session.ts";
+import * as Sentry from "@sentry/react";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { PasskeyLogin } from "@/components/Settings/PasskeyLogin.tsx";
 import { usePageContext } from "vike-react/usePageContext";
@@ -91,12 +92,11 @@ export default function Login() {
       const captchaToken = await solveCaptcha();
 
       login({ values, captchaToken }, {
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
           localStorage.setItem("token", data.token);
+          Sentry.setUser(getSentryUser());
 
-          const target = (pageContext.redirect && pageContext.redirect !== "/login" && pageContext.redirect !== "/register")
-            ? pageContext.redirect
-            : "/";
+          const target = await resolvePostLoginTarget(pageContext.redirect);
           window.location.href = target;
         },
         onError: (error) => {

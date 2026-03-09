@@ -4,6 +4,7 @@ import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOu
 import { ModalsProvider } from "@mantine/modals";
 import { notifications, Notifications } from "@mantine/notifications";
 import { logout } from "@/utils/session";
+import * as Sentry from "@sentry/react";
 import { usePageContext } from 'vike-react/usePageContext';
 import { navigate } from 'vike/client/router';
 
@@ -101,6 +102,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (userTokenError) {
+      Sentry.setUser(null);
       logout();
 
       if (pageContext.urlPathname !== '/login') {
