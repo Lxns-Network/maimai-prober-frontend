@@ -262,7 +262,7 @@ export function Controls() {
               checked={alwaysKeepHiSpeed}
               onChange={(e) => setAlwaysKeepHiSpeed(e.currentTarget.checked)}
             />
-            <HoverCard width={260} shadow="md" withArrow>
+            <HoverCard width={280} shadow="md" withArrow>
               <HoverCard.Target>
                 <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: 'pointer' }}>
                   <IconHelp />

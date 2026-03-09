@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
   Accordion, Button, Code, Card, Flex, Group, Loader, Text, ThemeIcon, Alert, Stepper, Divider, Space, Stack,
-  SimpleGrid, Paper
+  SimpleGrid, Paper,
+  HoverCard,
+  Mark
 } from '@mantine/core';
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useMediaQuery } from '@mantine/hooks';
-import { IconAlertCircle, IconDownload, IconRepeat } from "@tabler/icons-react";
+import { IconAlertCircle, IconDownload, IconHelp, IconRepeat } from "@tabler/icons-react";
 import { openAlertModal } from "@/utils/modal";
 import { checkProxy } from "@/utils/checkProxy.ts";
 import { getUserCrawlToken, getCrawlStatus } from "@/utils/api/user.ts";
@@ -364,7 +366,7 @@ const SyncContent = () => {
               {crawlStatus && {
                 "pending": "服务端正在爬取游戏数据",
                 "finished": "游戏数据同步成功",
-                "failed": "成绩同步失败"
+                "failed": "成绩同步不完全"
               }[crawlStatus.status]}
             </Text>
           </Card.Section>
@@ -386,7 +388,21 @@ const SyncContent = () => {
                     <Text fz="sm">{Math.floor((new Date(crawlStatus.complete_time).getTime() - new Date(crawlStatus.create_time).getTime()) / 1000)} 秒</Text>
                   </div>
                   <div>
-                    <Text fz="xs" c="dimmed">爬取的成绩数</Text>
+                    <Group gap={4} align="center">
+                      <Text fz="xs" c="dimmed">爬取的成绩数</Text>
+                      <HoverCard width={280} shadow="md" withArrow>
+                        <HoverCard.Target>
+                          <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: 'pointer' }}>
+                            <IconHelp />
+                          </ThemeIcon>
+                        </HoverCard.Target>
+                        <HoverCard.Dropdown>
+                          <Text size="sm">
+                            本次爬取过程中，服务器成功获取并<Mark>有变化</Mark>的成绩数量。
+                          </Text>
+                        </HoverCard.Dropdown>
+                      </HoverCard>
+                    </Group>
                     <Text fz="sm">{(crawlStatus.scores || []).length}</Text>
                   </div>
                   <div>

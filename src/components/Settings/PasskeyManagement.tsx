@@ -1,19 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  Card,
-  Text,
-  Button,
-  Group,
-  Stack,
-  Badge,
-  ActionIcon,
-  LoadingOverlay,
-  Box,
-  Flex,
-  Image,
-  useComputedColorScheme,
+  Card, Text, Button, Group, Stack, ActionIcon, LoadingOverlay, Box, Flex, Image,
+  useComputedColorScheme, HoverCard, ThemeIcon,
 } from "@mantine/core";
-import { IconKey, IconTrash, IconEdit, IconFingerprint } from "@tabler/icons-react";
+import { IconKey, IconTrash, IconEdit, IconFingerprint, IconCloud } from "@tabler/icons-react";
 import { getPasskeys, registerPasskey, updatePasskeyName, deletePasskey, getPasskeyRegisterChallenge } from "@/utils/api/user";
 import { openAlertModal, openConfirmModal, openRetryModal, openFormModal } from "@/utils/modal";
 import type { PasskeyProps, PasskeyRegisterData } from "@/types/user";
@@ -208,9 +198,18 @@ export const PasskeyManagement = () => {
                         {passkey.name || "未命名的通行密钥"}
                       </Text>
                       {passkey.backup_eligible && (
-                        <Badge size="sm" variant="light" color="blue">
-                          可同步
-                        </Badge>
+                        <HoverCard width={280} shadow="md" withArrow>
+                          <HoverCard.Target>
+                            <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: 'pointer' }}>
+                              <IconCloud />
+                            </ThemeIcon>
+                          </HoverCard.Target>
+                          <HoverCard.Dropdown>
+                            <Text size="sm">
+                              该通行密钥支持云备份，可以在多台设备上使用。
+                            </Text>
+                          </HoverCard.Dropdown>
+                        </HoverCard>
                       )}
                     </Group>
                     <Stack gap={2} mt="xs">

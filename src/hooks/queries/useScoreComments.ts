@@ -12,7 +12,7 @@ export interface Comment {
   uploader: {
     id: number;
     name: string;
-    avatar_id: number;
+    avatar_id?: number;
   }
 }
 

@@ -21,7 +21,7 @@ export const PlayerHeatmapSection = () => {
   const [game] = useGame();
   const computedColorScheme = useComputedColorScheme('light');
 
-  const { player } = usePlayer(game);
+  const { player, isLoading: isPlayerLoading } = usePlayer(game);
   const { heatmap, isLoading } = usePlayerHeatmap(game);
 
   const today = new Date();
@@ -42,14 +42,14 @@ export const PlayerHeatmapSection = () => {
 
   return (
     <Card className={classes.card} withBorder radius="md" p={0}>
-      {!player && (
+      {!isPlayerLoading && !player && (
         <Overlay color={
           computedColorScheme === 'dark' ? "#000" : "#FFF"
         } blur={5} center zIndex={1}>
           <Text>同步游戏数据后查看热力图</Text>
         </Overlay>
       )}
-      {isLoading && (
+      {(isLoading || isPlayerLoading) && (
         <Overlay color={
           computedColorScheme === 'dark' ? "#000" : "#FFF"
         } blur={5} center zIndex={1}>

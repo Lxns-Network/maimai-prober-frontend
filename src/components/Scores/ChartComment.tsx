@@ -179,7 +179,7 @@ const CommentItem = ({ game, comment, onUpdate, onDelete, onRevert }: {
     <Box>
       <Group>
         <Avatar
-          src={`${ASSET_URL}/${game}/${game === "maimai" ? "icon" : "character"}/${comment.uploader.avatar_id}.png!webp`}
+          src={`${ASSET_URL}/${game}/${game === "maimai" ? "icon" : "character"}/${comment.uploader.avatar_id || (game === "maimai" ? 1 : 0)}.png!webp`}
           radius={0}
         >
           <IconPhotoOff />
