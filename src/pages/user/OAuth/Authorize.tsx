@@ -16,6 +16,16 @@ function isOOBRedirectUri(redirectUri: string | null): boolean {
   return redirectUri === "urn:ietf:wg:oauth:2.0:oob" || redirectUri === "urn:ietf:wg:oauth:2.0:oob:auto";
 }
 
+function isAppSchemeRedirectUri(redirectUri: string | null): boolean {
+  if (!redirectUri) return false;
+  try {
+    const scheme = new URL(redirectUri).protocol.replace(/:$/, '');
+    return scheme !== 'http' && scheme !== 'https';
+  } catch {
+    return false;
+  }
+}
+
 export default function Authorize() {
   const pageContext = usePageContext();
   const params = new URLSearchParams(pageContext.urlParsed.search);
@@ -204,6 +214,11 @@ export default function Authorize() {
             {isOOBRedirectUri(app.redirect_uri) ? (
               <Box mt="sm">
                 <Text size="xs" c="dimmed">授权后将会显示授权码，请将其复制到应用中</Text>
+              </Box>
+            ) : isAppSchemeRedirectUri(app.redirect_uri) ? (
+              <Box mt="sm">
+                <Text size="xs" c="dimmed">授权后将会跳转回</Text>
+                <Text size="xs" fw={500} mt={2}>{app.name}</Text>
               </Box>
             ) : (
               <Box mt="sm">

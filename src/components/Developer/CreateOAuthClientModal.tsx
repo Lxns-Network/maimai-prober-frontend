@@ -2,13 +2,14 @@ import { useForm } from "@mantine/form";
 import { validateText, validateUrl, validateRedirectUri } from "@/utils/validator.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import {
+  Alert,
   Avatar, Box, Button, Checkbox, Group, HoverCard, Modal, SimpleGrid, Switch, Text, Textarea, TextInput, ThemeIcon,
   useComputedColorScheme
 } from "@mantine/core";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 import { useFileDialog } from "@mantine/hooks";
 import { useCreateOAuthApp, useEditOAuthApp, useUploadOAuthAppLogo } from "@/hooks/mutations/useDeveloperMutations.ts";
-import { IconHelp } from "@tabler/icons-react";
+import { IconAlertCircle, IconHelp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
 import { scopeData } from "@/data/scopeData.tsx";
@@ -167,12 +168,12 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
         <TextInput
           label="回调地址"
           description="OAuth 授权成功后，用户将被重定向到此地址"
-          placeholder="请输入应用回调地址"
+          placeholder="https://example.com/callback"
           mb="xs"
           withAsterisk
           {...form.getInputProps("redirect_uri")}
         />
-        <Group gap="xs" mb="xs">
+        <Group gap="xs" align="center" mb="xs">
           <Checkbox
             label="无回调地址"
             checked={oobChecked}
@@ -181,9 +182,9 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
               form.setFieldValue("redirect_uri", event.currentTarget.checked ? "urn:ietf:wg:oauth:2.0:oob" : "");
             }}
           />
-          <HoverCard width={280} shadow="md">
+          <HoverCard width={280} shadow="md" withArrow>
             <HoverCard.Target>
-              <ThemeIcon variant="subtle" color="gray" size="sm">
+              <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: 'pointer' }}>
                 <IconHelp />
               </ThemeIcon>
             </HoverCard.Target>
@@ -206,6 +207,17 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
             ))}
           </SimpleGrid>
         </Switch.Group>
+        {form.values.scopes?.includes("read_user_token") && (
+          <Alert
+            variant="light"
+            color="yellow"
+            icon={<IconAlertCircle />}
+            title="注意"
+            mt="lg"
+          >
+            我们已不再推荐使用个人 API 密钥，建议使用 OAuth 应用返回的访问令牌请求接口。
+          </Alert>
+        )}
         <Group justify="flex-end" mt="lg">
           <Button variant="default" onClick={onClose}>取消</Button>
           <Button color="blue" type="submit">{!app ? "创建" : "编辑"}</Button>
