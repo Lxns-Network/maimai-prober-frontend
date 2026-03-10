@@ -159,7 +159,7 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
               suffix="%"
               value={achievements}
               onChange={(value) => {
-                if (typeof value === "number") setLevelValue(value);
+                if (typeof value === "number") setAchievements(value);
               }}
             />}
             {method === "dx_rating" && <NumberInput
@@ -169,7 +169,7 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
               allowDecimal={false}
               value={deluxeRating}
               onChange={(value) => {
-                if (typeof value === "number") setLevelValue(value);
+                if (typeof value === "number") setDeluxeRating(value);
               }}
             />}
             <ScrollArea h={300}>
