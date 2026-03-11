@@ -122,6 +122,15 @@ export function ChartCanvas() {
     return playbackStartMsRef.current + elapsed;
   }, []);
 
+  const resyncAnswerSound = useCallback((currentMs: number, speed: number = playbackSpeedRef.current) => {
+    if (!chartData || !soundEnabled) {
+      return;
+    }
+
+    answerSoundRefs.current.reset(currentMs);
+    answerSoundRefs.current.schedule(chartData.notes, currentMs, speed);
+  }, [chartData, soundEnabled]);
+
   const renderFrame = useCallback((beatsOverride?: number) => {
     const renderer = rendererRef.current;
     const chart = useGameStore.getState().chartData;
@@ -159,7 +168,7 @@ export function ChartCanvas() {
     renderer.renderNotes(chart.notes, currentBeats, chart.bpmEvents);
 
     if (sound && playing) {
-      answerSoundRefs.current.schedule(chart.notes, currentMs);
+      answerSoundRefs.current.schedule(chart.notes, currentMs, playbackSpeedRef.current);
     }
   }, []);
 
@@ -296,7 +305,14 @@ export function ChartCanvas() {
 
   useEffect(() => {
     answerSoundRefs.current.setEnabled(soundEnabled);
-  }, [soundEnabled]);
+
+    if (!chartData || !isPlaying) {
+      return;
+    }
+
+    const currentMs = getPlaybackMs(performance.now());
+    resyncAnswerSound(currentMs);
+  }, [soundEnabled, chartData, isPlaying, getPlaybackMs, resyncAnswerSound]);
 
   useEffect(() => {
     answerSoundRefs.current.setVolume(soundVolume);
@@ -304,7 +320,14 @@ export function ChartCanvas() {
 
   useEffect(() => {
     answerSoundRefs.current.setTimingOffset(ANSWER_SOUND_BASE_OFFSET_MS + soundOffset);
-  }, [soundOffset]);
+
+    if (!chartData || !isPlaying || !soundEnabled) {
+      return;
+    }
+
+    const currentMs = getPlaybackMs(performance.now());
+    resyncAnswerSound(currentMs);
+  }, [soundOffset, chartData, isPlaying, soundEnabled, getPlaybackMs, resyncAnswerSound]);
 
   // 保存当前播放速度的 ref，用于在动画循环中获取最新值
   const playbackSpeedRef = useRef(playbackSpeed);
@@ -314,16 +337,20 @@ export function ChartCanvas() {
       const currentBeats = playbackTimeRef.current;
       playbackStartTimeRef.current = performance.now();
       playbackStartMsRef.current = beatsToMs(currentBeats, chartData.bpmEvents, chartData.bpm);
+
+      if (soundEnabled) {
+        resyncAnswerSound(playbackStartMsRef.current, playbackSpeed);
+      }
     }
     playbackSpeedRef.current = playbackSpeed;
-  }, [playbackSpeed, isPlaying, chartData]);
+  }, [playbackSpeed, isPlaying, chartData, soundEnabled, resyncAnswerSound]);
 
   useEffect(() => {
     if (!isPlaying || !chartData || !soundEnabled) return;
 
     const intervalId = window.setInterval(() => {
       const currentMs = getPlaybackMs(performance.now());
-      answerSoundRefs.current.schedule(chartData.notes, currentMs);
+      answerSoundRefs.current.schedule(chartData.notes, currentMs, playbackSpeedRef.current);
     }, 250);
 
     return () => {

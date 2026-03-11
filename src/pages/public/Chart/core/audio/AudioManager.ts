@@ -135,8 +135,15 @@ export class AudioManager {
     return note.timingMs.toFixed(3);
   }
 
-  schedule(notes: Note[] | null, currentTimeMs: number, lookAheadMs: number = SCHEDULE_LOOKAHEAD_MS): void {
+  schedule(
+    notes: Note[] | null,
+    currentTimeMs: number,
+    playbackSpeed: number = 1,
+    lookAheadMs: number = SCHEDULE_LOOKAHEAD_MS
+  ): void {
     if (!this.enabled || !notes || !this.audioContext || !this.answerBuffer) return;
+
+    const normalizedPlaybackSpeed = Math.max(playbackSpeed, 0.001);
 
     const adjustedCurrentTime = currentTimeMs - this.timingOffsetMs;
     const adjustedLastTime = this.lastScheduledTimeMs - this.timingOffsetMs;
@@ -161,7 +168,7 @@ export class AudioManager {
 
       this.handledEvents.add(eventKey);
       const delayMs = noteTime - adjustedCurrentTime;
-      const when = this.audioContext.currentTime + delayMs / 1000;
+      const when = this.audioContext.currentTime + delayMs / 1000 / normalizedPlaybackSpeed;
       this.playAnswerSoundAt(when, eventKey);
     }
 
@@ -175,6 +182,9 @@ export class AudioManager {
   }
 
   setEnabled(enabled: boolean): void {
+    if (!enabled) {
+      this.clearScheduledSources(true);
+    }
     this.enabled = enabled;
   }
 
