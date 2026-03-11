@@ -67,7 +67,6 @@ export function ChartCanvas() {
   const animationFrameRef = useRef<number | null>(null);
   const playbackStartTimeRef = useRef<number>(0);
   const playbackStartMsRef = useRef<number>(0);
-  const currentBeatsRef = useRef<number>(0);
   
   const fpsRef = useRef<number>(0);
   const frameTimesRef = useRef<number[]>([]);
@@ -75,7 +74,7 @@ export function ChartCanvas() {
 
   const answerSound = useAudio({ autoInit: true });
   const answerSoundRefs = useRef({
-    tick: answerSound.tick,
+    schedule: answerSound.schedule,
     reset: answerSound.reset,
     setEnabled: answerSound.setEnabled,
     setVolume: answerSound.setVolume,
@@ -86,7 +85,7 @@ export function ChartCanvas() {
   // 保持 refs 最新
   useEffect(() => {
     answerSoundRefs.current = {
-      tick: answerSound.tick,
+      schedule: answerSound.schedule,
       reset: answerSound.reset,
       setEnabled: answerSound.setEnabled,
       setVolume: answerSound.setVolume,
@@ -118,6 +117,11 @@ export function ChartCanvas() {
   const soundVolume = useGameSettingsStore((s) => s.soundVolume);
   const soundOffset = useGameSettingsStore((s) => s.soundOffset);
 
+  const getPlaybackMs = useCallback((timestamp: number) => {
+    const elapsed = (timestamp - playbackStartTimeRef.current) * playbackSpeedRef.current;
+    return playbackStartMsRef.current + elapsed;
+  }, []);
+
   const renderFrame = useCallback((beatsOverride?: number) => {
     const renderer = rendererRef.current;
     const chart = useGameStore.getState().chartData;
@@ -148,13 +152,14 @@ export function ChartCanvas() {
     }
     
     renderer.setBeatDisplayInfo(measure, beat, fraction, divisor);
+    const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
+
     renderer.clear();
     renderer.renderJudgmentLine();
     renderer.renderNotes(chart.notes, currentBeats, chart.bpmEvents);
 
     if (sound && playing) {
-      const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
-      answerSoundRefs.current.tick(chart.notes, currentMs);
+      answerSoundRefs.current.schedule(chart.notes, currentMs);
     }
   }, []);
 
@@ -205,6 +210,19 @@ export function ChartCanvas() {
     if (rendererRef.current) {
       rendererRef.current.setIsPlaying(isPlaying);
     }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (isPlaying) return;
+
+    const currentChart = useGameStore.getState().chartData;
+    if (!currentChart) {
+      answerSoundRefs.current.reset();
+      return;
+    }
+
+    const currentMs = beatsToMs(playbackTimeRef.current, currentChart.bpmEvents, currentChart.bpm);
+    answerSoundRefs.current.reset(currentMs);
   }, [isPlaying]);
 
   useEffect(() => {
@@ -301,6 +319,19 @@ export function ChartCanvas() {
   }, [playbackSpeed, isPlaying, chartData]);
 
   useEffect(() => {
+    if (!isPlaying || !chartData || !soundEnabled) return;
+
+    const intervalId = window.setInterval(() => {
+      const currentMs = getPlaybackMs(performance.now());
+      answerSoundRefs.current.schedule(chartData.notes, currentMs);
+    }, 250);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isPlaying, chartData, soundEnabled, getPlaybackMs]);
+
+  useEffect(() => {
     if (!isPlaying || !chartData) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -348,15 +379,12 @@ export function ChartCanvas() {
           chartData.bpmEvents,
           chartData.bpm
         );
-        currentBeatsRef.current = storeState.timeline.preciseTime;
         // 传入当前时间，避免播放之前已经过去的 note 音效
         answerSoundRefs.current.reset(playbackStartMsRef.current);
       }
 
       // 使用 ref 获取最新的播放速度
-      const currentSpeed = playbackSpeedRef.current;
-      const elapsed = (timestamp - playbackStartTimeRef.current) * currentSpeed;
-      const currentMs = playbackStartMsRef.current + elapsed;
+      const currentMs = getPlaybackMs(timestamp);
 
       if (currentMs >= totalDurationMs + 500) {
         setPreciseTime(totalBeats);
@@ -365,7 +393,6 @@ export function ChartCanvas() {
       }
 
       const currentBeats = msToBeats(currentMs, chartData.bpmEvents, chartData.bpm);
-      currentBeatsRef.current = currentBeats;
       playbackTimeRef.current = currentBeats;
       
       renderFrame(currentBeats);
@@ -381,7 +408,7 @@ export function ChartCanvas() {
         animationFrameRef.current = null;
       }
     };
-  }, [isPlaying, chartData, totalMeasures, beatsPerMeasure, pause, setPreciseTime, renderFrame]);
+  }, [isPlaying, chartData, totalMeasures, beatsPerMeasure, pause, setPreciseTime, renderFrame, getPlaybackMs]);
 
   // 非播放状态下的预览更新（支持拖动进度条时的实时预览）
   useEffect(() => {
