@@ -1,10 +1,18 @@
 import { Note, AudioConfig } from '../../types';
 import { ANSWER_SOUND_BASE_OFFSET_MS } from '../../utils/constants';
 
+const SCHEDULE_LOOKAHEAD_MS = 1500;
+
 export interface AudioManagerConfig {
   answerSoundPath?: string;
   initialVolume?: number;
   initialTimingOffset?: number;
+}
+
+interface ScheduledSourceEntry {
+  source: AudioBufferSourceNode;
+  gainNode: GainNode;
+  startTime: number;
 }
 
 export class AudioManager {
@@ -18,9 +26,10 @@ export class AudioManager {
   private volume = 0.5;
   private timingOffsetMs = ANSWER_SOUND_BASE_OFFSET_MS;
 
-  private playedNotes = new Set<string>();
-  
-  private lastTickTimeMs = -Infinity;
+  private handledEvents = new Set<string>();
+  private scheduledSources = new Set<ScheduledSourceEntry>();
+
+  private lastScheduledTimeMs = -Infinity;
 
   private answerSoundPath: string;
 
@@ -56,28 +65,51 @@ export class AudioManager {
   }
 
   dispose(): void {
+    this.clearScheduledSources(true);
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
     }
     this.answerBuffer = null;
     this.initialized = false;
-    this.playedNotes.clear();
+    this.handledEvents.clear();
   }
 
-  private playAnswerSound(): void {
+  private playAnswerSoundAt(when: number): void {
     if (!this.enabled || !this.answerBuffer || !this.audioContext) return;
 
     try {
       const source = this.audioContext.createBufferSource();
       const gainNode = this.audioContext.createGain();
+      const entry: ScheduledSourceEntry = {
+        source,
+        gainNode,
+        startTime: when > 0 ? when : this.audioContext.currentTime,
+      };
 
       source.buffer = this.answerBuffer;
       gainNode.gain.value = this.volume;
 
       source.connect(gainNode);
       gainNode.connect(this.audioContext.destination);
-      source.start(0);
+      this.scheduledSources.add(entry);
+      source.start(when);
+
+      source.onended = () => {
+        this.scheduledSources.delete(entry);
+
+        try {
+          source.disconnect();
+        } catch {
+          // 忽略已经断开的 source
+        }
+
+        try {
+          gainNode.disconnect();
+        } catch {
+          // 忽略已经断开的 gain
+        }
+      };
     } catch (error) {
       console.error('AudioManager: Playback error', error);
     }
@@ -109,48 +141,60 @@ export class AudioManager {
     }
   }
 
-  private getNoteKey(note: Note): string {
-    return `${note.type}-${note.timing}-${note.position}`;
+  private getEventKey(note: Note): string {
+    return note.timingMs.toFixed(3);
   }
 
-  tick(notes: Note[] | null, currentTimeMs: number): void {
-    if (!this.enabled || !notes) return;
+  schedule(
+    notes: Note[] | null,
+    currentTimeMs: number,
+    playbackSpeed: number = 1,
+    lookAheadMs: number = SCHEDULE_LOOKAHEAD_MS
+  ): void {
+    if (!this.enabled || !notes || !this.audioContext || !this.answerBuffer) return;
+
+    const normalizedPlaybackSpeed = Math.max(playbackSpeed, 0.001);
 
     const adjustedCurrentTime = currentTimeMs - this.timingOffsetMs;
-    const adjustedLastTime = this.lastTickTimeMs - this.timingOffsetMs;
-
-    let shouldPlay = false;
+    const adjustedLastTime = this.lastScheduledTimeMs - this.timingOffsetMs;
+    const adjustedLookAheadTime = adjustedCurrentTime + lookAheadMs;
 
     for (const note of notes) {
-      const noteKey = this.getNoteKey(note);
+      if (!this.shouldPlaySound(note)) continue;
 
-      if (this.playedNotes.has(noteKey)) continue;
+      const eventKey = this.getEventKey(note);
+      if (this.handledEvents.has(eventKey)) continue;
 
       const noteTime = note.timingMs;
-      
-      if (noteTime > adjustedLastTime && noteTime <= adjustedCurrentTime) {
-        if (this.shouldPlaySound(note)) {
-          shouldPlay = true;
-          this.playedNotes.add(noteKey);
+      if (noteTime > adjustedLookAheadTime) continue;
+
+      if (noteTime <= adjustedCurrentTime) {
+        this.handledEvents.add(eventKey);
+        if (noteTime > adjustedLastTime) {
+          this.playAnswerSoundAt(0);
         }
+        continue;
       }
+
+      this.handledEvents.add(eventKey);
+      const delayMs = noteTime - adjustedCurrentTime;
+      const when = this.audioContext.currentTime + delayMs / 1000 / normalizedPlaybackSpeed;
+      this.playAnswerSoundAt(when);
     }
 
-    this.lastTickTimeMs = currentTimeMs;
-
-    if (shouldPlay) {
-      this.playAnswerSound();
-    }
+    this.lastScheduledTimeMs = currentTimeMs;
   }
 
-  reset(currentTimeMs?: number): void {
-    this.playedNotes.clear();
-    // 如果提供了当前时间，使用它作为 lastTickTimeMs，避免播放之前的 note 音效
-    // 如果没有提供，使用 -Infinity（从头开始播放的情况）
-    this.lastTickTimeMs = currentTimeMs ?? -Infinity;
+  reset(currentTimeMs?: number, stopStartedSources: boolean = false): void {
+    this.clearScheduledSources(stopStartedSources);
+    this.handledEvents.clear();
+    this.lastScheduledTimeMs = currentTimeMs ?? -Infinity;
   }
 
   setEnabled(enabled: boolean): void {
+    if (!enabled) {
+      this.clearScheduledSources(true);
+    }
     this.enabled = enabled;
   }
 
@@ -202,6 +246,36 @@ export class AudioManager {
 
   isInitialized(): boolean {
     return this.initialized;
+  }
+
+  private clearScheduledSources(stopStartedSources: boolean = false): void {
+    const now = this.audioContext?.currentTime ?? 0;
+
+    for (const entry of this.scheduledSources) {
+      if (!stopStartedSources && entry.startTime <= now) {
+        continue;
+      }
+
+      try {
+        entry.source.stop();
+      } catch {
+        // 忽略已经结束的 source
+      }
+
+      try {
+        entry.source.disconnect();
+      } catch {
+        // 忽略已经断开的 source
+      }
+
+      try {
+        entry.gainNode.disconnect();
+      } catch {
+        // 忽略已经断开的 gain
+      }
+
+      this.scheduledSources.delete(entry);
+    }
   }
 }
 

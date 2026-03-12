@@ -442,7 +442,18 @@ export function Controls() {
             <div>
               <Group justify="space-between" mb={4}>
                 <Text size="sm">音乐偏移</Text>
-                <Text size="sm" c="dimmed" ff="monospace">{musicOffset}ms</Text>
+                <Group gap={4}>
+                  <Text size="sm" c="dimmed" ff="monospace">{musicOffset}ms</Text>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size="sm"
+                    aria-label="重置音乐偏移"
+                    onClick={() => setMusicOffset(0)}
+                  >
+                    <IconRefresh size={14} />
+                  </ActionIcon>
+                </Group>
               </Group>
               <Slider
                 value={musicOffset}
@@ -469,7 +480,18 @@ export function Controls() {
             <div>
               <Group justify="space-between" mb={4}>
                 <Text size="sm">正解音偏移</Text>
-                <Text size="sm" c="dimmed" ff="monospace">{soundOffset}ms</Text>
+                <Group gap={4}>
+                  <Text size="sm" c="dimmed" ff="monospace">{soundOffset}ms</Text>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size="sm"
+                    aria-label="重置正解音偏移"
+                    onClick={() => setSoundOffset(0)}
+                  >
+                    <IconRefresh size={14} />
+                  </ActionIcon>
+                </Group>
               </Group>
               <Slider
                 value={soundOffset}

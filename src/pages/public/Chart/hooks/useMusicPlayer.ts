@@ -8,6 +8,7 @@ const LEAD_IN_BEATS = 4;
 const DRIFT_THRESHOLD = 0.3;
 const SYNC_INTERVAL_MS = 200;
 const SEEK_THROTTLE_MS = 50;
+const SOURCE_FADE_TIME_S = 0.015;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(min, value), max);
@@ -48,6 +49,7 @@ interface AudioState {
   audioBuffer: AudioBuffer | null;
   sourceNode: AudioBufferSourceNode | null;
   gainNode: GainNode | null;
+  sourceGainNode: GainNode | null;
   startTime: number;
   startOffset: number;
   isSourcePlaying: boolean;
@@ -59,6 +61,7 @@ export function useMusicPlayer() {
     audioBuffer: null,
     sourceNode: null,
     gainNode: null,
+    sourceGainNode: null,
     startTime: 0,
     startOffset: 0,
     isSourcePlaying: false,
@@ -116,18 +119,58 @@ export function useMusicPlayer() {
   }, []);
 
   // 停止当前播放的 source node
-  const stopSource = useCallback(() => {
+  const stopSource = useCallback((immediate: boolean = false) => {
     const state = audioStateRef.current;
-    if (state.sourceNode) {
+    const sourceNode = state.sourceNode;
+    const sourceGainNode = state.sourceGainNode;
+
+    state.sourceNode = null;
+    state.sourceGainNode = null;
+    state.isSourcePlaying = false;
+
+    if (!sourceNode) {
+      return;
+    }
+
+    const cleanup = () => {
       try {
-        state.sourceNode.stop();
+        sourceNode.disconnect();
+      } catch {
+        // 忽略已经断开的 source
+      }
+      try {
+        sourceGainNode?.disconnect();
+      } catch {
+        // 忽略已经断开的 gain
+      }
+    };
+
+    if (immediate || !state.audioContext || !sourceGainNode) {
+      try {
+        sourceNode.stop();
       } catch {
         // 忽略已停止的 source
       }
-      state.sourceNode.disconnect();
-      state.sourceNode = null;
+      cleanup();
+      return;
     }
-    state.isSourcePlaying = false;
+
+    const now = state.audioContext.currentTime;
+
+    try {
+      sourceGainNode.gain.cancelScheduledValues(now);
+      sourceGainNode.gain.setValueAtTime(sourceGainNode.gain.value, now);
+      sourceGainNode.gain.linearRampToValueAtTime(0, now + SOURCE_FADE_TIME_S);
+      sourceNode.stop(now + SOURCE_FADE_TIME_S);
+    } catch {
+      try {
+        sourceNode.stop();
+      } catch {
+        // 忽略已经停止的 source
+      }
+    }
+
+    window.setTimeout(cleanup, SOURCE_FADE_TIME_S * 1000 + 50);
   }, []);
 
   // 确保 AudioContext 已初始化并处于运行状态
@@ -173,18 +216,35 @@ export function useMusicPlayer() {
 
     // 创建新的 source node
     const sourceNode = state.audioContext.createBufferSource();
+    const sourceGainNode = state.audioContext.createGain();
     sourceNode.buffer = state.audioBuffer;
     sourceNode.playbackRate.value = playbackSpeedRef.current;
-    sourceNode.connect(state.gainNode);
+    sourceGainNode.gain.setValueAtTime(0, state.audioContext.currentTime);
+    sourceGainNode.gain.linearRampToValueAtTime(1, state.audioContext.currentTime + SOURCE_FADE_TIME_S);
+    sourceNode.connect(sourceGainNode);
+    sourceGainNode.connect(state.gainNode);
 
     // 处理播放结束
     sourceNode.onended = () => {
       if (state.sourceNode === sourceNode) {
+        state.sourceNode = null;
+        state.sourceGainNode = null;
         state.isSourcePlaying = false;
+      }
+      try {
+        sourceNode.disconnect();
+      } catch {
+        // 忽略已经断开的 source
+      }
+      try {
+        sourceGainNode.disconnect();
+      } catch {
+        // 忽略已经断开的 gain
       }
     };
 
     state.sourceNode = sourceNode;
+    state.sourceGainNode = sourceGainNode;
     state.startTime = state.audioContext.currentTime;
     state.startOffset = clampedPosition;
     state.isSourcePlaying = true;
@@ -211,6 +271,7 @@ export function useMusicPlayer() {
         state.audioContext.close();
         state.audioContext = null;
         state.gainNode = null;
+        state.sourceGainNode = null;
       }
     };
   }, [stopSource]);
@@ -219,7 +280,7 @@ export function useMusicPlayer() {
   useEffect(() => {
     if (!musicUrl) {
       const state = audioStateRef.current;
-      stopSource();
+      stopSource(true);
       state.audioBuffer = null;
       state.startOffset = 0;
       lastUrlRef.current = '';
@@ -256,7 +317,7 @@ export function useMusicPlayer() {
     }
 
     if (musicUrl !== lastUrlRef.current) {
-      stopSource();
+      stopSource(true);
       state.audioBuffer = null;
       state.startOffset = 0;
     }
