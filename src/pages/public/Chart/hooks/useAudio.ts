@@ -11,7 +11,7 @@ export interface UseAudioReturn {
   init: () => Promise<void>;
   resume: () => Promise<void>;
   schedule: (notes: Note[] | null, currentTimeMs: number, playbackSpeed?: number, lookAheadMs?: number) => void;
-  reset: (currentTimeMs?: number) => void;
+  reset: (currentTimeMs?: number, stopStartedSources?: boolean) => void;
   isInitialized: boolean;
   config: AudioConfig;
   setEnabled: (enabled: boolean) => void;
@@ -68,8 +68,8 @@ export function useAudio(options: UseAudioOptions = {}): UseAudioReturn {
     managerRef.current?.schedule(notes, currentTimeMs, playbackSpeed, lookAheadMs);
   }, []);
 
-  const reset = useCallback((currentTimeMs?: number) => {
-    managerRef.current?.reset(currentTimeMs);
+  const reset = useCallback((currentTimeMs?: number, stopStartedSources?: boolean) => {
+    managerRef.current?.reset(currentTimeMs, stopStartedSources);
   }, []);
 
   const updateConfig = useCallback(() => {

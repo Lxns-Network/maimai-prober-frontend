@@ -296,12 +296,12 @@ export function ChartCanvas() {
 
     const currentChart = useGameStore.getState().chartData;
     if (!currentChart) {
-      answerSoundRefs.current.reset();
+      answerSoundRefs.current.reset(undefined, true);
       return;
     }
 
     const currentMs = beatsToMs(playbackTimeRef.current, currentChart.bpmEvents, currentChart.bpm);
-    answerSoundRefs.current.reset(currentMs);
+    answerSoundRefs.current.reset(currentMs, true);
   }, [isPlaying]);
 
   useEffect(() => {
@@ -380,9 +380,9 @@ export function ChartCanvas() {
       return;
     }
 
-    const currentMs = getPlaybackMs(performance.now());
+    const currentMs = beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm);
     resyncAnswerSound(currentMs);
-  }, [soundEnabled, chartData, isPlaying, getPlaybackMs, resyncAnswerSound]);
+  }, [soundEnabled, chartData, isPlaying, resyncAnswerSound]);
 
   useEffect(() => {
     answerSoundRefs.current.setVolume(soundVolume);
@@ -395,9 +395,9 @@ export function ChartCanvas() {
       return;
     }
 
-    const currentMs = getPlaybackMs(performance.now());
+    const currentMs = beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm);
     resyncAnswerSound(currentMs);
-  }, [soundOffset, chartData, isPlaying, soundEnabled, getPlaybackMs, resyncAnswerSound]);
+  }, [soundOffset, chartData, isPlaying, soundEnabled, resyncAnswerSound]);
 
   // 保存当前播放速度的 ref，用于在动画循环中获取最新值
   const playbackSpeedRef = useRef(playbackSpeed);
@@ -419,6 +419,10 @@ export function ChartCanvas() {
     if (!isPlaying || !chartData || !soundEnabled) return;
 
     const intervalId = window.setInterval(() => {
+      if (!useGameStore.getState().isPlaying || !useGameSettingsStore.getState().soundEnabled) {
+        return;
+      }
+
       const currentMs = getPlaybackMs(performance.now());
       answerSoundRefs.current.schedule(chartData.notes, currentMs, playbackSpeedRef.current);
     }, 250);
