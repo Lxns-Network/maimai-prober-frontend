@@ -11,6 +11,7 @@ export interface AudioManagerConfig {
 
 interface ScheduledSourceEntry {
   source: AudioBufferSourceNode;
+  gainNode: GainNode;
   startTime: number;
 }
 
@@ -91,6 +92,7 @@ export class AudioManager {
       if (eventKey) {
         this.scheduledSources.set(eventKey, {
           source,
+          gainNode,
           startTime: when > 0 ? when : this.audioContext.currentTime,
         });
       }
@@ -98,6 +100,18 @@ export class AudioManager {
       source.onended = () => {
         if (eventKey) {
           this.scheduledSources.delete(eventKey);
+        }
+
+        try {
+          source.disconnect();
+        } catch {
+          // 忽略已经断开的 source
+        }
+
+        try {
+          gainNode.disconnect();
+        } catch {
+          // 忽略已经断开的 gain
         }
       };
     } catch (error) {
@@ -256,6 +270,12 @@ export class AudioManager {
         entry.source.disconnect();
       } catch {
         // 忽略已经断开的 source
+      }
+
+      try {
+        entry.gainNode.disconnect();
+      } catch {
+        // 忽略已经断开的 gain
       }
 
       this.scheduledSources.delete(eventKey);

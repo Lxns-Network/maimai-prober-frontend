@@ -448,6 +448,7 @@ export function Controls() {
                     variant="subtle"
                     color="gray"
                     size="sm"
+                    aria-label="重置音乐偏移"
                     onClick={() => setMusicOffset(0)}
                   >
                     <IconRefresh size={14} />
@@ -485,6 +486,7 @@ export function Controls() {
                     variant="subtle"
                     color="gray"
                     size="sm"
+                    aria-label="重置正解音偏移"
                     onClick={() => setSoundOffset(0)}
                   >
                     <IconRefresh size={14} />
