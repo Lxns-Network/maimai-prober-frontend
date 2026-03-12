@@ -71,6 +71,7 @@ export function ChartCanvas() {
   const fpsRef = useRef<number>(0);
   const frameTimesRef = useRef<number[]>([]);
   const lastFrameTimeRef = useRef<number>(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const answerSound = useAudio({ autoInit: true });
   const answerSoundRefs = useRef({
@@ -121,6 +122,44 @@ export function ChartCanvas() {
     const elapsed = (timestamp - playbackStartTimeRef.current) * playbackSpeedRef.current;
     return playbackStartMsRef.current + elapsed;
   }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    const wakeLock = wakeLockRef.current;
+    wakeLockRef.current = null;
+
+    if (!wakeLock) {
+      return;
+    }
+
+    try {
+      await wakeLock.release();
+    } catch {
+      // 忽略已经释放的 wake lock
+    }
+  }, []);
+
+  const requestWakeLock = useCallback(async () => {
+    if (!isPlaying || document.visibilityState !== 'visible' || wakeLockRef.current) {
+      return;
+    }
+
+    const wakeLockApi = navigator.wakeLock;
+    if (!wakeLockApi) {
+      return;
+    }
+
+    try {
+      const wakeLock = await wakeLockApi.request('screen');
+      wakeLockRef.current = wakeLock;
+      wakeLock.addEventListener?.('release', () => {
+        if (wakeLockRef.current === wakeLock) {
+          wakeLockRef.current = null;
+        }
+      });
+    } catch {
+      // 浏览器/系统可能拒绝 wake lock，预览继续工作即可
+    }
+  }, [isPlaying]);
 
   const resyncAnswerSound = useCallback((currentMs: number, speed: number = playbackSpeedRef.current) => {
     if (!chartData || !soundEnabled) {
@@ -220,6 +259,37 @@ export function ChartCanvas() {
       rendererRef.current.setIsPlaying(isPlaying);
     }
   }, [isPlaying]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      void requestWakeLock();
+      return;
+    }
+
+    void releaseWakeLock();
+  }, [isPlaying, requestWakeLock, releaseWakeLock]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void requestWakeLock();
+        return;
+      }
+
+      void releaseWakeLock();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [requestWakeLock, releaseWakeLock]);
+
+  useEffect(() => {
+    return () => {
+      void releaseWakeLock();
+    };
+  }, [releaseWakeLock]);
 
   useEffect(() => {
     if (isPlaying) return;
