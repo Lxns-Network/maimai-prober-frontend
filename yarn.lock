@@ -1071,7 +1071,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/carousel@npm:^8.2.8":
+"@mantine/carousel@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/carousel@npm:8.3.16"
   peerDependencies:
@@ -1085,7 +1085,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/charts@npm:^8.2.8":
+"@mantine/charts@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/charts@npm:8.3.16"
   peerDependencies:
@@ -1098,7 +1098,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/code-highlight@npm:^8.2.8":
+"@mantine/code-highlight@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/code-highlight@npm:8.3.16"
   dependencies:
@@ -1112,7 +1112,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/core@npm:^8.2.8":
+"@mantine/core@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/core@npm:8.3.16"
   dependencies:
@@ -1130,7 +1130,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/dates@npm:^8.2.8":
+"@mantine/dates@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/dates@npm:8.3.16"
   dependencies:
@@ -1145,7 +1145,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/form@npm:^8.2.8":
+"@mantine/form@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/form@npm:8.3.16"
   dependencies:
@@ -1157,7 +1157,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/hooks@npm:^8.2.8":
+"@mantine/hooks@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/hooks@npm:8.3.16"
   peerDependencies:
@@ -1166,7 +1166,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/modals@npm:^8.2.8":
+"@mantine/modals@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/modals@npm:8.3.16"
   peerDependencies:
@@ -1178,7 +1178,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/notifications@npm:^8.2.8":
+"@mantine/notifications@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/notifications@npm:8.3.16"
   dependencies:
@@ -1193,7 +1193,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/nprogress@npm:^8.2.8":
+"@mantine/nprogress@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/nprogress@npm:8.3.16"
   dependencies:
@@ -1216,7 +1216,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mantine/tiptap@npm:^8.2.8":
+"@mantine/tiptap@npm:^8.3.16":
   version: 8.3.16
   resolution: "@mantine/tiptap@npm:8.3.16"
   peerDependencies:
@@ -5733,17 +5733,17 @@ __metadata:
   dependencies:
     "@cap.js/widget": "npm:^0.1.34"
     "@formkit/auto-animate": "npm:^0.9.0"
-    "@mantine/carousel": "npm:^8.2.8"
-    "@mantine/charts": "npm:^8.2.8"
-    "@mantine/code-highlight": "npm:^8.2.8"
-    "@mantine/core": "npm:^8.2.8"
-    "@mantine/dates": "npm:^8.2.8"
-    "@mantine/form": "npm:^8.2.8"
-    "@mantine/hooks": "npm:^8.2.8"
-    "@mantine/modals": "npm:^8.2.8"
-    "@mantine/notifications": "npm:^8.2.8"
-    "@mantine/nprogress": "npm:^8.2.8"
-    "@mantine/tiptap": "npm:^8.2.8"
+    "@mantine/carousel": "npm:^8.3.16"
+    "@mantine/charts": "npm:^8.3.16"
+    "@mantine/code-highlight": "npm:^8.3.16"
+    "@mantine/core": "npm:^8.3.16"
+    "@mantine/dates": "npm:^8.3.16"
+    "@mantine/form": "npm:^8.3.16"
+    "@mantine/hooks": "npm:^8.3.16"
+    "@mantine/modals": "npm:^8.3.16"
+    "@mantine/notifications": "npm:^8.3.16"
+    "@mantine/nprogress": "npm:^8.3.16"
+    "@mantine/tiptap": "npm:^8.3.16"
     "@mdi/js": "npm:^7.4.47"
     "@mdi/react": "npm:^1.6.1"
     "@sentry/react": "npm:^10.5.0"
