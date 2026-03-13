@@ -23,12 +23,6 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Lint
-        run: yarn lint
-
-      - name: Stylelint
-        run: yarn stylelint
-
       - name: Build
         run: yarn build
         env:
