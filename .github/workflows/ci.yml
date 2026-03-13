@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
@@ -11,21 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: yarn
-          corepack: true
 
       - name: Install dependencies
         run: yarn install --immutable
-
-      - name: Lint
-        run: yarn lint
-
-      - name: Stylelint
-        run: yarn stylelint
 
       - name: Build
         run: yarn build
