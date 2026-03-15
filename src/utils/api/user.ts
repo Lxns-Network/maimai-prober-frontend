@@ -13,10 +13,6 @@ export async function getUserCrawlToken(): Promise<Response> {
   return fetchAPI("user/crawl/token", { method: "GET" });
 }
 
-export async function getCrawlStatus(): Promise<Response> {
-  return fetchAPI("user/crawl/status", { method: "GET" });
-}
-
 export async function updateUserConfig(game: string, data: object): Promise<Response> {
   return fetchAPI(`user/${game}/config`, { method: "POST", body: data });
 }

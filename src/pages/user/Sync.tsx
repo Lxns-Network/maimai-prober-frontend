@@ -8,10 +8,11 @@ import {
 import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
 import { useIdle, useMediaQuery } from '@mantine/hooks';
-import { IconAlertCircle, IconDownload, IconHelp, IconRepeat } from "@tabler/icons-react";
+import { IconAlertCircle, IconChevronRight, IconDownload, IconHelp, IconRepeat } from "@tabler/icons-react";
 import { openAlertModal } from "@/utils/modal";
 import { checkProxy } from "@/utils/checkProxy.ts";
-import { getUserCrawlToken, getCrawlStatus } from "@/utils/api/user.ts";
+import { getUserCrawlToken } from "@/utils/api/user.ts";
+import { API_URL } from "@/utils/api/api.ts";
 import classes from './Sync.module.css';
 
 import { LoginAlert } from "@/components/LoginAlert";
@@ -55,7 +56,8 @@ export interface ScoreChangesProps {
 interface CrawlStatusProps {
   game: Game;
   friend_code: number;
-  status: string;
+  status: "pending" | "assigned" | "completed" | "failed";
+  error_message?: string;
   create_time: string;
   complete_time: string;
   scores: ScoreChangesProps[];
@@ -69,6 +71,7 @@ interface CrawlStatisticProps {
 
 const SyncContent = () => {
   const [proxyAvailable, setProxyAvailable] = useState(false);
+  const [proxySkipped, setProxySkipped] = useState(false);
   const [networkError, setNetworkError] = useState(false);
   const [crawlStatistic, setCrawlStatistic] = useState<CrawlStatisticProps | null>(null);
   const [crawlToken, setCrawlToken] = useState<string | null>(null);
@@ -117,7 +120,7 @@ const SyncContent = () => {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (idle || step > 1) return;
+      if (idle || step > 1 || proxySkipped) return;
 
       checkProxy().then((result) => {
         if (result.proxyAvailable && !result.networkError) {
@@ -135,47 +138,81 @@ const SyncContent = () => {
     };
   });
 
-  const checkCrawlStatus = async () => {
-    if (idle || step === 0) return;
+  useEffect(() => {
+    if (isLoggedOut || !(proxyAvailable || proxySkipped)) return;
 
-    if (crawlStatus != null && crawlStatus.status != "pending") {
-      setStep(3);
-      return;
-    }
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-    try {
-      const res = await getCrawlStatus();
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      if (data.data != null) {
-        if (data.data.status === "pending") {
-          setStep(2);
-        } else {
-          setStep(3);
-          if (data.data.status === "failed") {
-            openAlertModal("同步游戏数据失败", "你的游戏数据同步时出现了错误，请查看同步结果了解详情。")
-          } else if (data.data.status === "finished") {
-            openAlertModal("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。")
+    const abortController = new AbortController();
+
+    let lastStatus: CrawlStatusProps["status"] | null = null;
+
+    const connectSSE = async () => {
+      try {
+        const res = await fetch(`${API_URL}/user/crawl/status`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "text/event-stream",
+          },
+          signal: abortController.signal,
+        });
+
+        if (!res.ok || !res.body) return;
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        let readerDone = false;
+        while (!readerDone) {
+          const { done, value } = await reader.read();
+          if (done) { readerDone = true; break; }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const parsed = JSON.parse(line.slice(6));
+            if (!parsed || !parsed.status) continue;
+            const status = parsed as CrawlStatusProps;
+            lastStatus = status.status;
+            setCrawlStatus(prev => ({ ...prev, ...status }));
+
+            if (status.status === "pending" || status.status === "assigned") {
+              setStep(2);
+            } else if (status.status === "completed") {
+              setStep(3);
+              openAlertModal("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
+            } else if (status.status === "failed") {
+              setStep(3);
+              openAlertModal("同步游戏数据失败", status.error_message || "你的游戏数据同步时出现了错误，请查看同步结果了解详情。");
+            }
           }
         }
-        setCrawlStatus(data.data);
+
+        // 连接正常关闭，若任务未完成则重连
+        if (lastStatus && lastStatus !== "completed" && lastStatus !== "failed") {
+          setTimeout(connectSSE, 3000);
+        }
+      } catch (error) {
+        if ((error as DOMException).name === "AbortError") return;
+        console.error("SSE connection error:", error);
+        // 异常断开，若有进行中的任务则重连
+        if (lastStatus && lastStatus !== "completed" && lastStatus !== "failed") {
+          setTimeout(connectSSE, 3000);
+        }
       }
-    } catch (error) {
-      openAlertModal("获取同步结果失败", `${error}`);
-    }
-  }
+    };
 
-  useEffect(() => {
-    if (isLoggedOut) return;
-
-    const intervalId = setInterval(checkCrawlStatus, 5000);
+    connectSSE();
 
     return () => {
-      clearInterval(intervalId);
+      abortController.abort();
     };
-  }, [crawlStatus, proxyAvailable]);
+  }, [proxyAvailable, proxySkipped, game]);
 
   const { width } = useShellViewportSize();
   const [containerWidth, setContainerWidth] = useState(width);
@@ -210,7 +247,7 @@ const SyncContent = () => {
         </Alert>
       )}
       <Stepper active={
-        proxyAvailable ? (
+        (proxyAvailable || proxySkipped) ? (
           crawlStatus != null ? (
             crawlStatus.status !== "pending" ? 4 : 3
           ) : 2
@@ -218,9 +255,19 @@ const SyncContent = () => {
       } orientation="vertical" allowNextStepsSelect={false}>
         <Stepper.Step label="步骤 1" description={
           <Group gap="xs" w={containerWidth}>
-            <Text fz="sm">
-              配置 HTTP 代理
-            </Text>
+            <Group gap="xs" justify="space-between" w="100%">
+              <Text fz="sm">
+                配置 HTTP 代理
+              </Text>
+              {!proxyAvailable && !proxySkipped && (
+                <Button variant="subtle" size="compact-xs" rightSection={<IconChevronRight size={14} />} styles={{ section: { marginInlineStart: 2 } }} onClick={() => {
+                  setProxySkipped(true);
+                  setStep(1);
+                }}>
+                  跳过
+                </Button>
+              )}
+            </Group>
             <Card withBorder radius="md" className={classes.card} mb="md" p={0} w="100%">
               <Flex align="center" justify="space-between" m="md">
                 <Group className={classes.loaderText} wrap="nowrap">
@@ -294,7 +341,7 @@ const SyncContent = () => {
               </Text>
             </Card>
           </Group>
-        } loading={!proxyAvailable} />
+        } loading={!proxyAvailable && !proxySkipped} />
         <Stepper.Step label="步骤 2" description={
           <Stack gap="xs" w={containerWidth}>
             <Text fz="sm">
@@ -341,12 +388,12 @@ const SyncContent = () => {
             )}
             <Space h="sm" />
           </Stack>
-        } loading={proxyAvailable && !crawlStatus} />
+        } loading={(proxyAvailable || proxySkipped) && !crawlStatus} />
         <Stepper.Step label="步骤 4" description={
           <Text fz="sm">
             等待数据同步完成
           </Text>
-        } loading={proxyAvailable && crawlStatus?.status === "pending"} />
+        } loading={(proxyAvailable || proxySkipped) && crawlStatus?.status === "pending"} />
       </Stepper>
       <LoginAlert content="你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。" mt="xs" radius="md" />
       {!isLoggedOut && (
@@ -358,20 +405,21 @@ const SyncContent = () => {
             <Text fz="lg" c={
               crawlStatus ? (
                 crawlStatus.status === "failed" ? "red" : (
-                  crawlStatus.status === "finished" ? "teal" : "default"
+                    crawlStatus.status === "completed" ? "teal" : "default"
                 )
               ) : "default"
             }>
               {!crawlStatus && "等待前置步骤完成"}
               {crawlStatus && {
-                "pending": "服务端正在爬取游戏数据",
-                "finished": "游戏数据同步成功",
+                "pending": "正在排队等待爬取",
+                "assigned": "正在爬取游戏数据",
+                "completed": "游戏数据同步成功",
                 "failed": "成绩同步不完全"
               }[crawlStatus.status]}
             </Text>
           </Card.Section>
 
-          {(!crawlStatus || (crawlStatus.status !== "finished" && crawlStatus.status !== "failed")) ? (
+          {(!crawlStatus || (crawlStatus.status !== "completed" && crawlStatus.status !== "failed")) ? (
             <Card.Section p="md">
               <Text size="sm">
                 你的「{game === "maimai" ? "舞萌 DX" : "中二节奏"}」玩家信息与成绩将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
