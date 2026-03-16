@@ -54,5 +54,14 @@
     "image": "reisasol",
     "button": "添加",
     "url": "https://bot.q.qq.com/s/c2mloqdgv?id=102172520"
+  },
+  
+  {
+    "title": "Sakiko",
+    "tags": ["QQ 机器人", "中二节奏"],
+    "description": "适用于国服中二节奏的 查分/牌子进度/游戏内容 命令生成图表QQ Bot，支持落雪账户一键绑定",
+    "image": "sakiko",
+    "button": "了解更多",
+    "url": "https://sakiko.moeneko.cc"
   }
 ]
