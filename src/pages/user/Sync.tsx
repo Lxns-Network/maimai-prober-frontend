@@ -43,7 +43,7 @@ const SyncContent = () => {
 
   const activeSyncMethod: SyncMethod = isLoggedOut ? "proxy" : syncMethod;
   const syncMethodOptions = [
-    { name: "自动同步", description: "使用 HTTP 代理与微信 OAuth 自动同步成绩", value: "proxy" },
+    { name: "代理同步", description: "使用 HTTP 代理与微信 OAuth 同步成绩", value: "proxy" },
     ...(!isLoggedOut ? [{
       name: "手动上传 HTML",
       description: "上传成绩页面的 HTML 文件",

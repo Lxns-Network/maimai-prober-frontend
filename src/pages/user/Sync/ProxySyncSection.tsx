@@ -250,7 +250,7 @@ export const ProxySyncSection = ({ crawlStatistic, game, onGameChange, onSyncRes
       {(new Date()).getHours() >= 18 && (
         <Alert radius="md" icon={<IconAlertCircle />} title="游玩高峰期警告" color="yellow" mb="xl">
           <Text size="sm" mb="md">
-            由于现在是游玩高峰期，自动同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，尝试更改爬取设置以增加稳定性，或者你也可以选择手动上传 HTML 文件。
+            由于现在是游玩高峰期，同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，尝试更改爬取设置以增加稳定性，或者你也可以选择手动上传 HTML 文件。
           </Text>
           <Button variant="outline" color="yellow" onClick={() => navigate("/user/settings")}>
             更改爬取设置
@@ -260,7 +260,7 @@ export const ProxySyncSection = ({ crawlStatistic, game, onGameChange, onSyncRes
       {(new Date()).getHours() >= 4 && (new Date()).getHours() < 7 && (
         <Alert radius="md" icon={<IconAlertCircle />} title="NET 维护中" color="red" mb="xl">
           <Text size="sm">
-            由于现在是 NET 维护时间，故无法进行自动同步，请于 7:00 后重试。
+            由于现在是 NET 维护时间，故无法进行同步，请于 7:00 后重试。
           </Text>
         </Alert>
       )}
