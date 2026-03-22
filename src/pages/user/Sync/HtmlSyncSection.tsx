@@ -277,7 +277,7 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
             </Button>
           </Group>
           <Text size="sm" c="dimmed">
-            文件可多选；文本输入会通过弹窗加入待上传列表。
+            文件可多选，文本输入可多次添加。
           </Text>
           <Card withBorder radius="md" p="md">
             <Stack gap="sm">
@@ -297,7 +297,7 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
               </Group>
               {uploadItems.length === 0 ? (
                 <Text size="sm" c="dimmed">
-                  暂无待上传内容。你可以添加多个 HTML 文件，或通过弹窗多次粘贴文本后加入列表。
+                  暂无待上传内容。你可以添加多个 HTML 文件，或通过多次粘贴 HTML 文本加入列表。
                 </Text>
               ) : (
                 <Stack gap="xs">
