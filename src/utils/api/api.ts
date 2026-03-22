@@ -55,7 +55,7 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
       "Content-Type": "application/json",
       ...headers,
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: body ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,
   })
 }
 

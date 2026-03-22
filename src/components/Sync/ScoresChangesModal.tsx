@@ -1,7 +1,7 @@
 import {
   Badge, Flex, Group, HoverCard, Image, Mark, Modal, NumberFormatter, rem, Space, Text, ThemeIcon
 } from "@mantine/core";
-import { ScoreChangeDetailProps, ScoreChangesProps } from "@/pages/user/Sync.tsx";
+import { ScoreChangeDetailProps, ScoreChangesProps } from "@/types/sync";
 import { DataTable } from "mantine-datatable";
 import { IconArrowRight, IconDatabaseOff, IconHelp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
