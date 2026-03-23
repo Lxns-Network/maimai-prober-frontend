@@ -117,7 +117,7 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
   const appendUploadItem = (item: Omit<UploadItem, "id">) => {
     setUploadItems((current) => [...current, {
       ...item,
-      id: `${Date.now()}-${current.length}-${Math.random().toString(36).slice(2, 8)}`,
+      id: crypto.randomUUID(),
     }]);
   };
 
