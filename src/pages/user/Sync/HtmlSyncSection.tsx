@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { Alert, Badge, Button, Card, Group, Modal, Paper, Stack, Text, Textarea, ThemeIcon } from "@mantine/core";
+import { Alert, Badge, Button, Card, Group, Modal, Paper, SimpleGrid, Stack, Text, Textarea, ThemeIcon } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { IconAlertCircle, IconCode, IconFileImport, IconTrash, IconUpload } from "@tabler/icons-react";
-import { Game } from "@/types/game";
+import { navigate } from "vike/client/router";
+import useGame from "@/hooks/useGame.ts";
 import { RadioCardGroup } from "@/components/RadioCardGroup.tsx";
-import { openAlertModal, openConfirmModal } from "@/utils/modal";
+import { openAlertModal } from "@/utils/modal";
+import { ScoresChangesModal } from "@/components/Sync/ScoresChangesModal.tsx";
 import { syncHtml } from "@/utils/api/user.ts";
-import { ScoreChangesProps, SyncResultSnapshot } from "@/types/sync";
+import { ScoreChangesProps, SyncResult } from "@/pages/user/Sync";
 import classes from "../Sync.module.css";
 
 interface UploadItem {
@@ -17,14 +20,8 @@ interface UploadItem {
   error?: string;
 }
 
-interface HtmlSyncSectionProps {
-  game: Game;
-  onGameChange: (value: Game) => void;
-  onSyncResult: (result: SyncResultSnapshot) => void;
-}
-
 interface HtmlSyncResult {
-  game: Game;
+  game: SyncResult["game"];
   scores: ScoreChangesProps[];
 }
 
@@ -55,7 +52,17 @@ const isLikelyHtmlDocument = (content: string) => {
 
 const normalizeHtmlContent = (content: string) => content.trim();
 
-const createHtmlSyncResult = (game: Game, scores: ScoreChangesProps[]): HtmlSyncResult => ({
+const extractHtmlTitle = (content: string) => {
+  const match = content.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = match?.[1]
+    ?.replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return title || null;
+};
+
+const createHtmlSyncResult = (game: SyncResult["game"], scores: ScoreChangesProps[]): HtmlSyncResult => ({
   game,
   scores,
 });
@@ -108,11 +115,16 @@ const mergeHtmlSyncResults = (results: HtmlSyncResult[]): HtmlSyncResult | null 
   };
 };
 
-export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSectionProps) => {
+export const HtmlSyncSection = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
   const [isTextModalOpened, setIsTextModalOpened] = useState(false);
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+  const [resultModalOpened, setResultModalOpened] = useState(false);
+  const [hasImportedResult, setHasImportedResult] = useState(false);
+  const [game, setGame] = useGame();
+  const small = useMediaQuery("(max-width: 600px)");
 
   const appendUploadItem = (item: Omit<UploadItem, "id">) => {
     setUploadItems((current) => [...current, {
@@ -167,8 +179,9 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
     }
 
     const textItemCount = uploadItems.filter((item) => item.source === "text").length + 1;
+    const pageTitle = extractHtmlTitle(trimmed);
     appendUploadItem({
-      name: `粘贴内容 ${textItemCount}`,
+      name: pageTitle || `未知网页 ${textItemCount}`,
       source: "text",
       content: trimmed,
       size: new Blob([trimmed]).size,
@@ -224,7 +237,7 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
             ...item,
             error: failureMap.get(item.id),
           })));
-        throw new Error(`导入失败，共 ${failures.length} 份 HTML 处理失败。`);
+        throw new Error(`共 ${failures.length} 份 HTML 处理失败。`);
       }
       if (!mergedResult) {
         throw new Error("没有可处理的 HTML 输入。");
@@ -238,24 +251,22 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
             ...item,
             error: failureMap.get(item.id),
           })));
-        openConfirmModal(
-          "部分导入失败",
-          `成功导入 ${results.length} 份 HTML，失败 ${failures.length} 份。`,
-          () => {
-            onSyncResult({
-              game: mergedResult.game,
-              scores: mergedResult.scores,
-            });
-          }
-        );
+        setHasImportedResult(true);
+        setSyncResult({
+          game: mergedResult.game,
+          scores: mergedResult.scores,
+        });
+        openAlertModal("部分导入失败", `成功导入 ${results.length} 份 HTML，失败 ${failures.length} 份。`);
         return;
       }
 
       setUploadItems([]);
-      onSyncResult({
+      setHasImportedResult(true);
+      setSyncResult({
         game: mergedResult.game,
         scores: mergedResult.scores,
       });
+      setResultModalOpened(true);
     } catch (error) {
       openAlertModal("导入失败", `${error}`);
     } finally {
@@ -265,6 +276,12 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
 
   return (
     <>
+      <ScoresChangesModal
+        game={syncResult?.game ?? game}
+        scores={syncResult?.scores ?? []}
+        opened={resultModalOpened}
+        onClose={() => setResultModalOpened(false)}
+      />
       <Modal opened={isTextModalOpened} onClose={() => setIsTextModalOpened(false)} title="粘贴 HTML 文本" centered>
         <Stack gap="md">
           <Text size="sm" c="dimmed">
@@ -291,18 +308,18 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
           <div>
             <Text fz="lg" fw={700}>上传 HTML 文件</Text>
             <Text fz="sm" c="dimmed" mt={4}>
-              上传你手动保存的成绩页面 HTML 文件
+              上传你保存的成绩页面 HTML 文件
             </Text>
           </div>
           <div>
             <Text fz="sm" mb="xs">选择游戏</Text>
             <RadioCardGroup
               data={[
-                { name: '舞萌 DX', description: '导入舞萌 DX 成绩页面', value: 'maimai' },
-                { name: '中二节奏', description: '导入中二节奏成绩页面', value: 'chunithm' },
+                { name: '舞萌 DX', description: '导入舞萌 DX 页面', value: 'maimai' },
+                { name: '中二节奏', description: '导入中二节奏页面', value: 'chunithm' },
               ]}
               value={game}
-              onChange={(value) => onGameChange(value as Game)}
+              onChange={(value) => setGame(value as typeof game)}
             />
           </div>
           <Alert radius="md" color="blue" icon={<IconFileImport size={18} />} title="文件要求">
@@ -392,6 +409,17 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
               )}
             </Stack>
           </Card>
+          <SimpleGrid cols={small ? 2 : 3}>
+            <Button disabled={!hasImportedResult} onClick={() => setResultModalOpened(true)}>
+              查看同步结果
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/user/profile")}>
+              账号详情
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/user/scores")}>
+              成绩管理
+            </Button>
+          </SimpleGrid>
         </Stack>
       </Card>
     </>
