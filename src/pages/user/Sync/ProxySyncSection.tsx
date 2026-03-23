@@ -280,7 +280,7 @@ export const ProxySyncSection = ({ crawlStatistic, game, onGameChange, onSyncRes
                   <Group className={classes.loaderText} wrap="nowrap">
                     {isProxyAvailable ? (
                       <div>
-                        <Text size="lg" c="tal">HTTP 代理已配置</Text>
+                        <Text size="lg" c="teal">HTTP 代理已配置</Text>
                         <Text size="xs" c="dimmed">请继续执行下一步操作</Text>
                       </div>
                     ) : (hasNetworkError ? (

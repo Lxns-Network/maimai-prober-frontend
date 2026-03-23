@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Alert, Badge, Button, Card, Group, Modal, Paper, Stack, Text, Textarea } from "@mantine/core";
-import { IconCode, IconFileImport, IconTrash, IconUpload } from "@tabler/icons-react";
+import { Alert, Badge, Button, Card, Group, Modal, Paper, Stack, Text, Textarea, ThemeIcon } from "@mantine/core";
+import { IconAlertCircle, IconCode, IconFileImport, IconTrash, IconUpload } from "@tabler/icons-react";
 import { Game } from "@/types/game";
 import { RadioCardGroup } from "@/components/RadioCardGroup.tsx";
-import { openAlertModal } from "@/utils/modal";
+import { openAlertModal, openConfirmModal } from "@/utils/modal";
 import { syncHtml } from "@/utils/api/user.ts";
 import { ScoreChangesProps, SyncResultSnapshot } from "@/types/sync";
 import classes from "../Sync.module.css";
@@ -14,6 +14,7 @@ interface UploadItem {
   source: "file" | "text";
   content: string;
   size: number;
+  error?: string;
 }
 
 interface HtmlSyncSectionProps {
@@ -25,6 +26,11 @@ interface HtmlSyncSectionProps {
 interface HtmlSyncResult {
   game: Game;
   scores: ScoreChangesProps[];
+}
+
+interface HtmlSyncFailure {
+  name: string;
+  reason: string;
 }
 
 const scoreChangeKey = (score: ScoreChangesProps) => `${score.id}:${score.type}:${score.level_index}`;
@@ -184,19 +190,65 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
     const uploadGame = game;
     setIsUploading(true);
     try {
+      const itemsToUpload = uploadItems.map((item) => ({ ...item }));
       const results: HtmlSyncResult[] = [];
-      for (const item of uploadItems) {
-        const res = await syncHtml(uploadGame, item.content);
-        const data = await res.json();
-        if (!data.success) {
-          throw new Error(`「${item.name}」导入失败：${data.message}`);
+      const failures: Array<HtmlSyncFailure & { id: string }> = [];
+      for (const item of itemsToUpload) {
+        try {
+          const res = await syncHtml(uploadGame, item.content);
+          const data = await res.json();
+          if (!data.success) {
+            failures.push({
+              id: item.id,
+              name: item.name,
+              reason: data.message,
+            });
+            continue;
+          }
+          results.push(createHtmlSyncResult(uploadGame, data.data));
+        } catch (error) {
+          failures.push({
+            id: item.id,
+            name: item.name,
+            reason: `${error}`,
+          });
         }
-        results.push(createHtmlSyncResult(uploadGame, data.data));
       }
 
       const mergedResult = mergeHtmlSyncResults(results);
+      if (!mergedResult && failures.length > 0) {
+        const failureMap = new Map(failures.map((failure) => [failure.id, failure.reason]));
+        setUploadItems(itemsToUpload
+          .filter((item) => failureMap.has(item.id))
+          .map((item) => ({
+            ...item,
+            error: failureMap.get(item.id),
+          })));
+        throw new Error(`导入失败，共 ${failures.length} 份 HTML 处理失败。`);
+      }
       if (!mergedResult) {
         throw new Error("没有可处理的 HTML 输入。");
+      }
+
+      if (failures.length > 0) {
+        const failureMap = new Map(failures.map((failure) => [failure.id, failure.reason]));
+        setUploadItems(itemsToUpload
+          .filter((item) => failureMap.has(item.id))
+          .map((item) => ({
+            ...item,
+            error: failureMap.get(item.id),
+          })));
+        openConfirmModal(
+          "部分导入失败",
+          `成功导入 ${results.length} 份 HTML，失败 ${failures.length} 份。`,
+          () => {
+            onSyncResult({
+              game: mergedResult.game,
+              scores: mergedResult.scores,
+            });
+          }
+        );
+        return;
       }
 
       setUploadItems([]);
@@ -308,10 +360,20 @@ export const HtmlSyncSection = ({ game, onGameChange, onSyncResult }: HtmlSyncSe
                           <Group gap="xs" mb={4}>
                             <Text fw={600} truncate>{item.name}</Text>
                             <Badge variant="light">{item.source === "file" ? "文件" : "文本"}</Badge>
+                            {item.error && (
+                              <ThemeIcon color="red" variant="light" size="sm" radius="xl">
+                                <IconAlertCircle size={12} />
+                              </ThemeIcon>
+                            )}
                           </Group>
                           <Text size="sm" c="dimmed">
                             大小约 {(item.size / 1024).toFixed(1)} KB，长度 {item.content.length} 字符
                           </Text>
+                          {item.error && (
+                            <Text size="sm" c="red" mt={4}>
+                              {item.error}
+                            </Text>
+                          )}
                         </div>
                         <Button
                           variant="subtle"
