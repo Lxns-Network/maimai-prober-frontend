@@ -22,6 +22,11 @@ const RatingBadge = ({ game, rating }: { game: string, rating: number }) => {
   )
 }
 
+function TruncateToTwoDecimal(value: number): number {
+    return Math.floor(value * 100) / 100;
+}
+
+
 export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBestsProps }) {
   const [game] = useGame();
 
@@ -49,21 +54,21 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
     bests = bests as ChunithmBestsProps;
     data.push({
       label: 'B30',
-      count: Math.floor(bests.bests.reduce((acc, score) => acc + score.rating, 0) / bests.bests.length * 100) / 100 || 0,
+      count: Math.floor(bests.bests.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.bests.length * 100) / 100 || 0,
       color: '#228be6',
       min: bests.bests.length > 0 ? bests.bests[bests.bests.length - 1].rating : 0,
       max: bests.bests.length > 0 ? bests.bests[0].rating : 0
     });
     data.push({
       label: 'S10',
-      count: Math.floor(bests.selections.reduce((acc, score) => acc + score.rating, 0) / bests.selections.length * 100) / 100 || 0,
+      count: Math.floor(bests.selections.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.selections.length * 100) / 100 || 0,
       color: '#228be6',
       min: bests.selections.length > 0 ? bests.selections[bests.selections.length - 1].rating : 0,
       max: bests.selections.length > 0 ? bests.selections[0].rating : 0
     });
     data.push({
       label: 'N20',
-      count: Math.floor(bests.new_bests.reduce((acc, score) => acc + score.rating, 0) / bests.new_bests.length * 100) / 100 || 0,
+      count: Math.floor(bests.new_bests.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.new_bests.length * 100) / 100 || 0,
       color: '#228be6',
       min: bests.new_bests.length > 0 ? bests.new_bests[bests.new_bests.length - 1].rating : 0,
       max: bests.new_bests.length > 0 ? bests.new_bests[0].rating : 0
