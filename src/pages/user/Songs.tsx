@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { Text, Flex, Anchor, Space, Transition } from "@mantine/core";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
@@ -62,6 +62,7 @@ const SongsContent = () => {
   const [songCollections, setSongCollections] = useState<SongCollectionItemProps[] | null>(null);
   const getSongList = useSongListStore((state) => state.getSongList);
 
+  const switchingGame = useRef(false);
   const { scores: fetchedScores } = useSongBests(game, song);
 
   const getSongCollectionsHandler = async (songId: number) => {
@@ -84,6 +85,7 @@ const SongsContent = () => {
     setSongList(getSongList(game));
 
     if (prevGame !== undefined && prevGame !== game) {
+      switchingGame.current = true;
       setScores([]);
       setSongCollections(null);
       window.history.replaceState(null, '', window.location.pathname);
@@ -92,6 +94,10 @@ const SongsContent = () => {
   }, [game]);
 
   useEffect(() => {
+    if (switchingGame.current) {
+      switchingGame.current = false;
+      return;
+    }
     if (!song) return;
     window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&song_id=${song.id.toString()}`);
   }, [song, game]);

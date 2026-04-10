@@ -39,7 +39,7 @@ export default function Sync() {
     <Page
       meta={{
         title: "同步游戏数据",
-        description: "同步你的玩家数据与成绩",
+        description: "同步你的「舞萌 DX」与「中二节奏」游戏数据",
       }}
       tabs={[
         {
