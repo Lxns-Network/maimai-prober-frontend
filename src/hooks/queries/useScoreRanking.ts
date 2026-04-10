@@ -25,6 +25,8 @@ export function buildScoreParams(game: Game, score: MaimaiScoreProps | ChunithmS
   return params;
 }
 
+const emptyRankingScores: RankingScoreProps[] = [];
+
 export const useScoreRanking = (game: Game, score: MaimaiScoreProps | ChunithmScoreProps | null) => {
   const { player } = usePlayer(game);
   const isLoggedOut = !localStorage.getItem("token");
@@ -40,7 +42,7 @@ export const useScoreRanking = (game: Game, score: MaimaiScoreProps | ChunithmSc
   });
 
   return {
-    rankingScores: data || [],
+    rankingScores: data ?? emptyRankingScores,
     isLoading,
     error,
   };

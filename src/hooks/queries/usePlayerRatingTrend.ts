@@ -4,6 +4,8 @@ import { MaimaiRatingTrendProps } from "@/components/Profile/PlayerPanel/maimai/
 import { ChunithmRatingTrendProps } from "@/components/Profile/PlayerPanel/chunithm/RatingTrend.tsx";
 import { queryKeys } from "./queryKeys.ts";
 
+const emptyTrend: (MaimaiRatingTrendProps | ChunithmRatingTrendProps)[] = [];
+
 export const usePlayerRatingTrend = (game: Game, version: number) => {
   const { data, error, isLoading } = useQuery<(MaimaiRatingTrendProps | ChunithmRatingTrendProps)[]>({
     queryKey: queryKeys.player.ratingTrend(game, version),
@@ -12,7 +14,7 @@ export const usePlayerRatingTrend = (game: Game, version: number) => {
   });
 
   return {
-    trend: data || [],
+    trend: data ?? emptyTrend,
     isLoading,
     error,
   };

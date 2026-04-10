@@ -4,6 +4,8 @@ import { Game } from "@/types/game";
 import { usePlayer } from "./usePlayer.ts";
 import { queryKeys } from "./queryKeys.ts";
 
+const emptyScores: (MaimaiScoreProps | ChunithmScoreProps)[] = [];
+
 export const useScores = (game: Game) => {
   const { player } = usePlayer(game);
   const queryClient = useQueryClient();
@@ -14,7 +16,7 @@ export const useScores = (game: Game) => {
   });
 
   return {
-    scores: data || [],
+    scores: data ?? emptyScores,
     isLoading,
     error,
     invalidate: () => queryClient.invalidateQueries({ queryKey: queryKeys.player.scores(game) }),

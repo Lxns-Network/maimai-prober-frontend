@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { OAuthAppProps } from "@/types/developer";
 import { queryKeys } from "./queryKeys.ts";
 
+const emptyApps: OAuthAppProps[] = [];
+
 export const useUserOAuthApps = () => {
   const queryClient = useQueryClient();
   const { data, error, isLoading } = useQuery<OAuthAppProps[]>({
@@ -9,7 +11,7 @@ export const useUserOAuthApps = () => {
   });
 
   return {
-    apps: data || [],
+    apps: data ?? emptyApps,
     isLoading,
     error,
     invalidate: () => queryClient.invalidateQueries({ queryKey: queryKeys.oauth.authorizeList() }),

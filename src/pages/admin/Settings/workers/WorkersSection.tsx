@@ -98,6 +98,8 @@ const TokenDisplay = ({ token }: { token: string }) => {
 
 const QUERY_KEY = ['user/admin/workers'] as const;
 
+const emptyWorkers: WorkerProps[] = [];
+
 const StatCard = ({ icon, label, value, color }: {
   icon: React.ReactNode;
   label: string;
@@ -117,7 +119,7 @@ const StatCard = ({ icon, label, value, color }: {
 
 export const WorkersSection = () => {
   const queryClient = useQueryClient();
-  const { data: workers = [], isLoading } = useQuery<WorkerProps[]>({
+  const { data: workers = emptyWorkers, isLoading } = useQuery<WorkerProps[]>({
     queryKey: QUERY_KEY,
     refetchInterval: 5000,
   });

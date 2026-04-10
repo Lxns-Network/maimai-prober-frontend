@@ -1,9 +1,9 @@
 import { ChunithmPlayerProps } from "@/types/player";
-import { Avatar, Badge, Divider, Flex, Group, rem, Text, Image, Center, NumberFormatter, Box } from "@mantine/core";
+import { Avatar, Badge, Divider, Flex, Group, Text, Image, Center, NumberFormatter, Box } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
-import { getRatingGradient, getTrophyColor } from "@/utils/color.ts";
+import { getRatingGradient } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main";
-import { Marquee } from "@/components/Marquee.tsx";
+import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
@@ -47,15 +47,7 @@ export const ChunithmPlayerContent = ({ player, onCollectionEdit, editable }: Pl
       <Box pr="md">
         <Flex gap="xs" mb={8}>
           {player.trophy && (
-            <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color)} children={
-              <Marquee>
-                <Text fz="xs" style={{
-                  whiteSpace: "pre-wrap"
-                }}>
-                  {player.trophy.name}
-                </Text>
-              </Marquee>
-            } />
+            <TrophyBadge name={player.trophy.name} trophyColor={player.trophy.color} />
           )}
           <Badge variant="gradient" gradient={getRatingGradient(player.rating)} style={{
             flex: "none"

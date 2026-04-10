@@ -25,6 +25,8 @@ interface UseScoreCommentsOptions {
   }
 }
 
+const emptyComments: Comment[] = [];
+
 export const useScoreComments = ({ game, params }: UseScoreCommentsOptions) => {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(params as Record<string, string> | undefined);
@@ -36,7 +38,7 @@ export const useScoreComments = ({ game, params }: UseScoreCommentsOptions) => {
   });
 
   return {
-    comments: data || [],
+    comments: data ?? emptyComments,
     isLoading,
     error,
     setData: (newData: Comment[] | ((prev: Comment[] | undefined) => Comment[] | undefined)) =>

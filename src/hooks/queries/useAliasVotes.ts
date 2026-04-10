@@ -3,6 +3,8 @@ import { VoteProps } from "@/types/alias";
 import { Game } from "@/types/game";
 import { queryKeys } from "./queryKeys.ts";
 
+const emptyVotes: VoteProps[] = [];
+
 export const useAliasVotes = (game: Game) => {
   const queryClient = useQueryClient();
   const { data, error, isLoading } = useQuery<VoteProps[]>({
@@ -10,7 +12,7 @@ export const useAliasVotes = (game: Game) => {
   });
 
   return {
-    votes: data || [],
+    votes: data ?? emptyVotes,
     isLoading,
     error,
     invalidate: () => queryClient.invalidateQueries({ queryKey: queryKeys.alias.votes(game) }),

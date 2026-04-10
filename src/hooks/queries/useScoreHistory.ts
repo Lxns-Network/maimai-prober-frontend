@@ -5,6 +5,8 @@ import { queryKeys } from "./queryKeys.ts";
 import { buildScoreParams } from "./useScoreRanking.ts";
 import { useMemo } from "react";
 
+const emptyHistoryScores: (MaimaiScoreProps | ChunithmScoreProps)[] = [];
+
 function hasNegativeScore(game: Game, score: MaimaiScoreProps | ChunithmScoreProps) {
   return (game === "maimai" && "achievements" in score && score.achievements < 0) ||
     (game === "chunithm" && "score" in score && score.score < 0);
@@ -36,7 +38,7 @@ export const useScoreHistory = (game: Game, score: MaimaiScoreProps | ChunithmSc
   });
 
   return {
-    historyScores: data || [],
+    historyScores: data ?? emptyHistoryScores,
     isLoading,
     error,
   };

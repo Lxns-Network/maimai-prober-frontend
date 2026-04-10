@@ -42,6 +42,10 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       label: '管理面板', icon: <IconTable stroke={1.5} />, to: '/admin/panel',
       enabled: checkPermission(UserPermission.Administrator), divider: true
     },
+    {
+      label: '系统设置', icon: <IconSettings2 stroke={1.5} />, to: '/admin/settings',
+      enabled: checkPermission(UserPermission.Administrator)
+    },
   ], [isLoggedOut]);
 
   useEffect(() => {

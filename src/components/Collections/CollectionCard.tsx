@@ -1,7 +1,6 @@
-import { AspectRatio, Badge, Card, Center, Image, Text } from "@mantine/core";
+import { AspectRatio, Card, Center, Image, Text } from "@mantine/core";
 import classes from "@/pages/Page.module.css";
-import { getTrophyColor } from "@/utils/color.ts";
-import { Marquee } from "@/components/Marquee.tsx";
+import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import { CollectionProps } from "@/types/player";
 import React from "react";
 import useFixedGame from "@/hooks/useFixedGame.ts";
@@ -24,18 +23,14 @@ const Trophy = ({ trophy }: { trophy: CollectionProps }) => {
   }
 
   return (
-    <Badge
-      variant="light" size="xl" radius="xl" w="100%" mt="md"
-      color={getTrophyColor(trophy.color || "normal")}
-      children={
-        <Marquee>
-          <Text fz="xl" style={{
-            whiteSpace: "pre-wrap"
-          }}>
-            {trophy.name}
-          </Text>
-        </Marquee>
-      }
+    <TrophyBadge
+      name={trophy.name}
+      trophyColor={trophy.color || "normal"}
+      size="xl"
+      radius="xl"
+      w="100%"
+      mt="md"
+      fontSize="xl"
     />
   )
 }

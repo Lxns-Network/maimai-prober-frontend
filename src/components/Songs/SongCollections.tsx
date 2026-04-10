@@ -1,7 +1,6 @@
 import { SongCollectionItemProps } from "@/utils/api/song/song.tsx";
 import {
   AspectRatio,
-  Badge,
   Box,
   Card,
   Center,
@@ -16,8 +15,7 @@ import {
 } from "@mantine/core";
 import { IconAward } from "@tabler/icons-react";
 import useFixedGame from "@/hooks/useFixedGame.ts";
-import { getTrophyColor } from "@/utils/color.ts";
-import { Marquee } from "@/components/Marquee.tsx";
+import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import React, { useMemo } from "react";
 import classes from "@/pages/Page.module.css";
 import scoreClasses from "@/components/Scores/ScoreModal.module.css";
@@ -57,19 +55,13 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
         );
       }
       return (
-        <Badge
-          variant="light"
+        <TrophyBadge
+          name={collection.name}
+          trophyColor={collection.color || "normal"}
           size="lg"
           radius="xl"
           w="100%"
-          color={getTrophyColor(collection.color || "normal")}
-          children={
-            <Marquee>
-              <Text fz="sm" style={{ whiteSpace: "pre-wrap" }}>
-                {collection.name}
-              </Text>
-            </Marquee>
-          }
+          fontSize="sm"
         />
       );
     }

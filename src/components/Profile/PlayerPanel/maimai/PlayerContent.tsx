@@ -1,9 +1,9 @@
 import { MaimaiPlayerProps } from "@/types/player";
-import { Avatar, Badge, Box, Divider, Flex, Group, Image, rem, Text, useComputedColorScheme } from "@mantine/core";
+import { Avatar, Badge, Box, Divider, Flex, Group, Image, Text, useComputedColorScheme } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
-import { getDeluxeRatingGradient, getTrophyColor } from "@/utils/color.ts";
+import { getDeluxeRatingGradient } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main";
-import { Marquee } from "@/components/Marquee.tsx";
+import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
@@ -32,15 +32,7 @@ export const MaimaiPlayerContent = ({ player, onCollectionEdit, editable }: Play
       <Box pr="md">
         <Flex gap="xs" mb={8}>
           {player.trophy && (
-            <Badge variant="light" radius={rem(10)} color={getTrophyColor(player.trophy.color || "normal")} children={
-              <Marquee>
-                <Text fz="xs" style={{
-                  whiteSpace: "pre-wrap"
-                }}>
-                  {player.trophy.name}
-                </Text>
-              </Marquee>
-            } />
+            <TrophyBadge name={player.trophy.name} trophyColor={player.trophy.color || "normal"} />
           )}
           <Badge variant="gradient" gradient={getDeluxeRatingGradient(player.rating)} style={{
             flex: "none"

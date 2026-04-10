@@ -3,6 +3,8 @@ import { Game } from "@/types/game";
 import { CollectionProps } from "@/types/player";
 import { queryKeys } from "./queryKeys.ts";
 
+const emptyCollections: CollectionProps[] = [];
+
 export const usePlayerCollections = ({ game, type }: {
   game: Game;
   type: "trophies" | "icons" | "plates" | "frames" | "characters";
@@ -12,7 +14,7 @@ export const usePlayerCollections = ({ game, type }: {
   });
 
   return {
-    collections: data || [],
+    collections: data ?? emptyCollections,
     isLoading,
     error,
   };

@@ -28,6 +28,8 @@ function getMaimaiTypes(song: MaimaiSongProps): string[] {
   return types;
 }
 
+const emptyScores: (MaimaiScoreProps | ChunithmScoreProps)[] = [];
+
 export const useSongBests = (
   game: Game,
   song: MaimaiSongProps | ChunithmSongProps | null,
@@ -51,7 +53,7 @@ export const useSongBests = (
   });
 
   return {
-    scores: data || [],
+    scores: data ?? emptyScores,
     isLoading,
     error,
   };
