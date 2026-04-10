@@ -2,6 +2,11 @@
 
 ---
 
+## 2026/4/10
+
+- 现在支持手动上传 HTML 同步游戏数据（[#18](https://github.com/Lxns-Network/maimai-prober-frontend/pull/18)）
+- 修复中二节奏分数构成 Rating 计算错误的问题（[#20](https://github.com/Lxns-Network/maimai-prober-frontend/pull/20)）
+
 ## 2026/3/16
 
 - 现在同步游戏数据时，微信返回的网页会实时显示同步进度

@@ -56,7 +56,7 @@
     position: relative;
     line-height: 1;
     padding: 0 8px;
-    color: light-dark(var(--mantine-primary-color-6), var(--mantine-primary-color-4));
+    color: var(--mantine-color-blue-light-color);
 }
 
 .highlight::before {
@@ -66,8 +66,9 @@
     width: 100%;
     left: 0;
     top: -6px;
-    background-color: var(--mantine-primary-color-light);
-    border-radius: var(--mantine-radius-sm);
+    background-color: var(--mantine-color-blue-light);
+    border-radius: var(--mantine-radius-md);
+    z-index: -1;
 }
 
 .arrow {
