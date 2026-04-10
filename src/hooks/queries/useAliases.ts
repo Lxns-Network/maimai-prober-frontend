@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AliasListProps } from "@/types/alias";
 import { Game } from "@/types/game";
@@ -22,10 +23,12 @@ export const useAliases = (game: Game, page: number, approved: boolean = false, 
     placeholderData: keepPreviousData,
   });
 
+  const aliases = useMemo(() => data?.aliases ?? [], [data]);
+
   return {
-    aliases: data?.aliases || [],
-    pageCount: data?.page_count || 0,
-    pageSize: data?.page_size || 0,
+    aliases,
+    pageCount: data?.page_count ?? 0,
+    pageSize: data?.page_size ?? 0,
     isLoading,
     error,
     setData: (newData: AliasListProps) => queryClient.setQueryData<AliasListProps>(key, newData),
