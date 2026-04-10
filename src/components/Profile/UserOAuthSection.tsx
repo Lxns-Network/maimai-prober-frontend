@@ -44,7 +44,7 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
       </Group>
 
       <div>
-        <Collapse in={expanded}>
+        <Collapse expanded={expanded}>
           <Stack gap="xs">
             {scopeList.map((scope) => {
               const scopeInfo = scopeData[scope as keyof typeof scopeData];

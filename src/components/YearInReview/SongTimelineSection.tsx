@@ -6,7 +6,7 @@ import { Avatar, Box } from "@mantine/core";
 import {useEffect, useState} from "react";
 import { ColorExtractor } from "react-color-extractor";
 import { Game } from "@/types/game";
-import LazyLoad, { forceCheck } from "react-lazyload";
+import LazyLoad, { forceCheck } from "@/components/LazyLoad";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import {useShallow} from "zustand/react/shallow";
 

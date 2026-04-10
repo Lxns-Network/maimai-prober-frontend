@@ -18,7 +18,7 @@ import {
   Text,
   ThemeIcon,
 } from "@mantine/core";
-import Icon from "@mdi/react";
+import { Icon } from "@/components/MdiIcon";
 import { mdiCheck, mdiPause } from "@mdi/js";
 import { useEffect, useState } from "react";
 import { useIdle, useMediaQuery } from "@mantine/hooks";

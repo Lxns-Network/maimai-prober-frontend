@@ -31,6 +31,9 @@ export default defineConfig({
     }
   },
   assetsInclude: ['**/*.md'],
+  optimizeDeps: {
+    include: ['react-lazyload', 'react-color-extractor'],
+  },
   build: {
     rollupOptions: {
       output: {

@@ -2,7 +2,7 @@ import {
   Group, Text, Loader, Card, Switch, ActionIcon, Tooltip, CopyButton, Anchor, Divider, useMantineTheme, Button,
   TextInput, Stack, Flex, Alert
 } from '@mantine/core';
-import Icon from "@mdi/react";
+import { Icon } from "@/components/MdiIcon";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";

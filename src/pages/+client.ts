@@ -1,5 +1,3 @@
-import '../wdyr';
-
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/nprogress/styles.css";

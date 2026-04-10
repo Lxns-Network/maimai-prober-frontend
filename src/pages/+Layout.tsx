@@ -14,7 +14,7 @@ import { queryClient } from "@/lib/queryClient.ts";
 import { ErrorBoundary } from "react-error-boundary";
 import { Fallback } from "@/pages/public/Fallback.tsx";
 import { PhotoProvider } from "react-photo-view";
-import { useFullscreen } from "@mantine/hooks";
+import { useFullscreenDocument } from "@mantine/hooks";
 import { useShallow } from "zustand/react/shallow";
 import useTouchEvents from "beautiful-react-hooks/useTouchEvents";
 import Shell from "@/components/Shell/Shell.tsx";
@@ -23,6 +23,7 @@ import useAliasListStore from "@/hooks/useAliasListStore.ts";
 import { useSiteConfig } from "@/hooks/queries/useSiteConfig.ts";
 import { useUserToken } from "@/hooks/queries/useUserToken.ts";
 import { useVersionChecker } from "@/hooks/useVersionChecker.tsx";
+import { HelmetProvider } from "react-helmet-async";
 
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
@@ -49,7 +50,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
   const { config, isLoading: isSiteConfigLoading } = useSiteConfig();
   const { error: userTokenError } = useUserToken();
-  const { toggle, fullscreen } = useFullscreen();
+  const { toggle, fullscreen } = useFullscreenDocument();
   const [opened, setOpened] = useState(typeof window !== 'undefined' ? window.innerWidth > NAVBAR_BREAKPOINT : false);
   const viewport = useRef<HTMLDivElement>(null);
 
@@ -58,7 +59,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
 
   // 侧边栏手势
   const ref = useRef<HTMLDivElement>(null);
-  const { onTouchStart, onTouchEnd } = useTouchEvents(ref);
+  const { onTouchStart, onTouchEnd } = useTouchEvents(ref as React.RefObject<HTMLDivElement>);
   const [touchStartX, setTouchStartX] = useState(0);
 
   onTouchStart((event: TouchEvent) => {
@@ -140,6 +141,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   }, [game, isSiteConfigLoading]);
 
   return (
+    <HelmetProvider>
     <MantineProvider theme={theme} defaultColorScheme="auto">
       <ErrorBoundary FallbackComponent={Fallback}>
         <ModalsProvider labels={{ confirm: '确定', cancel: '取消' }}>
@@ -171,7 +173,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
             }}
           >
             <Notifications />
-            <Shell navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} viewportRef={viewport}>
+            <Shell navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} viewportRef={viewport as React.RefObject<HTMLDivElement>}>
               <div ref={ref} style={{
                 minHeight: 'calc(100vh - var(--header-height))',
               }}>
@@ -190,6 +192,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
         </ModalsProvider>
       </ErrorBoundary>
     </MantineProvider>
+    </HelmetProvider>
   );
 }
 

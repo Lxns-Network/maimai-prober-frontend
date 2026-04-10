@@ -4,7 +4,7 @@ import {
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@/components/MdiIcon";
 import { TransformedValues, useForm } from "@mantine/form";
 import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
 import { useCreateAlias } from "@/hooks/mutations/useAliasMutations.ts";

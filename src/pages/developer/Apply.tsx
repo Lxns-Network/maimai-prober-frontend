@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Title, TextInput, Text, Group, Button, LoadingOverlay, Textarea, Card } from '@mantine/core';
 import { Container, rem } from '@mantine/core';
-import Icon from "@mdi/react";
+import { Icon } from "@/components/MdiIcon";
 import { mdiCodeTags, mdiLink } from "@mdi/js";
 import { useForm } from "@mantine/form";
 import classes from "../Form.module.css";

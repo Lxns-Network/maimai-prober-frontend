@@ -22,7 +22,7 @@ export const Marquee = (
   const delayUntilRef = useRef(0);
 
   const ref = useRef<HTMLDivElement>(null);
-  const isHovering = useHoverDirty(ref); // 是否鼠标悬停
+  const isHovering = useHoverDirty(ref as React.RefObject<Element>); // 是否鼠标悬停
 
   useAnimationFrame((time) => {
     if (!isScrolling || isPaused) return;

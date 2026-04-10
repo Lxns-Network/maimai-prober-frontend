@@ -92,7 +92,7 @@ export const SongRankingSection = ({ data }: { data: YearInReviewProps }) => {
 
   return (
     <div>
-      <Grid gutter="xl" mt={50}>
+      <Grid gap="xl" mt={50}>
         {songCards}
       </Grid>
       <Paper radius="md" mt={32} p={0}>

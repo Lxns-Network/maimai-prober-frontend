@@ -12,7 +12,7 @@ interface HeaderProps {
   navbarOpened: boolean;
   onNavbarToggle(): void;
   gameTabsVisible: boolean;
-  headerRef: React.RefObject<HTMLDivElement>;
+  headerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const games = [{

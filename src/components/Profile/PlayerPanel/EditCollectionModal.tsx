@@ -5,10 +5,10 @@ import {
 import { usePlayerCollections } from "@/hooks/queries/usePlayerCollections.ts";
 import { useEffect, useState } from "react";
 import classes from "./EditCollectionModal.module.css";
-import LazyLoad from "react-lazyload";
-import { forceCheck } from 'react-lazyload';
+import LazyLoad from "@/components/LazyLoad";
+import { forceCheck } from '@/components/LazyLoad';
 import { IconDatabaseOff, IconHeartFilled, IconHelp, IconSearch } from "@tabler/icons-react";
-import Icon from "@mdi/react";
+import { Icon } from "@/components/MdiIcon";
 import { mdiWebOff } from "@mdi/js";
 import { useThrottledValue } from "@mantine/hooks";
 import { Marquee } from "@/components/Marquee.tsx";

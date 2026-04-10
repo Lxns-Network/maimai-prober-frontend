@@ -1,5 +1,5 @@
 import { Alert, Button, Group, Text } from "@mantine/core";
-import Icon from "@mdi/react";
+import { Icon } from "@/components/MdiIcon";
 import { mdiAlertCircleOutline } from "@mdi/js";
 import { navigate } from "vike/client/router";
 

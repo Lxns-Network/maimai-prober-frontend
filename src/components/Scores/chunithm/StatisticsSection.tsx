@@ -77,7 +77,7 @@ export const ChunithmStatisticsSection = ({ scores }: { scores: ChunithmScorePro
   return (
     <Card withBorder radius="md">
       <Spoiler maxHeight={120} showLabel="显示详细统计信息..." hideLabel="隐藏详细统计信息">
-        <Grid gutter={small ? "md" : "xl"}>
+        <Grid gap={small ? "md" : "xl"}>
           <Grid.Col span={extraSmall ? 12 : 6}>
             <RateStatistics scores={scores} />
           </Grid.Col>

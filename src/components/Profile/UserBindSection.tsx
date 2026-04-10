@@ -1,6 +1,6 @@
 import { Button, Card, Group, Switch, Text, TextInput } from "@mantine/core";
 import { TransformedValues, useForm } from "@mantine/form";
-import Icon from "@mdi/react";
+import { Icon } from "@/components/MdiIcon";
 import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";

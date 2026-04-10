@@ -331,7 +331,7 @@ export function Controls() {
           </Group>
         </UnstyledButton>
 
-        <Collapse in={showDisplaySettings}>
+        <Collapse expanded={showDisplaySettings}>
           <Stack gap="md" mt="md">
             <div>
               <Text size="sm" mb={4}>镜像</Text>
@@ -423,7 +423,7 @@ export function Controls() {
           </Group>
         </UnstyledButton>
 
-        <Collapse in={showMusicSettings}>
+        <Collapse expanded={showMusicSettings}>
           <Stack gap="md" mt="md">
             <div>
               <Group justify="space-between" mb={4}>

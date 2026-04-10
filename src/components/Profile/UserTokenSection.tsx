@@ -1,7 +1,7 @@
 import {
   Button, Card, Group, Switch, Text, TextInput, ActionIcon, CopyButton, Tooltip, List, Mark, Paper, rem, Box
 } from "@mantine/core";
-import Icon from "@mdi/react";
+import { Icon } from "@/components/MdiIcon";
 import { mdiAlertCircle, mdiEye, mdiEyeOff, mdiInformation } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";

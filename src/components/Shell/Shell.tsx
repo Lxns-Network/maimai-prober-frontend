@@ -24,7 +24,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
 
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
   const [lastScrollTop, setLastScrollTop] = useState(0);
-  const scrollState = useScroll(viewportRef);
+  const scrollState = useScroll(viewportRef as React.RefObject<HTMLElement>);
 
   useEffect(() => {
     const currentScrollTop = scrollState.y;

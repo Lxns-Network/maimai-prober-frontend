@@ -18,7 +18,7 @@ import { useListState } from "@mantine/hooks";
 import {
   IconAlertCircle, IconArrowLeft, IconCheck, IconChevronDown, IconCopy, IconInfoCircle, IconListSearch
 } from "@tabler/icons-react";
-import LazyLoad from 'react-lazyload';
+import LazyLoad from '@/components/LazyLoad';
 import { PhotoView } from "react-photo-view";
 import { CodeHighlight, CodeHighlightAdapterProvider, createShikiAdapter } from "@mantine/code-highlight";
 import clsx from "clsx";
@@ -344,7 +344,7 @@ const Content = ({ markdown }: { markdown: string }) => {
 
             const childrenArray = React.Children.toArray(children);
             const titleChild = childrenArray.find(
-              child => React.isValidElement(child) && child.props.className?.includes('remark-container-title')
+              child => React.isValidElement(child) && (child.props as Record<string, unknown>).className?.toString().includes('remark-container-title')
             ) as React.ReactElement;
 
             return <Alert
@@ -353,7 +353,7 @@ const Content = ({ markdown }: { markdown: string }) => {
               mt="md"
               variant="light"
               color={color}
-              title={titleChild?.props.children}
+              title={titleChild ? (titleChild.props as Record<string, unknown>).children as React.ReactNode : undefined}
               icon={icon}
               styles={{
                 body: {
@@ -362,7 +362,7 @@ const Content = ({ markdown }: { markdown: string }) => {
               }}
             >
               {childrenArray.filter(
-                (child) => !React.isValidElement(child) || !child.props.className?.includes('remark-container-title')
+                (child) => !React.isValidElement(child) || !(child.props as Record<string, unknown>).className?.toString().includes('remark-container-title')
               )}
             </Alert>
           }

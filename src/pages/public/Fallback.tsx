@@ -15,7 +15,7 @@ export function Fallback({ error, resetErrorBoundary }: { error: Error, resetErr
       <Text className={classes.description} size="lg" c="dimmed" mt="md">
         <code style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{error.message}</code>
       </Text>
-      <Collapse in={opened}>
+      <Collapse expanded={opened}>
         <Center>
           <Code block maw={650} w={width - 32} fz="sm" mt="lg">
             <ScrollArea>
