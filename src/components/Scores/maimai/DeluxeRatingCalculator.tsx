@@ -146,7 +146,9 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
               max={15}
               decimalScale={1}
               value={levelValue}
-              onChange={(value) => setLevelValue(value as number)}
+              onChange={(value) => {
+                if (typeof value === "number") setLevelValue(value);
+              }}
             />}
             {method === "achievements" && <NumberInput
               variant="filled"
@@ -156,7 +158,9 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
               decimalScale={4}
               suffix="%"
               value={achievements}
-              onChange={(value) => setAchievements(value as number)}
+              onChange={(value) => {
+                if (typeof value === "number") setAchievements(value);
+              }}
             />}
             {method === "dx_rating" && <NumberInput
               variant="filled"
@@ -164,7 +168,9 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
               min={0}
               allowDecimal={false}
               value={deluxeRating}
-              onChange={(value) => setDeluxeRating(value as number)}
+              onChange={(value) => {
+                if (typeof value === "number") setDeluxeRating(value);
+              }}
             />}
             <ScrollArea h={300}>
               <Table stickyHeader horizontalSpacing={0} layout="fixed">

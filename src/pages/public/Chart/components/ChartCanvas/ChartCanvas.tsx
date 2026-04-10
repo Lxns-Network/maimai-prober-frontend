@@ -67,15 +67,15 @@ export function ChartCanvas() {
   const animationFrameRef = useRef<number | null>(null);
   const playbackStartTimeRef = useRef<number>(0);
   const playbackStartMsRef = useRef<number>(0);
-  const currentBeatsRef = useRef<number>(0);
   
   const fpsRef = useRef<number>(0);
   const frameTimesRef = useRef<number[]>([]);
   const lastFrameTimeRef = useRef<number>(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const answerSound = useAudio({ autoInit: true });
   const answerSoundRefs = useRef({
-    tick: answerSound.tick,
+    schedule: answerSound.schedule,
     reset: answerSound.reset,
     setEnabled: answerSound.setEnabled,
     setVolume: answerSound.setVolume,
@@ -86,7 +86,7 @@ export function ChartCanvas() {
   // 保持 refs 最新
   useEffect(() => {
     answerSoundRefs.current = {
-      tick: answerSound.tick,
+      schedule: answerSound.schedule,
       reset: answerSound.reset,
       setEnabled: answerSound.setEnabled,
       setVolume: answerSound.setVolume,
@@ -118,6 +118,58 @@ export function ChartCanvas() {
   const soundVolume = useGameSettingsStore((s) => s.soundVolume);
   const soundOffset = useGameSettingsStore((s) => s.soundOffset);
 
+  const getPlaybackMs = useCallback((timestamp: number) => {
+    const elapsed = (timestamp - playbackStartTimeRef.current) * playbackSpeedRef.current;
+    return playbackStartMsRef.current + elapsed;
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    const wakeLock = wakeLockRef.current;
+    wakeLockRef.current = null;
+
+    if (!wakeLock) {
+      return;
+    }
+
+    try {
+      await wakeLock.release();
+    } catch {
+      // 忽略已经释放的 wake lock
+    }
+  }, []);
+
+  const requestWakeLock = useCallback(async () => {
+    if (!isPlaying || document.visibilityState !== 'visible' || wakeLockRef.current) {
+      return;
+    }
+
+    const wakeLockApi = navigator.wakeLock;
+    if (!wakeLockApi) {
+      return;
+    }
+
+    try {
+      const wakeLock = await wakeLockApi.request('screen');
+      wakeLockRef.current = wakeLock;
+      wakeLock.addEventListener?.('release', () => {
+        if (wakeLockRef.current === wakeLock) {
+          wakeLockRef.current = null;
+        }
+      });
+    } catch {
+      // 浏览器/系统可能拒绝 wake lock，预览继续工作即可
+    }
+  }, [isPlaying]);
+
+  const resyncAnswerSound = useCallback((currentMs: number, speed: number = playbackSpeedRef.current) => {
+    if (!chartData || !soundEnabled) {
+      return;
+    }
+
+    answerSoundRefs.current.reset(currentMs);
+    answerSoundRefs.current.schedule(chartData.notes, currentMs, speed);
+  }, [chartData, soundEnabled]);
+
   const renderFrame = useCallback((beatsOverride?: number) => {
     const renderer = rendererRef.current;
     const chart = useGameStore.getState().chartData;
@@ -148,13 +200,14 @@ export function ChartCanvas() {
     }
     
     renderer.setBeatDisplayInfo(measure, beat, fraction, divisor);
+    const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
+
     renderer.clear();
     renderer.renderJudgmentLine();
     renderer.renderNotes(chart.notes, currentBeats, chart.bpmEvents);
 
     if (sound && playing) {
-      const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
-      answerSoundRefs.current.tick(chart.notes, currentMs);
+      answerSoundRefs.current.schedule(chart.notes, currentMs, playbackSpeedRef.current);
     }
   }, []);
 
@@ -205,6 +258,50 @@ export function ChartCanvas() {
     if (rendererRef.current) {
       rendererRef.current.setIsPlaying(isPlaying);
     }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      void requestWakeLock();
+      return;
+    }
+
+    void releaseWakeLock();
+  }, [isPlaying, requestWakeLock, releaseWakeLock]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void requestWakeLock();
+        return;
+      }
+
+      void releaseWakeLock();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [requestWakeLock, releaseWakeLock]);
+
+  useEffect(() => {
+    return () => {
+      void releaseWakeLock();
+    };
+  }, [releaseWakeLock]);
+
+  useEffect(() => {
+    if (isPlaying) return;
+
+    const currentChart = useGameStore.getState().chartData;
+    if (!currentChart) {
+      answerSoundRefs.current.reset(undefined, true);
+      return;
+    }
+
+    const currentMs = beatsToMs(playbackTimeRef.current, currentChart.bpmEvents, currentChart.bpm);
+    answerSoundRefs.current.reset(currentMs, true);
   }, [isPlaying]);
 
   useEffect(() => {
@@ -278,7 +375,14 @@ export function ChartCanvas() {
 
   useEffect(() => {
     answerSoundRefs.current.setEnabled(soundEnabled);
-  }, [soundEnabled]);
+
+    if (!chartData || !isPlaying) {
+      return;
+    }
+
+    const currentMs = beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm);
+    resyncAnswerSound(currentMs);
+  }, [soundEnabled, chartData, isPlaying, resyncAnswerSound]);
 
   useEffect(() => {
     answerSoundRefs.current.setVolume(soundVolume);
@@ -286,7 +390,14 @@ export function ChartCanvas() {
 
   useEffect(() => {
     answerSoundRefs.current.setTimingOffset(ANSWER_SOUND_BASE_OFFSET_MS + soundOffset);
-  }, [soundOffset]);
+
+    if (!chartData || !isPlaying || !soundEnabled) {
+      return;
+    }
+
+    const currentMs = beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm);
+    resyncAnswerSound(currentMs);
+  }, [soundOffset, chartData, isPlaying, soundEnabled, resyncAnswerSound]);
 
   // 保存当前播放速度的 ref，用于在动画循环中获取最新值
   const playbackSpeedRef = useRef(playbackSpeed);
@@ -296,9 +407,30 @@ export function ChartCanvas() {
       const currentBeats = playbackTimeRef.current;
       playbackStartTimeRef.current = performance.now();
       playbackStartMsRef.current = beatsToMs(currentBeats, chartData.bpmEvents, chartData.bpm);
+
+      if (soundEnabled) {
+        resyncAnswerSound(playbackStartMsRef.current, playbackSpeed);
+      }
     }
     playbackSpeedRef.current = playbackSpeed;
-  }, [playbackSpeed, isPlaying, chartData]);
+  }, [playbackSpeed, isPlaying, chartData, soundEnabled, resyncAnswerSound]);
+
+  useEffect(() => {
+    if (!isPlaying || !chartData || !soundEnabled) return;
+
+    const intervalId = window.setInterval(() => {
+      if (!useGameStore.getState().isPlaying || !useGameSettingsStore.getState().soundEnabled) {
+        return;
+      }
+
+      const currentMs = getPlaybackMs(performance.now());
+      answerSoundRefs.current.schedule(chartData.notes, currentMs, playbackSpeedRef.current);
+    }, 250);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isPlaying, chartData, soundEnabled, getPlaybackMs]);
 
   useEffect(() => {
     if (!isPlaying || !chartData) {
@@ -348,15 +480,12 @@ export function ChartCanvas() {
           chartData.bpmEvents,
           chartData.bpm
         );
-        currentBeatsRef.current = storeState.timeline.preciseTime;
         // 传入当前时间，避免播放之前已经过去的 note 音效
         answerSoundRefs.current.reset(playbackStartMsRef.current);
       }
 
       // 使用 ref 获取最新的播放速度
-      const currentSpeed = playbackSpeedRef.current;
-      const elapsed = (timestamp - playbackStartTimeRef.current) * currentSpeed;
-      const currentMs = playbackStartMsRef.current + elapsed;
+      const currentMs = getPlaybackMs(timestamp);
 
       if (currentMs >= totalDurationMs + 500) {
         setPreciseTime(totalBeats);
@@ -365,7 +494,6 @@ export function ChartCanvas() {
       }
 
       const currentBeats = msToBeats(currentMs, chartData.bpmEvents, chartData.bpm);
-      currentBeatsRef.current = currentBeats;
       playbackTimeRef.current = currentBeats;
       
       renderFrame(currentBeats);
@@ -381,7 +509,7 @@ export function ChartCanvas() {
         animationFrameRef.current = null;
       }
     };
-  }, [isPlaying, chartData, totalMeasures, beatsPerMeasure, pause, setPreciseTime, renderFrame]);
+  }, [isPlaying, chartData, totalMeasures, beatsPerMeasure, pause, setPreciseTime, renderFrame, getPlaybackMs]);
 
   // 非播放状态下的预览更新（支持拖动进度条时的实时预览）
   useEffect(() => {

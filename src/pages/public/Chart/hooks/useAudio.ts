@@ -10,8 +10,8 @@ export interface UseAudioOptions extends AudioManagerConfig {
 export interface UseAudioReturn {
   init: () => Promise<void>;
   resume: () => Promise<void>;
-  tick: (notes: Note[] | null, currentTimeMs: number) => void;
-  reset: (currentTimeMs?: number) => void;
+  schedule: (notes: Note[] | null, currentTimeMs: number, playbackSpeed?: number, lookAheadMs?: number) => void;
+  reset: (currentTimeMs?: number, stopStartedSources?: boolean) => void;
   isInitialized: boolean;
   config: AudioConfig;
   setEnabled: (enabled: boolean) => void;
@@ -32,13 +32,15 @@ const defaultConfig: AudioConfig = {
 export function useAudio(options: UseAudioOptions = {}): UseAudioReturn {
   const { autoInit = false, ...managerConfig } = options;
   const managerRef = useRef<AudioManager | null>(null);
+  const managerConfigRef = useRef(managerConfig);
+  const autoInitRef = useRef(autoInit);
   const [isInitialized, setIsInitialized] = useState(false);
   const [config, setConfig] = useState<AudioConfig>(defaultConfig);
 
   useEffect(() => {
-    managerRef.current = new AudioManager(managerConfig);
+    managerRef.current = new AudioManager(managerConfigRef.current);
 
-    if (autoInit) {
+    if (autoInitRef.current) {
       managerRef.current.init().then(() => {
         setIsInitialized(true);
         if (managerRef.current) setConfig(managerRef.current.getConfig());
@@ -62,12 +64,12 @@ export function useAudio(options: UseAudioOptions = {}): UseAudioReturn {
     await managerRef.current?.resume();
   }, []);
 
-  const tick = useCallback((notes: Note[] | null, currentTimeMs: number) => {
-    managerRef.current?.tick(notes, currentTimeMs);
+  const schedule = useCallback((notes: Note[] | null, currentTimeMs: number, playbackSpeed?: number, lookAheadMs?: number) => {
+    managerRef.current?.schedule(notes, currentTimeMs, playbackSpeed, lookAheadMs);
   }, []);
 
-  const reset = useCallback((currentTimeMs?: number) => {
-    managerRef.current?.reset(currentTimeMs);
+  const reset = useCallback((currentTimeMs?: number, stopStartedSources?: boolean) => {
+    managerRef.current?.reset(currentTimeMs, stopStartedSources);
   }, []);
 
   const updateConfig = useCallback(() => {
@@ -102,7 +104,7 @@ export function useAudio(options: UseAudioOptions = {}): UseAudioReturn {
   return {
     init,
     resume,
-    tick,
+    schedule,
     reset,
     isInitialized,
     config,
