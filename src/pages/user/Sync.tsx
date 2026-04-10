@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Accordion, Button, Code, Card, Flex, Group, Loader, Text, ThemeIcon, Alert, Stepper, Divider, Space, Stack,
-  SimpleGrid, Paper,
+  Paper, SimpleGrid,
   HoverCard,
   Mark
 } from '@mantine/core';
@@ -78,6 +78,7 @@ const SyncContent = () => {
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [resultOpened, setResultOpened] = useState(false);
   const [step, setStep] = useState(0);
+  const [sseResetKey, setSseResetKey] = useState(0);
   const [game, setGame] = useGame();
   const idle = useIdle(60000);
 
@@ -147,6 +148,7 @@ const SyncContent = () => {
     const abortController = new AbortController();
 
     let lastStatus: CrawlStatusProps["status"] | null = null;
+    let waitingForNewTask = sseResetKey > 0;
 
     const connectSSE = async () => {
       try {
@@ -178,6 +180,14 @@ const SyncContent = () => {
             const parsed = JSON.parse(line.slice(6));
             if (!parsed || !parsed.status) continue;
             const status = parsed as CrawlStatusProps;
+
+            if (status.status === "pending" || status.status === "assigned") {
+              waitingForNewTask = false;
+            }
+            if (waitingForNewTask && (status.status === "completed" || status.status === "failed")) {
+              continue;
+            }
+
             lastStatus = status.status;
             setCrawlStatus(prev => ({ ...prev, ...status }));
 
@@ -212,11 +222,12 @@ const SyncContent = () => {
     return () => {
       abortController.abort();
     };
-  }, [proxyAvailable, proxySkipped, game]);
+  }, [proxyAvailable, proxySkipped, game, sseResetKey]);
 
   const { width } = useShellViewportSize();
   const [containerWidth, setContainerWidth] = useState(width);
   const small = useMediaQuery('(max-width: 600px)');
+  const extraSmall = useMediaQuery('(max-width: 400px)');
 
   useEffect(() => {
     if (width > 692) {
@@ -249,7 +260,7 @@ const SyncContent = () => {
       <Stepper active={
         (proxyAvailable || proxySkipped) ? (
           crawlStatus != null ? (
-            crawlStatus.status !== "pending" ? 4 : 3
+            (crawlStatus.status === "completed" || crawlStatus.status === "failed") ? 4 : 3
           ) : 2
         ) : 0
       } orientation="vertical" allowNextStepsSelect={false}>
@@ -393,29 +404,32 @@ const SyncContent = () => {
           <Text fz="sm">
             等待数据同步完成
           </Text>
-        } loading={(proxyAvailable || proxySkipped) && crawlStatus?.status === "pending"} />
+        } loading={(proxyAvailable || proxySkipped) && (crawlStatus?.status === "pending" || crawlStatus?.status === "assigned")} />
       </Stepper>
       <LoginAlert content="你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。" mt="xs" radius="md" />
-      {!isLoggedOut && (
+      {!isLoggedOut && (() => {
+        const statusColor = !crawlStatus ? "default" : {
+          "pending": "default",
+          "assigned": "default",
+          "completed": "teal",
+          "failed": "red",
+        }[crawlStatus.status];
+
+        const statusText = !crawlStatus ? "等待前置步骤完成" : {
+          "pending": "正在排队等待爬取",
+          "assigned": "正在爬取游戏数据",
+          "completed": "游戏数据同步成功",
+          "failed": "游戏数据同步不完全",
+        }[crawlStatus.status];
+
+        return (
         <Card withBorder radius="md" className={classes.card} p="md" mt="xs">
           <Card.Section className={classes.section}>
             <Text size="xs" c="dimmed">
               数据同步状态
             </Text>
-            <Text fz="lg" c={
-              crawlStatus ? (
-                crawlStatus.status === "failed" ? "red" : (
-                    crawlStatus.status === "completed" ? "teal" : "default"
-                )
-              ) : "default"
-            }>
-              {!crawlStatus && "等待前置步骤完成"}
-              {crawlStatus && {
-                "pending": "正在排队等待爬取",
-                "assigned": "正在爬取游戏数据",
-                "completed": "游戏数据同步成功",
-                "failed": "成绩同步不完全"
-              }[crawlStatus.status]}
+            <Text fz="lg" c={statusColor}>
+              {statusText}
             </Text>
           </Card.Section>
 
@@ -428,16 +442,23 @@ const SyncContent = () => {
           ) : (
             <>
               <Card.Section className={classes.section}>
-                <Text fz="xs" c="dimmed">好友码</Text>
-                <Text fz="sm">{crawlStatus.friend_code}</Text>
-                <Group mt="md">
-                  <div>
+                {crawlStatus.status === "failed" && crawlStatus.error_message && (
+                  <Alert radius="md" color="red" icon={<IconAlertCircle />} title="爬取过程中出现错误" mb="md">
+                    <Text size="sm">{crawlStatus.error_message}</Text>
+                  </Alert>
+                )}
+                <SimpleGrid cols={extraSmall ? 1 : 2} spacing="xs">
+                  <Paper className={classes.subParameters}>
+                    <Text fz="xs" c="dimmed">好友码</Text>
+                    <Text fz="sm">{crawlStatus.friend_code}</Text>
+                  </Paper>
+                  <Paper className={classes.subParameters}>
                     <Text fz="xs" c="dimmed">爬取耗时</Text>
                     <Text fz="sm">{Math.floor((new Date(crawlStatus.complete_time).getTime() - new Date(crawlStatus.create_time).getTime()) / 1000)} 秒</Text>
-                  </div>
-                  <div>
+                  </Paper>
+                  <Paper className={classes.subParameters}>
                     <Group gap={4} align="center">
-                      <Text fz="xs" c="dimmed">爬取的成绩数</Text>
+                      <Text fz="xs" c="dimmed">成绩变化数</Text>
                       <HoverCard width={280} shadow="md" withArrow>
                         <HoverCard.Target>
                           <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: 'pointer' }}>
@@ -452,27 +473,37 @@ const SyncContent = () => {
                       </HoverCard>
                     </Group>
                     <Text fz="sm">{(crawlStatus.scores || []).length}</Text>
-                  </div>
-                  <div>
-                    <Text fz="xs" c="dimmed">爬取失败的难度</Text>
+                  </Paper>
+                  <Paper className={classes.subParameters}>
+                    <Text fz="xs" c="dimmed">失败难度</Text>
                     <Text fz="sm">
                       {(!crawlStatus.failed_difficulties || crawlStatus.failed_difficulties.length === 0) ? "无" : crawlStatus.failed_difficulties.map((difficulty) => {
-                        return [
-                          "BASIC",
-                          "ADVANCED",
-                          "EXPERT",
-                          "MASTER",
-                          crawlStatus.game === "maimai" ? "Re:MASTER" : "ULTIMA",
-                        ][difficulty];
+                        const names: Record<number, string> = {
+                          0: "BASIC",
+                          1: "ADVANCED",
+                          2: "EXPERT",
+                          3: "MASTER",
+                          4: crawlStatus.game === "maimai" ? "Re:MASTER" : "ULTIMA",
+                          5: "WORLD'S END",
+                          10: "U·TA·GE",
+                        };
+                        return names[difficulty] ?? `难度 ${difficulty}`;
                       }).join("、")}
                     </Text>
-                  </div>
-                </Group>
+                  </Paper>
+                </SimpleGrid>
               </Card.Section>
               <Card.Section p="md">
                 <SimpleGrid cols={small ? 2 : 4}>
                   <Button onClick={() => setResultOpened(true)}>
                     查看同步结果
+                  </Button>
+                  <Button variant="outline" leftSection={<IconRepeat size={18} />} onClick={() => {
+                    setCrawlStatus(null);
+                    setStep(1);
+                    setSseResetKey(k => k + 1);
+                  }}>
+                    重新同步
                   </Button>
                   <Button variant="outline" onClick={() => navigate("/user/profile")}>
                     账号详情
@@ -480,18 +511,13 @@ const SyncContent = () => {
                   <Button variant="outline" onClick={() => navigate("/user/scores")}>
                     成绩管理
                   </Button>
-                  <Button variant="outline" leftSection={<IconRepeat size={18} />} onClick={() => {
-                    setCrawlStatus(null);
-                    setStep(1);
-                  }}>
-                    重新同步
-                  </Button>
                 </SimpleGrid>
               </Card.Section>
             </>
           )}
         </Card>
-      )}
+        );
+      })()}
     </div>
   );
 }

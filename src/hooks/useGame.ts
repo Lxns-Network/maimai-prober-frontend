@@ -9,15 +9,24 @@ function useGame(defaultGame: Game = 'maimai'): [Game, (game: Game) => void] {
   const isBrowser = typeof window !== 'undefined';
   const gameFromSearch = searchParams.get("game");
   const validGames = ["maimai", "chunithm"];
-  const gameFromStorage = isBrowser ? localStorage.getItem("game") : null;
+  const rawGameFromStorage = isBrowser ? localStorage.getItem("game") : null;
+  let gameFromStorage: Game | null = null;
+  if (rawGameFromStorage) {
+    try {
+      const parsed = JSON.parse(rawGameFromStorage);
+      if (validGames.includes(parsed)) {
+        gameFromStorage = parsed as Game;
+      }
+    } catch {
+      if (validGames.includes(rawGameFromStorage)) {
+        gameFromStorage = rawGameFromStorage as Game;
+      }
+    }
+  }
 
   const initialGame: Game =
     validGames.includes(gameFromSearch || "") ? (gameFromSearch as Game) :
-      (gameFromStorage ? (JSON.parse(gameFromStorage) as Game) : defaultGame);
-
-  if (isBrowser && initialGame !== gameFromStorage) {
-    localStorage.setItem("game", JSON.stringify(initialGame));
-  }
+      (gameFromStorage ?? defaultGame);
 
   const [game, setGame] = useLocalStorage<Game>({
     key: "game",
