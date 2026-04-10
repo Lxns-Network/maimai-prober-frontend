@@ -22,11 +22,12 @@ import Icon from "@mdi/react";
 import { mdiCheck, mdiPause } from "@mdi/js";
 import { useEffect, useState } from "react";
 import { useIdle, useMediaQuery } from "@mantine/hooks";
-import { IconAlertCircle, IconDownload, IconHelp, IconRepeat } from "@tabler/icons-react";
+import { IconAlertCircle, IconChevronRight, IconDownload, IconHelp, IconRepeat } from "@tabler/icons-react";
 import { navigate } from "vike/client/router";
 import { openAlertModal } from "@/utils/modal";
 import { checkProxy } from "@/utils/checkProxy.ts";
-import { getCrawlStatus, getUserCrawlToken } from "@/utils/api/user.ts";
+import { getUserCrawlToken } from "@/utils/api/user.ts";
+import { API_URL } from "@/utils/api/api.ts";
 import { getCrawlStatistic } from "@/utils/api/misc.ts";
 import useGame from "@/hooks/useGame.ts";
 import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
@@ -47,7 +48,8 @@ interface CrawlStatisticProps {
 interface CrawlStatusProps {
   game: Game;
   friend_code: number;
-  status: string;
+  status: "pending" | "assigned" | "completed" | "failed";
+  error_message?: string;
   create_time: string;
   complete_time: string;
   scores: ScoreChangesProps[];
@@ -56,18 +58,21 @@ interface CrawlStatusProps {
 
 export const ProxySyncSection = () => {
   const [isProxyAvailable, setIsProxyAvailable] = useState(false);
+  const [proxySkipped, setProxySkipped] = useState(false);
   const [hasNetworkError, setHasNetworkError] = useState(false);
   const [crawlToken, setCrawlToken] = useState<string | null>(null);
   const [crawlStatistic, setCrawlStatistic] = useState<CrawlStatisticProps | null>(null);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [resultModalOpened, setResultModalOpened] = useState(false);
   const [step, setStep] = useState(0);
+  const [sseResetKey, setSseResetKey] = useState(0);
   const [game, setGame] = useGame();
   const idle = useIdle(60000);
   const isLoggedOut = !localStorage.getItem("token");
   const { width } = useShellViewportSize();
   const [containerWidth, setContainerWidth] = useState(width);
   const small = useMediaQuery("(max-width: 600px)");
+  const extraSmall = useMediaQuery("(max-width: 400px)");
 
   const loadCrawlToken = async () => {
     try {
@@ -116,7 +121,7 @@ export const ProxySyncSection = () => {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (idle || step > 1) return;
+      if (idle || step > 1 || proxySkipped) return;
 
       checkProxy().then((result) => {
         if (result.proxyAvailable && !result.networkError) {
@@ -132,49 +137,92 @@ export const ProxySyncSection = () => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [idle, step]);
+  }, [idle, step, proxySkipped]);
 
   useEffect(() => {
-    if (isLoggedOut) return;
+    if (isLoggedOut || !(isProxyAvailable || proxySkipped)) return;
 
-    const checkProxyCrawlStatus = async () => {
-      if (idle || step === 0) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-      if (crawlStatus != null && crawlStatus.status !== "pending") {
-        setStep(3);
-        return;
-      }
+    const abortController = new AbortController();
 
+    let lastStatus: CrawlStatusProps["status"] | null = null;
+    let waitingForNewTask = sseResetKey > 0;
+
+    const connectSSE = async () => {
       try {
-        const res = await getCrawlStatus();
-        const data = await res.json();
-        if (!data.success) {
-          throw new Error(data.message);
-        }
-        if (data.data != null) {
-          if (data.data.status === "pending") {
-            setStep(2);
-          } else {
-            setStep(3);
-            if (data.data.status === "failed") {
-              openAlertModal("同步游戏数据失败", "你的游戏数据同步时出现了错误，请查看同步结果了解详情。");
-            } else if (data.data.status === "finished") {
+        const res = await fetch(`${API_URL}/user/crawl/status`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "text/event-stream",
+          },
+          signal: abortController.signal,
+        });
+
+        if (!res.ok || !res.body) return;
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        let readerDone = false;
+        while (!readerDone) {
+          const { done, value } = await reader.read();
+          if (done) { readerDone = true; break; }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const parsed = JSON.parse(line.slice(6));
+            if (!parsed || !parsed.status) continue;
+            const status = parsed as CrawlStatusProps;
+
+            if (status.status === "pending" || status.status === "assigned") {
+              waitingForNewTask = false;
+            }
+            if (waitingForNewTask && (status.status === "completed" || status.status === "failed")) {
+              continue;
+            }
+
+            lastStatus = status.status;
+            setCrawlStatus(prev => ({ ...prev, ...status }));
+
+            if (status.status === "pending" || status.status === "assigned") {
+              setStep(2);
+            } else if (status.status === "completed") {
+              setStep(3);
               openAlertModal("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
+            } else if (status.status === "failed") {
+              setStep(3);
+              openAlertModal("同步游戏数据失败", status.error_message || "你的游戏数据同步时出现了错误，请查看同步结果了解详情。");
             }
           }
-          setCrawlStatus(data.data);
+        }
+
+        if (lastStatus && lastStatus !== "completed" && lastStatus !== "failed") {
+          setTimeout(connectSSE, 3000);
         }
       } catch (error) {
-        openAlertModal("获取同步结果失败", `${error}`);
+        if ((error as DOMException).name === "AbortError") return;
+        console.error("SSE connection error:", error);
+        if (lastStatus && lastStatus !== "completed" && lastStatus !== "failed") {
+          setTimeout(connectSSE, 3000);
+        }
       }
     };
 
-    const intervalId = setInterval(checkProxyCrawlStatus, 5000);
+    connectSSE();
 
     return () => {
-      clearInterval(intervalId);
+      abortController.abort();
     };
-  }, [crawlStatus, idle, isLoggedOut, step, game]);
+  }, [isProxyAvailable, proxySkipped, game, sseResetKey]);
+
+  const proxyReady = isProxyAvailable || proxySkipped;
 
   return (
     <>
@@ -187,7 +235,7 @@ export const ProxySyncSection = () => {
       {(new Date()).getHours() >= 18 && (
         <Alert radius="md" icon={<IconAlertCircle />} title="游玩高峰期警告" color="yellow" mb="xl">
           <Text size="sm" mb="md">
-            由于现在是游玩高峰期，同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，尝试更改爬取设置以增加稳定性，或者你也可以选择手动上传 HTML 文件。
+            由于现在是游玩高峰期，同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，或者尝试更改爬取设置以增加稳定性。
           </Text>
           <Button variant="outline" color="yellow" onClick={() => navigate("/user/settings")}>
             更改爬取设置
@@ -202,16 +250,26 @@ export const ProxySyncSection = () => {
         </Alert>
       )}
       <Stepper
-        active={isProxyAvailable ? (crawlStatus != null ? (crawlStatus.status !== "pending" ? 4 : 3) : 2) : 0}
+        active={proxyReady ? (crawlStatus != null ? ((crawlStatus.status === "completed" || crawlStatus.status === "failed") ? 4 : 3) : 2) : 0}
         orientation="vertical"
         allowNextStepsSelect={false}
       >
         <Stepper.Step
           label="步骤 1"
-          loading={!isProxyAvailable}
+          loading={!isProxyAvailable && !proxySkipped}
           description={
             <Group gap="xs" w={containerWidth}>
-              <Text fz="sm">配置 HTTP 代理</Text>
+              <Group gap="xs" justify="space-between" w="100%">
+                <Text fz="sm">配置 HTTP 代理</Text>
+                {!isProxyAvailable && !proxySkipped && (
+                  <Button variant="subtle" size="compact-xs" rightSection={<IconChevronRight size={14} />} styles={{ section: { marginInlineStart: 2 } }} onClick={() => {
+                    setProxySkipped(true);
+                    setStep(1);
+                  }}>
+                    跳过
+                  </Button>
+                )}
+              </Group>
               <Card withBorder radius="md" className={classes.card} mb="md" p={0} w="100%">
                 <Flex align="center" justify="space-between" m="md">
                   <Group className={classes.loaderText} wrap="nowrap">
@@ -319,10 +377,10 @@ export const ProxySyncSection = () => {
         />
         <Stepper.Step
           label="步骤 3"
-          loading={isProxyAvailable && !crawlStatus}
+          loading={proxyReady && !crawlStatus}
           description={
             <Stack gap="xs" w={containerWidth}>
-                <Text fz="sm">复制微信 OAuth 链接，发送至安全的聊天中并打开</Text>
+              <Text fz="sm">复制微信 OAuth 链接，发送至安全的聊天中并打开</Text>
               {game && <WechatOAuthLink game={game} crawlToken={crawlToken} />}
               {!isLoggedOut && (
                 <Text>
@@ -333,106 +391,123 @@ export const ProxySyncSection = () => {
             </Stack>
           }
         />
-      <Stepper.Step
-        label="步骤 4"
-        loading={isProxyAvailable && crawlStatus?.status === "pending"}
-        description={<Text fz="sm">等待数据同步完成</Text>}
-      />
+        <Stepper.Step
+          label="步骤 4"
+          loading={proxyReady && (crawlStatus?.status === "pending" || crawlStatus?.status === "assigned")}
+          description={<Text fz="sm">等待数据同步完成</Text>}
+        />
       </Stepper>
-      {!isLoggedOut && (
-        <Card withBorder radius="md" className={classes.card} p="md" mt="xs">
-          <Card.Section className={classes.section}>
-            <Text size="xs" c="dimmed">
-              数据同步状态
-            </Text>
-            <Text
-              fz="lg"
-              c={crawlStatus ? (crawlStatus.status === "failed" ? "red" : (crawlStatus.status === "finished" ? "teal" : "default")) : "default"}
-            >
-              {!crawlStatus && "等待前置步骤完成"}
-              {crawlStatus && {
-                pending: "服务端正在爬取游戏数据",
-                finished: "游戏数据同步成功",
-                failed: "成绩同步不完全",
-              }[crawlStatus.status as "pending" | "finished" | "failed"]}
-            </Text>
-          </Card.Section>
+      {!isLoggedOut && (() => {
+        const statusColor = !crawlStatus ? "default" : {
+          "pending": "default",
+          "assigned": "default",
+          "completed": "teal",
+          "failed": "red",
+        }[crawlStatus.status];
 
-          {(!crawlStatus || (crawlStatus.status !== "finished" && crawlStatus.status !== "failed")) ? (
-            <Card.Section p="md">
-              <Text size="sm">
-                你的「{game === "maimai" ? "舞萌 DX" : "中二节奏"}」玩家信息与成绩将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
+        const statusText = !crawlStatus ? "等待前置步骤完成" : {
+          "pending": "正在排队等待爬取",
+          "assigned": "正在爬取游戏数据",
+          "completed": "游戏数据同步成功",
+          "failed": "游戏数据同步不完全",
+        }[crawlStatus.status];
+
+        return (
+          <Card withBorder radius="md" className={classes.card} p="md" mt="xs">
+            <Card.Section className={classes.section}>
+              <Text size="xs" c="dimmed">
+                数据同步状态
+              </Text>
+              <Text fz="lg" c={statusColor}>
+                {statusText}
               </Text>
             </Card.Section>
-          ) : (
-            <>
-              <Card.Section className={classes.section}>
-                <Text fz="xs" c="dimmed">好友码</Text>
-                <Text fz="sm">{crawlStatus.friend_code}</Text>
-                <Group mt="md">
-                  <div>
-                    <Text fz="xs" c="dimmed">爬取耗时</Text>
-                    <Text fz="sm">
-                      {Math.floor((new Date(crawlStatus.complete_time).getTime() - new Date(crawlStatus.create_time).getTime()) / 1000)} 秒
-                    </Text>
-                  </div>
-                  <div>
-                    <Group gap={4} align="center">
-                      <Text fz="xs" c="dimmed">爬取的成绩数</Text>
-                      <HoverCard width={280} shadow="md" withArrow>
-                        <HoverCard.Target>
-                          <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: "pointer" }}>
-                            <IconHelp />
-                          </ThemeIcon>
-                        </HoverCard.Target>
-                        <HoverCard.Dropdown>
-                          <Text size="sm">
-                            本次爬取过程中，服务器成功获取并<Mark>有变化</Mark>的成绩数量。
-                          </Text>
-                        </HoverCard.Dropdown>
-                      </HoverCard>
-                    </Group>
-                    <Text fz="sm">{(crawlStatus.scores || []).length}</Text>
-                  </div>
-                  <div>
-                    <Text fz="xs" c="dimmed">爬取失败的难度</Text>
-                    <Text fz="sm">
-                      {(!crawlStatus.failed_difficulties || crawlStatus.failed_difficulties.length === 0) ? "无" : crawlStatus.failed_difficulties.map((difficulty: number) => {
-                        return [
-                          "BASIC",
-                          "ADVANCED",
-                          "EXPERT",
-                          "MASTER",
-                          crawlStatus.game === "maimai" ? "Re:MASTER" : "ULTIMA",
-                        ][difficulty];
-                      }).join("、")}
-                    </Text>
-                  </div>
-                </Group>
-              </Card.Section>
+
+            {(!crawlStatus || (crawlStatus.status !== "completed" && crawlStatus.status !== "failed")) ? (
               <Card.Section p="md">
-                <SimpleGrid cols={small ? 2 : 4}>
-                  <Button onClick={() => setResultModalOpened(true)}>
-                    查看同步结果
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate("/user/profile")}>
-                    账号详情
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate("/user/scores")}>
-                    成绩管理
-                  </Button>
-                  <Button variant="outline" leftSection={<IconRepeat size={18} />} onClick={() => {
-                    setCrawlStatus(null);
-                    setStep(1);
-                  }}>
-                    重新同步
-                  </Button>
-                </SimpleGrid>
+                <Text size="sm">
+                  你的「{game === "maimai" ? "舞萌 DX" : "中二节奏"}」玩家信息与成绩将会被同步到 maimai DX 查分器，并与你的查分器账号绑定。
+                </Text>
               </Card.Section>
-            </>
-          )}
-        </Card>
-      )}
+            ) : (
+              <>
+                <Card.Section className={classes.section}>
+                  {crawlStatus.status === "failed" && crawlStatus.error_message && (
+                    <Alert radius="md" color="red" icon={<IconAlertCircle />} title="爬取过程中出现错误" mb="md">
+                      <Text size="sm">{crawlStatus.error_message}</Text>
+                    </Alert>
+                  )}
+                  <SimpleGrid cols={extraSmall ? 1 : 2} spacing="xs">
+                    <Paper className={classes.subParameters}>
+                      <Text fz="xs" c="dimmed">好友码</Text>
+                      <Text fz="sm">{crawlStatus.friend_code}</Text>
+                    </Paper>
+                    <Paper className={classes.subParameters}>
+                      <Text fz="xs" c="dimmed">爬取耗时</Text>
+                      <Text fz="sm">{Math.floor((new Date(crawlStatus.complete_time).getTime() - new Date(crawlStatus.create_time).getTime()) / 1000)} 秒</Text>
+                    </Paper>
+                    <Paper className={classes.subParameters}>
+                      <Group gap={4} align="center">
+                        <Text fz="xs" c="dimmed">成绩变化数</Text>
+                        <HoverCard width={280} shadow="md" withArrow>
+                          <HoverCard.Target>
+                            <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: "pointer" }}>
+                              <IconHelp />
+                            </ThemeIcon>
+                          </HoverCard.Target>
+                          <HoverCard.Dropdown>
+                            <Text size="sm">
+                              本次爬取过程中，服务器成功获取并<Mark>有变化</Mark>的成绩数量。
+                            </Text>
+                          </HoverCard.Dropdown>
+                        </HoverCard>
+                      </Group>
+                      <Text fz="sm">{(crawlStatus.scores || []).length}</Text>
+                    </Paper>
+                    <Paper className={classes.subParameters}>
+                      <Text fz="xs" c="dimmed">失败难度</Text>
+                      <Text fz="sm">
+                        {(!crawlStatus.failed_difficulties || crawlStatus.failed_difficulties.length === 0) ? "无" : crawlStatus.failed_difficulties.map((difficulty) => {
+                          const names: Record<number, string> = {
+                            0: "BASIC",
+                            1: "ADVANCED",
+                            2: "EXPERT",
+                            3: "MASTER",
+                            4: crawlStatus.game === "maimai" ? "Re:MASTER" : "ULTIMA",
+                            5: "WORLD'S END",
+                            10: "U·TA·GE",
+                          };
+                          return names[difficulty] ?? `难度 ${difficulty}`;
+                        }).join("、")}
+                      </Text>
+                    </Paper>
+                  </SimpleGrid>
+                </Card.Section>
+                <Card.Section p="md">
+                  <SimpleGrid cols={small ? 2 : 4}>
+                    <Button onClick={() => setResultModalOpened(true)}>
+                      查看同步结果
+                    </Button>
+                    <Button variant="outline" leftSection={<IconRepeat size={18} />} onClick={() => {
+                      setCrawlStatus(null);
+                      setStep(1);
+                      setSseResetKey(k => k + 1);
+                    }}>
+                      重新同步
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate("/user/profile")}>
+                      账号详情
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate("/user/scores")}>
+                      成绩管理
+                    </Button>
+                  </SimpleGrid>
+                </Card.Section>
+              </>
+            )}
+          </Card>
+        );
+      })()}
     </>
   );
 };
