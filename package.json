@@ -46,7 +46,7 @@
     "embla-carousel-react": "8.6.0",
     "hast-util-from-html-isomorphic": "2.0.0",
     "immer": "10.2.0",
-    "mantine-datatable": "7.17.1",
+    "mantine-datatable": "patch:mantine-datatable@npm%3A8.3.13#~/.yarn/patches/mantine-datatable-npm-8.3.13-babf176244.patch",
     "motion": "12.38.0",
     "node-vibrant": "3.2.1-alpha.1",
     "postcss-mixins": "9.0.4",

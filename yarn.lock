@@ -5384,7 +5384,7 @@ __metadata:
     eslint-plugin-react-refresh: "npm:0.4.26"
     hast-util-from-html-isomorphic: "npm:2.0.0"
     immer: "npm:10.2.0"
-    mantine-datatable: "npm:7.17.1"
+    mantine-datatable: "npm:8.3.13"
     motion: "npm:12.38.0"
     node-vibrant: "npm:3.2.1-alpha.1"
     postcss: "npm:8.5.9"
@@ -5447,15 +5447,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mantine-datatable@npm:7.17.1":
-  version: 7.17.1
-  resolution: "mantine-datatable@npm:7.17.1"
+"mantine-datatable@npm:8.3.13":
+  version: 8.3.13
+  resolution: "mantine-datatable@npm:8.3.13"
   peerDependencies:
-    "@mantine/core": ">=7.14"
-    "@mantine/hooks": ">=7.14"
+    "@mantine/core": ">=8.3"
+    "@mantine/hooks": ">=8.3"
     clsx: ">=2"
-    react: ">=18.2"
-  checksum: 10c0/aafc41ba88e1a33a4094a47ceb23940952f811fc9240dad622030c7348169f0e51a78b024ce186762e1a114c94621e54508f23b5e57507055b3640d120a298ce
+    react: ">=19"
+    react-dom: ">=19"
+  checksum: 10c0/47f5338c449d4c2559cebc218fbd363470710e5369a5869f5c82a1260e2e758248ff7f097982734aacba621f614fe42cbbe5f1f2396d650605ca876c49334672
   languageName: node
   linkType: hard
 

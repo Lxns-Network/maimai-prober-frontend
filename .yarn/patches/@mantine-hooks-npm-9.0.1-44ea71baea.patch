@@ -1,0 +1,18 @@
+diff --git a/esm/use-merged-ref/use-merged-ref.mjs b/esm/use-merged-ref/use-merged-ref.mjs
+index f8ef130b7ecf89effc2f6a28708d5d1b491f316d..b13906cbb67aabdcdd89cc5685550d37b06c77ca 100644
+--- a/esm/use-merged-ref/use-merged-ref.mjs
++++ b/esm/use-merged-ref/use-merged-ref.mjs
+@@ -12,11 +12,11 @@ function mergeRefs(...refs) {
+ 			const cleanup = assignRef(ref, node);
+ 			if (cleanup) cleanupMap.set(ref, cleanup);
+ 		});
+-		if (cleanupMap.size > 0) return () => {
++		return () => {
+ 			refs.forEach((ref) => {
+ 				const cleanup = cleanupMap.get(ref);
+ 				if (cleanup && typeof cleanup === "function") cleanup();
+-				else assignRef(ref, null);
++				else if (typeof ref === "object" && ref !== null && "current" in ref) ref.current = null;
+ 			});
+ 			cleanupMap.clear();
+ 		};

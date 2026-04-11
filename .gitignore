@@ -124,6 +124,7 @@ dist
 
 # yarn v2
 .yarn/
+!.yarn/patches/
 .pnp.*
 
 # JetBrains IDEs
