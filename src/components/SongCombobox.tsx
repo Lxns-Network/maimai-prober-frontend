@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  CloseButton, Combobox, InputBase, ScrollArea, Text, useCombobox, InputBaseProps, ElementProps, Group, Badge
+  CloseButton, Combobox, InputBase, ScrollArea, Text, useVirtualizedCombobox, InputBaseProps, ElementProps, Group, Badge
 } from "@mantine/core";
 import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.ts";
 import { IconSearch } from "@tabler/icons-react";
 import { toHiragana } from 'wanakana';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import useSongListStore from "../hooks/useSongListStore.ts";
 import useAliasListStore from "../hooks/useAliasListStore.ts";
 import useGame from "@/hooks/useGame.ts";
@@ -17,15 +18,19 @@ interface SongComboboxProps extends InputBaseProps, ElementProps<'input', keyof 
   onOptionSubmit?: (value: number) => void;
 }
 
-function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search: string, aliases?: {
-  song_id: number;
-  aliases: string[];
-}[]): (MaimaiSongProps | ChunithmSongProps)[] {
-  const result = new Set<MaimaiSongProps | ChunithmSongProps>();
-  const hiragana = toHiragana(search).toLowerCase();
-  const searchLower = search.toLowerCase();
-  const searchNumber = !isNaN(Number(search)) ? Number(search) : null;
+interface SongSearchIndex {
+  song: MaimaiSongProps | ChunithmSongProps;
+  titleLower: string;
+  artistLower: string;
+  titleHiragana: string;
+  artistHiragana: string;
+  aliasesLower: string[];
+}
 
+function buildSearchIndex(
+  songs: (MaimaiSongProps | ChunithmSongProps)[],
+  aliases?: { song_id: number; aliases: string[] }[]
+): SongSearchIndex[] {
   const aliasMap = new Map<number, string[]>();
   if (aliases) {
     for (const alias of aliases) {
@@ -33,67 +38,96 @@ function getFilteredSongs(songs: (MaimaiSongProps | ChunithmSongProps)[], search
     }
   }
 
-  for (const song of songs) {
-    if (searchNumber !== null && song.id === searchNumber) {
-      result.add(song);
+  return songs.map((song) => ({
+    song,
+    titleLower: song.title.toLowerCase(),
+    artistLower: song.artist.toLowerCase(),
+    titleHiragana: toHiragana(song.title).toLowerCase(),
+    artistHiragana: toHiragana(song.artist).toLowerCase(),
+    aliasesLower: aliasMap.get(song.id) || [],
+  }));
+}
+
+function searchSongs(index: SongSearchIndex[], search: string): (MaimaiSongProps | ChunithmSongProps)[] {
+  if (!search) return index.map((entry) => entry.song);
+
+  const searchLower = search.toLowerCase();
+  const searchHiragana = toHiragana(search).toLowerCase();
+  const searchNumber = !isNaN(Number(search)) ? Number(search) : null;
+
+  const result: (MaimaiSongProps | ChunithmSongProps)[] = [];
+
+  for (const entry of index) {
+    if (searchNumber !== null && entry.song.id === searchNumber) {
+      result.push(entry.song);
       continue;
     }
-
-    const titleLower = song.title.toLowerCase();
-    const artistLower = song.artist.toLowerCase();
-    const titleHiragana = toHiragana(song.title).toLowerCase();
-    const artistHiragana = toHiragana(song.artist).toLowerCase();
 
     if (
-      titleLower.includes(searchLower) ||
-      titleHiragana.includes(hiragana) ||
-      artistLower.includes(searchLower) ||
-      artistHiragana.includes(hiragana)
+      entry.titleLower.includes(searchLower) ||
+      entry.titleHiragana.includes(searchHiragana) ||
+      entry.artistLower.includes(searchLower) ||
+      entry.artistHiragana.includes(searchHiragana) ||
+      entry.aliasesLower.some(alias => alias.includes(searchLower))
     ) {
-      result.add(song);
-      continue;
-    }
-
-    if (aliasMap.has(song.id)) {
-      const aliasList = aliasMap.get(song.id);
-      if (aliasList && aliasList.some(alias => alias.includes(searchLower))) {
-        result.add(song);
-      }
+      result.push(entry.song);
     }
   }
 
-  return Array.from(result);
+  return result;
 }
+
+const ITEM_HEIGHT = 48;
 
 export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSubmit, ...others }: SongComboboxProps) => {
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [aliases, setAliases] = useState<{ song_id: number; aliases: string[] }[]>([]);
   const [game] = useGame();
   const [search, setSearch] = useState('');
-  const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
+  const [searchIndex, setSearchIndex] = useState<SongSearchIndex[]>([]);
+  const filteredSongs = useMemo(() => searchSongs(searchIndex, search), [searchIndex, search]);
+  const [opened, setOpened] = useState(false);
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState(-1);
+  const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const getAliasList = useAliasListStore((state) => state.getAliasList);
-  const combobox = useCombobox({
-    onDropdownClose: () => combobox.resetSelectedOption(),
+
+  const virtualizer = useVirtualizer({
+    count: filteredSongs.length,
+    getScrollElement: () => scrollParent,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 10,
   });
 
-  const MAX_SONGS = 100;
+  function onOptionSubmitHandler(index: number) {
+    const song = filteredSongs[index];
+    if (!song) return;
+    onOptionSubmit && onOptionSubmit(song.id);
+    setSearch(song.title);
+    combobox.closeDropdown();
+    combobox.resetSelectedOption();
+  }
+
+  const combobox = useVirtualizedCombobox({
+    opened,
+    onOpenedChange: setOpened,
+    totalOptionsCount: filteredSongs.length,
+    getOptionId: (index) => filteredSongs[index] ? `song-${filteredSongs[index].id}` : null,
+    selectedOptionIndex,
+    setSelectedOptionIndex: (index) => {
+      setSelectedOptionIndex(index);
+      if (index >= 0) {
+        virtualizer.scrollToIndex(index, { align: 'auto' });
+      }
+    },
+    onSelectedOptionSubmit: onOptionSubmitHandler,
+  });
 
   useEffect(() => {
-    setFilteredSongs([]);
-    setSongList(getSongList(game));
+    const newSongList = getSongList(game);
+    setSongList(newSongList);
+    setSearchIndex(newSongList ? buildSearchIndex(newSongList.songs, getAliasList(game).aliases) : []);
   }, [game]);
-
-  useEffect(() => {
-    setAliases(getAliasList(game).aliases);
-  }, [game, getAliasList]);
-
-  useEffect(() => {
-    if (!songList) return;
-
-    setFilteredSongs(getFilteredSongs(songList.songs, search, aliases));
-  }, [songList?.songs, search]);
 
   useEffect(() => {
     onSearchChange && onSearchChange(search);
@@ -101,28 +135,47 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
 
   useEffect(() => {
     if (!songList) return;
-
     onSongsChange && onSongsChange(search.length === 0 ? songList.songs : filteredSongs);
   }, [filteredSongs]);
 
   useEffect(() => {
     if (!songList) return;
-
     const song = songList.songs.find((song) => song.id === value);
     setSearch(song?.title || '');
   }, [songList?.songs, value]);
 
+  const renderOption = useCallback((index: number) => {
+    const song = filteredSongs[index];
+    if (!song) return null;
+
+    return (
+      <Group justify="space-between" wrap="nowrap">
+        <div>
+          <Text fz="sm" fw={500}>{song.title}</Text>
+          <Text fz="xs" opacity={0.6}>{song.artist}</Text>
+        </div>
+        {songList instanceof MaimaiSongList && song.id >= 100000 && (
+          <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">宴</Badge>
+        )}
+        {songList instanceof ChunithmSongList && song.id >= 8000 && (
+          <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
+            {(song as ChunithmSongProps).difficulties[0].kanji}
+          </Badge>
+        )}
+      </Group>
+    );
+  }, [filteredSongs, songList]);
+
   return (
     <Combobox
-      position="bottom"
-      middlewares={{ flip: false, shift: false }}
       store={combobox}
+      resetSelectionOnOptionHover={false}
+      keepMounted
       onOptionSubmit={(value) => {
         onOptionSubmit && onOptionSubmit(parseInt(value));
         setSearch(songList?.songs.find((song) => song.id === parseInt(value))?.title || '');
         combobox.closeDropdown();
       }}
-      transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
     >
       <Combobox.Target>
         <InputBase
@@ -134,7 +187,7 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
                 size="sm"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
-                  setSearch('')
+                  setSearch('');
                   onOptionSubmit && onOptionSubmit(0);
                 }}
               />
@@ -147,7 +200,6 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
           disabled={songList?.songs.length === 0}
           onChange={(event) => {
             combobox.openDropdown();
-            combobox.updateSelectedOptionIndex();
             setSearch(event.currentTarget.value);
           }}
           onClick={() => combobox.openDropdown()}
@@ -162,41 +214,43 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
 
       <Combobox.Dropdown>
         <Combobox.Options>
-          <ScrollArea.Autosize mah={200} type="scroll">
-            {filteredSongs.length === 0 && (
-              <Combobox.Empty>没有找到符合条件的曲目</Combobox.Empty>
-            )}
-            {filteredSongs.slice(0, MAX_SONGS).map((song) => (
-              <Combobox.Option value={song.id.toString()} key={song.id}>
-                <Group justify="space-between" wrap="nowrap">
-                  <div>
-                    <Text fz="sm" fw={500}>
-                      {song.title}
-                    </Text>
-                    <Text fz="xs" opacity={0.6}>
-                      {song.artist}
-                    </Text>
-                  </div>
-                  {songList instanceof MaimaiSongList && song.id >= 100000 && (
-                    <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
-                      宴
-                    </Badge>
-                  )}
-                  {songList instanceof ChunithmSongList && song.id >= 8000 && (
-                    <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
-                      {(song as ChunithmSongProps).difficulties[0].kanji}
-                    </Badge>
-                  )}
-                </Group>
-              </Combobox.Option>
-            ))}
-          </ScrollArea.Autosize>
+          {filteredSongs.length === 0 ? (
+            <Combobox.Empty>没有找到符合条件的曲目</Combobox.Empty>
+          ) : (
+            <ScrollArea.Autosize
+              mah={200}
+              type="scroll"
+              scrollbarSize={4}
+              viewportRef={setScrollParent}
+              onMouseDown={(event) => event.preventDefault()}
+            >
+              <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+                {virtualizer.getVirtualItems().map((virtualItem) => {
+                  const song = filteredSongs[virtualItem.index];
+                  if (!song) return null;
+                  return (
+                    <Combobox.Option
+                      value={song.id.toString()}
+                      key={song.id}
+                      active={virtualItem.index === selectedOptionIndex}
+                      onClick={() => onOptionSubmitHandler(virtualItem.index)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: virtualItem.size,
+                        transform: `translateY(${virtualItem.start}px)`,
+                      }}
+                    >
+                      {renderOption(virtualItem.index)}
+                    </Combobox.Option>
+                  );
+                })}
+              </div>
+            </ScrollArea.Autosize>
+          )}
         </Combobox.Options>
-        <Combobox.Footer>
-          <Text fz="xs" c="dimmed">
-            最多显示 {MAX_SONGS} 条结果
-          </Text>
-        </Combobox.Footer>
       </Combobox.Dropdown>
     </Combobox>
   )

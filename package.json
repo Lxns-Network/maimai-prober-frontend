@@ -30,6 +30,7 @@
     "@simplewebauthn/browser": "13.3.0",
     "@tabler/icons-react": "2.47.0",
     "@tanstack/react-query": "5.97.0",
+    "@tanstack/react-virtual": "3.13.6",
     "@tiptap/extension-highlight": "2.27.2",
     "@tiptap/extension-image": "2.27.2",
     "@tiptap/extension-link": "2.27.2",
