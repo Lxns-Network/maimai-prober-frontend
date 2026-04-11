@@ -44,11 +44,13 @@ const reducer = (state: State, action: Action): State => {
 }
 
 const SongsContent = () => {
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useGame();
   const prevGame = usePrevious(game);
   const pageContext = usePageContext();
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
+  const getSongList = useSongListStore((state) => state.getSongList);
+
+  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>(() => getSongList(game));
   const [state, dispatch] = useReducer(reducer, {
     songId: (() => {
       const id = searchParams.get("song_id");
@@ -60,10 +62,13 @@ const SongsContent = () => {
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [songCollections, setSongCollections] = useState<SongCollectionItemProps[] | null>(null);
-  const getSongList = useSongListStore((state) => state.getSongList);
 
   const switchingGame = useRef(false);
-  const { scores: fetchedScores } = useSongBests(game, song);
+  const isSongMatchingGame = song && (
+    (game === "maimai" && "standard" in (song.difficulties || {})) ||
+    (game === "chunithm" && !("standard" in (song.difficulties || {})))
+  );
+  const { scores: fetchedScores } = useSongBests(game, isSongMatchingGame ? song : null);
 
   const getSongCollectionsHandler = async (songId: number) => {
     try {
@@ -76,16 +81,12 @@ const SongsContent = () => {
   }
 
   useEffect(() => {
-    if (pageContext.songId) {
-      dispatch({ type: "SET_FROM_PAGE_CONTEXT", payload: { songId: pageContext.songId } });
-    }
-  }, [pageContext.songId]);
-
-  useEffect(() => {
-    setSongList(getSongList(game));
+    const newSongList = getSongList(game);
+    setSongList(newSongList);
 
     if (prevGame !== undefined && prevGame !== game) {
       switchingGame.current = true;
+      setSong(null);
       setScores([]);
       setSongCollections(null);
       window.history.replaceState(null, '', window.location.pathname);
@@ -98,15 +99,20 @@ const SongsContent = () => {
       switchingGame.current = false;
       return;
     }
-    if (!song) return;
+    if (!song || !songId) return;
     window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&song_id=${song.id.toString()}`);
-  }, [song, game]);
+  }, [song, songId, game]);
 
   useEffect(() => {
     setScores(fetchedScores);
   }, [fetchedScores]);
 
   useEffect(() => {
+    if (!songId) {
+      setSong(null);
+      return;
+    }
+
     const song = songList?.songs.find((song) => song.id === songId);
     if (!song) return;
 
@@ -161,7 +167,7 @@ const SongsContent = () => {
       <Transition
         mounted={Boolean(songId && song)}
         transition="pop"
-        enterDelay={0}
+        enterDelay={300}
       >
         {(styles) => (
           <SongDifficultyList song={song} scores={scores} setScores={setScores} style={styles} />
@@ -170,7 +176,7 @@ const SongsContent = () => {
       <Transition
         mounted={Boolean(songId && song && songCollections && songCollections.length > 0)}
         transition="pop"
-        enterDelay={0}
+        enterDelay={350}
       >
         {(styles) => (
           <SongCollections collections={songCollections} style={{ ...styles, marginTop: "1rem" }} />

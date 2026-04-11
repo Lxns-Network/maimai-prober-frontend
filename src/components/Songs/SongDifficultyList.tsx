@@ -94,11 +94,10 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
   const { openModal: openScoreModal } = useScoreStore();
 
   useEffect(() => {
-    setDifficulties([]);
-  }, [game]);
-
-  useEffect(() => {
-    if (!song || !song.difficulties) return;
+    if (!song || !song.difficulties) {
+      setDifficulties([]);
+      return;
+    }
 
     if ("standard" in song.difficulties) {
       Object.keys(song.difficulties).forEach((type) => {
@@ -112,7 +111,7 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
     } else {
       setDifficulties((song.difficulties as ChunithmDifficultyProps[]).slice().reverse());
     }
-  }, [song]);
+  }, [song, game]);
 
   useEffect(() => {
     if (!song || !song.difficulties) return;

@@ -10,7 +10,7 @@ export const DEFAULT_THEME_COLOR: MantineColor = "blue";
 
 export function useThemeColor(): [MantineColor, (color: MantineColor) => void] {
   const [color, setColor] = useLocalStorage<MantineColor>({
-    key: "themeColor",
+    key: "mantine-primary-color-value",
     defaultValue: DEFAULT_THEME_COLOR,
   });
 

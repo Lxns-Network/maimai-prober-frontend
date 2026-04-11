@@ -111,7 +111,7 @@ export const MaimaiSongDifficulty = ({ difficulty, score, songId, versions, onCl
             <Badge variant="filled" color="#49090a" size="sm" ml="xs">BUDDY</Badge>
           )}
         </Flex>
-        {score ? (
+        {score && score.achievements >= 0 ? (
           <Card w="100%" radius="md" p="1rem" pt="xs" pb="xs" style={{ color: "var(--mantine-text-dark)", backgroundColor: "#424242" }}>
             <Group>
               <Image

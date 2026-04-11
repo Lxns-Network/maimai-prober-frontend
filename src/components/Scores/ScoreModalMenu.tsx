@@ -138,7 +138,7 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
         </Menu.Item>
         {location.pathname !== "/songs" && (
           <Menu.Item leftSection={<IconMusic size={20} stroke={1.5} />} onClick={() => {
-            navigate(`/songs`, { pageContext: { songId: score.id } });
+            navigate(`/songs?game=${game}&song_id=${score.id}`);
             closeScoreModal();
           }}>
             查看曲目详情

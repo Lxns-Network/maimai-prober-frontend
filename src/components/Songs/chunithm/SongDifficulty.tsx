@@ -68,7 +68,7 @@ export const ChunithmSongDifficulty = ({ difficulty, score, versions, onClick }:
           <Rating count={difficulty.star} value={5} size={12} readOnly />
         )}
       </Flex>
-      {score ? (
+      {score && score.score >= 0 ? (
         <Card w="100%" radius="md" p="1rem" pt="xs" pb="xs" style={{ color: "var(--mantine-text-dark)", backgroundColor: "#424242" }}>
           <Group>
             <Stack gap={8}>
