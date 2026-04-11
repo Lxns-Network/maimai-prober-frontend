@@ -220,7 +220,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
         )}
         <Group justify="flex-end" mt="lg">
           <Button variant="default" onClick={onClose}>取消</Button>
-          <Button color="blue" type="submit">{!app ? "创建" : "编辑"}</Button>
+          <Button type="submit">{!app ? "创建" : "编辑"}</Button>
         </Group>
       </form>
     </Modal>

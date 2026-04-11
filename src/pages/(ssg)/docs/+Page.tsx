@@ -332,7 +332,7 @@ const Content = ({ markdown }: { markdown: string }) => {
 
           if (classesName.includes("remark-container")) {
             let icon = <IconInfoCircle />;
-            let color = "blue";
+            let color = "";
             if (classesName.includes("warning")) {
               icon = <IconAlertCircle />;
               color = "yellow";

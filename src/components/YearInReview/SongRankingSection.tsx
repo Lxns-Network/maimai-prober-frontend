@@ -106,7 +106,7 @@ export const SongRankingSection = ({ data }: { data: YearInReviewProps }) => {
                 marginBottom: index === sortedEntries.length - 4 ? 0 : rem(8),
               }}>
                 <Group>
-                  <Badge variant="light" color="blue" size="xl" circle>
+                  <Badge variant="light" size="xl" circle>
                     {index + 4}
                   </Badge>
                   <div style={{ flex: 1 }}>

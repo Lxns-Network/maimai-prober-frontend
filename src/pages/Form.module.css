@@ -12,5 +12,5 @@
     background-color: var(--mantine-primary-color-light);
     border-radius: var(--mantine-radius-sm);
     padding: 4px 8px;
-    color: var(--mantine-color-blue-light-color);
+    color: var(--mantine-primary-color-light-color);
 }

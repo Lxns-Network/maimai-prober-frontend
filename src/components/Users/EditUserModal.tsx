@@ -114,7 +114,7 @@ export const EditUserModal = ({ user, opened, onClose }: { user: UserProps | nul
           </Group>
           <Group>
             <Button variant="default" onClick={onClose}>取消</Button>
-            <Button color="blue" type="submit">保存</Button>
+            <Button type="submit">保存</Button>
           </Group>
         </Group>
       </form>

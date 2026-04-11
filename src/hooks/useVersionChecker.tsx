@@ -44,7 +44,6 @@ export function useVersionChecker(interval = 60000) {
             </Button>
           </Stack>
         ),
-        color: 'blue',
         autoClose: false,
       });
     }

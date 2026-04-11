@@ -388,7 +388,7 @@ function ChartContent() {
           <div>
             <Group gap="xs">
               <Title order={3}>谱面预览</Title>
-              <Badge variant="light" color="blue">测试版</Badge>
+              <Badge variant="light">测试版</Badge>
             </Group>
             {chartData && (
               <Text size="sm" c="dimmed">{chartData.title}</Text>

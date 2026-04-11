@@ -82,7 +82,7 @@
   width: 1px;
 
   &.measureTickMajor {
-    background-color: var(--mantine-color-blue-6);
+    background-color: var(--mantine-primary-color-light-color);
   }
 
   &.measureTickMedium {
@@ -103,7 +103,7 @@
 .measureLabel {
   position: absolute;
   font-size: 9px;
-  color: var(--mantine-color-blue-6);
+  color: var(--mantine-primary-color-light-color);
   font-family: var(--mantine-font-family-monospace);
   top: 5px;
 }

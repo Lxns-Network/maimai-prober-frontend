@@ -86,7 +86,7 @@ export const EditDeveloperModal = ({ opened, close, developer, onSuccess }: Edit
         />
         <Group justify="flex-end" mt="lg">
           <Button variant="default" onClick={close}>取消</Button>
-          <Button color="blue" type="submit">保存</Button>
+          <Button type="submit">保存</Button>
         </Group>
       </form>
     </Modal>

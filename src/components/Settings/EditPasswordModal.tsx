@@ -54,7 +54,7 @@ export const EditPasswordModal = ({ opened, close }: { opened: boolean, close():
         <PasswordInput label="重复密码" placeholder="请再次输入新密码" mb="xs" {...form.getInputProps("confirm_new_password")} />
         <Group justify="flex-end" mt="lg">
           <Button variant="default" onClick={close}>取消</Button>
-          <Button color="blue" type="submit">保存</Button>
+          <Button type="submit">保存</Button>
         </Group>
       </form>
     </Modal>

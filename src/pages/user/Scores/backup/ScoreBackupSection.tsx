@@ -25,7 +25,7 @@ const CardButton = ({ icon, title, description, disabled, onClick }: CardButtonP
         disabled: disabled,
       }}>
         <Flex align="center" direction="column">
-          <ThemeIcon variant="subtle" color="blue" size={64}>
+          <ThemeIcon variant="subtle" size={64}>
             {icon}
           </ThemeIcon>
           <Space h="sm" />

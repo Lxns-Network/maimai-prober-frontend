@@ -129,7 +129,7 @@ export default function Page() {
 
         <Title className={classes.title}>
           落雪咖啡屋{' '}
-          <Text variant="gradient" component="span" inherit>
+          <Text c="var(--mantine-primary-color-light-color)" component="span" inherit>
             maimai
           </Text>{' '}
           DX 查分器

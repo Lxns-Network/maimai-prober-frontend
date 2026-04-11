@@ -364,7 +364,6 @@ export const WorkersSection = () => {
                   <ActionIcon
                     size="sm"
                     variant="subtle"
-                    color="blue"
                     disabled={isLocal}
                     onClick={(e) => { e.stopPropagation(); handleRename(worker); }}
                   >

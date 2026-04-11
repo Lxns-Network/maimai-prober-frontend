@@ -106,7 +106,7 @@
     position: relative;
     line-height: 1;
     padding: 0 8px;
-    color: var(--mantine-color-blue-light-color);
+    color: var(--mantine-primary-color-light-color);
 }
 
 .highlight::before {

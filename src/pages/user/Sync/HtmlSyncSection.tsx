@@ -322,7 +322,7 @@ export const HtmlSyncSection = () => {
               onChange={(value) => setGame(value as typeof game)}
             />
           </div>
-          <Alert radius="md" color="blue" icon={<IconFileImport size={18} />} title="文件要求">
+          <Alert radius="md" icon={<IconFileImport size={18} />} title="文件要求">
             <Stack gap="xs">
               <Text size="sm">
                 仅支持从 NET 保存的完整 HTML 源码。你可以上传文件，也可以直接粘贴 HTML 文本。

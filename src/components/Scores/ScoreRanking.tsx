@@ -42,7 +42,7 @@ export const ScoreRanking = ({ game, score }: {
   return (
     <Stack gap="xs">
       {rankingScores.map((rankingScore, index) => {
-        let badgeColor: string;
+        let badgeColor = undefined;
         switch (rankingScore.ranking) {
           case 1:
             badgeColor = "yellow";
@@ -53,8 +53,6 @@ export const ScoreRanking = ({ game, score }: {
           case 3:
             badgeColor = "orange";
             break;
-          default:
-            badgeColor = "blue";
         }
 
         return (

@@ -73,7 +73,7 @@ export const UserBindSection = () => {
           {...form.getInputProps('qq')}
         />
         <Group justify="flex-end" mt="md">
-          <Button color="blue" type="submit" disabled={!form.isDirty()}>保存</Button>
+          <Button type="submit" disabled={!form.isDirty()}>保存</Button>
         </Group>
       </form>
     </Card>

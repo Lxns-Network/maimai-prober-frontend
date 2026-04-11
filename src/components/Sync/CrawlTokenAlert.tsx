@@ -12,7 +12,7 @@ export const CrawlTokenAlert = ({ token, resetHandler }: CrawlTokenAlertProps) =
   }
 
   const isTokenExpired = token && getExpireTime(token) < 0;
-  const alertColor = isTokenExpired ? 'yellow' : 'blue';
+  const alertColor = isTokenExpired ? 'yellow' : undefined;
 
   return (
     <Alert variant="light" icon={<IconAlertCircle />} title="链接有效期提示" color={alertColor}>

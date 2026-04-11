@@ -32,7 +32,7 @@ export function UserButton({ user, onClick, ...others }: { user: UserProps, onCl
               {user.name}
             </Text>
             {permissionToList(user.permission).indexOf(UserPermission.Developer) !== -1 ? (
-              <Badge color="blue" variant="light">开发者</Badge>
+              <Badge variant="light">开发者</Badge>
             ) : (
               <Badge color="red" variant="light">非开发者</Badge>
             )}

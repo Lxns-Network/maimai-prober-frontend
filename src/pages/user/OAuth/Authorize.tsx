@@ -136,7 +136,7 @@ export default function Authorize() {
             size="sm"
             mt="md"
             icon={
-              <ThemeIcon color="blue" size={20} radius="xl">
+              <ThemeIcon size={20} radius="xl">
                 <IconCheck size={14} />
               </ThemeIcon>
             }
@@ -191,7 +191,7 @@ export default function Authorize() {
                   </Button>
                   <CopyButton value={code} timeout={2000}>
                     {({ copied, copy }) => (
-                      <Button onClick={copy} leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />} color={copied ? "teal" : "blue"}>
+                      <Button onClick={copy} leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />} color={copied ? "teal" : undefined}>
                         {copied ? "已复制" : "复制授权码"}
                       </Button>
                     )}

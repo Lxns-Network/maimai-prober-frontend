@@ -10,7 +10,7 @@ export const UploadRhythmSection = ({ data }: { data: YearInReviewProps }) => {
         data={Object.entries(data.player_monthly_uploads).map(([key, value]) => ({ key: `${key} 月`, value }))}
         dataKey="key"
         series={[
-          { name: 'value', label: '次数', color: 'blue.6' },
+          { name: 'value', label: '次数' },
         ]}
         unit=" 次"
         barProps={{ barSize: 50 }}

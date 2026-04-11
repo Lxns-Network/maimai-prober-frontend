@@ -384,7 +384,7 @@ ${url}`);
 
           <Title className={classes.title}>
             {(data ? data.game : game) === 'maimai' ? '舞萌 DX' : '中二节奏'}{' '}
-            <Text variant="gradient" component="span" inherit>
+            <Text c="var(--mantine-primary-color-light-color)" component="span" inherit>
               {year}
             </Text>{' '}
             年度总结

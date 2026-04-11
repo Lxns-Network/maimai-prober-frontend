@@ -6,12 +6,12 @@ const colorSchemes = {
   auto: {
     icon: <IconSunMoon stroke={1.5} />,
     label: '跟随系统',
-    color: 'blue'
+    color: undefined,
   },
   dark: {
     icon: <IconMoonStars stroke={1.5} />,
     label: '深色模式',
-    color: 'blue'
+    color: undefined,
   },
   light: {
     icon: <IconSun stroke={1.5} />,

@@ -119,7 +119,7 @@ export default function Login() {
         请使用 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号登录
       </Text>
       {!isTokenUndefined() && !isTokenExpired() &&
-        <Alert variant="light" color="blue" icon={<IconAlertCircle />} mt="xl" radius="md">
+        <Alert variant="light" icon={<IconAlertCircle />} mt="xl" radius="md">
           你已登录，如果想要切换账号，请先登出。
         </Alert>
       }
@@ -173,7 +173,7 @@ export default function Login() {
             />
           )}
           <Group justify="space-between" mt="md">
-            <Text component="label" htmlFor="password" size="sm" fw={500}>密码</Text>
+            <Text component="label" htmlFor="password" size="sm" fw={600}>密码</Text>
             <Anchor onClick={() => navigate("/forgot-password")} style={(theme) => ({
               paddingTop: 2,
               color: theme.colors[theme.primaryColor][computedColorScheme === 'dark' ? 4 : 6],

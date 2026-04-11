@@ -166,7 +166,7 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
         <Text fz="xs" c="dimmed">投票占比</Text>
         <Progress.Root size="xl" mt={4}>
           <Tooltip label={`共 ${alias.weight.up} 人`}>
-            <Progress.Section value={progress} color="blue">
+            <Progress.Section value={progress} color="var(--mantine-primary-color-filled)" >
               <Progress.Label>支持</Progress.Label>
             </Progress.Section>
           </Tooltip>

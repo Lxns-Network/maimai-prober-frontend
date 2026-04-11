@@ -51,9 +51,9 @@ const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps 
   return (
     <RingProgress
       roundCaps
-      sections={[{ value: calculateCompletion(), color: 'blue' }]}
+      sections={[{ value: calculateCompletion(), color: 'var(--mantine-primary-color-filled)' }]}
       label={
-        <Text c="blue" fw={700} ta="center" size="xl">
+        <Text c="var(--mantine-primary-color-light-color)" fw={700} ta="center" size="xl">
           {calculateCompletion()}%
         </Text>
       }

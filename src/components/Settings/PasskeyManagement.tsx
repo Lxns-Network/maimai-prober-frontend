@@ -232,7 +232,6 @@ export const PasskeyManagement = () => {
                   <Group gap="xs">
                     <ActionIcon
                       variant="light"
-                      color="blue"
                       onClick={() => showEditModal(passkey)}
                     >
                       <IconEdit size={16} />

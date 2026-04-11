@@ -25,7 +25,7 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
           <ThemeIcon
             size="sm"
             variant="light"
-            color={hasHighRiskScope ? "orange" : "blue"}
+            color={hasHighRiskScope ? "orange" : undefined}
           >
             {hasHighRiskScope ? <IconAlertTriangle size={12} /> : <IconShield size={12} />}
           </ThemeIcon>
@@ -78,7 +78,7 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
                 <Badge
                   key={scope}
                   variant={isHighRisk ? "filled" : "light"}
-                  color={isHighRisk ? "orange" : "blue"}
+                  color={isHighRisk ? "orange" : undefined}
                   size="sm"
                 >
                   {scopeInfo?.title || scope}
@@ -138,7 +138,6 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => v
             {app.website && (
               <ActionIcon
                 variant="subtle"
-                color="blue"
                 size="sm"
                 onClick={handleVisitWebsite}
               >
@@ -197,7 +196,7 @@ export const UserOAuthSection = () => {
             <Text fz="lg" fw={700}>
               OAuth 应用
             </Text>
-            <Badge variant="light" color="blue">测试版</Badge>
+            <Badge variant="light">测试版</Badge>
           </Group>
           <Text fz="xs" c="dimmed" mt={3}>
             管理已授权的 OAuth 应用，这些应用可以访问你的查分器数据

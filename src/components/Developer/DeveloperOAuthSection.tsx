@@ -81,7 +81,7 @@ export const DeveloperOAuthSection = () => {
               <Text fz="lg" fw={700}>
                 OAuth 应用
               </Text>
-              <Badge variant="light" color="blue">测试版</Badge>
+              <Badge variant="light">测试版</Badge>
             </Group>
             <Text fz="xs" c="dimmed" mt={3}>
               使用 OAuth 应用来获取用户授权访问其 maimai DX 查分器数据
@@ -144,7 +144,6 @@ export const DeveloperOAuthSection = () => {
                 <ActionIcon
                   size="sm"
                   variant="subtle"
-                  color="blue"
                   onClick={(event) => {
                     event.stopPropagation();
                     setSelectedApp(app);

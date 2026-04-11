@@ -164,7 +164,7 @@ export const SendBatchEmailModal = ({ users, opened, close }: { users: UserProps
         </RichTextEditor>
         <Group justify="flex-end" mt="lg">
           <Button variant="default" onClick={close}>取消</Button>
-          <Button color="blue" type="submit">发送</Button>
+          <Button type="submit">发送</Button>
         </Group>
       </form>
     </Modal>

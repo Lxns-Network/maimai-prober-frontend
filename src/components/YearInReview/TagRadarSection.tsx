@@ -126,7 +126,7 @@ export const TagRadarSection = ({ data }: { data: YearInReviewProps }) => {
               data={Object.entries(groupTagData[tagGroup]).map(([key, value]) => ({ key, value }))}
               dataKey="key"
               series={[
-                { name: 'value', color: 'blue.6' },
+                { name: 'value', color: 'var(--mantine-primary-color-light-color)' },
               ]}
               barProps={{ barSize: 50 }}
               gridAxis="none"
@@ -138,7 +138,7 @@ export const TagRadarSection = ({ data }: { data: YearInReviewProps }) => {
               h={300}
               data={Object.entries(groupTagData[tagGroup || 1]).map(([key, value]) => ({ tag: key, weight: value })).slice(0, 6)}
               dataKey="tag"
-              series={[{ name: 'weight', color: 'blue.4' }]}
+              series={[{ name: 'weight', color: 'var(--mantine-primary-color-light-color)' }]}
             />
           )}
         </Stack>
