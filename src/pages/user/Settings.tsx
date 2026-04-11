@@ -1,6 +1,7 @@
 import { Page } from "@/components/Page/Page.tsx";
 import { GeneralSettingsSection } from "./Settings/GeneralSettingsSection.tsx";
 import { SecuritySettingsSection } from "./Settings/SecuritySettingsSection.tsx";
+import { SiteSettingsSection } from "./Settings/SiteSettingsSection.tsx";
 
 export default function Settings() {
   return (
@@ -11,6 +12,7 @@ export default function Settings() {
       }}
       tabs={[
         { id: "general", name: "常规设置", children: <GeneralSettingsSection /> },
+        { id: "site", name: "站点设置", children: <SiteSettingsSection /> },
         { id: "security", name: "账号安全", children: <SecuritySettingsSection /> },
       ]}
     />

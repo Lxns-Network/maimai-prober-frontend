@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from '@mantine/core';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
 import { ModalsProvider } from "@mantine/modals";
@@ -38,19 +38,26 @@ import 'react-photo-view/dist/react-photo-view.css';
 import "@/index.css";
 import classes from "@/App.module.css";
 import useGame from "@/hooks/useGame.ts";
+import { useThemeColor } from "@/hooks/useThemeColor.ts";
 import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 
-const theme = createTheme({
-  focusRing: 'never',
-  cursorType: 'pointer',
-  activeClassName: classes.active,
-});
+const baseTheme = {
+  primaryShade: 9 as const,
+  focusRing: 'never' as const,
+  cursorType: 'pointer' as const,
+};
 
 function LayoutInner({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
   const { config, isLoading: isSiteConfigLoading } = useSiteConfig();
   const { error: userTokenError } = useUserToken();
   const { toggle, fullscreen } = useFullscreenDocument();
+  const [themeColor] = useThemeColor();
+  const theme = useMemo(() => createTheme({
+    ...baseTheme,
+    primaryColor: themeColor,
+    activeClassName: classes.active,
+  }), [themeColor]);
   const [opened, setOpened] = useState(typeof window !== 'undefined' ? window.innerWidth > NAVBAR_BREAKPOINT : false);
   const viewport = useRef<HTMLDivElement>(null);
 

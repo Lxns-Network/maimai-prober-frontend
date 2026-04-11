@@ -14,6 +14,7 @@ interface NavbarProps {
   onClose(): void;
 }
 
+
 export default function Navbar({ style, onClose }: NavbarProps) {
   const [active, setActive] = useState('');
   const isLoggedOut = typeof window !== 'undefined' ? !localStorage.getItem("token") : true;

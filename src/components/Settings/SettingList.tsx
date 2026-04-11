@@ -14,7 +14,7 @@ export interface SettingProps {
   key: string;
   title: string;
   description: string;
-  optionType: 'switch' | 'select' | 'multi-select' | 'button' | 'group';
+  optionType: 'switch' | 'select' | 'multi-select' | 'button' | 'group' | 'custom';
   // 可选参数
   placeholder?: string;
   color?: string; // 选项类型为 'button' 时需要
@@ -23,6 +23,7 @@ export interface SettingProps {
   options?: OptionProps[]; // 选项类型为 'select' 或 'multi-select' 时需要
   onChange?: (value: string | boolean | string[] | null) => void; // 选项更改时的回调函数
   onClick?: () => void; // 选项类型为 'button' 时需要
+  render?: () => React.ReactNode; // 选项类型为 'custom' 时需要
 }
 
 export type SettingValue = Record<string, unknown>;
@@ -55,7 +56,7 @@ const Setting = ({ data, value, onChange }: {
           </Box>
           {data.optionType === 'group' ? (
             <IconChevronRight size={16} />
-          ) : (
+          ) : data.optionType !== 'custom' && (
             <Box style={{ flexBasis: small && data.optionType.includes("select") ? "100%" : "auto" }}>
               {data.optionType === 'switch' && (
                 <Switch
@@ -89,7 +90,7 @@ const Setting = ({ data, value, onChange }: {
               {data.optionType === 'button' && (
                 <Button
                   variant="outline"
-                  color={data.color || 'blue'}
+                  color={data.color}
                   onClick={data.onClick}
                 >
                   {data.placeholder}
@@ -98,6 +99,9 @@ const Setting = ({ data, value, onChange }: {
             </Box>
           )}
         </Flex>
+        {data.optionType === 'custom' && data.render && (
+          <Box mt="xs">{data.render()}</Box>
+        )}
       </UnstyledButton>
     </>
   );
