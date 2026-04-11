@@ -2,6 +2,11 @@
 
 ---
 
+## 2026/4/12
+
+- 新增[站点设置](/user/settings?tab=site)，现在支持修改站点的主题颜色
+- 移除了曲目搜索和收藏品搜索的最大搜索结果限制
+
 ## 2026/4/10
 
 - 现在支持手动上传 HTML 同步游戏数据（[#18](https://github.com/Lxns-Network/maimai-prober-frontend/pull/18)）
