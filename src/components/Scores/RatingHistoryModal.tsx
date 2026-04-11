@@ -1,8 +1,7 @@
 import { AspectRatio, Divider, Flex, Group, Image, Modal, ScrollArea, Stack, Text, ThemeIcon } from "@mantine/core";
-import { Ref, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MaimaiDifficultyProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { IconArrowBigDownFilled, IconArrowBigRightFilled, IconArrowBigUpFilled } from "@tabler/icons-react";
-import { useScrollIntoView } from "@mantine/hooks";
 import { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { getSong } from "@/utils/api/song/song.tsx";
 import useGame from "@/hooks/useGame.ts";
@@ -21,10 +20,6 @@ const HISTORY_VERSION_LIST = {
 
 export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: RatingHistoryModalProps) => {
   const [game] = useGame();
-  const { scrollIntoView, targetRef, scrollableRef } = useScrollIntoView<
-    HTMLDivElement,
-    HTMLDivElement
-  >({ axis: 'x', duration: 0 });
   const [ratings, setRatings] = useState<number[]>([]);
 
   const versions = HISTORY_VERSION_LIST[game];
@@ -75,12 +70,6 @@ export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: Rating
     fetchRatings();
   }, [opened, fetchRatings]);
 
-  useEffect(() => {
-    setTimeout(() => {
-      scrollIntoView();
-    }, 0);
-  }, [ratings, scrollIntoView]);
-
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
@@ -90,13 +79,12 @@ export const RatingHistoryModal = ({ song, difficulty, opened, onClose }: Rating
           <Modal.CloseButton />
         </Modal.Header>
         <Modal.Body>
-          <ScrollArea viewportRef={scrollableRef}>
+          <ScrollArea startScrollPosition={{ x: versions.length * 100 }}>
             <Flex mb="xs" justify="center" w={versions.length * 100}>
               {versions.map((version, index) => (
                 <Stack
                   key={version}
                   gap="xs"
-                  ref={index === versions.length - 1 ? (targetRef as Ref<HTMLDivElement>) : undefined}
                 >
                   {ratings[index] ? <>
                     <AspectRatio ratio={ratio}>
