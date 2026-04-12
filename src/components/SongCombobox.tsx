@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CloseButton, Combobox, InputBase, ScrollArea, Text, useVirtualizedCombobox, InputBaseProps, ElementProps, Group, Badge
 } from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
 import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.ts";
 import { IconSearch } from "@tabler/icons-react";
@@ -83,8 +84,9 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useGame();
   const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebouncedValue(search, 200);
   const [searchIndex, setSearchIndex] = useState<SongSearchIndex[]>([]);
-  const filteredSongs = useMemo(() => searchSongs(searchIndex, search), [searchIndex, search]);
+  const filteredSongs = useMemo(() => searchSongs(searchIndex, debouncedSearch), [searchIndex, debouncedSearch]);
   const [opened, setOpened] = useState(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(-1);
   const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
@@ -123,11 +125,13 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
     onSelectedOptionSubmit: onOptionSubmitHandler,
   });
 
+  const latestSongList = getSongList(game);
+  const latestAliases = getAliasList(game).aliases;
+
   useEffect(() => {
-    const newSongList = getSongList(game);
-    setSongList(newSongList);
-    setSearchIndex(newSongList ? buildSearchIndex(newSongList.songs, getAliasList(game).aliases) : []);
-  }, [game]);
+    setSongList(latestSongList);
+    setSearchIndex(latestSongList ? buildSearchIndex(latestSongList.songs, latestAliases) : []);
+  }, [latestSongList?.songs, latestAliases]);
 
   useEffect(() => {
     onSearchChange && onSearchChange(search);
@@ -198,6 +202,7 @@ export const SongCombobox = ({ value, onSearchChange, onSongsChange, onOptionSub
           rightSectionPointerEvents={search.length !== 0 ? 'auto' : 'none'}
           value={search}
           disabled={songList?.songs.length === 0}
+          loading={!songList || songList.songs.length === 0}
           onChange={(event) => {
             combobox.openDropdown();
             setSearch(event.currentTarget.value);

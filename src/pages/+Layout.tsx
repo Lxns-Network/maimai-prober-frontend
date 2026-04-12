@@ -45,6 +45,9 @@ const baseTheme = {
   primaryShade: 9 as const,
   focusRing: 'never' as const,
   cursorType: 'pointer' as const,
+  fontWeights: {
+    medium: '500' as const,
+  },
 };
 
 function LayoutInner({ children }: { children: React.ReactNode }) {

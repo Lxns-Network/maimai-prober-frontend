@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  CloseButton, Combobox, InputBase, ScrollArea, Text, useVirtualizedCombobox, InputBaseProps, ElementProps, Loader
+  CloseButton, Combobox, InputBase, ScrollArea, Text, useVirtualizedCombobox, InputBaseProps, ElementProps
 } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 import { CollectionProps } from "@/types/player";
@@ -98,10 +98,9 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
         <InputBase
           placeholder="请选择收藏品"
           leftSection={<IconSearch size={18} />}
+          loading={loading}
           rightSection={
-            loading ? (
-              <Loader size={18} />
-            ) : search.length !== 0 ? (
+            search.length !== 0 && !loading ? (
               <CloseButton
                 size="sm"
                 onMouseDown={(event) => event.preventDefault()}
@@ -110,9 +109,9 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
                   onOptionSubmit && onOptionSubmit(null);
                 }}
               />
-            ) : (
+            ) : !loading ? (
               <Combobox.Chevron />
-            )
+            ) : null
           }
           rightSectionPointerEvents={search.length !== 0 ? 'auto' : 'none'}
           value={search}

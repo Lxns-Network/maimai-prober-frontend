@@ -132,7 +132,7 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => v
 
         <div style={{ flex: 1 }}>
           <Group gap={4} align="center">
-            <Text fw={600} size="md">
+            <Text fw={500} size="md">
               {app.name}
             </Text>
             {app.website && (

@@ -173,7 +173,7 @@ export default function Login() {
             />
           )}
           <Group justify="space-between" mt="md">
-            <Text component="label" htmlFor="password" size="sm" fw={600}>密码</Text>
+            <Text component="label" htmlFor="password" size="sm">密码</Text>
             <Anchor onClick={() => navigate("/forgot-password")} style={(theme) => ({
               paddingTop: 2,
               color: theme.colors[theme.primaryColor][computedColorScheme === 'dark' ? 4 : 6],

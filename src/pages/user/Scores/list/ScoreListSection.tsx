@@ -70,9 +70,8 @@ export const ScoreListSection = () => {
   const searchedScores = useMemo(() => {
     if (!filteredScores || isLoading) return [];
     if (!filteredSongs) return filteredScores;
-    return filteredScores.filter((score) => {
-      return filteredSongs.find((song) => song.id === score.id);
-    });
+    const songIds = new Set(filteredSongs.map((song) => song.id));
+    return filteredScores.filter((score) => songIds.has(score.id));
   }, [filteredScores, filteredSongs, isLoading]);
 
   const sortedScores = useMemo(() => {

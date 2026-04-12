@@ -375,7 +375,7 @@ export const HtmlSyncSection = () => {
                       <Group justify="space-between" align="flex-start" wrap="nowrap">
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <Group gap="xs" mb={4}>
-                            <Text fw={600} truncate>{item.name}</Text>
+                            <Text fw={500} truncate>{item.name}</Text>
                             <Badge variant="light">{item.source === "file" ? "文件" : "文本"}</Badge>
                             {item.error && (
                               <ThemeIcon color="red" variant="light" size="sm" radius="xl">
