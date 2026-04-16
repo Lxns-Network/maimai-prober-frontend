@@ -34,45 +34,55 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
 
   if (game === 'maimai') {
     bests = bests as MaimaiBestsProps;
-    data.push({
-      label: 'B35',
-      count: bests.standard_total,
-      color: '#228be6',
-      min: bests.standard.length > 0 ? bests.standard[bests.standard.length - 1].dx_rating : 0,
-      avg: Math.floor(bests.standard.reduce((acc, score) => acc + score.dx_rating, 0) / bests.standard.length * 100) / 100 || 0,
-      max: bests.standard.length > 0 ? bests.standard[0].dx_rating : 0
-    });
-    data.push({
-      label: 'B15',
-      count: bests.dx_total,
-      color: '#fd7e14',
-      min: bests.dx.length > 0 ? bests.dx[bests.dx.length - 1].dx_rating : 0,
-      avg: Math.floor(bests.dx.reduce((acc, score) => acc + score.dx_rating, 0) / bests.dx.length * 100) / 100 || 0,
-      max: bests.dx.length > 0 ? bests.dx[0].dx_rating : 0
-    });
+    if (bests.standard) {
+      data.push({
+        label: 'B35',
+        count: bests.standard_total,
+        color: '#228be6',
+        min: bests.standard.length > 0 ? bests.standard[bests.standard.length - 1].dx_rating : 0,
+        avg: Math.floor(bests.standard.reduce((acc, score) => acc + score.dx_rating, 0) / bests.standard.length * 100) / 100 || 0,
+        max: bests.standard.length > 0 ? bests.standard[0].dx_rating : 0
+      });
+    }
+    if (bests.dx) {
+      data.push({
+        label: 'B15',
+        count: bests.dx_total,
+        color: '#fd7e14',
+        min: bests.dx.length > 0 ? bests.dx[bests.dx.length - 1].dx_rating : 0,
+        avg: Math.floor(bests.dx.reduce((acc, score) => acc + score.dx_rating, 0) / bests.dx.length * 100) / 100 || 0,
+        max: bests.dx.length > 0 ? bests.dx[0].dx_rating : 0
+      });
+    }
   } else if (game === 'chunithm') {
     bests = bests as ChunithmBestsProps;
-    data.push({
-      label: 'B30',
-      count: Math.floor(bests.bests.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.bests.length * 100) / 100 || 0,
-      color: '#228be6',
-      min: bests.bests.length > 0 ? bests.bests[bests.bests.length - 1].rating : 0,
-      max: bests.bests.length > 0 ? bests.bests[0].rating : 0
-    });
-    data.push({
-      label: 'S10',
-      count: Math.floor(bests.selections.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.selections.length * 100) / 100 || 0,
-      color: '#228be6',
-      min: bests.selections.length > 0 ? bests.selections[bests.selections.length - 1].rating : 0,
-      max: bests.selections.length > 0 ? bests.selections[0].rating : 0
-    });
-    data.push({
-      label: 'N20',
-      count: Math.floor(bests.new_bests.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.new_bests.length * 100) / 100 || 0,
-      color: '#228be6',
-      min: bests.new_bests.length > 0 ? bests.new_bests[bests.new_bests.length - 1].rating : 0,
-      max: bests.new_bests.length > 0 ? bests.new_bests[0].rating : 0
-    });
+    if (bests.bests) {
+      data.push({
+        label: 'B30',
+        count: Math.floor(bests.bests.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.bests.length * 100) / 100 || 0,
+        color: '#228be6',
+        min: bests.bests.length > 0 ? bests.bests[bests.bests.length - 1].rating : 0,
+        max: bests.bests.length > 0 ? bests.bests[0].rating : 0
+      });
+    }
+    if (bests.selections) {
+      data.push({
+        label: 'S10',
+        count: Math.floor(bests.selections.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.selections.length * 100) / 100 || 0,
+        color: '#228be6',
+        min: bests.selections.length > 0 ? bests.selections[bests.selections.length - 1].rating : 0,
+        max: bests.selections.length > 0 ? bests.selections[0].rating : 0
+      });
+    }
+    if (bests.new_bests) {
+      data.push({
+        label: 'N20',
+        count: Math.floor(bests.new_bests.reduce((acc, score) => acc + TruncateToTwoDecimal(score.rating), 0) / bests.new_bests.length * 100) / 100 || 0,
+        color: '#228be6',
+        min: bests.new_bests.length > 0 ? bests.new_bests[bests.new_bests.length - 1].rating : 0,
+        max: bests.new_bests.length > 0 ? bests.new_bests[0].rating : 0
+      });
+    }
   }
 
   const descriptions = data.map((stat) => (
@@ -132,8 +142,8 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
         {"standard_total" in bests && "dx_total" in bests && (
           <RatingBadge game="maimai" rating={bests.standard_total + bests.dx_total} />
         )}
-        {"bests" in bests && data.length === 3 && (
-          <RatingBadge game="chunithm" rating={Math.floor((data[0].count * bests.bests.length + data[2].count * bests.new_bests.length) / 50 * 100) / 100} />
+        {"bests" in bests && "new_bests" in bests && data.length === 3 && (
+          <RatingBadge game="chunithm" rating={Math.floor((data[0].count * (bests.bests?.length || 0) + data[2].count * (bests.new_bests?.length || 0)) / 50 * 100) / 100} />
         )}
       </Stack>
       <SimpleGrid cols={{ base: 1, xs: 2 }} mt="md">
