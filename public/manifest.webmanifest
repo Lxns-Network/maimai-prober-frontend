@@ -23,11 +23,6 @@
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
-    },
-    {
-      "src": "/favicon.webp",
-      "sizes": "441x441",
-      "type": "image/webp"
     }
   ]
 }

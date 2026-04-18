@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon, useComputedColorScheme, DEFAULT_THEME } from '@mantine/core';
+import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from '@mantine/core';
 import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
 import { ModalsProvider } from "@mantine/modals";
 import { notifications, Notifications } from "@mantine/notifications";
@@ -23,7 +23,7 @@ import useAliasListStore from "@/hooks/useAliasListStore.ts";
 import { useSiteConfig } from "@/hooks/queries/useSiteConfig.ts";
 import { useUserToken } from "@/hooks/queries/useUserToken.ts";
 import { useVersionChecker } from "@/hooks/useVersionChecker.tsx";
-import { Helmet, HelmetProvider } from "react-helmet-async";
+import { HelmetProvider } from "react-helmet-async";
 
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
@@ -153,7 +153,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <HelmetProvider>
     <MantineProvider theme={theme} defaultColorScheme="auto">
-      <ThemeColorMeta themeColor={themeColor} />
       <ErrorBoundary FallbackComponent={Fallback}>
         <ModalsProvider labels={{ confirm: '确定', cancel: '取消' }}>
           <PhotoProvider
@@ -204,20 +203,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       </ErrorBoundary>
     </MantineProvider>
     </HelmetProvider>
-  );
-}
-
-function ThemeColorMeta({ themeColor }: { themeColor: string }) {
-  const computedColorScheme = useComputedColorScheme('light');
-  const runtimeThemeColor = useMemo(() => {
-    const palette = DEFAULT_THEME.colors[themeColor] ?? DEFAULT_THEME.colors.blue;
-    return palette[computedColorScheme === 'dark' ? 8 : 6];
-  }, [computedColorScheme, themeColor]);
-
-  return (
-    <Helmet>
-      <meta name="theme-color" content={runtimeThemeColor} />
-    </Helmet>
   );
 }
 
