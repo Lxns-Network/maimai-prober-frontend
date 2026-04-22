@@ -1,11 +1,11 @@
 import {
-  Button, Chip, Flex, Grid, Group, Image, MultiSelect, NumberInput, RangeSlider, Space, Switch, Text
+  Button, Chip, Flex, Grid, Group, Image, MultiSelect, NumberInput, RangeSlider, Select, Space, Switch, Text
 } from "@mantine/core";
 import { IconReload } from "@tabler/icons-react";
 import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useMediaQuery } from "@mantine/hooks";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -60,6 +60,46 @@ const filterData = {
   }
 }
 
+type MaimaiRatingPreset = {
+  value: string;
+  label: string;
+  range: [number, number];
+};
+
+const maimaiRatingPresets: MaimaiRatingPreset[] = [
+  { value: "all", label: "全部", range: [1, 15] },
+  { value: "1", label: "1", range: [1.0, 1.9] },
+  { value: "2", label: "2", range: [2.0, 2.9] },
+  { value: "3", label: "3", range: [3.0, 3.9] },
+  { value: "4", label: "4", range: [4.0, 4.9] },
+  { value: "5", label: "5", range: [5.0, 5.9] },
+  { value: "6", label: "6", range: [6.0, 6.9] },
+  { value: "7", label: "7", range: [7.0, 7.5] },
+  { value: "7+", label: "7+", range: [7.6, 7.9] },
+  { value: "8", label: "8", range: [8.0, 8.5] },
+  { value: "8+", label: "8+", range: [8.6, 8.9] },
+  { value: "9", label: "9", range: [9.0, 9.5] },
+  { value: "9+", label: "9+", range: [9.6, 9.9] },
+  { value: "10", label: "10", range: [10.0, 10.5] },
+  { value: "10+", label: "10+", range: [10.6, 10.9] },
+  { value: "11", label: "11", range: [11.0, 11.5] },
+  { value: "11+", label: "11+", range: [11.6, 11.9] },
+  { value: "12", label: "12", range: [12.0, 12.5] },
+  { value: "12+", label: "12+", range: [12.6, 12.9] },
+  { value: "13", label: "13", range: [13.0, 13.5] },
+  { value: "13+", label: "13+", range: [13.6, 13.9] },
+  { value: "14", label: "14", range: [14.0, 14.5] },
+  { value: "14+", label: "14+", range: [14.6, 14.9] },
+  { value: "15", label: "15", range: [15.0, 15.0] },
+];
+
+const maimaiRatingPresetOptions = maimaiRatingPresets.map(({ value, label }) => ({ value, label }));
+
+function findMaimaiRatingPreset(value: [number, number]) {
+  return maimaiRatingPresets.find((preset) =>
+    preset.range[0] === value[0] && preset.range[1] === value[1])?.value ?? null;
+}
+
 const FilterChips = ({ title, value, onChange, options }: {
   title: string;
   value: string[];
@@ -87,8 +127,6 @@ export const AdvancedFilter = ({ scores, onChange }: {
   onChange: (filteredScores: (MaimaiScoreProps | ChunithmScoreProps)[]) => void;
 }) => {
   const [game] = useGame();
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
 
   const { filters, setFilter, resetFilters, isDefault } = useScoreFilters({
     rating: filterData[game].rating,
@@ -101,21 +139,15 @@ export const AdvancedFilter = ({ scores, onChange }: {
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const small = useMediaQuery('(max-width: 30rem)');
+  const songList = getSongList(game);
+  const selectedMaimaiRatingPreset = game === "maimai" ? findMaimaiRatingPreset(endRating) : null;
 
   useEffect(() => {
-    setSongList(getSongList(game));
     resetFilters();
   }, [game]);
 
-  useEffect(() => {
-    onChange(filteredScores);
-  }, [filteredScores]);
-
-  useEffect(() => {
-    if (!scores) return;
-    if (!rating.every((v, i)=> v === endRating[i])) {
-      return;
-    }
+  const filteredScores = useMemo(() => {
+    if (!scores) return [];
 
     let filteredData = [...scores];
 
@@ -159,8 +191,7 @@ export const AdvancedFilter = ({ scores, onChange }: {
 
     // 如果没有任何筛选条件，直接返回
     if (isDefault) {
-      setFilteredScores(filteredData);
-      return;
+      return filteredData;
     }
 
     // 不需要 song 和 difficulty 信息，提前过滤掉可以减少后续的计算量
@@ -223,8 +254,8 @@ export const AdvancedFilter = ({ scores, onChange }: {
           songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre)) || genre.length === 0; // 过滤乐曲分类
         matchVersion = (version.some((selected) => difficulty.version >= selected && difficulty.version < (
           songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 1000)) || version.length === 0); // 过滤版本
-        matchRating = ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
-          rating.every((v, i)=> v === filterData[game].rating[i]) && score.type === "utage")); // 过滤定数
+        matchRating = ((difficulty.level_value >= endRating[0] && difficulty.level_value <= endRating[1]) || (
+          endRating.every((v, i)=> v === filterData[game].rating[i]) && score.type === "utage")); // 过滤定数
       } else {
         song = song as ChunithmSongProps;
         score = score as ChunithmScoreProps;
@@ -236,8 +267,8 @@ export const AdvancedFilter = ({ scores, onChange }: {
           songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre)) || genre.length === 0; // 过滤乐曲分类
         matchVersion  = (version.some((selected) => difficulty.version >= selected && difficulty.version < (
           songList.versions[songList.versions.findIndex((value) => value.version === selected) + 1]?.version || selected + 500)) || version.length === 0); // 过滤版本
-        matchRating = ((difficulty.level_value >= rating[0] && difficulty.level_value <= rating[1]) || (
-          rating.every((v, i)=> v === filterData[game].rating[i]) && score.level_index === 5)); // 过滤定数
+        matchRating = ((difficulty.level_value >= endRating[0] && difficulty.level_value <= endRating[1]) || (
+          endRating.every((v, i)=> v === filterData[game].rating[i]) && score.level_index === 5)); // 过滤定数
       }
 
       return matchGenre && matchVersion && matchRating;
@@ -254,8 +285,12 @@ export const AdvancedFilter = ({ scores, onChange }: {
       return true;
     });
 
-    setFilteredScores(filteredData);
-  }, [filters]);
+    return filteredData;
+  }, [filters, game, isDefault, scores, songList]);
+
+  useEffect(() => {
+    onChange(filteredScores);
+  }, [filteredScores]);
 
   if (!songList) return null;
 
@@ -381,6 +416,23 @@ export const AdvancedFilter = ({ scores, onChange }: {
             stepHoldInterval={100}
             fixedDecimalScale
           />
+          {game === "maimai" && (
+            <Select
+              variant="filled"
+              size="xs"
+              w={small ? 64 : 80}
+              data={maimaiRatingPresetOptions}
+              placeholder={selectedMaimaiRatingPreset ? "快捷等级" : "自定义"}
+              value={selectedMaimaiRatingPreset}
+              onChange={(value) => {
+                const preset = maimaiRatingPresets.find((item) => item.value === value);
+                if (!preset) return;
+                setFilter("rating", preset.range);
+                setFilter("endRating", preset.range);
+              }}
+              allowDeselect={false}
+            />
+          )}
         </Group>
       </Grid.Col>
       {songList instanceof MaimaiSongList && (
