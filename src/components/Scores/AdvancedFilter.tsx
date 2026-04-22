@@ -415,7 +415,7 @@ export const AdvancedFilter = ({ scores, onChange }: {
               min={filterData[game].rating[0]}
               max={filterData[game].rating[1]}
               step={0.1}
-              minRange={0.1}
+              minRange={0}
               precision={1}
               value={rating}
               marks={Array.from({ length: filterData[game].rating[1] }, (_, index) => ({
