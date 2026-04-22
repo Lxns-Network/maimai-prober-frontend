@@ -60,13 +60,13 @@ const filterData = {
   }
 }
 
-type MaimaiRatingPreset = {
+type RatingPreset = {
   value: string;
   label: string;
   range: [number, number];
 };
 
-const maimaiRatingPresets: MaimaiRatingPreset[] = [
+const maimaiRatingPresets: RatingPreset[] = [
   { value: "all", label: "全部", range: [1, 15] },
   { value: "1", label: "1", range: [1.0, 1.9] },
   { value: "2", label: "2", range: [2.0, 2.9] },
@@ -93,10 +93,41 @@ const maimaiRatingPresets: MaimaiRatingPreset[] = [
   { value: "15", label: "15", range: [15.0, 15.0] },
 ];
 
-const maimaiRatingPresetOptions = maimaiRatingPresets.map(({ value, label }) => ({ value, label }));
+const chunithmRatingPresets: RatingPreset[] = [
+  { value: "all", label: "全部", range: [1, 16] },
+  { value: "1", label: "1", range: [1.0, 1.9] },
+  { value: "2", label: "2", range: [2.0, 2.9] },
+  { value: "3", label: "3", range: [3.0, 3.9] },
+  { value: "4", label: "4", range: [4.0, 4.9] },
+  { value: "5", label: "5", range: [5.0, 5.9] },
+  { value: "6", label: "6", range: [6.0, 6.9] },
+  { value: "7", label: "7", range: [7.0, 7.4] },
+  { value: "7+", label: "7+", range: [7.5, 7.9] },
+  { value: "8", label: "8", range: [8.0, 8.4] },
+  { value: "8+", label: "8+", range: [8.5, 8.9] },
+  { value: "9", label: "9", range: [9.0, 9.4] },
+  { value: "9+", label: "9+", range: [9.5, 9.9] },
+  { value: "10", label: "10", range: [10.0, 10.4] },
+  { value: "10+", label: "10+", range: [10.5, 10.9] },
+  { value: "11", label: "11", range: [11.0, 11.4] },
+  { value: "11+", label: "11+", range: [11.5, 11.9] },
+  { value: "12", label: "12", range: [12.0, 12.4] },
+  { value: "12+", label: "12+", range: [12.5, 12.9] },
+  { value: "13", label: "13", range: [13.0, 13.4] },
+  { value: "13+", label: "13+", range: [13.5, 13.9] },
+  { value: "14", label: "14", range: [14.0, 14.4] },
+  { value: "14+", label: "14+", range: [14.5, 14.9] },
+  { value: "15", label: "15", range: [15.0, 15.4] },
+  { value: "15+", label: "15+", range: [15.5, 16.0] },
+];
 
-function findMaimaiRatingPreset(value: [number, number]) {
-  return maimaiRatingPresets.find((preset) =>
+const ratingPresets = {
+  maimai: maimaiRatingPresets,
+  chunithm: chunithmRatingPresets,
+};
+
+function findRatingPreset(presets: RatingPreset[], value: [number, number]) {
+  return presets.find((preset) =>
     preset.range[0] === value[0] && preset.range[1] === value[1])?.value ?? null;
 }
 
@@ -140,7 +171,8 @@ export const AdvancedFilter = ({ scores, onChange }: {
   const getSongList = useSongListStore((state) => state.getSongList);
   const small = useMediaQuery('(max-width: 30rem)');
   const songList = getSongList(game);
-  const selectedMaimaiRatingPreset = game === "maimai" ? findMaimaiRatingPreset(endRating) : null;
+  const currentRatingPresets = ratingPresets[game];
+  const selectedRatingPreset = findRatingPreset(currentRatingPresets, endRating);
 
   useEffect(() => {
     resetFilters();
@@ -416,23 +448,21 @@ export const AdvancedFilter = ({ scores, onChange }: {
             stepHoldInterval={100}
             fixedDecimalScale
           />
-          {game === "maimai" && (
-            <Select
-              variant="filled"
-              size="xs"
-              w={small ? 64 : 80}
-              data={maimaiRatingPresetOptions}
-              placeholder={selectedMaimaiRatingPreset ? "快捷等级" : "自定义"}
-              value={selectedMaimaiRatingPreset}
-              onChange={(value) => {
-                const preset = maimaiRatingPresets.find((item) => item.value === value);
-                if (!preset) return;
-                setFilter("rating", preset.range);
-                setFilter("endRating", preset.range);
-              }}
-              allowDeselect={false}
-            />
-          )}
+          <Select
+            variant="filled"
+            size="xs"
+            w={72}
+            data={currentRatingPresets.map(({ value, label }) => ({ value, label }))}
+            placeholder={selectedRatingPreset ? "快捷等级" : "自定义"}
+            value={selectedRatingPreset}
+            onChange={(value) => {
+              const preset = currentRatingPresets.find((item) => item.value === value);
+              if (!preset) return;
+              setFilter("rating", preset.range);
+              setFilter("endRating", preset.range);
+            }}
+            allowDeselect={false}
+          />
         </Group>
       </Grid.Col>
       {songList instanceof MaimaiSongList && (
