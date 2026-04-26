@@ -23,3 +23,11 @@ export async function getSystemSettings(): Promise<Response> {
 export async function updateSystemSettings(data: Record<string, unknown>): Promise<Response> {
   return fetchAPI("user/admin/settings", { method: "POST", body: data });
 }
+
+export async function recalculateScores(game: "maimai" | "chunithm"): Promise<Response> {
+  return fetchAPI(`user/admin/${game}/scores/recalculate`, { method: "POST" });
+}
+
+export async function cancelRecalculateScores(game: "maimai" | "chunithm"): Promise<Response> {
+  return fetchAPI(`user/admin/${game}/scores/recalculate`, { method: "DELETE" });
+}

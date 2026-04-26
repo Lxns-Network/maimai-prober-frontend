@@ -5,6 +5,7 @@ import { SettingList, SettingProps } from '@/components/Settings/SettingList.tsx
 import { getSystemSettings, updateSystemSettings } from '@/utils/api/admin.ts';
 import { openRetryModal } from '@/utils/modal.tsx';
 import { notifications } from '@mantine/notifications';
+import { RecalculateSection } from '../recalculate/RecalculateSection.tsx';
 
 const SETTINGS_DEFAULTS: Record<string, unknown> = {
   'proxy.maintenance.maimai': false,
@@ -160,7 +161,7 @@ export const SystemSettingsSection = () => {
         </Text>
         <SettingList data={proxySettingsConfig} value={valueMap} onChange={handleChange} />
       </Card>
-      <Card withBorder radius="md" className={classes.card}>
+      <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
           工作节点
@@ -170,6 +171,7 @@ export const SystemSettingsSection = () => {
         </Text>
         <SettingList data={workerSettingsConfig} value={valueMap} onChange={handleChange} />
       </Card>
+      <RecalculateSection />
     </div>
   );
 };
