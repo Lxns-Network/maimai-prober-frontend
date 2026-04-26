@@ -2,7 +2,6 @@ import { Box, Text, Group, Paper, SimpleGrid, Divider, Flex, ScrollArea, Badge, 
 import { IconLoader3 } from '@tabler/icons-react';
 import classes from './RatingSegments.module.css';
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
-import useGame from "@/hooks/useGame.ts";
 import { getDeluxeRatingGradient, getRatingGradient } from "@/utils/color.ts";
 
 const RatingBadge = ({ game, rating }: { game: string, rating: number }) => {
@@ -26,14 +25,15 @@ function TruncateToTwoDecimal(value: number): number {
     return Math.floor(value * 100) / 100;
 }
 
+function isMaimaiBests(bests: MaimaiBestsProps | ChunithmBestsProps): bests is MaimaiBestsProps {
+  return "standard_total" in bests && "dx_total" in bests;
+}
 
 export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBestsProps }) {
-  const [game] = useGame();
-
+  const game = isMaimaiBests(bests) ? "maimai" : "chunithm";
   const data = []
 
-  if (game === 'maimai') {
-    bests = bests as MaimaiBestsProps;
+  if (isMaimaiBests(bests)) {
     if (bests.standard) {
       data.push({
         label: 'B35',
@@ -54,8 +54,7 @@ export function RatingSegments({ bests }: { bests: MaimaiBestsProps | ChunithmBe
         max: bests.dx.length > 0 ? bests.dx[0].dx_rating : 0
       });
     }
-  } else if (game === 'chunithm') {
-    bests = bests as ChunithmBestsProps;
+  } else {
     if (bests.bests) {
       data.push({
         label: 'B30',

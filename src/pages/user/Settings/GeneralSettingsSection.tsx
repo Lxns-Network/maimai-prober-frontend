@@ -165,7 +165,7 @@ export const GeneralSettingsSection = () => {
   const { mutate: unbindPlayerMutate } = useUnbindPlayer();
   const { mutate: deleteScoresMutate } = useDeletePlayerScores();
 
-  const updateUserConfigHandler = (key: string, value: unknown) => {
+  const applyUserConfig = (key: string, value: unknown) => {
     const newConfig = {
       ...config,
       [key]: value,
@@ -177,9 +177,21 @@ export const GeneralSettingsSection = () => {
     updateConfig({ game, data: newConfig }, {
       onError: (error) => {
         if (previousConfig) setData(previousConfig);
-        openRetryModal("保存设置失败", `${error}`, () => updateUserConfigHandler(key, value));
+        openRetryModal("保存设置失败", `${error}`, () => applyUserConfig(key, value));
       },
     });
+  }
+
+  const updateUserConfigHandler = (key: string, value: unknown) => {
+    if (key === "allow_overwrite_best_score" && value === true) {
+      openConfirmModal("开启「允许覆盖最佳成绩」", <>
+        若没有<Mark>必须覆盖错误成绩</Mark>的明确需求，建议保持关闭，以避免因爬取异常导致的 <Mark>B50 不准确</Mark>、<Mark>部分成绩被错误覆盖</Mark>等问题。开启后，建议在爬取前先<Anchor size="sm" component={Link} to="/user/scores?tab=backup">备份成绩</Anchor>，以防万一。
+      </>, () => applyUserConfig(key, value), {
+        confirmProps: { color: 'red' },
+      });
+      return;
+    }
+    applyUserConfig(key, value);
   }
 
   const unbindPlayerHandler = () => {

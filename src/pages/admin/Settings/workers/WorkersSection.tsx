@@ -325,7 +325,7 @@ export const WorkersSection = () => {
                 <Group gap="xs" wrap="nowrap">
                   <Box
                     className={workerClasses.statusDot}
-                    bg={!enabled ? 'red' : online ? 'green' : 'gray'}
+                    bg={!enabled ? 'red' : online ? 'green' : 'gray.6'}
                     data-online={enabled && online}
                   />
                   <Text fz="sm" truncate>{id === 0 ? '本地节点' : name}</Text>
