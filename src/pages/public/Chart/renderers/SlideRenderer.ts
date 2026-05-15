@@ -608,14 +608,14 @@ export class SlideRenderer extends BaseRenderer {
       ctx.lineTo(x2, y2);
       ctx.lineTo(x3, y3);
     }
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = currentStroke;
-    ctx.stroke();
-
-    // 批量绘制黑色轮廓
+    // 先批量绘制黑色轮廓
     ctx.lineWidth = lineWidth + 2;
     ctx.strokeStyle = '#000000';
-    ctx.globalCompositeOperation = 'destination-over';
+    ctx.stroke();
+
+    // 再绘制主体部分
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = currentStroke;
     ctx.stroke();
 
     ctx.restore();
