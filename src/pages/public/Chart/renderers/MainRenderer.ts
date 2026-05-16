@@ -358,6 +358,8 @@ export class MainRenderer {
 
     this.renderTapNotes(taps, currentBeat, currentTimeMs);
 
+    this.renderTapHitEffect(notes, currentTimeMs);
+
     this.ctx.restore();
   }
 
@@ -728,6 +730,39 @@ export class MainRenderer {
       if (this.config.showBreakIndex && tap.type === 'break' && tap.noExBreakIndex && !tap.isEx) {
         this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, tap.noExBreakIndex);
       }
+    }
+  }
+
+  private renderTapHitEffect(
+    notes: Note[],
+    currentTimeMs: number
+  ): void {
+    for (let i = 0; i < notes.length; i++) {
+      const note = notes[i];
+      if (isTouchNote(note) || isTouchHoldStartNote(note) || isHoldStartNote(note)) continue;
+      const pos = this.noteRenderer.calculateHitEffectPosition(note, currentTimeMs);
+      if (!(0 <= pos.progress && pos.progress <= 1)) continue;
+
+      let disabledForNextNote = false;
+      for (let j = i + 1; j < notes.length; j++) {
+        const nextNote = notes[j];
+        if (isTouchNote(nextNote) || isTouchHoldStartNote(nextNote) || isHoldStartNote(nextNote)) continue;
+        if (nextNote.position !== note.position) continue;
+        if (currentTimeMs >= nextNote.timingMs) {
+          disabledForNextNote = true;
+        }
+        break;
+      }
+      if (disabledForNextNote) continue;
+
+      this.noteRenderer.renderTapHitEffect(
+        pos.x,
+        pos.y,
+        note.position as ButtonPosition,
+        COLORS.HIT_EFFECT_GOLD,
+        pos.progress,
+        note.type === "break" ? "star" : "hexagon"
+      );
     }
   }
 

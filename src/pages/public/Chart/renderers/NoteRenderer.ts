@@ -7,6 +7,7 @@ import {
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
   NOTE_VISIBILITY_AFTER_MS,
+  NOTE_HIT_EFFECT_DURATION_MS,
 } from '../utils/constants';
 
 export class NoteRenderer extends BaseRenderer {
@@ -20,6 +21,18 @@ export class NoteRenderer extends BaseRenderer {
 
   getAngle(position: ButtonPosition): number {
     return this.getButtonAngle(position);
+  }
+
+  calculateHitEffectPosition(note: Note, currentTimeMs: number): { x: number; y: number; progress: number } {
+    const position = note.position as ButtonPosition;
+    const angle = this.getButtonAngle(position);
+    const timeDiff = currentTimeMs - note.timingMs;
+    if (timeDiff < 0 || timeDiff > NOTE_HIT_EFFECT_DURATION_MS) return { x: 0, y: 0, progress: -1 };
+    return {
+      x: this.context.centerX + Math.cos(angle) * this.context.radius,
+      y: this.context.centerY + Math.sin(angle) * this.context.radius,
+      progress: timeDiff / NOTE_HIT_EFFECT_DURATION_MS
+    };
   }
 
   calculateNotePosition(
@@ -73,6 +86,109 @@ export class NoteRenderer extends BaseRenderer {
       scale,
       visible: true,
     };
+  }
+
+  private drawHexagon(centerX: number, centerY: number, radius: number, angle: number): void {
+    this.context.ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const currentAngle = (i * Math.PI) / 3 + angle; // 60 deg in radians
+      const x = centerX + radius * Math.cos(currentAngle);
+      const y = centerY + radius * Math.sin(currentAngle);
+
+      if (i === 0) {
+        this.context.ctx.moveTo(x, y);
+      } else {
+        this.context.ctx.lineTo(x, y);
+      }
+    }
+    this.context.ctx.closePath();
+    this.context.ctx.stroke();
+  }
+
+  private drawStar(centerX: number, centerY: number, spikesCount: number, outerRadius: number, innerRadius: number, angle: number = 0): void {
+    const step = Math.PI / spikesCount;
+    let currentAngle = Math.PI / 2 * 3 + angle;
+    let x = centerX, y = centerY;
+
+    this.context.ctx.beginPath();
+    for (let i = 0; i < spikesCount; i++) {
+      x = centerX + Math.cos(currentAngle) * outerRadius;
+      y = centerY + Math.sin(currentAngle) * outerRadius;
+      this.context.ctx.lineTo(x, y);
+      currentAngle += step
+
+      x = centerX + Math.cos(currentAngle) * innerRadius;
+      y = centerY + Math.sin(currentAngle) * innerRadius;
+      this.context.ctx.lineTo(x, y);
+      currentAngle += step
+    }
+    this.context.ctx.closePath();
+    this.context.ctx.stroke();
+  }
+
+  renderTapHitEffect(
+    x: number,
+    y: number,
+    position: ButtonPosition,
+    color: string,
+    progress: number,
+    type: "hexagon" | "star",
+  ): void {
+    const radius = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5
+    const linewidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
+    const angle = this.getButtonAngle(position);
+
+    const clamp = (num: number, min: number, max: number) => Math.max(min, Math.min(num, max));
+
+    // y = 1-(3/4)*(x-1)^2
+    const scaleCurve = (x: number) => 1 - (3 / 4) * (x - 1) * (x - 1);
+    // y = 1-4*(x-(1/2))^2
+    const opacityCurve = (x: number) => 1 - 4 * ((x - 0.5) * (x - 0.5));
+    // y = 1-(x-1)^2  
+    const subHexagonsRotationAngleCurve = (x: number) => 1 - (x - 1) * (x - 1);
+    // y = 1-(6/5)*x^2
+    const subHexagonsRotationRadiusCurve = (x: number) => clamp(1 - (8 / 9) * x * x, 0, 1);
+
+    const SUB_HEXAGON_STARTING_ANGLE_1 = angle + Math.PI / 6; // 15 degrees
+    const SUB_HEXAGON_STARTING_ANGLE_2 = angle - Math.PI / 6; // -15 degrees
+
+    this.withContext(() => {
+      const ctx = this.context.ctx;
+      const elements = [[
+        x,
+        y,
+        radius * scaleCurve(progress)
+      ], [
+        x + Math.cos(SUB_HEXAGON_STARTING_ANGLE_1 + Math.PI * subHexagonsRotationAngleCurve(progress)) * radius * subHexagonsRotationRadiusCurve(progress),
+        y + Math.sin(SUB_HEXAGON_STARTING_ANGLE_1 + Math.PI * subHexagonsRotationAngleCurve(progress)) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
+        radius * scaleCurve(progress) * 0.7
+      ], [
+        x + Math.cos(SUB_HEXAGON_STARTING_ANGLE_1 + Math.PI * (1 + subHexagonsRotationAngleCurve(progress))) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
+        y + Math.sin(SUB_HEXAGON_STARTING_ANGLE_1 + Math.PI * (1 + subHexagonsRotationAngleCurve(progress))) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
+        radius * scaleCurve(progress) * 0.7
+      ], [
+        x + Math.cos(SUB_HEXAGON_STARTING_ANGLE_2 - Math.PI * subHexagonsRotationAngleCurve(progress)) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
+        y + Math.sin(SUB_HEXAGON_STARTING_ANGLE_2 - Math.PI * subHexagonsRotationAngleCurve(progress)) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
+        radius * scaleCurve(progress) * 0.8
+      ], [
+        x + Math.cos(SUB_HEXAGON_STARTING_ANGLE_2 + Math.PI * (1 - subHexagonsRotationAngleCurve(progress))) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
+        y + Math.sin(SUB_HEXAGON_STARTING_ANGLE_2 + Math.PI * (1 - subHexagonsRotationAngleCurve(progress))) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
+        radius * scaleCurve(progress) * 0.8
+      ]]
+
+      ctx.strokeStyle = `${color}`;
+      ctx.globalAlpha = opacityCurve(progress);
+      ctx.lineWidth = linewidth;
+
+      ctx.filter = `blur(${this.scaleByRadius(4 / 300) * subHexagonsRotationAngleCurve(progress) * 0.7}px)`;
+      for (const [centerX, centerY, radius] of elements) {
+        if (type === "hexagon") {
+          this.drawHexagon(centerX, centerY, radius, angle);
+        } else if (type === "star") {
+          this.drawStar(centerX, centerY, 5, radius, radius * 0.5, angle + Math.PI);
+        }
+      }
+    })
   }
 
   renderApproachArc(

@@ -16,6 +16,9 @@ export const NOTE_PLAY_WINDOW_MS = 20;
 /** 默认 Note 超过判定线后不可见时间（毫秒） */
 export const NOTE_VISIBILITY_AFTER_MS = 0;
 
+/** 打击效果持续时间（毫秒） */
+export const NOTE_HIT_EFFECT_DURATION_MS = 450;
+
 /** 圆圈周围按钮数量 */
 export const BUTTON_COUNT = 8;
 
@@ -147,7 +150,9 @@ export const COLORS = {
   
   WHITE: '#ffffff',
   CONNECTOR_GOLD: '#FFD700',
-  
+
+  HIT_EFFECT_GOLD: '#F5EA72',
+
   // DDR 判定颜色
   DDR_RED: '#FF0000',      // 1/1（节拍内）
   DDR_BLUE: '#0066FF',     // 1/2
