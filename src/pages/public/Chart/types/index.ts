@@ -430,6 +430,8 @@ export interface RendererConfig {
   ddrColorExtended: boolean;
   /** 是否显示烟花特效（touch `f` 标记） */
   showFireworks: boolean;
+  /** 是否显示判定点打击特效（tap / hold 尾 / 星星头 / 绝赞） */
+  showHitEffect: boolean;
 }
 
 export interface AudioConfig {

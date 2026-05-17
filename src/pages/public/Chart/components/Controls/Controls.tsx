@@ -195,11 +195,11 @@ export function Controls() {
   const {
     hiSpeed, alwaysKeepHiSpeed, slideRotation, mirrorMode,
     judgmentLineDesign, pinkSlideStart, highlightExNotes, normalColorBreakSlide,
-    showFireworks,
+    showFireworks, showHitEffect,
     musicVolume, musicOffset, soundOffset,
     setHiSpeed, setAlwaysKeepHiSpeed, setSlideRotation, setMirrorMode,
     setJudgmentLineDesign, setPinkSlideStart, setHighlightExNotes, setNormalColorBreakSlide,
-    setShowFireworks,
+    setShowFireworks, setShowHitEffect,
     setMusicVolume, setMusicOffset, setSoundOffset,
   } = useGameSettingsStore(useShallow((state) => state));
 
@@ -395,6 +395,14 @@ export function Controls() {
                 fullWidth
               />
             </div>
+
+            <Group justify="space-between">
+              <Text size="sm">显示判定点打击特效</Text>
+              <Switch
+                checked={showHitEffect}
+                onChange={(e) => setShowHitEffect(e.currentTarget.checked)}
+              />
+            </Group>
 
             <Group justify="space-between">
               <Text size="sm">星星头旋转</Text>

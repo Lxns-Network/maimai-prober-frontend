@@ -58,6 +58,7 @@ export class MainRenderer {
     ddrColorMode: false,
     ddrColorExtended: false,
     showFireworks: true,
+    showHitEffect: true,
   };
 
   private bpm: number = 120;
@@ -269,6 +270,10 @@ export class MainRenderer {
     this.config.showFireworks = enabled;
   }
 
+  setShowHitEffect(enabled: boolean): void {
+    this.config.showHitEffect = enabled;
+  }
+
   clear(): void {
     if (this.config.judgmentLineDesign === 'sensor') {
       this.ctx.fillStyle = '#000000';
@@ -397,7 +402,9 @@ export class MainRenderer {
     }
 
     // 击打特效画在最上层，盖住所有 note。
-    this.renderTapHitEffect(notes, currentTimeMs);
+    if (this.config.showHitEffect) {
+      this.renderTapHitEffect(notes, currentTimeMs);
+    }
 
     this.ctx.restore();
   }

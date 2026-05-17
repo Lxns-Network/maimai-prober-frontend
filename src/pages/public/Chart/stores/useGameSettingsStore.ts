@@ -12,6 +12,7 @@ export interface GameSettingsState {
   highlightExNotes: boolean;
   normalColorBreakSlide: boolean;
   showFireworks: boolean;
+  showHitEffect: boolean;
   soundEnabled: boolean;
   soundVolume: number;
   soundOffset: number;
@@ -29,6 +30,7 @@ export interface GameSettingsActions {
   setHighlightExNotes: (enabled: boolean) => void;
   setNormalColorBreakSlide: (enabled: boolean) => void;
   setShowFireworks: (enabled: boolean) => void;
+  setShowHitEffect: (enabled: boolean) => void;
   setSoundEnabled: (enabled: boolean) => void;
   setSoundVolume: (volume: number) => void;
   setSoundOffset: (offset: number) => void;
@@ -50,6 +52,7 @@ const initialState: GameSettingsState = {
   highlightExNotes: false,
   normalColorBreakSlide: false,
   showFireworks: true,
+  showHitEffect: true,
   soundEnabled: false,
   soundVolume: 0.5,
   soundOffset: 0,
@@ -70,6 +73,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       setHighlightExNotes: (enabled: boolean) => set({ highlightExNotes: enabled }),
       setNormalColorBreakSlide: (enabled: boolean) => set({ normalColorBreakSlide: enabled }),
       setShowFireworks: (enabled: boolean) => set({ showFireworks: enabled }),
+      setShowHitEffect: (enabled: boolean) => set({ showHitEffect: enabled }),
       setSoundEnabled: (enabled: boolean) => set({ soundEnabled: enabled }),
       setSoundVolume: (volume: number) => set({ soundVolume: Math.max(0, Math.min(1, volume)) }),
       setSoundOffset: (offset: number) => set({ soundOffset: offset }),
@@ -93,6 +97,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
         highlightExNotes: state.highlightExNotes,
         normalColorBreakSlide: state.normalColorBreakSlide,
         showFireworks: state.showFireworks,
+        showHitEffect: state.showHitEffect,
         soundEnabled: state.soundEnabled,
         soundVolume: state.soundVolume,
         soundOffset: state.soundOffset,

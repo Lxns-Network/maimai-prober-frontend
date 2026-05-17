@@ -114,6 +114,7 @@ export function ChartCanvas() {
   const highlightExNotes = useGameSettingsStore((s) => s.highlightExNotes);
   const normalColorBreakSlide = useGameSettingsStore((s) => s.normalColorBreakSlide);
   const showFireworks = useGameSettingsStore((s) => s.showFireworks);
+  const showHitEffect = useGameSettingsStore((s) => s.showHitEffect);
   const soundEnabled = useGameSettingsStore((s) => s.soundEnabled);
   const soundVolume = useGameSettingsStore((s) => s.soundVolume);
   const soundOffset = useGameSettingsStore((s) => s.soundOffset);
@@ -230,6 +231,7 @@ export function ChartCanvas() {
     renderer.setHighlightExNotes(settingsState.highlightExNotes);
     renderer.setNormalColorBreakSlide(settingsState.normalColorBreakSlide);
     renderer.setShowFireworks(settingsState.showFireworks);
+    renderer.setShowHitEffect(settingsState.showHitEffect);
     renderer.setPlaybackSpeed(useGameStore.getState().playbackSpeed);
 
     const handleResize = () => {
@@ -375,6 +377,13 @@ export function ChartCanvas() {
       renderFrame(playbackTimeRef.current);
     }
   }, [showFireworks, renderFrame]);
+
+  useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setShowHitEffect(showHitEffect);
+      renderFrame(playbackTimeRef.current);
+    }
+  }, [showHitEffect, renderFrame]);
 
   useEffect(() => {
     if (rendererRef.current && chartData) {
