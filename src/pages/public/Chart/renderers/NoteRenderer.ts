@@ -83,42 +83,30 @@ export class NoteRenderer extends BaseRenderer {
     };
   }
 
-  private drawHexagon(centerX: number, centerY: number, radius: number, angle: number): void {
-    this.context.ctx.beginPath();
+  private hexagonSubPath(p: Path2D, centerX: number, centerY: number, radius: number, angle: number): void {
     for (let i = 0; i < 6; i++) {
-      const currentAngle = (i * Math.PI) / 3 + angle; // 60 deg in radians
-      const x = centerX + radius * Math.cos(currentAngle);
-      const y = centerY + radius * Math.sin(currentAngle);
-
-      if (i === 0) {
-        this.context.ctx.moveTo(x, y);
-      } else {
-        this.context.ctx.lineTo(x, y);
-      }
+      const a = (i * Math.PI) / 3 + angle;
+      const px = centerX + radius * Math.cos(a);
+      const py = centerY + radius * Math.sin(a);
+      if (i === 0) p.moveTo(px, py);
+      else p.lineTo(px, py);
     }
-    this.context.ctx.closePath();
-    this.context.ctx.stroke();
+    p.closePath();
   }
 
-  private drawStar(centerX: number, centerY: number, spikesCount: number, outerRadius: number, innerRadius: number, angle: number = 0): void {
+  private starSubPath(p: Path2D, centerX: number, centerY: number, spikesCount: number, outerRadius: number, innerRadius: number, angle: number): void {
     const step = Math.PI / spikesCount;
-    let currentAngle = Math.PI / 2 * 3 + angle;
-    let x = centerX, y = centerY;
-
-    this.context.ctx.beginPath();
+    let a = (Math.PI / 2) * 3 + angle;
     for (let i = 0; i < spikesCount; i++) {
-      x = centerX + Math.cos(currentAngle) * outerRadius;
-      y = centerY + Math.sin(currentAngle) * outerRadius;
-      this.context.ctx.lineTo(x, y);
-      currentAngle += step
-
-      x = centerX + Math.cos(currentAngle) * innerRadius;
-      y = centerY + Math.sin(currentAngle) * innerRadius;
-      this.context.ctx.lineTo(x, y);
-      currentAngle += step
+      const ox = centerX + Math.cos(a) * outerRadius;
+      const oy = centerY + Math.sin(a) * outerRadius;
+      if (i === 0) p.moveTo(ox, oy);
+      else p.lineTo(ox, oy);
+      a += step;
+      p.lineTo(centerX + Math.cos(a) * innerRadius, centerY + Math.sin(a) * innerRadius);
+      a += step;
     }
-    this.context.ctx.closePath();
-    this.context.ctx.stroke();
+    p.closePath();
   }
 
   renderTapHitEffect(
@@ -129,61 +117,55 @@ export class NoteRenderer extends BaseRenderer {
     progress: number,
     type: "hexagon" | "star",
   ): void {
-    const radius = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5
-    const linewidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
+    // progress ∈ [0,1] 驱动 scale 上升 + 中段最亮 + 子图形旋转/离心。
+    const scale = 1 - 0.75 * (progress - 1) * (progress - 1);
+    const alpha = 1 - 4 * (progress - 0.5) * (progress - 0.5);
+    if (alpha <= 0 || scale <= 0) return;
+    const subAng = 1 - (progress - 1) * (progress - 1);
+    const subRad = Math.max(0, Math.min(1, 1 - (8 / 9) * progress * progress));
+
+    const baseR = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5;
     const angle = this.getButtonAngle(position);
+    const sub1 = angle + Math.PI / 6;
+    const sub2 = angle - Math.PI / 6;
+    const r0 = baseR * scale;
+    const rSmall = r0 * 0.7;
+    const rBig = r0 * 0.8;
+    const off = baseR * subRad * 0.7;
 
-    const clamp = (num: number, min: number, max: number) => Math.max(min, Math.min(num, max));
+    // 中心 + ±15° 偏轴各 2 个旋转副本合进同一条 Path2D，一次 stroke 触发一次 filter pass。
+    const path = new Path2D();
+    const add = (cx: number, cy: number, r: number) => {
+      if (type === "star") {
+        this.starSubPath(path, cx, cy, 5, r, r * 0.5, angle + Math.PI);
+      } else {
+        this.hexagonSubPath(path, cx, cy, r, angle);
+      }
+    };
 
-    // y = 1-(3/4)*(x-1)^2
-    const scaleCurve = (x: number) => 1 - (3 / 4) * (x - 1) * (x - 1);
-    // y = 1-4*(x-(1/2))^2
-    const opacityCurve = (x: number) => 1 - 4 * ((x - 0.5) * (x - 0.5));
-    // y = 1-(x-1)^2  
-    const subHexagonsRotationAngleCurve = (x: number) => 1 - (x - 1) * (x - 1);
-    // y = 1-(6/5)*x^2
-    const subHexagonsRotationRadiusCurve = (x: number) => clamp(1 - (8 / 9) * x * x, 0, 1);
+    add(x, y, r0);
+    const a1a = sub1 + Math.PI * subAng;
+    add(x + Math.cos(a1a) * off, y + Math.sin(a1a) * off * 0.7, rSmall);
+    const a1b = sub1 + Math.PI * (1 + subAng);
+    add(x + Math.cos(a1b) * off, y + Math.sin(a1b) * off, rSmall);
+    const a2a = sub2 - Math.PI * subAng;
+    add(x + Math.cos(a2a) * off, y + Math.sin(a2a) * off, rBig);
+    const a2b = sub2 + Math.PI * (1 - subAng);
+    add(x + Math.cos(a2b) * off, y + Math.sin(a2b) * off, rBig);
 
-    const SUB_HEXAGON_STARTING_ANGLE_1 = angle + Math.PI / 6; // 15 degrees
-    const SUB_HEXAGON_STARTING_ANGLE_2 = angle - Math.PI / 6; // -15 degrees
+    // blur < 0.5px 时跳过 filter 设置（progress 端点处不可感知，避免 GPU pass）。
+    const blurPx = this.scaleByRadius(4 / 300) * subAng * 0.7;
+    const useBlur = blurPx >= 0.5;
 
     this.withContext(() => {
       const ctx = this.context.ctx;
-      const elements = [[
-        x,
-        y,
-        radius * scaleCurve(progress)
-      ], [
-        x + Math.cos(SUB_HEXAGON_STARTING_ANGLE_1 + Math.PI * subHexagonsRotationAngleCurve(progress)) * radius * subHexagonsRotationRadiusCurve(progress),
-        y + Math.sin(SUB_HEXAGON_STARTING_ANGLE_1 + Math.PI * subHexagonsRotationAngleCurve(progress)) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
-        radius * scaleCurve(progress) * 0.7
-      ], [
-        x + Math.cos(SUB_HEXAGON_STARTING_ANGLE_1 + Math.PI * (1 + subHexagonsRotationAngleCurve(progress))) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
-        y + Math.sin(SUB_HEXAGON_STARTING_ANGLE_1 + Math.PI * (1 + subHexagonsRotationAngleCurve(progress))) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
-        radius * scaleCurve(progress) * 0.7
-      ], [
-        x + Math.cos(SUB_HEXAGON_STARTING_ANGLE_2 - Math.PI * subHexagonsRotationAngleCurve(progress)) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
-        y + Math.sin(SUB_HEXAGON_STARTING_ANGLE_2 - Math.PI * subHexagonsRotationAngleCurve(progress)) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
-        radius * scaleCurve(progress) * 0.8
-      ], [
-        x + Math.cos(SUB_HEXAGON_STARTING_ANGLE_2 + Math.PI * (1 - subHexagonsRotationAngleCurve(progress))) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
-        y + Math.sin(SUB_HEXAGON_STARTING_ANGLE_2 + Math.PI * (1 - subHexagonsRotationAngleCurve(progress))) * radius * subHexagonsRotationRadiusCurve(progress) * 0.7,
-        radius * scaleCurve(progress) * 0.8
-      ]]
-
-      ctx.strokeStyle = `${color}`;
-      ctx.globalAlpha = opacityCurve(progress);
-      ctx.lineWidth = linewidth;
-
-      ctx.filter = `blur(${this.scaleByRadius(4 / 300) * subHexagonsRotationAngleCurve(progress) * 0.7}px)`;
-      for (const [centerX, centerY, radius] of elements) {
-        if (type === "hexagon") {
-          this.drawHexagon(centerX, centerY, radius, angle);
-        } else if (type === "star") {
-          this.drawStar(centerX, centerY, 5, radius, radius * 0.5, angle + Math.PI);
-        }
-      }
-    })
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
+      ctx.lineJoin = 'round';
+      if (useBlur) ctx.filter = `blur(${blurPx}px)`;
+      ctx.stroke(path);
+    });
   }
 
   renderApproachArc(

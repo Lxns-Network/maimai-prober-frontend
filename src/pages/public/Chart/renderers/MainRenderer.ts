@@ -29,6 +29,7 @@ import {
   JUDGMENT_LINE_WIDTH_RATIO,
   COLORS,
   RAINBOW_SPEED_DEG_PER_SEC,
+  NOTE_HIT_EFFECT_DURATION_MS,
 } from '../utils/constants';
 
 export class MainRenderer {
@@ -783,23 +784,37 @@ export class MainRenderer {
     notes: Note[],
     currentTimeMs: number
   ): void {
-    for (let i = 0; i < notes.length; i++) {
+    // notes 按 timingMs 升序，二分定位窗口下界（currentTimeMs - DURATION），之后线性扫。
+    const windowStartMs = currentTimeMs - NOTE_HIT_EFFECT_DURATION_MS;
+    let lo = 0;
+    let hi = notes.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (notes[mid].timingMs < windowStartMs) lo = mid + 1;
+      else hi = mid;
+    }
+
+    // 同 position 后到的 note 已命中时让前面的特效退场。
+    const lastHitTimingByPos = new Map<ButtonPosition, number>();
+    for (let i = lo; i < notes.length; i++) {
+      const n = notes[i];
+      if (n.timingMs > currentTimeMs) break;
+      if (isTouchNote(n) || isTouchHoldStartNote(n) || isHoldStartNote(n)) continue;
+      const cur = lastHitTimingByPos.get(n.position as ButtonPosition);
+      if (cur === undefined || n.timingMs > cur) {
+        lastHitTimingByPos.set(n.position as ButtonPosition, n.timingMs);
+      }
+    }
+
+    for (let i = lo; i < notes.length; i++) {
       const note = notes[i];
+      if (note.timingMs > currentTimeMs) break;
       if (isTouchNote(note) || isTouchHoldStartNote(note) || isHoldStartNote(note)) continue;
+      const latest = lastHitTimingByPos.get(note.position as ButtonPosition);
+      if (latest !== undefined && latest > note.timingMs) continue;
+
       const pos = this.noteRenderer.calculateHitEffectPosition(note, currentTimeMs);
       if (!(0 <= pos.progress && pos.progress <= 1)) continue;
-
-      let disabledForNextNote = false;
-      for (let j = i + 1; j < notes.length; j++) {
-        const nextNote = notes[j];
-        if (isTouchNote(nextNote) || isTouchHoldStartNote(nextNote) || isHoldStartNote(nextNote)) continue;
-        if (nextNote.position !== note.position) continue;
-        if (currentTimeMs >= nextNote.timingMs) {
-          disabledForNextNote = true;
-        }
-        break;
-      }
-      if (disabledForNextNote) continue;
 
       this.noteRenderer.renderTapHitEffect(
         pos.x,
