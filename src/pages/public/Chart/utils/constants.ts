@@ -55,18 +55,6 @@ export const SLIDE_ARROW_SPACING = 26.896180742334582;
 /** 滑条 S/Z 曲线偏移比例 */
 export const SLIDE_CURVE_OFFSET_RATIO = 0.4;
 
-/** 滑条 pp/qq 曲线半径比例 */
-export const SLIDE_PP_CURVE_RADIUS_RATIO = 0.45;
-
-/** WiFi 滑条间距（大于普通滑条） */
-export const WIFI_ARROW_SPACING = 46.64867217847119;
-
-/** WiFi 滑条基础大小 */
-export const WIFI_ARROW_BASE_SIZE = 20;
-
-/** WiFi 滑条最大大小 */
-export const WIFI_ARROW_MAX_SIZE = 280;
-
 /** 长条 Note 宽度比例 */
 export const HOLD_WIDTH_RATIO = 1.5;
 
@@ -88,13 +76,13 @@ export const TOUCH_PETAL_CLOSED_RATIO = 1 / 12.5;
 /** 触摸 Hold 进度条宽度比例 */
 export const TOUCH_HOLD_PROGRESS_WIDTH_RATIO = 1 / 31.25;
 
-/** 触摸传感器半径 */
+/** 触摸传感器半径（占 panel radius 的比例）。 */
 export const TOUCH_SENSOR_RADII: Record<string, number> = {
-  A: 0.9,   // 外环
-  B: 0.465, // 内环  
-  C: 0,     // 中心
-  D: 0.9,   // 按钮区域
-  E: 0.66,  // 边缘
+  A: 0.854,
+  B: 0.479,
+  C: 0,
+  D: 0.854,
+  E: 0.625,
 };
 
 /** 最慢流速 */

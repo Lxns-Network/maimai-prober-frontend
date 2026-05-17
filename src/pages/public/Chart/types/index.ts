@@ -111,6 +111,15 @@ export const DIFFICULTY_COLORS: Record<ChartDifficulty, string> = {
   6: '#F8FAFC',
 };
 
+export interface SlideArcLutPoint {
+  x: number;
+  y: number;
+  /** 入向切线角（rad） */
+  angle: number;
+  /** 累计弧长 */
+  s: number;
+}
+
 export interface SlideSegment {
   /** 滑条路径类型 */
   type: SlidePathType;
@@ -120,6 +129,12 @@ export interface SlideSegment {
   endPos: ButtonPosition;
   /** 缓存长度（懒计算） */
   cachedLength?: number;
+  /** 缓存弧长 LUT（懒计算，star 头部按弧长定位） */
+  cachedLut?: readonly SlideArcLutPoint[];
+  /** 缓存对应的 canvas radius，size 变化（全屏切换/窗口 resize）时用于失效 */
+  cachedRadius?: number;
+  /** 缓存对应的 mirror mode，切换 mirror 时用于失效 */
+  cachedMirrorMode?: string;
 }
 
 export interface BaseNote {
@@ -413,6 +428,8 @@ export interface RendererConfig {
   ddrColorMode: boolean;
   /** 是否使用扩展 DDR 风格显示判定线 */
   ddrColorExtended: boolean;
+  /** 是否显示烟花特效（touch `f` 标记） */
+  showFireworks: boolean;
 }
 
 export interface AudioConfig {

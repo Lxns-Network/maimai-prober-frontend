@@ -1,12 +1,10 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useGameStore, playbackTimeRef } from '../stores/useGameStore';
+import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from '../stores/useGameStore';
 import { useGameSettingsStore } from '../stores/useGameSettingsStore';
 import { BpmEvent } from '../types';
 
 const LEAD_IN_BEATS = 4;
-const DRIFT_THRESHOLD = 0.3;
-const SYNC_INTERVAL_MS = 200;
 const SEEK_THROTTLE_MS = 50;
 const SOURCE_FADE_TIME_S = 0.015;
 
@@ -103,22 +101,22 @@ export function useMusicPlayer() {
   const bpm = chartData?.bpm ?? 120;
   const bpmEvents = chartData?.bpmEvents ?? null;
 
-  // 保持 playbackSpeed 的最新引用
   useEffect(() => {
     playbackSpeedRef.current = playbackSpeed;
   }, [playbackSpeed]);
 
-  // 获取当前播放位置
+  // 用 sourceNode.playbackRate 而非 ref：切速度时 React effect 顺序让 ref 早于
+  // 音频 rate 更新，错位会让切换瞬间的位置外推错。
   const getCurrentTime = useCallback((): number => {
     const state = audioStateRef.current;
-    if (!state.audioContext || !state.isSourcePlaying) {
+    if (!state.audioContext || !state.isSourcePlaying || !state.sourceNode) {
       return state.startOffset;
     }
-    const elapsed = (state.audioContext.currentTime - state.startTime) * playbackSpeedRef.current;
+    const speed = state.sourceNode.playbackRate.value;
+    const elapsed = (state.audioContext.currentTime - state.startTime) * speed;
     return state.startOffset + elapsed;
   }, []);
 
-  // 停止当前播放的 source node
   const stopSource = useCallback((immediate: boolean = false) => {
     const state = audioStateRef.current;
     const sourceNode = state.sourceNode;
@@ -173,11 +171,10 @@ export function useMusicPlayer() {
     window.setTimeout(cleanup, SOURCE_FADE_TIME_S * 1000 + 50);
   }, []);
 
-  // 确保 AudioContext 已初始化并处于运行状态
+  // AudioContext 懒加载 + 自动 resume（suspended 状态需要用户交互后才能恢复）。
   const ensureAudioContextReady = useCallback(async (): Promise<boolean> => {
     const state = audioStateRef.current;
 
-    // 懒加载创建 AudioContext
     if (!state.audioContext) {
       const ctx = new AudioContext();
       const gainNode = ctx.createGain();
@@ -187,7 +184,6 @@ export function useMusicPlayer() {
       state.gainNode = gainNode;
     }
 
-    // 如果 AudioContext 被挂起，尝试恢复（需要用户交互后才能成功）
     if (state.audioContext.state === 'suspended') {
       try {
         await state.audioContext.resume();
@@ -199,22 +195,18 @@ export function useMusicPlayer() {
     return state.audioContext.state === 'running';
   }, [musicVolume]);
 
-  // 从指定位置开始播放
   const playFromPosition = useCallback(async (position: number) => {
     const state = audioStateRef.current;
     if (!state.audioBuffer || !state.gainNode) return;
 
-    // 确保 AudioContext 处于运行状态
     const isReady = await ensureAudioContextReady();
     if (!isReady || !state.audioContext) return;
 
-    // 停止当前播放
     stopSource();
 
     const duration = state.audioBuffer.duration;
     const clampedPosition = clamp(position, 0, duration - 0.01);
 
-    // 创建新的 source node
     const sourceNode = state.audioContext.createBufferSource();
     const sourceGainNode = state.audioContext.createGain();
     sourceNode.buffer = state.audioBuffer;
@@ -252,12 +244,11 @@ export function useMusicPlayer() {
     sourceNode.start(0, clampedPosition);
   }, [stopSource, ensureAudioContextReady]);
 
-  // 同步加载状态到 store
   useEffect(() => {
     setMusicState(isLoaded, isLoading, error);
   }, [isLoaded, isLoading, error, setMusicState]);
 
-  // 清理 AudioContext 和取消加载
+  // 卸载清理：停 source、abort 进行中的下载、关 AudioContext。
   useEffect(() => {
     const currentState = audioStateRef.current;
     return () => {
@@ -276,7 +267,6 @@ export function useMusicPlayer() {
     };
   }, [stopSource]);
 
-  // 当 musicUrl 清空时重置状态
   useEffect(() => {
     if (!musicUrl) {
       const state = audioStateRef.current;
@@ -295,23 +285,15 @@ export function useMusicPlayer() {
     }
   }, [musicUrl, stopSource]);
 
-  // 加载音频文件（在 pendingPlay 或音频缓存被清除时触发）
+  // 仅在 pendingPlay 或 URL 变化时拉音频；同 URL 已 in-flight 时不重发。
   useEffect(() => {
     const state = audioStateRef.current;
-
-    // 需要加载音频的条件：有 musicUrl，并且（pendingPlay 或 audioBuffer 为空且 URL 变了）
     if (!musicUrl) return;
-    
     const shouldLoad = pendingPlay || (!state.audioBuffer && musicUrl !== lastUrlRef.current);
     if (!shouldLoad) return;
-
-    // 如果已经加载完成（相同 URL），不重复加载
     if (state.audioBuffer && musicUrl === lastUrlRef.current) return;
-
-    // 如果正在加载相同的 URL，不重复发起请求
     if (loadingUrlRef.current === musicUrl) return;
 
-    // URL 变化时需要取消之前的请求并重新加载
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -323,7 +305,7 @@ export function useMusicPlayer() {
     }
 
     loadingUrlRef.current = musicUrl;
-    const currentUrl = musicUrl; // 捕获当前 URL
+    const currentUrl = musicUrl;
     setIsLoading(true);
     setError(null);
     setIsLoaded(false);
@@ -333,7 +315,7 @@ export function useMusicPlayer() {
 
     const loadAudio = async () => {
       try {
-        // 懒加载创建 AudioContext（此时可能处于 suspended 状态，播放时再 resume）
+        // AudioContext 在加载时就建（首次播放再 resume）。
         if (!state.audioContext) {
           const ctx = new AudioContext();
           const gainNode = ctx.createGain();
@@ -343,25 +325,18 @@ export function useMusicPlayer() {
           state.gainNode = gainNode;
         }
 
-        const response = await fetch(currentUrl, {
-          signal: abortController.signal,
-        });
-
+        const response = await fetch(currentUrl, { signal: abortController.signal });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const arrayBuffer = await response.arrayBuffer();
-
-        // 检查是否已被取消
         if (abortController.signal.aborted) return;
 
         const audioBuffer = await state.audioContext.decodeAudioData(arrayBuffer);
-
-        // 再次检查是否已被取消
         if (abortController.signal.aborted) return;
 
-        // 确保是当前 URL 的加载结果
+        // 期间用户可能切歌；只在仍指向 currentUrl 时落盘。
         if (loadingUrlRef.current === currentUrl) {
           state.audioBuffer = audioBuffer;
           lastUrlRef.current = currentUrl;
@@ -382,12 +357,9 @@ export function useMusicPlayer() {
     };
 
     loadAudio();
-
-    // 注意：不在这里取消请求，让请求继续完成
-    // 只有在 musicUrl 变化或组件卸载时才取消
+    // effect cleanup 不取消请求 —— 让请求跑完，只在 URL 变化/卸载时 abort。
   }, [pendingPlay, musicUrl, musicVolume, stopSource]);
 
-  // 音量控制
   useEffect(() => {
     const state = audioStateRef.current;
     if (state.gainNode) {
@@ -395,14 +367,12 @@ export function useMusicPlayer() {
     }
   }, [musicVolume]);
 
-  // 播放速度控制
+  // 切速度：保存当前位置 → 改 playbackRate → 重锚 startTime/startOffset，避免外推跳变。
   useEffect(() => {
     const state = audioStateRef.current;
     if (state.sourceNode && state.isSourcePlaying) {
-      // 保存当前位置
       const currentPosition = getCurrentTime();
       state.sourceNode.playbackRate.value = playbackSpeed;
-      // 更新 startTime 和 startOffset 以保持位置同步
       if (state.audioContext) {
         state.startTime = state.audioContext.currentTime;
         state.startOffset = currentPosition;
@@ -420,68 +390,92 @@ export function useMusicPlayer() {
 
     if (isPlaying) {
       let animationFrameId: number | null = null;
-      let lastSyncTime = 0;
       let isStartingPlayback = false; // 防止重复触发异步播放
+      let lastSeekVersion = useGameStore.getState().seekVersion;
+      let pendingSeek = false;
 
       const syncAudio = () => {
         if (!useGameStore.getState().isPlaying) return;
 
-        const now = performance.now();
+        // 显式监听 seek：用户拖动进度条 → seekVersion++ → 重新定位音频源。
+        // 与旧版"按漂移阈值整源重启"相反，这里只在用户主动 seek 时动音频，
+        // 渲染抖动不再导致 source 重建。
+        const sv = useGameStore.getState().seekVersion;
+        if (sv !== lastSeekVersion) {
+          lastSeekVersion = sv;
+          pendingSeek = true;
+          // 立即让出主时钟，避免 animate 在本帧先于 syncAudio 跑时消费到 seek 前的音频时间
+          audioMasterTimeMsRef.current = null;
+        }
+
         const currentBeats = playbackTimeRef.current;
         const musicTime = calculateMusicTime(currentBeats, bpmEvents, bpm, musicOffset);
 
         if (musicTime < 0) {
-          // 音乐还未开始，停止播放
+          // 前奏（lead-in）阶段：音乐尚未真正开始
           if (state.isSourcePlaying) {
             stopSource();
             state.startOffset = 0;
           }
+          audioMasterTimeMsRef.current = null;
           isStartingPlayback = false;
+          pendingSeek = false;
         } else {
           const targetTime = clamp(musicTime, 0, duration - 0.01);
 
-          // 检查漂移，必要时重新同步
-          if (now - lastSyncTime >= SYNC_INTERVAL_MS) {
-            lastSyncTime = now;
-            const currentTime = getCurrentTime();
-            const drift = Math.abs(currentTime - targetTime);
-            if (drift > DRIFT_THRESHOLD && !isStartingPlayback) {
-              isStartingPlayback = true;
-              playFromPosition(targetTime).finally(() => {
-                isStartingPlayback = false;
-              });
-            }
-          }
-
-          // 如果没有在播放，开始播放
-          if (!state.isSourcePlaying && !isStartingPlayback) {
+          if ((pendingSeek || !state.isSourcePlaying) && !isStartingPlayback) {
+            // 起播或显式 seek：以谱面时间为锚点启动音频
+            pendingSeek = false;
+            audioMasterTimeMsRef.current = null;
             isStartingPlayback = true;
             playFromPosition(targetTime).finally(() => {
               isStartingPlayback = false;
             });
+          } else if (
+            state.isSourcePlaying &&
+            state.audioContext &&
+            !pendingSeek &&
+            !isStartingPlayback
+          ) {
+            // 音频在跑：用 AudioContext 时钟反推 chart-ms，渲染层将以此为主时钟。
+            // pendingSeek 或起播 in-flight 期间不发布，避免推出 seek 前 / 起播前的旧位置。
+            const elapsedSec =
+              (state.audioContext.currentTime - state.startTime) * playbackSpeedRef.current;
+            const musicTimeSec = state.startOffset + elapsedSec;
+            const leadInMs = (60000 * LEAD_IN_BEATS) / bpm;
+            audioMasterTimeMsRef.current = musicTimeSec * 1000 + leadInMs + musicOffset;
+          } else {
+            audioMasterTimeMsRef.current = null;
           }
         }
 
         animationFrameId = requestAnimationFrame(syncAudio);
       };
 
-      // 初始播放
-      const initialBeats = playbackTimeRef.current;
-      const initialMusicTime = calculateMusicTime(initialBeats, bpmEvents, bpm, musicOffset);
-      if (initialMusicTime >= 0) {
-        isStartingPlayback = true;
-        playFromPosition(clamp(initialMusicTime, 0, duration - 0.01)).then(() => {
-          isStartingPlayback = false;
+      // 起播延到下一帧 rAF，跟 ChartCanvas animate 首帧落在同一个 vsync 起步
+      let initRafId: number | null = requestAnimationFrame(() => {
+        initRafId = null;
+        const initialBeats = playbackTimeRef.current;
+        const initialMusicTime = calculateMusicTime(initialBeats, bpmEvents, bpm, musicOffset);
+        if (initialMusicTime >= 0) {
+          isStartingPlayback = true;
+          playFromPosition(clamp(initialMusicTime, 0, duration - 0.01)).then(() => {
+            isStartingPlayback = false;
+            animationFrameId = requestAnimationFrame(syncAudio);
+          });
+        } else {
           animationFrameId = requestAnimationFrame(syncAudio);
-        });
-      } else {
-        animationFrameId = requestAnimationFrame(syncAudio);
-      }
+        }
+      });
 
       return () => {
+        if (initRafId !== null) {
+          cancelAnimationFrame(initRafId);
+        }
         if (animationFrameId) {
           cancelAnimationFrame(animationFrameId);
         }
+        audioMasterTimeMsRef.current = null;
       };
     } else {
       // 暂停播放
@@ -489,6 +483,7 @@ export function useMusicPlayer() {
         state.startOffset = getCurrentTime();
         stopSource();
       }
+      audioMasterTimeMsRef.current = null;
 
       // 节流更新 seek 位置
       const now = Date.now();

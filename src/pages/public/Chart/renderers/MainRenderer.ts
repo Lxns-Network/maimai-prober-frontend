@@ -57,6 +57,7 @@ export class MainRenderer {
     rainbowBpm: false,
     ddrColorMode: false,
     ddrColorExtended: false,
+    showFireworks: true,
   };
 
   private bpm: number = 120;
@@ -80,11 +81,18 @@ export class MainRenderer {
 
   private sensorImage: HTMLImageElement | null = null;
 
+  // simulCounts / breakIdx 是静态元数据，只依赖 chart 本身。
+  // 用 notes 数组引用做缓存键——chart 切换时引用变化自然 invalidate。
+  private preparedNotesRef: Note[] | null = null;
+
   constructor(canvas: HTMLCanvasElement, initialBpm: number = 120) {
     this.canvas = canvas;
     this.bpm = initialBpm;
 
-    const context = canvas.getContext('2d');
+    // alpha: false 让浏览器知道 canvas 不透明（CSS 已经把 background 设成 #000），
+    // 合成时走 RGB 路径而不是 RGBA，省一次 alpha blend pass。
+    // 144Hz 高刷显示器下这是 MDN 推荐的 canvas 优化中最直接的一个。
+    const context = canvas.getContext('2d', { alpha: false });
     if (!context) {
       throw new Error('Failed to get 2D canvas context');
     }
@@ -141,7 +149,10 @@ export class MainRenderer {
 
     const rect = parent.getBoundingClientRect();
     const size = Math.min(rect.width, rect.height);
-    const dpr = window.devicePixelRatio || 1;
+    // 144Hz 显示器的 vsync 预算只有 6.9ms，按完整 DPR=2/3 渲染时浏览器
+    // composite canvas backing store 的成本会顶满预算导致掉帧；不过手机屏幕通常
+    // 物理面积小，按 DPR=2 渲染仍可接受，上限 2 在 DPR=3 设备节省 ~56% 像素。
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     this.logicalSize = size;
 
@@ -254,6 +265,10 @@ export class MainRenderer {
     this.updateRenderersContext();
   }
 
+  setShowFireworks(enabled: boolean): void {
+    this.config.showFireworks = enabled;
+  }
+
   clear(): void {
     if (this.config.judgmentLineDesign === 'sensor') {
       this.ctx.fillStyle = '#000000';
@@ -300,12 +315,33 @@ export class MainRenderer {
     this.ctx.restore();
   }
 
+  /** 火花特效：判定线之上、note 之下渲染，canvas 内切圆裁切。 */
+  renderFireworks(notes: Note[], currentBeat: number, bpmEvents: BpmEvent[] | null): void {
+    if (!this.config.showFireworks) return;
+    const currentTimeMs = this.beatsToMs(currentBeat, bpmEvents);
+    const touches: (TouchNote | TouchHoldStartNote)[] = [];
+    for (const note of notes) {
+      if (isTouchNote(note) || isTouchHoldStartNote(note)) touches.push(note);
+    }
+    if (touches.length === 0) return;
+
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.arc(this.centerX, this.centerY, this.logicalSize / 2, 0, Math.PI * 2);
+    this.ctx.clip();
+    this.touchRenderer.renderTouchFireworks(touches, currentTimeMs);
+    this.ctx.restore();
+  }
+
   renderNotes(notes: Note[], currentBeat: number, bpmEvents: BpmEvent[] | null): void {
     const currentTimeMs = this.beatsToMs(currentBeat, bpmEvents);
 
-    this.calculateSimultaneousCounts(notes);
-
-    this.assignBreakIndices(notes);
+    // 静态元数据：只在 chart 切换时算一次（省 ~0.4 ms CPU/帧 + ~100 KB GC 压力）
+    if (this.preparedNotesRef !== notes) {
+      this.calculateSimultaneousCounts(notes);
+      this.assignBreakIndices(notes);
+      this.preparedNotesRef = notes;
+    }
 
     if (this.config.showBpm) {
       this.renderBpmDisplay(currentBeat, bpmEvents);
@@ -324,7 +360,7 @@ export class MainRenderer {
 
     for (let i = notes.length - 1; i >= 0; i--) {
       const note = notes[i];
-      
+
       if (isSlideNote(note)) {
         slides.push(note);
       } else if (isTouchNote(note) || isTouchHoldStartNote(note)) {
@@ -337,26 +373,28 @@ export class MainRenderer {
     }
 
     for (const slide of slides) {
-      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, false);
+      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, 'tracks');
     }
 
     for (const slide of slides) {
-      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, true);
+      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, 'stars');
     }
 
     this.renderApproachIndicators(notes, holds, slides, currentBeat, currentTimeMs);
 
+    this.renderSlideStarts(slides, currentBeat, currentTimeMs);
+
+    this.renderTapNotes(taps, currentBeat, currentTimeMs);
+
+    // hold 在 tap/slide-star 之上，避免后到的 tap 盖住前面的 hold。
     this.renderHoldNotes(holds, notes, currentBeat, currentTimeMs);
 
+    // touch 最上层，覆盖普通 note。
     this.renderTouchBorders(touches, currentTimeMs);
 
     for (const touch of touches) {
       this.touchRenderer.renderTouch(touch, currentBeat, currentTimeMs);
     }
-
-    this.renderSlideStarts(slides, currentBeat, currentTimeMs);
-
-    this.renderTapNotes(taps, currentBeat, currentTimeMs);
 
     this.ctx.restore();
   }
@@ -610,7 +648,7 @@ export class MainRenderer {
       if (slide.isSplitSlide) {
         this.renderSplitSlideStar(pos.x, pos.y, noteSize, color, rotation);
       } else {
-        this.slideRenderer.drawStar(pos.x, pos.y, noteSize, color, rotation);
+        this.slideRenderer.drawStar(pos.x, pos.y, noteSize, color, rotation, slide.isEx ?? false);
       }
 
       if (this.config.showBreakIndex && slide.isStartBreak && slide.noExBreakIndex && !slide.isEx) {
@@ -753,8 +791,8 @@ export class MainRenderer {
     this.ctx.save();
     this.ctx.textAlign = 'left';
     this.ctx.textBaseline = 'top';
-    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    this.ctx.shadowBlur = 4 * this.radius / 300;
+    // 纯偏移阴影代替 shadowBlur：避免 GPU 高斯模糊 pass
+    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
     this.ctx.shadowOffsetX = 2 * this.radius / 300;
     this.ctx.shadowOffsetY = 2 * this.radius / 300;
 
@@ -895,8 +933,8 @@ export class MainRenderer {
 
     this.ctx.save();
     this.ctx.font = `bold ${fontSize}px sans-serif`;
-    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    this.ctx.shadowBlur = 4 * this.radius / 300;
+    // 纯偏移阴影代替 shadowBlur
+    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
     this.ctx.shadowOffsetX = 2 * this.radius / 300;
     this.ctx.shadowOffsetY = 2 * this.radius / 300;
 

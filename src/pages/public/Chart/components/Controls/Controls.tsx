@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import {
   ActionIcon,
+  Button,
   Card,
   Checkbox,
   Collapse,
@@ -12,6 +13,7 @@ import {
   Stack,
   Switch,
   Text,
+  Textarea,
   ThemeIcon,
   Tooltip,
   UnstyledButton,
@@ -178,15 +180,26 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 export function Controls() {
   const {
     playbackSpeed, rawSimaiText, selectedDifficulty, availableDifficulties, chartData,
-    setPlaybackSpeed, setChartData, setSelectedDifficulty,
+    setPlaybackSpeed, setChartData, setSelectedDifficulty, setRawSimaiText,
   } = useGameStore(useShallow((state) => state));
+
+  // 临时调试：手动编辑当前 simai 文本并重新加载
+  const [debugSimai, setDebugSimai] = useState(rawSimaiText);
+  useEffect(() => { setDebugSimai(rawSimaiText); }, [rawSimaiText]);
+  const applyDebugSimai = useCallback(() => {
+    setRawSimaiText(debugSimai);
+    const chart = parseSimaiChart(debugSimai, selectedDifficulty ?? undefined);
+    setChartData(chart);
+  }, [debugSimai, selectedDifficulty, setRawSimaiText, setChartData]);
 
   const {
     hiSpeed, alwaysKeepHiSpeed, slideRotation, mirrorMode,
     judgmentLineDesign, pinkSlideStart, highlightExNotes, normalColorBreakSlide,
+    showFireworks,
     musicVolume, musicOffset, soundOffset,
     setHiSpeed, setAlwaysKeepHiSpeed, setSlideRotation, setMirrorMode,
     setJudgmentLineDesign, setPinkSlideStart, setHighlightExNotes, setNormalColorBreakSlide,
+    setShowFireworks,
     setMusicVolume, setMusicOffset, setSoundOffset,
   } = useGameSettingsStore(useShallow((state) => state));
 
@@ -207,6 +220,23 @@ export function Controls() {
 
   return (
     <Stack gap="md">
+      {import.meta.env.DEV && (
+        <Card className={classes.card} radius="lg" withBorder>
+          <Stack gap="xs">
+            <Text size="sm" fw={500}>Simai 调试</Text>
+            <Textarea
+              value={debugSimai}
+              onChange={(e) => setDebugSimai(e.currentTarget.value)}
+              autosize
+              minRows={4}
+              maxRows={10}
+              styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
+            />
+            <Button size="xs" onClick={applyDebugSimai}>应用并重新解析</Button>
+          </Stack>
+        </Card>
+      )}
+
       <Card className={classes.card} radius="lg" withBorder>
         <Stack gap="md">
           <div>
@@ -397,7 +427,14 @@ export function Controls() {
                 onChange={(e) => setNormalColorBreakSlide(e.currentTarget.checked)}
               />
             </Group>
-            
+
+            <Group justify="space-between">
+              <Text size="sm">显示烟花特效</Text>
+              <Switch
+                checked={showFireworks}
+                onChange={(e) => setShowFireworks(e.currentTarget.checked)}
+              />
+            </Group>
 
           </Stack>
         </Collapse>

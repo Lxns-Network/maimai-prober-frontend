@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useGameStore, playbackTimeRef } from '../../stores/useGameStore';
+import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from '../../stores/useGameStore';
 import { useGameSettingsStore } from '../../stores/useGameSettingsStore';
 import { MainRenderer } from '../../renderers/MainRenderer';
 import { useAudio } from '../../hooks/useAudio';
@@ -83,7 +83,6 @@ export function ChartCanvas() {
     resume: answerSound.resume,
   });
 
-  // 保持 refs 最新
   useEffect(() => {
     answerSoundRefs.current = {
       schedule: answerSound.schedule,
@@ -114,6 +113,7 @@ export function ChartCanvas() {
   const pinkSlideStart = useGameSettingsStore((s) => s.pinkSlideStart);
   const highlightExNotes = useGameSettingsStore((s) => s.highlightExNotes);
   const normalColorBreakSlide = useGameSettingsStore((s) => s.normalColorBreakSlide);
+  const showFireworks = useGameSettingsStore((s) => s.showFireworks);
   const soundEnabled = useGameSettingsStore((s) => s.soundEnabled);
   const soundVolume = useGameSettingsStore((s) => s.soundVolume);
   const soundOffset = useGameSettingsStore((s) => s.soundOffset);
@@ -204,6 +204,7 @@ export function ChartCanvas() {
 
     renderer.clear();
     renderer.renderJudgmentLine();
+    renderer.renderFireworks(chart.notes, currentBeats, chart.bpmEvents);
     renderer.renderNotes(chart.notes, currentBeats, chart.bpmEvents);
 
     if (sound && playing) {
@@ -228,6 +229,7 @@ export function ChartCanvas() {
     renderer.setPinkSlideStart(settingsState.pinkSlideStart);
     renderer.setHighlightExNotes(settingsState.highlightExNotes);
     renderer.setNormalColorBreakSlide(settingsState.normalColorBreakSlide);
+    renderer.setShowFireworks(settingsState.showFireworks);
     renderer.setPlaybackSpeed(useGameStore.getState().playbackSpeed);
 
     const handleResize = () => {
@@ -368,6 +370,13 @@ export function ChartCanvas() {
   }, [normalColorBreakSlide, renderFrame]);
 
   useEffect(() => {
+    if (rendererRef.current) {
+      rendererRef.current.setShowFireworks(showFireworks);
+      renderFrame(playbackTimeRef.current);
+    }
+  }, [showFireworks, renderFrame]);
+
+  useEffect(() => {
     if (rendererRef.current && chartData) {
       rendererRef.current.setBpm(chartData.bpm);
     }
@@ -399,10 +408,9 @@ export function ChartCanvas() {
     resyncAnswerSound(currentMs);
   }, [soundOffset, chartData, isPlaying, soundEnabled, resyncAnswerSound]);
 
-  // 保存当前播放速度的 ref，用于在动画循环中获取最新值
+  // 切速度时重锚 startTime/startMs，避免外推位置跳变。
   const playbackSpeedRef = useRef(playbackSpeed);
   useEffect(() => {
-    // 当播放速度变化时，更新起始时间和位置以保持当前播放位置
     if (isPlaying && chartData) {
       const currentBeats = playbackTimeRef.current;
       playbackStartTimeRef.current = performance.now();
@@ -443,19 +451,27 @@ export function ChartCanvas() {
 
     answerSoundRefs.current.resume();
 
-    const currentPreciseTime = useGameStore.getState().timeline.preciseTime;
-    playbackStartTimeRef.current = performance.now();
-    playbackStartMsRef.current = beatsToMs(currentPreciseTime, chartData.bpmEvents, chartData.bpm);
-
-    // 传入当前时间，避免播放之前已经过去的 note 音效
-    answerSoundRefs.current.reset(playbackStartMsRef.current);
-
     const totalBeats = totalMeasures * beatsPerMeasure;
     const totalDurationMs = beatsToMs(totalBeats, chartData.bpmEvents, chartData.bpm);
 
     let lastSeekVersion = useGameStore.getState().seekVersion;
 
+    // 延迟到第一次 rAF 回调里捕获 anchor。如果在 useEffect 里立即用 performance.now() 作为
+    // anchor，首帧 timestamp 会比它晚一个 vsync 周期（60Hz ≈ 16ms，144Hz ≈ 7ms，外加 React
+    // effect 调度延迟），导致 getPlaybackMs(timestamp) 出现可见瞬移。seek 路径下面用的就是
+    // rAF timestamp，所以是精确的。
+    let anchorInitialized = false;
+
     const animate = (timestamp: number) => {
+      if (!anchorInitialized) {
+        anchorInitialized = true;
+        const currentPreciseTime = useGameStore.getState().timeline.preciseTime;
+        playbackStartTimeRef.current = timestamp;
+        playbackStartMsRef.current = beatsToMs(currentPreciseTime, chartData.bpmEvents, chartData.bpm);
+        // 传入当前时间，避免播放之前已经过去的 note 音效
+        answerSoundRefs.current.reset(playbackStartMsRef.current);
+      }
+
       // FPS 统计
       if (lastFrameTimeRef.current > 0) {
         const delta = timestamp - lastFrameTimeRef.current;
@@ -480,12 +496,24 @@ export function ChartCanvas() {
           chartData.bpmEvents,
           chartData.bpm
         );
+        // seek 后让出音频主时钟，本帧走 rAF 新锚点；syncAudio 重定位完成后会再发布
+        audioMasterTimeMsRef.current = null;
         // 传入当前时间，避免播放之前已经过去的 note 音效
         answerSoundRefs.current.reset(playbackStartMsRef.current);
       }
 
-      // 使用 ref 获取最新的播放速度
-      const currentMs = getPlaybackMs(timestamp);
+      // 音频实际在跑时以 AudioContext 时钟为主，否则回落 rAF 外推。
+      // 顺手把 rAF anchor 重新对齐到音频时间，让 lead-in/暂停/音乐结束后
+      // 回落到 rAF 路径时不会出现位置跳变。
+      const audioMs = audioMasterTimeMsRef.current;
+      let currentMs: number;
+      if (audioMs !== null) {
+        currentMs = audioMs;
+        playbackStartTimeRef.current = timestamp;
+        playbackStartMsRef.current = audioMs;
+      } else {
+        currentMs = getPlaybackMs(timestamp);
+      }
 
       if (currentMs >= totalDurationMs + 500) {
         setPreciseTime(totalBeats);
@@ -511,7 +539,7 @@ export function ChartCanvas() {
     };
   }, [isPlaying, chartData, totalMeasures, beatsPerMeasure, pause, setPreciseTime, renderFrame, getPlaybackMs]);
 
-  // 非播放状态下的预览更新（支持拖动进度条时的实时预览）
+  // 暂停态：进度条拖动时实时预览（rAF 节流，只在时间变了重渲染）。
   useEffect(() => {
     if (isPlaying) return;
 
@@ -520,7 +548,6 @@ export function ChartCanvas() {
 
     const updatePreview = () => {
       const currentTime = playbackTimeRef.current;
-      // 只有当时间变化时才重新渲染
       if (currentTime !== lastPreviewedTime) {
         lastPreviewedTime = currentTime;
         renderFrame(currentTime);
@@ -528,7 +555,6 @@ export function ChartCanvas() {
       previewAnimationFrameId = requestAnimationFrame(updatePreview);
     };
 
-    // 立即渲染当前帧
     renderFrame(playbackTimeRef.current);
     previewAnimationFrameId = requestAnimationFrame(updatePreview);
 

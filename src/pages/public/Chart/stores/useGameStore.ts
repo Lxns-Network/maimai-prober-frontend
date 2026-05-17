@@ -4,6 +4,10 @@ import { Chart, BpmEvent, ChartDifficulty, AvailableDifficulties } from '../type
 
 export const playbackTimeRef = { current: 0 };
 
+// 当音频已实际在播时，由 useMusicPlayer 每帧用 AudioContext 时钟反推的 chart-ms 位置。
+// 渲染循环优先消费此值，让音频作为主时钟；为 null 时回落到 rAF 外推。
+export const audioMasterTimeMsRef: { current: number | null } = { current: null };
+
 interface TimelineState {
   totalMeasures: number;
   beatsPerMeasure: number;
@@ -158,7 +162,6 @@ function getDivisorAt(chartData: Chart | null, time: number, forStepping: boolea
 
   const events = chartData.divisorEvents;
 
-  // 二分查找最后一个 timing <= time 的事件
   let left = 0;
   let right = events.length - 1;
   let result = -1;
@@ -174,8 +177,6 @@ function getDivisorAt(chartData: Chart | null, time: number, forStepping: boolea
   }
 
   const divisor = result >= 0 ? events[result].divisor : 4;
-
-  // 步进时限制最大分拍
   return forStepping ? Math.min(divisor, MAX_STEP_DIVISOR) : divisor;
 }
 
@@ -187,7 +188,7 @@ export const useGameStore = create<GameStore>()(
       const state = get();
       if (state.isPlaying) return;
 
-      // 如果设置了音乐 URL 但音乐还未加载完成，设置 pendingPlay 等待加载
+      // 音乐还在加载：先标记 pendingPlay，等 musicLoaded 触发自动 play。
       if (state.musicUrl && !state.musicLoaded) {
         set({ pendingPlay: true });
         return;
@@ -197,7 +198,6 @@ export const useGameStore = create<GameStore>()(
       const totalBeats = timeline.totalMeasures * timeline.beatsPerMeasure;
       const isAtEnd = timeline.preciseTime >= totalBeats - 0.01;
 
-      // 如果在结尾，从头开始播放
       if (isAtEnd) {
         playbackTimeRef.current = 0;
         set({
@@ -242,7 +242,6 @@ export const useGameStore = create<GameStore>()(
       const { beatsPerMeasure, totalMeasures } = state.timeline;
       const time = playbackTimeRef.current;
 
-      // 从 playbackTimeRef 同步当前位置
       const measure = Math.floor(time / beatsPerMeasure);
       const clampedMeasure = Math.max(0, Math.min(measure, totalMeasures - 1));
       const beatInMeasure = time - clampedMeasure * beatsPerMeasure;
@@ -331,7 +330,6 @@ export const useGameStore = create<GameStore>()(
       const position = Math.floor((beatInMeasure / beatsPerMeasure) * 512);
       const clampedPosition = Math.max(0, Math.min(position, 511));
 
-      // 同步更新 playbackTimeRef
       playbackTimeRef.current = time;
 
       set({
@@ -348,7 +346,6 @@ export const useGameStore = create<GameStore>()(
     stepPosition: (steps: number) => {
       const state = get();
       const { totalMeasures, beatsPerMeasure } = state.timeline;
-      // 使用 playbackTimeRef 获取实时播放位置
       const currentTime = state.isPlaying ? playbackTimeRef.current : state.timeline.preciseTime;
       const maxTime = totalMeasures * beatsPerMeasure;
 
@@ -384,7 +381,6 @@ export const useGameStore = create<GameStore>()(
     stepMeasure: (measures: number) => {
       const state = get();
       const { beatsPerMeasure } = state.timeline;
-      // 使用 playbackTimeRef 获取实时播放位置
       const currentTime = state.isPlaying ? playbackTimeRef.current : state.timeline.preciseTime;
       const currentMeasure = Math.floor(currentTime / beatsPerMeasure);
       get().setMeasure(currentMeasure + measures);
@@ -421,8 +417,7 @@ export const useGameStore = create<GameStore>()(
       set({ playbackSpeed: Math.max(0.1, Math.min(1.0, speed)) });
 
       if (state.isPlaying) {
-        // 使用 playbackTimeRef 获取实时播放位置
-        const currentBeats = playbackTimeRef.current;
+          const currentBeats = playbackTimeRef.current;
         const currentMs = beatsToMs(
           currentBeats,
           state.chartData?.bpmEvents ?? null,
@@ -445,25 +440,22 @@ export const useGameStore = create<GameStore>()(
 
     setMusicState: (loaded: boolean, loading: boolean, error: string | null) => {
       const state = get();
-      // 如果音乐加载完成且正在等待播放，自动开始播放
       const shouldAutoPlay = loaded && state.pendingPlay;
 
       set({
         musicLoaded: loaded,
         musicLoading: loading,
         musicError: error,
-        // 只有在即将播放时才清除 pendingPlay，避免触发 useEffect 取消请求
+        // 在 set 这一拍清掉 pendingPlay：放到 play() 后才清，会让中间的 useEffect 误以为还在等。
         ...(shouldAutoPlay ? { pendingPlay: false } : {}),
       });
 
       if (shouldAutoPlay) {
-        // 直接调用播放逻辑，此时 musicLoaded 已经是 true
         setTimeout(() => get().play(), 0);
       }
     },
     setPendingPlay: (pending: boolean) => set({ pendingPlay: pending }),
 
-    // Utility
     getCurrentTimeInBeats: () => {
       const { timeline } = get();
       return (

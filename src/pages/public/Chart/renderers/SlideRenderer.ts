@@ -1,15 +1,18 @@
 import { BaseRenderer, RenderContext } from './BaseRenderer';
-import { SlideNote, SlideSegment, SlidePathType, Point2D, ButtonPosition, NoteRenderPosition } from '../types';
+import { SlideNote, SlideSegment, SlidePathType, Point2D, ButtonPosition, NoteRenderPosition, SlideArcLutPoint } from '../types';
 import { NoteRenderer } from './NoteRenderer';
 import {
   SLIDE_ARROW_WIDTH_RATIO,
   SLIDE_ARROW_SPACING,
-  WIFI_ARROW_SPACING,
   SLIDE_CURVE_OFFSET_RATIO,
   COLORS,
   APPROACH_START_SCALE,
   NOTE_VISIBILITY_AFTER_MS,
 } from '../utils/constants';
+import { detectSlideShape, SLIDE_AREA_STEP_MAP } from '../utils/slideAreaSteps';
+import { SLIDE_BARS } from '../utils/slideBars';
+
+export type SlideRenderMode = 'tracks' | 'stars';
 
 export class SlideRenderer extends BaseRenderer {
   private noteRenderer: NoteRenderer;
@@ -17,6 +20,51 @@ export class SlideRenderer extends BaseRenderer {
   constructor(context: RenderContext, noteRenderer: NoteRenderer) {
     super(context);
     this.noteRenderer = noteRenderer;
+  }
+
+  /**
+   * 把 prefab bar 列表（unit-disc）变换到当前 canvas 坐标。返回的 polyline 同时
+   * 喂给箭头渲染和 getPointOnSegment（星头），保证两者跟同一条曲线。
+   */
+  private getBarChain(segment: SlideSegment): { x: number; y: number }[] | null {
+    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos);
+    if (!shape) return null;
+    const bars = SLIDE_BARS[shape.shape];
+    if (!bars) return null;
+
+    // 模板按 startPos=1 设计：非镜像时旋 (startPos-1)·π/4 把 button 1 → startPos；
+    // shape.mirror 先 x→-x 把 button 1 翻到 button 8，要多旋 45° 才能转回。
+    const startRotation = ((segment.startPos - (shape.mirror ? 0 : 1)) * Math.PI) / 4;
+    const cosR = Math.cos(startRotation);
+    const sinR = Math.sin(startRotation);
+    const r = this.context.radius;
+    const cx = this.context.centerX;
+    const cy = this.context.centerY;
+    // 用户 mirror（h 翻 x / v 翻 y / rotate180 双翻），跟 mirrorPosition 配套。
+    const mode = this.context.config.mirrorMode;
+    const sx = mode === 'horizontal' || mode === 'rotate180' ? -1 : 1;
+    const sy = mode === 'vertical' || mode === 'rotate180' ? -1 : 1;
+
+    // Circle prefab 原意是 π/32 等距 grid（8 bar/button-step）+ 半径 ~0.993，源数据
+    // 有 float 漂移。snap 到精确 grid + 固定半径，让 π/4 倍数的旋转后 overlap 对齐。
+    const isCircle = shape.shape.startsWith('circle');
+    const CIRCLE_BAR_R = 0.993;
+    const GRID_PER_PI = 32;
+
+    return bars.map((bar) => {
+      let bx = shape.mirror ? -bar.x : bar.x;
+      let by = bar.y;
+      if (isCircle) {
+        const angle = Math.atan2(by, bx);
+        const snapped = Math.round((angle * GRID_PER_PI) / Math.PI) * (Math.PI / GRID_PER_PI);
+        bx = Math.cos(snapped) * CIRCLE_BAR_R;
+        by = Math.sin(snapped) * CIRCLE_BAR_R;
+      }
+      return {
+        x: cx + sx * r * (bx * cosR - by * sinR),
+        y: cy + sy * r * (bx * sinR + by * cosR),
+      };
+    });
   }
 
   calculateSlideStartPosition(
@@ -61,19 +109,17 @@ export class SlideRenderer extends BaseRenderer {
     note: SlideNote,
     currentBeat: number,
     currentTimeMs: number,
-    renderStars: boolean = true
+    mode: SlideRenderMode = 'tracks'
   ): void {
     if (note.isSplitSlide && note.allSlideSegments) {
-      // 分段滑条：渲染每个路径
       for (let i = 0; i < note.allSlideSegments.length; i++) {
         const segments = note.allSlideSegments[i];
         if (segments && segments.length > 0) {
-          this.renderSlidePath(note, currentBeat, currentTimeMs, segments, i, renderStars);
+          this.renderSlidePath(note, currentBeat, currentTimeMs, segments, i, mode);
         }
       }
     } else if (note.slideSegments && note.slideSegments.length > 0) {
-      // 单段滑条
-      this.renderSlidePath(note, currentBeat, currentTimeMs, note.slideSegments, 0, renderStars);
+      this.renderSlidePath(note, currentBeat, currentTimeMs, note.slideSegments, 0, mode);
     }
   }
 
@@ -83,21 +129,19 @@ export class SlideRenderer extends BaseRenderer {
     currentTimeMs: number,
     segments: SlideSegment[],
     pathIndex: number = 0,
-    renderStars: boolean = true
+    mode: SlideRenderMode = 'tracks'
   ): void {
     const approachHalf = this.getApproachTimeMs() / 2;
     const visibilityStart = note.timingMs - approachHalf;
-    
+
     const durationMs = note.allDurationMs ? note.allDurationMs[pathIndex] : note.durationMs;
     const delayMs = note.allDelayMs ? note.allDelayMs[pathIndex] : (note.delayMs ?? 60000 / note.bpm);
     const slideStart = note.timingMs + delayMs;
 
-    // 检查可见性窗口
     if (currentTimeMs < visibilityStart || currentTimeMs > slideStart + durationMs) {
       return;
     }
 
-    // 计算淡入 alpha
     let alpha = 1;
     if (currentTimeMs < note.timingMs) {
       const fadeProgress = (currentTimeMs - visibilityStart) / approachHalf;
@@ -107,7 +151,6 @@ export class SlideRenderer extends BaseRenderer {
     this.withContext(() => {
       this.context.ctx.globalAlpha = alpha;
 
-      // 计算滑条进度 (0-1)
       let progress = 0;
       if (currentTimeMs >= slideStart) {
         const elapsed = currentTimeMs - slideStart;
@@ -115,47 +158,46 @@ export class SlideRenderer extends BaseRenderer {
       }
 
       const isSimultaneous = (note.simultaneousSlideCount ?? 0) >= 2 || (note.isSplitSlide ?? false);
-      const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
-      let allVisible = true;
 
-      // 计算总路径长度用于进度映射
-      const segmentLengths = segments.map(seg => this.getSegmentLength(seg));
-      const totalLength = segmentLengths.reduce((a, b) => a + b, 0);
-      
-      const segmentRanges: { start: number; end: number }[] = [];
-      let cumulative = 0;
-      for (let i = 0; i < segments.length; i++) {
-        const start = cumulative / totalLength;
-        cumulative += segmentLengths[i];
-        const end = cumulative / totalLength;
-        segmentRanges.push({ start, end });
-      }
+      if (mode === 'tracks') {
+        const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
 
-      // 渲染每个段 (反向层叠)
-      for (let i = segments.length - 1; i >= 0; i--) {
-        const segment = segments[i];
-        const range = segmentRanges[i];
-        
-        let segmentProgress = 0;
-        if (progress > range.start) {
-          segmentProgress = progress >= range.end 
-            ? 1 
-            : (progress - range.start) / (range.end - range.start);
+        const segmentLengths = segments.map((seg) => this.getSegmentLength(seg));
+        const totalLength = segmentLengths.reduce((a, b) => a + b, 0);
+        const segmentRanges: { start: number; end: number }[] = [];
+        let cumulative = 0;
+        for (const len of segmentLengths) {
+          const start = cumulative / totalLength;
+          cumulative += len;
+          const end = cumulative / totalLength;
+          segmentRanges.push({ start, end });
         }
 
-        const visible = this.renderSlideSegment(
-          segment,
-          isBreak,
-          segmentProgress,
-          isSimultaneous,
-          this.context.config.normalColorBreakSlide
-        );
-        if (!visible) allVisible = false;
-      }
+        // 反向迭代让后画的段叠在前画的段上；chunky snap 让内部函数查 areaStep，
+        // 外层只传原始 progress（双层 snap 会在 chunk 边界处错位）。
+        for (let i = segments.length - 1; i >= 0; i--) {
+          const segment = segments[i];
+          const range = segmentRanges[i];
 
-      // 渲染星星
-      if (renderStars && allVisible && currentTimeMs >= note.timingMs) {
-        this.renderSlideStar(note, progress, segments, pathIndex, currentTimeMs, isSimultaneous);
+          let segmentProgress = 0;
+          if (progress > range.start) {
+            segmentProgress = progress >= range.end
+              ? 1
+              : (progress - range.start) / (range.end - range.start);
+          }
+
+          this.renderSlideSegment(
+            segment,
+            isBreak,
+            segmentProgress,
+            isSimultaneous,
+            this.context.config.normalColorBreakSlide
+          );
+        }
+      } else {
+        if (currentTimeMs >= note.timingMs) {
+          this.renderSlideStar(note, progress, segments, pathIndex, currentTimeMs, isSimultaneous);
+        }
       }
     });
   }
@@ -170,14 +212,12 @@ export class SlideRenderer extends BaseRenderer {
     const startPos = this.noteRenderer.getPositionOnRing(segment.startPos);
     const endPos = this.noteRenderer.getPositionOnRing(segment.endPos);
     
-    // 镜像路径类型
     const mirroredType = this.mirrorPathType(segment.type);
 
     this.withContext(() => {
       const ctx = this.context.ctx;
       ctx.lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
-      
-      // 根据类型设置颜色
+
       if (isBreak && !normalBreakColor) {
         ctx.strokeStyle = COLORS.BREAK_ORANGE;
       } else if (isSimultaneous) {
@@ -189,7 +229,18 @@ export class SlideRenderer extends BaseRenderer {
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      // 根据镜像后的段类型渲染
+      if (segment.type === 'w') {
+        this.renderWifiBars(segment, progress);
+        return;
+      }
+
+      // 其他形状：prefab bar 位置 + drawSlideArrowsBatch（均匀箭头）。
+      const bars = this.getVisibleBarsForSegment(segment, progress);
+      if (bars !== null) {
+        if (bars.length > 0) this.drawSlideArrowsBatch(bars);
+        return;
+      }
+
       switch (mirroredType) {
         case '-':
           this.renderStraightPath(startPos, endPos, progress);
@@ -208,7 +259,6 @@ export class SlideRenderer extends BaseRenderer {
         case 'pp':
         case 'q':
         case 'qq':
-          // 传递原始段类型，让 getPointOnSegment 处理镜像
           this.renderCurvePath(segment.startPos, segment.endPos, segment.type, progress);
           break;
         case 's':
@@ -217,26 +267,110 @@ export class SlideRenderer extends BaseRenderer {
         case 'z':
           this.renderZPath(startPos, endPos, progress);
           break;
-        case 'w':
-          this.renderWifiPath(segment.startPos, segment.endPos, progress);
-          break;
       }
     });
 
     return true;
   }
 
+  /**
+   * Wifi 渲染：每个 bar 是对称 chevron，corner 朝 endPos、两臂朝 startPos 方向张开。
+   *
+   * - 11 个 corner 落在 pivot(startPos)→endPos 的 button 直线上，等距插值（prefab
+   *   原始位置跟 button 直线有 ~0.7% 横向偏差，所以投影到直线再插值）。
+   * - `CHAIN_SCALE` 控制 chain 沿 fan 方向总长（>1 把 prefab 末端推向 endPos rim）。
+   * - 每个 chevron 两臂等长，bend 135°（每臂与 -x_fan 轴成 ±67.5°）。
+   * - armLen = `cos(67.5°) · d_from_pivot`：精确反解能让 arm tip 正好落到从 startPos
+   *   出发的 ±22.5° fan blade ray 上，所有 chevron 的 tip 在左右各自共线。
+   * - chunky：floor + `steps[i] + 1`（inclusive 隐藏），progress = 0 时全部可见。
+   */
+  private renderWifiBars(segment: SlideSegment, progress: number): void {
+    const chain = this.getBarChain(segment);
+    if (!chain || chain.length < 2) return;
+
+    const steps = SLIDE_AREA_STEP_MAP['wifi'];
+    let hiddenCount = 0;
+    if (progress > 0 && steps && steps.length >= 2) {
+      const i = Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)));
+      hiddenCount = steps[i] + 1;
+    }
+
+    const pivot = this.noteRenderer.getPositionOnRing(segment.startPos);
+    const endPivot = this.noteRenderer.getPositionOnRing(segment.endPos);
+    const axisLen = Math.hypot(endPivot.x - pivot.x, endPivot.y - pivot.y);
+    const axisUx = (endPivot.x - pivot.x) / axisLen;
+    const axisUy = (endPivot.y - pivot.y) / axisLen;
+    const fanAngle = Math.atan2(axisUy, axisUx);
+
+    const CHAIN_SCALE = 1.15;
+    const N = chain.length;
+    const dFirst = Math.hypot(chain[0].x - pivot.x, chain[0].y - pivot.y) * CHAIN_SCALE;
+    const dLast = Math.hypot(chain[N - 1].x - pivot.x, chain[N - 1].y - pivot.y) * CHAIN_SCALE;
+
+    const ARM_HALF_ANGLE = (135 / 2) * Math.PI / 180; // 67.5°
+    const cosA = Math.cos(ARM_HALF_ANGLE); // ≈ 0.383
+    const sinA = Math.sin(ARM_HALF_ANGLE); // ≈ 0.924
+
+    const chevrons: {
+      x: number; y: number;
+      arm1Dx: number; arm1Dy: number;
+      arm2Dx: number; arm2Dy: number;
+    }[] = [];
+    for (let i = N - 1; i >= hiddenCount; i--) {
+      const d = dFirst + (dLast - dFirst) * (i / (N - 1));
+      const armLen = cosA * d;
+      chevrons.push({
+        x: pivot.x + axisUx * d,
+        y: pivot.y + axisUy * d,
+        arm1Dx: -armLen * cosA, arm1Dy: +armLen * sinA,
+        arm2Dx: -armLen * cosA, arm2Dy: -armLen * sinA,
+      });
+    }
+    if (chevrons.length === 0) return;
+    this.drawWifiChevronsBatch(chevrons, fanAngle);
+  }
+
+  private getVisibleBarsForSegment(
+    segment: SlideSegment,
+    progress: number
+  ): { x: number; y: number; angle: number }[] | null {
+    if (segment.type === 'w') return null;
+    const chain = this.getBarChain(segment);
+    if (!chain) return null;
+    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos)!;
+
+    // chunky 隐藏：areaStep[i] = 累积隐藏数量，floor 对齐分段时序。
+    const steps = SLIDE_AREA_STEP_MAP[shape.shape];
+    const hiddenCount =
+      steps && steps.length >= 2
+        ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
+        : 0;
+
+    // 各 bar 自带的朝向数据不一致，从相邻 bar 算 tangent。central difference
+    // 让索引无关：两条 overlap slide 同 prefab 旋转后，同位置的 bar 在两侧索引
+    // 可能不同（一条的 last 可能是另一条的中间），forward-only 会算出不同 tangent。
+    // 倒序 push 让近 star 的 bar 落数组末尾 = 最后画 = 最上层。
+    const result: { x: number; y: number; angle: number }[] = [];
+    const last = chain.length - 1;
+    for (let i = last; i >= hiddenCount; i--) {
+      const lo = i === 0 ? 0 : i - 1;
+      const hi = i === last ? last : i + 1;
+      const dx = chain[hi].x - chain[lo].x;
+      const dy = chain[hi].y - chain[lo].y;
+      result.push({ x: chain[i].x, y: chain[i].y, angle: Math.atan2(dy, dx) });
+    }
+    return result;
+  }
+
   private renderStraightPath(start: Point2D, end: Point2D, progress: number): void {
     const dx = end.x - start.x;
     const dy = end.y - start.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
 
     this.iterateArrowsAlongPath(
       (t) => ({
         x: start.x + dx * t,
         y: start.y + dy * t,
       }),
-      length,
       progress
     );
   }
@@ -249,7 +383,6 @@ export class SlideRenderer extends BaseRenderer {
     while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
     while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-    // 使用原始位置判断弧方向
     const isLeftSide = startPos === 1 || startPos === 2 || startPos === 7 || startPos === 8;
     if (isLeftSide) {
       if (angleDiff <= 0) angleDiff += 2 * Math.PI;
@@ -258,7 +391,6 @@ export class SlideRenderer extends BaseRenderer {
     }
 
     endAngle = startAngle + angleDiff;
-    const arcLength = Math.abs(angleDiff) * this.context.radius;
 
     this.iterateArrowsAlongPath(
       (t) => {
@@ -268,7 +400,6 @@ export class SlideRenderer extends BaseRenderer {
           y: this.context.centerY + Math.sin(angle) * this.context.radius,
         };
       },
-      arcLength,
       progress
     );
   }
@@ -281,7 +412,6 @@ export class SlideRenderer extends BaseRenderer {
     while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
     while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-    // 使用原始位置判断弧方向
     const isLeftSide = startPos === 1 || startPos === 2 || startPos === 7 || startPos === 8;
     if (isLeftSide) {
       if (angleDiff >= 0) angleDiff -= 2 * Math.PI;
@@ -290,7 +420,6 @@ export class SlideRenderer extends BaseRenderer {
     }
 
     endAngle = startAngle + angleDiff;
-    const arcLength = Math.abs(angleDiff) * this.context.radius;
 
     this.iterateArrowsAlongPath(
       (t) => {
@@ -300,7 +429,6 @@ export class SlideRenderer extends BaseRenderer {
           y: this.context.centerY + Math.sin(angle) * this.context.radius,
         };
       },
-      arcLength,
       progress
     );
   }
@@ -313,11 +441,10 @@ export class SlideRenderer extends BaseRenderer {
     while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
     while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-    // 完全相反 - 无法确定方向
+    // 起止 180° 相对时无法判定方向，跳过这一段
     if (Math.abs(angleDiff) === Math.PI) return false;
 
     endAngle = startAngle + angleDiff;
-    const arcLength = Math.abs(angleDiff) * this.context.radius;
 
     this.iterateArrowsAlongPath(
       (t) => {
@@ -327,7 +454,6 @@ export class SlideRenderer extends BaseRenderer {
           y: this.context.centerY + Math.sin(angle) * this.context.radius,
         };
       },
-      arcLength,
       progress
     );
 
@@ -335,7 +461,7 @@ export class SlideRenderer extends BaseRenderer {
   }
 
   private renderVPath(startPos: ButtonPosition, endPos: ButtonPosition, progress: number): boolean {
-    // 相反位置: 穿过中心的直线
+    // 起止 180° 相对 = 直线穿心，应由 '-' 处理
     if (Math.abs(endPos - startPos) === 4) return false;
 
     const startPt = this.noteRenderer.getPositionOnRing(startPos);
@@ -362,7 +488,6 @@ export class SlideRenderer extends BaseRenderer {
           };
         }
       },
-      totalDist,
       progress
     );
 
@@ -397,7 +522,7 @@ export class SlideRenderer extends BaseRenderer {
       (t) => {
         const r1 = seg1Len / totalLen;
         const r2 = seg2Len / totalLen;
-        
+
         if (t < r1) {
           const subT = t / r1;
           return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
@@ -409,7 +534,6 @@ export class SlideRenderer extends BaseRenderer {
           return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
         }
       },
-      totalLen,
       progress
     );
   }
@@ -424,7 +548,7 @@ export class SlideRenderer extends BaseRenderer {
     const perpY = nx;
     const offset = this.context.radius * SLIDE_CURVE_OFFSET_RATIO;
 
-    // Z 是 S 的镜像
+    // Z 是 S 沿主轴的镜像
     const mid1 = {
       x: start.x + nx * length * 0.49 - perpX * offset,
       y: start.y + ny * length * 0.49 - perpY * offset,
@@ -443,7 +567,7 @@ export class SlideRenderer extends BaseRenderer {
       (t) => {
         const r1 = seg1Len / totalLen;
         const r2 = seg2Len / totalLen;
-        
+
         if (t < r1) {
           const subT = t / r1;
           return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
@@ -455,144 +579,150 @@ export class SlideRenderer extends BaseRenderer {
           return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
         }
       },
-      totalLen,
       progress
     );
   }
 
-  private renderWifiPath(startPos: ButtonPosition, endPos: ButtonPosition, progress: number): void {
-    const start = this.noteRenderer.getPositionOnRing(startPos);
-    const end = this.noteRenderer.getPositionOnRing(endPos);
-    
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx);
-
-    const spacing = WIFI_ARROW_SPACING * this.context.radius / 300;
-    const count = Math.floor(length / spacing);
-
-    if (count === 0) return;
-
-    const FAN_SPREAD = 1.0;
-    const START_RATIO = 0.07;
-    const END_ASPECT = 5.5;
-    const START_ASPECT = 3.0;
-
-    const adjacentDistance = this.context.radius * Math.PI / 4;
-    const endHeight = adjacentDistance * 2 * FAN_SPREAD;
-    const endWidth = endHeight / END_ASPECT;
-
-    const startHeight = endHeight * START_RATIO;
-    const startWidth = startHeight / START_ASPECT;
-
-    // 预计算所有可见箭头
-    const arrows: { x: number; y: number; height: number; width: number }[] = [];
-    
-    for (let i = count - 2; i >= 0; i--) {
-      const t = (i + 0.5) / count;
-      if (t < progress) continue;
-
-      arrows.push({
-        x: start.x + dx * t,
-        y: start.y + dy * t,
-        height: startHeight + (endHeight - startHeight) * t,
-        width: startWidth + (endWidth - startWidth) * t,
-      });
-    }
-
-    if (arrows.length === 0) return;
-
-    // 批量绘制 WiFi 箭头
-    this.drawWifiArrowsBatch(arrows, angle);
-  }
-
   private renderCurvePath(startPos: ButtonPosition, endPos: ButtonPosition, originalType: SlidePathType, progress: number): void {
-    // 使用原始类型创建段，让 getPointOnSegment 处理镜像
     const segment: SlideSegment = {
       type: originalType,
       startPos,
       endPos,
     };
-    const pathFn = (t: number) => this.getPointOnSegment(segment, t);
-    const length = this.estimatePathLength(pathFn);
-    this.iterateArrowsAlongPath(pathFn, length, progress);
+    this.iterateArrowsAlongPath((t) => this.getPointOnSegment(segment, t), progress);
   }
 
   private iterateArrowsAlongPath(
     pathFn: (t: number) => Point2D,
-    totalLength: number,
     progress: number
   ): void {
+    // 一次性采样路径并累计弧长，箭头按弧长均布（而非按 t 均布）。
+    // 直线/圆弧/V/S/Z 这些恒速参数化路径视觉不变；p/pp/q/qq 等变曲率
+    // bend 曲线下，箭头间距不再随曲率忽密忽疏。
+    const lut = this.buildArcLut(pathFn);
+    const totalLength = lut[lut.length - 1].s;
+    if (totalLength <= 0) return;
+
     const spacing = SLIDE_ARROW_SPACING * this.context.radius / 300;
     const arrowCount = Math.floor(totalLength / spacing);
-
     if (arrowCount === 0) return;
 
-    // 预计算所有可见箭头的位置和角度
+    const minS = progress * totalLength;
     const arrows: { x: number; y: number; angle: number }[] = [];
-    
-    for (let i = arrowCount - 1; i >= 0; i--) {
-      const t = (i + 0.5) / arrowCount;
-      if (t < progress) continue;
 
-      const pos = pathFn(t);
-      const nextPos = pathFn(Math.min(t + 0.01, 1));
-      const angle = Math.atan2(nextPos.y - pos.y, nextPos.x - pos.x);
-      arrows.push({ x: pos.x, y: pos.y, angle });
+    for (let i = arrowCount - 1; i >= 0; i--) {
+      const s = (i + 0.5) * spacing;
+      if (s < minS) continue;
+      arrows.push(this.sampleArcLut(lut, s));
     }
 
     if (arrows.length === 0) return;
-
-    // 批量绘制所有箭头
     this.drawSlideArrowsBatch(arrows);
   }
 
+  /**
+   * 沿 pathFn 等步长采样 t∈[0,1]，输出每点位置、入向切线角和累计弧长。
+   * 第 0 点的角度用 t→0 的"出向"方向，避免首段方向缺失。
+   */
+  private buildArcLut(
+    pathFn: (t: number) => Point2D,
+    samples: number = 64
+  ): SlideArcLutPoint[] {
+    const lut: SlideArcLutPoint[] = new Array(samples + 1);
+    const p0 = pathFn(0);
+    const p1 = pathFn(1 / samples);
+    lut[0] = { x: p0.x, y: p0.y, angle: Math.atan2(p1.y - p0.y, p1.x - p0.x), s: 0 };
+
+    let prev = p0;
+    let acc = 0;
+    for (let i = 1; i <= samples; i++) {
+      const cur = i === 1 ? p1 : pathFn(i / samples);
+      const dx = cur.x - prev.x;
+      const dy = cur.y - prev.y;
+      acc += Math.hypot(dx, dy);
+      lut[i] = { x: cur.x, y: cur.y, angle: Math.atan2(dy, dx), s: acc };
+      prev = cur;
+    }
+    return lut;
+  }
+
+  /**
+   * 取 segment 的弧长 LUT，缓存到 segment.cachedLut。
+   * 顺手回填 cachedLength（与 LUT 同源，避免两套长度数据不一致）。
+   * canvas radius / mirror mode 变化时缓存失效重算。
+   */
+  private getSegmentLut(segment: SlideSegment): readonly SlideArcLutPoint[] {
+    const mode = this.context.config.mirrorMode;
+    if (
+      segment.cachedLut &&
+      segment.cachedRadius === this.context.radius &&
+      segment.cachedMirrorMode === mode
+    ) {
+      return segment.cachedLut;
+    }
+    const lut = this.buildArcLut((t) => this.getPointOnSegment(segment, t));
+    segment.cachedLut = lut;
+    segment.cachedLength = lut[lut.length - 1].s;
+    segment.cachedRadius = this.context.radius;
+    segment.cachedMirrorMode = mode;
+    return lut;
+  }
+
+  /**
+   * 在 LUT 上按累计弧长 s 二分查找，并在所在段内线性内插位置。
+   * 角度直接取该段的入向角（比插值更稳定，避免回转点抖动）。
+   */
+  private sampleArcLut(
+    lut: readonly SlideArcLutPoint[],
+    s: number
+  ): { x: number; y: number; angle: number } {
+    if (s <= 0) {
+      const f = lut[0];
+      return { x: f.x, y: f.y, angle: f.angle };
+    }
+    const last = lut[lut.length - 1];
+    if (s >= last.s) {
+      return { x: last.x, y: last.y, angle: last.angle };
+    }
+    let lo = 0;
+    let hi = lut.length - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >>> 1;
+      if (lut[mid].s <= s) lo = mid;
+      else hi = mid;
+    }
+    const a = lut[lo];
+    const b = lut[hi];
+    const span = b.s - a.s;
+    const u = span > 0 ? (s - a.s) / span : 0;
+    return {
+      x: a.x + (b.x - a.x) * u,
+      y: a.y + (b.y - a.y) * u,
+      angle: b.angle,
+    };
+  }
+
   private drawSlideArrowsBatch(arrows: { x: number; y: number; angle: number }[]): void {
+    if (arrows.length === 0) return;
     const ctx = this.context.ctx;
     const arrowHeight = 32 * this.context.radius / 300;
     const arrowWidth = 6 * 1.6 * this.context.radius / 300;
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
     const radiusScale = this.context.radius / 300;
-    const currentStroke = ctx.strokeStyle;
+    const mainStroke = ctx.strokeStyle;
 
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // 阴影层配置
+    // 拖影参数：从弱到强（先弱后强叠加，靠近本体的色更浓）
     const shadows = [
       { offset: 5, alpha: 0.2, extra: 6 },
       { offset: 3, alpha: 0.5, extra: 3 },
     ];
 
-    // 批量绘制阴影层
-    for (const shadow of shadows) {
-      ctx.beginPath();
-      for (const arrow of arrows) {
-        const cos = Math.cos(arrow.angle);
-        const sin = Math.sin(arrow.angle);
-        const offsetX = -shadow.offset * radiusScale;
-        
-        // 计算变换后的顶点
-        const x1 = arrow.x + cos * (-arrowWidth / 2 + offsetX) - sin * (-arrowHeight / 2);
-        const y1 = arrow.y + sin * (-arrowWidth / 2 + offsetX) + cos * (-arrowHeight / 2);
-        const x2 = arrow.x + cos * (arrowWidth / 2 + offsetX);
-        const y2 = arrow.y + sin * (arrowWidth / 2 + offsetX);
-        const x3 = arrow.x + cos * (-arrowWidth / 2 + offsetX) - sin * (arrowHeight / 2);
-        const y3 = arrow.y + sin * (-arrowWidth / 2 + offsetX) + cos * (arrowHeight / 2);
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
-      }
-      ctx.lineWidth = lineWidth + shadow.extra;
-      ctx.strokeStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
-      ctx.stroke();
-    }
-
-    // 批量绘制主箭头
-    ctx.beginPath();
+    // 逐箭头叠绘 outline → 拖影 → 主体（不按层批量）：arrows[0] 在远端、arrows[N-1]
+    // 靠 star 头，正向迭代让靠 star 的盖在远端上，自重叠路径处可见黑边切割下层。
     for (const arrow of arrows) {
       const cos = Math.cos(arrow.angle);
       const sin = Math.sin(arrow.angle);
@@ -604,93 +734,112 @@ export class SlideRenderer extends BaseRenderer {
       const x3 = arrow.x + cos * (-arrowWidth / 2) - sin * (arrowHeight / 2);
       const y3 = arrow.y + sin * (-arrowWidth / 2) + cos * (arrowHeight / 2);
 
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineTo(x3, y3);
-    }
-    // 先批量绘制黑色轮廓
-    ctx.lineWidth = lineWidth + 2;
-    ctx.strokeStyle = '#000000';
-    ctx.stroke();
+      const main = new Path2D();
+      main.moveTo(x1, y1);
+      main.lineTo(x2, y2);
+      main.lineTo(x3, y3);
 
-    // 再绘制主体部分
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = currentStroke;
-    ctx.stroke();
+      ctx.lineWidth = lineWidth + 2;
+      ctx.strokeStyle = '#000000';
+      ctx.stroke(main);
+
+      for (const shadow of shadows) {
+        const offsetX = -shadow.offset * radiusScale;
+        const sx1 = arrow.x + cos * (-arrowWidth / 2 + offsetX) - sin * (-arrowHeight / 2);
+        const sy1 = arrow.y + sin * (-arrowWidth / 2 + offsetX) + cos * (-arrowHeight / 2);
+        const sx2 = arrow.x + cos * (arrowWidth / 2 + offsetX);
+        const sy2 = arrow.y + sin * (arrowWidth / 2 + offsetX);
+        const sx3 = arrow.x + cos * (-arrowWidth / 2 + offsetX) - sin * (arrowHeight / 2);
+        const sy3 = arrow.y + sin * (-arrowWidth / 2 + offsetX) + cos * (arrowHeight / 2);
+
+        const trail = new Path2D();
+        trail.moveTo(sx1, sy1);
+        trail.lineTo(sx2, sy2);
+        trail.lineTo(sx3, sy3);
+
+        ctx.lineWidth = lineWidth + shadow.extra;
+        ctx.strokeStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
+        ctx.stroke(trail);
+      }
+
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = mainStroke;
+      ctx.stroke(main);
+    }
 
     ctx.restore();
   }
 
 
-  private drawWifiArrowsBatch(
-    arrows: { x: number; y: number; height: number; width: number }[],
-    angle: number
+  /**
+   * 画 chevron：每条 chevron 由 corner + 两条 arm tip 在 fan-local 帧的偏移定义。
+   * path = `M arm1 L corner L arm2`，stroke 同 slide arrow（外黑边 + 两层 drop shadow
+   * + 主色）。arm1/arm2 是 arm tip 相对 corner 的偏移，在调用方按 fanAngle 旋转。
+   */
+  private drawWifiChevronsBatch(
+    chevrons: {
+      x: number; y: number;
+      arm1Dx: number; arm1Dy: number;
+      arm2Dx: number; arm2Dy: number;
+    }[],
+    fanAngle: number,
   ): void {
+    if (chevrons.length === 0) return;
     const ctx = this.context.ctx;
     const lineWidth = 19.2 * this.context.radius / 300;
     const radiusScale = this.context.radius / 300;
-    const currentStroke = ctx.strokeStyle;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    const mainStroke = ctx.strokeStyle;
+    const cos = Math.cos(fanAngle);
+    const sin = Math.sin(fanAngle);
 
     const shadows = [
       { offset: 5, alpha: 0.15, extra: 6 },
       { offset: 3, alpha: 0.4, extra: 3 },
     ];
 
-    // 批量绘制阴影层
-    for (const shadow of shadows) {
-      ctx.beginPath();
-      for (const arrow of arrows) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (const c of chevrons) {
+      const a1x = c.x + cos * c.arm1Dx - sin * c.arm1Dy;
+      const a1y = c.y + sin * c.arm1Dx + cos * c.arm1Dy;
+      const a2x = c.x + cos * c.arm2Dx - sin * c.arm2Dy;
+      const a2y = c.y + sin * c.arm2Dx + cos * c.arm2Dy;
+
+      const main = new Path2D();
+      main.moveTo(a1x, a1y);
+      main.lineTo(c.x, c.y);
+      main.lineTo(a2x, a2y);
+
+      ctx.lineWidth = lineWidth + 2;
+      ctx.strokeStyle = '#000000';
+      ctx.stroke(main);
+
+      for (const shadow of shadows) {
         const offsetX = -shadow.offset * radiusScale;
-        
-        const x1 = arrow.x + cos * (-arrow.width / 2 + offsetX) - sin * (-arrow.height / 2);
-        const y1 = arrow.y + sin * (-arrow.width / 2 + offsetX) + cos * (-arrow.height / 2);
-        const x2 = arrow.x + cos * (arrow.width / 2 + offsetX);
-        const y2 = arrow.y + sin * (arrow.width / 2 + offsetX);
-        const x3 = arrow.x + cos * (-arrow.width / 2 + offsetX) - sin * (arrow.height / 2);
-        const y3 = arrow.y + sin * (-arrow.width / 2 + offsetX) + cos * (arrow.height / 2);
-
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
+        const s1x = a1x + cos * offsetX;
+        const s1y = a1y + sin * offsetX;
+        const scx = c.x + cos * offsetX;
+        const scy = c.y + sin * offsetX;
+        const s2x = a2x + cos * offsetX;
+        const s2y = a2y + sin * offsetX;
+        const trail = new Path2D();
+        trail.moveTo(s1x, s1y);
+        trail.lineTo(scx, scy);
+        trail.lineTo(s2x, s2y);
+        ctx.lineWidth = lineWidth + shadow.extra;
+        ctx.strokeStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
+        ctx.stroke(trail);
       }
-      ctx.lineWidth = lineWidth + shadow.extra;
-      ctx.strokeStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
-      ctx.stroke();
+
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = mainStroke;
+      ctx.stroke(main);
     }
-
-    // 批量绘制主箭头
-    ctx.beginPath();
-    for (const arrow of arrows) {
-      const x1 = arrow.x + cos * (-arrow.width / 2) - sin * (-arrow.height / 2);
-      const y1 = arrow.y + sin * (-arrow.width / 2) + cos * (-arrow.height / 2);
-      const x2 = arrow.x + cos * (arrow.width / 2);
-      const y2 = arrow.y + sin * (arrow.width / 2);
-      const x3 = arrow.x + cos * (-arrow.width / 2) - sin * (arrow.height / 2);
-      const y3 = arrow.y + sin * (-arrow.width / 2) + cos * (arrow.height / 2);
-
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineTo(x3, y3);
-    }
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = currentStroke;
-    ctx.stroke();
-
-    // 批量绘制黑色轮廓
-    ctx.lineWidth = lineWidth + 2;
-    ctx.strokeStyle = '#000000';
-    ctx.globalCompositeOperation = 'destination-over';
-    ctx.stroke();
 
     ctx.restore();
   }
-
 
   renderSlideStar(
     note: SlideNote,
@@ -700,7 +849,6 @@ export class SlideRenderer extends BaseRenderer {
     currentTimeMs: number,
     isSimultaneous: boolean
   ): void {
-    // WiFi 滑条有特殊的星星渲染
     if (segments.length > 0 && segments[0].type === 'w') {
       this.renderWifiStars(note, progress, segments, currentTimeMs, isSimultaneous, pathIndex);
       return;
@@ -708,26 +856,24 @@ export class SlideRenderer extends BaseRenderer {
 
     const delayMs = note.delayMs ?? 60000 / note.bpm;
     const slideStart = note.timingMs + delayMs;
-    
+
     let starPos: Point2D;
     let starScale = 1;
     let rotation = 0;
     const isSliding = currentTimeMs >= slideStart;
 
     if (!isSliding) {
-      // 滑条开始前: 星星在起始位置，逐渐增长，使用累积旋转
       starPos = this.noteRenderer.getPositionOnRing(segments[0].startPos);
       const elapsed = currentTimeMs - note.timingMs;
       starScale = Math.min(1, elapsed / delayMs);
-      
+
       if (this.context.config.slideRotation) {
         rotation = this.calculateStarRotation(note, currentTimeMs);
       }
     } else {
-      // 滑条期间: 星星沿着路径移动，根据路径切线方向旋转
       starPos = this.getPointAlongPath(progress, segments);
       starScale = 1;
-      
+
       if (this.context.config.slideRotation) {
         rotation = this.getPathTangentAngle(progress, segments) + Math.PI / 2;
       }
@@ -750,7 +896,7 @@ export class SlideRenderer extends BaseRenderer {
         color = this.context.config.pinkSlideStart ? COLORS.SLIDE_PINK : COLORS.SLIDE_CYAN;
       }
 
-      this.drawStar(starPos.x, starPos.y, size, color, rotation);
+      this.drawStar(starPos.x, starPos.y, size, color, rotation, note.isEx ?? false);
     });
   }
 
@@ -767,7 +913,6 @@ export class SlideRenderer extends BaseRenderer {
     const startPos = segments[0].startPos;
     const endPos = segments[0].endPos;
 
-    // 三个扇形位置
     const fanPositions = [
       { startPos, endPos },
       { startPos, endPos: ((endPos - 1 - 1 + 8) % 8 + 1) as ButtonPosition },
@@ -778,16 +923,20 @@ export class SlideRenderer extends BaseRenderer {
       this.context.ctx.globalAlpha = 1;
 
       for (const fan of fanPositions) {
+        const start = this.noteRenderer.getPositionOnRing(fan.startPos);
+        const end = this.noteRenderer.getPositionOnRing(fan.endPos);
+        // 每颗 fan 星头朝自己的目的地：左右两条 fan 的星尖恰好指向相邻轨迹。
+        const direction = Math.atan2(end.y - start.y, end.x - start.x);
+        const rotation = this.context.config.slideRotation ? direction + Math.PI / 2 : 0;
+
         let starPos: Point2D;
         let starScale = 1;
 
         if (currentTimeMs < slideStart) {
-          starPos = this.noteRenderer.getPositionOnRing(fan.startPos);
+          starPos = start;
           const elapsed = currentTimeMs - note.timingMs;
           starScale = Math.min(1, elapsed / delayMs);
         } else {
-          const start = this.noteRenderer.getPositionOnRing(fan.startPos);
-          const end = this.noteRenderer.getPositionOnRing(fan.endPos);
           starPos = {
             x: start.x + (end.x - start.x) * progress,
             y: start.y + (end.y - start.y) * progress,
@@ -797,7 +946,7 @@ export class SlideRenderer extends BaseRenderer {
         if (starPos) {
           const size = this.context.radius / 10.42 * starScale * 1.2;
           const isBreak = note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
-          
+
           let color: string;
           if (isBreak) {
             color = COLORS.BREAK_ORANGE;
@@ -807,13 +956,13 @@ export class SlideRenderer extends BaseRenderer {
             color = this.context.config.pinkSlideStart ? COLORS.SLIDE_PINK : COLORS.SLIDE_CYAN;
           }
 
-          this.drawStar(starPos.x, starPos.y, size, color, 0);
+          this.drawStar(starPos.x, starPos.y, size, color, rotation, note.isEx ?? false);
         }
       }
     });
   }
 
-  drawStar(x: number, y: number, size: number, color: string, rotation: number = 0): void {
+  drawStar(x: number, y: number, size: number, color: string, rotation: number = 0, isEx: boolean = false): void {
     this.withContext(() => {
       const ctx = this.context.ctx;
       
@@ -827,8 +976,41 @@ export class SlideRenderer extends BaseRenderer {
       const innerRadius = size * 0.5;
       const innerHoleOuter = outerRadius * 0.55;
       const innerHoleInner = innerRadius * 0.55;
+      const strokeW = this.getNoteStrokeWidth();
 
-      // 外星
+      // 外星 + 内孔各做一圈 wider black，ring fill 覆盖内侧 halo 只剩外缘黑边。
+      // EX 占用外圈，跳过外星的黑边但保留内孔。wider = strokeW*3 让可见黑边 ≈
+      // strokeW，跟随画布缩放避免小屏下过粗。
+      ctx.lineWidth = strokeW * 3;
+      ctx.strokeStyle = '#000000';
+
+      if (!isEx) {
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const angle = (i * Math.PI) / 5 - Math.PI / 2;
+          const radius = i % 2 === 0 ? outerRadius : innerRadius;
+          const px = x + Math.cos(angle) * radius;
+          const py = y + Math.sin(angle) * radius;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const angle = (i * Math.PI) / 5 - Math.PI / 2;
+        const radius = i % 2 === 0 ? innerHoleOuter : innerHoleInner;
+        const px = x + Math.cos(angle) * radius;
+        const py = y + Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+
+      // 外星 + 内孔（同向 path 描外环，反向 path 挖内孔 = 环形效果）
       ctx.beginPath();
       for (let i = 0; i < 10; i++) {
         const angle = (i * Math.PI) / 5 - Math.PI / 2;
@@ -839,8 +1021,6 @@ export class SlideRenderer extends BaseRenderer {
         else ctx.lineTo(px, py);
       }
       ctx.closePath();
-
-      // 内孔 (创建环形效果)
       for (let i = 9; i >= 0; i--) {
         const angle = (i * Math.PI) / 5 - Math.PI / 2;
         const radius = i % 2 === 0 ? innerHoleOuter : innerHoleInner;
@@ -850,15 +1030,11 @@ export class SlideRenderer extends BaseRenderer {
         else ctx.lineTo(px, py);
       }
       ctx.closePath();
-
       ctx.fillStyle = color;
       ctx.fill();
 
-      // 白色轮廓
       ctx.strokeStyle = COLORS.WHITE;
       ctx.lineWidth = this.getNoteStrokeWidth();
-
-      // 绘制外星轮廓
       ctx.beginPath();
       for (let i = 0; i < 10; i++) {
         const angle = (i * Math.PI) / 5 - Math.PI / 2;
@@ -871,7 +1047,6 @@ export class SlideRenderer extends BaseRenderer {
       ctx.closePath();
       ctx.stroke();
 
-      // 绘制内孔轮廓
       ctx.beginPath();
       for (let i = 0; i < 10; i++) {
         const angle = (i * Math.PI) / 5 - Math.PI / 2;
@@ -884,7 +1059,6 @@ export class SlideRenderer extends BaseRenderer {
       ctx.closePath();
       ctx.stroke();
 
-      // 中心点
       const centerSize = size * 0.15;
       ctx.beginPath();
       ctx.arc(x, y, centerSize, 0, Math.PI * 2);
@@ -910,7 +1084,6 @@ export class SlideRenderer extends BaseRenderer {
       const innerRadius = size;
       const innerInner = size * 0.5;
 
-      // 根据类型选择颜色
       let color: string;
       if (isBreak) {
         color = 'rgba(255, 200, 120, 0.8)';
@@ -967,7 +1140,6 @@ export class SlideRenderer extends BaseRenderer {
       const innerRadius = size;
       const innerInner = size * 0.5;
 
-      // 根据类型选择颜色
       let color: string;
       if (isBreak) {
         color = 'rgba(255, 200, 120, 0.8)';
@@ -1036,66 +1208,71 @@ export class SlideRenderer extends BaseRenderer {
     
     if (!segments || segments.length === 0 || !durationMs || durationMs === 0) return 0;
 
-    // 计算路径长度（像素）
     let totalLengthPixels = 0;
     for (const seg of segments) {
       totalLengthPixels += this.getSegmentLength(seg);
     }
 
-    // 归一化到标准半径 300
+    // 归一化到标准 300 半径下的像素长度（与 spacing 常量同尺度）
     const normalizedLength = totalLengthPixels * (300 / this.context.radius);
 
-    // 原始公式：SpeedMultiplier = (NormalizedLength / π / TotalDuration(ms)) × 15 (度/帧@60FPS)
-    // 转换为时间基准：(度/帧) / (1000ms/60帧) = (度/帧) × 0.06 = 度/ms
+    // 原始公式 (度/帧 @ 60FPS): NormalizedLength / π / TotalDurationMs × 15
+    // ÷ (1000/60) 转成度/ms。最大值上限 18 度/帧 = 1.08 度/ms。
     const rotationSpeedDegPerMs = (normalizedLength / Math.PI / durationMs) * 15 * 0.06;
-    
-    // 限制最大值：18.0 度/帧
     const MAX_ROTATION_DEG_PER_MS = 1.08;
     const cappedRotationDegPerMs = Math.min(rotationSpeedDegPerMs, MAX_ROTATION_DEG_PER_MS);
-    
-    // 转换为弧度并应用旋转方向（负号表示顺时针）
+    // 负号 = 顺时针
     const rotationSpeedRadPerMs = -cappedRotationDegPerMs * (Math.PI / 180);
 
     const approachTime = this.getApproachTimeMs();
     const visibilityStart = note.timingMs - approachTime;
-    
     if (currentTimeMs < visibilityStart) return 0;
 
-    // 计算经过的时间（毫秒）并返回累计旋转角度（弧度）
     const elapsedMs = currentTimeMs - visibilityStart;
     return rotationSpeedRadPerMs * elapsedMs;
   }
 
   getSegmentLength(segment: SlideSegment): number {
-    if (segment.cachedLength !== undefined) {
+    if (
+      segment.cachedLength !== undefined &&
+      segment.cachedRadius === this.context.radius &&
+      segment.cachedMirrorMode === this.context.config.mirrorMode
+    ) {
       return segment.cachedLength;
     }
-
-    let length = 0;
-    const pathFn = (t: number) => this.getPointOnSegment(segment, t);
-    let prevPoint = pathFn(0);
-
-    for (let i = 1; i <= 50; i++) {
-      const t = i / 50;
-      const point = pathFn(t);
-      const dx = point.x - prevPoint.x;
-      const dy = point.y - prevPoint.y;
-      length += Math.sqrt(dx * dx + dy * dy);
-      prevPoint = point;
-    }
-
-    segment.cachedLength = length;
-    return length;
+    // 用 LUT 算长度，cachedLength 由 getSegmentLut 一并写入。
+    // 单一来源避免 50 采样长度估计与 64 采样 LUT 长度漂移。
+    const lut = this.getSegmentLut(segment);
+    return lut[lut.length - 1].s;
   }
 
   getPointOnSegment(segment: SlideSegment, t: number): Point2D {
-    const start = this.noteRenderer.getPositionOnRing(segment.startPos);
-    const end = this.noteRenderer.getPositionOnRing(segment.endPos);
-    
-    // 镜像路径类型和位置用于正确的路径计算
     const mirroredType = this.mirrorPathType(segment.type);
     const mirroredStartPos = this.mirrorPosition(segment.startPos);
     const mirroredEndPos = this.mirrorPosition(segment.endPos);
+
+    // star 头部沿 [startPos button, ...bars, endPos button] 这条 polyline 走：
+    // prefab bar 0/last 距 button rim 还有一小段距离，多段链转折时若直接用 chain
+    // 会在按钮处瞬移。箭头（chevron）渲染仍用纯 bars chain，bar 末端不到 rim 是预期。
+    const chain = this.getBarChain(segment);
+    if (chain && chain.length >= 2) {
+      const start = this.noteRenderer.getPositionOnRing(segment.startPos);
+      const end = this.noteRenderer.getPositionOnRing(segment.endPos);
+      const N = chain.length + 2;
+      const idx = Math.max(0, Math.min(N - 1, t * (N - 1)));
+      const intBase = Math.min(N - 2, Math.floor(idx));
+      const frac = idx - intBase;
+      const get = (i: number) => (i === 0 ? start : i === N - 1 ? end : chain[i - 1]);
+      const p0 = get(intBase);
+      const p1 = get(intBase + 1);
+      return {
+        x: p0.x + (p1.x - p0.x) * frac,
+        y: p0.y + (p1.y - p0.y) * frac,
+      };
+    }
+
+    const start = this.noteRenderer.getPositionOnRing(segment.startPos);
+    const end = this.noteRenderer.getPositionOnRing(segment.endPos);
 
     switch (mirroredType) {
       case '-':
@@ -1114,7 +1291,6 @@ export class SlideRenderer extends BaseRenderer {
         while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
         while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-        // 使用原始位置判断弧方向
         if (mirroredType === '>') {
           const isLeft = [1, 2, 7, 8].includes(segment.startPos);
           if (isLeft ? angleDiff <= 0 : angleDiff >= 0) {
@@ -1467,7 +1643,8 @@ export class SlideRenderer extends BaseRenderer {
       return { x: this.context.centerX, y: this.context.centerY };
     }
 
-    const lengths = segments.map(seg => this.getSegmentLength(seg));
+    const luts = segments.map((seg) => this.getSegmentLut(seg));
+    const lengths = luts.map((lut) => lut[lut.length - 1].s);
     const totalLength = lengths.reduce((a, b) => a + b, 0);
 
     if (totalLength === 0) {
@@ -1479,13 +1656,12 @@ export class SlideRenderer extends BaseRenderer {
 
     for (let i = 0; i < segments.length; i++) {
       if (cumulative + lengths[i] >= targetDist) {
-        const t = lengths[i] > 0 ? (targetDist - cumulative) / lengths[i] : 0;
-        return this.getPointOnSegment(segments[i], t);
+        const p = this.sampleArcLut(luts[i], targetDist - cumulative);
+        return { x: p.x, y: p.y };
       }
       cumulative += lengths[i];
     }
 
-    // 返回最后一个段末尾
     const lastSeg = segments[segments.length - 1];
     return this.noteRenderer.getPositionOnRing(lastSeg.endPos);
   }
@@ -1493,7 +1669,8 @@ export class SlideRenderer extends BaseRenderer {
   private getPathTangentAngle(progress: number, segments: SlideSegment[]): number {
     if (!segments || segments.length === 0) return 0;
 
-    const lengths = segments.map(seg => this.getSegmentLength(seg));
+    const luts = segments.map((seg) => this.getSegmentLut(seg));
+    const lengths = luts.map((lut) => lut[lut.length - 1].s);
     const totalLength = lengths.reduce((a, b) => a + b, 0);
 
     if (totalLength === 0) return 0;
@@ -1503,42 +1680,15 @@ export class SlideRenderer extends BaseRenderer {
 
     for (let i = 0; i < segments.length; i++) {
       if (cumulative + lengths[i] >= targetDist) {
-        const t = lengths[i] > 0 ? (targetDist - cumulative) / lengths[i] : 0;
-        // 计算当前段的切线方向
-        const delta = 0.01; // 用于计算切线的微小偏移
-        const t1 = Math.max(0, t - delta);
-        const t2 = Math.min(1, t + delta);
-        const p1 = this.getPointOnSegment(segments[i], t1);
-        const p2 = this.getPointOnSegment(segments[i], t2);
-        return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        return this.sampleArcLut(luts[i], targetDist - cumulative).angle;
       }
       cumulative += lengths[i];
     }
 
-    // 返回最后一个段的切线角度
-    const lastSeg = segments[segments.length - 1];
-    const p1 = this.getPointOnSegment(lastSeg, 0.99);
-    const p2 = this.getPointOnSegment(lastSeg, 1);
-    return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+    const lastLut = luts[luts.length - 1];
+    return lastLut[lastLut.length - 1].angle;
   }
 
-  /**
-   * 通过采样估计路径长度
-   */
-  private estimatePathLength(pathFn: (t: number) => Point2D): number {
-    let length = 0;
-    let prev = pathFn(0);
-    
-    for (let i = 1; i <= 50; i++) {
-      const curr = pathFn(i / 50);
-      const dx = curr.x - prev.x;
-      const dy = curr.y - prev.y;
-      length += Math.sqrt(dx * dx + dy * dy);
-      prev = curr;
-    }
-
-    return length;
-  }
 }
 
 export default SlideRenderer;

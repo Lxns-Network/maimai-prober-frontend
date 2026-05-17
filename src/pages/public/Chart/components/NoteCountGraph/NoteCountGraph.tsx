@@ -134,8 +134,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
   const pause = useGameStore((s) => s.pause);
   const setPreciseTime = useGameStore((s) => s.setPreciseTime);
 
-  // 节流更新 store 的间隔（毫秒）
-  const SEEK_THROTTLE_MS = 32; // ~30fps
+  const SEEK_THROTTLE_MS = 32;
 
   const { buckets, totalDurationMs, maxCount, maxBeats, maxMeasure } = useMemo(() => {
     if (!chartData) {
@@ -165,7 +164,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     return Math.min(100, Math.max(0, (currentMs / totalDurationMs) * 100));
   }, [chartData, preciseTime, totalDurationMs]);
 
-  // 播放时使用 requestAnimationFrame 更新播放头位置
+  // 播放时 rAF 直接改 DOM style，避免 setState 链路触发整图重渲染。
   useEffect(() => {
     if (!isPlaying || !chartData || totalDurationMs <= 0) {
       if (animationFrameRef.current) {
@@ -205,7 +204,6 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     };
   }, [isPlaying, chartData, totalDurationMs, beatsPerMeasure]);
 
-  // 更新播放头视觉位置（不更新 store）
   const updatePlayheadVisual = useCallback((percent: number, measure: number) => {
     if (playheadRef.current) {
       playheadRef.current.style.transform = `translateX(calc(${percent}cqw - 1px))`;
@@ -219,7 +217,6 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     }
   }, []);
 
-  // 计算位置信息
   const calculateSeekPosition = useCallback((clientX: number) => {
     if (!containerRef.current || !chartData || totalDurationMs <= 0) return null;
 
@@ -234,7 +231,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     return { percent, beats: clampedBeats, measure };
   }, [chartData, totalDurationMs, maxBeats, beatsPerMeasure]);
 
-  // 节流更新 store
+  // 拖动 seek 节流（30fps），落在 throttle 窗口内的最后一次会通过 pendingSeekRef 兜底。
   const throttledSeekToStore = useCallback((beats: number) => {
     const now = performance.now();
     if (now - lastSeekTimeRef.current >= SEEK_THROTTLE_MS) {
@@ -251,18 +248,14 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     const pos = calculateSeekPosition(clientX);
     if (!pos) return;
 
-    // 立即更新视觉
     updatePlayheadVisual(pos.percent, pos.measure);
-    
-    // 更新 playbackTimeRef 用于谱面预览
     playbackTimeRef.current = pos.beats;
 
+    // immediate 用于点击 / 拖动结束（直接落 store）；拖动过程走 throttle。
     if (immediate) {
-      // 立即更新 store（用于点击和拖动结束）
       setPreciseTime(pos.beats, true);
       pendingSeekRef.current = null;
     } else {
-      // 节流更新 store（用于拖动过程中）
       throttledSeekToStore(pos.beats);
     }
   }, [calculateSeekPosition, updatePlayheadVisual, setPreciseTime, throttledSeekToStore]);
@@ -293,7 +286,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
       if (!isDraggingRef.current) return;
       lastClientX = e.clientX;
       
-      // 使用 RAF 批量处理拖动更新
+      // rAF coalescing：mousemove 频率远高于 60fps，把同一帧的更新合并掉。
       if (dragAnimationFrameRef.current === null) {
         dragAnimationFrameRef.current = requestAnimationFrame(() => {
           dragAnimationFrameRef.current = null;
@@ -323,13 +316,12 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
       if (!isDraggingRef.current) return;
       isDraggingRef.current = false;
       
-      // 取消待处理的 RAF
       if (dragAnimationFrameRef.current !== null) {
         cancelAnimationFrame(dragAnimationFrameRef.current);
         dragAnimationFrameRef.current = null;
       }
-      
-      // 确保最终位置被保存到 store
+
+      // 拖动期间 throttle 可能丢掉最后一次落点，松手时强制落。
       if (pendingSeekRef.current !== null) {
         setPreciseTime(pendingSeekRef.current, true);
         pendingSeekRef.current = null;
