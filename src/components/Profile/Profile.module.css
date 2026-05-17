@@ -1,35 +1,35 @@
 .card {
-    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
 }
 
 .section {
-    padding: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-md);
 }
 
 .tab {
-    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
-    color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-dark-0));
-    border: 0;
-    border-top: 1px solid light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-6));
-    padding: 8px var(--mantine-spacing-md);
-    cursor: pointer;
-    font-size: var(--mantine-font-size-sm);
-    flex: 1;
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-dark-0));
+  border: 0;
+  border-top: 1px solid light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-6));
+  padding: 8px var(--mantine-spacing-md);
+  cursor: pointer;
+  font-size: var(--mantine-font-size-sm);
+  flex: 1;
+
+  @mixin hover {
+    background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+  }
+
+  &[data-active] {
+    background-color: var(--mantine-primary-color-light);
+    color: var(--mantine-primary-color-light-color);
 
     @mixin hover {
-        background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+      background-color: var(--mantine-primary-color-light-hover);
     }
-
-    &[data-active] {
-        background-color: var(--mantine-primary-color-light);
-        color: var(--mantine-primary-color-light-color);
-
-        @mixin hover {
-            background-color: var(--mantine-primary-color-light-hover);
-        }
-    }
+  }
 }
 
 .list {
-    display: flex;
+  display: flex;
 }

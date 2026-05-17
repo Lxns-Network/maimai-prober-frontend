@@ -41,7 +41,9 @@ async function authMutationFn<T = unknown>(url: string, body: object): Promise<T
   return data.data as T;
 }
 
-export const useLogin = (options?: UseMutationOptions<{ token: string }, APIError, LoginParams>) => {
+export const useLogin = (
+  options?: UseMutationOptions<{ token: string }, APIError, LoginParams>,
+) => {
   return useMutation({
     mutationFn: ({ values, captchaToken }: LoginParams) =>
       authMutationFn<{ token: string }>(`${API_URL}/user/login?captcha=${captchaToken}`, values),
@@ -57,7 +59,9 @@ export const useRegister = (options?: UseMutationOptions<unknown, APIError, Regi
   });
 };
 
-export const useForgotPassword = (options?: UseMutationOptions<unknown, APIError, ForgotPasswordParams>) => {
+export const useForgotPassword = (
+  options?: UseMutationOptions<unknown, APIError, ForgotPasswordParams>,
+) => {
   return useMutation({
     mutationFn: ({ values, captchaToken }: ForgotPasswordParams) =>
       authMutationFn(`${API_URL}/user/forgot-password?captcha=${captchaToken}`, values),
@@ -65,7 +69,9 @@ export const useForgotPassword = (options?: UseMutationOptions<unknown, APIError
   });
 };
 
-export const useResetPassword = (options?: UseMutationOptions<unknown, APIError, ResetPasswordParams>) => {
+export const useResetPassword = (
+  options?: UseMutationOptions<unknown, APIError, ResetPasswordParams>,
+) => {
   return useMutation({
     mutationFn: ({ token, values }: ResetPasswordParams) =>
       authMutationFn(`${API_URL}/user/reset-password?token=${token}`, values),

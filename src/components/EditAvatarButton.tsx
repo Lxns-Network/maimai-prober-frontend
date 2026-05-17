@@ -13,11 +13,16 @@ export const EditAvatarButton = ({ children, onClick, disabled }: EditAvatarButt
   const { hovered, ref } = useHover();
 
   return (
-    <UnstyledButton pos="relative" ref={ref} onClick={() => !disabled && onClick()} style={{ cursor: "pointer" }}>
+    <UnstyledButton
+      pos="relative"
+      ref={ref}
+      onClick={() => !disabled && onClick()}
+      style={{ cursor: "pointer" }}
+    >
       <LoadingOverlay
         visible={hovered && !disabled}
         loaderProps={{
-          children: <IconEdit />
+          children: <IconEdit />,
         }}
         overlayProps={{ radius: "sm" }}
         styles={{
@@ -27,5 +32,5 @@ export const EditAvatarButton = ({ children, onClick, disabled }: EditAvatarButt
       />
       {children}
     </UnstyledButton>
-  )
-}
+  );
+};

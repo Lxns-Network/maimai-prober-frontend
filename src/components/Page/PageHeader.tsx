@@ -10,5 +10,5 @@ export const PageHeader = ({ meta }: PageProps) => {
         <Text className={classes.description}>{meta.description}</Text>
       </Box>
     </div>
-  )
-}
+  );
+};

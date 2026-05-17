@@ -10,7 +10,14 @@ interface SettingsModalProps {
   onChange?: (key: string, value: string | boolean | string[] | null) => void;
 }
 
-export const SettingsModal = ({ title, data, value, opened, onClose, onChange }: SettingsModalProps) => {
+export const SettingsModal = ({
+  title,
+  data,
+  value,
+  opened,
+  onClose,
+  onChange,
+}: SettingsModalProps) => {
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />
@@ -25,4 +32,4 @@ export const SettingsModal = ({ title, data, value, opened, onClose, onChange }:
       </Modal.Content>
     </Modal.Root>
   );
-}
+};

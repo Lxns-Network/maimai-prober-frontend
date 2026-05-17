@@ -1,5 +1,15 @@
 import { MaimaiPlayerProps } from "@/types/player";
-import { Avatar, Badge, Box, Divider, Flex, Group, Image, Text, useComputedColorScheme } from "@mantine/core";
+import {
+  Avatar,
+  Badge,
+  Box,
+  Divider,
+  Flex,
+  Group,
+  Image,
+  Text,
+  useComputedColorScheme,
+} from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getDeluxeRatingGradient } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main";
@@ -14,18 +24,27 @@ interface PlayerContentProps {
 }
 
 export const MaimaiPlayerContent = ({ player, onCollectionEdit, editable }: PlayerContentProps) => {
-  const computedColorScheme = useComputedColorScheme('light');
+  const computedColorScheme = useComputedColorScheme("light");
 
   return (
     <Group wrap="nowrap">
-      <EditAvatarButton onClick={() => {
-        editable && onCollectionEdit && onCollectionEdit("icons", player.icon?.id || 0)
-      }} disabled={!editable}>
-        <Avatar src={`${ASSET_URL}/maimai/icon/${player.icon ? player.icon.id : 0}.png!webp`} size={94} radius="md" styles={(theme) => ({
-          root: {
-            backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
-          }
-        })}>
+      <EditAvatarButton
+        onClick={() => {
+          editable && onCollectionEdit && onCollectionEdit("icons", player.icon?.id || 0);
+        }}
+        disabled={!editable}
+      >
+        <Avatar
+          src={`${ASSET_URL}/maimai/icon/${player.icon ? player.icon.id : 0}.png!webp`}
+          size={94}
+          radius="md"
+          styles={(theme) => ({
+            root: {
+              backgroundColor:
+                computedColorScheme === "dark" ? theme.colors.dark[8] : theme.colors.gray[1],
+            },
+          })}
+        >
           <IconPhotoOff />
         </Avatar>
       </EditAvatarButton>
@@ -34,9 +53,15 @@ export const MaimaiPlayerContent = ({ player, onCollectionEdit, editable }: Play
           {player.trophy && (
             <TrophyBadge name={player.trophy.name} trophyColor={player.trophy.color || "normal"} />
           )}
-          <Badge variant="gradient" gradient={getDeluxeRatingGradient(player.rating)} style={{
-            flex: "none"
-          }}>DX 评分: {player.rating}</Badge>
+          <Badge
+            variant="gradient"
+            gradient={getDeluxeRatingGradient(player.rating)}
+            style={{
+              flex: "none",
+            }}
+          >
+            DX 评分: {player.rating}
+          </Badge>
         </Flex>
 
         <Text fz="lg" fw={500}>
@@ -44,18 +69,20 @@ export const MaimaiPlayerContent = ({ player, onCollectionEdit, editable }: Play
         </Text>
         <Divider mb={10} variant="dashed" />
         <Group h={40} gap={0} wrap="nowrap">
-          <Image src={`/assets/maimai/course_rank/${player.course_rank || 0}.webp`} h={36} w="auto" />
+          <Image
+            src={`/assets/maimai/course_rank/${player.course_rank || 0}.webp`}
+            h={36}
+            w="auto"
+          />
           <Box h={40} w={78} style={{ overflow: "hidden" }}>
             <Image src={`/assets/maimai/class_rank/${player.class_rank || 0}.webp`} mt={-5} />
           </Box>
           <Group gap={2} ml="xs" wrap="nowrap">
             <Image src="/assets/maimai/icon_star.webp" h={30} w="auto" />
-            <Text>
-              ×{player.star}
-            </Text>
+            <Text>×{player.star}</Text>
           </Group>
         </Group>
       </Box>
     </Group>
-  )
-}
+  );
+};

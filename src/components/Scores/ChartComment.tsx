@@ -1,11 +1,35 @@
 import {
-  ActionIcon, Avatar, Box, Button, Center, Divider, Flex, Group, Image, Loader, Menu, NumberFormatter, Pagination,
-  Paper, Rating, Stack, Text, Textarea, ThemeIcon
+  ActionIcon,
+  Avatar,
+  Box,
+  Button,
+  Center,
+  Divider,
+  Flex,
+  Group,
+  Image,
+  Loader,
+  Menu,
+  NumberFormatter,
+  Pagination,
+  Paper,
+  Rating,
+  Stack,
+  Text,
+  Textarea,
+  ThemeIcon,
 } from "@mantine/core";
 import { Game } from "@/types/game";
 import { ASSET_URL } from "@/main";
 import {
-  IconDots, IconFlag2Filled, IconHeart, IconHeartFilled, IconMenu2, IconMessage, IconPhotoOff, IconTrash
+  IconDots,
+  IconFlag2Filled,
+  IconHeart,
+  IconHeartFilled,
+  IconMenu2,
+  IconMessage,
+  IconPhotoOff,
+  IconTrash,
 } from "@tabler/icons-react";
 import classes from "./ChartComment.module.css";
 import { useForm } from "@mantine/form";
@@ -15,7 +39,12 @@ import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { useToggle } from "@mantine/hooks";
 import { Comment, useScoreComments } from "@/hooks/queries/useScoreComments.ts";
-import { useCreateComment, useDeleteComment, useLikeComment, useUnlikeComment } from "@/hooks/mutations/useCommentMutations.ts";
+import {
+  useCreateComment,
+  useDeleteComment,
+  useLikeComment,
+  useUnlikeComment,
+} from "@/hooks/mutations/useCommentMutations.ts";
 
 interface FormValues {
   comment: string;
@@ -31,7 +60,12 @@ const SORT_OPTIONS = [
 ];
 const RATING_TEXT = ["粪谱", "勉强能玩", "能玩", "好玩", "神谱"];
 
-const ChartCommentForm = ({ game, score, comment, onSubmit }: {
+const ChartCommentForm = ({
+  game,
+  score,
+  comment,
+  onSubmit,
+}: {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
   comment?: Comment;
@@ -73,11 +107,15 @@ const ChartCommentForm = ({ game, score, comment, onSubmit }: {
     if (score && "achievements" in score) {
       comment.song_type = score.type;
     }
-    submitComment({ game, data: comment }, {
-      onSuccess: () => onSubmit(),
-      onError: (error) => openRetryModal("评论提交失败", `${error}`, () => submitCommentHandler(values)),
-    });
-  }
+    submitComment(
+      { game, data: comment },
+      {
+        onSuccess: () => onSubmit(),
+        onError: (error) =>
+          openRetryModal("评论提交失败", `${error}`, () => submitCommentHandler(values)),
+      },
+    );
+  };
 
   useEffect(() => {
     if (comment) {
@@ -88,53 +126,59 @@ const ChartCommentForm = ({ game, score, comment, onSubmit }: {
     }
   }, [comment]);
 
-  return <>
-    <Stack gap="sm">
-      <Textarea
-        classNames={{ input: classes.textarea }}
-        placeholder="分享你对这张谱面的看法吧！"
-        disabled={isLoggedOut}
-        {...form.getInputProps("comment")}
-      />
-      <Group justify="space-between">
-        <Group gap="xs">
-          <Rating
-            fractions={2}
-            readOnly={isLoggedOut}
-            {...form.getInputProps("rating")}
-          />
-          <Text size="xs" c="gray">
-            {form.values.rating === 0 ? "轻触评分" : RATING_TEXT[parseInt((form.values.rating - 0.5).toString())]}
-          </Text>
+  return (
+    <>
+      <Stack gap="sm">
+        <Textarea
+          classNames={{ input: classes.textarea }}
+          placeholder="分享你对这张谱面的看法吧！"
+          disabled={isLoggedOut}
+          {...form.getInputProps("comment")}
+        />
+        <Group justify="space-between">
+          <Group gap="xs">
+            <Rating fractions={2} readOnly={isLoggedOut} {...form.getInputProps("rating")} />
+            <Text size="xs" c="gray">
+              {form.values.rating === 0
+                ? "轻触评分"
+                : RATING_TEXT[parseInt((form.values.rating - 0.5).toString())]}
+            </Text>
+          </Group>
+          <Group>
+            <Text size="xs" c={form.values.comment.length > MAX_COMMENT_LENGTH ? "red" : "dimmed"}>
+              {form.values.comment.length} / {MAX_COMMENT_LENGTH} 字
+            </Text>
+            <Button
+              size="sm"
+              disabled={!form.isValid()}
+              onClick={() => {
+                let title = "提交评论";
+                let message = "你在一张谱面中只能提交一次评论，确定要提交这条评论吗？";
+                if (comment) {
+                  title = "编辑评论";
+                  message = "编辑评论后，你的原评论将被替换，确定要编辑这条评论吗？";
+                }
+                openConfirmModal(title, message, () => submitCommentHandler(form.values));
+              }}
+            >
+              {comment ? "编辑" : "提交"}
+            </Button>
+          </Group>
         </Group>
-        <Group>
-          <Text size="xs" c={
-            form.values.comment.length > MAX_COMMENT_LENGTH ? "red" : "dimmed"
-          }>{form.values.comment.length} / {MAX_COMMENT_LENGTH} 字</Text>
-          <Button
-            size="sm"
-            disabled={!form.isValid()}
-            onClick={() => {
-              let title = "提交评论";
-              let message = "你在一张谱面中只能提交一次评论，确定要提交这条评论吗？";
-              if (comment) {
-                title = "编辑评论";
-                message = "编辑评论后，你的原评论将被替换，确定要编辑这条评论吗？";
-              }
-              openConfirmModal(title, message, () => submitCommentHandler(form.values));
-            }}
-          >
-            {comment ? "编辑" : "提交"}
-          </Button>
-        </Group>
-      </Group>
-    </Stack>
-  </>
-}
+      </Stack>
+    </>
+  );
+};
 
-const CommentItem = ({ game, comment, onUpdate, onDelete, onRevert }: {
-  game: Game,
-  comment: Comment,
+const CommentItem = ({
+  game,
+  comment,
+  onUpdate,
+  onDelete,
+  onRevert,
+}: {
+  game: Game;
+  comment: Comment;
   onUpdate?: (comment: Comment) => void;
   onDelete?: (comment: Comment) => void;
   onRevert?: () => void;
@@ -146,14 +190,17 @@ const CommentItem = ({ game, comment, onUpdate, onDelete, onRevert }: {
   const deleteCommentHandler = () => {
     // Optimistic: remove from list immediately
     onDelete && onDelete(comment);
-    removeComment({ game, commentId: comment.comment_id }, {
-      onError: (error) => {
-        // Revert: refetch from server to restore the comment
-        onRevert && onRevert();
-        openRetryModal("评论删除失败", `${error}`, deleteCommentHandler);
+    removeComment(
+      { game, commentId: comment.comment_id },
+      {
+        onError: (error) => {
+          // Revert: refetch from server to restore the comment
+          onRevert && onRevert();
+          openRetryModal("评论删除失败", `${error}`, deleteCommentHandler);
+        },
       },
-    });
-  }
+    );
+  };
 
   const likeCommentHandler = (is_liked: boolean) => {
     // Optimistic: update UI immediately
@@ -166,14 +213,17 @@ const CommentItem = ({ game, comment, onUpdate, onDelete, onRevert }: {
     onUpdate && onUpdate(updatedComment);
 
     const mutationFn = is_liked ? unlike : like;
-    mutationFn({ game, commentId: comment.comment_id }, {
-      onError: (error) => {
-        // Revert on error
-        onUpdate && onUpdate(prevComment);
-        openRetryModal("评论点赞失败", `${error}`, () => likeCommentHandler(is_liked));
+    mutationFn(
+      { game, commentId: comment.comment_id },
+      {
+        onError: (error) => {
+          // Revert on error
+          onUpdate && onUpdate(prevComment);
+          openRetryModal("评论点赞失败", `${error}`, () => likeCommentHandler(is_liked));
+        },
       },
-    });
-  }
+    );
+  };
 
   return (
     <Box>
@@ -186,25 +236,31 @@ const CommentItem = ({ game, comment, onUpdate, onDelete, onRevert }: {
         </Avatar>
         <div style={{ flex: 1 }}>
           <Flex columnGap="md" align="baseline" wrap="wrap">
-            <Text fz="md">
-              {comment.uploader.name}
+            <Text fz="md">{comment.uploader.name}</Text>
+            <Text fz="xs" c="dimmed">
+              {new Date(comment.upload_time).toLocaleString()}
             </Text>
-            <Text fz="xs" c="dimmed">{new Date(comment.upload_time).toLocaleString()}</Text>
           </Flex>
           <Group h={18}>
             <Rating value={comment.rating} fractions={2} size="xs" readOnly />
             {comment.like_count && (
               <Group gap={0} align="flex-start">
                 <ThemeIcon variant="transparent" size="xs" c="red">
-                  <IconHeartFilled style={{ width: '90%', height: '90%' }} />
+                  <IconHeartFilled style={{ width: "90%", height: "90%" }} />
                 </ThemeIcon>
-                <Text size="xs" c="dimmed">{comment.like_count}</Text>
+                <Text size="xs" c="dimmed">
+                  {comment.like_count}
+                </Text>
               </Group>
             )}
           </Group>
         </div>
         <Group gap="xs">
-          <ActionIcon variant="subtle" color="red" onClick={() => likeCommentHandler(comment.is_liked)}>
+          <ActionIcon
+            variant="subtle"
+            color="red"
+            onClick={() => likeCommentHandler(comment.is_liked)}
+          >
             {comment.is_liked ? <IconHeartFilled size={16} /> : <IconHeart size={16} />}
           </ActionIcon>
           <Menu shadow="md" width={200} position="bottom-end">
@@ -217,39 +273,61 @@ const CommentItem = ({ game, comment, onUpdate, onDelete, onRevert }: {
             <Menu.Dropdown>
               <Menu.Label>更多操作</Menu.Label>
               {comment.uploader && comment.uploader.id !== getLoginUserId() && (
-                <Menu.Item c="red" leftSection={<IconFlag2Filled size={20} stroke={1.5} />} disabled>举报滥用</Menu.Item>
+                <Menu.Item
+                  c="red"
+                  leftSection={<IconFlag2Filled size={20} stroke={1.5} />}
+                  disabled
+                >
+                  举报滥用
+                </Menu.Item>
               )}
-              {(checkPermission(UserPermission.Administrator) || (comment.uploader && comment.uploader.id === getLoginUserId())) && (
-                <Menu.Item c="red" leftSection={<IconTrash size={20} stroke={1.5} />} onClick={() => {
-                  openConfirmModal("删除评论", "你确定要删除该评论吗？", deleteCommentHandler);
-                }}>删除</Menu.Item>
+              {(checkPermission(UserPermission.Administrator) ||
+                (comment.uploader && comment.uploader.id === getLoginUserId())) && (
+                <Menu.Item
+                  c="red"
+                  leftSection={<IconTrash size={20} stroke={1.5} />}
+                  onClick={() => {
+                    openConfirmModal("删除评论", "你确定要删除该评论吗？", deleteCommentHandler);
+                  }}
+                >
+                  删除
+                </Menu.Item>
               )}
             </Menu.Dropdown>
           </Menu>
         </Group>
       </Group>
-      {comment.comment && <>
+      {comment.comment && (
+        <>
           <Box pt="xs" pl={54}>
-              <Text size="sm">{comment.comment}</Text>
+            <Text size="sm">{comment.comment}</Text>
           </Box>
-      </>}
+        </>
+      )}
     </Box>
-  )
-}
+  );
+};
 
-export const ChartComment = ({ game, score, setCommentCount }: {
+export const ChartComment = ({
+  game,
+  score,
+  setCommentCount,
+}: {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
   setCommentCount?: (count: number) => void;
 }) => {
   const isLoggedOut = !localStorage.getItem("token");
   const { comments, isLoading, setData, invalidate } = useScoreComments({
-    game, params: !isLoggedOut ? {
-      song_id: score ? `${score.id}` : "",
-      level_index: score ? `${score.level_index}` : "",
-      ...(score && "type" in score ? { song_type: score.type } : {})
-    } : undefined
-  })
+    game,
+    params: !isLoggedOut
+      ? {
+          song_id: score ? `${score.id}` : "",
+          level_index: score ? `${score.level_index}` : "",
+          ...(score && "type" in score ? { song_type: score.type } : {}),
+        }
+      : undefined,
+  });
   const [sortedComments, setSortedComments] = useState<Comment[]>([]);
   const [sort, toggleSort] = useToggle(SORT_OPTIONS.map((option) => option.value));
   const [page, setPage] = useState(1);
@@ -274,7 +352,7 @@ export const ChartComment = ({ game, score, setCommentCount }: {
     });
 
     setSortedComments(sorted);
-  }
+  };
 
   useEffect(() => {
     setCommentCount && setCommentCount(comments.length);
@@ -286,13 +364,13 @@ export const ChartComment = ({ game, score, setCommentCount }: {
     if (filteredComments.length < 3) return 0;
     const totalRating = filteredComments.reduce((acc, comment) => acc + comment.rating!, 0);
     return totalRating / filteredComments.length;
-  }
+  };
 
   return (
     <Stack>
       <Group>
         <ThemeIcon variant="subtle" color="gray">
-          <IconMessage style={{ width: '100%', height: '100%' }} stroke={1.5} />
+          <IconMessage style={{ width: "100%", height: "100%" }} stroke={1.5} />
         </ThemeIcon>
         <Stack gap={2} style={{ flex: 1 }}>
           <Text size="lg">评论</Text>
@@ -316,23 +394,35 @@ export const ChartComment = ({ game, score, setCommentCount }: {
               数据不足
             </Text>
           ) : (
-            <Text size="xs" c="dimmed" component={Group} align="baseline" justify="space-between" gap="xs">
-              <Text size="lg" span style={{
-                color: "var(--mantine-color-yellow-filled)"
-              }}>
+            <Text
+              size="xs"
+              c="dimmed"
+              component={Group}
+              align="baseline"
+              justify="space-between"
+              gap="xs"
+            >
+              <Text
+                size="lg"
+                span
+                style={{
+                  color: "var(--mantine-color-yellow-filled)",
+                }}
+              >
                 {RATING_TEXT[parseInt((getTotalRating() - 0.5).toString())]}
               </Text>
               <span>
-                (<NumberFormatter value={getTotalRating()} decimalScale={1} fixedDecimalScale={true} />)
+                (
+                <NumberFormatter
+                  value={getTotalRating()}
+                  decimalScale={1}
+                  fixedDecimalScale={true}
+                />
+                )
               </span>
             </Text>
           )}
-          <Rating
-            value={getTotalRating()}
-            fractions={2}
-            size="xs"
-            readOnly
-          />
+          <Rating value={getTotalRating()} fractions={2} size="xs" readOnly />
         </Stack>
       </Group>
       <Group justify="center">
@@ -340,7 +430,7 @@ export const ChartComment = ({ game, score, setCommentCount }: {
           <Center>
             <Loader />
           </Center>
-        ) : (comments.length === 0 ? (
+        ) : comments.length === 0 ? (
           <Stack gap="xs" align="center">
             <Image src="/empty.webp" w={240} />
             <Text c="dimmed" fz="sm">
@@ -350,31 +440,37 @@ export const ChartComment = ({ game, score, setCommentCount }: {
         ) : (
           <Paper w="100%" p="md" radius="sm" withBorder>
             <Stack>
-              {sortedComments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((comment, index, array) => (
-                <div key={comment.comment_id}>
-                  <CommentItem
-                    game={game}
-                    comment={comment}
-                    onUpdate={(updatedComment) => {
-                      const newComments = [...comments];
-                      const index = newComments.findIndex((c) => c.comment_id === updatedComment.comment_id);
-                      if (index !== -1) {
-                        newComments[index] = updatedComment;
+              {sortedComments
+                .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+                .map((comment, index, array) => (
+                  <div key={comment.comment_id}>
+                    <CommentItem
+                      game={game}
+                      comment={comment}
+                      onUpdate={(updatedComment) => {
+                        const newComments = [...comments];
+                        const index = newComments.findIndex(
+                          (c) => c.comment_id === updatedComment.comment_id,
+                        );
+                        if (index !== -1) {
+                          newComments[index] = updatedComment;
+                          setData(newComments);
+                        }
+                      }}
+                      onDelete={(deletedComment) => {
+                        const newComments = comments.filter(
+                          (c) => c.comment_id !== deletedComment.comment_id,
+                        );
                         setData(newComments);
-                      }
-                    }}
-                    onDelete={(deletedComment) => {
-                      const newComments = comments.filter((c) => c.comment_id !== deletedComment.comment_id);
-                      setData(newComments);
-                    }}
-                    onRevert={invalidate}
-                  />
-                  {index < array.length - 1 && <Divider mt="md" />}
-                </div>
-              ))}
+                      }}
+                      onRevert={invalidate}
+                    />
+                    {index < array.length - 1 && <Divider mt="md" />}
+                  </div>
+                ))}
             </Stack>
           </Paper>
-        ))}
+        )}
         <Pagination
           total={Math.ceil(comments.length / PAGE_SIZE)}
           value={page}
@@ -390,5 +486,5 @@ export const ChartComment = ({ game, score, setCommentCount }: {
         onSubmit={() => invalidate()}
       />
     </Stack>
-  )
-}
+  );
+};

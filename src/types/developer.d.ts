@@ -25,5 +25,5 @@ export interface OAuthAppProps {
     id: number;
     name: string;
     url: string;
-  }
+  };
 }

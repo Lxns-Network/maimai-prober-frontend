@@ -10,7 +10,10 @@ export async function getPlayerRatingTrend(game: Game, version: number): Promise
   return fetchAPI(`user/${game}/player/trend?version=${version}`, { method: "GET" });
 }
 
-export async function updatePlayerData(game: Game, player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>): Promise<Response> {
+export async function updatePlayerData(
+  game: Game,
+  player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>,
+): Promise<Response> {
   return fetchAPI(`user/${game}/player`, {
     method: "PUT",
     body: player,
@@ -33,24 +36,35 @@ export async function deletePlayerScore(game: Game, params: URLSearchParams): Pr
   return fetchAPI(`user/${game}/player/score?${params.toString()}`, { method: "DELETE" });
 }
 
-export async function deletePlayerScoreHistory(game: Game, params: URLSearchParams): Promise<Response> {
+export async function deletePlayerScoreHistory(
+  game: Game,
+  params: URLSearchParams,
+): Promise<Response> {
   return fetchAPI(`user/${game}/player/scores?${params.toString()}`, { method: "DELETE" });
 }
 
-export async function getPlayerCollectionById(game: Game, collectionType: string, id: number): Promise<Response> {
+export async function getPlayerCollectionById(
+  game: Game,
+  collectionType: string,
+  id: number,
+): Promise<Response> {
   return fetchAPI(`user/${game}/player/${collectionType}/${id}`, { method: "GET" });
 }
 
-export async function getCollectionById(game: Game, collectionType: string, id: number): Promise<Response> {
+export async function getCollectionById(
+  game: Game,
+  collectionType: string,
+  id: number,
+): Promise<Response> {
   return fetchAPI(`${game}/${collectionType}/${id}`, { method: "GET" });
 }
 
 export function isMaimaiPlayerProps(obj: unknown): obj is MaimaiPlayerProps {
   if (!obj) return false;
-  return typeof obj === 'object' && 'course_rank' in obj;
+  return typeof obj === "object" && "course_rank" in obj;
 }
 
 export function isChunithmPlayerProps(obj: unknown): obj is ChunithmPlayerProps {
   if (!obj) return false;
-  return typeof obj === 'object' && 'over_power' in obj;
+  return typeof obj === "object" && "over_power" in obj;
 }

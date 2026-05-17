@@ -1,8 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
-  ActionIcon, Anchor, Badge, Box, Card, Center, Flex, Grid, Group, Image, Loader, LoadingOverlay, Pagination, rem,
-  RingProgress, SegmentedControl, SimpleGrid, Space, Text, ThemeIcon
+  ActionIcon,
+  Anchor,
+  Badge,
+  Box,
+  Card,
+  Center,
+  Flex,
+  Grid,
+  Group,
+  Image,
+  Loader,
+  LoadingOverlay,
+  Pagination,
+  rem,
+  RingProgress,
+  SegmentedControl,
+  SimpleGrid,
+  Space,
+  Text,
+  ThemeIcon,
 } from "@mantine/core";
 import classes from "../../pages/Page.module.css";
 import { IconCheck } from "@tabler/icons-react";
@@ -23,7 +41,7 @@ const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps 
   if (collection.required.every((required) => required.completed)) {
     return (
       <RingProgress
-        sections={[{ value: 100, color: 'teal' }]}
+        sections={[{ value: 100, color: "teal" }]}
         label={
           <Center>
             <ActionIcon color="teal" variant="light" radius="xl" size={44}>
@@ -45,13 +63,13 @@ const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps 
       });
     });
     if (total === 0) return 0;
-    return Math.round(completed / total * 100);
-  }
+    return Math.round((completed / total) * 100);
+  };
 
   return (
     <RingProgress
       roundCaps
-      sections={[{ value: calculateCompletion(), color: 'var(--mantine-primary-color-filled)' }]}
+      sections={[{ value: calculateCompletion(), color: "var(--mantine-primary-color-filled)" }]}
       label={
         <Text c="var(--mantine-primary-color-light-color)" fw={700} ta="center" size="xl">
           {calculateCompletion()}%
@@ -59,14 +77,24 @@ const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps 
       }
     />
   );
-}
+};
 
 const difficultyData: Record<Game, string[]> = {
-  maimai: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'Re:MASTER'],
-  chunithm: ['BASIC', 'ADVANCED', 'EXPERT', 'MASTER', 'ULTIMA'],
-}
+  maimai: ["BASIC", "ADVANCED", "EXPERT", "MASTER", "Re:MASTER"],
+  chunithm: ["BASIC", "ADVANCED", "EXPERT", "MASTER", "ULTIMA"],
+};
 
-export const RequiredSong = ({ collection, records, loading, style }: { collection: CollectionProps | null, records: CollectionRequiredSongProps[], loading?: boolean, style?: React.CSSProperties; }) => {
+export const RequiredSong = ({
+  collection,
+  records,
+  loading,
+  style,
+}: {
+  collection: CollectionProps | null;
+  records: CollectionRequiredSongProps[];
+  loading?: boolean;
+  style?: React.CSSProperties;
+}) => {
   const { height, ref } = useElementSize();
 
   const [animationRef] = useAutoAnimate();
@@ -92,17 +120,22 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
       setPage(1);
     }
     if (!collection || !collection.required) return;
-    
-    setFilteredRecords(records.filter((record) => {
-      return collection.required && collection.required.every((required) => {
-        if (required.difficulties.includes(difficulty || 0)) {
-          return (required.songs || []).some((song) => {
-            return song.title === record.title && song.type === record.type;
-          });
-        }
-        return true;
-      })
-    }));
+
+    setFilteredRecords(
+      records.filter((record) => {
+        return (
+          collection.required &&
+          collection.required.every((required) => {
+            if (required.difficulties.includes(difficulty || 0)) {
+              return (required.songs || []).some((song) => {
+                return song.title === record.title && song.type === record.type;
+              });
+            }
+            return true;
+          })
+        );
+      }),
+    );
   }, [difficulty]);
 
   useEffect(() => {
@@ -124,20 +157,24 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
 
   if (!collection) return null;
 
-  const difficultyProgress = (collection.required || []).reduce((acc, req) => {
-    if (difficulty === undefined) return acc;
-    if (!(req.difficulties || []).includes(difficulty) && req.difficulties.length != 0) return acc;
+  const difficultyProgress = (collection.required || []).reduce(
+    (acc, req) => {
+      if (difficulty === undefined) return acc;
+      if (!(req.difficulties || []).includes(difficulty) && req.difficulties.length != 0)
+        return acc;
 
-    const songsTotal = (req.songs || []).length;
-    const songsCompleted = (req.songs || []).filter(song =>
-      song.completed_difficulties && song.completed_difficulties.includes(difficulty)
-    ).length;
+      const songsTotal = (req.songs || []).length;
+      const songsCompleted = (req.songs || []).filter(
+        (song) => song.completed_difficulties && song.completed_difficulties.includes(difficulty),
+      ).length;
 
-    return {
-      total: acc.total + songsTotal,
-      completed: acc.completed + songsCompleted
-    };
-  }, { total: 0, completed: 0 });
+      return {
+        total: acc.total + songsTotal,
+        completed: acc.completed + songsCompleted,
+      };
+    },
+    { total: 0, completed: 0 },
+  );
 
   return (
     <Card radius="md" p="md" withBorder className={classes.card} style={style}>
@@ -152,7 +189,9 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
           <Space h="md" />
           <Grid grow>
             <Grid.Col span={6} ref={ref}>
-              <Text fz="xs" c="dimmed">曲目范围</Text>
+              <Text fz="xs" c="dimmed">
+                曲目范围
+              </Text>
               <Marquee>
                 <Text fz="sm">
                   {(() => {
@@ -160,48 +199,86 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
                     if (result) {
                       return result[1];
                     }
-                    return (collection?.description || "没有描述").split("/")[0]
+                    return (collection?.description || "没有描述").split("/")[0];
                   })()}
                 </Text>
               </Marquee>
             </Grid.Col>
             {collection?.required?.[0] &&
-              (['fc', 'fs', 'rate', 'full_combo', 'full_chain', 'rank'] as const).some(key => collection.required![0][key]) && (
+              (["fc", "fs", "rate", "full_combo", "full_chain", "rank"] as const).some(
+                (key) => collection.required![0][key],
+              ) && (
                 <Grid.Col span={6} h={height}>
                   {collection.required[0].fc && (
                     <div>
-                      <Text fz="xs" c="dimmed">全连要求</Text>
-                      <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${collection.required[0].fc}.webp`} />
+                      <Text fz="xs" c="dimmed">
+                        全连要求
+                      </Text>
+                      <Image
+                        w={rem(30)}
+                        ml={-3}
+                        src={`/assets/maimai/music_icon/${collection.required[0].fc}.webp`}
+                      />
                     </div>
                   )}
                   {collection.required[0].fs && (
                     <div>
-                      <Text fz="xs" c="dimmed">全同步要求</Text>
-                      <Image w={rem(30)} ml={-3} src={`/assets/maimai/music_icon/${collection.required[0].fs}.webp`} />
+                      <Text fz="xs" c="dimmed">
+                        全同步要求
+                      </Text>
+                      <Image
+                        w={rem(30)}
+                        ml={-3}
+                        src={`/assets/maimai/music_icon/${collection.required[0].fs}.webp`}
+                      />
                     </div>
                   )}
                   {collection.required[0].rate && (
                     <div>
-                      <Text fz="xs" c="dimmed">达成率要求</Text>
-                      <Image w={rem(64)} ml={-8} src={`/assets/maimai/music_rank/${collection.required[0].rate}.webp`} />
+                      <Text fz="xs" c="dimmed">
+                        达成率要求
+                      </Text>
+                      <Image
+                        w={rem(64)}
+                        ml={-8}
+                        src={`/assets/maimai/music_rank/${collection.required[0].rate}.webp`}
+                      />
                     </div>
                   )}
                   {collection.required[0].full_combo && (
                     <div>
-                      <Text fz="xs" c="dimmed">全连要求</Text>
-                      <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_icon/${collection.required[0].full_combo}.webp`} />
+                      <Text fz="xs" c="dimmed">
+                        全连要求
+                      </Text>
+                      <Image
+                        w={rem(94)}
+                        mt={2}
+                        src={`/assets/chunithm/music_icon/${collection.required[0].full_combo}.webp`}
+                      />
                     </div>
                   )}
                   {collection.required[0].full_chain && (
                     <div>
-                      <Text fz="xs" c="dimmed">全同步要求</Text>
-                      <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_icon/${collection.required[0].full_chain}.webp`} />
+                      <Text fz="xs" c="dimmed">
+                        全同步要求
+                      </Text>
+                      <Image
+                        w={rem(94)}
+                        mt={2}
+                        src={`/assets/chunithm/music_icon/${collection.required[0].full_chain}.webp`}
+                      />
                     </div>
                   )}
                   {collection.required[0].rank && (
                     <div>
-                      <Text fz="xs" c="dimmed">分数要求</Text>
-                      <Image w={rem(94)} mt={2} src={`/assets/chunithm/music_rank/${collection.required[0].rank}.webp`} />
+                      <Text fz="xs" c="dimmed">
+                        分数要求
+                      </Text>
+                      <Image
+                        w={rem(94)}
+                        mt={2}
+                        src={`/assets/chunithm/music_rank/${collection.required[0].rank}.webp`}
+                      />
                     </div>
                   )}
                 </Grid.Col>
@@ -212,15 +289,16 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
           <RequiredSongRingProgress collection={collection} />
         </Box>
       </Flex>
-      <Text fz="xs" c="dimmed" mt="md">要求难度</Text>
+      <Text fz="xs" c="dimmed" mt="md">
+        要求难度
+      </Text>
       {difficulties.length === 0 ? (
-        <Text fz="sm">
-          任意难度
-        </Text>
+        <Text fz="sm">任意难度</Text>
       ) : (
         <SegmentedControl
           orientation={small && difficulties.length > 4 ? "vertical" : "horizontal"}
-          size="xs" mt={4}
+          size="xs"
+          mt={4}
           data={[
             ...difficulties.map((difficulty) => ({
               label: difficultyData[game][difficulty],
@@ -232,7 +310,9 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
         />
       )}
       <Space h="md" />
-      <Text fz="xs" c="dimmed">已完成 {difficultyProgress.completed} / {difficultyProgress.total} 首：</Text>
+      <Text fz="xs" c="dimmed">
+        已完成 {difficultyProgress.completed} / {difficultyProgress.total} 首：
+      </Text>
       <Space h="xs" />
       {loading && (
         <Center>
@@ -243,25 +323,39 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
         {displayRecords.map((record) => (
           <Group key={record.id} wrap="nowrap" gap="xs">
             <Box pos="relative" h={40}>
-              <LoadingOverlay overlayProps={{ radius: "sm", backgroundOpacity: 0.9 }} visible={
-                record.completed_difficulties && record.completed_difficulties.includes(difficulty || 0)
-              } loaderProps={{
-                children: (
-                  <ThemeIcon variant="light" color="teal" size={40}>
-                    <IconCheck />
-                  </ThemeIcon>
-                )
-              }} zIndex={1} />
+              <LoadingOverlay
+                overlayProps={{ radius: "sm", backgroundOpacity: 0.9 }}
+                visible={
+                  record.completed_difficulties &&
+                  record.completed_difficulties.includes(difficulty || 0)
+                }
+                loaderProps={{
+                  children: (
+                    <ThemeIcon variant="light" color="teal" size={40}>
+                      <IconCheck />
+                    </ThemeIcon>
+                  ),
+                }}
+                zIndex={1}
+              />
               <PhotoView src={`${ASSET_URL}/${game}/jacket/${record.id}.png`}>
-                <Image h={40} w={40} radius="sm" src={`${ASSET_URL}/${game}/jacket/${record.id}.png!webp`} />
+                <Image
+                  h={40}
+                  w={40}
+                  radius="sm"
+                  src={`${ASSET_URL}/${game}/jacket/${record.id}.png!webp`}
+                />
               </PhotoView>
             </Box>
             <div>
               <Anchor
-                size="sm" fw={500} lineClamp={1} component={Link}
+                size="sm"
+                fw={500}
+                lineClamp={1}
+                component={Link}
                 to={`/songs?game=${game}&song_id=${record.id}`}
                 style={{
-                  color: "var(--mantine-color-text)"
+                  color: "var(--mantine-color-text)",
                 }}
               >
                 {record.title}
@@ -269,9 +363,13 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
               {game === "maimai" && (
                 <>
                   {record.type === "standard" ? (
-                    <Badge variant="filled" color="blue" size="sm">标准</Badge>
+                    <Badge variant="filled" color="blue" size="sm">
+                      标准
+                    </Badge>
                   ) : (
-                    <Badge variant="filled" color="orange" size="sm">DX</Badge>
+                    <Badge variant="filled" color="orange" size="sm">
+                      DX
+                    </Badge>
                   )}
                 </>
               )}
@@ -290,5 +388,5 @@ export const RequiredSong = ({ collection, records, loading, style }: { collecti
         />
       </Center>
     </Card>
-  )
-}
+  );
+};

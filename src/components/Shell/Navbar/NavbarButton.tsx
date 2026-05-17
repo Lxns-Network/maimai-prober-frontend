@@ -1,6 +1,6 @@
 import { Badge, Group, Text } from "@mantine/core";
 import React from "react";
-import classes from './Navbar.module.css';
+import classes from "./Navbar.module.css";
 import { navigate } from "vike/client/router";
 
 interface NavbarButtonProps {
@@ -13,9 +13,19 @@ interface NavbarButtonProps {
   onClick?(): void;
 }
 
-export const NavbarButton = ({ label, icon, is_new, to, active, onClose, onClick }: NavbarButtonProps) => {
+export const NavbarButton = ({
+  label,
+  icon,
+  is_new,
+  to,
+  active,
+  onClose,
+  onClick,
+}: NavbarButtonProps) => {
   return (
-    <a href={to} key={label}
+    <a
+      href={to}
+      key={label}
       className={classes.navbarLink}
       data-active={label === active || undefined}
       onClick={(event) => {
@@ -28,10 +38,18 @@ export const NavbarButton = ({ label, icon, is_new, to, active, onClose, onClick
       <Group>
         <div className={classes.navbarLinkIcon}>{icon}</div>
         <Text size="sm">{label}</Text>
-        {is_new && <Badge color="red" variant="light" style={{
-          cursor: "pointer",
-        }}>New</Badge>}
+        {is_new && (
+          <Badge
+            color="red"
+            variant="light"
+            style={{
+              cursor: "pointer",
+            }}
+          >
+            New
+          </Badge>
+        )}
       </Group>
     </a>
-  )
-}
+  );
+};

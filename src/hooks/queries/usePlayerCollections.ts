@@ -5,7 +5,10 @@ import { queryKeys } from "./queryKeys.ts";
 
 const emptyCollections: CollectionProps[] = [];
 
-export const usePlayerCollections = ({ game, type }: {
+export const usePlayerCollections = ({
+  game,
+  type,
+}: {
   game: Game;
   type: "trophies" | "icons" | "plates" | "frames" | "characters";
 }) => {

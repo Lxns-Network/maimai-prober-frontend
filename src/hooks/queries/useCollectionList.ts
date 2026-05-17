@@ -7,7 +7,11 @@ import { resourceQueryFn } from "./queryFn.ts";
 
 const emptyCollections: CollectionProps[] = [];
 
-export const useCollectionList = (game: Game, collectionType: string | null, required: boolean = false) => {
+export const useCollectionList = (
+  game: Game,
+  collectionType: string | null,
+  required: boolean = false,
+) => {
   const { data, error, isLoading } = useQuery<{
     [key: string]: CollectionProps[];
   }>({
@@ -17,8 +21,8 @@ export const useCollectionList = (game: Game, collectionType: string | null, req
   });
 
   const collections = useMemo(
-    () => (data ? data[Object.keys(data)[0]] ?? emptyCollections : emptyCollections),
-    [data]
+    () => (data ? (data[Object.keys(data)[0]] ?? emptyCollections) : emptyCollections),
+    [data],
   );
 
   return {

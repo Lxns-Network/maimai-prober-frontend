@@ -2,17 +2,17 @@
  * 所有可能的 Note 类型
  */
 export type NoteType =
-  | 'tap'
-  | 'break'
-  | 'simultaneous'
-  | 'hold-start'
-  | 'hold-start-simultaneous'
-  | 'hold-end'
-  | 'hold-end-simultaneous'
-  | 'slide'
-  | 'touch'
-  | 'touch-hold-start'
-  | 'touch-hold-end';
+  | "tap"
+  | "break"
+  | "simultaneous"
+  | "hold-start"
+  | "hold-start-simultaneous"
+  | "hold-end"
+  | "hold-end-simultaneous"
+  | "slide"
+  | "touch"
+  | "touch-hold-start"
+  | "touch-hold-end";
 
 /**
  * 滑条类型
@@ -31,19 +31,19 @@ export type NoteType =
  * - `V`: V 形带有中间点
  */
 export type SlidePathType =
-  | '-'
-  | '>'
-  | '<'
-  | '^'
-  | 'v'
-  | 'p'
-  | 'pp'
-  | 'q'
-  | 'qq'
-  | 's'
-  | 'z'
-  | 'w'
-  | 'V';
+  | "-"
+  | ">"
+  | "<"
+  | "^"
+  | "v"
+  | "p"
+  | "pp"
+  | "q"
+  | "qq"
+  | "s"
+  | "z"
+  | "w"
+  | "V";
 
 /**
  * 触摸判定区
@@ -54,11 +54,41 @@ export type SlidePathType =
  * - E1-E8: 边缘判定区
  */
 export type TouchPosition =
-  | 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'A6' | 'A7' | 'A8'
-  | 'B1' | 'B2' | 'B3' | 'B4' | 'B5' | 'B6' | 'B7' | 'B8'
-  | 'C' | 'C1' | 'C2'
-  | 'D1' | 'D2' | 'D3' | 'D4' | 'D5' | 'D6' | 'D7' | 'D8'
-  | 'E1' | 'E2' | 'E3' | 'E4' | 'E5' | 'E6' | 'E7' | 'E8';
+  | "A1"
+  | "A2"
+  | "A3"
+  | "A4"
+  | "A5"
+  | "A6"
+  | "A7"
+  | "A8"
+  | "B1"
+  | "B2"
+  | "B3"
+  | "B4"
+  | "B5"
+  | "B6"
+  | "B7"
+  | "B8"
+  | "C"
+  | "C1"
+  | "C2"
+  | "D1"
+  | "D2"
+  | "D3"
+  | "D4"
+  | "D5"
+  | "D6"
+  | "D7"
+  | "D8"
+  | "E1"
+  | "E2"
+  | "E3"
+  | "E4"
+  | "E5"
+  | "E6"
+  | "E7"
+  | "E8";
 
 /**
  * 按钮位置（1-8，顺时针从右上开始）
@@ -72,7 +102,7 @@ export type ButtonPosition = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
  * - vertical: 垂直
  * - rotate180: 旋转180度
  */
-export type MirrorMode = 'none' | 'horizontal' | 'vertical' | 'rotate180';
+export type MirrorMode = "none" | "horizontal" | "vertical" | "rotate180";
 
 /**
  * 判定线显示
@@ -81,7 +111,7 @@ export type MirrorMode = 'none' | 'horizontal' | 'vertical' | 'rotate180';
  * - simple: 判定点 + 判定线
  * - sensor: 判定点 + 判定线 + 判定区
  */
-export type JudgmentLineDesign = 'blind' | 'noLine' | 'simple' | 'sensor';
+export type JudgmentLineDesign = "blind" | "noLine" | "simple" | "sensor";
 
 /**
  * DDR 风格颜色模式选项
@@ -89,26 +119,26 @@ export type JudgmentLineDesign = 'blind' | 'noLine' | 'simple' | 'sensor';
  * - on: 开启
  * - extended: 扩展
  */
-export type DdrColorMode = 'off' | 'on' | 'extended';
+export type DdrColorMode = "off" | "on" | "extended";
 
 export type ChartDifficulty = 1 | 2 | 3 | 4 | 5 | 6;
 
 export const DIFFICULTY_NAMES: Record<ChartDifficulty, string> = {
-  1: 'EASY',
-  2: 'BASIC',
-  3: 'ADVANCED',
-  4: 'EXPERT',
-  5: 'MASTER',
-  6: 'Re:MASTER',
+  1: "EASY",
+  2: "BASIC",
+  3: "ADVANCED",
+  4: "EXPERT",
+  5: "MASTER",
+  6: "Re:MASTER",
 };
 
 export const DIFFICULTY_COLORS: Record<ChartDifficulty, string> = {
-  1: '#1E3A8A',
-  2: '#22C55E',
-  3: '#EAB308',
-  4: '#EF4444',
-  5: '#A855F7',
-  6: '#F8FAFC',
+  1: "#1E3A8A",
+  2: "#22C55E",
+  3: "#EAB308",
+  4: "#EF4444",
+  5: "#A855F7",
+  6: "#F8FAFC",
 };
 
 export interface SlideArcLutPoint {
@@ -167,14 +197,14 @@ export interface BaseNote {
 }
 
 export interface TapNote extends BaseNote {
-  type: 'tap' | 'break' | 'simultaneous';
+  type: "tap" | "break" | "simultaneous";
   position: ButtonPosition;
   /** 是否有保护套 */
   isEx?: boolean;
 }
 
 export interface HoldStartNote extends BaseNote {
-  type: 'hold-start' | 'hold-start-simultaneous';
+  type: "hold-start" | "hold-start-simultaneous";
   position: ButtonPosition;
   /** 持续时间（拍） */
   duration: number;
@@ -187,7 +217,7 @@ export interface HoldStartNote extends BaseNote {
 }
 
 export interface HoldEndNote extends BaseNote {
-  type: 'hold-end' | 'hold-end-simultaneous';
+  type: "hold-end" | "hold-end-simultaneous";
   position: ButtonPosition;
   /** 对应的 Hold 开始时间（拍） */
   holdStartTiming: number;
@@ -200,7 +230,7 @@ export interface HoldEndNote extends BaseNote {
 }
 
 export interface SlideNote extends BaseNote {
-  type: 'slide';
+  type: "slide";
   position: ButtonPosition;
   /** 滑条起始 Note 是否为绝赞 */
   isStartBreak?: boolean;
@@ -233,7 +263,7 @@ export interface SlideNote extends BaseNote {
 }
 
 export interface TouchNote extends BaseNote {
-  type: 'touch';
+  type: "touch";
   position: TouchPosition;
   /** 是否有烟花效果 */
   hasFirework?: boolean;
@@ -242,7 +272,7 @@ export interface TouchNote extends BaseNote {
 }
 
 export interface TouchHoldStartNote extends BaseNote {
-  type: 'touch-hold-start';
+  type: "touch-hold-start";
   position: TouchPosition;
   /** 持续时间（拍） */
   duration: number;
@@ -257,7 +287,7 @@ export interface TouchHoldStartNote extends BaseNote {
 }
 
 export interface TouchHoldEndNote extends BaseNote {
-  type: 'touch-hold-end';
+  type: "touch-hold-end";
   position: TouchPosition;
   /** 对应的 Hold 开始时间（拍） */
   holdStartTiming: number;
@@ -448,31 +478,31 @@ export interface AudioConfig {
 }
 
 export function isTapNote(note: Note): note is TapNote {
-  return note.type === 'tap' || note.type === 'break' || note.type === 'simultaneous';
+  return note.type === "tap" || note.type === "break" || note.type === "simultaneous";
 }
 
 export function isHoldStartNote(note: Note): note is HoldStartNote {
-  return note.type === 'hold-start' || note.type === 'hold-start-simultaneous';
+  return note.type === "hold-start" || note.type === "hold-start-simultaneous";
 }
 
 export function isHoldEndNote(note: Note): note is HoldEndNote {
-  return note.type === 'hold-end' || note.type === 'hold-end-simultaneous';
+  return note.type === "hold-end" || note.type === "hold-end-simultaneous";
 }
 
 export function isSlideNote(note: Note): note is SlideNote {
-  return note.type === 'slide';
+  return note.type === "slide";
 }
 
 export function isTouchNote(note: Note): note is TouchNote {
-  return note.type === 'touch';
+  return note.type === "touch";
 }
 
 export function isTouchHoldStartNote(note: Note): note is TouchHoldStartNote {
-  return note.type === 'touch-hold-start';
+  return note.type === "touch-hold-start";
 }
 
 export function isTouchHoldEndNote(note: Note): note is TouchHoldEndNote {
-  return note.type === 'touch-hold-end';
+  return note.type === "touch-hold-end";
 }
 
 export function isHoldNote(note: Note): note is HoldStartNote | HoldEndNote {
@@ -484,18 +514,20 @@ export function isTouchHoldNote(note: Note): note is TouchHoldStartNote | TouchH
 }
 
 export function isButtonNote(note: Note): boolean {
-  return typeof note.position === 'number' && note.position >= 1 && note.position <= 8;
+  return typeof note.position === "number" && note.position >= 1 && note.position <= 8;
 }
 
 export function countDisplayNotes(notes: Note[]): number {
   let totalNotes = 0;
 
   for (const note of notes) {
-    if (isTapNote(note) || 
-        isHoldEndNote(note) ||
-        isSlideNote(note) ||
-        isTouchNote(note) ||
-        note.type === 'touch-hold-end') {
+    if (
+      isTapNote(note) ||
+      isHoldEndNote(note) ||
+      isSlideNote(note) ||
+      isTouchNote(note) ||
+      note.type === "touch-hold-end"
+    ) {
       totalNotes++;
     }
 

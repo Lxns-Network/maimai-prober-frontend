@@ -24,7 +24,13 @@
   top: 12px;
   bottom: 0;
   width: 1px;
-  background-image: repeating-linear-gradient(to bottom, var(--mantine-color-gray-6) 0, var(--mantine-color-gray-6) 2px, transparent 2px, transparent 4px);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--mantine-color-gray-6) 0,
+    var(--mantine-color-gray-6) 2px,
+    transparent 2px,
+    transparent 4px
+  );
 }
 
 .timeLabels {

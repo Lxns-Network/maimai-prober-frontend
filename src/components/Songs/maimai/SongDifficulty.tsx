@@ -1,5 +1,19 @@
 import {
-  ActionIcon, Badge, Box, Button, Card, Divider, Flex, Group, Image, Modal, rem, Text, Title, Tooltip, useComputedColorScheme
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Divider,
+  Flex,
+  Group,
+  Image,
+  Modal,
+  rem,
+  Text,
+  Title,
+  Tooltip,
+  useComputedColorScheme,
 } from "@mantine/core";
 import { IconPlayerPlay } from "@tabler/icons-react";
 import classes from "../SongDifficulty.module.css";
@@ -17,9 +31,15 @@ interface SongDifficultyProps {
   onClick: () => void;
 }
 
-export const MaimaiSongDifficulty = ({ difficulty, score, songId, versions, onClick }: SongDifficultyProps) => {
+export const MaimaiSongDifficulty = ({
+  difficulty,
+  score,
+  songId,
+  versions,
+  onClick,
+}: SongDifficultyProps) => {
   const [buddyMenuOpened, setBuddyMenuOpened] = useState(false);
-  const computedColorScheme = useComputedColorScheme('light');
+  const computedColorScheme = useComputedColorScheme("light");
 
   const handleChartPreview = (chartId: number, difficulty: number) => {
     const params = new URLSearchParams({
@@ -41,25 +61,48 @@ export const MaimaiSongDifficulty = ({ difficulty, score, songId, versions, onCl
         onClose={() => setBuddyMenuOpened(false)}
       >
         <Group grow>
-          <Button variant="default" onClick={() => {
-            setBuddyMenuOpened(false);
-            setTimeout(() => handleChartPreview(songId, 0), 300);
-          }}>
+          <Button
+            variant="default"
+            onClick={() => {
+              setBuddyMenuOpened(false);
+              setTimeout(() => handleChartPreview(songId, 0), 300);
+            }}
+          >
             <Text fz="md">1P 谱面</Text>
           </Button>
-          <Button variant="default" onClick={() => {
-            setBuddyMenuOpened(false);
-            setTimeout(() => handleChartPreview(songId, 1), 300);
-          }}>
+          <Button
+            variant="default"
+            onClick={() => {
+              setBuddyMenuOpened(false);
+              setTimeout(() => handleChartPreview(songId, 1), 300);
+            }}
+          >
             <Text fz="md">2P 谱面</Text>
           </Button>
         </Group>
       </Modal>
-      <Card className={classes.scoreCard} c="white" mih={82.5} pt={5} p="0.5rem" shadow="sm" radius="md" withBorder style={{
-        border: `2px solid ${getScoreSecondaryColor("maimai", colorIndex)}`.replace(")", ", 0.95)"),
-        backgroundColor: getScoreCardBackgroundColor("maimai", colorIndex).replace(")", ", 0.95)"),
-        opacity: computedColorScheme === 'dark' ? 0.8 : 1,
-      }} onClick={onClick}>
+      <Card
+        className={classes.scoreCard}
+        c="white"
+        mih={82.5}
+        pt={5}
+        p="0.5rem"
+        shadow="sm"
+        radius="md"
+        withBorder
+        style={{
+          border: `2px solid ${getScoreSecondaryColor("maimai", colorIndex)}`.replace(
+            ")",
+            ", 0.95)",
+          ),
+          backgroundColor: getScoreCardBackgroundColor("maimai", colorIndex).replace(
+            ")",
+            ", 0.95)",
+          ),
+          opacity: computedColorScheme === "dark" ? 0.8 : 1,
+        }}
+        onClick={onClick}
+      >
         <Flex align="center" ml="0.5rem" mr="0.5rem" mb={5}>
           {isUtage ? (
             <Text fz="sm" fw={500} style={{ flex: 1 }}>
@@ -88,7 +131,7 @@ export const MaimaiSongDifficulty = ({ difficulty, score, songId, versions, onCl
                   if (difficulty?.is_buddy) {
                     setBuddyMenuOpened((o) => !o);
                   } else {
-                    const typeOffset = difficulty.type === 'dx' ? 1 : 0;
+                    const typeOffset = difficulty.type === "dx" ? 1 : 0;
                     handleChartPreview(typeOffset * 10000 + songId, difficulty.difficulty);
                   }
                 }}
@@ -99,55 +142,63 @@ export const MaimaiSongDifficulty = ({ difficulty, score, songId, versions, onCl
           )}
           <Flex>
             <Image
-              src={`/assets/maimai/music_icon/${score && score.fc || "blank"}.webp`}
+              src={`/assets/maimai/music_icon/${(score && score.fc) || "blank"}.webp`}
               w={rem(30)}
             />
             <Image
-              src={`/assets/maimai/music_icon/${score && score.fs || "blank"}.webp`}
+              src={`/assets/maimai/music_icon/${(score && score.fs) || "blank"}.webp`}
               w={rem(30)}
             />
           </Flex>
           {difficulty.is_buddy && (
-            <Badge variant="filled" color="#49090a" size="sm" ml="xs">BUDDY</Badge>
+            <Badge variant="filled" color="#49090a" size="sm" ml="xs">
+              BUDDY
+            </Badge>
           )}
         </Flex>
         {score && score.achievements >= 0 ? (
-          <Card w="100%" radius="md" p="1rem" pt="xs" pb="xs" style={{ color: "var(--mantine-text-dark)", backgroundColor: "#424242" }}>
+          <Card
+            w="100%"
+            radius="md"
+            p="1rem"
+            pt="xs"
+            pb="xs"
+            style={{ color: "var(--mantine-text-dark)", backgroundColor: "#424242" }}
+          >
             <Group>
-              <Image
-                src={`/assets/maimai/music_rank/${score.rate}.webp`}
-                w={rem(64)}
-              />
+              <Image src={`/assets/maimai/music_rank/${score.rate}.webp`} w={rem(64)} />
               <Box>
-                <Text fz="xs" c="dimmed">达成率</Text>
+                <Text fz="xs" c="dimmed">
+                  达成率
+                </Text>
                 <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
                   {parseInt(String(score.achievements))}
-                  <span style={{ fontSize: rem(16) }}>.{
-                    (String(score?.achievements).split(".")[1] || "0").padEnd(4, "0")
-                  }%</span>
+                  <span style={{ fontSize: rem(16) }}>
+                    .{(String(score?.achievements).split(".")[1] || "0").padEnd(4, "0")}%
+                  </span>
                 </Text>
               </Box>
             </Group>
             <Group mt="xs" gap="sm">
               <Box mr={16}>
-                <Text fz="xs" c="dimmed">DX Rating</Text>
-                <Text fz="md">
-                  {parseInt(String(score.dx_rating))}
+                <Text fz="xs" c="dimmed">
+                  DX Rating
                 </Text>
+                <Text fz="md">{parseInt(String(score.dx_rating))}</Text>
               </Box>
               {score.last_played_time && (
                 <Box mr={16}>
-                  <Text fz="xs" c="dimmed">最后游玩时间</Text>
-                  <Text fz="md">
-                    {new Date(score.last_played_time || "").toLocaleString()}
+                  <Text fz="xs" c="dimmed">
+                    最后游玩时间
                   </Text>
+                  <Text fz="md">{new Date(score.last_played_time || "").toLocaleString()}</Text>
                 </Box>
               )}
               <Box>
-                <Text fz="xs" c="dimmed">上传时间</Text>
-                <Text fz="md">
-                  {new Date(score.upload_time || "").toLocaleString()}
+                <Text fz="xs" c="dimmed">
+                  上传时间
                 </Text>
+                <Text fz="md">{new Date(score.upload_time || "").toLocaleString()}</Text>
               </Box>
             </Group>
           </Card>
@@ -166,11 +217,14 @@ export const MaimaiSongDifficulty = ({ difficulty, score, songId, versions, onCl
           <Group>
             <Text fz="xs">版本</Text>
             <Text fz="sm" fw={700}>
-              {versions.slice().reverse().find((version) => difficulty.version >= version.version)?.title || "未知"}
+              {versions
+                .slice()
+                .reverse()
+                .find((version) => difficulty.version >= version.version)?.title || "未知"}
             </Text>
           </Group>
         </Flex>
       </Card>
     </>
-  )
-}
+  );
+};

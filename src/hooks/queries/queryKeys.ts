@@ -11,7 +11,8 @@ export const queryKeys = {
     bests: (game: Game) => [`user/${game}/player/bests`] as const,
     collections: (game: Game, type: string) => [`user/${game}/player/${type}`] as const,
     heatmap: (game: Game) => [`user/${game}/player/heatmap`] as const,
-    ratingTrend: (game: Game, version: number) => [`user/${game}/player/trend?version=${version}`] as const,
+    ratingTrend: (game: Game, version: number) =>
+      [`user/${game}/player/trend?version=${version}`] as const,
     yearInReview: (game: Game, year: number, shareToken?: string, agree?: boolean) => {
       let url = shareToken
         ? `${game}/year-in-review/${year}/share/${shareToken}`
@@ -49,10 +50,8 @@ export const queryKeys = {
       [`user/${game}/player/score/history?${params.toString()}`] as const,
   },
   song: {
-    detail: (game: Game, id: number) =>
-      [`${game}/song/${id}`] as const,
-    bests: (game: Game, songId: number) =>
-      [`user/${game}/player/bests?song_id=${songId}`] as const,
+    detail: (game: Game, id: number) => [`${game}/song/${id}`] as const,
+    bests: (game: Game, songId: number) => [`user/${game}/player/bests?song_id=${songId}`] as const,
   },
   comments: {
     list: (game: Game, params: URLSearchParams) =>

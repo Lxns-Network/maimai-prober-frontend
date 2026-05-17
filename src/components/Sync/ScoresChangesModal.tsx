@@ -1,5 +1,16 @@
 import {
-  Badge, Flex, Group, HoverCard, Image, Mark, Modal, NumberFormatter, rem, Space, Text, ThemeIcon
+  Badge,
+  Flex,
+  Group,
+  HoverCard,
+  Image,
+  Mark,
+  Modal,
+  NumberFormatter,
+  rem,
+  Space,
+  Text,
+  ThemeIcon,
 } from "@mantine/core";
 import { ScoreChangeDetailProps, ScoreChangesProps } from "@/pages/user/Sync";
 import { DataTable } from "mantine-datatable";
@@ -18,12 +29,31 @@ interface ScoresChangesModalProps {
   onClose: () => void;
 }
 
-const MusicIconChangeCell = ({ game, icon }: { game: Game, icon: ScoreChangeDetailProps }) => {
+const MusicIconChangeCell = ({ game, icon }: { game: Game; icon: ScoreChangeDetailProps }) => {
   if (icon.new !== undefined && icon.new !== null) {
     if (game === "chunithm") {
-      return <Group gap={0} h={0} ml={-3} wrap="nowrap">
+      return (
+        <Group gap={0} h={0} ml={-3} wrap="nowrap">
+          <Image
+            src={`/assets/${game}/music_icon/${icon.old || "blank"}_xs.webp`}
+            h={rem(24)}
+            w={rem(24)}
+          />
+          <ThemeIcon variant="subtle" color="gray" size={20}>
+            <IconArrowRight />
+          </ThemeIcon>
+          <Image
+            src={`/assets/${game}/music_icon/${icon.new || "blank"}_xs.webp`}
+            h={rem(24)}
+            w={rem(24)}
+          />
+        </Group>
+      );
+    }
+    return (
+      <Group gap={0} h={0} ml={-3} wrap="nowrap">
         <Image
-          src={`/assets/${game}/music_icon/${icon.old || "blank"}_xs.webp`}
+          src={`/assets/${game}/music_icon/${icon.old || "blank"}.webp`}
           h={rem(24)}
           w={rem(24)}
         />
@@ -31,63 +61,54 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game, icon: ScoreChangeDeta
           <IconArrowRight />
         </ThemeIcon>
         <Image
-          src={`/assets/${game}/music_icon/${icon.new || "blank"}_xs.webp`}
+          src={`/assets/${game}/music_icon/${icon.new || "blank"}.webp`}
           h={rem(24)}
           w={rem(24)}
         />
-      </Group>;
-    }
-    return <Group gap={0} h={0} ml={-3} wrap="nowrap">
-      <Image
-        src={`/assets/${game}/music_icon/${icon.old || "blank"}.webp`}
-        h={rem(24)}
-        w={rem(24)}
-      />
-      <ThemeIcon variant="subtle" color="gray" size={20}>
-        <IconArrowRight />
-      </ThemeIcon>
-      <Image
-        src={`/assets/${game}/music_icon/${icon.new || "blank"}.webp`}
-        h={rem(24)}
-        w={rem(24)}
-      />
-    </Group>;
+      </Group>
+    );
   }
   if (game === "chunithm") {
-    return <Image
-      src={`/assets/${game}/music_icon/${icon.old || "blank"}_xs.webp`}
-      h={rem(24)} w="auto" ml={-3}
-    />;
+    return (
+      <Image
+        src={`/assets/${game}/music_icon/${icon.old || "blank"}_xs.webp`}
+        h={rem(24)}
+        w="auto"
+        ml={-3}
+      />
+    );
   }
-  return <Image
-    src={`/assets/${game}/music_icon/${icon.old || "blank"}.webp`}
-    h={rem(24)} w="auto" ml={-3}
-  />;
-}
+  return (
+    <Image
+      src={`/assets/${game}/music_icon/${icon.old || "blank"}.webp`}
+      h={rem(24)}
+      w="auto"
+      ml={-3}
+    />
+  );
+};
 
 function containsOld(obj: object): boolean {
   const record = obj as Record<string, unknown>;
   for (const key in record) {
-    if (typeof record[key] === 'object' && record[key] !== null) {
+    if (typeof record[key] === "object" && record[key] !== null) {
       if (containsOld(record[key] as object)) {
         return true;
       }
-    } else if (key === 'old') {
+    } else if (key === "old") {
       return true;
     }
   }
   return false;
 }
 
-const ScoresChangesTable = ({ game, scores }: { game: Game, scores: ScoreChangesProps[] }) => {
+const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChangesProps[] }) => {
   const PAGE_SIZES = [10, 15, 20];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);
   const [displayScores, setDisplayScores] = useState<ScoreChangesProps[]>([]);
 
-  const { songList } = useSongListStore(
-    useShallow((state) => ({ songList: state.chunithm })),
-  )
+  const { songList } = useSongListStore(useShallow((state) => ({ songList: state.chunithm })));
 
   useEffect(() => {
     const start = (page - 1) * pageSize;
@@ -102,7 +123,8 @@ const ScoresChangesTable = ({ game, scores }: { game: Game, scores: ScoreChanges
 
   return (
     <DataTable
-      highlightOnHover pinFirstColumn
+      highlightOnHover
+      pinFirstColumn
       horizontalSpacing="md"
       mih={scores.length === 0 ? 150 : 0}
       miw={700}
@@ -114,198 +136,236 @@ const ScoresChangesTable = ({ game, scores }: { game: Game, scores: ScoreChanges
       }
       rowBackgroundColor={(score, i) => {
         if (!containsOld(score)) {
-          return { dark: 'rgb(37,64,46)', light: 'rgb(233,252,239)' }
+          return { dark: "rgb(37,64,46)", light: "rgb(233,252,239)" };
         } else if (i % 2 === 0) {
-          return { dark: 'rgb(46,46,46)', light: 'rgb(248,249,250)' }
+          return { dark: "rgb(46,46,46)", light: "rgb(248,249,250)" };
         } else {
-          return { dark: 'rgb(36,36,36)', light: 'white' }
+          return { dark: "rgb(36,36,36)", light: "white" };
         }
       }}
       // 数据
       idAccessor={({ id, type, level_index }) => `${id}:${type}:${level_index}`}
-      columns={game === "maimai" ? [
-        {
-          accessor: 'id',
-          title: 'ID',
-          width: 20,
-        },
-        {
-          accessor: 'song_name',
-          title: '曲名',
-          width: 100,
-          render: ({ song_name, type }) => {
-            return (
-              <Flex align="center">
-                {type === "standard" ? (
-                  <Badge variant="filled" color="blue" size="xs" w={33} style={{
-                    flexShrink: 0,
-                  }}>标准</Badge>
-                ) : (
-                  <Badge variant="filled" color="orange" size="xs" w={33} style={{
-                    flexShrink: 0,
-                  }}>DX</Badge>
-                )}
-                <Space w={8} />
-                <Marquee>{song_name}</Marquee>
-              </Flex>
-            );
-          },
-        },
-        {
-          accessor: 'level',
-          title: '难度',
-          width: 20,
-          render: ({ level, level_index }) => {
-            return <Text size="sm" fw="700" c={getScoreCardBackgroundColor(game, level_index)}>{level}</Text>;
-          },
-        },
-        {
-          accessor: 'achievements.new',
-          title: '达成率',
-          width: 50,
-          render: ({ achievements }) => {
-            const { new: newValue, old: oldValue } = achievements as { old?: number, new?: number };
-            if (newValue !== undefined) {
-              const changeValue = (Math.round(newValue * 10000) - Math.round((oldValue || 0) * 10000)) / 10000
-              return (
-                <Text size="sm">
-                  {newValue.toFixed(4)}%
-                  {oldValue !== undefined && (
-                    <Text span c="green">
-                      {` (+${changeValue.toFixed(4)}%)`}
+      columns={
+        game === "maimai"
+          ? [
+              {
+                accessor: "id",
+                title: "ID",
+                width: 20,
+              },
+              {
+                accessor: "song_name",
+                title: "曲名",
+                width: 100,
+                render: ({ song_name, type }) => {
+                  return (
+                    <Flex align="center">
+                      {type === "standard" ? (
+                        <Badge
+                          variant="filled"
+                          color="blue"
+                          size="xs"
+                          w={33}
+                          style={{
+                            flexShrink: 0,
+                          }}
+                        >
+                          标准
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="filled"
+                          color="orange"
+                          size="xs"
+                          w={33}
+                          style={{
+                            flexShrink: 0,
+                          }}
+                        >
+                          DX
+                        </Badge>
+                      )}
+                      <Space w={8} />
+                      <Marquee>{song_name}</Marquee>
+                    </Flex>
+                  );
+                },
+              },
+              {
+                accessor: "level",
+                title: "难度",
+                width: 20,
+                render: ({ level, level_index }) => {
+                  return (
+                    <Text size="sm" fw="700" c={getScoreCardBackgroundColor(game, level_index)}>
+                      {level}
                     </Text>
-                  )}
-                </Text>
-              );
-            }
-            return <Text size="sm">{(oldValue || 0).toFixed(4)}%</Text>;
-          },
-        },
-        {
-          accessor: 'dx_rating.new',
-          title: 'DX Rating',
-          width: 50,
-          render: ({ dx_rating }) => {
-            const { new: newValue, old: oldValue } = dx_rating as { old?: number, new?: number };
-            if (newValue !== undefined) {
-              const changeValue = (Math.round(newValue * 10000) - Math.round((oldValue || 0) * 10000)) / 10000
-              return (
-                <Text size="sm">
-                  {newValue.toFixed(2)}
-                  {oldValue !== undefined && (
-                    <Text span c="green">
-                      {` (+${changeValue.toFixed(2)})`}
+                  );
+                },
+              },
+              {
+                accessor: "achievements.new",
+                title: "达成率",
+                width: 50,
+                render: ({ achievements }) => {
+                  const { new: newValue, old: oldValue } = achievements as {
+                    old?: number;
+                    new?: number;
+                  };
+                  if (newValue !== undefined) {
+                    const changeValue =
+                      (Math.round(newValue * 10000) - Math.round((oldValue || 0) * 10000)) / 10000;
+                    return (
+                      <Text size="sm">
+                        {newValue.toFixed(4)}%
+                        {oldValue !== undefined && (
+                          <Text span c="green">
+                            {` (+${changeValue.toFixed(4)}%)`}
+                          </Text>
+                        )}
+                      </Text>
+                    );
+                  }
+                  return <Text size="sm">{(oldValue || 0).toFixed(4)}%</Text>;
+                },
+              },
+              {
+                accessor: "dx_rating.new",
+                title: "DX Rating",
+                width: 50,
+                render: ({ dx_rating }) => {
+                  const { new: newValue, old: oldValue } = dx_rating as {
+                    old?: number;
+                    new?: number;
+                  };
+                  if (newValue !== undefined) {
+                    const changeValue =
+                      (Math.round(newValue * 10000) - Math.round((oldValue || 0) * 10000)) / 10000;
+                    return (
+                      <Text size="sm">
+                        {newValue.toFixed(2)}
+                        {oldValue !== undefined && (
+                          <Text span c="green">
+                            {` (+${changeValue.toFixed(2)})`}
+                          </Text>
+                        )}
+                      </Text>
+                    );
+                  }
+                  return <Text size="sm">{(oldValue || 0).toFixed(2)}</Text>;
+                },
+              },
+              {
+                accessor: "fc.new",
+                title: "",
+                width: 50,
+                render: ({ fc }) => <MusicIconChangeCell game={game} icon={fc} />,
+              },
+              {
+                accessor: "fs.new",
+                title: "",
+                width: 50,
+                render: ({ fs }) => <MusicIconChangeCell game={game} icon={fs} />,
+              },
+            ]
+          : [
+              {
+                accessor: "id",
+                title: "ID",
+                width: 20,
+              },
+              {
+                accessor: "song_name",
+                title: "曲名",
+                width: 100,
+                render: ({ song_name }) => <Marquee>{song_name}</Marquee>,
+              },
+              {
+                accessor: "level",
+                title: "难度",
+                width: 20,
+                render: ({ id, level, level_index }) => {
+                  let levelLabel = level;
+                  if (id >= 8000) {
+                    const song = songList.find(id);
+                    if (!song) {
+                      levelLabel = "未知";
+                    } else {
+                      levelLabel = song.difficulties[0].kanji;
+                    }
+                  }
+                  return (
+                    <Text size="sm" fw="700" c={getScoreCardBackgroundColor(game, level_index)}>
+                      {levelLabel}
                     </Text>
-                  )}
-                </Text>
-              );
-            }
-            return <Text size="sm">{(oldValue || 0).toFixed(2)}</Text>;
-          },
-        },
-        {
-          accessor: 'fc.new',
-          title: '',
-          width: 50,
-          render: ({ fc }) => <MusicIconChangeCell game={game} icon={fc} />,
-        },
-        {
-          accessor: 'fs.new',
-          title: '',
-          width: 50,
-          render: ({ fs }) => <MusicIconChangeCell game={game} icon={fs} />,
-        }
-      ] : [
-        {
-          accessor: 'id',
-          title: 'ID',
-          width: 20,
-        },
-        {
-          accessor: 'song_name',
-          title: '曲名',
-          width: 100,
-          render: ({ song_name }) => <Marquee>{song_name}</Marquee>,
-        },
-        {
-          accessor: 'level',
-          title: '难度',
-          width: 20,
-          render: ({ id, level, level_index }) => {
-            let levelLabel = level;
-            if (id >= 8000) {
-              const song = songList.find(id);
-              if (!song) {
-                levelLabel = "未知";
-              } else {
-                levelLabel = song.difficulties[0].kanji;
-              }
-            }
-            return <Text size="sm" fw="700" c={getScoreCardBackgroundColor(game, level_index)}>{levelLabel}</Text>;
-          },
-        },
-        {
-          accessor: 'score.new',
-          title: '分数',
-          width: 50,
-          render: ({ score }) => {
-            const { new: newValue, old: oldValue } = score as { old?: number, new?: number };
-            if (newValue !== undefined) {
-              return (
-                <Text size="sm">
-                  <NumberFormatter value={newValue} thousandSeparator />
-                  {oldValue !== undefined && (
-                    <Text span c="green">
-                      {` `}(+<NumberFormatter value={newValue - oldValue} thousandSeparator />)
-                    </Text>
-                  )}
-                </Text>
-              );
-            }
-            return <NumberFormatter value={oldValue || 0} thousandSeparator />
-          },
-        },
-        {
-          accessor: 'rating.new',
-          title: 'Rating',
-          width: 50,
-          render: ({ rating }) => {
-            const { new: newValue, old: oldValue } = rating as { old?: number, new?: number };
-            if (newValue !== undefined) {
-              const changeValue = (Math.round(newValue * 10000) - Math.round((oldValue || 0) * 10000)) / 10000
-              return (
-                <Text size="sm">
-                  {newValue.toFixed(4)}
-                  {oldValue !== undefined && (
-                    <Text span c="green">
-                      {` (+${changeValue.toFixed(4)})`}
-                    </Text>
-                  )}
-                </Text>
-              );
-            }
-            return <Text size="sm">{(oldValue || 0).toFixed(4)}</Text>;
-          },
-        },
-        {
-          accessor: 'full_combo.new',
-          title: '',
-          width: 50,
-          render: ({ full_combo }) => <MusicIconChangeCell game={game} icon={full_combo} />,
-        },
-        {
-          accessor: 'full_chain.new',
-          title: '',
-          width: 50,
-          render: ({ full_chain }) => <MusicIconChangeCell game={game} icon={full_chain} />,
-        }
-      ]}
+                  );
+                },
+              },
+              {
+                accessor: "score.new",
+                title: "分数",
+                width: 50,
+                render: ({ score }) => {
+                  const { new: newValue, old: oldValue } = score as { old?: number; new?: number };
+                  if (newValue !== undefined) {
+                    return (
+                      <Text size="sm">
+                        <NumberFormatter value={newValue} thousandSeparator />
+                        {oldValue !== undefined && (
+                          <Text span c="green">
+                            {` `}(+
+                            <NumberFormatter value={newValue - oldValue} thousandSeparator />)
+                          </Text>
+                        )}
+                      </Text>
+                    );
+                  }
+                  return <NumberFormatter value={oldValue || 0} thousandSeparator />;
+                },
+              },
+              {
+                accessor: "rating.new",
+                title: "Rating",
+                width: 50,
+                render: ({ rating }) => {
+                  const { new: newValue, old: oldValue } = rating as { old?: number; new?: number };
+                  if (newValue !== undefined) {
+                    const changeValue =
+                      (Math.round(newValue * 10000) - Math.round((oldValue || 0) * 10000)) / 10000;
+                    return (
+                      <Text size="sm">
+                        {newValue.toFixed(4)}
+                        {oldValue !== undefined && (
+                          <Text span c="green">
+                            {` (+${changeValue.toFixed(4)})`}
+                          </Text>
+                        )}
+                      </Text>
+                    );
+                  }
+                  return <Text size="sm">{(oldValue || 0).toFixed(4)}</Text>;
+                },
+              },
+              {
+                accessor: "full_combo.new",
+                title: "",
+                width: 50,
+                render: ({ full_combo }) => <MusicIconChangeCell game={game} icon={full_combo} />,
+              },
+              {
+                accessor: "full_chain.new",
+                title: "",
+                width: 50,
+                render: ({ full_chain }) => <MusicIconChangeCell game={game} icon={full_chain} />,
+              },
+            ]
+      }
       records={displayScores}
       totalRecords={scores.length}
       noRecordsText="没有记录"
       // 分页
       recordsPerPage={pageSize}
-      paginationText={({ from, to, totalRecords}) => {
+      paginationText={({ from, to, totalRecords }) => {
         return `${from}-${to} 条成绩，共 ${totalRecords} 条`;
       }}
       page={page}
@@ -315,7 +375,7 @@ const ScoresChangesTable = ({ game, scores }: { game: Game, scores: ScoreChanges
       onRecordsPerPageChange={setPageSize}
     />
   );
-}
+};
 
 export const ScoresChangesModal = ({ game, scores, opened, onClose }: ScoresChangesModalProps) => {
   return (
@@ -336,9 +396,7 @@ export const ScoresChangesModal = ({ game, scores, opened, onClose }: ScoresChan
                   <Text size="sm" mb="xs">
                     这里仅会显示同步后<Mark>最佳成绩</Mark>的变化情况，不会显示未破记录的成绩。
                   </Text>
-                  <Text size="sm">
-                    绿色底代表新成绩，其它成绩代表旧成绩更新。
-                  </Text>
+                  <Text size="sm">绿色底代表新成绩，其它成绩代表旧成绩更新。</Text>
                 </HoverCard.Dropdown>
               </HoverCard>
             </Group>
@@ -353,4 +411,4 @@ export const ScoresChangesModal = ({ game, scores, opened, onClose }: ScoresChan
       </Modal.Content>
     </Modal.Root>
   );
-}
+};

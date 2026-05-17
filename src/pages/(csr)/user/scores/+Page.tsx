@@ -1,5 +1,5 @@
-import { RouteGuard } from '@/components/RouteGuard';
-import Scores from '@/pages/user/Scores';
+import { RouteGuard } from "@/components/RouteGuard";
+import Scores from "@/pages/user/Scores";
 
 export default function Page() {
   return (

@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  CloseButton, Combobox, InputBase, ScrollArea, Text, useVirtualizedCombobox, InputBaseProps, ElementProps
+  CloseButton,
+  Combobox,
+  InputBase,
+  ScrollArea,
+  Text,
+  useVirtualizedCombobox,
+  InputBaseProps,
+  ElementProps,
 } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 import { CollectionProps } from "@/types/player";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
-interface CollectionComboboxProps extends InputBaseProps, ElementProps<'input', keyof InputBaseProps> {
+interface CollectionComboboxProps
+  extends InputBaseProps,
+    ElementProps<"input", keyof InputBaseProps> {
   collections: CollectionProps[];
   loading?: boolean;
   value?: number;
@@ -15,8 +24,14 @@ interface CollectionComboboxProps extends InputBaseProps, ElementProps<'input', 
 
 const ITEM_HEIGHT = 40;
 
-export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit, ...others }: CollectionComboboxProps) => {
-  const [search, setSearch] = useState('');
+export const CollectionCombobox = ({
+  collections,
+  loading,
+  value,
+  onOptionSubmit,
+  ...others
+}: CollectionComboboxProps) => {
+  const [search, setSearch] = useState("");
   const [filteredCollections, setFilteredCollections] = useState<CollectionProps[]>([]);
   const [opened, setOpened] = useState(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(-1);
@@ -42,46 +57,59 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
     opened,
     onOpenedChange: setOpened,
     totalOptionsCount: filteredCollections.length,
-    getOptionId: (index) => filteredCollections[index] ? `collection-${filteredCollections[index].id}` : null,
+    getOptionId: (index) =>
+      filteredCollections[index] ? `collection-${filteredCollections[index].id}` : null,
     selectedOptionIndex,
     setSelectedOptionIndex: (index) => {
       setSelectedOptionIndex(index);
       if (index >= 0) {
-        virtualizer.scrollToIndex(index, { align: 'auto' });
+        virtualizer.scrollToIndex(index, { align: "auto" });
       }
     },
     onSelectedOptionSubmit: onOptionSubmitHandler,
   });
 
   useEffect(() => {
-    setSearch('');
+    setSearch("");
   }, [collections]);
 
   useEffect(() => {
-    setFilteredCollections(collections.filter((collection) => {
-      if (search === '') return true;
-      return collection.name.toLowerCase().includes(search.toLowerCase()) || (collection.description || "").toLowerCase().includes(search.toLowerCase());
-    }));
+    setFilteredCollections(
+      collections.filter((collection) => {
+        if (search === "") return true;
+        return (
+          collection.name.toLowerCase().includes(search.toLowerCase()) ||
+          (collection.description || "").toLowerCase().includes(search.toLowerCase())
+        );
+      }),
+    );
   }, [collections, search]);
 
   useEffect(() => {
     const collection = collections.find((collection) => collection.id === value);
-    setSearch(collection?.name || '');
+    setSearch(collection?.name || "");
   }, [collections, value]);
 
-  const renderOption = useCallback((index: number) => {
-    const collection = filteredCollections[index];
-    if (!collection) return null;
+  const renderOption = useCallback(
+    (index: number) => {
+      const collection = filteredCollections[index];
+      if (!collection) return null;
 
-    return (
-      <>
-        <Text fz="sm" fw={500}>{collection.name}</Text>
-        {collection.description !== "-" && (
-          <Text fz="xs" opacity={0.6}>{collection.description}</Text>
-        )}
-      </>
-    );
-  }, [filteredCollections]);
+      return (
+        <>
+          <Text fz="sm" fw={500}>
+            {collection.name}
+          </Text>
+          {collection.description !== "-" && (
+            <Text fz="xs" opacity={0.6}>
+              {collection.description}
+            </Text>
+          )}
+        </>
+      );
+    },
+    [filteredCollections],
+  );
 
   return (
     <Combobox
@@ -90,7 +118,7 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
       keepMounted
       onOptionSubmit={(value) => {
         onOptionSubmit && onOptionSubmit(parseInt(value));
-        setSearch(collections.find((collection) => collection.id === parseInt(value))?.name || '');
+        setSearch(collections.find((collection) => collection.id === parseInt(value))?.name || "");
         combobox.closeDropdown();
       }}
     >
@@ -105,7 +133,7 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
                 size="sm"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
-                  setSearch('');
+                  setSearch("");
                   onOptionSubmit && onOptionSubmit(null);
                 }}
               />
@@ -113,7 +141,7 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
               <Combobox.Chevron />
             ) : null
           }
-          rightSectionPointerEvents={search.length !== 0 ? 'auto' : 'none'}
+          rightSectionPointerEvents={search.length !== 0 ? "auto" : "none"}
           value={search}
           disabled={collections.length === 0}
           onChange={(event) => {
@@ -124,7 +152,7 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
           onFocus={() => combobox.openDropdown()}
           onBlur={() => {
             combobox.closeDropdown();
-            setSearch(search || '');
+            setSearch(search || "");
           }}
           {...others}
         />
@@ -142,7 +170,7 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
               viewportRef={setScrollParent}
               onMouseDown={(event) => event.preventDefault()}
             >
-              <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+              <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
                 {virtualizer.getVirtualItems().map((virtualItem) => {
                   const collection = filteredCollections[virtualItem.index];
                   if (!collection) return null;
@@ -153,10 +181,10 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
                       active={virtualItem.index === selectedOptionIndex}
                       onClick={() => onOptionSubmitHandler(virtualItem.index)}
                       style={{
-                        position: 'absolute',
+                        position: "absolute",
                         top: 0,
                         left: 0,
-                        width: '100%',
+                        width: "100%",
                         height: virtualItem.size,
                         transform: `translateY(${virtualItem.start}px)`,
                       }}
@@ -171,5 +199,5 @@ export const CollectionCombobox = ({ collections, loading, value, onOptionSubmit
         </Combobox.Options>
       </Combobox.Dropdown>
     </Combobox>
-  )
-}
+  );
+};

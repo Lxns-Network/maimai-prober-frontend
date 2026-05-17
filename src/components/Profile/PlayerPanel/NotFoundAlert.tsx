@@ -5,7 +5,12 @@ import { navigate } from "vike/client/router";
 
 export const NotFoundAlert = () => {
   return (
-    <Alert radius={0} icon={<Icon path={mdiAlertCircleOutline} />} title="没有获取到游戏数据" color="red">
+    <Alert
+      radius={0}
+      icon={<Icon path={mdiAlertCircleOutline} />}
+      title="没有获取到游戏数据"
+      color="red"
+    >
       <Text size="sm" mb="md">
         请检查你的查分器账号是否已经绑定游戏账号。
       </Text>
@@ -15,5 +20,5 @@ export const NotFoundAlert = () => {
         </Button>
       </Group>
     </Alert>
-  )
-}
+  );
+};

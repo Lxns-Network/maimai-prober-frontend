@@ -1,4 +1,4 @@
-@import '@/pages/Page.module.css';
+@import "@/pages/Page.module.css";
 
 .separator {
   width: 1px;
@@ -16,7 +16,9 @@
   min-width: 60px;
   height: 40px;
   border-radius: var(--mantine-radius-md);
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
   cursor: pointer;
 }
 
@@ -25,7 +27,7 @@
 }
 
 .difficultyButtonSelected {
-  box-shadow: var(--mantine-shadow-xs)
+  box-shadow: var(--mantine-shadow-xs);
 }
 
 .difficultyName {

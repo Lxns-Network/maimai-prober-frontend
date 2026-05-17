@@ -1,12 +1,31 @@
 import {
-  Alert, Anchor, Box, Button, Center, Flex, Group, HoverCard, Image, Loader, Mark, Modal, Radio, ScrollArea, SimpleGrid,
-  Space, Stack, Text, TextInput, ThemeIcon, Tooltip
+  Alert,
+  Anchor,
+  Box,
+  Button,
+  Center,
+  Flex,
+  Group,
+  HoverCard,
+  Image,
+  Loader,
+  Mark,
+  Modal,
+  Radio,
+  ScrollArea,
+  SimpleGrid,
+  Space,
+  Stack,
+  Text,
+  TextInput,
+  ThemeIcon,
+  Tooltip,
 } from "@mantine/core";
 import { usePlayerCollections } from "@/hooks/queries/usePlayerCollections.ts";
 import { useEffect, useState } from "react";
 import classes from "./EditCollectionModal.module.css";
 import LazyLoad from "@/components/LazyLoad";
-import { forceCheck } from '@/components/LazyLoad';
+import { forceCheck } from "@/components/LazyLoad";
 import { IconDatabaseOff, IconHeartFilled, IconHelp, IconSearch } from "@tabler/icons-react";
 import { Icon } from "@/components/MdiIcon";
 import { mdiWebOff } from "@mdi/js";
@@ -60,7 +79,7 @@ const collectionMetadata = {
       path: "icon",
     },
   },
-}
+};
 
 export type Collection = "trophies" | "icons" | "plates" | "frames" | "characters";
 
@@ -72,9 +91,13 @@ interface EditCollectionModalContentProps {
   onSubmit: (key: string, id: number) => void;
 }
 
-const EditCollectionModalContent = (
-  { game, type, defaultValue, onCancel, onSubmit }: EditCollectionModalContentProps
-) => {
+const EditCollectionModalContent = ({
+  game,
+  type,
+  defaultValue,
+  onCancel,
+  onSubmit,
+}: EditCollectionModalContentProps) => {
   const { collections, isLoading, error } = usePlayerCollections({ game, type });
   const [collectionId, setCollectionId] = useState(defaultValue);
   const [searchedCollections, setSearchedCollections] = useState(collections);
@@ -95,11 +118,10 @@ const EditCollectionModalContent = (
 
   useEffect(() => {
     const lowerSearch = search.toLowerCase();
-    const filtered = search.trim() === ""
-      ? collections
-      : collections.filter((collection) =>
-        collection.name.toLowerCase().includes(lowerSearch)
-      );
+    const filtered =
+      search.trim() === ""
+        ? collections
+        : collections.filter((collection) => collection.name.toLowerCase().includes(lowerSearch));
     const sorted = filtered.sort((a, b) => {
       if (a.id === defaultValue) return -1;
       if (b.id === defaultValue) return 1;
@@ -122,10 +144,15 @@ const EditCollectionModalContent = (
   }
 
   const isAvatar = type === "icons" || type === "characters";
-  const metadata = collectionMetadata[game][type as keyof typeof collectionMetadata[Game]];
+  const metadata = collectionMetadata[game][type as keyof (typeof collectionMetadata)[Game]];
 
   const cards = searchedCollections.map((collection) => (
-    <Radio.Card className={classes.root} radius="md" value={collection.id.toString()} key={`${type}:${collection.id}`}>
+    <Radio.Card
+      className={classes.root}
+      radius="md"
+      value={collection.id.toString()}
+      key={`${type}:${collection.id}`}
+    >
       <Group wrap="nowrap" align="flex-start">
         <Radio.Indicator />
         <div style={{ flex: 1 }}>
@@ -149,9 +176,16 @@ const EditCollectionModalContent = (
             <Box mt="xs">
               <LazyLoad overflow placeholder={<Loader mt="xs" />}>
                 {isAvatar ? (
-                  <Image src={`https://assets2.lxns.net/${game}/${metadata.path}/${collection.id}.png`} h={54} w={54} />
+                  <Image
+                    src={`https://assets2.lxns.net/${game}/${metadata.path}/${collection.id}.png`}
+                    h={54}
+                    w={54}
+                  />
                 ) : (
-                  <Image src={`https://assets2.lxns.net/${game}/${metadata.path}/${collection.id}.png`} w="100%" />
+                  <Image
+                    src={`https://assets2.lxns.net/${game}/${metadata.path}/${collection.id}.png`}
+                    w="100%"
+                  />
                 )}
               </LazyLoad>
             </Box>
@@ -170,12 +204,20 @@ const EditCollectionModalContent = (
         leftSection={<IconSearch size={18} />}
         value={search}
         onChange={(event) => setSearch(event.currentTarget.value)}
-        style={{ flex: '0 0 auto' }}
+        style={{ flex: "0 0 auto" }}
       />
       {error ? (
-        <Alert radius="md" icon={<Icon path={mdiWebOff} />} title={`没有获取到玩家${metadata.title}数据`} color="red" mb="md">
+        <Alert
+          radius="md"
+          icon={<Icon path={mdiWebOff} />}
+          title={`没有获取到玩家${metadata.title}数据`}
+          color="red"
+          mb="md"
+        >
           <Text size="sm">
-            {error instanceof Error ? error.message : "可能是网络连接已断开，请检查你的网络连接是否正常。"}
+            {error instanceof Error
+              ? error.message
+              : "可能是网络连接已断开，请检查你的网络连接是否正常。"}
           </Text>
         </Alert>
       ) : (
@@ -194,33 +236,43 @@ const EditCollectionModalContent = (
               </Flex>
             ) : (
               <Stack gap="xs">
-                <SimpleGrid cols={isAvatar ? 2 : 1}>
-                  {cards}
-                </SimpleGrid>
-                {searchedCollections.length < collections.filter(c =>
-                  c.name.toLowerCase().includes(search.toLowerCase())
-                ).length && (
-                    <Button variant="light" onClick={handleLoadMore}>加载更多</Button>
-                  )}
+                <SimpleGrid cols={isAvatar ? 2 : 1}>{cards}</SimpleGrid>
+                {searchedCollections.length <
+                  collections.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+                    .length && (
+                  <Button variant="light" onClick={handleLoadMore}>
+                    加载更多
+                  </Button>
+                )}
               </Stack>
             )}
           </Radio.Group>
         </ScrollArea.Autosize>
       )}
-      <Box style={{ flex: '0 0 auto' }}>
+      <Box style={{ flex: "0 0 auto" }}>
         {game === "maimai" ? (
-          <Text size="xs" mt="sm" mb="sm" c="gray">※ 编辑收藏的{metadata.title}请前往 NET 操作，重新同步后生效。</Text>
+          <Text size="xs" mt="sm" mb="sm" c="gray">
+            ※ 编辑收藏的{metadata.title}请前往 NET 操作，重新同步后生效。
+          </Text>
         ) : (
           <Space h="md" />
         )}
         <Group justify="flex-end">
-          <Button variant="default" onClick={onCancel}>取消</Button>
-          <Button type="submit" onClick={() => onSubmit(metadata.key, collectionId)} disabled={!!error}>保存</Button>
+          <Button variant="default" onClick={onCancel}>
+            取消
+          </Button>
+          <Button
+            type="submit"
+            onClick={() => onSubmit(metadata.key, collectionId)}
+            disabled={!!error}
+          >
+            保存
+          </Button>
         </Group>
       </Box>
     </Flex>
-  )
-}
+  );
+};
 
 interface EditCollectionModalProps {
   game: Game;
@@ -231,10 +283,15 @@ interface EditCollectionModalProps {
   onSubmit: (key: string, id: number) => void;
 }
 
-export const EditCollectionModal = (
-  { game, type, defaultValue, opened, onCancel, onSubmit }: EditCollectionModalProps
-) => {
-  const metadata = collectionMetadata[game][type as keyof typeof collectionMetadata[Game]];
+export const EditCollectionModal = ({
+  game,
+  type,
+  defaultValue,
+  opened,
+  onCancel,
+  onSubmit,
+}: EditCollectionModalProps) => {
+  const metadata = collectionMetadata[game][type as keyof (typeof collectionMetadata)[Game]];
   const title = metadata?.title || "收藏品";
 
   return (
@@ -253,10 +310,13 @@ export const EditCollectionModal = (
                 </HoverCard.Target>
                 <HoverCard.Dropdown>
                   <Text size="sm" mb="xs">
-                    这里仅会显示同步后<Mark>拥有的{title}</Mark>。如果没有显示，请检查<Anchor onClick={() => navigate("/user/settings")}>{title}爬取设置</Anchor>是否打开。
+                    这里仅会显示同步后<Mark>拥有的{title}</Mark>。如果没有显示，请检查
+                    <Anchor onClick={() => navigate("/user/settings")}>{title}爬取设置</Anchor>
+                    是否打开。
                   </Text>
                   <Text size="sm">
-                    您可以根据需要修改装备的{title}，若{title}爬取设置为开，下次同步时装备的{title}将会被覆盖。
+                    您可以根据需要修改装备的{title}，若{title}爬取设置为开，下次同步时装备的{title}
+                    将会被覆盖。
                   </Text>
                 </HoverCard.Dropdown>
               </HoverCard>
@@ -276,4 +336,4 @@ export const EditCollectionModal = (
       </Modal.Content>
     </Modal.Root>
   );
-}
+};

@@ -5,11 +5,6 @@ export function ScoreModalProvider() {
   const { opened, game, score, closeModal } = useScoreStore();
 
   return (
-    <ScoreModal
-      game={game}
-      score={score}
-      opened={opened}
-      onClose={(score) => closeModal(score)}
-    />
+    <ScoreModal game={game} score={score} opened={opened} onClose={(score) => closeModal(score)} />
   );
 }

@@ -8,7 +8,10 @@ export async function createWorker(data: { name: string }): Promise<Response> {
   return fetchAPI("user/admin/worker", { method: "POST", body: data });
 }
 
-export async function updateWorker(workerId: number, data: { name?: string; enabled?: boolean }): Promise<Response> {
+export async function updateWorker(
+  workerId: number,
+  data: { name?: string; enabled?: boolean },
+): Promise<Response> {
   return fetchAPI(`user/admin/worker/${workerId}`, { method: "POST", body: data });
 }
 

@@ -1,7 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
-  Card, Text, Group, Loader, Anchor, UnstyledButton, UnstyledButtonProps, Badge, Button, Flex, Pagination, Stack
-} from '@mantine/core';
+  Card,
+  Text,
+  Group,
+  Loader,
+  Anchor,
+  UnstyledButton,
+  UnstyledButtonProps,
+  Badge,
+  Button,
+  Flex,
+  Pagination,
+  Stack,
+} from "@mantine/core";
 import { getDevelopers, revokeDeveloper } from "@/utils/api/developer.ts";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { permissionToList, UserPermission } from "@/utils/session.ts";
@@ -22,7 +33,11 @@ interface DeveloperProps {
   api_key: string;
 }
 
-export function UserButton({ user, onClick, ...others }: { user: UserProps, onClick?: () => void } & UnstyledButtonProps) {
+export function UserButton({
+  user,
+  onClick,
+  ...others
+}: { user: UserProps; onClick?: () => void } & UnstyledButtonProps) {
   return (
     <UnstyledButton className={classes.user} onClick={onClick} {...others}>
       <Group>
@@ -34,11 +49,15 @@ export function UserButton({ user, onClick, ...others }: { user: UserProps, onCl
             {permissionToList(user.permission).indexOf(UserPermission.Developer) !== -1 ? (
               <Badge variant="light">开发者</Badge>
             ) : (
-              <Badge color="red" variant="light">非开发者</Badge>
+              <Badge color="red" variant="light">
+                非开发者
+              </Badge>
             )}
           </Flex>
 
-          <Text c="dimmed" size="xs">{user.email}</Text>
+          <Text c="dimmed" size="xs">
+            {user.email}
+          </Text>
         </div>
 
         <IconChevronRight size={16} color="gray" />
@@ -64,7 +83,7 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
     } catch (error) {
       openRetryModal("撤销失败", `${error}`, revokeDeveloperHandler);
     }
-  }
+  };
 
   return (
     <Card className={classes.card} withBorder radius="md" w="100%" {...others}>
@@ -74,53 +93,82 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
       <Card.Section className={classes.section}>
         <Group justify="space-between">
           <div>
-            <Text fz="xs" c="dimmed">开发者名称</Text>
+            <Text fz="xs" c="dimmed">
+              开发者名称
+            </Text>
             <Text fz="sm">{developer.name}</Text>
           </div>
           <div>
-            <Text fz="xs" c="dimmed">开发者地址</Text>
+            <Text fz="xs" c="dimmed">
+              开发者地址
+            </Text>
             <Text fz="sm">
-              <Anchor href={developer.url} target="_blank" fz="sm" style={{
-                wordBreak: "break-all",
-              }}>{developer.url.replace(/(^\w+:|^)\/\//, '')}</Anchor>
+              <Anchor
+                href={developer.url}
+                target="_blank"
+                fz="sm"
+                style={{
+                  wordBreak: "break-all",
+                }}
+              >
+                {developer.url.replace(/(^\w+:|^)\/\//, "")}
+              </Anchor>
             </Text>
           </div>
           <div>
-            <Text fz="xs" c="dimmed">申请时间</Text>
-            <Text fz="sm">
-              {new Date(developer.apply_time).toLocaleString()}
+            <Text fz="xs" c="dimmed">
+              申请时间
             </Text>
+            <Text fz="sm">{new Date(developer.apply_time).toLocaleString()}</Text>
           </div>
         </Group>
-        <Text fz="xs" c="dimmed" mt="md">申请理由</Text>
+        <Text fz="xs" c="dimmed" mt="md">
+          申请理由
+        </Text>
         <Text fz="sm">{developer.reason}</Text>
       </Card.Section>
       <Card.Section p="md">
         <Group justify="flex-end">
-          {permissionToList(developer.user.permission).indexOf(UserPermission.Developer) !== -1 ? <>
-            <Button variant="outline" size="sm" leftSection={<IconRefresh size={20} />}>
-              重置 API 密钥
-            </Button>
+          {permissionToList(developer.user.permission).indexOf(UserPermission.Developer) !== -1 ? (
+            <>
+              <Button variant="outline" size="sm" leftSection={<IconRefresh size={20} />}>
+                重置 API 密钥
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                color="red"
+                leftSection={<IconArrowBackUp size={20} />}
+                onClick={() =>
+                  openConfirmModal(
+                    "撤销开发者",
+                    "确定要撤销这个开发者吗？",
+                    revokeDeveloperHandler,
+                    {
+                      confirmProps: { color: "red" },
+                    },
+                  )
+                }
+              >
+                撤销开发者
+              </Button>
+            </>
+          ) : (
             <Button
               variant="outline"
               size="sm"
               color="red"
               leftSection={<IconArrowBackUp size={20} />}
-              onClick={() => openConfirmModal("撤销开发者", "确定要撤销这个开发者吗？", revokeDeveloperHandler, {
-                confirmProps: { color: 'red' }
-              })}
-            >
-              撤销开发者
-            </Button>
-          </> : (
-            <Button
-              variant="outline"
-              size="sm"
-              color="red"
-              leftSection={<IconArrowBackUp size={20} />}
-              onClick={() => openConfirmModal("撤销开发者申请", "确定要撤销这个开发者申请吗？", revokeDeveloperHandler, {
-                confirmProps: { color: 'red' }
-              })}
+              onClick={() =>
+                openConfirmModal(
+                  "撤销开发者申请",
+                  "确定要撤销这个开发者申请吗？",
+                  revokeDeveloperHandler,
+                  {
+                    confirmProps: { color: "red" },
+                  },
+                )
+              }
             >
               撤销开发者申请
             </Button>
@@ -128,8 +176,8 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
         </Group>
       </Card.Section>
     </Card>
-  )
-}
+  );
+};
 
 const AdminDevelopersContent = () => {
   const [parent] = useAutoAnimate();
@@ -140,7 +188,7 @@ const AdminDevelopersContent = () => {
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
-  const small = useMediaQuery('(max-width: 30rem)');
+  const small = useMediaQuery("(max-width: 30rem)");
 
   const getDevelopersHandler = async () => {
     try {
@@ -149,14 +197,16 @@ const AdminDevelopersContent = () => {
       if (!data.success) {
         throw new Error(data.message);
       }
-      setDevelopers(data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
-        return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
-      }));
+      setDevelopers(
+        data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
+          return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
+        }),
+      );
       setFetching(false);
     } catch (error) {
       openRetryModal("开发者列表获取失败", `${error}`, getDevelopersHandler);
     }
-  }
+  };
 
   useEffect(() => {
     getDevelopersHandler();
@@ -166,12 +216,14 @@ const AdminDevelopersContent = () => {
   const PAGE_SIZE = 10;
 
   useEffect(() => {
-    const scrollArea = document.querySelector("#root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport");
+    const scrollArea = document.querySelector(
+      "#root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
+    );
 
     if (scrollArea) {
       scrollArea.scrollTo({
         top: 0,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
 
@@ -182,7 +234,13 @@ const AdminDevelopersContent = () => {
     <div>
       <EditUserModal user={activeUser as UserProps} opened={opened} onClose={() => close()} />
       <Stack align="center">
-        <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} size={small ? "sm" : "md"} />
+        <Pagination
+          hideWithOnePage
+          total={Math.ceil(developers.length / PAGE_SIZE)}
+          value={page}
+          onChange={setPage}
+          size={small ? "sm" : "md"}
+        />
         {fetching && (
           <Group justify="center">
             <Loader />
@@ -200,14 +258,18 @@ const AdminDevelopersContent = () => {
             />
           ))}
         </Stack>
-        <Pagination hideWithOnePage total={Math.ceil(developers.length / PAGE_SIZE)} value={page} onChange={setPage} size={small ? "sm" : "md"} />
+        <Pagination
+          hideWithOnePage
+          total={Math.ceil(developers.length / PAGE_SIZE)}
+          value={page}
+          onChange={setPage}
+          size={small ? "sm" : "md"}
+        />
       </Stack>
     </div>
   );
-}
+};
 
 export const AdminDevelopersSection = () => {
-  return (
-    <AdminDevelopersContent />
-  )
-}
+  return <AdminDevelopersContent />;
+};

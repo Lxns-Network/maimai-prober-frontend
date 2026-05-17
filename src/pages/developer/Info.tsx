@@ -1,7 +1,21 @@
 import {
-  Group, Text, Loader, Card, Switch, ActionIcon, Tooltip, CopyButton, Anchor, Divider, useMantineTheme, Button,
-  TextInput, Stack, Flex, Alert
-} from '@mantine/core';
+  Group,
+  Text,
+  Loader,
+  Card,
+  Switch,
+  ActionIcon,
+  Tooltip,
+  CopyButton,
+  Anchor,
+  Divider,
+  useMantineTheme,
+  Button,
+  TextInput,
+  Stack,
+  Flex,
+  Alert,
+} from "@mantine/core";
 import { Icon } from "@/components/MdiIcon";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
@@ -14,24 +28,24 @@ import { EditDeveloperModal } from "@/components/Developer/EditDeveloperModal.ts
 import { useDeveloper } from "@/hooks/queries/useDeveloper.ts";
 import { useResetDeveloperApiKey } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { useEffect } from "react";
-import { navigate } from 'vike/client/router';
+import { navigate } from "vike/client/router";
 
 const DeveloperInfoContent = () => {
   const { developer, isLoading, error, setData, invalidate } = useDeveloper();
   const { mutate: resetApiKey } = useResetDeveloperApiKey();
   const [visible, visibleHandler] = useDisclosure(false);
   const [editModalOpened, editModal] = useDisclosure(false);
-  const computedColorScheme = useComputedColorScheme('light');
+  const computedColorScheme = useComputedColorScheme("light");
   const theme = useMantineTheme();
 
   const resetDeveloperApiKeyHandler = () => {
     resetApiKey(undefined, {
       onSuccess: (data) => {
-        setData((prev) => prev ? { ...prev, api_key: data.api_key } : prev);
+        setData((prev) => (prev ? { ...prev, api_key: data.api_key } : prev));
       },
       onError: (err) => console.error(err),
     });
-  }
+  };
 
   useEffect(() => {
     if (isLoading) return;
@@ -43,12 +57,16 @@ const DeveloperInfoContent = () => {
 
   if (error) {
     return (
-      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title={`没有获取到开发者数据`} color="red" mb="md">
-        <Text size="sm">
-          可能是网络连接已断开，请检查你的网络连接是否正常。
-        </Text>
+      <Alert
+        radius="md"
+        icon={<Icon path={mdiWebOff} />}
+        title={`没有获取到开发者数据`}
+        color="red"
+        mb="md"
+      >
+        <Text size="sm">可能是网络连接已断开，请检查你的网络连接是否正常。</Text>
       </Alert>
-    )
+    );
   }
 
   return (
@@ -80,7 +98,11 @@ const DeveloperInfoContent = () => {
             编辑
           </Button>
         </Group>
-        <Divider mt="md" mb="md" color={computedColorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2]} />
+        <Divider
+          mt="md"
+          mb="md"
+          color={computedColorScheme === "dark" ? theme.colors.dark[5] : theme.colors.gray[2]}
+        />
         {isLoading && (
           <Group justify="center" m="xs">
             <Loader />
@@ -89,26 +111,32 @@ const DeveloperInfoContent = () => {
         {developer && (
           <Stack gap="xs">
             <Flex align="center" columnGap="md" wrap="wrap">
-              <Text fz="xs" c="dimmed" w={60}>开发者名称</Text>
+              <Text fz="xs" c="dimmed" w={60}>
+                开发者名称
+              </Text>
               <Text fz="sm">{developer.name}</Text>
             </Flex>
             <Flex align="center" columnGap="md" wrap="wrap">
-              <Text fz="xs" c="dimmed" w={60}>开发者地址</Text>
+              <Text fz="xs" c="dimmed" w={60}>
+                开发者地址
+              </Text>
               <Text fz="sm">
-                <Anchor href={developer.url} target="_blank" fz="sm">{developer.url.replace(/(^\w+:|^)\/\//, '')}</Anchor>
+                <Anchor href={developer.url} target="_blank" fz="sm">
+                  {developer.url.replace(/(^\w+:|^)\/\//, "")}
+                </Anchor>
               </Text>
             </Flex>
             <Flex align="center" columnGap="md" wrap="wrap">
-              <Text fz="xs" c="dimmed" w={60}>申请时间</Text>
-              <Text fz="sm">
-                {new Date(developer.apply_time).toLocaleString()}
+              <Text fz="xs" c="dimmed" w={60}>
+                申请时间
               </Text>
+              <Text fz="sm">{new Date(developer.apply_time).toLocaleString()}</Text>
             </Flex>
             <Flex align="center" columnGap="md" wrap="wrap">
-              <Text fz="xs" c="dimmed" w={60}>申请理由</Text>
-              <Text fz="sm">
-                {developer.reason}
+              <Text fz="xs" c="dimmed" w={60}>
+                申请理由
               </Text>
+              <Text fz="sm">{developer.reason}</Text>
             </Flex>
           </Stack>
         )}
@@ -140,12 +168,12 @@ const DeveloperInfoContent = () => {
         {developer && (
           <TextInput
             variant="filled"
-            value={visible ? developer.api_key : developer.api_key.replace(/./g, '•')}
+            value={visible ? developer.api_key : developer.api_key.replace(/./g, "•")}
             rightSection={
               <CopyButton value={developer.api_key} timeout={2000}>
                 {({ copied, copy }) => (
-                  <Tooltip label={copied ? '已复制' : '复制'} withArrow position="right">
-                    <ActionIcon variant="subtle" color={copied ? 'teal' : 'gray'} onClick={copy}>
+                  <Tooltip label={copied ? "已复制" : "复制"} withArrow position="right">
+                    <ActionIcon variant="subtle" color={copied ? "teal" : "gray"} onClick={copy}>
                       {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
                     </ActionIcon>
                   </Tooltip>
@@ -156,7 +184,12 @@ const DeveloperInfoContent = () => {
           />
         )}
         <Group justify="flex-end" mt="md">
-          <Button variant="default" size="sm" leftSection={<IconRefresh size={20} />} onClick={resetDeveloperApiKeyHandler}>
+          <Button
+            variant="default"
+            size="sm"
+            leftSection={<IconRefresh size={20} />}
+            onClick={resetDeveloperApiKeyHandler}
+          >
             重置 API 密钥
           </Button>
         </Group>
@@ -164,8 +197,8 @@ const DeveloperInfoContent = () => {
 
       <DeveloperOAuthSection />
     </Stack>
-  )
-}
+  );
+};
 
 export default function DeveloperInfo() {
   return (
@@ -176,5 +209,5 @@ export default function DeveloperInfo() {
       }}
       children={<DeveloperInfoContent />}
     />
-  )
+  );
 }

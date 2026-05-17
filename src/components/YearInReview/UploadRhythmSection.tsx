@@ -7,11 +7,12 @@ export const UploadRhythmSection = ({ data }: { data: YearInReviewProps }) => {
     <>
       <BarChart
         h={300}
-        data={Object.entries(data.player_monthly_uploads).map(([key, value]) => ({ key: `${key} 月`, value }))}
+        data={Object.entries(data.player_monthly_uploads).map(([key, value]) => ({
+          key: `${key} 月`,
+          value,
+        }))}
         dataKey="key"
-        series={[
-          { name: 'value', label: '次数' },
-        ]}
+        series={[{ name: "value", label: "次数" }]}
         unit=" 次"
         barProps={{ barSize: 50 }}
       />
@@ -21,13 +22,13 @@ export const UploadRhythmSection = ({ data }: { data: YearInReviewProps }) => {
         data={Object.entries(data.player_hourly_uploads).map(([key, value]) => ({
           hour: key,
           index: 1,
-          value
+          value,
         }))}
         range={[16, 225]}
         label="上传量/时"
         color="lime.6"
-        dataKey={{ x: 'hour', y: 'index', z: 'value' }}
+        dataKey={{ x: "hour", y: "index", z: "value" }}
       />
     </>
-  )
-}
+  );
+};

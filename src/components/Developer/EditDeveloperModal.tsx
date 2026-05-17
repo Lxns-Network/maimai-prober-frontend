@@ -17,7 +17,12 @@ interface EditDeveloperModalProps {
   onSuccess: () => void;
 }
 
-export const EditDeveloperModal = ({ opened, close, developer, onSuccess }: EditDeveloperModalProps) => {
+export const EditDeveloperModal = ({
+  opened,
+  close,
+  developer,
+  onSuccess,
+}: EditDeveloperModalProps) => {
   const form = useForm<FormValues>({
     initialValues: {
       name: "",
@@ -25,12 +30,13 @@ export const EditDeveloperModal = ({ opened, close, developer, onSuccess }: Edit
     },
 
     validate: {
-      name: (value) => validateText(value, {
-        allowEmpty: false,
-        textLabel: "开发者名称",
-        minLength: 4,
-        maxLength: 16,
-      }),
+      name: (value) =>
+        validateText(value, {
+          allowEmpty: false,
+          textLabel: "开发者名称",
+          minLength: 4,
+          maxLength: 16,
+        }),
       url: (value) => validateUrl(value, { allowEmpty: false, urlLabel: "开发者地址" }),
     },
 
@@ -67,10 +73,16 @@ export const EditDeveloperModal = ({ opened, close, developer, onSuccess }: Edit
         openRetryModal("修改失败", `${err}`, () => updateDeveloperInfoHandler(values));
       },
     });
-  }
+  };
 
   return (
-    <Modal opened={opened} onClose={close} onExitTransitionEnd={form.reset} title="编辑开发者信息" centered>
+    <Modal
+      opened={opened}
+      onClose={close}
+      onExitTransitionEnd={form.reset}
+      title="编辑开发者信息"
+      centered
+    >
       <form onSubmit={form.onSubmit(updateDeveloperInfoHandler)}>
         <TextInput
           label="开发者名称"
@@ -85,10 +97,12 @@ export const EditDeveloperModal = ({ opened, close, developer, onSuccess }: Edit
           {...form.getInputProps("url")}
         />
         <Group justify="flex-end" mt="lg">
-          <Button variant="default" onClick={close}>取消</Button>
+          <Button variant="default" onClick={close}>
+            取消
+          </Button>
           <Button type="submit">保存</Button>
         </Group>
       </form>
     </Modal>
-  )
-}
+  );
+};

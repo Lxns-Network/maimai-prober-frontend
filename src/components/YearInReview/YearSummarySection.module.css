@@ -1,33 +1,33 @@
 .card {
-    height: 440px;
-    padding: var(--mantine-spacing-xl);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-start;
+  height: 440px;
+  padding: var(--mantine-spacing-xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .cardImage {
-    background-size: cover;
-    background-position: center;
+  background-size: cover;
+  background-position: center;
 
-    & .title {
-        color: var(--mantine-color-white);
-    }
+  & .title {
+    color: var(--mantine-color-white);
+  }
 
-    & .description {
-        color: var(--mantine-color-white);
-    }
+  & .description {
+    color: var(--mantine-color-white);
+  }
 }
 
 .title {
-    font-weight: 900;
-    font-size: 32px;
-    margin-top: var(--mantine-spacing-xs);
+  font-weight: 900;
+  font-size: 32px;
+  margin-top: var(--mantine-spacing-xs);
 }
 
 .description {
-    opacity: 0.7;
-    font-weight: 700;
-    text-transform: uppercase;
+  opacity: 0.7;
+  font-weight: 700;
+  text-transform: uppercase;
 }

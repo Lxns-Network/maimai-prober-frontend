@@ -15,7 +15,7 @@ interface FormValues {
 export const UserBindSection = () => {
   const { user, setData } = useUser();
   const { mutate: updateBind } = useUpdateUserBind();
-  const [visible, visibleHandler] = useDisclosure(false)
+  const [visible, visibleHandler] = useDisclosure(false);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -23,26 +23,28 @@ export const UserBindSection = () => {
     },
 
     validate: {
-      qq: (value) => /^\d{5,11}$/.test(value as string) ? null : "QQ 号格式不正确",
+      qq: (value) => (/^\d{5,11}$/.test(value as string) ? null : "QQ 号格式不正确"),
     },
 
     transformValues: (values) => ({
       qq: parseInt(values.qq as string),
-    })
+    }),
   });
 
   const updateUserBindHandler = (values: TransformedValues<typeof form>) => {
     updateBind(values, {
       onSuccess: () => {
         openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");
-        setData((prev) => prev ? { ...prev, bind: { ...(prev.bind || {}), qq: values.qq as number } } : prev);
+        setData((prev) =>
+          prev ? { ...prev, bind: { ...(prev.bind || {}), qq: values.qq as number } } : prev,
+        );
       },
       onError: (error) => {
         openRetryModal("绑定失败", `${error}`, () => updateUserBindHandler(values));
       },
       onSettled: () => form.reset(),
     });
-  }
+  };
 
   return (
     <Card withBorder radius="md" className={classes.card}>
@@ -66,16 +68,22 @@ export const UserBindSection = () => {
       <form onSubmit={form.onSubmit(updateUserBindHandler)}>
         <TextInput
           label="QQ"
-          placeholder={(user?.bind && user?.bind.qq && (visible ? user?.bind.qq.toString() :
-            user?.bind.qq.toString().replace(/./g, '•'))) || "请输入你的 QQ 号"}
+          placeholder={
+            (user?.bind &&
+              user?.bind.qq &&
+              (visible ? user?.bind.qq.toString() : user?.bind.qq.toString().replace(/./g, "•"))) ||
+            "请输入你的 QQ 号"
+          }
           variant="filled"
           mb={5}
-          {...form.getInputProps('qq')}
+          {...form.getInputProps("qq")}
         />
         <Group justify="flex-end" mt="md">
-          <Button type="submit" disabled={!form.isDirty()}>保存</Button>
+          <Button type="submit" disabled={!form.isDirty()}>
+            保存
+          </Button>
         </Group>
       </form>
     </Card>
-  )
-}
+  );
+};

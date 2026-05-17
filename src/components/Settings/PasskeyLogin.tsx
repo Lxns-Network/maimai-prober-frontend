@@ -3,7 +3,7 @@ import { IconFingerprint } from "@tabler/icons-react";
 import { useState } from "react";
 import { authenticatePasskey, getPasskeyLoginChallenge } from "@/utils/api/user";
 import { openAlertModal, openRetryModal } from "@/utils/modal";
-import { startAuthentication } from '@simplewebauthn/browser';
+import { startAuthentication } from "@simplewebauthn/browser";
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import * as Sentry from "@sentry/react";

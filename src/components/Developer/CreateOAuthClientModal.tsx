@@ -3,12 +3,28 @@ import { validateText, validateUrl, validateRedirectUri } from "@/utils/validato
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import {
   Alert,
-  Avatar, Box, Button, Checkbox, Group, HoverCard, Modal, SimpleGrid, Switch, Text, Textarea, TextInput, ThemeIcon,
-  useComputedColorScheme
+  Avatar,
+  Box,
+  Button,
+  Checkbox,
+  Group,
+  HoverCard,
+  Modal,
+  SimpleGrid,
+  Switch,
+  Text,
+  Textarea,
+  TextInput,
+  ThemeIcon,
+  useComputedColorScheme,
 } from "@mantine/core";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 import { useFileDialog } from "@mantine/hooks";
-import { useCreateOAuthApp, useEditOAuthApp, useUploadOAuthAppLogo } from "@/hooks/mutations/useDeveloperMutations.ts";
+import {
+  useCreateOAuthApp,
+  useEditOAuthApp,
+  useUploadOAuthAppLogo,
+} from "@/hooks/mutations/useDeveloperMutations.ts";
 import { IconAlertCircle, IconHelp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
@@ -42,7 +58,13 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
     },
 
     validate: {
-      name: (value) => validateText(value, { allowEmpty: false, textLabel: "应用名称", minLength: 4, maxLength: 16 }),
+      name: (value) =>
+        validateText(value, {
+          allowEmpty: false,
+          textLabel: "应用名称",
+          minLength: 4,
+          maxLength: 16,
+        }),
       description: (value) => validateText(value, { allowEmpty: true, textLabel: "应用描述" }),
       website: (value) => validateUrl(value, { allowEmpty: true, urlLabel: "应用网站" }),
       redirect_uri: (value) => validateRedirectUri(value),
@@ -68,13 +90,13 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
 
   const fileDialog = useFileDialog({
     multiple: false,
-    accept: 'image/*',
+    accept: "image/*",
     onChange: (files) => {
       if (!files || files.length === 0) return;
       logoUploadHandler(files[0]);
-    }
+    },
   });
-  const computedColorScheme = useComputedColorScheme('light');
+  const computedColorScheme = useComputedColorScheme("light");
 
   const logoUploadHandler = (file: File) => {
     uploadOAuthAppLogoMutation.mutate(file, {
@@ -85,7 +107,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
         openAlertModal("上传失败", `${err}`);
       },
     });
-  }
+  };
 
   const createOAuthClientHandler = (values: FormValues) => {
     createOAuthAppMutation.mutate(values, {
@@ -96,19 +118,22 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
         openRetryModal("创建失败", `${err}`, () => createOAuthClientHandler(values));
       },
     });
-  }
+  };
 
   const editOAuthClientHandler = (values: FormValues) => {
     if (!app || !app.client_id) return;
-    editOAuthAppMutation.mutate({ clientId: app.client_id, data: values }, {
-      onSuccess: () => {
-        onClose();
+    editOAuthAppMutation.mutate(
+      { clientId: app.client_id, data: values },
+      {
+        onSuccess: () => {
+          onClose();
+        },
+        onError: (err) => {
+          openRetryModal("编辑失败", `${err}`, () => createOAuthClientHandler(values));
+        },
       },
-      onError: (err) => {
-        openRetryModal("编辑失败", `${err}`, () => createOAuthClientHandler(values));
-      },
-    });
-  }
+    );
+  };
 
   useEffect(() => {
     if (app) {
@@ -126,22 +151,36 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
   }, [app, opened]);
 
   return (
-    <Modal opened={opened} onClose={onClose} onExitTransitionEnd={form.reset} title={!app ? "创建 OAuth 应用" : "编辑 OAuth 应用"} centered>
-      <form onSubmit={form.onSubmit((values) => {
-        if (!app) {
-          createOAuthClientHandler(values);
-        } else {
-          editOAuthClientHandler(values);
-        }
-      })}>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      onExitTransitionEnd={form.reset}
+      title={!app ? "创建 OAuth 应用" : "编辑 OAuth 应用"}
+      centered
+    >
+      <form
+        onSubmit={form.onSubmit((values) => {
+          if (!app) {
+            createOAuthClientHandler(values);
+          } else {
+            editOAuthClientHandler(values);
+          }
+        })}
+      >
         <Box mb="xs">
           <Text size="sm">应用图标</Text>
           <EditAvatarButton onClick={fileDialog.open}>
-            <Avatar src={form.values.logo_url || undefined} size={94} radius="md" styles={(theme) => ({
-              root: {
-                backgroundColor: computedColorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[1],
-              }
-            })}>
+            <Avatar
+              src={form.values.logo_url || undefined}
+              size={94}
+              radius="md"
+              styles={(theme) => ({
+                root: {
+                  backgroundColor:
+                    computedColorScheme === "dark" ? theme.colors.dark[8] : theme.colors.gray[1],
+                },
+              })}
+            >
               <Text fz="xs">请选择图片</Text>
             </Avatar>
           </EditAvatarButton>
@@ -179,12 +218,15 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
             checked={oobChecked}
             onChange={(event) => {
               setOobChecked(event.currentTarget.checked);
-              form.setFieldValue("redirect_uri", event.currentTarget.checked ? "urn:ietf:wg:oauth:2.0:oob" : "");
+              form.setFieldValue(
+                "redirect_uri",
+                event.currentTarget.checked ? "urn:ietf:wg:oauth:2.0:oob" : "",
+              );
             }}
           />
           <HoverCard width={280} shadow="md" withArrow>
             <HoverCard.Target>
-              <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: 'pointer' }}>
+              <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: "pointer" }}>
                 <IconHelp />
               </ThemeIcon>
             </HoverCard.Target>
@@ -208,21 +250,17 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
           </SimpleGrid>
         </Switch.Group>
         {form.values.scopes?.includes("read_user_token") && (
-          <Alert
-            variant="light"
-            color="yellow"
-            icon={<IconAlertCircle />}
-            title="注意"
-            mt="lg"
-          >
+          <Alert variant="light" color="yellow" icon={<IconAlertCircle />} title="注意" mt="lg">
             我们已不再推荐使用个人 API 密钥，建议使用 OAuth 应用返回的访问令牌请求接口。
           </Alert>
         )}
         <Group justify="flex-end" mt="lg">
-          <Button variant="default" onClick={onClose}>取消</Button>
+          <Button variant="default" onClick={onClose}>
+            取消
+          </Button>
           <Button type="submit">{!app ? "创建" : "编辑"}</Button>
         </Group>
       </form>
     </Modal>
-  )
-}
+  );
+};

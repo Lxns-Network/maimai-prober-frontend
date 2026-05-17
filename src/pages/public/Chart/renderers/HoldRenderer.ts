@@ -1,13 +1,13 @@
-import { BaseRenderer, RenderContext } from './BaseRenderer';
-import { HoldStartNote, HoldEndNote, NoteRenderPosition, ButtonPosition, Point2D } from '../types';
-import { NoteRenderer } from './NoteRenderer';
+import { BaseRenderer, RenderContext } from "./BaseRenderer";
+import { HoldStartNote, HoldEndNote, NoteRenderPosition, ButtonPosition, Point2D } from "../types";
+import { NoteRenderer } from "./NoteRenderer";
 import {
   NOTE_SIZE_RATIO,
   HOLD_WIDTH_RATIO,
   HOLD_INNER_RATIO,
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
-} from '../utils/constants';
+} from "../utils/constants";
 
 export class HoldRenderer extends BaseRenderer {
   constructor(context: RenderContext, _noteRenderer: NoteRenderer) {
@@ -25,7 +25,7 @@ export class HoldRenderer extends BaseRenderer {
     currentTimeMs: number = 0,
     isBreakHold: boolean = false,
     isSimultaneous: boolean = false,
-    exScaleFactor: number = 1
+    exScaleFactor: number = 1,
   ): void {
     const angle = this.getButtonAngle(buttonPosition);
     const baseSize = this.scaleByRadius(NOTE_SIZE_RATIO) * HOLD_WIDTH_RATIO;
@@ -168,7 +168,7 @@ export class HoldRenderer extends BaseRenderer {
       // EX 占用外圈，跳过外六的黑边但保留内六。wider = strokeWidth*3 让可见黑边
       // ≈ strokeWidth，跟随画布缩放避免小屏下显得过粗。
       ctx.lineWidth = strokeWidth * 3;
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = "#000000";
 
       if (!isEx) {
         ctx.beginPath();

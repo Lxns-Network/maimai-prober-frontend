@@ -1,9 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Button, Card, Checkbox, Flex, Group, Loader, Pagination, Space, Text } from '@mantine/core';
+import { useEffect, useState } from "react";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Flex,
+  Group,
+  Loader,
+  Pagination,
+  Space,
+  Text,
+} from "@mantine/core";
 import { useMediaQuery, useToggle } from "@mantine/hooks";
 import { AliasList } from "@/components/Alias/AliasList.tsx";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
-import classes from "../Page.module.css"
+import classes from "../Page.module.css";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { useAliases } from "@/hooks/queries/useAliases.ts";
@@ -12,12 +22,12 @@ import { AliasListProps } from "@/types/alias";
 import useGame from "@/hooks/useGame.ts";
 import useAliasStore from "@/hooks/useAliasStore.ts";
 
-type SortKey = 'alias' | 'total_weight' | 'alias_id';
+type SortKey = "alias" | "total_weight" | "alias_id";
 
 const sortKeys: { name: string; key: SortKey }[] = [
-  { name: '别名', key: 'alias' },
-  { name: '总权重', key: 'total_weight' },
-  { name: '提交时间', key: 'alias_id' },
+  { name: "别名", key: "alias" },
+  { name: "总权重", key: "total_weight" },
+  { name: "提交时间", key: "alias_id" },
 ];
 
 const AliasVoteContent = () => {
@@ -36,11 +46,16 @@ const AliasVoteContent = () => {
   // 分页相关
   // const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
-  const small = useMediaQuery('(max-width: 30rem)');
+  const small = useMediaQuery("(max-width: 30rem)");
 
-  const {
-    aliases, pageCount, pageSize, isLoading, setData, invalidate
-  } = useAliases(game, page, onlyNotApproved, sortBy, reverseSortDirection ? 'asc' : 'desc', songId);
+  const { aliases, pageCount, pageSize, isLoading, setData, invalidate } = useAliases(
+    game,
+    page,
+    onlyNotApproved,
+    sortBy,
+    reverseSortDirection ? "asc" : "desc",
+    songId,
+  );
   const { votes, invalidate: invalidateVotes } = useAliasVotes(game);
 
   const sort = (key: SortKey, autoChangeReverse = true) => {
@@ -74,9 +89,7 @@ const AliasVoteContent = () => {
 
   const renderSortIndicator = (key: SortKey) => {
     if (sortBy === key) {
-      return <>
-        {reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}
-      </>
+      return <>{reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}</>;
     }
     return null;
   };
@@ -89,7 +102,7 @@ const AliasVoteContent = () => {
         values && invalidate();
       },
     });
-  }
+  };
 
   return (
     <div>
@@ -143,20 +156,34 @@ const AliasVoteContent = () => {
         <Group justify="center" mt="md" mb="md">
           <Loader />
         </Group>
-      ) : (pageCount === 0 && (
-        <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
-          <IconDatabaseOff size={64} stroke={1.5} />
-          <Text fz="sm">暂时没有可投票的曲目别名</Text>
-        </Flex>
-      ))}
+      ) : (
+        pageCount === 0 && (
+          <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
+            <IconDatabaseOff size={64} stroke={1.5} />
+            <Text fz="sm">暂时没有可投票的曲目别名</Text>
+          </Flex>
+        )
+      )}
       <Group justify="center">
-        <Pagination total={pageCount} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
+        <Pagination
+          total={pageCount}
+          value={page}
+          onChange={setPage}
+          size={small ? "sm" : "md"}
+          disabled={isLoading}
+        />
         <AliasList aliases={aliases} onVote={invalidateVotes} onMutate={invalidate} />
-        <Pagination total={pageCount} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
+        <Pagination
+          total={pageCount}
+          value={page}
+          onChange={setPage}
+          size={small ? "sm" : "md"}
+          disabled={isLoading}
+        />
       </Group>
     </div>
   );
-}
+};
 
 export default function AliasVote() {
   return (
@@ -167,5 +194,5 @@ export default function AliasVote() {
       }}
       children={<AliasVoteContent />}
     />
-  )
+  );
 }

@@ -18,9 +18,11 @@ export const scopeData = {
   },
   read_user_token: {
     title: "读取个人 API 密钥",
-    description: <>
-      个人 API 密钥对你绑定的游戏数据拥有<Mark>完全访问权限</Mark>。
-    </>,
+    description: (
+      <>
+        个人 API 密钥对你绑定的游戏数据拥有<Mark>完全访问权限</Mark>。
+      </>
+    ),
     high_risk: true,
   },
-}
+};

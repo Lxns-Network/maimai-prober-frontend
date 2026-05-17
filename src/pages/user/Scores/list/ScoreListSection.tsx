@@ -5,7 +5,17 @@ import { useMediaQuery } from "@mantine/hooks";
 import { useScores } from "@/hooks/queries/useScores.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
-import { Accordion, Button, Card, Flex, Group, Loader, Pagination, Space, Text } from "@mantine/core";
+import {
+  Accordion,
+  Button,
+  Card,
+  Flex,
+  Group,
+  Loader,
+  Pagination,
+  Space,
+  Text,
+} from "@mantine/core";
 import classes from "@/pages/Page.module.css";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
@@ -19,23 +29,23 @@ import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 
 const sortKeys = {
   maimai: [
-    { name: '曲目 ID', key: 'id' },
-    { name: '曲名', key: 'song_name' },
-    { name: '定数', key: 'level_value' },
-    { name: '达成率', key: 'achievements' },
-    { name: 'DX Rating', key: 'dx_rating' },
+    { name: "曲目 ID", key: "id" },
+    { name: "曲名", key: "song_name" },
+    { name: "定数", key: "level_value" },
+    { name: "达成率", key: "achievements" },
+    { name: "DX Rating", key: "dx_rating" },
     // { name: '上传时间', key: 'upload_time' },
-    { name: '最后游玩时间', key: 'last_played_time' },
+    { name: "最后游玩时间", key: "last_played_time" },
   ],
   chunithm: [
-    { name: '曲目 ID', key: 'id' },
-    { name: '曲名', key: 'song_name' },
-    { name: '定数', key: 'level_value' },
-    { name: '成绩', key: 'score' },
-    { name: 'Rating', key: 'rating' },
+    { name: "曲目 ID", key: "id" },
+    { name: "曲名", key: "song_name" },
+    { name: "定数", key: "level_value" },
+    { name: "成绩", key: "score" },
+    { name: "Rating", key: "rating" },
     // { name: '上传时间', key: 'upload_time' },
-    { name: '最后游玩时间', key: 'last_played_time' },
-  ]
+    { name: "最后游玩时间", key: "last_played_time" },
+  ],
 };
 
 export const ScoreListSection = () => {
@@ -43,7 +53,9 @@ export const ScoreListSection = () => {
 
   const { player } = usePlayer(game);
   const { scores, isLoading, invalidate } = useScores(game);
-  const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
+  const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>(
+    [],
+  );
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
   const [songId, setSongId] = useState<number>(0);
 
@@ -56,7 +68,7 @@ export const ScoreListSection = () => {
   const { openModal: openCreateScoreModal } = useCreateScoreStore();
   const getSongList = useSongListStore((state) => state.getSongList);
   const songList = getSongList(game);
-  const small = useMediaQuery('(max-width: 30rem)');
+  const small = useMediaQuery("(max-width: 30rem)");
 
   useEffect(() => {
     setSongId(0);
@@ -79,13 +91,17 @@ export const ScoreListSection = () => {
 
     const getCompareValue = (
       score: MaimaiScoreProps | ChunithmScoreProps,
-      key: string
+      key: string,
     ): string | number | null => {
-      if (key === 'level_value') {
+      if (key === "level_value") {
         const song = songList.find(score.id);
         if (!song) return null;
-        if (songList instanceof MaimaiSongList && 'type' in score) {
-          const difficulty = songList.getDifficulty(song as MaimaiSongProps, score.type, score.level_index);
+        if (songList instanceof MaimaiSongList && "type" in score) {
+          const difficulty = songList.getDifficulty(
+            song as MaimaiSongProps,
+            score.type,
+            score.level_index,
+          );
           return difficulty?.level_value ?? null;
         } else if (songList instanceof ChunithmSongList) {
           const difficulty = songList.getDifficulty(song as ChunithmSongProps, score.level_index);
@@ -108,15 +124,13 @@ export const ScoreListSection = () => {
         return valueA === null ? 1 : -1;
       }
 
-      if (typeof valueA === 'string' && typeof valueB === 'string') {
-        return reverseSortDirection
-          ? valueA.localeCompare(valueB)
-          : valueB.localeCompare(valueA);
+      if (typeof valueA === "string" && typeof valueB === "string") {
+        return reverseSortDirection ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
       }
 
-      if (typeof valueA === 'number' && typeof valueB === 'number') {
-        const dxRatingA = 'dx_rating' in a ? (a.dx_rating ?? 0) : 0;
-        const dxRatingB = 'dx_rating' in b ? (b.dx_rating ?? 0) : 0;
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        const dxRatingA = "dx_rating" in a ? (a.dx_rating ?? 0) : 0;
+        const dxRatingB = "dx_rating" in b ? (b.dx_rating ?? 0) : 0;
         return reverseSortDirection
           ? valueA - valueB || dxRatingA - dxRatingB
           : valueB - valueA || dxRatingA - dxRatingB;
@@ -131,9 +145,7 @@ export const ScoreListSection = () => {
 
   const renderSortIndicator = (key: string) => {
     if (sortBy === key) {
-      return <>
-        {reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}
-      </>
+      return <>{reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}</>;
     }
     return null;
   };
@@ -174,10 +186,13 @@ export const ScoreListSection = () => {
           <Accordion.Item value="advanced-filter">
             <Accordion.Control>高级筛选设置</Accordion.Control>
             <Accordion.Panel>
-              <AdvancedFilter scores={scores} onChange={(result) => {
-                setFilteredScores(result);
-                setPage(1);
-              }} />
+              <AdvancedFilter
+                scores={scores}
+                onChange={(result) => {
+                  setFilteredScores(result);
+                  setPage(1);
+                }}
+              />
             </Accordion.Panel>
           </Accordion.Item>
         </Accordion>
@@ -194,14 +209,19 @@ export const ScoreListSection = () => {
           radius="md"
           style={{ flex: 1 }}
         />
-        <Button radius="md" leftSection={<IconPlus size={20} />} disabled={!player} onClick={() => {
-          openCreateScoreModal({
-            game,
-            onClose: (values) => {
-              values && invalidate()
-            }
-          })
-        }}>
+        <Button
+          radius="md"
+          leftSection={<IconPlus size={20} />}
+          disabled={!player}
+          onClick={() => {
+            openCreateScoreModal({
+              game,
+              onClose: (values) => {
+                values && invalidate();
+              },
+            });
+          }}
+        >
           创建成绩
         </Button>
       </Flex>
@@ -210,22 +230,43 @@ export const ScoreListSection = () => {
         <Group justify="center" mt="md" mb="md">
           <Loader />
         </Group>
-      ) : (totalPages === 0 && (
-        <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
-          <IconDatabaseOff size={64} stroke={1.5} />
-          <Text fz="sm">没有获取或筛选到任何成绩</Text>
-        </Flex>
-      ))}
+      ) : (
+        totalPages === 0 && (
+          <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
+            <IconDatabaseOff size={64} stroke={1.5} />
+            <Text fz="sm">没有获取或筛选到任何成绩</Text>
+          </Flex>
+        )
+      )}
       <Group justify="center">
-        <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
-        <ScoreList scores={displayScores} onScoreChange={(score) => {
-          score && invalidate();
-        }} />
-        <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} disabled={isLoading} />
+        <Pagination
+          total={totalPages}
+          value={page}
+          onChange={setPage}
+          size={small ? "sm" : "md"}
+          disabled={isLoading}
+        />
+        <ScoreList
+          scores={displayScores}
+          onScoreChange={(score) => {
+            score && invalidate();
+          }}
+        />
+        <Pagination
+          total={totalPages}
+          value={page}
+          onChange={setPage}
+          size={small ? "sm" : "md"}
+          disabled={isLoading}
+        />
       </Group>
       <Space h="md" />
-      {game === "maimai" && <MaimaiStatisticsSection scores={searchedScores as MaimaiScoreProps[]} />}
-      {game === "chunithm" && <ChunithmStatisticsSection scores={searchedScores as ChunithmScoreProps[]} />}
+      {game === "maimai" && (
+        <MaimaiStatisticsSection scores={searchedScores as MaimaiScoreProps[]} />
+      )}
+      {game === "chunithm" && (
+        <ChunithmStatisticsSection scores={searchedScores as ChunithmScoreProps[]} />
+      )}
     </div>
   );
-}
+};

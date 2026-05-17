@@ -1,14 +1,31 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  Card, Text, Button, Group, Stack, ActionIcon, LoadingOverlay, Box, Flex, Image,
-  useComputedColorScheme, HoverCard, ThemeIcon,
+  Card,
+  Text,
+  Button,
+  Group,
+  Stack,
+  ActionIcon,
+  LoadingOverlay,
+  Box,
+  Flex,
+  Image,
+  useComputedColorScheme,
+  HoverCard,
+  ThemeIcon,
 } from "@mantine/core";
 import { IconKey, IconTrash, IconEdit, IconFingerprint, IconCloud } from "@tabler/icons-react";
-import { getPasskeys, registerPasskey, updatePasskeyName, deletePasskey, getPasskeyRegisterChallenge } from "@/utils/api/user";
+import {
+  getPasskeys,
+  registerPasskey,
+  updatePasskeyName,
+  deletePasskey,
+  getPasskeyRegisterChallenge,
+} from "@/utils/api/user";
 import { openAlertModal, openConfirmModal, openRetryModal, openFormModal } from "@/utils/modal";
 import type { PasskeyProps, PasskeyRegisterData } from "@/types/user";
 import classes from "./Settings.module.css";
-import { startRegistration } from '@simplewebauthn/browser';
+import { startRegistration } from "@simplewebauthn/browser";
 import aaguidData from "@/data/aaguid.json";
 
 export const PasskeyManagement = () => {
@@ -18,7 +35,7 @@ export const PasskeyManagement = () => {
 
   const getPasskeyInfo = (aaguid: string) => {
     const info = aaguidData[aaguid as keyof typeof aaguidData];
-    if (!info || !('icon_dark' in info) || !('icon_light' in info)) {
+    if (!info || !("icon_dark" in info) || !("icon_light" in info)) {
       return { name: "未知设备", icon: null };
     }
     const icon = computedColorScheme === "dark" ? info.icon_dark : info.icon_light;
@@ -94,7 +111,7 @@ export const PasskeyManagement = () => {
   const showRegisterModal = () => {
     openFormModal(
       "添加通行密钥",
-      "请为你的新通行密钥命名，方便你识别它来自哪台设备。", 
+      "请为你的新通行密钥命名，方便你识别它来自哪台设备。",
       {
         label: "名称",
         placeholder: "例如：糯米好粘的笔记本电脑",
@@ -102,7 +119,7 @@ export const PasskeyManagement = () => {
       },
       (name) => {
         handleRegisterPasskey(name.trim() || undefined);
-      }
+      },
     );
   };
 
@@ -131,7 +148,7 @@ export const PasskeyManagement = () => {
       },
       (name) => {
         handleUpdateName(passkey.id, name.trim() || "");
-      }
+      },
     );
   };
 
@@ -166,11 +183,7 @@ export const PasskeyManagement = () => {
               使用通行密钥快速安全地登录你的账号
             </Text>
           </Box>
-          <Button
-            leftSection={<IconKey size={16} />}
-            onClick={showRegisterModal}
-            size="sm"
-          >
+          <Button leftSection={<IconKey size={16} />} onClick={showRegisterModal} size="sm">
             添加通行密钥
           </Button>
         </Group>
@@ -200,40 +213,46 @@ export const PasskeyManagement = () => {
                       {passkey.backup_eligible && (
                         <HoverCard width={280} shadow="md" withArrow>
                           <HoverCard.Target>
-                            <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: 'pointer' }}>
+                            <ThemeIcon
+                              variant="subtle"
+                              color="gray"
+                              size="xs"
+                              style={{ cursor: "pointer" }}
+                            >
                               <IconCloud />
                             </ThemeIcon>
                           </HoverCard.Target>
                           <HoverCard.Dropdown>
-                            <Text size="sm">
-                              该通行密钥支持云备份，可以在多台设备上使用。
-                            </Text>
+                            <Text size="sm">该通行密钥支持云备份，可以在多台设备上使用。</Text>
                           </HoverCard.Dropdown>
                         </HoverCard>
                       )}
                     </Group>
                     <Stack gap={2} mt="xs">
                       <Flex align="center" columnGap="md" wrap="wrap">
-                        <Text fz="xs" c="dimmed" w={60}>设备类型</Text>
+                        <Text fz="xs" c="dimmed" w={60}>
+                          设备类型
+                        </Text>
                         <Text fz="xs">{getPasskeyInfo(passkey.aaguid).name}</Text>
                       </Flex>
                       <Flex align="center" columnGap="md" wrap="wrap">
-                        <Text fz="xs" c="dimmed" w={60}>创建于</Text>
+                        <Text fz="xs" c="dimmed" w={60}>
+                          创建于
+                        </Text>
                         <Text fz="xs">{formatDate(passkey.create_time)}</Text>
                       </Flex>
                       {passkey.last_used_time && (
                         <Flex align="center" columnGap="md" wrap="wrap">
-                          <Text fz="xs" c="dimmed" w={60}>最后使用于</Text>
+                          <Text fz="xs" c="dimmed" w={60}>
+                            最后使用于
+                          </Text>
                           <Text fz="xs">{formatDate(passkey.last_used_time)}</Text>
                         </Flex>
                       )}
                     </Stack>
                   </Box>
                   <Group gap="xs">
-                    <ActionIcon
-                      variant="light"
-                      onClick={() => showEditModal(passkey)}
-                    >
+                    <ActionIcon variant="light" onClick={() => showEditModal(passkey)}>
                       <IconEdit size={16} />
                     </ActionIcon>
                     <ActionIcon
@@ -244,7 +263,7 @@ export const PasskeyManagement = () => {
                           "删除通行密钥",
                           `你确定要删除「${passkey.name || "未命名的通行密钥"}」吗？`,
                           () => handleDeletePasskey(passkey.id),
-                          { confirmProps: { color: "red" } }
+                          { confirmProps: { color: "red" } },
                         )
                       }
                     >

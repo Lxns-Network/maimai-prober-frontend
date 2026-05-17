@@ -2,7 +2,7 @@ import { fetchAPI } from "./api.ts";
 import type {
   PasskeyRegisterData,
   PasskeyAuthenticateData,
-  PasskeyUpdateNameData
+  PasskeyUpdateNameData,
 } from "@/types/user";
 
 export async function updateUserProfile(data: object): Promise<Response> {
@@ -88,7 +88,10 @@ export async function getPasskeys(): Promise<Response> {
   return fetchAPI("user/passkeys", { method: "GET" });
 }
 
-export async function updatePasskeyName(id: number, data: PasskeyUpdateNameData): Promise<Response> {
+export async function updatePasskeyName(
+  id: number,
+  data: PasskeyUpdateNameData,
+): Promise<Response> {
   return fetchAPI(`user/passkeys/${id}`, { method: "PUT", body: data });
 }
 

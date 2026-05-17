@@ -34,38 +34,48 @@ export const ScoreBestsSection = () => {
       {"dx" in bests && (
         <Box mb="md">
           <Title order={3}>Best 15</Title>
-          <Text fz="sm" c="dimmed" mb="md">现版本最佳曲目</Text>
+          <Text fz="sm" c="dimmed" mb="md">
+            现版本最佳曲目
+          </Text>
           <ScoreList scores={bests.dx} />
         </Box>
       )}
       {"standard" in bests && (
         <Box>
           <Title order={3}>Best 35</Title>
-          <Text fz="sm" c="dimmed" mb="md">旧版本最佳曲目</Text>
+          <Text fz="sm" c="dimmed" mb="md">
+            旧版本最佳曲目
+          </Text>
           <ScoreList scores={bests.standard} />
         </Box>
       )}
       {"bests" in bests && (
         <Box mb="md">
           <Title order={3}>Best 30</Title>
-          <Text fz="sm" c="dimmed" mb="md">评分对象曲（最高）</Text>
+          <Text fz="sm" c="dimmed" mb="md">
+            评分对象曲（最高）
+          </Text>
           <ScoreList scores={bests.bests} />
         </Box>
       )}
       {"selections" in bests && (
         <Box mb="md">
           <Title order={3}>Selection 10</Title>
-          <Text fz="sm" c="dimmed" mb="md">候选评分对象曲（最高）</Text>
+          <Text fz="sm" c="dimmed" mb="md">
+            候选评分对象曲（最高）
+          </Text>
           <ScoreList scores={bests.selections} />
         </Box>
       )}
       {"new_bests" in bests && (
         <Box>
           <Title order={3}>New 20</Title>
-          <Text fz="sm" c="dimmed" mb="md">评分对象曲（新曲）</Text>
+          <Text fz="sm" c="dimmed" mb="md">
+            评分对象曲（新曲）
+          </Text>
           <ScoreList scores={bests.new_bests} />
         </Box>
       )}
     </>
-  )
-}
+  );
+};

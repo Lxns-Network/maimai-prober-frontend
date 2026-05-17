@@ -1,7 +1,7 @@
-import { navigate } from 'vike/client/router';
-import { isTokenUndefined, isTokenExpired, checkPermission, UserPermission } from '@/utils/session';
-import { useUserToken } from '@/hooks/queries/useUserToken.ts';
-import { useEffect, useState } from 'react';
+import { navigate } from "vike/client/router";
+import { isTokenUndefined, isTokenExpired, checkPermission, UserPermission } from "@/utils/session";
+import { useUserToken } from "@/hooks/queries/useUserToken.ts";
+import { useEffect, useState } from "react";
 
 interface GuardProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ export function RouteGuard({ children, requireAdmin = false }: GuardProps) {
   const [isAllowed, setIsAllowed] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       setIsChecking(false);
       return;
     }
@@ -30,7 +30,7 @@ export function RouteGuard({ children, requireAdmin = false }: GuardProps) {
     }
 
     if (requireAdmin && !checkPermission(UserPermission.Administrator)) {
-      navigate('/');
+      navigate("/");
       return;
     }
 

@@ -1,6 +1,21 @@
 import {
-  ActionIcon, Avatar, Button, Checkbox, Flex, Group, List, Mark, Modal, Paper, rem, Space, Text, TextInput, Tooltip,
-  Box, Alert
+  ActionIcon,
+  Avatar,
+  Button,
+  Checkbox,
+  Flex,
+  Group,
+  List,
+  Mark,
+  Modal,
+  Paper,
+  rem,
+  Space,
+  Text,
+  TextInput,
+  Tooltip,
+  Box,
+  Alert,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
@@ -31,7 +46,12 @@ interface CreateAliasModalProps {
   onClose: (alias?: FormValues) => void;
 }
 
-export const CreateAliasModal = ({ game, defaultSongId, opened, onClose }: CreateAliasModalProps) => {
+export const CreateAliasModal = ({
+  game,
+  defaultSongId,
+  opened,
+  onClose,
+}: CreateAliasModalProps) => {
   const [uploading, setUploading] = useState(false);
   const [readonly, setReadonly] = useState(false);
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
@@ -46,13 +66,17 @@ export const CreateAliasModal = ({ game, defaultSongId, opened, onClose }: Creat
     },
 
     validate: {
-      song_id: (value) => value !== null ? null : "请选择曲目",
+      song_id: (value) => (value !== null ? null : "请选择曲目"),
       alias: (value, values) => {
         if (value.trim() === "") return "请输入曲目别名";
         if (!/^.{1,32}$/.test(value)) return "别名长度不符合要求";
-        if (values.song_id && songList?.find(values.song_id)?.title.toLowerCase() === value.toLowerCase()) return "别名不能与曲目名称相同";
+        if (
+          values.song_id &&
+          songList?.find(values.song_id)?.title.toLowerCase() === value.toLowerCase()
+        )
+          return "别名不能与曲目名称相同";
       },
-      agree: (value) => value ? null : "请阅读并同意曲目别名命名规则",
+      agree: (value) => (value ? null : "请阅读并同意曲目别名命名规则"),
     },
 
     transformValues: (values) => ({
@@ -66,24 +90,27 @@ export const CreateAliasModal = ({ game, defaultSongId, opened, onClose }: Creat
   const createAliasHandler = (values: TransformedValues<typeof form>) => {
     setUploading(true);
 
-    createAliasMutation.mutate({ game, data: values }, {
-      onSuccess: () => {
-        openAlertModal("别名创建成功", "快去邀请你的小伙伴投票吧。")
-        form.resetField("alias");
-        onClose(values);
+    createAliasMutation.mutate(
+      { game, data: values },
+      {
+        onSuccess: () => {
+          openAlertModal("别名创建成功", "快去邀请你的小伙伴投票吧。");
+          form.resetField("alias");
+          onClose(values);
+        },
+        onError: (error) => {
+          if (error instanceof APIError && error.code === 409) {
+            openAlertModal("别名创建失败", "别名已存在，请输入其它曲目别名。");
+          } else {
+            openRetryModal("别名创建失败", `${error}`, () => createAliasHandler(values));
+          }
+        },
+        onSettled: () => {
+          setUploading(false);
+        },
       },
-      onError: (error) => {
-        if (error instanceof APIError && error.code === 409) {
-          openAlertModal("别名创建失败", "别名已存在，请输入其它曲目别名。");
-        } else {
-          openRetryModal("别名创建失败", `${error}`, () => createAliasHandler(values));
-        }
-      },
-      onSettled: () => {
-        setUploading(false);
-      },
-    });
-  }
+    );
+  };
 
   useEffect(() => {
     setSongList(getSongList(game));
@@ -126,12 +153,20 @@ export const CreateAliasModal = ({ game, defaultSongId, opened, onClose }: Creat
           <form onSubmit={form.onSubmit(createAliasHandler)}>
             <Flex align="center" gap="md">
               {song ? (
-                <PhotoView src={`${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png`}>
-                  <Avatar size={94} radius="md" src={`${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png!webp`} />
+                <PhotoView
+                  src={`${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png`}
+                >
+                  <Avatar
+                    size={94}
+                    radius="md"
+                    src={`${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png!webp`}
+                  />
                 </PhotoView>
               ) : (
                 <Avatar size={94} radius="md" src={null}>
-                  <Text ta="center" fz="xs">请选择曲目</Text>
+                  <Text ta="center" fz="xs">
+                    请选择曲目
+                  </Text>
                 </Avatar>
               )}
               <div style={{ flex: 1 }}>
@@ -149,12 +184,19 @@ export const CreateAliasModal = ({ game, defaultSongId, opened, onClose }: Creat
                     style={{ flex: 1 }}
                   />
                   <Tooltip label="随机一首曲目" withinPortal>
-                    <ActionIcon variant="default" size={24} onClick={() => {
-                      const song = songList?.songs[Math.floor(Math.random() * songList?.songs.length)];
-                      form.setValues({
-                        song_id: song?.id,
-                      });
-                    }} mt={14} disabled={songList?.songs.length === 0 || readonly}>
+                    <ActionIcon
+                      variant="default"
+                      size={24}
+                      onClick={() => {
+                        const song =
+                          songList?.songs[Math.floor(Math.random() * songList?.songs.length)];
+                        form.setValues({
+                          song_id: song?.id,
+                        });
+                      }}
+                      mt={14}
+                      disabled={songList?.songs.length === 0 || readonly}
+                    >
                       <IconArrowsShuffle size={16} />
                     </ActionIcon>
                   </Tooltip>
@@ -168,48 +210,74 @@ export const CreateAliasModal = ({ game, defaultSongId, opened, onClose }: Creat
               </div>
             </Flex>
             <Space h="md" />
-            {Boolean(form.values.song_id) && ((game === "maimai" && form.values.song_id! >= 100000) || (game === "chunithm" && form.values.song_id! >= 8000)) && (
-              <Alert color="yellow" variant="light" icon={<IconAlertCircle />} title="特殊曲目注意" mb="md">
-                <Text size="sm">
-                  你目前选中的是「{game === "maimai" ? "宴会场曲目" : "WORLD'S END 曲目"}」，请确认你要提交的是原曲还是特殊曲目。
-                </Text>
-              </Alert>
-            )}
+            {Boolean(form.values.song_id) &&
+              ((game === "maimai" && form.values.song_id! >= 100000) ||
+                (game === "chunithm" && form.values.song_id! >= 8000)) && (
+                <Alert
+                  color="yellow"
+                  variant="light"
+                  icon={<IconAlertCircle />}
+                  title="特殊曲目注意"
+                  mb="md"
+                >
+                  <Text size="sm">
+                    你目前选中的是「{game === "maimai" ? "宴会场曲目" : "WORLD'S END 曲目"}
+                    」，请确认你要提交的是原曲还是特殊曲目。
+                  </Text>
+                </Alert>
+              )}
             <Checkbox
               label="我已阅读并理解曲目别名命名规则"
-              {...form.getInputProps("agree", { type: 'checkbox' })}
+              {...form.getInputProps("agree", { type: "checkbox" })}
             />
             <Space h="xs" />
             <Paper p="md" withBorder>
-              <Text fz="sm" fw={700} mb="sm">曲目别名命名规则</Text>
-              <List size="xs" icon={
-                <Box h={18}>
-                  <Icon color="orange" path={mdiAlertCircle} size={rem(18)} />
-                </Box>
-              }>
+              <Text fz="sm" fw={700} mb="sm">
+                曲目别名命名规则
+              </Text>
+              <List
+                size="xs"
+                icon={
+                  <Box h={18}>
+                    <Icon color="orange" path={mdiAlertCircle} size={rem(18)} />
+                  </Box>
+                }
+              >
                 <List.Item>不建议使用符号（全角或半角）、空格</List.Item>
                 <List.Item>不建议使用重复的别名，除非曲目的知名度很高</List.Item>
                 <List.Item>长度不应过长，且不应包含生僻字</List.Item>
-                <List.Item icon={
-                  <Box h={18}>
-                    <Icon color="rgb(250,82,82)" path={mdiCancel} size={rem(18)} />
-                  </Box>
-                }>不允许包含<Mark>敏感内容</Mark>，或其他令人不适的内容</List.Item>
-                <List.Item icon={
-                  <Box h={18}>
-                    <Icon color="rgb(250,82,82)" path={mdiCancel} size={rem(18)} />
-                  </Box>
-                }>不允许使用容易跟随版本变化而失效的别名</List.Item>
+                <List.Item
+                  icon={
+                    <Box h={18}>
+                      <Icon color="rgb(250,82,82)" path={mdiCancel} size={rem(18)} />
+                    </Box>
+                  }
+                >
+                  不允许包含<Mark>敏感内容</Mark>，或其他令人不适的内容
+                </List.Item>
+                <List.Item
+                  icon={
+                    <Box h={18}>
+                      <Icon color="rgb(250,82,82)" path={mdiCancel} size={rem(18)} />
+                    </Box>
+                  }
+                >
+                  不允许使用容易跟随版本变化而失效的别名
+                </List.Item>
               </List>
             </Paper>
             <Space h="lg" />
             <Group justify="flex-end">
-              <Button variant="default" onClick={() => onClose()}>取消</Button>
-              <Button type="submit" loading={uploading}>提交</Button>
+              <Button variant="default" onClick={() => onClose()}>
+                取消
+              </Button>
+              <Button type="submit" loading={uploading}>
+                提交
+              </Button>
             </Group>
           </form>
         </Modal.Body>
       </Modal.Content>
     </Modal.Root>
   );
-}
+};

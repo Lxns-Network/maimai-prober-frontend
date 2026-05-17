@@ -1,15 +1,31 @@
 import { useEffect, useState } from "react";
 import {
-  Title, PasswordInput, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Alert, useComputedColorScheme,
-  Card, SegmentedControl, Center
-} from '@mantine/core';
-import { Container } from '@mantine/core';
-import { solveCaptcha } from '@/utils/captcha';
+  Title,
+  PasswordInput,
+  TextInput,
+  Text,
+  Group,
+  Anchor,
+  Button,
+  LoadingOverlay,
+  Alert,
+  useComputedColorScheme,
+  Card,
+  SegmentedControl,
+  Center,
+} from "@mantine/core";
+import { Container } from "@mantine/core";
+import { solveCaptcha } from "@/utils/captcha";
 import { useForm } from "@mantine/form";
 import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
 import { IconAlertCircle, IconLock, IconMail, IconUser } from "@tabler/icons-react";
 import classes from "../Form.module.css";
-import { getSentryUser, isTokenExpired, isTokenUndefined, resolvePostLoginTarget } from "@/utils/session.ts";
+import {
+  getSentryUser,
+  isTokenExpired,
+  isTokenUndefined,
+  resolvePostLoginTarget,
+} from "@/utils/session.ts";
 import * as Sentry from "@sentry/react";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { PasskeyLogin } from "@/components/Settings/PasskeyLogin.tsx";
@@ -24,22 +40,22 @@ interface FormValues {
 }
 
 export default function Login() {
-  const [method, setMethod] = useState<'name' | 'email'>('name');
+  const [method, setMethod] = useState<"name" | "email">("name");
   const [visible, setVisible] = useState(false);
-  const computedColorScheme = useComputedColorScheme('light');
+  const computedColorScheme = useComputedColorScheme("light");
   const pageContext = usePageContext();
   const { mutate: login } = useLogin();
 
   useEffect(() => {
     if (pageContext.loginState) {
       if (pageContext.loginState.expired) {
-        openAlertModal("你已登出", "登录会话已过期，请重新登录。")
+        openAlertModal("你已登出", "登录会话已过期，请重新登录。");
       }
       if (pageContext.loginState.reset) {
         openAlertModal("重置成功", "请使用新密码登录。");
       }
     }
-  }, [pageContext.loginState])
+  }, [pageContext.loginState]);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -71,16 +87,16 @@ export default function Login() {
     },
 
     transformValues: (values) => {
-      if (method === 'name') {
+      if (method === "name") {
         return {
           name: values.name,
           password: values.password,
-        }
+        };
       } else {
         return {
           email: values.email,
           password: values.password,
-        }
+        };
       }
     },
   });
@@ -91,24 +107,27 @@ export default function Login() {
     try {
       const captchaToken = await solveCaptcha();
 
-      login({ values, captchaToken }, {
-        onSuccess: async (data) => {
-          localStorage.setItem("token", data.token);
-          Sentry.setUser(getSentryUser());
+      login(
+        { values, captchaToken },
+        {
+          onSuccess: async (data) => {
+            localStorage.setItem("token", data.token);
+            Sentry.setUser(getSentryUser());
 
-          const target = await resolvePostLoginTarget(pageContext.redirect);
-          window.location.href = target;
+            const target = await resolvePostLoginTarget(pageContext.redirect);
+            window.location.href = target;
+          },
+          onError: (error) => {
+            openRetryModal("登录失败", `${error}`, () => loginHandler(values));
+            setVisible(false);
+          },
         },
-        onError: (error) => {
-          openRetryModal("登录失败", `${error}`, () => loginHandler(values));
-          setVisible(false);
-        },
-      });
+      );
     } catch (error) {
       openRetryModal("登录失败", `${error}`, () => loginHandler(values));
       setVisible(false);
     }
-  }
+  };
 
   return (
     <Container className={classes.root} size={420}>
@@ -118,68 +137,78 @@ export default function Login() {
       <Text c="dimmed" size="sm" ta="center" mt="sm">
         请使用 <span className={classes.highlight}>落雪咖啡屋</span> maimai DX 查分器账号登录
       </Text>
-      {!isTokenUndefined() && !isTokenExpired() &&
+      {!isTokenUndefined() && !isTokenExpired() && (
         <Alert variant="light" icon={<IconAlertCircle />} mt="xl" radius="md">
           你已登录，如果想要切换账号，请先登出。
         </Alert>
-      }
+      )}
       <SegmentedControl
-        fullWidth mt={30} radius="md"
-        data={[{
-          label: (
-            <Center style={{ gap: 10 }}>
-              <IconUser size={16} />
-              <span>用户名登录</span>
-            </Center>
-          ),
-          value: "name"
-        }, {
-          label: (
-            <Center style={{ gap: 10 }}>
-              <IconMail size={16} />
-              <span>邮箱登录</span>
-            </Center>
-          ),
-          value: "email"
-        }]}
+        fullWidth
+        mt={30}
+        radius="md"
+        data={[
+          {
+            label: (
+              <Center style={{ gap: 10 }}>
+                <IconUser size={16} />
+                <span>用户名登录</span>
+              </Center>
+            ),
+            value: "name",
+          },
+          {
+            label: (
+              <Center style={{ gap: 10 }}>
+                <IconMail size={16} />
+                <span>邮箱登录</span>
+              </Center>
+            ),
+            value: "email",
+          },
+        ]}
         value={method}
         onChange={(value) => {
-          setMethod(value as 'name' | 'email');
-          form.setFieldValue('name', '');
-          form.setFieldValue('email', '');
+          setMethod(value as "name" | "email");
+          form.setFieldValue("name", "");
+          form.setFieldValue("email", "");
         }}
       />
       <Card className={classes.card} withBorder shadow="md" p={30} mt="md">
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={2} />
         <form onSubmit={form.onSubmit(loginHandler)}>
-          {method === 'name' && (
+          {method === "name" && (
             <TextInput
               name="name"
               label="用户名"
               variant="filled"
               placeholder="请输入你的用户名"
               leftSection={<IconUser size={20} stroke={1.5} />}
-              {...form.getInputProps('name')}
+              {...form.getInputProps("name")}
             />
           )}
-          {method === 'email' && (
+          {method === "email" && (
             <TextInput
               name="email"
               label="邮箱"
               variant="filled"
               placeholder="请输入你的邮箱"
               leftSection={<IconMail size={20} stroke={1.5} />}
-              {...form.getInputProps('email')}
+              {...form.getInputProps("email")}
             />
           )}
           <Group justify="space-between" mt="md">
-            <Text component="label" htmlFor="password" size="sm">密码</Text>
-            <Anchor onClick={() => navigate("/forgot-password")} style={(theme) => ({
-              paddingTop: 2,
-              color: theme.colors[theme.primaryColor][computedColorScheme === 'dark' ? 4 : 6],
-              fontWeight: 500,
-              fontSize: theme.fontSizes.xs,
-            })}>
+            <Text component="label" htmlFor="password" size="sm">
+              密码
+            </Text>
+            <Anchor
+              onClick={() => navigate("/forgot-password")}
+              style={(theme) => ({
+                paddingTop: 2,
+                color: theme.colors[theme.primaryColor][computedColorScheme === "dark" ? 4 : 6],
+                fontWeight: 500,
+                fontSize: theme.fontSizes.xs,
+              })}
+            >
               忘记密码？
             </Anchor>
           </Group>
@@ -188,11 +217,15 @@ export default function Login() {
             variant="filled"
             placeholder="请输入你的密码"
             leftSection={<IconLock size={20} stroke={1.5} />}
-            {...form.getInputProps('password')}
+            {...form.getInputProps("password")}
           />
           <Group justify="flex-end" mt="xl">
-            <Button size="sm" variant="default" color="gray" onClick={() => navigate("/register")}>注册</Button>
-            <Button size="sm" type="submit">登录</Button>
+            <Button size="sm" variant="default" color="gray" onClick={() => navigate("/register")}>
+              注册
+            </Button>
+            <Button size="sm" type="submit">
+              登录
+            </Button>
           </Group>
         </form>
         <PasskeyLogin />

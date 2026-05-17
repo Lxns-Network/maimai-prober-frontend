@@ -1,8 +1,8 @@
-import { RenderContext } from './BaseRenderer';
-import { NoteRenderer } from './NoteRenderer';
-import { SlideRenderer } from './SlideRenderer';
-import { HoldRenderer } from './HoldRenderer';
-import { TouchRenderer } from './TouchRenderer';
+import { RenderContext } from "./BaseRenderer";
+import { NoteRenderer } from "./NoteRenderer";
+import { SlideRenderer } from "./SlideRenderer";
+import { HoldRenderer } from "./HoldRenderer";
+import { TouchRenderer } from "./TouchRenderer";
 import {
   Note,
   BpmEvent,
@@ -20,7 +20,7 @@ import {
   isHoldEndNote,
   isTouchNote,
   isTouchHoldStartNote,
-} from '../types';
+} from "../types";
 import {
   BASE_APPROACH_TIME_MS,
   HI_SPEED_DEFAULT,
@@ -30,7 +30,7 @@ import {
   COLORS,
   RAINBOW_SPEED_DEG_PER_SEC,
   NOTE_HIT_EFFECT_DURATION_MS,
-} from '../utils/constants';
+} from "../utils/constants";
 
 export class MainRenderer {
   private canvas: HTMLCanvasElement;
@@ -45,12 +45,12 @@ export class MainRenderer {
     hiSpeed: HI_SPEED_DEFAULT * HI_SPEED_CONVERSION_FACTOR,
     alwaysKeepHiSpeed: false,
     playbackSpeed: 1.0,
-    mirrorMode: 'none',
+    mirrorMode: "none",
     highlightExNotes: false,
     normalColorBreakSlide: false,
     pinkSlideStart: false,
     slideRotation: false,
-    judgmentLineDesign: 'simple',
+    judgmentLineDesign: "simple",
     showBpm: true,
     showNoteTotal: true,
     showBreakCount: true,
@@ -66,7 +66,7 @@ export class MainRenderer {
   private fps: number = 0;
   private prevBpm: number = 120;
   private bpmChangeTime: number = 0;
-  private bpmChangeType: 'up' | 'down' | null = null;
+  private bpmChangeType: "up" | "down" | null = null;
   private isPlaying: boolean = false;
 
   private beatDisplayInfo: {
@@ -94,9 +94,9 @@ export class MainRenderer {
     // alpha: false 让浏览器知道 canvas 不透明（CSS 已经把 background 设成 #000），
     // 合成时走 RGB 路径而不是 RGBA，省一次 alpha blend pass。
     // 144Hz 高刷显示器下这是 MDN 推荐的 canvas 优化中最直接的一个。
-    const context = canvas.getContext('2d', { alpha: false });
+    const context = canvas.getContext("2d", { alpha: false });
     if (!context) {
-      throw new Error('Failed to get 2D canvas context');
+      throw new Error("Failed to get 2D canvas context");
     }
     this.ctx = context;
 
@@ -109,7 +109,7 @@ export class MainRenderer {
 
   private initRenderers(): void {
     const context = this.createRenderContext();
-    
+
     this.noteRenderer = new NoteRenderer(context);
     this.slideRenderer = new SlideRenderer(context, this.noteRenderer);
     this.holdRenderer = new HoldRenderer(context, this.noteRenderer);
@@ -139,15 +139,15 @@ export class MainRenderer {
 
   private loadAssets(): void {
     this.sensorImage = new Image();
-    this.sensorImage.src = '/assets/maimai/chart/sensor.webp';
+    this.sensorImage.src = "/assets/maimai/chart/sensor.webp";
   }
 
   resize(): void {
     const parent = this.canvas.parentElement;
     if (!parent) return;
 
-    this.canvas.style.width = '';
-    this.canvas.style.height = '';
+    this.canvas.style.width = "";
+    this.canvas.style.height = "";
 
     const rect = parent.getBoundingClientRect();
     const size = Math.min(rect.width, rect.height);
@@ -227,12 +227,12 @@ export class MainRenderer {
     this.updateRenderersContext();
   }
 
-  setMirrorMode(mode: 'none' | 'horizontal' | 'vertical' | 'rotate180'): void {
+  setMirrorMode(mode: "none" | "horizontal" | "vertical" | "rotate180"): void {
     this.config.mirrorMode = mode;
     this.updateRenderersContext();
   }
 
-  setJudgmentLineDesign(design: 'simple' | 'noLine' | 'blind' | 'sensor'): void {
+  setJudgmentLineDesign(design: "simple" | "noLine" | "blind" | "sensor"): void {
     this.config.judgmentLineDesign = design;
     this.updateRenderersContext();
   }
@@ -276,8 +276,8 @@ export class MainRenderer {
   }
 
   clear(): void {
-    if (this.config.judgmentLineDesign === 'sensor') {
-      this.ctx.fillStyle = '#000000';
+    if (this.config.judgmentLineDesign === "sensor") {
+      this.ctx.fillStyle = "#000000";
       this.ctx.fillRect(0, 0, this.logicalSize, this.logicalSize);
     } else {
       this.ctx.clearRect(0, 0, this.logicalSize, this.logicalSize);
@@ -285,23 +285,27 @@ export class MainRenderer {
   }
 
   renderJudgmentLine(): void {
-    if (this.config.judgmentLineDesign === 'blind') {
+    if (this.config.judgmentLineDesign === "blind") {
       return;
     }
 
     this.ctx.save();
 
-    if (this.config.judgmentLineDesign === 'sensor' && 
-        this.sensorImage && 
-        this.sensorImage.complete) {
+    if (
+      this.config.judgmentLineDesign === "sensor" &&
+      this.sensorImage &&
+      this.sensorImage.complete
+    ) {
       const imgSize = this.logicalSize - 10;
       const imgX = this.centerX - imgSize / 2;
       const imgY = this.centerY - imgSize / 2 + 8;
       this.ctx.drawImage(this.sensorImage, imgX, imgY, imgSize, imgSize);
     }
 
-    if (this.config.judgmentLineDesign === 'simple' || 
-        this.config.judgmentLineDesign === 'sensor') {
+    if (
+      this.config.judgmentLineDesign === "simple" ||
+      this.config.judgmentLineDesign === "sensor"
+    ) {
       this.ctx.beginPath();
       this.ctx.arc(this.centerX, this.centerY, this.radius, 0, Math.PI * 2);
       this.ctx.strokeStyle = COLORS.WHITE;
@@ -379,11 +383,11 @@ export class MainRenderer {
     }
 
     for (const slide of slides) {
-      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, 'tracks');
+      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, "tracks");
     }
 
     for (const slide of slides) {
-      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, 'stars');
+      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, "stars");
     }
 
     this.renderApproachIndicators(notes, holds, slides, currentBeat, currentTimeMs);
@@ -412,7 +416,7 @@ export class MainRenderer {
 
   private calculateSimultaneousCounts(notes: Note[]): void {
     const byTiming = new Map<string, Note[]>();
-    
+
     for (const note of notes) {
       if (isHoldEndNote(note) || note.hasDelayMarker) continue;
 
@@ -424,17 +428,16 @@ export class MainRenderer {
     }
 
     for (const [, group] of byTiming) {
-      const tapCount = group.filter(n => !isTapNote(n) || n.type !== 'break').length;
-      const breakCount = group.filter(n => 
-        n.type === 'break' || 
-        (isSlideNote(n) && n.isStartBreak) ||
-        (isHoldStartNote(n) && n.isBreakHold)
+      const tapCount = group.filter((n) => !isTapNote(n) || n.type !== "break").length;
+      const breakCount = group.filter(
+        (n) =>
+          n.type === "break" ||
+          (isSlideNote(n) && n.isStartBreak) ||
+          (isHoldStartNote(n) && n.isBreakHold),
       ).length;
-      const slideCount = group.filter(n => isSlideNote(n)).length;
-      const nonTouchCount = group.filter(n => 
-        !isTouchNote(n) && 
-        !isTouchHoldStartNote(n) &&
-        n.type !== 'break'
+      const slideCount = group.filter((n) => isSlideNote(n)).length;
+      const nonTouchCount = group.filter(
+        (n) => !isTouchNote(n) && !isTouchHoldStartNote(n) && n.type !== "break",
       ).length;
 
       const touchByPos = new Map<string, number>();
@@ -460,11 +463,12 @@ export class MainRenderer {
 
   private assignBreakIndices(notes: Note[]): void {
     const breakNotes = notes
-      .filter(n => 
-        (n.type === 'break' || 
-         (isSlideNote(n) && n.isStartBreak) ||
-         (isHoldStartNote(n) && n.isBreakHold)) &&
-        !(n as TapNote).isEx
+      .filter(
+        (n) =>
+          (n.type === "break" ||
+            (isSlideNote(n) && n.isStartBreak) ||
+            (isHoldStartNote(n) && n.isBreakHold)) &&
+          !(n as TapNote).isEx,
       )
       .sort((a, b) => a.timingMs - b.timingMs);
 
@@ -479,9 +483,12 @@ export class MainRenderer {
     holds: HoldStartNote[],
     slides: SlideNote[],
     currentBeat: number,
-    currentTimeMs: number
+    currentTimeMs: number,
   ): void {
-    const byTiming = new Map<string, { note: Note; position: { x: number; y: number }; type: string }[]>();
+    const byTiming = new Map<
+      string,
+      { note: Note; position: { x: number; y: number }; type: string }[]
+    >();
 
     for (const hold of holds) {
       const pos = this.noteRenderer.calculateNotePosition(hold, currentBeat, currentTimeMs);
@@ -490,13 +497,16 @@ export class MainRenderer {
       const timeDiff = hold.timing - currentBeat;
       if (timeDiff > 0) {
         const isSimultaneous = (hold.simultaneousNoteCount ?? 0) >= 2;
-        const color = hold.isBreakHold ? COLORS.BREAK_ORANGE : 
-                      isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.TAP_PINK;
+        const color = hold.isBreakHold
+          ? COLORS.BREAK_ORANGE
+          : isSimultaneous
+            ? COLORS.SIMULTANEOUS_GOLD
+            : COLORS.TAP_PINK;
         this.noteRenderer.renderApproachArc(hold.position, pos.x, pos.y, color);
 
         const key = hold.timingMs.toFixed(3);
         if (!byTiming.has(key)) byTiming.set(key, []);
-        byTiming.get(key)!.push({ note: hold, position: pos, type: 'hold' });
+        byTiming.get(key)!.push({ note: hold, position: pos, type: "hold" });
       }
     }
 
@@ -507,13 +517,16 @@ export class MainRenderer {
       const timeDiff = slide.timing - currentBeat;
       if (timeDiff > 0) {
         const isSimultaneous = (slide.simultaneousNoteCount ?? 0) >= 2;
-        const color = slide.isStartBreak ? COLORS.BREAK_ORANGE :
-                      isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.SLIDE_CYAN;
+        const color = slide.isStartBreak
+          ? COLORS.BREAK_ORANGE
+          : isSimultaneous
+            ? COLORS.SIMULTANEOUS_GOLD
+            : COLORS.SLIDE_CYAN;
         this.noteRenderer.renderApproachArc(slide.position, pos.x, pos.y, color);
 
         const key = slide.timingMs.toFixed(3);
         if (!byTiming.has(key)) byTiming.set(key, []);
-        byTiming.get(key)!.push({ note: slide, position: pos, type: 'slide' });
+        byTiming.get(key)!.push({ note: slide, position: pos, type: "slide" });
       }
     }
 
@@ -521,7 +534,7 @@ export class MainRenderer {
       if (group.length >= 2) {
         const distance = Math.sqrt(
           Math.pow(group[0].position.x - this.centerX, 2) +
-          Math.pow(group[0].position.y - this.centerY, 2)
+            Math.pow(group[0].position.y - this.centerY, 2),
         );
 
         for (let i = 0; i < group.length; i++) {
@@ -530,7 +543,7 @@ export class MainRenderer {
               group[i].note.position as ButtonPosition,
               group[j].note.position as ButtonPosition,
               distance,
-              COLORS.SIMULTANEOUS_GOLD
+              COLORS.SIMULTANEOUS_GOLD,
             );
           }
         }
@@ -542,16 +555,15 @@ export class MainRenderer {
     holds: HoldStartNote[],
     allNotes: Note[],
     currentBeat: number,
-    currentTimeMs: number
+    currentTimeMs: number,
   ): void {
     for (const hold of holds) {
       const startPos = this.noteRenderer.calculateNotePosition(hold, currentBeat, currentTimeMs);
       if (!startPos.visible) continue;
 
-      const holdEnd = allNotes.find(n =>
-        isHoldEndNote(n) &&
-        n.position === hold.position &&
-        n.holdStartTiming === hold.timing
+      const holdEnd = allNotes.find(
+        (n) =>
+          isHoldEndNote(n) && n.position === hold.position && n.holdStartTiming === hold.timing,
       ) as HoldEndNote | undefined;
 
       if (!holdEnd) continue;
@@ -560,10 +572,13 @@ export class MainRenderer {
       const isSimultaneous = (hold.simultaneousNoteCount ?? 0) >= 2;
 
       const ddrColor = this.config.ddrColorMode ? this.getDdrColor(hold.timing) : null;
-      const color = ddrColor ?? (
-        hold.isBreakHold ? COLORS.BREAK_ORANGE :
-        isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.TAP_PINK
-      );
+      const color =
+        ddrColor ??
+        (hold.isBreakHold
+          ? COLORS.BREAK_ORANGE
+          : isSimultaneous
+            ? COLORS.SIMULTANEOUS_GOLD
+            : COLORS.TAP_PINK);
 
       this.holdRenderer.renderHold(
         startPos,
@@ -576,24 +591,35 @@ export class MainRenderer {
         currentTimeMs,
         hold.isBreakHold ?? false,
         isSimultaneous,
-        this.config.highlightExNotes ? 1.2 : 1
+        this.config.highlightExNotes ? 1.2 : 1,
       );
 
-      if (this.config.showBreakIndex && hold.isBreakHold && hold.noExBreakIndex && !hold.isEx && startPos.visible) {
-        this.noteRenderer.renderBreakIndex(startPos.x, startPos.y, startPos.scale, hold.noExBreakIndex);
+      if (
+        this.config.showBreakIndex &&
+        hold.isBreakHold &&
+        hold.noExBreakIndex &&
+        !hold.isEx &&
+        startPos.visible
+      ) {
+        this.noteRenderer.renderBreakIndex(
+          startPos.x,
+          startPos.y,
+          startPos.scale,
+          hold.noExBreakIndex,
+        );
       }
     }
   }
 
   private renderTouchBorders(
     touches: (TouchNote | TouchHoldStartNote)[],
-    currentTimeMs: number
+    currentTimeMs: number,
   ): void {
     const approachTime = BASE_APPROACH_TIME_MS / this.config.hiSpeed;
 
     const visibleByPos = new Map<string, number>();
     for (const touch of touches) {
-      if (touch.type === 'touch-hold-start') continue;
+      if (touch.type === "touch-hold-start") continue;
       const timeDiff = touch.timingMs - currentTimeMs;
       if (timeDiff <= approachTime && timeDiff >= -50) {
         const pos = touch.position as string;
@@ -612,21 +638,20 @@ export class MainRenderer {
     }
   }
 
-  private renderSlideStarts(
-    slides: SlideNote[],
-    currentBeat: number,
-    currentTimeMs: number
-  ): void {
+  private renderSlideStarts(slides: SlideNote[], currentBeat: number, currentTimeMs: number): void {
     for (const slide of slides) {
       const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
       if (!pos.visible) continue;
 
       const isSimultaneous = (slide.simultaneousNoteCount ?? 0) >= 2;
-      const noteSize = this.radius / 12.5 * pos.scale * 1.15 * 1.25;
+      const noteSize = (this.radius / 12.5) * pos.scale * 1.15 * 1.25;
 
       if (slide.timing - currentBeat > 0) {
-        const color = slide.isStartBreak ? COLORS.BREAK_ORANGE :
-                      isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.SLIDE_CYAN;
+        const color = slide.isStartBreak
+          ? COLORS.BREAK_ORANGE
+          : isSimultaneous
+            ? COLORS.SIMULTANEOUS_GOLD
+            : COLORS.SLIDE_CYAN;
         this.noteRenderer.renderApproachArc(slide.position, pos.x, pos.y, color);
       }
 
@@ -634,26 +659,38 @@ export class MainRenderer {
         const scale = this.config.highlightExNotes ? 1.2 : 1;
         if (slide.isSplitSlide) {
           this.slideRenderer.renderExSplitStarRing(
-            pos.x, pos.y, noteSize, 
-            slide.isStartBreak ?? false, isSimultaneous, scale
+            pos.x,
+            pos.y,
+            noteSize,
+            slide.isStartBreak ?? false,
+            isSimultaneous,
+            scale,
           );
         } else {
           this.slideRenderer.renderExStarRing(
-            pos.x, pos.y, noteSize, 
-            slide.isStartBreak ?? false, isSimultaneous, scale
+            pos.x,
+            pos.y,
+            noteSize,
+            slide.isStartBreak ?? false,
+            isSimultaneous,
+            scale,
           );
         }
       }
 
       const ddrColor = this.config.ddrColorMode ? this.getDdrColor(slide.timing) : null;
-      const color = ddrColor ?? (
-        slide.isStartBreak ? COLORS.BREAK_ORANGE :
-        isSimultaneous ? COLORS.SLIDE_SIMULTANEOUS :
-        this.config.pinkSlideStart ? COLORS.SLIDE_PINK : COLORS.SLIDE_CYAN
-      );
+      const color =
+        ddrColor ??
+        (slide.isStartBreak
+          ? COLORS.BREAK_ORANGE
+          : isSimultaneous
+            ? COLORS.SLIDE_SIMULTANEOUS
+            : this.config.pinkSlideStart
+              ? COLORS.SLIDE_PINK
+              : COLORS.SLIDE_CYAN);
 
-      const rotation = this.config.slideRotation 
-        ? this.slideRenderer['calculateStarRotation'](slide, currentTimeMs)
+      const rotation = this.config.slideRotation
+        ? this.slideRenderer["calculateStarRotation"](slide, currentTimeMs)
         : 0;
 
       if (slide.isSplitSlide) {
@@ -668,9 +705,15 @@ export class MainRenderer {
     }
   }
 
-  private renderSplitSlideStar(x: number, y: number, size: number, color: string, rotation: number): void {
+  private renderSplitSlideStar(
+    x: number,
+    y: number,
+    size: number,
+    color: string,
+    rotation: number,
+  ): void {
     this.ctx.save();
-    
+
     if (rotation !== 0) {
       this.ctx.translate(x, y);
       this.ctx.rotate(rotation);
@@ -685,7 +728,7 @@ export class MainRenderer {
 
       this.ctx.beginPath();
       for (let i = 0; i < 10; i++) {
-        const angle = (i * Math.PI / 5) + baseAngle;
+        const angle = (i * Math.PI) / 5 + baseAngle;
         const r = i % 2 === 0 ? outerR : innerR;
         const px = x + Math.cos(angle) * r;
         const py = y + Math.sin(angle) * r;
@@ -695,7 +738,7 @@ export class MainRenderer {
       this.ctx.closePath();
 
       for (let i = 9; i >= 0; i--) {
-        const angle = (i * Math.PI / 5) + baseAngle;
+        const angle = (i * Math.PI) / 5 + baseAngle;
         const r = i % 2 === 0 ? outerHoleR : innerHoleR;
         const px = x + Math.cos(angle) * r;
         const py = y + Math.sin(angle) * r;
@@ -711,11 +754,11 @@ export class MainRenderer {
     this.ctx.fill();
 
     this.ctx.strokeStyle = COLORS.WHITE;
-    this.ctx.lineWidth = 2 * this.radius / 300;
+    this.ctx.lineWidth = (2 * this.radius) / 300;
 
     this.ctx.beginPath();
     for (let i = 0; i < 10; i++) {
-      const angle = (i * Math.PI / 5) - Math.PI / 2;  
+      const angle = (i * Math.PI) / 5 - Math.PI / 2;
       const r = i % 2 === 0 ? size : size * 0.5;
       const px = x + Math.cos(angle) * r;
       const py = y + Math.sin(angle) * r;
@@ -727,7 +770,7 @@ export class MainRenderer {
 
     this.ctx.beginPath();
     for (let i = 0; i < 10; i++) {
-      const angle = (i * Math.PI / 5) + Math.PI / 2;
+      const angle = (i * Math.PI) / 5 + Math.PI / 2;
       const r = i % 2 === 0 ? size : size * 0.5;
       const px = x + Math.cos(angle) * r;
       const py = y + Math.sin(angle) * r;
@@ -745,11 +788,7 @@ export class MainRenderer {
     this.ctx.restore();
   }
 
-  private renderTapNotes(
-    taps: TapNote[],
-    currentBeat: number,
-    currentTimeMs: number
-  ): void {
+  private renderTapNotes(taps: TapNote[], currentBeat: number, currentTimeMs: number): void {
     for (const tap of taps) {
       const pos = this.noteRenderer.calculateNotePosition(tap, currentBeat, currentTimeMs);
       if (!pos.visible) continue;
@@ -758,8 +797,12 @@ export class MainRenderer {
       const timeDiff = tap.timing - currentBeat;
 
       if (timeDiff > 0) {
-        const color = tap.type === 'break' ? COLORS.BREAK_ORANGE :
-                      isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.TAP_PINK;
+        const color =
+          tap.type === "break"
+            ? COLORS.BREAK_ORANGE
+            : isSimultaneous
+              ? COLORS.SIMULTANEOUS_GOLD
+              : COLORS.TAP_PINK;
         this.noteRenderer.renderApproachArc(tap.position, pos.x, pos.y, color);
       }
 
@@ -767,23 +810,20 @@ export class MainRenderer {
         pos.x,
         pos.y,
         pos.scale,
-        tap.type === 'break',
+        tap.type === "break",
         isSimultaneous,
         tap.isEx ?? false,
         tap.timing,
-        this.config.highlightExNotes ? 1.2 : 1
+        this.config.highlightExNotes ? 1.2 : 1,
       );
 
-      if (this.config.showBreakIndex && tap.type === 'break' && tap.noExBreakIndex && !tap.isEx) {
+      if (this.config.showBreakIndex && tap.type === "break" && tap.noExBreakIndex && !tap.isEx) {
         this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, tap.noExBreakIndex);
       }
     }
   }
 
-  private renderTapHitEffect(
-    notes: Note[],
-    currentTimeMs: number
-  ): void {
+  private renderTapHitEffect(notes: Note[], currentTimeMs: number): void {
     // notes 按 timingMs 升序，二分定位窗口下界（currentTimeMs - DURATION），之后线性扫。
     const windowStartMs = currentTimeMs - NOTE_HIT_EFFECT_DURATION_MS;
     let lo = 0;
@@ -822,7 +862,7 @@ export class MainRenderer {
         note.position as ButtonPosition,
         COLORS.HIT_EFFECT_GOLD,
         pos.progress,
-        note.type === "break" ? "star" : "hexagon"
+        note.type === "break" ? "star" : "hexagon",
       );
     }
   }
@@ -830,29 +870,29 @@ export class MainRenderer {
   private renderBpmDisplay(currentBeat: number, bpmEvents: BpmEvent[] | null): void {
     const currentBpm = this.getBpmAtTiming(currentBeat, bpmEvents);
     const lastBpm = this.prevBpm;
-    
+
     if (!this.isPlaying) {
       this.prevBpm = currentBpm;
       this.bpmChangeType = null;
       this.bpmChangeTime = 0;
     } else if (currentBpm !== lastBpm) {
       this.bpmChangeTime = Date.now();
-      this.bpmChangeType = currentBpm > lastBpm ? 'up' : 'down';
+      this.bpmChangeType = currentBpm > lastBpm ? "up" : "down";
       this.prevBpm = currentBpm;
     }
 
-    const fontSize = Math.round(22 * this.radius / 300);
-    const smallFontSize = Math.round(16 * this.radius / 300);
-    const padding = Math.round(20 * this.radius / 300);
-    const lineGap = Math.round(4 * this.radius / 300);
+    const fontSize = Math.round((22 * this.radius) / 300);
+    const smallFontSize = Math.round((16 * this.radius) / 300);
+    const padding = Math.round((20 * this.radius) / 300);
+    const lineGap = Math.round((4 * this.radius) / 300);
 
     this.ctx.save();
-    this.ctx.textAlign = 'left';
-    this.ctx.textBaseline = 'top';
+    this.ctx.textAlign = "left";
+    this.ctx.textBaseline = "top";
     // 纯偏移阴影代替 shadowBlur：避免 GPU 高斯模糊 pass
-    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
-    this.ctx.shadowOffsetX = 2 * this.radius / 300;
-    this.ctx.shadowOffsetY = 2 * this.radius / 300;
+    this.ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+    this.ctx.shadowOffsetX = (2 * this.radius) / 300;
+    this.ctx.shadowOffsetY = (2 * this.radius) / 300;
 
     this.ctx.font = `bold ${fontSize}px sans-serif`;
     const bpmText = `BPM: ${Math.floor(currentBpm)}`;
@@ -863,15 +903,21 @@ export class MainRenderer {
     const FADE_DURATION = 500;
 
     if (this.isPlaying && timeSinceChange < FADE_DURATION && this.bpmChangeType) {
-      if (this.bpmChangeType === 'up') {
+      if (this.bpmChangeType === "up") {
         const red = Math.round(255);
-        const fadeProgress = Math.max(0, (timeSinceChange - INSTANT_DURATION) / (FADE_DURATION - INSTANT_DURATION));
+        const fadeProgress = Math.max(
+          0,
+          (timeSinceChange - INSTANT_DURATION) / (FADE_DURATION - INSTANT_DURATION),
+        );
         const green = Math.round(255 * fadeProgress);
         const blue = Math.round(255 * fadeProgress);
         bpmColor = `rgb(${red}, ${green}, ${blue})`;
-      } else if (this.bpmChangeType === 'down') {
+      } else if (this.bpmChangeType === "down") {
         const green = Math.round(255);
-        const fadeProgress = Math.max(0, (timeSinceChange - INSTANT_DURATION) / (FADE_DURATION - INSTANT_DURATION));
+        const fadeProgress = Math.max(
+          0,
+          (timeSinceChange - INSTANT_DURATION) / (FADE_DURATION - INSTANT_DURATION),
+        );
         const red = Math.round(255 * fadeProgress);
         const blue = Math.round(255 * fadeProgress);
         bpmColor = `rgb(${red}, ${green}, ${blue})`;
@@ -880,9 +926,9 @@ export class MainRenderer {
 
     if (this.config.rainbowBpm && this.isRoundBpm(currentBpm)) {
       const bpmMetrics = this.ctx.measureText(bpmText);
-      const hue = (Date.now() / 1000 * RAINBOW_SPEED_DEG_PER_SEC) % 360;
+      const hue = ((Date.now() / 1000) * RAINBOW_SPEED_DEG_PER_SEC) % 360;
       const gradient = this.ctx.createLinearGradient(padding, 0, padding + bpmMetrics.width, 0);
-      
+
       for (let i = 0; i <= 6; i++) {
         const h = (hue + i * 51) % 360;
         gradient.addColorStop(i / 6, `hsl(${h}, 100%, 60%)`);
@@ -893,16 +939,18 @@ export class MainRenderer {
     }
 
     this.ctx.fillText(bpmText, padding, padding);
-    
+
     let currentY = padding + fontSize + lineGap;
-    
+
     if (this.beatDisplayInfo) {
       const { measure, beat, fraction, divisor } = this.beatDisplayInfo;
-      
+
       this.ctx.font = `bold ${smallFontSize}px sans-serif`;
-      this.ctx.fillStyle = '#94a3b8'; // slate-400
-      
-      const fractionStr = Math.floor(fraction * 100).toString().padStart(2, '0');
+      this.ctx.fillStyle = "#94a3b8"; // slate-400
+
+      const fractionStr = Math.floor(fraction * 100)
+        .toString()
+        .padStart(2, "0");
       const beatText = `${measure}:${beat}.${fractionStr} [1/${divisor}]`;
       this.ctx.fillText(beatText, padding, currentY);
       currentY += smallFontSize + lineGap * 2;
@@ -910,7 +958,7 @@ export class MainRenderer {
 
     if (this.fps > 0) {
       this.ctx.font = `bold ${smallFontSize}px sans-serif`;
-      const fpsColor = this.fps >= 55 ? '#22c55e' : this.fps >= 30 ? '#eab308' : '#ef4444';
+      const fpsColor = this.fps >= 55 ? "#22c55e" : this.fps >= 30 ? "#eab308" : "#ef4444";
       this.ctx.fillStyle = fpsColor;
       this.ctx.fillText(`FPS: ${this.fps}`, padding, currentY);
     }
@@ -934,11 +982,13 @@ export class MainRenderer {
     for (const note of notes) {
       const isCompleted = note.timingMs <= currentTimeMs;
 
-      if (isTapNote(note) || 
-          (isHoldEndNote(note)) ||
-          isSlideNote(note) ||
-          isTouchNote(note) ||
-          (note.type === 'touch-hold-end')) {
+      if (
+        isTapNote(note) ||
+        isHoldEndNote(note) ||
+        isSlideNote(note) ||
+        isTouchNote(note) ||
+        note.type === "touch-hold-end"
+      ) {
         totalNotes++;
         if (isCompleted) completedNotes++;
       }
@@ -946,7 +996,7 @@ export class MainRenderer {
       if (isSlideNote(note)) {
         const pathCount = note.allSlideSegments?.length ?? 1;
         totalNotes += pathCount;
-        
+
         for (let i = 0; i < pathCount; i++) {
           const pathDelayMs = note.allDelayMs?.[i] ?? note.delayMs ?? 0;
           const pathDurationMs = note.allDurationMs?.[i] ?? note.durationMs ?? 0;
@@ -956,14 +1006,15 @@ export class MainRenderer {
         }
       }
 
-      const isBreak = note.type === 'break' || 
-                      (isSlideNote(note) && note.isStartBreak) ||
-                      (isHoldStartNote(note) && note.isBreakHold);
-      
+      const isBreak =
+        note.type === "break" ||
+        (isSlideNote(note) && note.isStartBreak) ||
+        (isHoldStartNote(note) && note.isBreakHold);
+
       if (isBreak) {
         totalBreaks++;
         if (isCompleted) completedBreaks++;
-        
+
         if (!(note as TapNote).isEx) {
           totalBreaksNoEx++;
           if (isCompleted) completedBreaksNoEx++;
@@ -984,39 +1035,51 @@ export class MainRenderer {
       }
     }
 
-    const fontSize = Math.round(22 * this.radius / 300);
-    const smallFontSize = Math.round(18 * this.radius / 300);
-    const padding = Math.round(20 * this.radius / 300);
-    const lineGap = Math.round(4 * this.radius / 300);
+    const fontSize = Math.round((22 * this.radius) / 300);
+    const smallFontSize = Math.round((18 * this.radius) / 300);
+    const padding = Math.round((20 * this.radius) / 300);
+    const lineGap = Math.round((4 * this.radius) / 300);
 
     this.ctx.save();
     this.ctx.font = `bold ${fontSize}px sans-serif`;
     // 纯偏移阴影代替 shadowBlur
-    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
-    this.ctx.shadowOffsetX = 2 * this.radius / 300;
-    this.ctx.shadowOffsetY = 2 * this.radius / 300;
+    this.ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+    this.ctx.shadowOffsetX = (2 * this.radius) / 300;
+    this.ctx.shadowOffsetY = (2 * this.radius) / 300;
 
     if (this.config.showNoteTotal) {
-      this.ctx.textAlign = 'right';
-      this.ctx.textBaseline = 'top';
+      this.ctx.textAlign = "right";
+      this.ctx.textBaseline = "top";
       this.ctx.fillStyle = COLORS.WHITE;
-      this.ctx.fillText(`连击: ${completedNotes} / ${totalNotes}`, this.logicalSize - padding, padding);
+      this.ctx.fillText(
+        `连击: ${completedNotes} / ${totalNotes}`,
+        this.logicalSize - padding,
+        padding,
+      );
     }
 
     if (this.config.showBreakCount) {
-      this.ctx.textAlign = 'left';
-      this.ctx.textBaseline = 'bottom';
+      this.ctx.textAlign = "left";
+      this.ctx.textBaseline = "bottom";
       this.ctx.font = `bold ${fontSize}px sans-serif`;
       this.ctx.fillStyle = COLORS.BREAK_ORANGE;
-      this.ctx.fillText(`BREAK: ${completedBreaks} / ${totalBreaks}`, padding, this.logicalSize - padding);
+      this.ctx.fillText(
+        `BREAK: ${completedBreaks} / ${totalBreaks}`,
+        padding,
+        this.logicalSize - padding,
+      );
 
-      this.ctx.textAlign = 'right';
+      this.ctx.textAlign = "right";
       this.ctx.font = `bold ${fontSize}px sans-serif`;
-      this.ctx.fillStyle = '#FFA500';
+      this.ctx.fillStyle = "#FFA500";
       const bottomY = this.logicalSize - padding;
-      this.ctx.fillText(`BREAK: ${completedBreaksNoEx} / ${totalBreaksNoEx}`, this.logicalSize - padding, bottomY);
+      this.ctx.fillText(
+        `BREAK: ${completedBreaksNoEx} / ${totalBreaksNoEx}`,
+        this.logicalSize - padding,
+        bottomY,
+      );
       this.ctx.font = `bold ${smallFontSize}px sans-serif`;
-      this.ctx.fillText('无保护', this.logicalSize - padding, bottomY - fontSize - lineGap);
+      this.ctx.fillText("无保护", this.logicalSize - padding, bottomY - fontSize - lineGap);
     }
 
     this.ctx.restore();
@@ -1064,10 +1127,10 @@ export class MainRenderer {
     if (frac < epsilon || frac > 1 - epsilon) return COLORS.DDR_RED;
     if (Math.abs(timing % 0.5) < epsilon) return COLORS.DDR_BLUE;
     if (Math.abs(timing % 0.25) < epsilon) return COLORS.DDR_YELLOW;
-    
+
     if (this.config.ddrColorExtended) {
       if (Math.abs(timing % 0.125) < epsilon) return COLORS.DDR_ORANGE;
-      if (Math.abs(timing % (1/6)) < epsilon) return COLORS.DDR_CYAN;
+      if (Math.abs(timing % (1 / 6)) < epsilon) return COLORS.DDR_CYAN;
     }
 
     return COLORS.DDR_GREEN;

@@ -21,16 +21,14 @@ interface ScoreProps {
 
 const Score = ({ score, onClick }: ScoreProps) => {
   const [game] = useFixedGame();
-  const { songList } = useSongListStore(
-    useShallow((state) => ({ songList: state[game] })),
-  )
+  const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
 
-  const computedColorScheme = useComputedColorScheme('light');
+  const computedColorScheme = useComputedColorScheme("light");
   const song = songList.find(score.id);
 
   let borderSize = 2;
   let levelIndex = score.level_index;
-  const classNameList = [classes.card, classes.scoreCard]
+  const classNameList = [classes.card, classes.scoreCard];
 
   if (game === "maimai" && "type" in score && score.type === "utage") {
     levelIndex = 5;
@@ -45,26 +43,29 @@ const Score = ({ score, onClick }: ScoreProps) => {
       radius="md"
       p={0}
       h={84.5}
-      className={classNameList.join(' ')}
+      className={classNameList.join(" ")}
       style={{
         border: `${borderSize}px solid ${getScoreSecondaryColor(game, levelIndex)}`,
-        opacity: computedColorScheme === 'dark' ? 0.8 : 1,
+        opacity: computedColorScheme === "dark" ? 0.8 : 1,
       }}
       onClick={() => onClick && onClick()}
     >
-      <BackgroundImage src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : score.id)}.png!webp`}>
-        {game === "maimai" && <MaimaiScoreContent
-          score={score as MaimaiScoreProps}
-          song={song as MaimaiSongProps}
-        />}
-        {game === "chunithm" && <ChunithmScoreContent
-          score={score as ChunithmScoreProps}
-          song={song as ChunithmSongProps}
-        />}
+      <BackgroundImage
+        src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : score.id)}.png!webp`}
+      >
+        {game === "maimai" && (
+          <MaimaiScoreContent score={score as MaimaiScoreProps} song={song as MaimaiSongProps} />
+        )}
+        {game === "chunithm" && (
+          <ChunithmScoreContent
+            score={score as ChunithmScoreProps}
+            song={song as ChunithmSongProps}
+          />
+        )}
       </BackgroundImage>
     </Card>
-  )
-}
+  );
+};
 
 interface ScoreListProps {
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
@@ -83,18 +84,13 @@ export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
       score,
       onClose: (score) => {
         score && onScoreChange && onScoreChange(score);
-      }
+      },
     });
-  }
+  };
 
   return (
     <Box w="100%">
-      <SimpleGrid
-        type="container"
-        cols={{ base: 1, '400px': 2 }}
-        spacing="xs"
-        ref={ref}
-      >
+      <SimpleGrid type="container" cols={{ base: 1, "400px": 2 }} spacing="xs" ref={ref}>
         {scores.map((score) => (
           <Score
             key={`${score.id}:${"type" in score && score.type}:${score.level_index}`}
@@ -105,4 +101,4 @@ export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
       </SimpleGrid>
     </Box>
   );
-}
+};

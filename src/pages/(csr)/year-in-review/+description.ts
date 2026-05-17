@@ -1,4 +1,4 @@
-import type { PageContext } from 'vike/types';
+import type { PageContext } from "vike/types";
 
 export function description(pageContext: PageContext) {
   const year = pageContext.routeParams?.year || new Date().getFullYear() - 1;

@@ -1,13 +1,21 @@
 import React, { useEffect, useRef } from "react";
 import {
-  Title, Text, Button, Container, rem, SimpleGrid, ThemeIcon, Center, AspectRatio
-} from '@mantine/core';
+  Title,
+  Text,
+  Button,
+  Container,
+  rem,
+  SimpleGrid,
+  ThemeIcon,
+  Center,
+  AspectRatio,
+} from "@mantine/core";
 import { IconChartBar, IconCode, IconGavel, IconHandStop, IconHistory } from "@tabler/icons-react";
 import { ProductCarousel } from "@/components/Home/ProductCarousel.tsx";
 import { Footer } from "@/components/Shell/Footer/Footer";
-import classes from './Home.module.css';
+import classes from "./Home.module.css";
 
-interface FeatureProps extends React.ComponentPropsWithoutRef<'div'> {
+interface FeatureProps extends React.ComponentPropsWithoutRef<"div"> {
   icon: React.ReactNode;
   title: string;
   description: string;
@@ -38,7 +46,7 @@ function LogoParallax() {
     function handleMouseMove(e: MouseEvent) {
       if (!logoParallaxRef.current) return;
 
-      const isTouchDevice = 'ontouchstart' in window;
+      const isTouchDevice = "ontouchstart" in window;
       if (isTouchDevice) return;
 
       const parallaxRect = logoParallaxRef.current.getBoundingClientRect();
@@ -78,11 +86,7 @@ function LogoParallax() {
   }, []);
 
   return (
-    <AspectRatio
-      className={classes.logoWrapper}
-      ratio={1200 / 735}
-      mb="md"
-    >
+    <AspectRatio className={classes.logoWrapper} ratio={1200 / 735} mb="md">
       <div ref={logoParallaxRef} className={classes.logoParallax}>
         <div ref={backgroundRef} className={classes.background} />
         <div ref={foregroundRef} className={classes.foreground} />
@@ -94,33 +98,37 @@ function LogoParallax() {
 const features = [
   {
     icon: <IconHandStop stroke={1.5} />,
-    title: '易于同步成绩',
-    description: '摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。',
+    title: "易于同步成绩",
+    description:
+      "摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。",
   },
   {
     icon: <IconChartBar stroke={1.5} />,
-    title: '高效的成绩管理',
-    description: 'maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。',
+    title: "高效的成绩管理",
+    description:
+      "maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。",
   },
   {
     icon: <IconHistory stroke={1.5} />,
-    title: '历史成绩查询',
-    description: '我们会存储玩家上传的所有成绩，玩家可以随时查询自己的历史成绩与 DX Rating 的变化趋势。',
+    title: "历史成绩查询",
+    description:
+      "我们会存储玩家上传的所有成绩，玩家可以随时查询自己的历史成绩与 DX Rating 的变化趋势。",
   },
   {
     icon: <IconGavel stroke={1.5} />,
-    title: '曲目别名投票',
-    description: 'maimai DX 查分器拥有一套独立的曲目别名系统，玩家可以为曲目投票或提交曲目别名。',
+    title: "曲目别名投票",
+    description: "maimai DX 查分器拥有一套独立的曲目别名系统，玩家可以为曲目投票或提交曲目别名。",
   },
   {
     icon: <IconCode stroke={1.5} />,
-    title: '开发者友好',
-    description: '我们提供了对开发者友好的 API 接口，开发者可以通过 API 接口获取、管理玩家的游戏数据。',
+    title: "开发者友好",
+    description:
+      "我们提供了对开发者友好的 API 接口，开发者可以通过 API 接口获取、管理玩家的游戏数据。",
   },
 ];
 
 export default function Page() {
-  const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem("token");
+  const isLoggedIn = typeof window !== "undefined" && localStorage.getItem("token");
 
   return (
     <>
@@ -128,66 +136,90 @@ export default function Page() {
         <LogoParallax />
 
         <Title className={classes.title}>
-          落雪咖啡屋{' '}
+          落雪咖啡屋{" "}
           <Text c="var(--mantine-primary-color-light-color)" component="span" inherit>
             maimai
-          </Text>{' '}
+          </Text>{" "}
           DX 查分器
         </Title>
 
         <Container p={0} size={600}>
           <Text size="lg" c="dimmed" className={classes.description}>
-            一个简单的{' '}
+            一个简单的{" "}
             <Text className={classes.highlight} fw={700} component="span" inherit>
               舞萌 DX & 中二节奏
-            </Text>{' '}
-            国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API 接口供开发者获取玩家的成绩数据。
+            </Text>{" "}
+            国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API
+            接口供开发者获取玩家的成绩数据。
           </Text>
         </Container>
 
         <Container className={classes.controls} p={0}>
-          {isLoggedIn ? <>
-            <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
-              component="a" href="/docs">
-              帮助文档
-            </Button>
-            <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
-              component="a" href="/user/profile">
-              管理我的查分器账号
-            </Button>
-          </> : <>
-            <Button className={classes.control} size="lg" variant="default" c="var(--mantine-color-text)"
-              component="a" href="/login">
-              登录
-            </Button>
-            <Button className={classes.control} size="lg"
-              component="a" href="/register">
-              注册 maimai DX 查分器账号
-            </Button>
-          </>}
+          {isLoggedIn ? (
+            <>
+              <Button
+                className={classes.control}
+                size="lg"
+                variant="default"
+                c="var(--mantine-color-text)"
+                component="a"
+                href="/docs"
+              >
+                帮助文档
+              </Button>
+              <Button
+                className={classes.control}
+                size="lg"
+                variant="default"
+                c="var(--mantine-color-text)"
+                component="a"
+                href="/user/profile"
+              >
+                管理我的查分器账号
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                className={classes.control}
+                size="lg"
+                variant="default"
+                c="var(--mantine-color-text)"
+                component="a"
+                href="/login"
+              >
+                登录
+              </Button>
+              <Button className={classes.control} size="lg" component="a" href="/register">
+                注册 maimai DX 查分器账号
+              </Button>
+            </>
+          )}
         </Container>
 
         <Container className={classes.section} mt={rem(100)} size="lg">
           <Center ta="center" mb={50}>
             <div>
-              <Title order={2} mb="xs">特色功能</Title>
-              <Text c="dimmed">
-                我们的目标是为玩家提供一个简单、易用的查分器。
-              </Text>
+              <Title order={2} mb="xs">
+                特色功能
+              </Title>
+              <Text c="dimmed">我们的目标是为玩家提供一个简单、易用的查分器。</Text>
             </div>
           </Center>
           <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={50}>
-            {features.map((feature) => <Feature {...feature} key={feature.title} />)}
+            {features.map((feature) => (
+              <Feature {...feature} key={feature.title} />
+            ))}
           </SimpleGrid>
         </Container>
 
         <Container className={classes.section} mt={rem(100)}>
           <Center ta="center" mb={50}>
             <div>
-              <Title order={2} mb="xs">其他工具</Title>
-              <Text c="dimmed">
-                基于 maimai DX 查分器开发的第三方开发者工具。
-              </Text>
+              <Title order={2} mb="xs">
+                其他工具
+              </Title>
+              <Text c="dimmed">基于 maimai DX 查分器开发的第三方开发者工具。</Text>
             </div>
           </Center>
           <ProductCarousel />

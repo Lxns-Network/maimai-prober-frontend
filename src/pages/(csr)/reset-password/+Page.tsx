@@ -1,4 +1,4 @@
-import ResetPassword from '@/pages/public/ResetPassword';
+import ResetPassword from "@/pages/public/ResetPassword";
 
 export default function Page() {
   return <ResetPassword />;

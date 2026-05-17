@@ -22,7 +22,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   const [headerHeight, setHeaderHeight] = useState(0);
   const headerRef = useRef<HTMLDivElement>(null);
 
-  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
+  const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(null);
   const [lastScrollTop, setLastScrollTop] = useState(0);
   const scrollState = useScroll(viewportRef as React.RefObject<HTMLElement>);
 
@@ -30,13 +30,13 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
     const currentScrollTop = scrollState.y;
 
     if (Math.abs(lastScrollTop - currentScrollTop) > 50) {
-      setScrollDirection(currentScrollTop > lastScrollTop ? 'down' : 'up');
+      setScrollDirection(currentScrollTop > lastScrollTop ? "down" : "up");
       setLastScrollTop(currentScrollTop);
     }
   }, [scrollState.y]);
 
   useEffect(() => {
-    setScrollDirection('up');
+    setScrollDirection("up");
   }, [navbarOpened]);
 
   useEffect(() => {
@@ -71,24 +71,41 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   }, [headerRef.current, width]);
 
   return (
-    <div id="shell-root" style={{
-      "--navbar-width": "300px",
-      "--header-height": headerHeight ? `${headerHeight}px` : undefined,
-    } as React.CSSProperties}>
-      <Transition mounted={navbarOpened} transition="slide-right" duration={300} timingFunction="ease">
+    <div
+      id="shell-root"
+      style={
+        {
+          "--navbar-width": "300px",
+          "--header-height": headerHeight ? `${headerHeight}px` : undefined,
+        } as React.CSSProperties
+      }
+    >
+      <Transition
+        mounted={navbarOpened}
+        transition="slide-right"
+        duration={300}
+        timingFunction="ease"
+      >
         {(styles) => <Navbar style={styles} onClose={onNavbarToggle} />}
       </Transition>
 
       <Header
         navbarOpened={navbarOpened}
         onNavbarToggle={onNavbarToggle}
-        gameTabsVisible={!scrollDirection || scrollDirection === 'up'}
+        gameTabsVisible={!scrollDirection || scrollDirection === "up"}
         headerRef={headerRef}
       />
 
       <ScrollArea className={classes.routesWrapper} type="scroll" viewportRef={viewportRef}>
-        <Transition mounted={navbarOpened && width <= NAVBAR_BREAKPOINT} transition="fade" duration={300} timingFunction="ease">
-          {(styles) => <Overlay color="#000" style={styles} onClick={onNavbarToggle} zIndex={100} />}
+        <Transition
+          mounted={navbarOpened && width <= NAVBAR_BREAKPOINT}
+          transition="fade"
+          duration={300}
+          timingFunction="ease"
+        >
+          {(styles) => (
+            <Overlay color="#000" style={styles} onClick={onNavbarToggle} zIndex={100} />
+          )}
         </Transition>
         {children}
       </ScrollArea>

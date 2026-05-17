@@ -1,5 +1,14 @@
 import {
-  Badge, Center, Flex, Group, Space, Text, ThemeIcon, Tooltip, UnstyledButton, UnstyledButtonProps
+  Badge,
+  Center,
+  Flex,
+  Group,
+  Space,
+  Text,
+  ThemeIcon,
+  Tooltip,
+  UnstyledButton,
+  UnstyledButtonProps,
 } from "@mantine/core";
 import { IconCheck, IconChevronRight, IconNorthStar } from "@tabler/icons-react";
 import classes from "./Alias.module.css";
@@ -11,12 +20,14 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { AliasProps } from "@/types/alias";
 
-export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, onClick?: () => void } & UnstyledButtonProps) {
+export function AliasButton({
+  alias,
+  onClick,
+  ...others
+}: { alias: AliasProps; onClick?: () => void } & UnstyledButtonProps) {
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps>();
   const [game] = useFixedGame();
-  const { songList } = useSongListStore(
-    useShallow((state) => ({ songList: state[game] })),
-  )
+  const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
 
   useEffect(() => {
     setSong(songList.find(alias.song.id));
@@ -45,9 +56,7 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
                 <IconNorthStar />
               </ThemeIcon>
             </Tooltip>
-            {alias.approved && (
-              <Space w="xs" />
-            )}
+            {alias.approved && <Space w="xs" />}
           </Center>
         )}
         {alias.approved && (
@@ -61,7 +70,9 @@ export function AliasButton({ alias, onClick, ...others }: { alias: AliasProps, 
         )}
       </Flex>
       <Group>
-        <Text fz="xl" fw={700} truncate style={{ flex: 1 }}>{alias.alias}</Text>
+        <Text fz="xl" fw={700} truncate style={{ flex: 1 }}>
+          {alias.alias}
+        </Text>
         <IconChevronRight size={16} />
       </Group>
     </UnstyledButton>

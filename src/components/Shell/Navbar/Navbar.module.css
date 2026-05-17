@@ -1,86 +1,88 @@
 .navbar {
-    position: fixed;
-    z-index: var(--mantine-z-index-modal);
-    height: calc(100vh - var(--header-height));
+  position: fixed;
+  z-index: var(--mantine-z-index-modal);
+  height: calc(100vh - var(--header-height));
+  width: var(--navbar-width);
+  background-color: var(--mantine-color-body);
+  border-right: rem(1px) solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+
+  display: flex;
+  flex-direction: column;
+
+  @mixin smaller-than $mantine-breakpoint-md {
     width: var(--navbar-width);
-    background-color: var(--mantine-color-body);
-    border-right: rem(1px) solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  }
 
-    display: flex;
-    flex-direction: column;
-
-    @mixin smaller-than $mantine-breakpoint-md {
-        width: var(--navbar-width);
-    }
-
-    @supports (max-height: 100dvh) {
-        height: calc(100dvh - var(--header-height));
-    }
+  @supports (max-height: 100dvh) {
+    height: calc(100dvh - var(--header-height));
+  }
 }
 
 .navbarHeader {
-    padding-bottom: var(--mantine-spacing-md);
-    margin-bottom: calc(var(--mantine-spacing-md) * 1.5);
-    border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  padding-bottom: var(--mantine-spacing-md);
+  margin-bottom: calc(var(--mantine-spacing-md) * 1.5);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
 }
 
 .navbarMain {
-    flex: 1 1 auto;
-    overflow-y: auto;
+  flex: 1 1 auto;
+  overflow-y: auto;
 }
 
 .navbarFooter {
-    padding-top: var(--mantine-spacing-md);
-    padding-bottom: var(--mantine-spacing-md);
-    border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  padding-top: var(--mantine-spacing-md);
+  padding-bottom: var(--mantine-spacing-md);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
 }
 
 .divider {
-    color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
 }
 
 .navbarLink {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    font-size: var(--mantine-font-size-sm);
-    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
-    padding: 8px var(--mantine-spacing-sm);
-    border-radius: var(--mantine-radius-md);
-    font-weight: 500;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: background-color 50ms ease-in-out, color 50ms ease-in-out;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-size: var(--mantine-font-size-sm);
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+  padding: 8px var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 50ms ease-in-out,
+    color 50ms ease-in-out;
+
+  @mixin hover {
+    background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+    color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+
+    .navbarLinkIcon {
+      color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+    }
+  }
+
+  &[data-active] {
+    &,
+    &:hover {
+      background-color: var(--mantine-primary-color-light);
+      color: var(--mantine-primary-color-light-color);
+
+      .navbarLinkIcon {
+        color: var(--mantine-primary-color-light-color);
+      }
+    }
 
     @mixin hover {
-        background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
-        color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
-
-        .navbarLinkIcon {
-            color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
-        }
+      background-color: var(--mantine-primary-color-light-hover);
     }
-
-    &[data-active] {
-        &,
-        &:hover {
-            background-color: var(--mantine-primary-color-light);
-            color: var(--mantine-primary-color-light-color);
-
-            .navbarLinkIcon {
-                color: var(--mantine-primary-color-light-color);
-            }
-        }
-
-        @mixin hover {
-            background-color: var(--mantine-primary-color-light-hover);
-        }
-    }
+  }
 }
 
 .navbarLinkIcon {
-    color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
-    display: flex;
-    padding: 2px 0;
-    transition: color 50ms ease-in-out;
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
+  display: flex;
+  padding: 2px 0;
+  transition: color 50ms ease-in-out;
 }

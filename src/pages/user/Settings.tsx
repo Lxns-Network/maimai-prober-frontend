@@ -16,5 +16,5 @@ export default function Settings() {
         { id: "security", name: "账号安全", children: <SecuritySettingsSection /> },
       ]}
     />
-  )
+  );
 }

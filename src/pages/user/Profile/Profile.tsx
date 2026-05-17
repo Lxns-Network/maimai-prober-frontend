@@ -14,5 +14,5 @@ export default function Profile() {
         { id: "thirdparty", name: "第三方应用", children: <ProfileThirdPartySection /> },
       ]}
     />
-  )
+  );
 }

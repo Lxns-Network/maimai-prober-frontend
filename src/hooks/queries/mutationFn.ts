@@ -1,9 +1,7 @@
 import { APIError } from "@/utils/errors.ts";
 import { ApiResponse } from "@/types/api";
 
-export async function apiMutationFn<T = unknown>(
-  apiFn: () => Promise<Response>
-): Promise<T> {
+export async function apiMutationFn<T = unknown>(apiFn: () => Promise<Response>): Promise<T> {
   const res = await apiFn();
   let data: ApiResponse<T>;
   try {

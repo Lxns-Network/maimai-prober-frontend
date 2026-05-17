@@ -1,7 +1,7 @@
-import { ComponentPropsWithoutRef, forwardRef } from 'react';
-import { navigate } from 'vike/client/router';
+import { ComponentPropsWithoutRef, forwardRef } from "react";
+import { navigate } from "vike/client/router";
 
-interface LinkProps extends Omit<ComponentPropsWithoutRef<'a'>, 'href'> {
+interface LinkProps extends Omit<ComponentPropsWithoutRef<"a">, "href"> {
   to: string;
   replace?: boolean;
   state?: unknown;
@@ -16,9 +16,9 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
         e.shiftKey ||
         e.altKey ||
         e.button !== 0 ||
-        props.target === '_blank' ||
-        to.startsWith('http://') ||
-        to.startsWith('https://')
+        props.target === "_blank" ||
+        to.startsWith("http://") ||
+        to.startsWith("https://")
       ) {
         onClick?.(e);
         return;
@@ -28,7 +28,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
       onClick?.(e);
 
       if (replace) {
-        window.history.replaceState(state, '', to);
+        window.history.replaceState(state, "", to);
       }
       navigate(to);
     };
@@ -38,7 +38,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
         {children}
       </a>
     );
-  }
+  },
 );
 
-Link.displayName = 'Link';
+Link.displayName = "Link";

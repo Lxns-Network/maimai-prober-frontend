@@ -40,7 +40,9 @@ const coefficientDict: CoefficientDict = {
 function calculateRating(chartConstant: number, achievementRate: number): number {
   let levelCoefficient = 22.4;
 
-  for (const rate of Object.keys(coefficientDict).map(Number).sort((a, b) => a - b)) {
+  for (const rate of Object.keys(coefficientDict)
+    .map(Number)
+    .sort((a, b) => a - b)) {
     if (achievementRate < rate) {
       levelCoefficient = coefficientDict[rate];
       break;
@@ -59,7 +61,13 @@ interface RowProps {
   deluxeRating: number;
 }
 
-export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue, defaultDeluxeRating, opened, onClose }: DeluxeRatingCalculatorProps) => {
+export const DeluxeRatingCalculator = ({
+  defaultAchievements,
+  defaultLevelValue,
+  defaultDeluxeRating,
+  opened,
+  onClose,
+}: DeluxeRatingCalculatorProps) => {
   const [achievements, setAchievements] = useState(defaultAchievements);
   const [deluxeRating, setDeluxeRating] = useState(defaultDeluxeRating);
   const [levelValue, setLevelValue] = useState(defaultLevelValue);
@@ -80,30 +88,35 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
     } else if (method === "achievements") {
       for (let i = 10; i <= 150; i++) {
         newRows.push({
-          levelValue: i/10,
+          levelValue: i / 10,
           achievements: achievements || 0,
-          deluxeRating: calculateRating(i/10, achievements || 0),
+          deluxeRating: calculateRating(i / 10, achievements || 0),
         });
       }
       newRows.sort((a, b) => b.deluxeRating - a.deluxeRating);
     } else if (method === "dx_rating") {
       for (let i = 10; i <= 150; i++) {
-        if (calculateRating(i/10, 101) < (deluxeRating || 0)) continue;
-        let l = 0, r = 1010000, ans = r;
+        if (calculateRating(i / 10, 101) < (deluxeRating || 0)) continue;
+        let l = 0,
+          r = 1010000,
+          ans = r;
         while (r >= l) {
           const mid = Math.floor((r + l) / 2);
-          if (calculateRating(i/10, mid/10000) >= (deluxeRating || 0)) {
+          if (calculateRating(i / 10, mid / 10000) >= (deluxeRating || 0)) {
             ans = mid;
             r = mid - 1;
           } else {
             l = mid + 1;
           }
         }
-        if (!newRows.length || Math.round(newRows[newRows.length - 1].achievements * 10000) != ans) {
+        if (
+          !newRows.length ||
+          Math.round(newRows[newRows.length - 1].achievements * 10000) != ans
+        ) {
           newRows.push({
-            levelValue: i/10,
-            achievements: ans/10000,
-            deluxeRating: calculateRating(i/10, ans/10000),
+            levelValue: i / 10,
+            achievements: ans / 10000,
+            deluxeRating: calculateRating(i / 10, ans / 10000),
           });
         }
       }
@@ -129,7 +142,9 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
         <Modal.Body>
           <Stack gap="xs">
             <div>
-              <Text size="sm" fw={500} mb={4}>计算方式</Text>
+              <Text size="sm" fw={500} mb={4}>
+                计算方式
+              </Text>
               <Chip.Group value={method} onChange={(value) => setMethod(value as string)}>
                 <Group>
                   <Chip value="level_value">定数</Chip>
@@ -138,40 +153,46 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
                 </Group>
               </Chip.Group>
             </div>
-            {method === "level_value" && <NumberInput
-              variant="filled"
-              label="定数"
-              step={0.1}
-              min={0}
-              max={15}
-              decimalScale={1}
-              value={levelValue}
-              onChange={(value) => {
-                if (typeof value === "number") setLevelValue(value);
-              }}
-            />}
-            {method === "achievements" && <NumberInput
-              variant="filled"
-              label="达成率"
-              min={0}
-              max={101}
-              decimalScale={4}
-              suffix="%"
-              value={achievements}
-              onChange={(value) => {
-                if (typeof value === "number") setAchievements(value);
-              }}
-            />}
-            {method === "dx_rating" && <NumberInput
-              variant="filled"
-              label="DX Rating"
-              min={0}
-              allowDecimal={false}
-              value={deluxeRating}
-              onChange={(value) => {
-                if (typeof value === "number") setDeluxeRating(value);
-              }}
-            />}
+            {method === "level_value" && (
+              <NumberInput
+                variant="filled"
+                label="定数"
+                step={0.1}
+                min={0}
+                max={15}
+                decimalScale={1}
+                value={levelValue}
+                onChange={(value) => {
+                  if (typeof value === "number") setLevelValue(value);
+                }}
+              />
+            )}
+            {method === "achievements" && (
+              <NumberInput
+                variant="filled"
+                label="达成率"
+                min={0}
+                max={101}
+                decimalScale={4}
+                suffix="%"
+                value={achievements}
+                onChange={(value) => {
+                  if (typeof value === "number") setAchievements(value);
+                }}
+              />
+            )}
+            {method === "dx_rating" && (
+              <NumberInput
+                variant="filled"
+                label="DX Rating"
+                min={0}
+                allowDecimal={false}
+                value={deluxeRating}
+                onChange={(value) => {
+                  if (typeof value === "number") setDeluxeRating(value);
+                }}
+              />
+            )}
             <ScrollArea h={300}>
               <Table stickyHeader horizontalSpacing={0} layout="fixed">
                 <Table.Thead>
@@ -184,27 +205,31 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
                 <Table.Tbody>
                   {rows.map((row, index) => {
                     if (row.achievements === 0) return null;
-                    return <Table.Tr key={index}>
-                      <Table.Td>{row.achievements.toFixed(4)}%</Table.Td>
-                      <Table.Td>{row.levelValue.toFixed(1)}</Table.Td>
-                      {method != "dx_rating" && rows[index+1] ? (
-                        <Table.Td className={classes.changeLabel} fw={500} data-label={
-                          `+ ${(parseInt(row.deluxeRating.toString())-parseInt(rows[index+1].deluxeRating.toString()))}`
-                        }>
-                          {parseInt(row.deluxeRating.toString())}
-                          <Text span c="gray" size="sm">
-                            .{row.deluxeRating.toFixed(2).split(".")[1]}
-                          </Text>
-                        </Table.Td>
-                      ) : (
-                        <Table.Td fw={500}>
-                          {parseInt(row.deluxeRating.toString())}
-                          <Text span c="gray" size="sm">
-                            .{row.deluxeRating.toFixed(2).split(".")[1]}
-                          </Text>
-                        </Table.Td>
-                      )}
-                    </Table.Tr>
+                    return (
+                      <Table.Tr key={index}>
+                        <Table.Td>{row.achievements.toFixed(4)}%</Table.Td>
+                        <Table.Td>{row.levelValue.toFixed(1)}</Table.Td>
+                        {method != "dx_rating" && rows[index + 1] ? (
+                          <Table.Td
+                            className={classes.changeLabel}
+                            fw={500}
+                            data-label={`+ ${parseInt(row.deluxeRating.toString()) - parseInt(rows[index + 1].deluxeRating.toString())}`}
+                          >
+                            {parseInt(row.deluxeRating.toString())}
+                            <Text span c="gray" size="sm">
+                              .{row.deluxeRating.toFixed(2).split(".")[1]}
+                            </Text>
+                          </Table.Td>
+                        ) : (
+                          <Table.Td fw={500}>
+                            {parseInt(row.deluxeRating.toString())}
+                            <Text span c="gray" size="sm">
+                              .{row.deluxeRating.toFixed(2).split(".")[1]}
+                            </Text>
+                          </Table.Td>
+                        )}
+                      </Table.Tr>
+                    );
                   })}
                 </Table.Tbody>
               </Table>
@@ -214,4 +239,4 @@ export const DeluxeRatingCalculator = ({ defaultAchievements, defaultLevelValue,
       </Modal.Content>
     </Modal.Root>
   );
-}
+};

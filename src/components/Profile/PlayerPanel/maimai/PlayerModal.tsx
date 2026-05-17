@@ -15,27 +15,37 @@ export const MaimaiPlayerModalContent = ({ player, onCollectionEdit }: PlayerMod
       <Grid>
         <Grid.Col span={6}>
           {player.name_plate && (
-            <EditButton title="姓名框" description={player.name_plate.name} onClick={() => {
-              onCollectionEdit("plates", player.name_plate?.id || 0);
-            }} />
+            <EditButton
+              title="姓名框"
+              description={player.name_plate.name}
+              onClick={() => {
+                onCollectionEdit("plates", player.name_plate?.id || 0);
+              }}
+            />
           )}
         </Grid.Col>
         <Grid.Col span={6}>
           {player.frame && (
-            <EditButton title="背景" description={player.frame.name} onClick={() => {
-              onCollectionEdit("frames", player.frame?.id || 0);
-            }} />
+            <EditButton
+              title="背景"
+              description={player.frame.name}
+              onClick={() => {
+                onCollectionEdit("frames", player.frame?.id || 0);
+              }}
+            />
           )}
         </Grid.Col>
         <Grid.Col span={6}>
           <Paper className={classes.subParameters}>
-            <Text fz="xs" c="dimmed">上次同步时间</Text>
+            <Text fz="xs" c="dimmed">
+              上次同步时间
+            </Text>
             <Text fz="sm">
-              <Marquee>{(new Date(Date.parse(player.upload_time))).toLocaleString()}</Marquee>
+              <Marquee>{new Date(Date.parse(player.upload_time)).toLocaleString()}</Marquee>
             </Text>
           </Paper>
         </Grid.Col>
       </Grid>
     </Container>
-  )
-}
+  );
+};

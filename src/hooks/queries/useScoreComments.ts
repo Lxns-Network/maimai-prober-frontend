@@ -13,7 +13,7 @@ export interface Comment {
     id: number;
     name: string;
     avatar_id?: number;
-  }
+  };
 }
 
 interface UseScoreCommentsOptions {
@@ -22,7 +22,7 @@ interface UseScoreCommentsOptions {
     song_id: string;
     song_type?: string;
     level_index: string;
-  }
+  };
 }
 
 const emptyComments: Comment[] = [];

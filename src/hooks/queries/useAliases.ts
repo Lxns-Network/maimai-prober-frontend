@@ -4,12 +4,19 @@ import { AliasListProps } from "@/types/alias";
 import { Game } from "@/types/game";
 import { queryKeys } from "./queryKeys.ts";
 
-export const useAliases = (game: Game, page: number, approved: boolean = false, sort: string = "alias_id", order: string = "desc", songId: number = 0) => {
+export const useAliases = (
+  game: Game,
+  page: number,
+  approved: boolean = false,
+  sort: string = "alias_id",
+  order: string = "desc",
+  songId: number = 0,
+) => {
   const queryClient = useQueryClient();
   const params = new URLSearchParams({
     page: String(page),
     sort: `${sort} ${order}`,
-    approved: String(approved)
+    approved: String(approved),
   });
 
   if (songId !== 0) {

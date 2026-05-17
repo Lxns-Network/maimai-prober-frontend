@@ -1,4 +1,13 @@
-import { Switch, Text, Select, MultiSelect, Button, Box, UnstyledButton, Flex } from '@mantine/core';
+import {
+  Switch,
+  Text,
+  Select,
+  MultiSelect,
+  Button,
+  Box,
+  UnstyledButton,
+  Flex,
+} from "@mantine/core";
 import { memo, useState } from "react";
 import classes from "./Settings.module.css";
 import { useMediaQuery } from "@mantine/hooks";
@@ -14,7 +23,7 @@ export interface SettingProps {
   key: string;
   title: string;
   description: string;
-  optionType: 'switch' | 'select' | 'multi-select' | 'button' | 'group' | 'custom';
+  optionType: "switch" | "select" | "multi-select" | "button" | "group" | "custom";
   // 可选参数
   placeholder?: string;
   color?: string; // 选项类型为 'button' 时需要
@@ -29,24 +38,41 @@ export interface SettingProps {
 export type SettingValue = Record<string, unknown>;
 type SettingOnChange = (key: string, value: string | boolean | string[] | null) => void;
 
-const Setting = ({ data, value, onChange }: {
+const Setting = ({
+  data,
+  value,
+  onChange,
+}: {
   data: SettingProps;
   value?: SettingValue;
   onChange?: SettingOnChange;
 }) => {
   const [opened, setOpened] = useState(false);
-  const small = useMediaQuery('(max-width: 450px)');
+  const small = useMediaQuery("(max-width: 450px)");
 
   return (
     <>
-      <SettingsModal title={data.title} data={data.settings || []} value={value} opened={opened} onClose={() => setOpened(false)} onChange={onChange} />
-      <UnstyledButton w="100%" className={classes.item} onClick={() => {
-        if (data.optionType === 'group') {
-          setOpened(true);
-        }
-      }} style={{
-        cursor: data.optionType === 'group' ? 'pointer' : 'default',
-      }} component="div">
+      <SettingsModal
+        title={data.title}
+        data={data.settings || []}
+        value={value}
+        opened={opened}
+        onClose={() => setOpened(false)}
+        onChange={onChange}
+      />
+      <UnstyledButton
+        w="100%"
+        className={classes.item}
+        onClick={() => {
+          if (data.optionType === "group") {
+            setOpened(true);
+          }
+        }}
+        style={{
+          cursor: data.optionType === "group" ? "pointer" : "default",
+        }}
+        component="div"
+      >
         <Flex justify="space-between" align="center" columnGap="md" rowGap="xs" wrap="wrap">
           <Box style={{ flex: 1 }}>
             <Text>{data.title}</Text>
@@ -54,69 +80,99 @@ const Setting = ({ data, value, onChange }: {
               {data.description}
             </Text>
           </Box>
-          {data.optionType === 'group' ? (
+          {data.optionType === "group" ? (
             <IconChevronRight size={16} />
-          ) : data.optionType !== 'custom' && (
-            <Box style={{ flexBasis: small && data.optionType.includes("select") ? "100%" : "auto" }}>
-              {data.optionType === 'switch' && (
-                <Switch
-                  onLabel="开"
-                  offLabel="关"
-                  className={classes.switch}
-                  size="lg"
-                  checked={(value && data.key in value) ? value[data.key] as boolean : data.defaultValue as boolean}
-                  onChange={(event) => onChange && onChange(data.key, event.currentTarget.checked)}
-                />
-              )}
-              {data.optionType === 'select' && (
-                <Select
-                  variant="filled"
-                  data={data.options || []}
-                  value={(value && data.key in value) ? value[data.key] as string : data.defaultValue as string}
-                  comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
-                  onChange={(value) => onChange && onChange(data.key, value)}
-                />
-              )}
-              {data.optionType === 'multi-select' && (
-                <MultiSelect
-                  variant="filled"
-                  data={data.options || []}
-                  placeholder={data.placeholder}
-                  value={(value && data.key in value) ? value[data.key] as string[] : data.defaultValue as string[]}
-                  comboboxProps={{ transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' } }}
-                  onChange={(value) => onChange && onChange(data.key, value)}
-                />
-              )}
-              {data.optionType === 'button' && (
-                <Button
-                  variant="outline"
-                  color={data.color}
-                  onClick={data.onClick}
-                >
-                  {data.placeholder}
-                </Button>
-              )}
-            </Box>
+          ) : (
+            data.optionType !== "custom" && (
+              <Box
+                style={{ flexBasis: small && data.optionType.includes("select") ? "100%" : "auto" }}
+              >
+                {data.optionType === "switch" && (
+                  <Switch
+                    onLabel="开"
+                    offLabel="关"
+                    className={classes.switch}
+                    size="lg"
+                    checked={
+                      value && data.key in value
+                        ? (value[data.key] as boolean)
+                        : (data.defaultValue as boolean)
+                    }
+                    onChange={(event) =>
+                      onChange && onChange(data.key, event.currentTarget.checked)
+                    }
+                  />
+                )}
+                {data.optionType === "select" && (
+                  <Select
+                    variant="filled"
+                    data={data.options || []}
+                    value={
+                      value && data.key in value
+                        ? (value[data.key] as string)
+                        : (data.defaultValue as string)
+                    }
+                    comboboxProps={{
+                      transitionProps: {
+                        transition: "fade",
+                        duration: 100,
+                        timingFunction: "ease",
+                      },
+                    }}
+                    onChange={(value) => onChange && onChange(data.key, value)}
+                  />
+                )}
+                {data.optionType === "multi-select" && (
+                  <MultiSelect
+                    variant="filled"
+                    data={data.options || []}
+                    placeholder={data.placeholder}
+                    value={
+                      value && data.key in value
+                        ? (value[data.key] as string[])
+                        : (data.defaultValue as string[])
+                    }
+                    comboboxProps={{
+                      transitionProps: {
+                        transition: "fade",
+                        duration: 100,
+                        timingFunction: "ease",
+                      },
+                    }}
+                    onChange={(value) => onChange && onChange(data.key, value)}
+                  />
+                )}
+                {data.optionType === "button" && (
+                  <Button variant="outline" color={data.color} onClick={data.onClick}>
+                    {data.placeholder}
+                  </Button>
+                )}
+              </Box>
+            )
           )}
         </Flex>
-        {data.optionType === 'custom' && data.render && (
-          <Box mt="xs">{data.render()}</Box>
-        )}
+        {data.optionType === "custom" && data.render && <Box mt="xs">{data.render()}</Box>}
       </UnstyledButton>
     </>
   );
-}
+};
 
-export const SettingList = memo(({ data, value, onChange }: {
-  data: SettingProps[];
-  value?: SettingValue;
-  onChange?: SettingOnChange;
-}) => {
-  return (
-    <Box>
-      {data.map((item) => (
-        <Setting key={item.key} data={item} value={value} onChange={onChange} />
-      ))}
-    </Box>
-  );
-});
+export const SettingList = memo(
+  ({
+    data,
+    value,
+    onChange,
+  }: {
+    data: SettingProps[];
+    value?: SettingValue;
+    onChange?: SettingOnChange;
+  }) => {
+    return (
+      <Box>
+        {data.map((item) => (
+          <Setting key={item.key} data={item} value={value} onChange={onChange} />
+        ))}
+      </Box>
+    );
+  },
+);

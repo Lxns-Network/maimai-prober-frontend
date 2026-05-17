@@ -20,5 +20,5 @@ export const PlayerPanelSkeleton = () => {
         <Skeleton h={8} mt={8} w="70%" radius="xl" />
       </Grid.Col>
     </Grid>
-  )
-}
+  );
+};

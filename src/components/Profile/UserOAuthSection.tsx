@@ -1,32 +1,49 @@
 import {
-  Card, Text, Group, Avatar, Badge, ActionIcon, Tooltip, Stack, Box, Collapse, ThemeIcon, Divider, Loader
+  Card,
+  Text,
+  Group,
+  Avatar,
+  Badge,
+  ActionIcon,
+  Tooltip,
+  Stack,
+  Box,
+  Collapse,
+  ThemeIcon,
+  Divider,
+  Loader,
 } from "@mantine/core";
 import {
-  IconTrash, IconExternalLink, IconCalendar, IconChevronDown, IconChevronUp, IconShield, IconAlertTriangle, IconTool
+  IconTrash,
+  IconExternalLink,
+  IconCalendar,
+  IconChevronDown,
+  IconChevronUp,
+  IconShield,
+  IconAlertTriangle,
+  IconTool,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
 import { scopeData } from "@/data/scopeData.tsx";
 import { useUserOAuthApps } from "@/hooks/queries/useUserOAuthApps.ts";
-import classes from "./UserOAuthSection.module.css"
+import classes from "./UserOAuthSection.module.css";
 import { useRevokeUserOAuthApp } from "@/hooks/mutations/useUserMutations.ts";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 
 const ScopeDisplay = ({ scopes }: { scopes: string }) => {
   const [expanded, setExpanded] = useState(false);
-  const scopeList = scopes.split(' ');
+  const scopeList = scopes.split(" ");
 
-  const hasHighRiskScope = scopeList.some(scope => scopeData[scope as keyof typeof scopeData]?.high_risk);
+  const hasHighRiskScope = scopeList.some(
+    (scope) => scopeData[scope as keyof typeof scopeData]?.high_risk,
+  );
 
   return (
     <Stack gap="xs">
       <Group justify="space-between" align="center">
         <Group gap="xs">
-          <ThemeIcon
-            size="sm"
-            variant="light"
-            color={hasHighRiskScope ? "orange" : undefined}
-          >
+          <ThemeIcon size="sm" variant="light" color={hasHighRiskScope ? "orange" : undefined}>
             {hasHighRiskScope ? <IconAlertTriangle size={12} /> : <IconShield size={12} />}
           </ThemeIcon>
           <Text size="sm" fw={500}>
@@ -50,7 +67,13 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
               const scopeInfo = scopeData[scope as keyof typeof scopeData];
 
               return (
-                <Card key={scope} className={classes.oauthScopeCard} padding="xs" withBorder radius="sm">
+                <Card
+                  key={scope}
+                  className={classes.oauthScopeCard}
+                  padding="xs"
+                  withBorder
+                  radius="sm"
+                >
                   {scopeInfo && (
                     <Stack gap={4}>
                       <Text size="sm" fw={500}>
@@ -97,12 +120,12 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
   );
 };
 
-const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => void }) => {
+const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => void }) => {
   const { mutate: mutateRevoke } = useRevokeUserOAuthApp();
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "未知";
-    return new Date(dateString).toLocaleDateString('zh-CN');
+    return new Date(dateString).toLocaleDateString("zh-CN");
   };
 
   const handleDelete = () => {
@@ -119,14 +142,14 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => v
 
   const handleVisitWebsite = () => {
     if (app.website) {
-      window.open(app.website, '_blank');
+      window.open(app.website, "_blank");
     }
   };
 
   return (
     <Card className={classes.oauthCard} withBorder radius="md" p={0}>
       <Group align="center" gap="md" style={{ flex: 1 }} m="xs">
-        <Avatar src={app.logo_url} radius="sm" >
+        <Avatar src={app.logo_url} radius="sm">
           {app.name.charAt(0).toUpperCase()}
         </Avatar>
 
@@ -136,11 +159,7 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => v
               {app.name}
             </Text>
             {app.website && (
-              <ActionIcon
-                variant="subtle"
-                size="sm"
-                onClick={handleVisitWebsite}
-              >
+              <ActionIcon variant="subtle" size="sm" onClick={handleVisitWebsite}>
                 <IconExternalLink size={14} />
               </ActionIcon>
             )}
@@ -149,7 +168,7 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => v
           <Group gap="md">
             {app.developer && (
               <Group gap={4}>
-                <IconTool size={12} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                <IconTool size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
                 <Text size="xs" c="dimmed">
                   {app.developer.name}
                 </Text>
@@ -157,7 +176,7 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => v
             )}
             {app.user_authorize_time && (
               <Group gap={4}>
-                <IconCalendar size={12} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                <IconCalendar size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
                 <Text size="xs" c="dimmed">
                   授权于 {formatDate(app.user_authorize_time)}
                 </Text>
@@ -170,7 +189,13 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps, onRevoke: () => v
           <ActionIcon
             color="red"
             variant="subtle"
-            onClick={() => openConfirmModal("撤销授权", `你确定要撤销对 ${app.name} 的授权吗？撤销后，该应用将无法访问你的查分器数据。`, handleDelete)}
+            onClick={() =>
+              openConfirmModal(
+                "撤销授权",
+                `你确定要撤销对 ${app.name} 的授权吗？撤销后，该应用将无法访问你的查分器数据。`,
+                handleDelete,
+              )
+            }
             size="lg"
           >
             <IconTrash size={18} />

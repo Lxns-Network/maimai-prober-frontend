@@ -1,10 +1,16 @@
 import { useMutation, UseMutationOptions } from "@tanstack/react-query";
 import { apiMutationFn } from "@/hooks/queries/mutationFn.ts";
 import {
-  createAlias, voteAlias, deleteUserAlias, deleteAlias, approveAlias,
+  createAlias,
+  voteAlias,
+  deleteUserAlias,
+  deleteAlias,
+  approveAlias,
 } from "@/utils/api/alias.ts";
 
-export const useCreateAlias = (options?: UseMutationOptions<unknown, Error, { game: string; data: object }>) => {
+export const useCreateAlias = (
+  options?: UseMutationOptions<unknown, Error, { game: string; data: object }>,
+) => {
   return useMutation({
     mutationFn: ({ game, data }: { game: string; data: object }) =>
       apiMutationFn(() => createAlias(game, data)),
@@ -12,7 +18,9 @@ export const useCreateAlias = (options?: UseMutationOptions<unknown, Error, { ga
   });
 };
 
-export const useVoteAlias = (options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number; vote: boolean }>) => {
+export const useVoteAlias = (
+  options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number; vote: boolean }>,
+) => {
   return useMutation({
     mutationFn: ({ game, aliasId, vote }: { game: string; aliasId: number; vote: boolean }) =>
       apiMutationFn(() => voteAlias(game, aliasId, vote)),
@@ -20,7 +28,9 @@ export const useVoteAlias = (options?: UseMutationOptions<unknown, Error, { game
   });
 };
 
-export const useDeleteUserAlias = (options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>) => {
+export const useDeleteUserAlias = (
+  options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>,
+) => {
   return useMutation({
     mutationFn: ({ game, aliasId }: { game: string; aliasId: number }) =>
       apiMutationFn(() => deleteUserAlias(game, aliasId)),
@@ -29,7 +39,9 @@ export const useDeleteUserAlias = (options?: UseMutationOptions<unknown, Error, 
 };
 
 // Admin
-export const useDeleteAlias = (options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>) => {
+export const useDeleteAlias = (
+  options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>,
+) => {
   return useMutation({
     mutationFn: ({ game, aliasId }: { game: string; aliasId: number }) =>
       apiMutationFn(() => deleteAlias(game, aliasId)),
@@ -37,7 +49,9 @@ export const useDeleteAlias = (options?: UseMutationOptions<unknown, Error, { ga
   });
 };
 
-export const useApproveAlias = (options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>) => {
+export const useApproveAlias = (
+  options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>,
+) => {
   return useMutation({
     mutationFn: ({ game, aliasId }: { game: string; aliasId: number }) =>
       apiMutationFn(() => approveAlias(game, aliasId)),

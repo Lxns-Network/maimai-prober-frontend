@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import { Title, TextInput, Text, Group, Button, LoadingOverlay, Textarea, Card } from '@mantine/core';
-import { Container, rem } from '@mantine/core';
+import {
+  Title,
+  TextInput,
+  Text,
+  Group,
+  Button,
+  LoadingOverlay,
+  Textarea,
+  Card,
+} from "@mantine/core";
+import { Container, rem } from "@mantine/core";
 import { Icon } from "@/components/MdiIcon";
 import { mdiCodeTags, mdiLink } from "@mdi/js";
 import { useForm } from "@mantine/form";
@@ -9,7 +18,7 @@ import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { validateText, validateUrl } from "@/utils/validator.ts";
 import { useDeveloper } from "@/hooks/queries/useDeveloper.ts";
 import { useSendDeveloperApply } from "@/hooks/mutations/useDeveloperMutations.ts";
-import { navigate } from 'vike/client/router'
+import { navigate } from "vike/client/router";
 
 interface FormValues {
   name: string;
@@ -31,12 +40,13 @@ export default function DeveloperApply() {
     },
 
     validate: {
-      name: (value) => validateText(value, {
-        allowEmpty: false,
-        textLabel: "开发者名称",
-        minLength: 4,
-        maxLength: 16,
-      }),
+      name: (value) =>
+        validateText(value, {
+          allowEmpty: false,
+          textLabel: "开发者名称",
+          minLength: 4,
+          maxLength: 16,
+        }),
       url: (value) => validateUrl(value, { allowEmpty: false, urlLabel: "开发者地址" }),
       reason: (value) => validateText(value, { allowEmpty: false, textLabel: "申请理由" }),
     },
@@ -57,7 +67,7 @@ export default function DeveloperApply() {
         setSubmitting(false);
       },
     });
-  }
+  };
 
   useEffect(() => {
     if (!developer) return;
@@ -93,7 +103,7 @@ export default function DeveloperApply() {
             mb="sm"
             leftSection={<Icon path={mdiCodeTags} size={rem(16)} />}
             disabled={applied}
-            {...form.getInputProps('name')}
+            {...form.getInputProps("name")}
           />
           <TextInput
             name="url"
@@ -103,7 +113,7 @@ export default function DeveloperApply() {
             mb={4}
             leftSection={<Icon path={mdiLink} size={rem(16)} />}
             disabled={applied}
-            {...form.getInputProps('url')}
+            {...form.getInputProps("url")}
           />
           <Text c="dimmed" size="xs" ta="left" mb="sm">
             可以是个人主页、GitHub 主页或组织主页等
@@ -115,15 +125,19 @@ export default function DeveloperApply() {
             placeholder="请输入你的申请理由"
             mb="sm"
             disabled={applied}
-            {...form.getInputProps('reason')}
+            {...form.getInputProps("reason")}
           />
           <Group justify="space-between" mt="xl">
             <div>
               {applied && (
-                <Text size="xs" c="dimmed">你的申请正在受理中</Text>
+                <Text size="xs" c="dimmed">
+                  你的申请正在受理中
+                </Text>
               )}
             </div>
-            <Button size="sm" type="submit" loading={submitting} disabled={applied}>提交申请</Button>
+            <Button size="sm" type="submit" loading={submitting} disabled={applied}>
+              提交申请
+            </Button>
           </Group>
         </form>
       </Card>

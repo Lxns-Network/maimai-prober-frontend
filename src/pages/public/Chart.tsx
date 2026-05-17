@@ -1,25 +1,39 @@
-import { useEffect, useCallback, useState, useRef } from 'react';
-import { ActionIcon, Text, Title, Kbd, Group, Card, SimpleGrid, Stack, Container, Badge } from '@mantine/core';
-import { IconArrowLeft, IconLock, IconLockOpen } from '@tabler/icons-react';
-import { ChartCanvas } from '@/pages/public/Chart/components/ChartCanvas';
-import { Controls, PlaybackControls } from '@/pages/public/Chart/components/Controls';
-import { useGameStore } from '@/pages/public/Chart/stores/useGameStore';
-import { useGameSettingsStore } from '@/pages/public/Chart/stores/useGameSettingsStore';
-import { parseSimaiChart, getAvailableDifficulties } from '@/pages/public/Chart/core/parser/ChartParser';
-import { ChartDifficulty } from '@/pages/public/Chart/types';
-import classes from './Chart.module.css';
-import { usePageContext } from 'vike-react/usePageContext';
+import { useEffect, useCallback, useState, useRef } from "react";
+import {
+  ActionIcon,
+  Text,
+  Title,
+  Kbd,
+  Group,
+  Card,
+  SimpleGrid,
+  Stack,
+  Container,
+  Badge,
+} from "@mantine/core";
+import { IconArrowLeft, IconLock, IconLockOpen } from "@tabler/icons-react";
+import { ChartCanvas } from "@/pages/public/Chart/components/ChartCanvas";
+import { Controls, PlaybackControls } from "@/pages/public/Chart/components/Controls";
+import { useGameStore } from "@/pages/public/Chart/stores/useGameStore";
+import { useGameSettingsStore } from "@/pages/public/Chart/stores/useGameSettingsStore";
+import {
+  parseSimaiChart,
+  getAvailableDifficulties,
+} from "@/pages/public/Chart/core/parser/ChartParser";
+import { ChartDifficulty } from "@/pages/public/Chart/types";
+import classes from "./Chart.module.css";
+import { usePageContext } from "vike-react/usePageContext";
 
 async function fetchChartData(chartId: number): Promise<string | null> {
   try {
     const response = await fetch(`https://assets2.lxns.net/maimai/chart/${chartId}.txt`);
     if (!response.ok) {
-      console.error('Failed to fetch chart data:', response.status);
+      console.error("Failed to fetch chart data:", response.status);
       return null;
     }
     return await response.text();
   } catch (error) {
-    console.error('Failed to fetch chart data:', error);
+    console.error("Failed to fetch chart data:", error);
     return null;
   }
 }
@@ -27,23 +41,33 @@ async function fetchChartData(chartId: number): Promise<string | null> {
 function KeyboardShortcuts() {
   return (
     <Card className={classes.card} radius="lg" withBorder>
-      <Text size="sm" fw={500} mb="sm">键盘快捷键</Text>
+      <Text size="sm" fw={500} mb="sm">
+        键盘快捷键
+      </Text>
       <SimpleGrid cols={2} spacing="xs">
         <Group justify="space-between">
           <Kbd>Space</Kbd>
-          <Text size="xs" c="dimmed">播放/暂停</Text>
+          <Text size="xs" c="dimmed">
+            播放/暂停
+          </Text>
         </Group>
         <Group justify="space-between">
           <Kbd>R</Kbd>
-          <Text size="xs" c="dimmed">重新播放当前小节</Text>
+          <Text size="xs" c="dimmed">
+            重新播放当前小节
+          </Text>
         </Group>
         <Group justify="space-between">
           <Kbd>← →</Kbd>
-          <Text size="xs" c="dimmed">步进</Text>
+          <Text size="xs" c="dimmed">
+            步进
+          </Text>
         </Group>
         <Group justify="space-between">
           <Kbd>↑ ↓</Kbd>
-          <Text size="xs" c="dimmed">流速</Text>
+          <Text size="xs" c="dimmed">
+            流速
+          </Text>
         </Group>
       </SimpleGrid>
     </Card>
@@ -63,36 +87,36 @@ function useKeyboardShortcuts() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       switch (e.key) {
-        case ' ':
+        case " ":
           e.preventDefault();
           togglePlayback();
           break;
-        case 'r':
-        case 'R':
+        case "r":
+        case "R":
           e.preventDefault();
           restart();
           break;
-        case 'ArrowLeft':
+        case "ArrowLeft":
           e.preventDefault();
           e.shiftKey ? stepMeasure(-1) : stepPosition(-1);
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           e.preventDefault();
           e.shiftKey ? stepMeasure(1) : stepPosition(1);
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
           setHiSpeed(Math.min(9, hiSpeed + 0.25));
           break;
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
           setHiSpeed(Math.max(3, hiSpeed - 0.25));
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [togglePlayback, restart, stepMeasure, stepPosition, setHiSpeed, hiSpeed]);
 }
 
@@ -118,7 +142,7 @@ function ChartContent() {
   const chartIdParam = searchParams.chart_id;
   const difficultyParam = searchParams.difficulty;
   const chartId = chartIdParam ? parseInt(chartIdParam) : null;
-  const difficulty = difficultyParam ? (parseInt(difficultyParam) + 2) as ChartDifficulty : null;
+  const difficulty = difficultyParam ? ((parseInt(difficultyParam) + 2) as ChartDifficulty) : null;
 
   useKeyboardShortcuts();
 
@@ -137,7 +161,9 @@ function ChartContent() {
 
         let diffToUse = difficulty;
         if (!diffToUse || !available[diffToUse]) {
-          const availableList = Object.keys(available).map(Number).sort((a, b) => b - a) as ChartDifficulty[];
+          const availableList = Object.keys(available)
+            .map(Number)
+            .sort((a, b) => b - a) as ChartDifficulty[];
           diffToUse = availableList[0] || null;
         }
 
@@ -147,10 +173,18 @@ function ChartContent() {
           setChartData(chart);
         }
       } catch (error) {
-        console.error('Failed to parse chart:', error);
+        console.error("Failed to parse chart:", error);
       }
     }
-  }, [chartId, difficulty, setRawSimaiText, setMusicUrl, setChartData, setAvailableDifficulties, setSelectedDifficulty]);
+  }, [
+    chartId,
+    difficulty,
+    setRawSimaiText,
+    setMusicUrl,
+    setChartData,
+    setAvailableDifficulties,
+    setSelectedDifficulty,
+  ]);
 
   useEffect(() => {
     loadChart();
@@ -202,7 +236,10 @@ function ChartContent() {
     const handleMouseMove = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const wasOverControls = isOverControls;
-      isOverControls = !!(target.closest('.mantine-ActionIcon-root') || target.closest('[class*="fullscreenControls"]'));
+      isOverControls = !!(
+        target.closest(".mantine-ActionIcon-root") ||
+        target.closest('[class*="fullscreenControls"]')
+      );
 
       if (isOverControls) {
         if (controlsTimeoutRef.current) {
@@ -225,7 +262,10 @@ function ChartContent() {
       lastTouchTime = now;
 
       const target = e.target as HTMLElement;
-      const isTouchingControls = !!(target.closest('[class*="fullscreenControls"]') || target.closest('.mantine-ActionIcon-root'));
+      const isTouchingControls = !!(
+        target.closest('[class*="fullscreenControls"]') ||
+        target.closest(".mantine-ActionIcon-root")
+      );
 
       if (isTouchingControls) {
         setShowControls(true);
@@ -237,7 +277,7 @@ function ChartContent() {
       } else {
         e.preventDefault();
         isOverControls = false;
-        setShowControls(prev => {
+        setShowControls((prev) => {
           if (prev) {
             if (controlsTimeoutRef.current) {
               clearTimeout(controlsTimeoutRef.current);
@@ -257,16 +297,16 @@ function ChartContent() {
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchstart', handleTouch, { passive: false });
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchstart", handleTouch, { passive: false });
 
     controlsTimeoutRef.current = setTimeout(() => {
       setShowControls(false);
     }, 3000);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchstart', handleTouch);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchstart", handleTouch);
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
         controlsTimeoutRef.current = null;
@@ -281,26 +321,28 @@ function ChartContent() {
         mozFullScreenElement?: Element;
         msFullscreenElement?: Element;
       };
-      const isCurrentlyFullscreen = !!(document.fullscreenElement ||
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
         doc.webkitFullscreenElement ||
         doc.mozFullScreenElement ||
-        doc.msFullscreenElement);
+        doc.msFullscreenElement
+      );
 
       if (isFullscreen && !isCurrentlyFullscreen) {
         setIsFullscreen(false);
       }
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullscreenChange);
 
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
     };
   }, [isFullscreen, setIsFullscreen]);
 
@@ -326,7 +368,7 @@ function ChartContent() {
           await el.msRequestFullscreen();
         }
       } catch (err) {
-        console.error('全屏失败:', err);
+        console.error("全屏失败:", err);
       }
     };
 
@@ -347,7 +389,7 @@ function ChartContent() {
           await doc.msExitFullscreen();
         }
       } catch (err) {
-        console.error('退出全屏失败:', err);
+        console.error("退出全屏失败:", err);
       }
     };
 
@@ -363,8 +405,8 @@ function ChartContent() {
     const chartCanvasElement = chartCanvasRef.current;
     if (!chartCanvasElement) return;
 
-    const fullscreenContainer = document.getElementById('fullscreen-chart-container');
-    const normalContainer = document.getElementById('normal-chart-container');
+    const fullscreenContainer = document.getElementById("fullscreen-chart-container");
+    const normalContainer = document.getElementById("normal-chart-container");
 
     if (isFullscreen && fullscreenContainer) {
       fullscreenContainer.appendChild(chartCanvasElement);
@@ -375,13 +417,9 @@ function ChartContent() {
 
   return (
     <>
-      <Container size="xl" py="lg" style={{ display: isFullscreen ? 'none' : 'block' }}>
+      <Container size="xl" py="lg" style={{ display: isFullscreen ? "none" : "block" }}>
         <Group mb="lg">
-          <ActionIcon
-            variant="subtle"
-            onClick={() => window.history.back()}
-            aria-label="返回"
-          >
+          <ActionIcon variant="subtle" onClick={() => window.history.back()} aria-label="返回">
             <IconArrowLeft size={20} />
           </ActionIcon>
 
@@ -391,7 +429,9 @@ function ChartContent() {
               <Badge variant="light">测试版</Badge>
             </Group>
             {chartData && (
-              <Text size="sm" c="dimmed">{chartData.title}</Text>
+              <Text size="sm" c="dimmed">
+                {chartData.title}
+              </Text>
             )}
           </div>
         </Group>
@@ -415,18 +455,23 @@ function ChartContent() {
 
       {isFullscreen && (
         <div className={classes.fullscreen} ref={fullscreenElementRef}>
-          <div id="fullscreen-chart-container" style={{ cursor: showControls ? 'default' : 'none' }} />
-          <div className={`${classes.fullscreenControls} ${showControls ? classes.showControls : ''}`}>
+          <div
+            id="fullscreen-chart-container"
+            style={{ cursor: showControls ? "default" : "none" }}
+          />
+          <div
+            className={`${classes.fullscreenControls} ${showControls ? classes.showControls : ""}`}
+          >
             <PlaybackControls onToggleFullscreen={toggleFullscreen} isFullscreen={true} />
           </div>
           <ActionIcon
-            className={`${classes.lockButton} ${(isLocked || showControls) ? classes.showButton : ''}`}
+            className={`${classes.lockButton} ${isLocked || showControls ? classes.showButton : ""}`}
             variant="filled"
             color="dark"
             size="lg"
             radius="xl"
-            onClick={() => setIsLocked(prev => !prev)}
-            aria-label={isLocked ? '解锁控制' : '锁定控制'}
+            onClick={() => setIsLocked((prev) => !prev)}
+            aria-label={isLocked ? "解锁控制" : "锁定控制"}
           >
             {isLocked ? <IconLock size={20} /> : <IconLockOpen size={20} />}
           </ActionIcon>

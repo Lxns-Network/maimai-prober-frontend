@@ -22,11 +22,9 @@ const useAliasStore = create<ModalState>((set) => ({
   opened: false,
   game: "maimai",
 
-  openModal: ({ game, songId = null, onClose }) =>
-    set({ opened: true, game, songId, onClose }),
+  openModal: ({ game, songId = null, onClose }) => set({ opened: true, game, songId, onClose }),
 
-  closeModal: () =>
-    set({ opened: false, onClose: undefined }),
+  closeModal: () => set({ opened: false, onClose: undefined }),
 }));
 
 export default useAliasStore;

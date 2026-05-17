@@ -1,14 +1,28 @@
-import { Badge, BadgeProps, darken, ElementProps, rem, rgba, Text, MantineSize } from "@mantine/core";
+import {
+  Badge,
+  BadgeProps,
+  darken,
+  ElementProps,
+  rem,
+  rgba,
+  Text,
+  MantineSize,
+} from "@mantine/core";
 import { Marquee } from "@/components/Marquee.tsx";
 import { getTrophyColor } from "@/utils/color.ts";
 
-interface TrophyBadgeProps extends BadgeProps, ElementProps<'div', keyof BadgeProps> {
+interface TrophyBadgeProps extends BadgeProps, ElementProps<"div", keyof BadgeProps> {
   name: string;
   trophyColor: string;
   fontSize?: MantineSize;
 }
 
-export const TrophyBadge = ({ name, trophyColor: color, fontSize = "xs", ...others }: TrophyBadgeProps) => {
+export const TrophyBadge = ({
+  name,
+  trophyColor: color,
+  fontSize = "xs",
+  ...others
+}: TrophyBadgeProps) => {
   const resolvedColor = getTrophyColor(color);
 
   return (

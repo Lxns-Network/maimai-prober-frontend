@@ -1,14 +1,31 @@
 import React, { useEffect, useState } from "react";
 import {
-  Title, Text, Button, Container, rem, Center, Group, Avatar, Anchor, useMantineTheme, Transition, Box, Loader,
-  TextInput, Alert,
-  Image
-} from '@mantine/core';
+  Title,
+  Text,
+  Button,
+  Container,
+  rem,
+  Center,
+  Group,
+  Avatar,
+  Anchor,
+  useMantineTheme,
+  Transition,
+  Box,
+  Loader,
+  TextInput,
+  Alert,
+  Image,
+} from "@mantine/core";
 import {
-  IconAlertCircle, IconArrowDown, IconArrowRight, IconPhotoOff, IconShare
+  IconAlertCircle,
+  IconArrowDown,
+  IconArrowRight,
+  IconPhotoOff,
+  IconShare,
 } from "@tabler/icons-react";
 import { Footer } from "../../components/Shell/Footer/Footer";
-import classes from './YearInReview.module.css';
+import classes from "./YearInReview.module.css";
 import { ASSET_URL } from "@/main";
 import { YearSummarySection } from "@/components/YearInReview/YearSummarySection.tsx";
 import { SongRankingSection } from "@/components/YearInReview/SongRankingSection.tsx";
@@ -80,15 +97,11 @@ const LazyLoadSection = ({ children }: { children: React.ReactNode }) => {
         timingFunction="ease"
         keepMounted
       >
-        {(styles) => (
-          <div style={styles}>
-            {children}
-          </div>
-        )}
+        {(styles) => <div style={styles}>{children}</div>}
       </Transition>
     </Box>
   );
-}
+};
 
 interface YearInReviewContentProps {
   data: YearInReviewProps;
@@ -108,7 +121,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       <Container className={classes.section} mt={rem(30)} size="lg">
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="xs" fw={900}>全年数据大揭秘</Title>
+            <Title order={1} mb="xs" fw={900}>
+              全年数据大揭秘
+            </Title>
             <Text size="lg" c="dimmed">
               你全年上传了多少谱面？答案比你想的更疯狂！
             </Text>
@@ -122,7 +137,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       <Container className={classes.section} mt={rem(100)}>
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="xs" fw={900}>最爱曲目排行榜</Title>
+            <Title order={1} mb="xs" fw={900}>
+              最爱曲目排行榜
+            </Title>
             <Text size="lg" c="dimmed">
               这一年，你最常上传的曲目有哪些？来看看你的 Top 10 吧！
             </Text>
@@ -137,7 +154,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
         <Container className={classes.section} mt={rem(100)}>
           <Center ta="center" mb={16}>
             <div>
-              <Title order={1} mb="xs" fw={900}>谱面标签雷达</Title>
+              <Title order={1} mb="xs" fw={900}>
+                谱面标签雷达
+              </Title>
               <Text size="lg" c="dimmed">
                 你的标签偏好是什么？来看看你的标签雷达吧！
               </Text>
@@ -152,7 +171,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       <Container className={classes.section} mt={rem(100)}>
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="xs" fw={900}>每日上传小秘密</Title>
+            <Title order={1} mb="xs" fw={900}>
+              每日上传小秘密
+            </Title>
             <Text size="lg" c="dimmed">
               你的上传节奏如何？来看看你的一年上传时间线吧！
             </Text>
@@ -166,7 +187,9 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       <Container className={classes.section} mt={rem(100)}>
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="xs" fw={900}>月度上传冠军揭晓</Title>
+            <Title order={1} mb="xs" fw={900}>
+              月度上传冠军揭晓
+            </Title>
             <Text size="lg" c="dimmed">
               月度最爱，12 位冠军曲目谁能赢得全年的殊荣？
             </Text>
@@ -177,27 +200,32 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
         </LazyLoadSection>
       </Container>
 
-      {data.year >= 2025 && (data.rate_distribute || data.rank_distribute || data.full_combo_distribute) && (
-        <Container className={classes.section} mt={rem(100)}>
-          <Center ta="center" mb={50}>
-            <div>
-              <Title order={1} mb="xs" fw={900}>成绩分布解析</Title>
-              <Text size="lg" c="dimmed">
-                你的{data.game === 'maimai' ? '达成率' : '分数'}与全连水平如何？
-              </Text>
-            </div>
-          </Center>
-          <LazyLoadSection>
-            <RateDistributionSection data={data} />
-          </LazyLoadSection>
-        </Container>
-      )}
+      {data.year >= 2025 &&
+        (data.rate_distribute || data.rank_distribute || data.full_combo_distribute) && (
+          <Container className={classes.section} mt={rem(100)}>
+            <Center ta="center" mb={50}>
+              <div>
+                <Title order={1} mb="xs" fw={900}>
+                  成绩分布解析
+                </Title>
+                <Text size="lg" c="dimmed">
+                  你的{data.game === "maimai" ? "达成率" : "分数"}与全连水平如何？
+                </Text>
+              </div>
+            </Center>
+            <LazyLoadSection>
+              <RateDistributionSection data={data} />
+            </LazyLoadSection>
+          </Container>
+        )}
 
       {data.year >= 2025 && data.rating_growth && (
         <Container className={classes.section} mt={rem(100)}>
           <Center ta="center" mb={50}>
             <div>
-              <Title order={1} mb="xs" fw={900}>Rating 成长之路</Title>
+              <Title order={1} mb="xs" fw={900}>
+                Rating 成长之路
+              </Title>
               <Text size="lg" c="dimmed">
                 从年初到年末，你的能力提升了多少？
               </Text>
@@ -213,26 +241,31 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
         </Container>
       )}
 
-      {data.year >= 2025 && (data.difficulty_distribute || data.most_played_genres || data.most_played_bpm_ranges) && (
-        <Container className={classes.section} mt={rem(100)}>
-          <Center ta="center" mb={50}>
-            <div>
-              <Title order={1} mb="xs" fw={900}>游玩风格画像</Title>
-              <Text size="lg" c="dimmed">
-                难度、曲风、节奏——看看你的独特偏好！
-              </Text>
-            </div>
-          </Center>
-          <LazyLoadSection>
-            <DifficultyGenreSection data={data} />
-          </LazyLoadSection>
-        </Container>
-      )}
+      {data.year >= 2025 &&
+        (data.difficulty_distribute || data.most_played_genres || data.most_played_bpm_ranges) && (
+          <Container className={classes.section} mt={rem(100)}>
+            <Center ta="center" mb={50}>
+              <div>
+                <Title order={1} mb="xs" fw={900}>
+                  游玩风格画像
+                </Title>
+                <Text size="lg" c="dimmed">
+                  难度、曲风、节奏——看看你的独特偏好！
+                </Text>
+              </div>
+            </Center>
+            <LazyLoadSection>
+              <DifficultyGenreSection data={data} />
+            </LazyLoadSection>
+          </Container>
+        )}
 
       <Container className={classes.section} mt={rem(100)}>
         <Center ta="center" mb={50}>
           <div>
-            <Title order={1} mb="lg" fw={900}>每一步，都是进步的足迹</Title>
+            <Title order={1} mb="lg" fw={900}>
+              每一步，都是进步的足迹
+            </Title>
 
             <Text size="lg" c="dimmed" mb="xs">
               回望这一年，你上传了诸多曲目成绩，创造了属于自己的记录。每一次上传，都是你与音乐之间深刻的对话，每一次数据的刷新，都是你成长的见证。
@@ -252,25 +285,27 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
         <Image src="/year_in_review_footer.webp" maw={150} mb={50} />
       </Center>
     </>
-  )
+  );
 };
 
 export default function YearInReview() {
   const [game] = useGame();
   const pageContext = usePageContext();
-  const year = pageContext.routeParams?.year ? parseInt(pageContext.routeParams.year) : new Date().getFullYear() - 1;
-  
+  const year = pageContext.routeParams?.year
+    ? parseInt(pageContext.routeParams.year)
+    : new Date().getFullYear() - 1;
+
   const getShareTokenFromUrl = () => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     const pathMatch = window.location.pathname.match(/^\/year-in-review\/\d{4}\/([^/]+)\/?$/);
     return pathMatch ? pathMatch[1] : null;
   };
-  
+
   const shareToken = getShareTokenFromUrl() || pageContext.routeParams?.["*"];
   const [agree, setAgree] = useState(false);
 
   const { data, isLoading, error } = useYearInReview(game, year, shareToken, agree);
-  const [shareLink, setShareLink] = useState('');
+  const [shareLink, setShareLink] = useState("");
   const clipboard = useClipboard({ timeout: 500 });
   const theme = useMantineTheme();
   const small = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
@@ -304,11 +339,11 @@ export default function YearInReview() {
 
       if (!shareToken) {
         const res = await fetchAPI(`user/${game}/player/year-in-review/${year}/share`, {
-          method: 'POST',
+          method: "POST",
           body: {
             public: true,
           },
-        })
+        });
         const resData = await res.json();
         if (!resData.success) {
           notifications.show({
@@ -331,29 +366,39 @@ ${url}`);
         title: "分享链接已生成",
         message: "链接已复制到剪贴板，快去分享给好友吧！",
         autoClose: 2000,
-      })
+      });
       setShareLink(url);
-    }
+    };
     if (shareToken) {
       handler();
       return;
     }
-    openConfirmModal("创建分享链接", "创建分享链接，即代表您同意将本页面的所有信息分享给他人。", handler);
-  }
+    openConfirmModal(
+      "创建分享链接",
+      "创建分享链接，即代表您同意将本页面的所有信息分享给他人。",
+      handler,
+    );
+  };
 
-  const faqData = [{
-    title: "年度总结的数据来源是什么？",
-    content: `本页面的数据来源于您在查分器上传的谱面成绩。如果您 ${year} 年内在查分器上传了谱面成绩，那么您可以在本页面看到您的数据。我们不保证数据的准确性，结果仅供参考。`,
-  }, {
-    title: "本页面统计的次数是什么？",
-    content: `本页面统计的次数是您在 ${year} 年内上传的谱面成绩个数，而非单次上传的次数。`,
-  }, {
-    title: "别人能看到我的数据吗？",
-    content: "本页面的数据仅供您查看，不会被其他人看到。如果您想要分享您的数据，请点击上方的“分享该页面”按钮。生成后会有一个永久链接，别人访问这个链接时可以看到您的数据。",
-  }, {
-    title: "统计范围是什么时候到什么时候？",
-    content: `本页面的数据统计范围是 ${year} 年 1 月 1 日至 12 月 31 日，以成绩的上传时间（而非实际游玩时间）为准。`,
-  }];
+  const faqData = [
+    {
+      title: "年度总结的数据来源是什么？",
+      content: `本页面的数据来源于您在查分器上传的谱面成绩。如果您 ${year} 年内在查分器上传了谱面成绩，那么您可以在本页面看到您的数据。我们不保证数据的准确性，结果仅供参考。`,
+    },
+    {
+      title: "本页面统计的次数是什么？",
+      content: `本页面统计的次数是您在 ${year} 年内上传的谱面成绩个数，而非单次上传的次数。`,
+    },
+    {
+      title: "别人能看到我的数据吗？",
+      content:
+        "本页面的数据仅供您查看，不会被其他人看到。如果您想要分享您的数据，请点击上方的“分享该页面”按钮。生成后会有一个永久链接，别人访问这个链接时可以看到您的数据。",
+    },
+    {
+      title: "统计范围是什么时候到什么时候？",
+      content: `本页面的数据统计范围是 ${year} 年 1 月 1 日至 12 月 31 日，以成绩的上传时间（而非实际游玩时间）为准。`,
+    },
+  ];
 
   if (isLoggedOut && !shareToken) {
     return null;
@@ -383,16 +428,17 @@ ${url}`);
           )}
 
           <Title className={classes.title}>
-            {(data ? data.game : game) === 'maimai' ? '舞萌 DX' : '中二节奏'}{' '}
+            {(data ? data.game : game) === "maimai" ? "舞萌 DX" : "中二节奏"}{" "}
             <Text c="var(--mantine-primary-color-light-color)" component="span" inherit>
               {year}
-            </Text>{' '}
+            </Text>{" "}
             年度总结
           </Title>
 
           <Container p={0}>
             <Text size="lg" c="dimmed" className={classes.description}>
-              你在 {year} 年度上传了多少谱面？你的最爱是哪首曲目？你的标签雷达是什么样的？你的每日上传节奏又是怎样的呢？让我们一起揭晓！
+              你在 {year}{" "}
+              年度上传了多少谱面？你的最爱是哪首曲目？你的标签雷达是什么样的？你的每日上传节奏又是怎样的呢？让我们一起揭晓！
             </Text>
           </Container>
 
@@ -403,7 +449,7 @@ ${url}`);
                   size={small ? "md" : "lg"}
                   value={shareLink}
                   onFocus={(e) => e.target.select()}
-                  style={{ flex: small ? 1 : 'unset' }}
+                  style={{ flex: small ? 1 : "unset" }}
                   readOnly
                 />
               )}
@@ -435,15 +481,15 @@ ${url}`);
                   size={small ? "md" : "lg"}
                   onClick={() => setAgree(true)}
                   rightSection={<IconArrowRight />}
-                  disabled={new Date(`${year + 1}-01-01 00:00:00`).getTime() > new Date().getTime() ||
-                    new Date().getFullYear() > year + 1}
+                  disabled={
+                    new Date(`${year + 1}-01-01 00:00:00`).getTime() > new Date().getTime() ||
+                    new Date().getFullYear() > year + 1
+                  }
                 >
                   生成数据
                 </Button>
                 {new Date().getFullYear() > year + 1 && (
-                  <Text c="dimmed">
-                    您已超过该年度总结的数据生成期限
-                  </Text>
+                  <Text c="dimmed">您已超过该年度总结的数据生成期限</Text>
                 )}
                 {new Date(`${year + 1}-01-01 00:00:00`).getTime() > new Date().getTime() && (
                   <Text c="dimmed">
@@ -452,7 +498,13 @@ ${url}`);
                 )}
               </Group>
             ) : (
-              <Alert variant="light" icon={<IconAlertCircle />} title="数据加载失败" color="red" mt={50}>
+              <Alert
+                variant="light"
+                icon={<IconAlertCircle />}
+                title="数据加载失败"
+                color="red"
+                mt={50}
+              >
                 {(() => {
                   if (error.message === "player not found") {
                     return "未找到对应的玩家数据，请先同步游戏数据。";
@@ -467,30 +519,33 @@ ${url}`);
           </Container>
         )}
 
-        {data && (
-          <YearInReviewContent data={data} onCreateShareLink={createShareLink} />
-        )}
+        {data && <YearInReviewContent data={data} onCreateShareLink={createShareLink} />}
 
         <Container className={classes.section} mt={rem(50)}>
           <div>
-            <Title order={2} mb="xs">特别鸣谢</Title>
+            <Title order={2} mb="xs">
+              特别鸣谢
+            </Title>
             <Text c="dimmed">
-              <Anchor href="https://dxrating.net/search" target="_blank">DXRating.net</Anchor> 提供的舞萌 DX 曲目标签数据支持
+              <Anchor href="https://dxrating.net/search" target="_blank">
+                DXRating.net
+              </Anchor>{" "}
+              提供的舞萌 DX 曲目标签数据支持
             </Text>
           </div>
         </Container>
 
         <Container className={classes.section} mt={rem(50)}>
           <div>
-            <Title order={2} mb="xs">常见问题</Title>
+            <Title order={2} mb="xs">
+              常见问题
+            </Title>
             {faqData.map((item, index) => (
               <div key={index}>
                 <Title order={4} mt="xl" mb="xs">
                   {item.title}
                 </Title>
-                <Text c="dimmed">
-                  {item.content}
-                </Text>
+                <Text c="dimmed">{item.content}</Text>
               </div>
             ))}
           </div>
@@ -500,7 +555,9 @@ ${url}`);
           <Container className={classes.section} mt={rem(80)}>
             <Center>
               <div>
-                <Title order={3} mb="md" ta="center">往年记录</Title>
+                <Title order={3} mb="md" ta="center">
+                  往年记录
+                </Title>
                 <Center>
                   <Group gap="md">
                     {Array.from({ length: year - 2024 }, (_, i) => 2024 + i).map((pastYear) => (

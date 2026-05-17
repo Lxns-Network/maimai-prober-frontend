@@ -3,14 +3,14 @@ import classes from "./SongTimelineSection.module.css";
 import { ASSET_URL } from "@/main";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { Avatar, Box } from "@mantine/core";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import { ColorExtractor } from "react-color-extractor";
 import { Game } from "@/types/game";
 import LazyLoad, { forceCheck } from "@/components/LazyLoad";
 import useSongListStore from "@/hooks/useSongListStore.ts";
-import {useShallow} from "zustand/react/shallow";
+import { useShallow } from "zustand/react/shallow";
 
-const SongImage = ({ game, id }: { game: Game, id: number }) => {
+const SongImage = ({ game, id }: { game: Game; id: number }) => {
   const [colors, setColors] = useState<string[]>([]);
 
   return (
@@ -19,26 +19,27 @@ const SongImage = ({ game, id }: { game: Game, id: number }) => {
         src={`${ASSET_URL}/${game}/jacket/${id}.png!webp`}
         getColors={(colors: string[]) => setColors(colors)}
       />
-      <Box className={classes.jacket} style={{
-        '--primary-color': colors && colors[0],
-        '--secondary-color': colors && colors[1]
-      }}>
+      <Box
+        className={classes.jacket}
+        style={{
+          "--primary-color": colors && colors[0],
+          "--secondary-color": colors && colors[1],
+        }}
+      >
         <Avatar src={`${ASSET_URL}/${game}/jacket/${id}.png!webp`} size={115} radius="md" mx="auto">
           <IconPhotoOff />
         </Avatar>
       </Box>
     </>
-  )
-}
+  );
+};
 
 export const SongTimelineSection = ({ data }: { data: YearInReviewProps }) => {
-  const { songList } = useSongListStore(
-    useShallow((state) => ({ songList: state[data.game] })),
-  );
+  const { songList } = useSongListStore(useShallow((state) => ({ songList: state[data.game] })));
 
   useEffect(() => {
     const scrollArea = document.querySelector(
-      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport"
+      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
     );
 
     if (!scrollArea) return;
@@ -69,5 +70,5 @@ export const SongTimelineSection = ({ data }: { data: YearInReviewProps }) => {
         </div>
       ))}
     </div>
-  )
-}
+  );
+};

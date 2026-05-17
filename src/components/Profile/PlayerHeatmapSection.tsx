@@ -19,14 +19,16 @@ const generateRandomHeatmap = (start: Date, end: Date): Record<string, number> =
 
 export const PlayerHeatmapSection = () => {
   const [game] = useGame();
-  const computedColorScheme = useComputedColorScheme('light');
+  const computedColorScheme = useComputedColorScheme("light");
 
   const { player, isLoading: isPlayerLoading } = usePlayer(game);
   const { heatmap, isLoading } = usePlayerHeatmap(game);
 
   const today = new Date();
-  const endDate = today.toISOString().split('T')[0];
-  const startDate = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+  const endDate = today.toISOString().split("T")[0];
+  const startDate = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate())
+    .toISOString()
+    .split("T")[0];
 
   const scaledHeatmap = useMemo(() => {
     if (!player) {
@@ -36,23 +38,29 @@ export const PlayerHeatmapSection = () => {
     }
     if (!heatmap) return {};
     return Object.fromEntries(
-      Object.entries(heatmap).map(([date, value]) => [date, Math.log(value + 1)])
+      Object.entries(heatmap).map(([date, value]) => [date, Math.log(value + 1)]),
     );
   }, [player, heatmap]);
 
   return (
     <Card className={classes.card} withBorder radius="md" p={0}>
       {!isPlayerLoading && !player && (
-        <Overlay color={
-          computedColorScheme === 'dark' ? "#000" : "#FFF"
-        } blur={5} center zIndex={1}>
+        <Overlay
+          color={computedColorScheme === "dark" ? "#000" : "#FFF"}
+          blur={5}
+          center
+          zIndex={1}
+        >
           <Text>同步游戏数据后查看热力图</Text>
         </Overlay>
       )}
       {(isLoading || isPlayerLoading) && (
-        <Overlay color={
-          computedColorScheme === 'dark' ? "#000" : "#FFF"
-        } blur={5} center zIndex={1}>
+        <Overlay
+          color={computedColorScheme === "dark" ? "#000" : "#FFF"}
+          blur={5}
+          center
+          zIndex={1}
+        >
           <Loader />
         </Overlay>
       )}
@@ -65,7 +73,20 @@ export const PlayerHeatmapSection = () => {
           withMonthLabels
           withWeekdayLabels
           withTooltip
-          monthLabels={["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"]}
+          monthLabels={[
+            "一月",
+            "二月",
+            "三月",
+            "四月",
+            "五月",
+            "六月",
+            "七月",
+            "八月",
+            "九月",
+            "十月",
+            "十一月",
+            "十二月",
+          ]}
           weekdayLabels={["周日", "周一", "", "周三", "", "周五", ""]}
           getTooltipLabel={({ date }) => {
             const original = heatmap?.[date] ?? 0;
@@ -76,5 +97,5 @@ export const PlayerHeatmapSection = () => {
         />
       </ScrollArea>
     </Card>
-  )
-}
+  );
+};

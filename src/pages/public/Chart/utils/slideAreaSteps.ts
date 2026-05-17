@@ -1,4 +1,4 @@
-import { ButtonPosition, SlidePathType } from '../types';
+import { ButtonPosition, SlidePathType } from "../types";
 
 /**
  * Slide 分区消失（chunky disappearance）的数据驱动表。
@@ -30,7 +30,7 @@ export function isUpperHalf(key: number): boolean {
  * 2 表示 CW 一步，以此类推；7 表示 CW 七步 = CCW 一步。
  */
 export function relativeEnd(startPos: ButtonPosition, endPos: ButtonPosition): number {
-  const d = ((endPos - startPos) % 8 + 8) % 8;
+  const d = (((endPos - startPos) % 8) + 8) % 8;
   return d + 1;
 }
 
@@ -48,62 +48,62 @@ export interface SlideShape {
 export function detectSlideShape(
   slideType: SlidePathType,
   startPos: ButtonPosition,
-  endPos: ButtonPosition
+  endPos: ButtonPosition,
 ): SlideShape | null {
   const rel = relativeEnd(startPos, endPos);
 
   switch (slideType) {
-    case '-':
+    case "-":
       // 必须至少隔一键：rel ∈ [3, 7]
       if (rel < 3 || rel > 7) return null;
       return { shape: `line${rel}`, mirror: false };
 
-    case '>':
+    case ">":
       // 顺时针弧；起点在上半盘走原版，否则走镜像版本（保证视觉永远偏外侧）
       return isUpperHalf(startPos)
         ? { shape: `circle${rel}`, mirror: false }
         : { shape: `circle${mirrorKey(rel)}`, mirror: true };
 
-    case '<':
+    case "<":
       return !isUpperHalf(startPos)
         ? { shape: `circle${rel}`, mirror: false }
         : { shape: `circle${mirrorKey(rel)}`, mirror: true };
 
-    case '^':
+    case "^":
       // 取短边方向。rel<5 走 CW 短边 = circle 原版；rel>5 走 CCW 短边 = 镜像。
       if (rel === 1 || rel === 5) return null;
       return rel < 5
         ? { shape: `circle${rel}`, mirror: false }
         : { shape: `circle${mirrorKey(rel)}`, mirror: true };
 
-    case 'v':
+    case "v":
       // 穿心 V，不能终点 = 起点对称（rel = 5）
       if (rel === 5) return null;
       return { shape: `v${rel}`, mirror: false };
 
-    case 'pp':
+    case "pp":
       return { shape: `ppqq${rel}`, mirror: false };
 
-    case 'qq':
+    case "qq":
       return { shape: `ppqq${mirrorKey(rel)}`, mirror: true };
 
-    case 'p':
+    case "p":
       return { shape: `pq${rel}`, mirror: false };
 
-    case 'q':
+    case "q":
       return { shape: `pq${mirrorKey(rel)}`, mirror: true };
 
-    case 's':
+    case "s":
       // s 必须穿心
       if (rel !== 5) return null;
-      return { shape: 's', mirror: false };
+      return { shape: "s", mirror: false };
 
-    case 'z':
+    case "z":
       if (rel !== 5) return null;
-      return { shape: 's', mirror: true };
+      return { shape: "s", mirror: true };
 
-    case 'w':
-      return { shape: 'wifi', mirror: false };
+    case "w":
+      return { shape: "wifi", mirror: false };
 
     default:
       return null;
@@ -167,4 +167,3 @@ export const SLIDE_AREA_STEP_MAP: { readonly [shape: string]: readonly number[] 
   L4: [0, 2, 8, 17, 22, 26, 32],
   L5: [0, 2, 8, 16, 22, 28],
 };
-

@@ -2,8 +2,19 @@ import { MantineColor } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 
 export const themeColors: MantineColor[] = [
-  "gray", "red", "pink", "grape", "violet", "indigo",
-  "blue", "cyan", "teal", "green", "lime", "yellow", "orange",
+  "gray",
+  "red",
+  "pink",
+  "grape",
+  "violet",
+  "indigo",
+  "blue",
+  "cyan",
+  "teal",
+  "green",
+  "lime",
+  "yellow",
+  "orange",
 ];
 
 export const DEFAULT_THEME_COLOR: MantineColor = "blue";

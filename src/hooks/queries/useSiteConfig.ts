@@ -4,12 +4,12 @@ import { queryKeys } from "./queryKeys.ts";
 interface ConfigProps {
   resource_version: {
     [key: string]: number;
-  },
+  };
   resource_hashes: {
     [key: string]: {
       [key: string]: string;
-    }
-  }
+    };
+  };
 }
 
 export const useSiteConfig = () => {

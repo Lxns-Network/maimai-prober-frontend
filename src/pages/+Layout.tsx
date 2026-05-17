@@ -1,12 +1,18 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from '@mantine/core';
-import { IconMaximize, IconMinimize, IconRotateClockwise, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
+import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from "@mantine/core";
+import {
+  IconMaximize,
+  IconMinimize,
+  IconRotateClockwise,
+  IconZoomIn,
+  IconZoomOut,
+} from "@tabler/icons-react";
 import { ModalsProvider } from "@mantine/modals";
 import { notifications, Notifications } from "@mantine/notifications";
 import { logout } from "@/utils/session";
 import * as Sentry from "@sentry/react";
-import { usePageContext } from 'vike-react/usePageContext';
-import { navigate } from 'vike/client/router';
+import { usePageContext } from "vike-react/usePageContext";
+import { navigate } from "vike/client/router";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -29,12 +35,12 @@ import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/nprogress/styles.css";
 import "@mantine/notifications/styles.css";
-import '@mantine/carousel/styles.css';
-import '@mantine/tiptap/styles.css';
-import '@mantine/charts/styles.css';
-import '@mantine/code-highlight/styles.css';
+import "@mantine/carousel/styles.css";
+import "@mantine/tiptap/styles.css";
+import "@mantine/charts/styles.css";
+import "@mantine/code-highlight/styles.css";
 import "mantine-datatable/styles.css";
-import 'react-photo-view/dist/react-photo-view.css';
+import "react-photo-view/dist/react-photo-view.css";
 import "@/index.css";
 import classes from "@/App.module.css";
 import useGame from "@/hooks/useGame.ts";
@@ -43,10 +49,10 @@ import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 
 const baseTheme = {
   primaryShade: 9 as const,
-  focusRing: 'never' as const,
-  cursorType: 'pointer' as const,
+  focusRing: "never" as const,
+  cursorType: "pointer" as const,
   fontWeights: {
-    medium: '500' as const,
+    medium: "500" as const,
   },
 };
 
@@ -56,12 +62,18 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   const { error: userTokenError } = useUserToken();
   const { toggle, fullscreen } = useFullscreenDocument();
   const [themeColor] = useThemeColor();
-  const theme = useMemo(() => createTheme({
-    ...baseTheme,
-    primaryColor: themeColor,
-    activeClassName: classes.active,
-  }), [themeColor]);
-  const [opened, setOpened] = useState(typeof window !== 'undefined' ? window.innerWidth > NAVBAR_BREAKPOINT : false);
+  const theme = useMemo(
+    () =>
+      createTheme({
+        ...baseTheme,
+        primaryColor: themeColor,
+        activeClassName: classes.active,
+      }),
+    [themeColor],
+  );
+  const [opened, setOpened] = useState(
+    typeof window !== "undefined" ? window.innerWidth > NAVBAR_BREAKPOINT : false,
+  );
   const viewport = useRef<HTMLDivElement>(null);
 
   // 版本检查
@@ -96,19 +108,17 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
   const [getSongList, fetchSongList] = useSongListStore(
     useShallow((state) => [state.getSongList, state.fetchSongList]),
-  )
-  const [fetchAliasList] = useAliasListStore(
-    useShallow((state) => [state.fetchAliasList]),
-  )
+  );
+  const [fetchAliasList] = useAliasListStore(useShallow((state) => [state.fetchAliasList]));
   const [game] = useGame();
 
   useEffect(() => {
@@ -116,8 +126,8 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       Sentry.setUser(null);
       logout();
 
-      if (pageContext.urlPathname !== '/login') {
-        navigate('/login', {
+      if (pageContext.urlPathname !== "/login") {
+        navigate("/login", {
           overwriteLastHistoryEntry: true,
         });
       }
@@ -126,7 +136,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (viewport.current) {
-      viewport.current.scrollTo({ top: 0, behavior: 'smooth' });
+      viewport.current.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [pageContext.urlPathname]);
 
@@ -134,13 +144,13 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     if (isSiteConfigLoading || !config) return;
 
     localStorage.setItem("maimai_version", (config.resource_version.maimai || 25000).toString());
-    localStorage.setItem("chunithm_version", (config.resource_version.chunithm || 23000).toString());
+    localStorage.setItem(
+      "chunithm_version",
+      (config.resource_version.chunithm || 23000).toString(),
+    );
 
     if (getSongList(game).songs.length === 0) {
-      Promise.all([
-        fetchSongList(config.resource_hashes),
-        fetchAliasList(),
-      ]).catch((error) => {
+      Promise.all([fetchSongList(config.resource_hashes), fetchAliasList()]).catch((error) => {
         notifications.show({
           title: "获取曲目数据失败",
           message: error.message,
@@ -152,56 +162,67 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <HelmetProvider>
-    <MantineProvider theme={theme} defaultColorScheme="auto">
-      <ErrorBoundary FallbackComponent={Fallback}>
-        <ModalsProvider labels={{ confirm: '确定', cancel: '取消' }}>
-          <PhotoProvider
-            speed={() => 200}
-            maskOpacity={0.6}
-            onVisibleChange={(visible) => !visible && fullscreen && toggle()}
-            toolbarRender={({ onScale, scale, onRotate, rotate }) => {
-              return (
-                <Group h={44} gap={0}>
-                  <ActionIcon variant="transparent" size={44} onClick={() => onScale(scale + 1)}>
-                    <IconZoomIn className={classes.photoViewerIcon} />
-                  </ActionIcon>
-                  <ActionIcon variant="transparent" size={44} onClick={() => onScale(scale - 1)}>
-                    <IconZoomOut className={classes.photoViewerIcon} />
-                  </ActionIcon>
-                  <ActionIcon variant="transparent" size={44} onClick={() => onRotate(rotate + 90)}>
-                    <IconRotateClockwise className={classes.photoViewerIcon} />
-                  </ActionIcon>
-                  <ActionIcon variant="transparent" size={44} onClick={() => toggle()}>
-                    {fullscreen ? (
-                      <IconMinimize className={classes.photoViewerIcon} />
-                    ) : (
-                      <IconMaximize className={classes.photoViewerIcon} />
-                    )}
-                  </ActionIcon>
-                </Group>
-              );
-            }}
-          >
-            <Notifications />
-            <Shell navbarOpened={opened} onNavbarToggle={toggleNavbarOpened} viewportRef={viewport as React.RefObject<HTMLDivElement>}>
-              <div ref={ref} style={{
-                minHeight: 'calc(100vh - var(--header-height))',
-              }}>
-                <Suspense fallback={(
-                  <Group justify="center" p={rem(80)}>
-                    <Loader type="dots" size="xl" />
+      <MantineProvider theme={theme} defaultColorScheme="auto">
+        <ErrorBoundary FallbackComponent={Fallback}>
+          <ModalsProvider labels={{ confirm: "确定", cancel: "取消" }}>
+            <PhotoProvider
+              speed={() => 200}
+              maskOpacity={0.6}
+              onVisibleChange={(visible) => !visible && fullscreen && toggle()}
+              toolbarRender={({ onScale, scale, onRotate, rotate }) => {
+                return (
+                  <Group h={44} gap={0}>
+                    <ActionIcon variant="transparent" size={44} onClick={() => onScale(scale + 1)}>
+                      <IconZoomIn className={classes.photoViewerIcon} />
+                    </ActionIcon>
+                    <ActionIcon variant="transparent" size={44} onClick={() => onScale(scale - 1)}>
+                      <IconZoomOut className={classes.photoViewerIcon} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="transparent"
+                      size={44}
+                      onClick={() => onRotate(rotate + 90)}
+                    >
+                      <IconRotateClockwise className={classes.photoViewerIcon} />
+                    </ActionIcon>
+                    <ActionIcon variant="transparent" size={44} onClick={() => toggle()}>
+                      {fullscreen ? (
+                        <IconMinimize className={classes.photoViewerIcon} />
+                      ) : (
+                        <IconMaximize className={classes.photoViewerIcon} />
+                      )}
+                    </ActionIcon>
                   </Group>
-                )}>
-                  <ErrorBoundary FallbackComponent={Fallback}>
-                    {children}
-                  </ErrorBoundary>
-                </Suspense>
-              </div>
-            </Shell>
-          </PhotoProvider>
-        </ModalsProvider>
-      </ErrorBoundary>
-    </MantineProvider>
+                );
+              }}
+            >
+              <Notifications />
+              <Shell
+                navbarOpened={opened}
+                onNavbarToggle={toggleNavbarOpened}
+                viewportRef={viewport as React.RefObject<HTMLDivElement>}
+              >
+                <div
+                  ref={ref}
+                  style={{
+                    minHeight: "calc(100vh - var(--header-height))",
+                  }}
+                >
+                  <Suspense
+                    fallback={
+                      <Group justify="center" p={rem(80)}>
+                        <Loader type="dots" size="xl" />
+                      </Group>
+                    }
+                  >
+                    <ErrorBoundary FallbackComponent={Fallback}>{children}</ErrorBoundary>
+                  </Suspense>
+                </div>
+              </Shell>
+            </PhotoProvider>
+          </ModalsProvider>
+        </ErrorBoundary>
+      </MantineProvider>
     </HelmetProvider>
   );
 }

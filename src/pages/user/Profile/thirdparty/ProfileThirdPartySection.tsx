@@ -12,7 +12,7 @@ export const ProfileThirdPartySection = () => {
       <Group justify="center" mt="xl">
         <Loader />
       </Group>
-    )
+    );
   }
 
   return (
@@ -21,5 +21,5 @@ export const ProfileThirdPartySection = () => {
       <UserBindSection />
       <UserTokenSection />
     </Stack>
-  )
-}
+  );
+};

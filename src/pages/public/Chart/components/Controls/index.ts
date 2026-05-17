@@ -1,1 +1,1 @@
-export { Controls, PlaybackControls, default } from './Controls';
+export { Controls, PlaybackControls, default } from "./Controls";

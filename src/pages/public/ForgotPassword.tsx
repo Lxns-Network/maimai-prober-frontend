@@ -1,7 +1,18 @@
 import { useState } from "react";
-import { Title, TextInput, Text, Group, Anchor, Button, LoadingOverlay, Center, Box, Card } from '@mantine/core';
-import { Container } from '@mantine/core';
-import { solveCaptcha } from '@/utils/captcha';
+import {
+  Title,
+  TextInput,
+  Text,
+  Group,
+  Anchor,
+  Button,
+  LoadingOverlay,
+  Center,
+  Box,
+  Card,
+} from "@mantine/core";
+import { Container } from "@mantine/core";
+import { solveCaptcha } from "@/utils/captcha";
 import { validateEmail } from "@/utils/validator.ts";
 import { Link } from "@/components/Link";
 import { useForm } from "@mantine/form";
@@ -34,22 +45,25 @@ export default function ForgotPassword() {
     try {
       const captchaToken = await solveCaptcha();
 
-      forgotPassword({ values, captchaToken }, {
-        onSuccess: () => {
-          openAlertModal("发送成功", "请前往你的邮箱查看重置邮件。");
+      forgotPassword(
+        { values, captchaToken },
+        {
+          onSuccess: () => {
+            openAlertModal("发送成功", "请前往你的邮箱查看重置邮件。");
+          },
+          onError: (error) => {
+            openRetryModal("发送失败", `${error}`, () => forgotPasswordHandler(values));
+          },
+          onSettled: () => {
+            setVisible(false);
+          },
         },
-        onError: (error) => {
-          openRetryModal("发送失败", `${error}`, () => forgotPasswordHandler(values));
-        },
-        onSettled: () => {
-          setVisible(false);
-        },
-      });
+      );
     } catch (error) {
       openRetryModal("发送失败", `${error}`, () => forgotPasswordHandler(values));
       setVisible(false);
     }
-  }
+  };
 
   return (
     <Container className={classes.root} size={420}>
@@ -68,7 +82,7 @@ export default function ForgotPassword() {
             variant="filled"
             placeholder="请输入你的邮箱"
             leftSection={<IconMail size={20} stroke={1.5} />}
-            {...form.getInputProps('email')}
+            {...form.getInputProps("email")}
           />
           <Group justify="space-between" mt="xl">
             <Anchor c="dimmed" size="sm" component={Link} to="/login">
@@ -79,7 +93,9 @@ export default function ForgotPassword() {
                 </Box>
               </Center>
             </Anchor>
-            <Button size="sm" type="submit">发送重置邮件</Button>
+            <Button size="sm" type="submit">
+              发送重置邮件
+            </Button>
           </Group>
         </form>
       </Card>
