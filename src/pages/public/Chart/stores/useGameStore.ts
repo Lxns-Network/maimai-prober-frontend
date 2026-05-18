@@ -45,8 +45,6 @@ interface GameState {
   playbackStartTime: number;
   /** 播放开始位置（毫秒） */
   playbackStartPositionMs: number;
-  /** 重新开始位置 */
-  restartPosition: { measure: number; position: number };
   /** 搜索索引 */
   seekVersion: number;
   /** 是否全屏 */
@@ -60,8 +58,8 @@ interface GameActions {
   pause: () => void;
   /** 切换播放状态 */
   togglePlayback: () => void;
-  /** 重新开始 */
-  restart: () => void;
+  /** 重新播放当前小节 */
+  restartCurrentMeasure: () => void;
   /** 设置小节 */
   setMeasure: (measure: number) => void;
   /** 设置位置 */
@@ -127,7 +125,6 @@ const initialState: GameState = {
   pendingPlay: false,
   playbackStartTime: 0,
   playbackStartPositionMs: 0,
-  restartPosition: { measure: 0, position: 0 },
   seekVersion: 0,
   isFullscreen: false,
 };
@@ -210,10 +207,6 @@ export const useGameStore = create<GameStore>()(
             currentPosition: 0,
             preciseTime: 0,
           },
-          restartPosition: {
-            measure: 0,
-            position: 0,
-          },
           seekVersion: state.seekVersion + 1,
         });
         return;
@@ -230,10 +223,6 @@ export const useGameStore = create<GameStore>()(
         isPlaying: true,
         playbackStartTime: performance.now(),
         playbackStartPositionMs: currentMs,
-        restartPosition: {
-          measure: state.timeline.currentMeasure,
-          position: state.timeline.currentPosition,
-        },
       });
     },
 
@@ -265,23 +254,12 @@ export const useGameStore = create<GameStore>()(
       state.isPlaying ? state.pause() : state.play();
     },
 
-    restart: () => {
+    restartCurrentMeasure: () => {
       const state = get();
-      const { restartPosition } = state;
-
-      set({
-        isPlaying: false,
-        timeline: {
-          ...state.timeline,
-          currentMeasure: restartPosition.measure,
-          currentPosition: restartPosition.position,
-          preciseTime:
-            restartPosition.measure * state.timeline.beatsPerMeasure +
-            (restartPosition.position / 512) * state.timeline.beatsPerMeasure,
-        },
-      });
-
-      setTimeout(() => get().play(), 0);
+      const { beatsPerMeasure } = state.timeline;
+      const currentTime = state.isPlaying ? playbackTimeRef.current : state.timeline.preciseTime;
+      const currentMeasure = Math.floor(currentTime / beatsPerMeasure);
+      state.setMeasure(currentMeasure);
     },
 
     setMeasure: (measure: number) => {
@@ -402,7 +380,6 @@ export const useGameStore = create<GameStore>()(
           currentPosition: 0,
           preciseTime: 0,
         },
-        restartPosition: { measure: 0, position: 0 },
         seekVersion: state.seekVersion + 1,
       }));
     },
