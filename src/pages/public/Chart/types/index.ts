@@ -202,6 +202,10 @@ export interface HoldEndNote extends BaseNote {
 export interface SlideNote extends BaseNote {
   type: 'slide';
   position: ButtonPosition;
+  /** 是否隐藏滑条起始星星 */
+  isHeadless?: boolean;
+  /** 无头滑条 tracing star 显示方式：simai `?` 为 fade，`!` 为 pop */
+  headlessMode?: 'fade' | 'pop';
   /** 滑条起始 Note 是否为绝赞 */
   isStartBreak?: boolean;
   /** 每个滑条路径是否为绝赞 */

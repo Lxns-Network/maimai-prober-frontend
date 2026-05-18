@@ -501,6 +501,8 @@ export class MainRenderer {
     }
 
     for (const slide of slides) {
+      if (slide.isHeadless) continue;
+
       const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
       if (!pos.visible) continue;
 
@@ -618,6 +620,8 @@ export class MainRenderer {
     currentTimeMs: number
   ): void {
     for (const slide of slides) {
+      if (slide.isHeadless) continue;
+
       const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
       if (!pos.visible) continue;
 
@@ -800,6 +804,7 @@ export class MainRenderer {
       const n = notes[i];
       if (n.timingMs > currentTimeMs) break;
       if (isTouchNote(n) || isTouchHoldStartNote(n) || isHoldStartNote(n)) continue;
+      if (isSlideNote(n) && n.isHeadless) continue;
       const cur = lastHitTimingByPos.get(n.position as ButtonPosition);
       if (cur === undefined || n.timingMs > cur) {
         lastHitTimingByPos.set(n.position as ButtonPosition, n.timingMs);
@@ -810,6 +815,7 @@ export class MainRenderer {
       const note = notes[i];
       if (note.timingMs > currentTimeMs) break;
       if (isTouchNote(note) || isTouchHoldStartNote(note) || isHoldStartNote(note)) continue;
+      if (isSlideNote(note) && note.isHeadless) continue;
       const latest = lastHitTimingByPos.get(note.position as ButtonPosition);
       if (latest !== undefined && latest > note.timingMs) continue;
 
@@ -936,7 +942,7 @@ export class MainRenderer {
 
       if (isTapNote(note) || 
           (isHoldEndNote(note)) ||
-          isSlideNote(note) ||
+          (isSlideNote(note) && !note.isHeadless) ||
           isTouchNote(note) ||
           (note.type === 'touch-hold-end')) {
         totalNotes++;
