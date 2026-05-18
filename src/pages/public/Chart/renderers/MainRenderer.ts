@@ -20,6 +20,7 @@ import {
   isHoldEndNote,
   isTouchNote,
   isTouchHoldStartNote,
+  isButtonNote,
 } from '../types';
 import {
   BASE_APPROACH_TIME_MS,
@@ -479,6 +480,7 @@ export class MainRenderer {
   private prepareHitEffectNotes(notes: Note[]): Note[] {
     return notes
       .filter(note =>
+        isButtonNote(note) &&
         !isTouchNote(note) &&
         !isTouchHoldStartNote(note) &&
         !isHoldStartNote(note) &&
