@@ -537,11 +537,16 @@ function parseNoteString(
   }
 
   // 尝试匹配滑条模式：1-5[4:1] 或 1b-5[4:1] 或复杂模式：1-4[8:5]>3[384:47]...
-  const slideMatch = noteStr.match(/^(\d+)([bx]*[-><^vpqszVw*]+.*)$/i);
+  const slideMatch = noteStr.match(/^(\d+)([bx?!]*[-><^vpqszVw*]+.*)$/i);
   if (slideMatch && /[-><^vpqszVw]/i.test(slideMatch[2])) {
     const startPosition = parseInt(slideMatch[1]) as ButtonPosition;
     const slideNotation = slideMatch[2];
-    const isStartBreak = !!noteStr.match(/^(\d+)[bx]*b[x]*[-><^vpqszVw]/i);
+    const pathStartIndex = slideNotation.search(/[-><^vpqszVw*]/i);
+    const startModifiers = pathStartIndex >= 0 ? slideNotation.slice(0, pathStartIndex).toLowerCase() : '';
+    // simai 无头滑条：`?` 让 tracing star 渐显，`!` 让 tracing star 在滑条启动时突然出现。
+    const headlessMarker = startModifiers.includes('!') ? '!' : startModifiers.includes('?') ? '?' : null;
+    const isStartBreak = startModifiers.includes('b');
+    const isHeadless = headlessMarker !== null;
     const isEx = /x/i.test(noteStr);
 
     // 按 * 分割滑条
@@ -653,6 +658,8 @@ function parseNoteString(
         positionInMeasure,
         scale: 1,
         bpm,
+        isHeadless,
+        headlessMode: headlessMarker === '!' ? 'pop' : headlessMarker === '?' ? 'fade' : undefined,
         isStartBreak,
         allSlideBreaks,
         isEx,

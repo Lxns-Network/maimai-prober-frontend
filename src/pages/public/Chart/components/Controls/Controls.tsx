@@ -51,17 +51,13 @@ type PlaybackControlsProps = {
 
 export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackControlsProps) {
   const {
-    isPlaying, timeline, pendingPlay,
-    togglePlayback, setMeasure, stepMeasure, stepPosition,
+    isPlaying, pendingPlay,
+    togglePlayback, restartCurrentMeasure, stepMeasure, stepPosition,
   } = useGameStore(useShallow((state) => state));
 
   const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
     useShallow((state) => ({ soundEnabled: state.soundEnabled, setSoundEnabled: state.setSoundEnabled }))
   );
-
-  const { currentMeasure } = timeline;
-
-  const restartMeasure = () => setMeasure(currentMeasure);
 
   const getPlayButtonIcon = () => {
     return isPlaying ? <IconPlayerPause size={24} /> : <IconPlayerPlay size={24} />;
@@ -144,7 +140,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
               variant="subtle"
               color={isFullscreen ? 'white' : 'gray'}
               size="lg"
-              onClick={restartMeasure}
+              onClick={restartCurrentMeasure}
             >
               <IconRefresh size={20} />
             </ActionIcon>
