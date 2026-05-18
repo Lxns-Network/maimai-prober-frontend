@@ -579,9 +579,14 @@ function parseNoteString(
 
         // 解析节拍：[a##b] 秒
         const secondsMatch = part.match(/\[([\d.]+)##([\d.]+)\]/);
+        // [#X] 单 #：整条 slide 持续 X 秒（与 MajdataView 行为一致）
+        const seconfsOnlyMatch = part.match(/\[#([\d.]+)\]/);
         if (secondsMatch) {
           customDelay = parseFloat(secondsMatch[1]);
           customLengthSeconds = parseFloat(secondsMatch[2]);
+          duration = customLengthSeconds;
+        } else if (seconfsOnlyMatch) {
+          customLengthSeconds = parseFloat(seconfsOnlyMatch[1]);
           duration = customLengthSeconds;
         } else {
           // 解析节拍：[delay#a:b##length] 或 [a:b]
@@ -605,7 +610,8 @@ function parseNoteString(
 
         if (customLengthSeconds !== null) {
           durationMsValue = customLengthSeconds * 1000;
-          delayMsValue = (customDelay !== null ? customDelay : 0) * 1000;
+          // [D##L] 走显式 delay；[#X] 无 delay，沿用 [N:M] 的 1 拍预览延迟使星头对齐。
+          delayMsValue = customDelay !== null ? customDelay * 1000 : 60000 / bpm;
         } else {
           const effectiveBpm = customDelay !== null ? customDelay : bpm;
           durationMsValue = (60000 * duration) / (customDurationSeconds !== null ? 1000 / customDurationSeconds : bpm);
@@ -906,10 +912,15 @@ function parseSlideSegmentsWithTiming(
           
           // 检查秒数标记：a##b
           const secondsMatch = timingStr.match(/^([\d.]+)##([\d.]+)$/);
+          // [#X] 单 #：整条 slide 持续 X 秒（与 MajdataView 行为一致）
+          const seconfsOnlyMatch = timingStr.match(/^#([\d.]+)$/);
           if (secondsMatch) {
             // 延迟##持续时间（秒）
             segDuration = parseFloat(secondsMatch[2]);
             segDurationMs = segDuration * 1000;
+          } else if (seconfsOnlyMatch) {
+            segDurationMs = parseFloat(seconfsOnlyMatch[1]) * 1000;
+            segDuration = (segDurationMs * defaultBpm) / 60000;
           } else {
             // 检查标准标记：[delay#]a:b[##length]
             const stdMatch = timingStr.match(/^(?:([\d.]+)#)?([\d.]+):([\d.]+)(?:##([\d.]+))?$/);

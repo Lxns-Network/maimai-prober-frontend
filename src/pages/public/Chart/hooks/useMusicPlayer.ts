@@ -420,6 +420,12 @@ export function useMusicPlayer() {
           audioMasterTimeMsRef.current = null;
           isStartingPlayback = false;
           pendingSeek = false;
+        } else if (musicTime >= duration && !pendingSeek) {
+          // 谱面已经走过音乐尾巴：不要重启音频（否则 source 反复在 duration-0.01
+          // 起播又立即 onended，钉死 audioMasterTimeMsRef 在末尾，让 ChartCanvas
+          // 的尾奏判停 (currentMs >= totalDurationMs + 500) 永远触发不到）。
+          if (state.isSourcePlaying) stopSource();
+          audioMasterTimeMsRef.current = null;
         } else {
           const targetTime = clamp(musicTime, 0, duration - 0.01);
 

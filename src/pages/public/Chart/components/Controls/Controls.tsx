@@ -40,7 +40,9 @@ import { useGameSettingsStore } from '../../stores/useGameSettingsStore';
 import { parseSimaiChart } from '../../core/parser/ChartParser';
 import { ChartDifficulty, DIFFICULTY_NAMES, DIFFICULTY_COLORS } from '../../types';
 import { NoteCountGraph } from '../NoteCountGraph';
+import { SimaiStatementList } from '../SimaiStatementList';
 import classes from './Controls.module.css';
+
 
 type PlaybackControlsProps = {
   onToggleFullscreen?: () => void;
@@ -235,6 +237,10 @@ export function Controls() {
             <Button size="xs" onClick={applyDebugSimai}>应用并重新解析</Button>
           </Stack>
         </Card>
+      )}
+
+      {import.meta.env.DEV && (
+        <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />
       )}
 
       <Card className={classes.card} radius="lg" withBorder>
