@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Card, Group, ScrollArea, Stack, Text, Tooltip } from '@mantine/core';
-import { IconCurrentLocation } from '@tabler/icons-react';
+import { ActionIcon, Card, Collapse, Group, ScrollArea, Text, Tooltip, UnstyledButton } from '@mantine/core';
+import { IconChevronDown, IconCurrentLocation, IconListNumbers } from '@tabler/icons-react';
 import { useGameStore, playbackTimeRef } from '../../stores/useGameStore';
 import { ChartDifficulty } from '../../types';
 import classes from './SimaiStatementList.module.css';
@@ -105,47 +105,37 @@ interface StatementRowProps {
   index: number;
   isActive: boolean;
   activeChunkIdx: number;
+  isMarkerOnly: boolean;
   seekTo: (beat: number) => void;
   registerRef: (index: number, el: HTMLDivElement | null) => void;
 }
 
+// chunk 只包含 BPM/divisor 标记（`(120)` / `{8}` / `(120){8}`）而没有 note 时，视为 marker-only。
+const MARKER_ONLY_RE = /^[({][^a-zA-Z0-9/]*[\d.]+[)}](\{[\d.]+\})?$/;
+
 const StatementRow = memo(function StatementRow({
-  statement, index, isActive, activeChunkIdx, seekTo, registerRef,
+  statement, index, isActive, activeChunkIdx, isMarkerOnly, seekTo, registerRef,
 }: StatementRowProps) {
+  const rowClass = [
+    classes.row,
+    isActive && classes.rowActive,
+    isMarkerOnly && classes.rowMarker,
+  ].filter(Boolean).join(' ');
   return (
     <div
       ref={(el) => registerRef(index, el)}
-      style={{
-        padding: '2px 6px',
-        backgroundColor: isActive ? 'rgba(255, 215, 0, 0.15)' : undefined,
-        borderRadius: 4,
-        display: 'flex',
-        gap: 8,
-        alignItems: 'flex-start',
-        cursor: 'pointer',
-      }}
+      className={rowClass}
       onClick={() => seekTo(statement.beat)}
     >
-      <span style={{ opacity: 0.5, minWidth: 48, textAlign: 'right', flexShrink: 0 }}>
-        {statement.beat.toFixed(2)}
-      </span>
-      <span style={{ display: 'flex', flexWrap: 'wrap', gap: 2, minWidth: 0, flex: 1 }}>
+      <span className={classes.beat}>{statement.beat.toFixed(2)}</span>
+      <span className={classes.chunks}>
         {statement.chunks.map((c, ci) => {
           const isActiveChunk = isActive && ci === activeChunkIdx;
           return (
             <span
               key={ci}
-              title={`beat ${c.beat.toFixed(3)} — click to seek`}
+              className={`${classes.chunk}${isActiveChunk ? ` ${classes.chunkActive}` : ''}`}
               onClick={(e) => { e.stopPropagation(); seekTo(c.beat); }}
-              style={{
-                padding: '0 4px',
-                borderRadius: 3,
-                backgroundColor: isActiveChunk ? 'rgba(255, 215, 0, 0.55)' : undefined,
-                borderLeft: ci === 0 ? undefined : '1px solid rgba(255,255,255,0.12)',
-                cursor: 'pointer',
-                wordBreak: 'break-all',
-                overflowWrap: 'anywhere',
-              }}
             >
               {c.text}
             </span>
@@ -164,6 +154,10 @@ export function SimaiStatementList({
   difficulty: ChartDifficulty | null;
 }) {
   const statements = useMemo(() => parseSimaiStatements(simaiText, difficulty), [simaiText, difficulty]);
+  const markerFlags = useMemo(
+    () => statements.map((s) => s.chunks.every((c) => MARKER_ONLY_RE.test(c.text.trim()))),
+    [statements],
+  );
   const isPlaying = useGameStore((s) => s.isPlaying);
   const preciseTime = useGameStore((s) => s.timeline.preciseTime);
   const setPreciseTime = useGameStore((s) => s.setPreciseTime);
@@ -180,9 +174,17 @@ export function SimaiStatementList({
     itemRefs.current[index] = el;
   }, []);
 
+  // 折叠状态（默认收起）。收起时跳过 rAF 跟踪，相当于功能开关。
+  const [expanded, setExpanded] = useState(false);
+
   // 每帧用最后一个 statement.beat <= curBeat 定位"刚刚通过"的 statement。空白/标记行
   // 自然命中。curBeat 在第一个 statement 之前则锁定到第一个 statement。
   useEffect(() => {
+    if (!expanded) {
+      // 收起：清空 active，避免下次展开时残留旧高亮。
+      setActive({ line: -1, chunk: -1 });
+      return;
+    }
     let raf: number | null = null;
     let lastLine = -1;
     let lastChunk = -1;
@@ -222,7 +224,7 @@ export function SimaiStatementList({
     };
     raf = requestAnimationFrame(tick);
     return () => { if (raf !== null) cancelAnimationFrame(raf); };
-  }, [statements, isPlaying, preciseTime]);
+  }, [statements, isPlaying, preciseTime, expanded]);
 
   // 用户用 wheel/touch 滚动后停止自动跟随，按下"居中"按钮恢复。
   const [autoScroll, setAutoScroll] = useState(true);
@@ -245,44 +247,62 @@ export function SimaiStatementList({
 
   return (
     <Card className={classes.card} radius="lg" withBorder>
-      <Stack gap="xs">
-        <Group justify="space-between" align="center">
-          <Text size="sm" fw={500}>Simai 语句</Text>
-          <Tooltip label="恢复自动滚动">
-            <ActionIcon
-              size="sm"
-              variant="subtle"
-              color="gray"
-              disabled={autoScroll}
-              onClick={() => setAutoScroll(true)}
-            >
-              <IconCurrentLocation size={14} />
-            </ActionIcon>
-          </Tooltip>
+      <UnstyledButton onClick={() => setExpanded((v) => !v)} w="100%">
+        <Group justify="space-between">
+          <Group gap="xs">
+            <IconListNumbers size={20} />
+            <Text size="sm" fw={500}>Simai 语句</Text>
+          </Group>
+          <IconChevronDown
+            size={16}
+            style={{
+              transition: 'transform 0.2s',
+              transform: expanded ? 'rotate(180deg)' : 'none',
+            }}
+          />
         </Group>
-        <ScrollArea
-          h={240}
-          viewportRef={containerRef}
-          onWheel={pauseAutoScroll}
-          onTouchMove={pauseAutoScroll}
-          styles={{ viewport: { fontFamily: 'monospace', fontSize: 12, lineHeight: 1.55 } }}
-        >
-          {statements.map((s, i) => {
-            const isActive = i === active.line;
-            return (
-              <StatementRow
-                key={i}
-                statement={s}
-                index={i}
-                isActive={isActive}
-                activeChunkIdx={isActive ? active.chunk : -1}
-                seekTo={seekTo}
-                registerRef={registerRef}
-              />
-            );
-          })}
-        </ScrollArea>
-      </Stack>
+      </UnstyledButton>
+
+      <Collapse expanded={expanded}>
+        <div className={classes.viewportWrap}>
+          <ScrollArea
+            h={240}
+            viewportRef={containerRef}
+            onWheel={pauseAutoScroll}
+            onTouchMove={pauseAutoScroll}
+            styles={{ viewport: { fontFamily: 'monospace', fontSize: 12, lineHeight: 1.55 } }}
+          >
+            {statements.map((s, i) => {
+              const isActive = i === active.line;
+              return (
+                <StatementRow
+                  key={i}
+                  statement={s}
+                  index={i}
+                  isActive={isActive}
+                  activeChunkIdx={isActive ? active.chunk : -1}
+                  isMarkerOnly={markerFlags[i]}
+                  seekTo={seekTo}
+                  registerRef={registerRef}
+                />
+              );
+            })}
+          </ScrollArea>
+          {!autoScroll && (
+            <Tooltip label="恢复自动滚动">
+              <ActionIcon
+                className={classes.autoScrollBtn}
+                size="sm"
+                variant="subtle"
+                color="gray"
+                onClick={() => setAutoScroll(true)}
+              >
+                <IconCurrentLocation size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </div>
+      </Collapse>
     </Card>
   );
 }

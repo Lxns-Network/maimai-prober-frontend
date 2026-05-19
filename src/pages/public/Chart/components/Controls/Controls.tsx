@@ -235,9 +235,7 @@ export function Controls() {
         </Card>
       )}
 
-      {import.meta.env.DEV && (
-        <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />
-      )}
+      <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />
 
       <Card className={classes.card} radius="lg" withBorder>
         <Stack gap="md">
