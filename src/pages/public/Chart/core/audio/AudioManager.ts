@@ -124,7 +124,7 @@ export class AudioManager {
       case "hold-start":
       case "hold-start-simultaneous":
       case "slide":
-        return true;
+        return note.type !== "slide" || !note.isHeadless;
 
       case "touch":
       case "touch-hold-start":

@@ -40,6 +40,7 @@ import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
 import { parseSimaiChart } from "../../core/parser/ChartParser";
 import { ChartDifficulty, DIFFICULTY_NAMES, DIFFICULTY_COLORS } from "../../types";
 import { NoteCountGraph } from "../NoteCountGraph";
+import { SimaiStatementList } from "../SimaiStatementList";
 import classes from "./Controls.module.css";
 
 type PlaybackControlsProps = {
@@ -50,10 +51,9 @@ type PlaybackControlsProps = {
 export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackControlsProps) {
   const {
     isPlaying,
-    timeline,
     pendingPlay,
     togglePlayback,
-    setMeasure,
+    restartCurrentMeasure,
     stepMeasure,
     stepPosition,
   } = useGameStore(useShallow((state) => state));
@@ -64,10 +64,6 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
       setSoundEnabled: state.setSoundEnabled,
     })),
   );
-
-  const { currentMeasure } = timeline;
-
-  const restartMeasure = () => setMeasure(currentMeasure);
 
   const getPlayButtonIcon = () => {
     return isPlaying ? <IconPlayerPause size={24} /> : <IconPlayerPlay size={24} />;
@@ -150,7 +146,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
               size="lg"
-              onClick={restartMeasure}
+              onClick={restartCurrentMeasure}
             >
               <IconRefresh size={20} />
             </ActionIcon>
@@ -278,6 +274,8 @@ export function Controls() {
           </Stack>
         </Card>
       )}
+
+      <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />
 
       <Card className={classes.card} radius="lg" withBorder>
         <Stack gap="md">

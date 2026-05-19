@@ -76,7 +76,7 @@ function KeyboardShortcuts() {
 
 function useKeyboardShortcuts() {
   const togglePlayback = useGameStore((s) => s.togglePlayback);
-  const restart = useGameStore((s) => s.restart);
+  const restartCurrentMeasure = useGameStore((s) => s.restartCurrentMeasure);
   const stepMeasure = useGameStore((s) => s.stepMeasure);
   const stepPosition = useGameStore((s) => s.stepPosition);
   const setHiSpeed = useGameSettingsStore((s) => s.setHiSpeed);
@@ -94,7 +94,7 @@ function useKeyboardShortcuts() {
         case "r":
         case "R":
           e.preventDefault();
-          restart();
+          restartCurrentMeasure();
           break;
         case "ArrowLeft":
           e.preventDefault();
@@ -117,7 +117,7 @@ function useKeyboardShortcuts() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlayback, restart, stepMeasure, stepPosition, setHiSpeed, hiSpeed]);
+  }, [togglePlayback, restartCurrentMeasure, stepMeasure, stepPosition, setHiSpeed, hiSpeed]);
 }
 
 function ChartContent() {

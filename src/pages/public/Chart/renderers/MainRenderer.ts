@@ -20,6 +20,7 @@ import {
   isHoldEndNote,
   isTouchNote,
   isTouchHoldStartNote,
+  isButtonNote,
 } from "../types";
 import {
   BASE_APPROACH_TIME_MS,
@@ -86,6 +87,7 @@ export class MainRenderer {
   // simulCounts / breakIdx 是静态元数据，只依赖 chart 本身。
   // 用 notes 数组引用做缓存键——chart 切换时引用变化自然 invalidate。
   private preparedNotesRef: Note[] | null = null;
+  private hitEffectNotes: Note[] = [];
 
   constructor(canvas: HTMLCanvasElement, initialBpm: number = 120) {
     this.canvas = canvas;
@@ -350,6 +352,7 @@ export class MainRenderer {
     if (this.preparedNotesRef !== notes) {
       this.calculateSimultaneousCounts(notes);
       this.assignBreakIndices(notes);
+      this.hitEffectNotes = this.prepareHitEffectNotes(notes);
       this.preparedNotesRef = notes;
     }
 
@@ -408,7 +411,7 @@ export class MainRenderer {
 
     // 击打特效画在最上层，盖住所有 note。
     if (this.config.showHitEffect) {
-      this.renderTapHitEffect(notes, currentTimeMs);
+      this.renderTapHitEffect(this.hitEffectNotes, currentTimeMs);
     }
 
     this.ctx.restore();
@@ -478,6 +481,19 @@ export class MainRenderer {
     }
   }
 
+  private prepareHitEffectNotes(notes: Note[]): Note[] {
+    return notes
+      .filter(
+        (note) =>
+          isButtonNote(note) &&
+          !isTouchNote(note) &&
+          !isTouchHoldStartNote(note) &&
+          !isHoldStartNote(note) &&
+          !(isSlideNote(note) && note.isHeadless),
+      )
+      .sort((a, b) => a.timingMs - b.timingMs);
+  }
+
   private renderApproachIndicators(
     _allNotes: Note[],
     holds: HoldStartNote[],
@@ -511,6 +527,8 @@ export class MainRenderer {
     }
 
     for (const slide of slides) {
+      if (slide.isHeadless) continue;
+
       const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
       if (!pos.visible) continue;
 
@@ -640,6 +658,8 @@ export class MainRenderer {
 
   private renderSlideStarts(slides: SlideNote[], currentBeat: number, currentTimeMs: number): void {
     for (const slide of slides) {
+      if (slide.isHeadless) continue;
+
       const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
       if (!pos.visible) continue;
 
@@ -824,7 +844,7 @@ export class MainRenderer {
   }
 
   private renderTapHitEffect(notes: Note[], currentTimeMs: number): void {
-    // notes 按 timingMs 升序，二分定位窗口下界（currentTimeMs - DURATION），之后线性扫。
+    // hitEffectNotes 按 timingMs 升序，二分定位窗口下界（currentTimeMs - DURATION），之后线性扫。
     const windowStartMs = currentTimeMs - NOTE_HIT_EFFECT_DURATION_MS;
     let lo = 0;
     let hi = notes.length;
@@ -839,7 +859,6 @@ export class MainRenderer {
     for (let i = lo; i < notes.length; i++) {
       const n = notes[i];
       if (n.timingMs > currentTimeMs) break;
-      if (isTouchNote(n) || isTouchHoldStartNote(n) || isHoldStartNote(n)) continue;
       const cur = lastHitTimingByPos.get(n.position as ButtonPosition);
       if (cur === undefined || n.timingMs > cur) {
         lastHitTimingByPos.set(n.position as ButtonPosition, n.timingMs);
@@ -849,7 +868,6 @@ export class MainRenderer {
     for (let i = lo; i < notes.length; i++) {
       const note = notes[i];
       if (note.timingMs > currentTimeMs) break;
-      if (isTouchNote(note) || isTouchHoldStartNote(note) || isHoldStartNote(note)) continue;
       const latest = lastHitTimingByPos.get(note.position as ButtonPosition);
       if (latest !== undefined && latest > note.timingMs) continue;
 
@@ -985,7 +1003,7 @@ export class MainRenderer {
       if (
         isTapNote(note) ||
         isHoldEndNote(note) ||
-        isSlideNote(note) ||
+        (isSlideNote(note) && !note.isHeadless) ||
         isTouchNote(note) ||
         note.type === "touch-hold-end"
       ) {

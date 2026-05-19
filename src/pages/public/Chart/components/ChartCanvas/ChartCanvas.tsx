@@ -485,7 +485,7 @@ export function ChartCanvas() {
           chartData.bpm,
         );
         // 传入当前时间，避免播放之前已经过去的 note 音效
-        answerSoundRefs.current.reset(playbackStartMsRef.current);
+        answerSoundRefs.current.reset(playbackStartMsRef.current, true);
       }
 
       // FPS 统计
@@ -516,7 +516,7 @@ export function ChartCanvas() {
         // seek 后让出音频主时钟，本帧走 rAF 新锚点；syncAudio 重定位完成后会再发布
         audioMasterTimeMsRef.current = null;
         // 传入当前时间，避免播放之前已经过去的 note 音效
-        answerSoundRefs.current.reset(playbackStartMsRef.current);
+        answerSoundRefs.current.reset(playbackStartMsRef.current, true);
       }
 
       // 音频实际在跑时以 AudioContext 时钟为主，否则回落 rAF 外推。

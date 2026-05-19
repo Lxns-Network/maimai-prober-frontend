@@ -864,7 +864,7 @@ export class SlideRenderer extends BaseRenderer {
       return;
     }
 
-    const delayMs = note.delayMs ?? 60000 / note.bpm;
+    const delayMs = note.allDelayMs?.[pathIndex] ?? note.delayMs ?? 60000 / note.bpm;
     const slideStart = note.timingMs + delayMs;
 
     let starPos: Point2D;
@@ -873,6 +873,8 @@ export class SlideRenderer extends BaseRenderer {
     const isSliding = currentTimeMs >= slideStart;
 
     if (!isSliding) {
+      if (note.headlessMode === "pop") return;
+
       starPos = this.noteRenderer.getPositionOnRing(segments[0].startPos);
       const elapsed = currentTimeMs - note.timingMs;
       starScale = Math.min(1, elapsed / delayMs);
@@ -919,7 +921,7 @@ export class SlideRenderer extends BaseRenderer {
     isSimultaneous: boolean,
     pathIndex: number,
   ): void {
-    const delayMs = note.delayMs ?? 60000 / note.bpm;
+    const delayMs = note.allDelayMs?.[pathIndex] ?? note.delayMs ?? 60000 / note.bpm;
     const slideStart = note.timingMs + delayMs;
     const startPos = segments[0].startPos;
     const endPos = segments[0].endPos;
@@ -944,6 +946,8 @@ export class SlideRenderer extends BaseRenderer {
         let starScale = 1;
 
         if (currentTimeMs < slideStart) {
+          if (note.headlessMode === "pop") continue;
+
           starPos = start;
           const elapsed = currentTimeMs - note.timingMs;
           starScale = Math.min(1, elapsed / delayMs);
