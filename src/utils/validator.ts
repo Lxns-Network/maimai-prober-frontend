@@ -1,20 +1,20 @@
-export const validateEmail = (email: string, {
-  allowEmpty = false
-}) => {
+export const validateEmail = (email: string, { allowEmpty = false }) => {
   if (email.length === 0 && !allowEmpty) {
     return "邮箱不能为空";
   } else if (email.length === 0 && allowEmpty) {
     return null;
   }
-  if (!/^([a-zA-Z0-9])(([a-zA-Z0-9])*([._-])?([a-zA-Z0-9]))*@(([a-zA-Z0-9\-])+(\.))+([a-zA-Z]{2,4})+$/.test(email)) {
+  if (
+    !/^([a-zA-Z0-9])(([a-zA-Z0-9])*([._-])?([a-zA-Z0-9]))*@(([a-zA-Z0-9\-])+(\.))+([a-zA-Z]{2,4})+$/.test(
+      email,
+    )
+  ) {
     return "邮箱格式不正确";
   }
   return null;
-}
+};
 
-export const validateUserName = (name: string, {
-  allowEmpty = false
-}) => {
+export const validateUserName = (name: string, { allowEmpty = false }) => {
   if (name.length === 0 && !allowEmpty) {
     return "用户名不能为空";
   } else if (name.length === 0 && allowEmpty) {
@@ -27,12 +27,12 @@ export const validateUserName = (name: string, {
     return "用户名只能包含字母、数字和下划线";
   }
   return null;
-}
+};
 
-export const validatePassword = (password: string, {
-  allowEmpty = false,
-  passwordLabel = "密码"
-}) => {
+export const validatePassword = (
+  password: string,
+  { allowEmpty = false, passwordLabel = "密码" },
+) => {
   if (password.length === 0 && !allowEmpty) {
     return `${passwordLabel}不能为空`;
   } else if (password.length === 0 && allowEmpty) {
@@ -42,18 +42,16 @@ export const validatePassword = (password: string, {
     return `${passwordLabel}长度必须在 6 到 16 字符之间`;
   }
   return null;
-}
+};
 
-export const validateUrl = (url: string, {
-  allowEmpty = false,
-  urlLabel = "地址"
-}) => {
+export const validateUrl = (url: string, { allowEmpty = false, urlLabel = "地址" }) => {
   if (url.length === 0 && !allowEmpty) {
     return `${urlLabel}不能为空`;
   } else if (url.length === 0 && allowEmpty) {
     return null;
   }
-  const pattern = "^(https?:\\/\\/)?([a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}(\\/[a-zA-Z0-9\\-._~:/?#@!$&'()*+,;=]*)?$";
+  const pattern =
+    "^(https?:\\/\\/)?([a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}(\\/[a-zA-Z0-9\\-._~:/?#@!$&'()*+,;=]*)?$";
   const regex = new RegExp(pattern);
   if (!regex.test(url)) {
     return `${urlLabel}格式不正确`;
@@ -62,7 +60,7 @@ export const validateUrl = (url: string, {
     return `${urlLabel}长度不能超过 200 字符`;
   }
   return null;
-}
+};
 
 export const validateRedirectUri = (uri: string) => {
   if (uri === "urn:ietf:wg:oauth:2.0:oob" || uri === "urn:ietf:wg:oauth:2.0:oob:auto") {
@@ -70,18 +68,18 @@ export const validateRedirectUri = (uri: string) => {
   }
   try {
     const parsed = new URL(uri);
-    const scheme = parsed.protocol.replace(/:$/, '');
-    if (['javascript', 'data', 'file', 'vbscript'].includes(scheme)) {
+    const scheme = parsed.protocol.replace(/:$/, "");
+    if (["javascript", "data", "file", "vbscript"].includes(scheme)) {
       return "回调地址使用了不安全的协议";
     }
     if (parsed.hash) {
       return "回调地址不能包含哈希片段";
     }
-    if (scheme === 'http' || scheme === 'https') {
+    if (scheme === "http" || scheme === "https") {
       if (!parsed.hostname) {
         return "回调地址必须包含有效的主机名";
       }
-      if (scheme === 'http' && parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1') {
+      if (scheme === "http" && parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
         return "不安全的回调地址，HTTP 协议仅允许 localhost 或 127.0.0.1";
       }
     } else {
@@ -95,14 +93,12 @@ export const validateRedirectUri = (uri: string) => {
   } catch (e) {
     return "回调地址格式不正确";
   }
-}
+};
 
-export const validateText = (text: string, {
-  allowEmpty = false,
-  textLabel = "文本",
-  minLength = 10,
-  maxLength = 200
-}) => {
+export const validateText = (
+  text: string,
+  { allowEmpty = false, textLabel = "文本", minLength = 10, maxLength = 200 },
+) => {
   if (text.length === 0 && !allowEmpty) {
     return `${textLabel}不能为空`;
   } else if (text.length === 0 && allowEmpty) {
@@ -112,4 +108,4 @@ export const validateText = (text: string, {
     return `${textLabel}长度必须在 ${minLength} 到 ${maxLength} 字符之间`;
   }
   return null;
-}
+};

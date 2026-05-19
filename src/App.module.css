@@ -1,17 +1,17 @@
 .active {
-    transition: transform 50ms ease-in-out;
+  transition: transform 50ms ease-in-out;
 
-    &:active {
-        transform: perspective(100px) translate3d(0, 0, -5px);
-    }
+  &:active {
+    transform: perspective(100px) translate3d(0, 0, -5px);
+  }
 }
 
 .photoViewerIcon {
-    color: white;
-    opacity: 0.75;
-    transition: opacity 0.2s ease-in-out;
+  color: white;
+  opacity: 0.75;
+  transition: opacity 0.2s ease-in-out;
 }
 
 .photoViewerIcon:hover {
-    opacity: 1;
+  opacity: 1;
 }

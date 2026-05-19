@@ -1,5 +1,5 @@
-import { Note, AudioConfig } from '../../types';
-import { ANSWER_SOUND_BASE_OFFSET_MS } from '../../utils/constants';
+import { Note, AudioConfig } from "../../types";
+import { ANSWER_SOUND_BASE_OFFSET_MS } from "../../utils/constants";
 
 const SCHEDULE_LOOKAHEAD_MS = 1500;
 
@@ -34,7 +34,7 @@ export class AudioManager {
   private answerSoundPath: string;
 
   constructor(config: AudioManagerConfig = {}) {
-    this.answerSoundPath = config.answerSoundPath ?? '/assets/maimai/chart/answer.wav';
+    this.answerSoundPath = config.answerSoundPath ?? "/assets/maimai/chart/answer.wav";
     this.volume = config.initialVolume ?? 0.5;
     this.timingOffsetMs = config.initialTimingOffset ?? ANSWER_SOUND_BASE_OFFSET_MS;
   }
@@ -43,9 +43,10 @@ export class AudioManager {
     if (this.initialized) return;
 
     try {
-      const AudioContextClass = window.AudioContext || 
+      const AudioContextClass =
+        window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      
+
       this.audioContext = new AudioContextClass();
 
       const response = await fetch(this.answerSoundPath);
@@ -54,12 +55,12 @@ export class AudioManager {
 
       this.initialized = true;
     } catch (error) {
-      console.error('AudioManager: Failed to initialize', error);
+      console.error("AudioManager: Failed to initialize", error);
     }
   }
 
   async resume(): Promise<void> {
-    if (this.audioContext && this.audioContext.state === 'suspended') {
+    if (this.audioContext && this.audioContext.state === "suspended") {
       await this.audioContext.resume();
     }
   }
@@ -111,29 +112,29 @@ export class AudioManager {
         }
       };
     } catch (error) {
-      console.error('AudioManager: Playback error', error);
+      console.error("AudioManager: Playback error", error);
     }
   }
 
   private shouldPlaySound(note: Note): boolean {
     switch (note.type) {
-      case 'tap':
-      case 'break':
-      case 'simultaneous':
-      case 'hold-start':
-      case 'hold-start-simultaneous':
-      case 'slide':
-        return note.type !== 'slide' || !note.isHeadless;
+      case "tap":
+      case "break":
+      case "simultaneous":
+      case "hold-start":
+      case "hold-start-simultaneous":
+      case "slide":
+        return note.type !== "slide" || !note.isHeadless;
 
-      case 'touch':
-      case 'touch-hold-start':
+      case "touch":
+      case "touch-hold-start":
         return this.touchSoundEnabled;
 
-      case 'touch-hold-end':
+      case "touch-hold-end":
         return this.touchSoundEnabled && this.holdEndSoundEnabled;
 
-      case 'hold-end':
-      case 'hold-end-simultaneous':
+      case "hold-end":
+      case "hold-end-simultaneous":
         return this.holdEndSoundEnabled;
 
       default:
@@ -149,7 +150,7 @@ export class AudioManager {
     notes: Note[] | null,
     currentTimeMs: number,
     playbackSpeed: number = 1,
-    lookAheadMs: number = SCHEDULE_LOOKAHEAD_MS
+    lookAheadMs: number = SCHEDULE_LOOKAHEAD_MS,
   ): void {
     if (!this.enabled || !notes || !this.audioContext || !this.answerBuffer) return;
 

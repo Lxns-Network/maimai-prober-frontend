@@ -1,4 +1,4 @@
-import Songs from '@/pages/user/Songs';
+import Songs from "@/pages/user/Songs";
 
 export default function Page() {
   return <Songs />;

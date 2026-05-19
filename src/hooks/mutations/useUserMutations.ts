@@ -2,11 +2,23 @@ import { useMutation, UseMutationOptions } from "@tanstack/react-query";
 import { apiMutationFn } from "@/hooks/queries/mutationFn.ts";
 import { OAuthAuthorizeResponse } from "@/types/api";
 import {
-  updateUserProfile, updateUserBind, generateUserToken, logoutUser,
-  editUserPassword, deleteSelfUser, updateUserConfig,
-  confirmUserOAuthAuthorize, revokeUserOAuthApp,
-  registerPasskey, deletePasskey, updatePasskeyName, authenticatePasskey,
-  deleteUsers, sendBatchEmail, updateUser, deleteUser,
+  updateUserProfile,
+  updateUserBind,
+  generateUserToken,
+  logoutUser,
+  editUserPassword,
+  deleteSelfUser,
+  updateUserConfig,
+  confirmUserOAuthAuthorize,
+  revokeUserOAuthApp,
+  registerPasskey,
+  deletePasskey,
+  updatePasskeyName,
+  authenticatePasskey,
+  deleteUsers,
+  sendBatchEmail,
+  updateUser,
+  deleteUser,
 } from "@/utils/api/user.ts";
 import type {
   PasskeyRegisterData,
@@ -28,7 +40,9 @@ export const useUpdateUserBind = (options?: UseMutationOptions<unknown, Error, o
   });
 };
 
-export const useGenerateUserToken = (options?: UseMutationOptions<{ token: string }, Error, void>) => {
+export const useGenerateUserToken = (
+  options?: UseMutationOptions<{ token: string }, Error, void>,
+) => {
   return useMutation({
     mutationFn: () => apiMutationFn<{ token: string }>(() => generateUserToken()),
     ...options,
@@ -56,7 +70,9 @@ export const useDeleteSelfUser = (options?: UseMutationOptions<unknown, Error, v
   });
 };
 
-export const useUpdateUserConfig = (options?: UseMutationOptions<unknown, Error, { game: string; data: object }>) => {
+export const useUpdateUserConfig = (
+  options?: UseMutationOptions<unknown, Error, { game: string; data: object }>,
+) => {
   return useMutation({
     mutationFn: ({ game, data }: { game: string; data: object }) =>
       apiMutationFn(() => updateUserConfig(game, data)),
@@ -64,9 +80,12 @@ export const useUpdateUserConfig = (options?: UseMutationOptions<unknown, Error,
   });
 };
 
-export const useConfirmOAuthAuthorize = (options?: UseMutationOptions<OAuthAuthorizeResponse, Error, object>) => {
+export const useConfirmOAuthAuthorize = (
+  options?: UseMutationOptions<OAuthAuthorizeResponse, Error, object>,
+) => {
   return useMutation({
-    mutationFn: (data: object) => apiMutationFn<OAuthAuthorizeResponse>(() => confirmUserOAuthAuthorize(data)),
+    mutationFn: (data: object) =>
+      apiMutationFn<OAuthAuthorizeResponse>(() => confirmUserOAuthAuthorize(data)),
     ...options,
   });
 };
@@ -78,7 +97,9 @@ export const useRevokeUserOAuthApp = (options?: UseMutationOptions<unknown, Erro
   });
 };
 
-export const useRegisterPasskey = (options?: UseMutationOptions<unknown, Error, PasskeyRegisterData>) => {
+export const useRegisterPasskey = (
+  options?: UseMutationOptions<unknown, Error, PasskeyRegisterData>,
+) => {
   return useMutation({
     mutationFn: (data: PasskeyRegisterData) => apiMutationFn(() => registerPasskey(data)),
     ...options,
@@ -92,7 +113,9 @@ export const useDeletePasskey = (options?: UseMutationOptions<unknown, Error, nu
   });
 };
 
-export const useUpdatePasskeyName = (options?: UseMutationOptions<unknown, Error, { id: number; data: PasskeyUpdateNameData }>) => {
+export const useUpdatePasskeyName = (
+  options?: UseMutationOptions<unknown, Error, { id: number; data: PasskeyUpdateNameData }>,
+) => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: PasskeyUpdateNameData }) =>
       apiMutationFn(() => updatePasskeyName(id, data)),
@@ -100,7 +123,9 @@ export const useUpdatePasskeyName = (options?: UseMutationOptions<unknown, Error
   });
 };
 
-export const useAuthenticatePasskey = (options?: UseMutationOptions<unknown, Error, PasskeyAuthenticateData>) => {
+export const useAuthenticatePasskey = (
+  options?: UseMutationOptions<unknown, Error, PasskeyAuthenticateData>,
+) => {
   return useMutation({
     mutationFn: (data: PasskeyAuthenticateData) => apiMutationFn(() => authenticatePasskey(data)),
     ...options,
@@ -122,7 +147,9 @@ export const useSendBatchEmail = (options?: UseMutationOptions<unknown, Error, o
   });
 };
 
-export const useUpdateUser = (options?: UseMutationOptions<unknown, Error, { userId: number; data: object }>) => {
+export const useUpdateUser = (
+  options?: UseMutationOptions<unknown, Error, { userId: number; data: object }>,
+) => {
   return useMutation({
     mutationFn: ({ userId, data }: { userId: number; data: object }) =>
       apiMutationFn(() => updateUser(userId, data)),
@@ -136,4 +163,3 @@ export const useDeleteUser = (options?: UseMutationOptions<unknown, Error, numbe
     ...options,
   });
 };
-

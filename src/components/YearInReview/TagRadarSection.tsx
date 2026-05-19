@@ -2,7 +2,7 @@ import { YearInReviewProps } from "@/pages/public/YearInReview.tsx";
 import tags from "@/data/tags.json";
 import { BarChart, RadarChart } from "@mantine/charts";
 import { useEffect, useMemo, useRef, useState } from "react";
-import WordCloud from 'wordcloud';
+import WordCloud from "wordcloud";
 import { Center, SegmentedControl, SimpleGrid, Stack } from "@mantine/core";
 import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
 import { useInViewport } from "@mantine/hooks";
@@ -11,10 +11,10 @@ interface TagProps {
   id: number;
   localized_name: {
     [key: string]: string;
-  },
+  };
   localized_description: {
     [key: string]: string;
-  },
+  };
   group_id: number;
 }
 
@@ -22,7 +22,7 @@ interface TagGroupProps {
   id: number;
   localized_name: {
     [key: string]: string;
-  },
+  };
   color: string;
 }
 
@@ -31,7 +31,7 @@ interface TagsProps {
   tagGroups: TagGroupProps[];
 }
 
-const WordCloudSection = ({ data }: { data: { name: string, value: number }[] }) => {
+const WordCloudSection = ({ data }: { data: { name: string; value: number }[] }) => {
   const { width } = useShellViewportSize();
   const [containerWidth, setContainerWidth] = useState(400);
   const hasRendered = useRef(false);
@@ -48,28 +48,32 @@ const WordCloudSection = ({ data }: { data: { name: string, value: number }[] })
   useEffect(() => {
     // 只在进入视口且未渲染过时才渲染
     if (!inViewport || hasRendered.current) return;
-    
-    const container = document.getElementById('word-cloud-container');
+
+    const container = document.getElementById("word-cloud-container");
     const maxValue = Math.max(...data.map((word) => word.value));
 
     if (container && data.length > 0) {
       // 使用 setTimeout 确保容器已完全挂载
       setTimeout(() => {
-        container.innerHTML = '';
-        
+        container.innerHTML = "";
+
         WordCloud(container, {
-          list: data.map((word) => [word.name, word.value / maxValue * 100]),
+          list: data.map((word) => [word.name, (word.value / maxValue) * 100]),
           gridSize: 8,
-          backgroundColor: 'transparent',
+          backgroundColor: "transparent",
         });
-        
+
         hasRendered.current = true;
       }, 100);
     }
   }, [inViewport, data]);
 
   return (
-    <div ref={ref} id="word-cloud-container" style={{ width: `${containerWidth}px`, height: '250px' }} />
+    <div
+      ref={ref}
+      id="word-cloud-container"
+      style={{ width: `${containerWidth}px`, height: "250px" }}
+    />
   );
 };
 
@@ -92,7 +96,10 @@ export const TagRadarSection = ({ data }: { data: YearInReviewProps }) => {
       });
     });
 
-    const wordCloudData = Object.entries(totalTagData).map(([key, value]) => ({ name: key, value: value }));
+    const wordCloudData = Object.entries(totalTagData).map(([key, value]) => ({
+      name: key,
+      value: value,
+    }));
 
     return { groupTagData, wordCloudData };
   }, [data.player_tags]);
@@ -125,9 +132,7 @@ export const TagRadarSection = ({ data }: { data: YearInReviewProps }) => {
               h={300}
               data={Object.entries(groupTagData[tagGroup]).map(([key, value]) => ({ key, value }))}
               dataKey="key"
-              series={[
-                { name: 'value', color: 'var(--mantine-primary-color-light-color)' },
-              ]}
+              series={[{ name: "value", color: "var(--mantine-primary-color-light-color)" }]}
               barProps={{ barSize: 50 }}
               gridAxis="none"
               withYAxis={false}
@@ -136,9 +141,11 @@ export const TagRadarSection = ({ data }: { data: YearInReviewProps }) => {
           ) : (
             <RadarChart
               h={300}
-              data={Object.entries(groupTagData[tagGroup || 1]).map(([key, value]) => ({ tag: key, weight: value })).slice(0, 6)}
+              data={Object.entries(groupTagData[tagGroup || 1])
+                .map(([key, value]) => ({ tag: key, weight: value }))
+                .slice(0, 6)}
               dataKey="tag"
-              series={[{ name: 'weight', color: 'var(--mantine-primary-color-light-color)' }]}
+              series={[{ name: "weight", color: "var(--mantine-primary-color-light-color)" }]}
             />
           )}
         </Stack>
@@ -147,5 +154,5 @@ export const TagRadarSection = ({ data }: { data: YearInReviewProps }) => {
         </Center>
       </SimpleGrid>
     </>
-  )
-}
+  );
+};

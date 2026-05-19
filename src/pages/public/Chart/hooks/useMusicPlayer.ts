@@ -1,8 +1,8 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from '../stores/useGameStore';
-import { useGameSettingsStore } from '../stores/useGameSettingsStore';
-import { BpmEvent } from '../types';
+import { useRef, useEffect, useState, useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from "../stores/useGameStore";
+import { useGameSettingsStore } from "../stores/useGameSettingsStore";
+import { BpmEvent } from "../types";
 
 const LEAD_IN_BEATS = 4;
 const SEEK_THROTTLE_MS = 50;
@@ -35,7 +35,7 @@ function calculateMusicTime(
   preciseTime: number,
   bpmEvents: BpmEvent[] | null,
   bpm: number,
-  musicOffset: number
+  musicOffset: number,
 ): number {
   const chartTimeMs = beatsToMs(preciseTime, bpmEvents, bpm);
   const leadInMs = (60000 * LEAD_IN_BEATS) / bpm;
@@ -64,7 +64,7 @@ export function useMusicPlayer() {
     startOffset: 0,
     isSourcePlaying: false,
   });
-  const lastUrlRef = useRef('');
+  const lastUrlRef = useRef("");
   const lastSeekRef = useRef(0);
   const playbackSpeedRef = useRef(1);
   const loadingUrlRef = useRef<string | null>(null);
@@ -74,28 +74,21 @@ export function useMusicPlayer() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const {
-    musicUrl,
-    isPlaying,
-    playbackSpeed,
-    chartData,
-    preciseTime,
-    pendingPlay,
-    setMusicState,
-  } = useGameStore(
-    useShallow((s) => ({
-      musicUrl: s.musicUrl,
-      isPlaying: s.isPlaying,
-      playbackSpeed: s.playbackSpeed,
-      chartData: s.chartData,
-      preciseTime: s.timeline.preciseTime,
-      pendingPlay: s.pendingPlay,
-      setMusicState: s.setMusicState,
-    }))
-  );
+  const { musicUrl, isPlaying, playbackSpeed, chartData, preciseTime, pendingPlay, setMusicState } =
+    useGameStore(
+      useShallow((s) => ({
+        musicUrl: s.musicUrl,
+        isPlaying: s.isPlaying,
+        playbackSpeed: s.playbackSpeed,
+        chartData: s.chartData,
+        preciseTime: s.timeline.preciseTime,
+        pendingPlay: s.pendingPlay,
+        setMusicState: s.setMusicState,
+      })),
+    );
 
   const { musicVolume, musicOffset } = useGameSettingsStore(
-    useShallow((s) => ({ musicVolume: s.musicVolume, musicOffset: s.musicOffset }))
+    useShallow((s) => ({ musicVolume: s.musicVolume, musicOffset: s.musicOffset })),
   );
 
   const bpm = chartData?.bpm ?? 120;
@@ -184,7 +177,7 @@ export function useMusicPlayer() {
       state.gainNode = gainNode;
     }
 
-    if (state.audioContext.state === 'suspended') {
+    if (state.audioContext.state === "suspended") {
       try {
         await state.audioContext.resume();
       } catch {
@@ -192,57 +185,63 @@ export function useMusicPlayer() {
       }
     }
 
-    return state.audioContext.state === 'running';
+    return state.audioContext.state === "running";
   }, [musicVolume]);
 
-  const playFromPosition = useCallback(async (position: number) => {
-    const state = audioStateRef.current;
-    if (!state.audioBuffer || !state.gainNode) return;
+  const playFromPosition = useCallback(
+    async (position: number) => {
+      const state = audioStateRef.current;
+      if (!state.audioBuffer || !state.gainNode) return;
 
-    const isReady = await ensureAudioContextReady();
-    if (!isReady || !state.audioContext) return;
+      const isReady = await ensureAudioContextReady();
+      if (!isReady || !state.audioContext) return;
 
-    stopSource();
+      stopSource();
 
-    const duration = state.audioBuffer.duration;
-    const clampedPosition = clamp(position, 0, duration - 0.01);
+      const duration = state.audioBuffer.duration;
+      const clampedPosition = clamp(position, 0, duration - 0.01);
 
-    const sourceNode = state.audioContext.createBufferSource();
-    const sourceGainNode = state.audioContext.createGain();
-    sourceNode.buffer = state.audioBuffer;
-    sourceNode.playbackRate.value = playbackSpeedRef.current;
-    sourceGainNode.gain.setValueAtTime(0, state.audioContext.currentTime);
-    sourceGainNode.gain.linearRampToValueAtTime(1, state.audioContext.currentTime + SOURCE_FADE_TIME_S);
-    sourceNode.connect(sourceGainNode);
-    sourceGainNode.connect(state.gainNode);
+      const sourceNode = state.audioContext.createBufferSource();
+      const sourceGainNode = state.audioContext.createGain();
+      sourceNode.buffer = state.audioBuffer;
+      sourceNode.playbackRate.value = playbackSpeedRef.current;
+      sourceGainNode.gain.setValueAtTime(0, state.audioContext.currentTime);
+      sourceGainNode.gain.linearRampToValueAtTime(
+        1,
+        state.audioContext.currentTime + SOURCE_FADE_TIME_S,
+      );
+      sourceNode.connect(sourceGainNode);
+      sourceGainNode.connect(state.gainNode);
 
-    // 处理播放结束
-    sourceNode.onended = () => {
-      if (state.sourceNode === sourceNode) {
-        state.sourceNode = null;
-        state.sourceGainNode = null;
-        state.isSourcePlaying = false;
-      }
-      try {
-        sourceNode.disconnect();
-      } catch {
-        // 忽略已经断开的 source
-      }
-      try {
-        sourceGainNode.disconnect();
-      } catch {
-        // 忽略已经断开的 gain
-      }
-    };
+      // 处理播放结束
+      sourceNode.onended = () => {
+        if (state.sourceNode === sourceNode) {
+          state.sourceNode = null;
+          state.sourceGainNode = null;
+          state.isSourcePlaying = false;
+        }
+        try {
+          sourceNode.disconnect();
+        } catch {
+          // 忽略已经断开的 source
+        }
+        try {
+          sourceGainNode.disconnect();
+        } catch {
+          // 忽略已经断开的 gain
+        }
+      };
 
-    state.sourceNode = sourceNode;
-    state.sourceGainNode = sourceGainNode;
-    state.startTime = state.audioContext.currentTime;
-    state.startOffset = clampedPosition;
-    state.isSourcePlaying = true;
+      state.sourceNode = sourceNode;
+      state.sourceGainNode = sourceGainNode;
+      state.startTime = state.audioContext.currentTime;
+      state.startOffset = clampedPosition;
+      state.isSourcePlaying = true;
 
-    sourceNode.start(0, clampedPosition);
-  }, [stopSource, ensureAudioContextReady]);
+      sourceNode.start(0, clampedPosition);
+    },
+    [stopSource, ensureAudioContextReady],
+  );
 
   useEffect(() => {
     setMusicState(isLoaded, isLoading, error);
@@ -273,7 +272,7 @@ export function useMusicPlayer() {
       stopSource(true);
       state.audioBuffer = null;
       state.startOffset = 0;
-      lastUrlRef.current = '';
+      lastUrlRef.current = "";
       loadingUrlRef.current = null;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -351,7 +350,7 @@ export function useMusicPlayer() {
           loadingUrlRef.current = null;
           setIsLoaded(false);
           setIsLoading(false);
-          setError('Failed to load audio. Check URL and CORS settings.');
+          setError("Failed to load audio. Check URL and CORS settings.");
         }
       }
     };
@@ -499,21 +498,31 @@ export function useMusicPlayer() {
         state.startOffset = musicTime < 0 ? 0 : clamp(musicTime, 0, duration - 0.01);
       }
     }
-  }, [isPlaying, preciseTime, bpmEvents, bpm, musicOffset, isLoaded, stopSource, playFromPosition, getCurrentTime]);
+  }, [
+    isPlaying,
+    preciseTime,
+    bpmEvents,
+    bpm,
+    musicOffset,
+    isLoaded,
+    stopSource,
+    playFromPosition,
+    getCurrentTime,
+  ]);
 
-  return { 
-    isLoaded, 
-    isLoading, 
+  return {
+    isLoaded,
+    isLoading,
     error,
     clearAudio: () => {
       const state = audioStateRef.current;
       stopSource();
       state.audioBuffer = null;
-      lastUrlRef.current = '';
+      lastUrlRef.current = "";
       setIsLoaded(false);
       setIsLoading(false);
       setError(null);
-    }
+    },
   };
 }
 

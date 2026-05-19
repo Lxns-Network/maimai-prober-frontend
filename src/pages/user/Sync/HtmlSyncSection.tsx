@@ -1,7 +1,26 @@
 import { useState } from "react";
-import { Alert, Badge, Button, Card, Group, Modal, Paper, SimpleGrid, Stack, Text, Textarea, ThemeIcon } from "@mantine/core";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Modal,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  Textarea,
+  ThemeIcon,
+} from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconAlertCircle, IconCode, IconFileImport, IconTrash, IconUpload } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconCode,
+  IconFileImport,
+  IconTrash,
+  IconUpload,
+} from "@tabler/icons-react";
 import { navigate } from "vike/client/router";
 import useGame from "@/hooks/useGame.ts";
 import { RadioCardGroup } from "@/components/RadioCardGroup.tsx";
@@ -30,7 +49,8 @@ interface HtmlSyncFailure {
   reason: string;
 }
 
-const scoreChangeKey = (score: ScoreChangesProps) => `${score.id}:${score.type}:${score.level_index}`;
+const scoreChangeKey = (score: ScoreChangesProps) =>
+  `${score.id}:${score.type}:${score.level_index}`;
 
 const scoreChangeDetailKeys = [
   "achievements",
@@ -62,16 +82,19 @@ const extractHtmlTitle = (content: string) => {
   return title || null;
 };
 
-const createHtmlSyncResult = (game: SyncResult["game"], scores: ScoreChangesProps[]): HtmlSyncResult => ({
+const createHtmlSyncResult = (
+  game: SyncResult["game"],
+  scores: ScoreChangesProps[],
+): HtmlSyncResult => ({
   game,
   scores,
 });
 
 const mergeScoreChangeDetail = (
-  current?: ScoreChangesProps[typeof scoreChangeDetailKeys[number]],
-  incoming?: ScoreChangesProps[typeof scoreChangeDetailKeys[number]],
+  current?: ScoreChangesProps[(typeof scoreChangeDetailKeys)[number]],
+  incoming?: ScoreChangesProps[(typeof scoreChangeDetailKeys)[number]],
 ) => {
-  const merged = {} as ScoreChangesProps[typeof scoreChangeDetailKeys[number]];
+  const merged = {} as ScoreChangesProps[(typeof scoreChangeDetailKeys)[number]];
   const oldValue = current?.old !== undefined ? current.old : incoming?.old;
   const newValue = incoming?.new !== undefined ? incoming.new : current?.new;
 
@@ -127,10 +150,13 @@ export const HtmlSyncSection = () => {
   const small = useMediaQuery("(max-width: 600px)");
 
   const appendUploadItem = (item: Omit<UploadItem, "id">) => {
-    setUploadItems((current) => [...current, {
-      ...item,
-      id: crypto.randomUUID(),
-    }]);
+    setUploadItems((current) => [
+      ...current,
+      {
+        ...item,
+        id: crypto.randomUUID(),
+      },
+    ]);
   };
 
   const selectHtmlFiles = () => {
@@ -231,12 +257,14 @@ export const HtmlSyncSection = () => {
       const mergedResult = mergeHtmlSyncResults(results);
       if (!mergedResult && failures.length > 0) {
         const failureMap = new Map(failures.map((failure) => [failure.id, failure.reason]));
-        setUploadItems(itemsToUpload
-          .filter((item) => failureMap.has(item.id))
-          .map((item) => ({
-            ...item,
-            error: failureMap.get(item.id),
-          })));
+        setUploadItems(
+          itemsToUpload
+            .filter((item) => failureMap.has(item.id))
+            .map((item) => ({
+              ...item,
+              error: failureMap.get(item.id),
+            })),
+        );
         throw new Error(`共 ${failures.length} 份 HTML 处理失败。`);
       }
       if (!mergedResult) {
@@ -245,18 +273,23 @@ export const HtmlSyncSection = () => {
 
       if (failures.length > 0) {
         const failureMap = new Map(failures.map((failure) => [failure.id, failure.reason]));
-        setUploadItems(itemsToUpload
-          .filter((item) => failureMap.has(item.id))
-          .map((item) => ({
-            ...item,
-            error: failureMap.get(item.id),
-          })));
+        setUploadItems(
+          itemsToUpload
+            .filter((item) => failureMap.has(item.id))
+            .map((item) => ({
+              ...item,
+              error: failureMap.get(item.id),
+            })),
+        );
         setHasImportedResult(true);
         setSyncResult({
           game: mergedResult.game,
           scores: mergedResult.scores,
         });
-        openAlertModal("部分导入失败", `成功导入 ${results.length} 份 HTML，失败 ${failures.length} 份。`);
+        openAlertModal(
+          "部分导入失败",
+          `成功导入 ${results.length} 份 HTML，失败 ${failures.length} 份。`,
+        );
         return;
       }
 
@@ -282,7 +315,12 @@ export const HtmlSyncSection = () => {
         opened={resultModalOpened}
         onClose={() => setResultModalOpened(false)}
       />
-      <Modal opened={isTextModalOpened} onClose={() => setIsTextModalOpened(false)} title="粘贴 HTML 文本" centered>
+      <Modal
+        opened={isTextModalOpened}
+        onClose={() => setIsTextModalOpened(false)}
+        title="粘贴 HTML 文本"
+        centered
+      >
         <Stack gap="md">
           <Text size="sm" c="dimmed">
             将页面 HTML 源码粘贴到这里，确认后加入待上传列表。
@@ -306,17 +344,21 @@ export const HtmlSyncSection = () => {
       <Card withBorder radius="md" className={classes.card} p="md" mb="xl">
         <Stack gap="md">
           <div>
-            <Text fz="lg" fw={700}>上传 HTML 文件</Text>
+            <Text fz="lg" fw={700}>
+              上传 HTML 文件
+            </Text>
             <Text fz="sm" c="dimmed" mt={4}>
               上传你保存的成绩页面 HTML 文件
             </Text>
           </div>
           <div>
-            <Text fz="sm" mb="xs">选择游戏</Text>
+            <Text fz="sm" mb="xs">
+              选择游戏
+            </Text>
             <RadioCardGroup
               data={[
-                { name: '舞萌 DX', description: '导入舞萌 DX 页面', value: 'maimai' },
-                { name: '中二节奏', description: '导入中二节奏页面', value: 'chunithm' },
+                { name: "舞萌 DX", description: "导入舞萌 DX 页面", value: "maimai" },
+                { name: "中二节奏", description: "导入中二节奏页面", value: "chunithm" },
               ]}
               value={game}
               onChange={(value) => setGame(value as typeof game)}
@@ -327,13 +369,15 @@ export const HtmlSyncSection = () => {
               <Text size="sm">
                 仅支持从 NET 保存的完整 HTML 源码。你可以上传文件，也可以直接粘贴 HTML 文本。
               </Text>
-              <Text size="sm">
-                目前支持玩家信息、收藏品、最近游玩记录、最佳成绩等页面。
-              </Text>
+              <Text size="sm">目前支持玩家信息、收藏品、最近游玩记录、最佳成绩等页面。</Text>
             </Stack>
           </Alert>
           <Group>
-            <Button onClick={selectHtmlFiles} disabled={isUploading} leftSection={<IconFileImport size={18} />}>
+            <Button
+              onClick={selectHtmlFiles}
+              disabled={isUploading}
+              leftSection={<IconFileImport size={18} />}
+            >
               选择 HTML 文件
             </Button>
             <Button
@@ -352,8 +396,12 @@ export const HtmlSyncSection = () => {
             <Stack gap="sm">
               <Group justify="space-between" align="center">
                 <div>
-                  <Text fz="md" fw={700}>待上传 HTML（{uploadItems.length}）</Text>
-                  <Text fz="sm" c="dimmed">文件与文本会统一转换为 HTML 源码后顺序上传。</Text>
+                  <Text fz="md" fw={700}>
+                    待上传 HTML（{uploadItems.length}）
+                  </Text>
+                  <Text fz="sm" c="dimmed">
+                    文件与文本会统一转换为 HTML 源码后顺序上传。
+                  </Text>
                 </div>
                 <Button
                   onClick={submitHtmlUploads}
@@ -375,8 +423,12 @@ export const HtmlSyncSection = () => {
                       <Group justify="space-between" align="flex-start" wrap="nowrap">
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <Group gap="xs" mb={4}>
-                            <Text fw={500} truncate>{item.name}</Text>
-                            <Badge variant="light">{item.source === "file" ? "文件" : "文本"}</Badge>
+                            <Text fw={500} truncate>
+                              {item.name}
+                            </Text>
+                            <Badge variant="light">
+                              {item.source === "file" ? "文件" : "文本"}
+                            </Badge>
                             {item.error && (
                               <ThemeIcon color="red" variant="light" size="sm" radius="xl">
                                 <IconAlertCircle size={12} />
@@ -384,7 +436,8 @@ export const HtmlSyncSection = () => {
                             )}
                           </Group>
                           <Text size="sm" c="dimmed">
-                            大小约 {(item.size / 1024).toFixed(1)} KB，长度 {item.content.length} 字符
+                            大小约 {(item.size / 1024).toFixed(1)} KB，长度 {item.content.length}{" "}
+                            字符
                           </Text>
                           {item.error && (
                             <Text size="sm" c="red" mt={4}>

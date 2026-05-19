@@ -11,7 +11,7 @@ export function Panel() {
       }}
       tabs={[
         { id: "users", name: "用户列表", children: <AdminUsersSection /> },
-        { id: "developers", name: "开发者列表", children: <AdminDevelopersSection />},
+        { id: "developers", name: "开发者列表", children: <AdminDevelopersSection /> },
       ]}
     />
   );

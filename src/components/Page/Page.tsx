@@ -20,26 +20,23 @@ export interface PageProps {
 
 export const Page = (props: PageProps) => {
   return (
-    <div style={{
-      "--page-max-width": `calc(${NAVBAR_BREAKPOINT}px - var(--navbar-width))`,
-    } as React.CSSProperties}>
-      <Helmet
-        defaultTitle="maimai DX 查分器"
-        titleTemplate="%s | maimai DX 查分器"
-      >
+    <div
+      style={
+        {
+          "--page-max-width": `calc(${NAVBAR_BREAKPOINT}px - var(--navbar-width))`,
+        } as React.CSSProperties
+      }
+    >
+      <Helmet defaultTitle="maimai DX 查分器" titleTemplate="%s | maimai DX 查分器">
         {props.meta.title && <title>{props.meta.title}</title>}
         {props.meta.description && <meta name="description" content={props.meta.description} />}
       </Helmet>
 
       <PageHeader {...props} />
 
-      {props.tabs && (
-        <PageTabs {...props} />
-      )}
+      {props.tabs && <PageTabs {...props} />}
 
-      {props.children && (
-        <PageRawContent {...props} />
-      )}
+      {props.children && <PageRawContent {...props} />}
     </div>
   );
-}
+};

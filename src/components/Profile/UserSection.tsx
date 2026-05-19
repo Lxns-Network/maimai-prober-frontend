@@ -16,7 +16,7 @@ interface FormValues {
 
 export const UserSection = () => {
   const { user, setData } = useUser();
-  const [visible, visibleHandler] = useDisclosure(false)
+  const [visible, visibleHandler] = useDisclosure(false);
 
   const { mutate: mutateUpdateProfile } = useUpdateUserProfile();
 
@@ -34,23 +34,30 @@ export const UserSection = () => {
 
   if (!user) {
     return (
-      <Alert radius="md" icon={<Icon path={mdiWebOff} />} title="没有获取到查分器账号数据" color="red">
-        <Text size="sm">
-          可能是网络连接已断开，请检查你的网络连接是否正常。
-        </Text>
+      <Alert
+        radius="md"
+        icon={<Icon path={mdiWebOff} />}
+        title="没有获取到查分器账号数据"
+        color="red"
+      >
+        <Text size="sm">可能是网络连接已断开，请检查你的网络连接是否正常。</Text>
       </Alert>
-    )
+    );
   }
 
   const updateUserProfileHandler = (values: TransformedValues<typeof form>) => {
     mutateUpdateProfile(values, {
       onSuccess: () => {
         openAlertModal("保存成功", "你的账号详情保存成功。");
-        setData((prev) => prev ? {
-          ...prev,
-          name: form.values.name || prev.name,
-          email: form.values.email || prev.email,
-        } : prev);
+        setData((prev) =>
+          prev
+            ? {
+                ...prev,
+                name: form.values.name || prev.name,
+                email: form.values.email || prev.email,
+              }
+            : prev,
+        );
       },
       onError: (error) => {
         openRetryModal("保存失败", `${error}`, () => updateUserProfileHandler(values));
@@ -59,7 +66,7 @@ export const UserSection = () => {
         form.reset();
       },
     });
-  }
+  };
 
   return (
     <Card withBorder radius="md" className={classes.card}>
@@ -85,19 +92,21 @@ export const UserSection = () => {
           label="用户名"
           variant="filled"
           mb={5}
-          placeholder={visible ? user.name : user.name.replace(/./g, '•')}
-          {...form.getInputProps('name')}
+          placeholder={visible ? user.name : user.name.replace(/./g, "•")}
+          {...form.getInputProps("name")}
         />
         <TextInput
           label="邮箱"
           variant="filled"
-          placeholder={visible ? user.email : user.email.replace(/./g, '•')}
-          {...form.getInputProps('email')}
+          placeholder={visible ? user.email : user.email.replace(/./g, "•")}
+          {...form.getInputProps("email")}
         />
         <Group justify="flex-end" mt="md">
-          <Button type="submit" disabled={!form.isDirty()}>保存</Button>
+          <Button type="submit" disabled={!form.isDirty()}>
+            保存
+          </Button>
         </Group>
       </form>
     </Card>
-  )
-}
+  );
+};

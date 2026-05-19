@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { MirrorMode, JudgmentLineDesign } from '../types';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { MirrorMode, JudgmentLineDesign } from "../types";
 
 export interface GameSettingsState {
   hiSpeed: number;
@@ -46,8 +46,8 @@ const initialState: GameSettingsState = {
   hiSpeed: 6,
   alwaysKeepHiSpeed: false,
   slideRotation: true,
-  mirrorMode: 'none',
-  judgmentLineDesign: 'simple',
+  mirrorMode: "none",
+  judgmentLineDesign: "simple",
   pinkSlideStart: false,
   highlightExNotes: false,
   normalColorBreakSlide: false,
@@ -81,7 +81,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       setMusicOffset: (offset: number) => set({ musicOffset: offset }),
     }),
     {
-      name: 'maimai_chart_preview_settings',
+      name: "maimai_chart_preview_settings",
       version: SETTINGS_STORE_VERSION,
       migrate: (persistedState) => ({
         ...initialState,
@@ -104,6 +104,6 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
         musicVolume: state.musicVolume,
         musicOffset: state.musicOffset,
       }),
-    }
-  )
+    },
+  ),
 );

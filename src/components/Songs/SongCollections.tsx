@@ -11,7 +11,7 @@ import {
   Stack,
   Text,
   Title,
-  UnstyledButton
+  UnstyledButton,
 } from "@mantine/core";
 import { IconAward } from "@tabler/icons-react";
 import useFixedGame from "@/hooks/useFixedGame.ts";
@@ -38,7 +38,9 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
   const [game] = useFixedGame();
 
   const handleClick = () => {
-    navigate(`/collections?game=${game}&collection_type=${collection.type}&collection_id=${collection.id}`);
+    navigate(
+      `/collections?game=${game}&collection_type=${collection.type}&collection_id=${collection.id}`,
+    );
   };
 
   const renderCollectionPreview = () => {
@@ -96,7 +98,10 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
 
   return (
     <UnstyledButton onClick={handleClick} style={{ width: "100%" }}>
-      <Paper className={[scoreClasses.subParameters, scoreClasses.subParametersButton].join(' ')} p="sm">
+      <Paper
+        className={[scoreClasses.subParameters, scoreClasses.subParametersButton].join(" ")}
+        p="sm"
+      >
         <Stack gap="xs" align="center">
           {renderCollectionPreview()}
           <Text fz="sm" fw={500} ta="center" lineClamp={1}>
@@ -108,7 +113,13 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
   );
 };
 
-const CollectionSection = ({ title, collections }: { title: string; collections: SongCollectionItemProps[] }) => {
+const CollectionSection = ({
+  title,
+  collections,
+}: {
+  title: string;
+  collections: SongCollectionItemProps[];
+}) => {
   if (!collections || collections.length === 0) return null;
 
   return (
@@ -144,28 +155,29 @@ export const SongCollections = ({ collections, style }: SongCollectionsComponent
 
   if (!groupedCollections) return null;
 
-  const displayOrder = game === "maimai"
-    ? ["plate", "frame", "icon", "trophy"]
-    : ["plate", "character", "icon", "trophy"];
+  const displayOrder =
+    game === "maimai"
+      ? ["plate", "frame", "icon", "trophy"]
+      : ["plate", "character", "icon", "trophy"];
 
   return (
     <Card radius="md" p="md" withBorder className={classes.card} style={style}>
       <Group gap="xs" mb="md">
         <IconAward size={20} />
-        <Title order={5}>
-          关联收藏品
-        </Title>
+        <Title order={5}>关联收藏品</Title>
       </Group>
       <Stack gap="md">
-        {displayOrder.map((type) => (
-          groupedCollections[type] && groupedCollections[type].length > 0 && (
-            <CollectionSection
-              key={type}
-              title={collectionTypeLabelMap[type]}
-              collections={groupedCollections[type]}
-            />
-          )
-        ))}
+        {displayOrder.map(
+          (type) =>
+            groupedCollections[type] &&
+            groupedCollections[type].length > 0 && (
+              <CollectionSection
+                key={type}
+                title={collectionTypeLabelMap[type]}
+                collections={groupedCollections[type]}
+              />
+            ),
+        )}
       </Stack>
     </Card>
   );

@@ -7,7 +7,7 @@ import { usePageContext } from "vike-react/usePageContext";
 export const PageTabs = (props: PageProps) => {
   const pageContext = usePageContext();
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || props.tabs?.[0].id);
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || props.tabs?.[0].id);
 
   return (
     <Tabs
@@ -17,8 +17,8 @@ export const PageTabs = (props: PageProps) => {
       keepMounted={false}
       radius="md"
       onChange={(tab) => {
-        window.history.replaceState(null, '', `${window.location.pathname}?tab=${tab!}`);
-        setActiveTab(tab!)
+        window.history.replaceState(null, "", `${window.location.pathname}?tab=${tab!}`);
+        setActiveTab(tab!);
       }}
     >
       <div className={classes.tabsWrapper}>
@@ -33,11 +33,9 @@ export const PageTabs = (props: PageProps) => {
 
       {props.tabs?.map((tab) => (
         <Tabs.Panel key={tab.id} value={tab.id}>
-          <div className={classes.tabContent}>
-            {tab.children}
-          </div>
+          <div className={classes.tabContent}>{tab.children}</div>
         </Tabs.Panel>
       ))}
     </Tabs>
-  )
-}
+  );
+};

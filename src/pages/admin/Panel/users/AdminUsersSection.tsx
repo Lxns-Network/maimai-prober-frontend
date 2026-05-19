@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Group, TextInput, Button, Text, keys, Flex, Card, Badge } from '@mantine/core';
+import { useEffect, useState } from "react";
+import { Group, TextInput, Button, Text, keys, Flex, Card, Badge } from "@mantine/core";
 import { deleteUsers, getUsers } from "@/utils/api/user.ts";
-import { useDisclosure, useViewportSize } from '@mantine/hooks';
+import { useDisclosure, useViewportSize } from "@mantine/hooks";
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
 import { IconDatabaseOff, IconSearch, IconSend, IconTrash } from "@tabler/icons-react";
 import classes from "@/pages/Page.module.css";
@@ -14,13 +14,13 @@ import { UserProps } from "@/types/user";
 function filterData(data: UserProps[], search: string) {
   const query = search.toLowerCase().trim();
   return data.filter((item) =>
-    keys(item).some((key) => String(item[key]).toLowerCase().includes(query))
+    keys(item).some((key) => String(item[key]).toLowerCase().includes(query)),
   );
 }
 
 function sortData(
   data: UserProps[],
-  payload: { sortBy: keyof UserProps | null; reversed: boolean; search: string }
+  payload: { sortBy: keyof UserProps | null; reversed: boolean; search: string },
 ) {
   const { sortBy } = payload;
 
@@ -30,11 +30,11 @@ function sortData(
 
   return filterData(
     [...data].sort((a, b) => {
-      if (typeof a[sortBy] === 'string') {
+      if (typeof a[sortBy] === "string") {
         if (payload.reversed) {
-          return (b[sortBy] as string).localeCompare((a[sortBy] as string));
+          return (b[sortBy] as string).localeCompare(a[sortBy] as string);
         }
-        return (a[sortBy] as string).localeCompare((b[sortBy] as string));
+        return (a[sortBy] as string).localeCompare(b[sortBy] as string);
       } else {
         if (payload.reversed) {
           return (b[sortBy] as number) - (a[sortBy] as number);
@@ -42,7 +42,7 @@ function sortData(
         return (a[sortBy] as number) - (b[sortBy] as number);
       }
     }),
-    payload.search
+    payload.search,
   );
 }
 
@@ -50,7 +50,7 @@ const AdminUsersContent = () => {
   const [users, setUsers] = useState<UserProps[]>([]);
   const [fetching, setFetching] = useState<boolean>(true);
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const [editUserModalOpened, editUserModal] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
@@ -62,8 +62,8 @@ const AdminUsersContent = () => {
 
   const [sortedUsers, setSortedUsers] = useState(users);
   const [sortStatus, setSortStatus] = useState<DataTableSortStatus<UserProps>>({
-    columnAccessor: 'id',
-    direction: 'asc',
+    columnAccessor: "id",
+    direction: "asc",
   });
 
   const [sendBatchEmailModalOpened, sendBatchEmailModal] = useDisclosure(false);
@@ -86,11 +86,13 @@ const AdminUsersContent = () => {
   }, [sortedUsers]);
 
   useEffect(() => {
-    setSortedUsers(sortData(users, {
-      sortBy: sortStatus.columnAccessor as keyof UserProps,
-      reversed: sortStatus.direction === 'desc',
-      search
-    }));
+    setSortedUsers(
+      sortData(users, {
+        sortBy: sortStatus.columnAccessor as keyof UserProps,
+        reversed: sortStatus.direction === "desc",
+        search,
+      }),
+    );
   }, [users, search, sortStatus]);
 
   const getUserHandler = async () => {
@@ -103,17 +105,17 @@ const AdminUsersContent = () => {
       setUsers(data.data);
       setSortedUsers(data.data);
     } catch (error) {
-      openRetryModal("用户列表获取失败", `${error}`, getUserHandler)
+      openRetryModal("用户列表获取失败", `${error}`, getUserHandler);
     } finally {
       setFetching(false);
     }
-  }
+  };
 
   const deleteUsersHandler = async () => {
-    try  {
+    try {
       const res = await deleteUsers({
         ids: selectedUsers.map((user) => user.id),
-      })
+      });
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);
@@ -123,17 +125,19 @@ const AdminUsersContent = () => {
         const index = users.findIndex((u) => u.id === user.id);
         users.splice(index, 1);
         setUsers(users);
-        setSortedUsers(sortData(users, {
-          sortBy: sortStatus.columnAccessor as keyof UserProps,
-          reversed: sortStatus.direction === 'desc',
-          search
-        }));
+        setSortedUsers(
+          sortData(users, {
+            sortBy: sortStatus.columnAccessor as keyof UserProps,
+            reversed: sortStatus.direction === "desc",
+            search,
+          }),
+        );
         setSelectedUsers([]);
       });
     } catch (error) {
       openRetryModal("删除失败", `${error}`, deleteUsersHandler);
     }
-  }
+  };
 
   useEffect(() => {
     getUserHandler();
@@ -142,21 +146,29 @@ const AdminUsersContent = () => {
   const { width } = useViewportSize();
 
   return (
-    <div style={{ position:"relative" }}>
-      <EditUserModal user={activeUser as UserProps} opened={editUserModalOpened} onClose={() => {
-        const index = users.findIndex((user) => user.id === activeUser?.id);
-        users.splice(index, 1);
-        if (activeUser?.deleted != true) {
-          users.push(activeUser as UserProps);
-        }
-        const newUsers = users.sort((a, b) => a.id - b.id);
-        setUsers(newUsers);
+    <div style={{ position: "relative" }}>
+      <EditUserModal
+        user={activeUser as UserProps}
+        opened={editUserModalOpened}
+        onClose={() => {
+          const index = users.findIndex((user) => user.id === activeUser?.id);
+          users.splice(index, 1);
+          if (activeUser?.deleted != true) {
+            users.push(activeUser as UserProps);
+          }
+          const newUsers = users.sort((a, b) => a.id - b.id);
+          setUsers(newUsers);
 
-        editUserModal.close();
-      }} />
-      <SendBatchEmailModal users={selectedUsers} opened={sendBatchEmailModalOpened} close={() => {
-        sendBatchEmailModal.close();
-      }} />
+          editUserModal.close();
+        }}
+      />
+      <SendBatchEmailModal
+        users={selectedUsers}
+        opened={sendBatchEmailModalOpened}
+        close={() => {
+          sendBatchEmailModal.close();
+        }}
+      />
       <TextInput
         placeholder="搜索用户"
         radius="md"
@@ -165,18 +177,44 @@ const AdminUsersContent = () => {
         value={search}
         onChange={(event) => setSearch(event.currentTarget.value)}
       />
-      <Card className={classes.card} withBorder radius="md" w={width > 700 ? `100%` : width - 32} p={0}>
+      <Card
+        className={classes.card}
+        withBorder
+        radius="md"
+        w={width > 700 ? `100%` : width - 32}
+        p={0}
+      >
         <Card.Section className={classes.section} m={0}>
-          <Text size="sm" mb="xs">对所选的 {selectedUsers.length} 名用户进行操作：</Text>
+          <Text size="sm" mb="xs">
+            对所选的 {selectedUsers.length} 名用户进行操作：
+          </Text>
           <Group>
-            <Button variant="filled" leftSection={<IconSend size={20} />} disabled={selectedUsers.length === 0} onClick={() => {
-              sendBatchEmailModal.open();
-            }}>群发邮件</Button>
-            <Button variant="outline" color="red" leftSection={<IconTrash size={20} />} onClick={() => {
-              openConfirmModal("删除用户", `你确定要删除所选的 ${selectedUsers.length} 名用户吗？`, deleteUsersHandler, {
-                confirmProps: { color: 'red' }
-              });
-            }} disabled={selectedUsers.length === 0}>
+            <Button
+              variant="filled"
+              leftSection={<IconSend size={20} />}
+              disabled={selectedUsers.length === 0}
+              onClick={() => {
+                sendBatchEmailModal.open();
+              }}
+            >
+              群发邮件
+            </Button>
+            <Button
+              variant="outline"
+              color="red"
+              leftSection={<IconTrash size={20} />}
+              onClick={() => {
+                openConfirmModal(
+                  "删除用户",
+                  `你确定要删除所选的 ${selectedUsers.length} 名用户吗？`,
+                  deleteUsersHandler,
+                  {
+                    confirmProps: { color: "red" },
+                  },
+                );
+              }}
+              disabled={selectedUsers.length === 0}
+            >
               删除
             </Button>
           </Group>
@@ -195,38 +233,42 @@ const AdminUsersContent = () => {
           // 数据
           columns={[
             {
-              accessor: 'id',
-              title: 'ID',
+              accessor: "id",
+              title: "ID",
               width: 50,
               sortable: true,
             },
             {
-              accessor: 'name',
-              title: '用户名',
+              accessor: "name",
+              title: "用户名",
               width: 100,
               ellipsis: true,
               sortable: true,
             },
             {
-              accessor: 'email',
-              title: '邮箱',
+              accessor: "email",
+              title: "邮箱",
               width: 200,
               ellipsis: true,
               sortable: true,
             },
             {
-              accessor: 'permission',
-              title: '权限',
+              accessor: "permission",
+              title: "权限",
               width: 150,
               render: ({ permission }) => {
                 return (
                   <Group gap="xs">
-                    {permissionToList(permission-UserPermission.User).map((permission) => (
-                      <Badge variant="default" key={permission}>{{
-                        1: '普通用户',
-                        2: '开发者',
-                        4: '管理员',
-                      }[permission]}</Badge>
+                    {permissionToList(permission - UserPermission.User).map((permission) => (
+                      <Badge variant="default" key={permission}>
+                        {
+                          {
+                            1: "普通用户",
+                            2: "开发者",
+                            4: "管理员",
+                          }[permission]
+                        }
+                      </Badge>
                     ))}
                   </Group>
                 );
@@ -234,8 +276,8 @@ const AdminUsersContent = () => {
               sortable: true,
             },
             {
-              accessor: 'register_time',
-              title: '注册时间',
+              accessor: "register_time",
+              title: "注册时间",
               width: 150,
               render: ({ register_time }) => new Date(register_time).toLocaleString(),
               sortable: true,
@@ -254,7 +296,7 @@ const AdminUsersContent = () => {
           }}
           // 分页
           recordsPerPage={pageSize}
-          paginationText={({ from, to, totalRecords}) => {
+          paginationText={({ from, to, totalRecords }) => {
             return `${from}-${to} 名用户，共 ${totalRecords} 名`;
           }}
           page={page}
@@ -281,11 +323,9 @@ const AdminUsersContent = () => {
         />
       </Card>
     </div>
-  )
-}
+  );
+};
 
 export const AdminUsersSection = () => {
-  return (
-    <AdminUsersContent />
-  )
-}
+  return <AdminUsersContent />;
+};

@@ -1,5 +1,5 @@
-import { Radio, Group, Stack, Text } from '@mantine/core';
-import classes from './RadioCardGroup.module.css';
+import { Radio, Group, Stack, Text } from "@mantine/core";
+import classes from "./RadioCardGroup.module.css";
 
 interface RadioCardGroupProps {
   data: { name: string; description: string; value: string }[];
@@ -14,18 +14,17 @@ export const RadioCardGroup = ({ data, value, onChange }: RadioCardGroupProps) =
         <Radio.Indicator />
         <div>
           <Text className={classes.label}>{item.name}</Text>
-          <Text className={classes.description} lh="xs">{item.description}</Text>
+          <Text className={classes.description} lh="xs">
+            {item.description}
+          </Text>
         </div>
       </Group>
     </Radio.Card>
   ));
 
-  return <Radio.Group
-    value={value}
-    onChange={onChange}
-  >
-    <Stack gap="xs">
-      {cards}
-    </Stack>
-  </Radio.Group>
-}
+  return (
+    <Radio.Group value={value} onChange={onChange}>
+      <Stack gap="xs">{cards}</Stack>
+    </Radio.Group>
+  );
+};

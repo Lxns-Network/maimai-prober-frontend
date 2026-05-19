@@ -36,8 +36,14 @@ interface State {
 }
 
 type Action =
-  | { type: "SET_FROM_URL"; payload: { collectionType: string | null; collectionId: number | null } }
-  | { type: "SET_FROM_USER"; payload: { collectionType: string | null; collectionId: number | null } }
+  | {
+      type: "SET_FROM_URL";
+      payload: { collectionType: string | null; collectionId: number | null };
+    }
+  | {
+      type: "SET_FROM_USER";
+      payload: { collectionType: string | null; collectionId: number | null };
+    }
   | { type: "SET_FROM_SELECT"; payload: { collectionType: string | null } }
   | { type: "RESET_COLLECTION_ID" };
 
@@ -79,7 +85,7 @@ const CollectionsContent = () => {
   const [state, dispatch] = useReducer(reducer, {
     collectionType: (() => {
       const type = searchParams.get("collection_type");
-      if (type && collectionTypeData[game].some(item => item.value === type)) return type;
+      if (type && collectionTypeData[game].some((item) => item.value === type)) return type;
       return game === "maimai" ? "plate" : "trophy";
     })(),
     collectionId: (() => {
@@ -89,7 +95,10 @@ const CollectionsContent = () => {
   });
 
   const { collectionType, collectionId } = state;
-  const { collections, isLoading: isCollectionListLoading } = useCollectionList(game, collectionType);
+  const { collections, isLoading: isCollectionListLoading } = useCollectionList(
+    game,
+    collectionType,
+  );
   const [displayCollectionType, setDisplayCollectionType] = useState<string | null>(null);
   const [filteredCollections, setFilteredCollections] = useState<CollectionProps[]>([]);
   const [collection, setCollection] = useState<CollectionProps | null>(null);
@@ -110,7 +119,7 @@ const CollectionsContent = () => {
     } finally {
       setIsCollectionLoading(false);
     }
-  }
+  };
 
   const getPlayerCollectionHandler = async (id: number) => {
     if (!collectionType) return;
@@ -133,14 +142,17 @@ const CollectionsContent = () => {
     } finally {
       setIsCollectionLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (prevGame !== undefined && prevGame !== game) {
       setFilteredCollections([]);
-      window.history.replaceState(null, '', window.location.pathname);
+      window.history.replaceState(null, "", window.location.pathname);
       dispatch({ type: "RESET_COLLECTION_ID" });
-      dispatch({ type: "SET_FROM_SELECT", payload: { collectionType: game === "maimai" ? "plate" : "trophy" } });
+      dispatch({
+        type: "SET_FROM_SELECT",
+        payload: { collectionType: game === "maimai" ? "plate" : "trophy" },
+      });
     }
   }, [game]);
 
@@ -172,33 +184,37 @@ const CollectionsContent = () => {
       return;
     }
 
-    window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&collection_type=${collectionType || ""}&collection_id=${collection.id.toString()}`);
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}?game=${game}&collection_type=${collectionType || ""}&collection_id=${collection.id.toString()}`,
+    );
 
     if (!collection.required) {
       setRecords([]);
       return;
     }
 
-    const mergedRequiredSongs = collection.required.flatMap(required => (required.songs || []));
+    const mergedRequiredSongs = collection.required.flatMap((required) => required.songs || []);
 
     // 去重并合并 completed_difficulties
     const songMap = new Map();
-    mergedRequiredSongs.forEach(song => {
+    mergedRequiredSongs.forEach((song) => {
       const key = `${song.id}-${song.type}`;
       if (songMap.has(key)) {
         const existing = songMap.get(key);
         existing.completed_difficulties = [
           ...new Set([
             ...(existing.completed_difficulties || []),
-            ...(song.completed_difficulties || [])
-          ])
+            ...(song.completed_difficulties || []),
+          ]),
         ];
       } else {
         songMap.set(key, { ...song });
       }
     });
 
-    const convertedRecords = Array.from(songMap.values()).map(song => {
+    const convertedRecords = Array.from(songMap.values()).map((song) => {
       if (!song.completed_difficulties) return song;
 
       const record = { ...song };
@@ -212,10 +228,12 @@ const CollectionsContent = () => {
   }, [collection]);
 
   useEffect(() => {
-    setFilteredCollections(collections.filter((collection) => {
-      if (onlyRequired) return collection.required && collection.required.length > 0;
-      return true;
-    }));
+    setFilteredCollections(
+      collections.filter((collection) => {
+        if (onlyRequired) return collection.required && collection.required.length > 0;
+        return true;
+      }),
+    );
   }, [collections, onlyRequired]);
 
   return (
@@ -229,7 +247,11 @@ const CollectionsContent = () => {
               type: "SET_FROM_SELECT",
               payload: { collectionType: value },
             });
-            window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&collection_type=${value || ""}`);
+            window.history.replaceState(
+              null,
+              "",
+              `${window.location.pathname}?game=${game}&collection_type=${value || ""}`,
+            );
             setFilteredCollections([]);
           }}
           allowDeselect={false}
@@ -237,7 +259,7 @@ const CollectionsContent = () => {
           maw={150}
           radius="md"
           comboboxProps={{
-            transitionProps: { transition: 'fade', duration: 100, timingFunction: 'ease' }
+            transitionProps: { transition: "fade", duration: 100, timingFunction: "ease" },
           }}
         />
         <CollectionCombobox
@@ -266,7 +288,11 @@ const CollectionsContent = () => {
         enterDelay={0}
       >
         {(styles) => (
-          <CollectionCard collection={collection} collectionType={displayCollectionType} style={styles} />
+          <CollectionCard
+            collection={collection}
+            collectionType={displayCollectionType}
+            style={styles}
+          />
         )}
       </Transition>
       <Space h="md" />
@@ -277,16 +303,25 @@ const CollectionsContent = () => {
         enterDelay={0}
       >
         {(styles) => (
-          <RequiredSong collection={collection} records={records} loading={isCollectionLoading} style={styles} />
+          <RequiredSong
+            collection={collection}
+            records={records}
+            loading={isCollectionLoading}
+            style={styles}
+          />
         )}
       </Transition>
-      <Transition
-        mounted={collectionId === null}
-        transition="pop"
-        enterDelay={300}
-      >
+      <Transition mounted={collectionId === null} transition="pop" enterDelay={300}>
         {(styles) => (
-          <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl" style={styles}>
+          <Flex
+            gap="xs"
+            align="center"
+            direction="column"
+            c="dimmed"
+            mt="xl"
+            mb="xl"
+            style={styles}
+          >
             <IconPlaylist size={64} stroke={1.5} />
             <Text fz="sm">请选择一个收藏品来查看要求曲目</Text>
           </Flex>
@@ -298,15 +333,23 @@ const CollectionsContent = () => {
         enterDelay={300}
       >
         {(styles) => (
-          <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl" style={styles}>
+          <Flex
+            gap="xs"
+            align="center"
+            direction="column"
+            c="dimmed"
+            mt="xl"
+            mb="xl"
+            style={styles}
+          >
             <IconPlaylistOff size={64} stroke={1.5} />
             <Text fz="sm">该收藏品没有要求曲目</Text>
           </Flex>
         )}
       </Transition>
     </div>
-  )
-}
+  );
+};
 
 export default function Collections() {
   return (
@@ -317,5 +360,5 @@ export default function Collections() {
       }}
       children={<CollectionsContent />}
     />
-  )
+  );
 }

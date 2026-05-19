@@ -1,7 +1,14 @@
-import { Divider, Group, ScrollArea, Text, UnstyledButton, UnstyledButtonProps } from "@mantine/core";
+import {
+  Divider,
+  Group,
+  ScrollArea,
+  Text,
+  UnstyledButton,
+  UnstyledButtonProps,
+} from "@mantine/core";
 import { useState } from "react";
 import { useViewportSize } from "@mantine/hooks";
-import classes from "./PlayerPanel.module.css"
+import classes from "./PlayerPanel.module.css";
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
 import { PlayerContent, PlayerModal } from "./PlayerModal.tsx";
 import useGame from "@/hooks/useGame.ts";
@@ -12,17 +19,17 @@ const examplePlayer = {
     rating: 0,
     friend_code: 888888888888888,
     trophy: {
-      "name": "欢迎来到“舞萌DX”！",
-      "color": "Normal"
+      name: "欢迎来到“舞萌DX”！",
+      color: "Normal",
     },
     course_rank: 0,
     class_rank: 0,
     star: 0,
     icon: {
       id: 1,
-      name: ""
+      name: "",
     },
-    upload_time: "2024-01-01T08:00:00Z"
+    upload_time: "2024-01-01T08:00:00Z",
   },
   chunithm: {
     name: "ＣＨＵＮＩＴＨＭ",
@@ -31,7 +38,7 @@ const examplePlayer = {
     friend_code: 888888888888888,
     class_emblem: {
       base: 0,
-      medal: 0
+      medal: 0,
     },
     reborn_count: 0,
     over_power: 0,
@@ -40,15 +47,15 @@ const examplePlayer = {
     total_currency: 0,
     trophy: {
       name: "NEW COMER",
-      color: "normal"
+      color: "normal",
     },
     character: {
       id: 0,
-      name: ""
+      name: "",
     },
-    upload_time: "2024-01-01T08:00:00Z"
+    upload_time: "2024-01-01T08:00:00Z",
   },
-}
+};
 
 interface PlayerButtonProps {
   player: MaimaiPlayerProps | ChunithmPlayerProps;
@@ -61,7 +68,7 @@ const PlayerButton = ({ player, onClick, ...others }: PlayerButtonProps & Unstyl
       <PlayerContent player={player} editable={false} />
     </UnstyledButton>
   );
-}
+};
 
 export const PlayerPanel = ({ player }: { player?: MaimaiPlayerProps | ChunithmPlayerProps }) => {
   const { width } = useViewportSize();
@@ -73,20 +80,24 @@ export const PlayerPanel = ({ player }: { player?: MaimaiPlayerProps | ChunithmP
   return (
     <>
       <PlayerModal game={game} player={player} opened={opened} onClose={() => setOpened(false)} />
-      <ScrollArea maw={width < 768 ? width - 34 : 768} >
+      <ScrollArea maw={width < 768 ? width - 34 : 768}>
         <PlayerButton player={player} onClick={() => setOpened(true)} />
       </ScrollArea>
       <Divider />
       <div className={classes.section}>
         <Group>
-          <Text fz="xs" c="dimmed">好友码</Text>
+          <Text fz="xs" c="dimmed">
+            好友码
+          </Text>
           <Text fz="sm">{player.friend_code}</Text>
         </Group>
         <Group mt="xs">
-          <Text fz="xs" c="dimmed">上次同步时间</Text>
-          <Text fz="sm">{(new Date(Date.parse(player.upload_time))).toLocaleString()}</Text>
+          <Text fz="xs" c="dimmed">
+            上次同步时间
+          </Text>
+          <Text fz="sm">{new Date(Date.parse(player.upload_time)).toLocaleString()}</Text>
         </Group>
       </div>
     </>
-  )
-}
+  );
+};

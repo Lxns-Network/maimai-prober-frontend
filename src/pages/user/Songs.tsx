@@ -41,7 +41,7 @@ const reducer = (state: State, action: Action): State => {
     default:
       return state;
   }
-}
+};
 
 const SongsContent = () => {
   const [game] = useGame();
@@ -50,7 +50,9 @@ const SongsContent = () => {
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const getSongList = useSongListStore((state) => state.getSongList);
 
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>(() => getSongList(game));
+  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>(() =>
+    getSongList(game),
+  );
   const [state, dispatch] = useReducer(reducer, {
     songId: (() => {
       const id = searchParams.get("song_id");
@@ -64,10 +66,10 @@ const SongsContent = () => {
   const [songCollections, setSongCollections] = useState<SongCollectionItemProps[] | null>(null);
 
   const switchingGame = useRef(false);
-  const isSongMatchingGame = song && (
-    (game === "maimai" && "standard" in (song.difficulties || {})) ||
-    (game === "chunithm" && !("standard" in (song.difficulties || {})))
-  );
+  const isSongMatchingGame =
+    song &&
+    ((game === "maimai" && "standard" in (song.difficulties || {})) ||
+      (game === "chunithm" && !("standard" in (song.difficulties || {}))));
   const { scores: fetchedScores } = useSongBests(game, isSongMatchingGame ? song : null);
 
   const getSongCollectionsHandler = async (songId: number) => {
@@ -78,7 +80,7 @@ const SongsContent = () => {
       console.error("获取关联收藏品失败", error);
       setSongCollections(null);
     }
-  }
+  };
 
   useEffect(() => {
     const newSongList = getSongList(game);
@@ -89,7 +91,7 @@ const SongsContent = () => {
       setSong(null);
       setScores([]);
       setSongCollections(null);
-      window.history.replaceState(null, '', window.location.pathname);
+      window.history.replaceState(null, "", window.location.pathname);
       dispatch({ type: "RESET_SONG_ID" });
     }
   }, [game]);
@@ -100,7 +102,11 @@ const SongsContent = () => {
       return;
     }
     if (!song || !songId) return;
-    window.history.replaceState(null, '', `${window.location.pathname}?game=${game}&song_id=${song.id.toString()}`);
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}?game=${game}&song_id=${song.id.toString()}`,
+    );
   }, [song, songId, game]);
 
   useEffect(() => {
@@ -128,7 +134,7 @@ const SongsContent = () => {
         value={songId ?? undefined}
         onOptionSubmit={(value) => {
           if (value === 0) {
-            window.history.replaceState(null, '', window.location.pathname);
+            window.history.replaceState(null, "", window.location.pathname);
             dispatch({ type: "RESET_SONG_ID" });
             return;
           }
@@ -138,7 +144,11 @@ const SongsContent = () => {
         mb={4}
       />
       <Text c="dimmed" size="xs">
-        你可以使用曲目 ID、曲名、艺术家或<Anchor component={Link} to="/alias/vote">曲目别名</Anchor>来搜索曲目。
+        你可以使用曲目 ID、曲名、艺术家或
+        <Anchor component={Link} to="/alias/vote">
+          曲目别名
+        </Anchor>
+        来搜索曲目。
       </Text>
       <Transition
         mounted={Boolean(songId && song)}
@@ -146,29 +156,27 @@ const SongsContent = () => {
         timingFunction="ease"
         enterDelay={250}
       >
-        {(styles) => (
-          <SongCard song={song} style={styles} />
-        )}
+        {(styles) => <SongCard song={song} style={styles} />}
       </Transition>
       <Space h="md" />
       <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mb="md" radius="md" />
-      <Transition
-        mounted={!(songId && song)}
-        transition="pop"
-        enterDelay={300}
-      >
+      <Transition mounted={!(songId && song)} transition="pop" enterDelay={300}>
         {(styles) => (
-          <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl" style={styles}>
+          <Flex
+            gap="xs"
+            align="center"
+            direction="column"
+            c="dimmed"
+            mt="xl"
+            mb="xl"
+            style={styles}
+          >
             <IconListDetails size={64} stroke={1.5} />
             <Text fz="sm">请选择一首曲目来查看曲目详情</Text>
           </Flex>
         )}
       </Transition>
-      <Transition
-        mounted={Boolean(songId && song)}
-        transition="pop"
-        enterDelay={300}
-      >
+      <Transition mounted={Boolean(songId && song)} transition="pop" enterDelay={300}>
         {(styles) => (
           <SongDifficultyList song={song} scores={scores} setScores={setScores} style={styles} />
         )}
@@ -184,7 +192,7 @@ const SongsContent = () => {
       </Transition>
     </div>
   );
-}
+};
 
 export default function Songs() {
   return (
@@ -195,5 +203,5 @@ export default function Songs() {
       }}
       children={<SongsContent />}
     />
-  )
+  );
 }

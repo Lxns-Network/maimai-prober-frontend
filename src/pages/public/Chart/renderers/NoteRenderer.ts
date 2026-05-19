@@ -1,5 +1,5 @@
-import { BaseRenderer, RenderContext } from './BaseRenderer';
-import { Note, Point2D, NoteRenderPosition, ButtonPosition } from '../types';
+import { BaseRenderer, RenderContext } from "./BaseRenderer";
+import { Note, Point2D, NoteRenderPosition, ButtonPosition } from "../types";
 import {
   NOTE_SIZE_RATIO,
   TAP_INNER_RING_RATIO,
@@ -8,7 +8,7 @@ import {
   COLORS,
   NOTE_VISIBILITY_AFTER_MS,
   NOTE_HIT_EFFECT_DURATION_MS,
-} from '../utils/constants';
+} from "../utils/constants";
 
 export class NoteRenderer extends BaseRenderer {
   constructor(context: RenderContext) {
@@ -23,7 +23,10 @@ export class NoteRenderer extends BaseRenderer {
     return this.getButtonAngle(position);
   }
 
-  calculateHitEffectPosition(note: Note, currentTimeMs: number): { x: number; y: number; progress: number } {
+  calculateHitEffectPosition(
+    note: Note,
+    currentTimeMs: number,
+  ): { x: number; y: number; progress: number } {
     const position = note.position as ButtonPosition;
     const angle = this.getButtonAngle(position);
     const timeDiff = currentTimeMs - note.timingMs;
@@ -31,14 +34,14 @@ export class NoteRenderer extends BaseRenderer {
     return {
       x: this.context.centerX + Math.cos(angle) * this.context.radius,
       y: this.context.centerY + Math.sin(angle) * this.context.radius,
-      progress: timeDiff / NOTE_HIT_EFFECT_DURATION_MS
+      progress: timeDiff / NOTE_HIT_EFFECT_DURATION_MS,
     };
   }
 
   calculateNotePosition(
     note: Note,
     _currentBeat: number,
-    currentTimeMs: number
+    currentTimeMs: number,
   ): NoteRenderPosition {
     const position = note.position as ButtonPosition;
     const angle = this.getButtonAngle(position);
@@ -47,7 +50,7 @@ export class NoteRenderer extends BaseRenderer {
 
     // Hold 起点在 hold duration 内一直可见；普通 note 只有 NOTE_VISIBILITY_AFTER_MS。
     let holdWindow = NOTE_VISIBILITY_AFTER_MS;
-    if ('isHoldStart' in note && note.isHoldStart && 'duration' in note) {
+    if ("isHoldStart" in note && note.isHoldStart && "duration" in note) {
       holdWindow = this.durationToMs(note.duration, note.bpm);
     }
     if (timeDiff > approachTime || timeDiff < -holdWindow) {
@@ -66,7 +69,7 @@ export class NoteRenderer extends BaseRenderer {
       const progress = 1 - timeDiff / halfApproach;
       distance = this.context.radius * (APPROACH_START_SCALE + 0.75 * progress);
       scale = 1;
-    } else if ('isHoldStart' in note && note.isHoldStart) {
+    } else if ("isHoldStart" in note && note.isHoldStart) {
       distance = this.context.radius;
       scale = 1;
     } else {
@@ -83,7 +86,13 @@ export class NoteRenderer extends BaseRenderer {
     };
   }
 
-  private hexagonSubPath(p: Path2D, centerX: number, centerY: number, radius: number, angle: number): void {
+  private hexagonSubPath(
+    p: Path2D,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    angle: number,
+  ): void {
     for (let i = 0; i < 6; i++) {
       const a = (i * Math.PI) / 3 + angle;
       const px = centerX + radius * Math.cos(a);
@@ -94,7 +103,15 @@ export class NoteRenderer extends BaseRenderer {
     p.closePath();
   }
 
-  private starSubPath(p: Path2D, centerX: number, centerY: number, spikesCount: number, outerRadius: number, innerRadius: number, angle: number): void {
+  private starSubPath(
+    p: Path2D,
+    centerX: number,
+    centerY: number,
+    spikesCount: number,
+    outerRadius: number,
+    innerRadius: number,
+    angle: number,
+  ): void {
     const step = Math.PI / spikesCount;
     let a = (Math.PI / 2) * 3 + angle;
     for (let i = 0; i < spikesCount; i++) {
@@ -162,18 +179,13 @@ export class NoteRenderer extends BaseRenderer {
       ctx.strokeStyle = color;
       ctx.globalAlpha = alpha;
       ctx.lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
-      ctx.lineJoin = 'round';
+      ctx.lineJoin = "round";
       if (useBlur) ctx.filter = `blur(${blurPx}px)`;
       ctx.stroke(path);
     });
   }
 
-  renderApproachArc(
-    position: ButtonPosition,
-    noteX: number,
-    noteY: number,
-    color: string
-  ): void {
+  renderApproachArc(position: ButtonPosition, noteX: number, noteY: number, color: string): void {
     const angle = this.getButtonAngle(position);
     const distance = this.distanceToCenter(noteX, noteY);
     const ctx = this.context.ctx;
@@ -196,20 +208,24 @@ export class NoteRenderer extends BaseRenderer {
         ctx.arc(centerX, centerY, distance, angle - Math.PI / 8, angle + Math.PI / 8, false);
       } else {
         ctx.arc(
-          centerX, centerY, distance,
+          centerX,
+          centerY,
+          distance,
           angle - Math.PI / 8 - i * trailStep,
           angle - Math.PI / 8 - (i - 1) * trailStep,
-          false
+          false,
         );
         ctx.moveTo(
           centerX + Math.cos(angle + Math.PI / 8 + (i - 1) * trailStep) * distance,
-          centerY + Math.sin(angle + Math.PI / 8 + (i - 1) * trailStep) * distance
+          centerY + Math.sin(angle + Math.PI / 8 + (i - 1) * trailStep) * distance,
         );
         ctx.arc(
-          centerX, centerY, distance,
+          centerX,
+          centerY,
+          distance,
           angle + Math.PI / 8 + (i - 1) * trailStep,
           angle + Math.PI / 8 + i * trailStep,
-          false
+          false,
         );
       }
       ctx.stroke();
@@ -222,7 +238,7 @@ export class NoteRenderer extends BaseRenderer {
     startPos: ButtonPosition,
     endPos: ButtonPosition,
     distance: number,
-    color: string
+    color: string,
   ): void {
     const startAngle = this.getButtonAngle(startPos);
     const endAngle = this.getButtonAngle(endPos);
@@ -243,9 +259,7 @@ export class NoteRenderer extends BaseRenderer {
       if (isFullCircle) {
         ctx.arc(this.context.centerX, this.context.centerY, distance, 0, Math.PI * 2);
       } else {
-        const [arcStart, arcEnd] = angleDiff > 0
-          ? [startAngle, endAngle]
-          : [endAngle, startAngle];
+        const [arcStart, arcEnd] = angleDiff > 0 ? [startAngle, endAngle] : [endAngle, startAngle];
         ctx.arc(this.context.centerX, this.context.centerY, distance, arcStart, arcEnd, false);
       }
       ctx.stroke();
@@ -256,16 +270,16 @@ export class NoteRenderer extends BaseRenderer {
     x: number,
     y: number,
     noteSize: number,
-    noteType: string = 'tap',
+    noteType: string = "tap",
     isSimultaneous: boolean = false,
-    scaleFactor: number = 1
+    scaleFactor: number = 1,
   ): void {
     const innerRadius = noteSize;
     const outerRadius = noteSize * 1.19 * scaleFactor;
 
     // 根据类型选择颜色
     let color: string;
-    if (noteType === 'break') {
+    if (noteType === "break") {
       color = COLORS.EX_OVERLAY_BREAK;
     } else if (isSimultaneous) {
       color = COLORS.EX_OVERLAY_SIMULTANEOUS;
@@ -280,12 +294,7 @@ export class NoteRenderer extends BaseRenderer {
     });
   }
 
-  renderBreakTriangle(
-    x: number,
-    y: number,
-    size: number,
-    position: ButtonPosition
-  ): void {
+  renderBreakTriangle(x: number, y: number, size: number, position: ButtonPosition): void {
     const angle = this.getButtonAngle(position);
     const triangleSize = size * 1.4;
 
@@ -308,7 +317,7 @@ export class NoteRenderer extends BaseRenderer {
       ctx.lineTo(rightX, rightY);
       ctx.closePath();
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
       ctx.lineWidth = this.scaleByRadius(4 / 300);
       ctx.stroke();
     });
@@ -322,7 +331,7 @@ export class NoteRenderer extends BaseRenderer {
     isSimultaneous: boolean,
     isEx: boolean,
     timing: number,
-    highlightExScale: number = 1
+    highlightExScale: number = 1,
   ): void {
     const baseSize = this.scaleByRadius(NOTE_SIZE_RATIO) * noteScale * 1.36;
     const outerRadius = baseSize;
@@ -332,7 +341,14 @@ export class NoteRenderer extends BaseRenderer {
       const ctx = this.context.ctx;
 
       if (isEx) {
-        this.renderExRing(x, y, outerRadius, isBreak ? 'break' : 'tap', isSimultaneous, highlightExScale);
+        this.renderExRing(
+          x,
+          y,
+          outerRadius,
+          isBreak ? "break" : "tap",
+          isSimultaneous,
+          highlightExScale,
+        );
       }
 
       this.drawRing(x, y, innerRadius, outerRadius);
@@ -355,7 +371,7 @@ export class NoteRenderer extends BaseRenderer {
       // 但保留内侧。黑边宽度跟随 strokeW 缩放，避免小屏下显得过粗。
       const strokeW = this.getNoteStrokeWidth();
       const blackBandW = strokeW;
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = "#000000";
       ctx.lineWidth = blackBandW;
       if (!isEx) {
         this.drawCircle(x, y, outerRadius + strokeW / 2 + blackBandW / 2);
@@ -388,22 +404,17 @@ export class NoteRenderer extends BaseRenderer {
     });
   }
 
-  renderBreakIndex(
-    x: number,
-    y: number,
-    scale: number,
-    index: number
-  ): void {
-    const fontSize = Math.round(30 * this.context.radius / 300 * scale);
+  renderBreakIndex(x: number, y: number, scale: number, index: number): void {
+    const fontSize = Math.round(((30 * this.context.radius) / 300) * scale);
 
     this.withContext(() => {
       const ctx = this.context.ctx;
       ctx.font = `bold ${fontSize}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       ctx.fillStyle = COLORS.WHITE;
       // 纯偏移阴影代替 shadowBlur
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+      ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
       ctx.shadowOffsetX = 1;
       ctx.shadowOffsetY = 1;
       ctx.fillText(`${index}`, x, y);

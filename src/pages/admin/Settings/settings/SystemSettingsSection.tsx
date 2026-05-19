@@ -1,36 +1,36 @@
-import { useEffect, useState } from 'react';
-import { Card, Text, LoadingOverlay } from '@mantine/core';
-import classes from '@/pages/Page.module.css';
-import { SettingList, SettingProps } from '@/components/Settings/SettingList.tsx';
-import { getSystemSettings, updateSystemSettings } from '@/utils/api/admin.ts';
-import { openRetryModal } from '@/utils/modal.tsx';
-import { notifications } from '@mantine/notifications';
-import { RecalculateSection } from '../recalculate/RecalculateSection.tsx';
+import { useEffect, useState } from "react";
+import { Card, Text, LoadingOverlay } from "@mantine/core";
+import classes from "@/pages/Page.module.css";
+import { SettingList, SettingProps } from "@/components/Settings/SettingList.tsx";
+import { getSystemSettings, updateSystemSettings } from "@/utils/api/admin.ts";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
+import { RecalculateSection } from "../recalculate/RecalculateSection.tsx";
 
 const SETTINGS_DEFAULTS: Record<string, unknown> = {
-  'proxy.maintenance.maimai': false,
-  'proxy.maintenance.chunithm': false,
-  'worker.remote_only': false,
-  'worker.task_timeout': 900,
-  'worker.task_expire': 86400,
+  "proxy.maintenance.maimai": false,
+  "proxy.maintenance.chunithm": false,
+  "worker.remote_only": false,
+  "worker.task_timeout": 900,
+  "worker.task_expire": 86400,
 };
 
 const TIMEOUT_OPTIONS = [
-  { value: '300', label: '5 分钟' },
-  { value: '600', label: '10 分钟' },
-  { value: '900', label: '15 分钟' },
-  { value: '1800', label: '30 分钟' },
-  { value: '3600', label: '1 小时' },
+  { value: "300", label: "5 分钟" },
+  { value: "600", label: "10 分钟" },
+  { value: "900", label: "15 分钟" },
+  { value: "1800", label: "30 分钟" },
+  { value: "3600", label: "1 小时" },
 ];
 
 const EXPIRE_OPTIONS = [
-  { value: '3600', label: '1 小时' },
-  { value: '7200', label: '2 小时' },
-  { value: '21600', label: '6 小时' },
-  { value: '43200', label: '12 小时' },
-  { value: '86400', label: '1 天' },
-  { value: '172800', label: '2 天' },
-  { value: '604800', label: '7 天' },
+  { value: "3600", label: "1 小时" },
+  { value: "7200", label: "2 小时" },
+  { value: "21600", label: "6 小时" },
+  { value: "43200", label: "12 小时" },
+  { value: "86400", label: "1 天" },
+  { value: "172800", label: "2 天" },
+  { value: "604800", label: "7 天" },
 ];
 
 export const SystemSettingsSection = () => {
@@ -43,7 +43,7 @@ export const SystemSettingsSection = () => {
       const res = await getSystemSettings();
       const data = await res.json();
       if (data.code !== 200) {
-        throw new Error(data.message || '获取失败');
+        throw new Error(data.message || "获取失败");
       }
       setSettings(data.data || {});
     } catch (error) {
@@ -61,7 +61,7 @@ export const SystemSettingsSection = () => {
     let parsedValue: unknown = value;
 
     // Convert string numbers to actual numbers for numeric settings
-    if (key === 'worker.task_timeout' || key === 'worker.task_expire') {
+    if (key === "worker.task_timeout" || key === "worker.task_expire") {
       parsedValue = Number(value);
     }
 
@@ -69,19 +69,19 @@ export const SystemSettingsSection = () => {
       const res = await updateSystemSettings({ [key]: parsedValue });
       const data = await res.json();
       if (data.code !== 200) {
-        throw new Error(data.message || '保存失败');
+        throw new Error(data.message || "保存失败");
       }
       setSettings((prev) => ({ ...prev, [key]: parsedValue }));
       notifications.show({
-        title: '保存成功',
-        message: '系统设置已更新',
-        color: 'green',
+        title: "保存成功",
+        message: "系统设置已更新",
+        color: "green",
       });
     } catch (error) {
       notifications.show({
-        title: '保存失败',
+        title: "保存失败",
         message: `${error}`,
-        color: 'red',
+        color: "red",
       });
     }
   };
@@ -91,7 +91,7 @@ export const SystemSettingsSection = () => {
   for (const key of Object.keys(SETTINGS_DEFAULTS)) {
     const val = key in settings ? settings[key] : SETTINGS_DEFAULTS[key];
     // Convert numeric values to strings for select components
-    if (key === 'worker.task_timeout' || key === 'worker.task_expire') {
+    if (key === "worker.task_timeout" || key === "worker.task_expire") {
       valueMap[key] = String(val);
     } else {
       valueMap[key] = val;
@@ -100,24 +100,24 @@ export const SystemSettingsSection = () => {
 
   const proxySettingsConfig: SettingProps[] = [
     {
-      key: 'proxy.maintenance',
-      title: '维护模式',
-      description: '设置各游戏的代理服务与数据爬取维护状态。',
-      optionType: 'group',
+      key: "proxy.maintenance",
+      title: "维护模式",
+      description: "设置各游戏的代理服务与数据爬取维护状态。",
+      optionType: "group",
       settings: [
         {
-          key: 'proxy.maintenance.maimai',
-          title: '舞萌 DX',
-          description: '启用后将暂停「舞萌 DX」的代理服务与数据爬取。',
-          optionType: 'switch',
-          defaultValue: SETTINGS_DEFAULTS['proxy.maintenance.maimai'] as boolean,
+          key: "proxy.maintenance.maimai",
+          title: "舞萌 DX",
+          description: "启用后将暂停「舞萌 DX」的代理服务与数据爬取。",
+          optionType: "switch",
+          defaultValue: SETTINGS_DEFAULTS["proxy.maintenance.maimai"] as boolean,
         },
         {
-          key: 'proxy.maintenance.chunithm',
-          title: '中二节奏',
-          description: '启用后将暂停「中二节奏」的代理服务与数据爬取。',
-          optionType: 'switch',
-          defaultValue: SETTINGS_DEFAULTS['proxy.maintenance.chunithm'] as boolean,
+          key: "proxy.maintenance.chunithm",
+          title: "中二节奏",
+          description: "启用后将暂停「中二节奏」的代理服务与数据爬取。",
+          optionType: "switch",
+          defaultValue: SETTINGS_DEFAULTS["proxy.maintenance.chunithm"] as boolean,
         },
       ],
     },
@@ -125,27 +125,27 @@ export const SystemSettingsSection = () => {
 
   const workerSettingsConfig: SettingProps[] = [
     {
-      key: 'worker.remote_only',
-      title: '仅使用远程工作节点',
-      description: '启用后将禁用本地工作节点，所有任务将由远程工作节点处理。',
-      optionType: 'switch',
-      defaultValue: SETTINGS_DEFAULTS['worker.remote_only'] as boolean,
+      key: "worker.remote_only",
+      title: "仅使用远程工作节点",
+      description: "启用后将禁用本地工作节点，所有任务将由远程工作节点处理。",
+      optionType: "switch",
+      defaultValue: SETTINGS_DEFAULTS["worker.remote_only"] as boolean,
     },
     {
-      key: 'worker.task_timeout',
-      title: '任务超时时间',
-      description: '单个任务的最大执行时间，超时后任务将被取消。',
-      optionType: 'select',
+      key: "worker.task_timeout",
+      title: "任务超时时间",
+      description: "单个任务的最大执行时间，超时后任务将被取消。",
+      optionType: "select",
       options: TIMEOUT_OPTIONS,
-      defaultValue: String(SETTINGS_DEFAULTS['worker.task_timeout']),
+      defaultValue: String(SETTINGS_DEFAULTS["worker.task_timeout"]),
     },
     {
-      key: 'worker.task_expire',
-      title: '任务过期时间',
-      description: '已完成或失败的任务超过此时间后将被自动删除。',
-      optionType: 'select',
+      key: "worker.task_expire",
+      title: "任务过期时间",
+      description: "已完成或失败的任务超过此时间后将被自动删除。",
+      optionType: "select",
       options: EXPIRE_OPTIONS,
-      defaultValue: String(SETTINGS_DEFAULTS['worker.task_expire']),
+      defaultValue: String(SETTINGS_DEFAULTS["worker.task_expire"]),
     },
   ];
 

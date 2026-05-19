@@ -1,2 +1,2 @@
-export { NoteCountGraph } from './NoteCountGraph';
-export { default } from './NoteCountGraph';
+export { NoteCountGraph } from "./NoteCountGraph";
+export { default } from "./NoteCountGraph";

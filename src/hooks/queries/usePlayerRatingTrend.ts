@@ -7,7 +7,9 @@ import { queryKeys } from "./queryKeys.ts";
 const emptyTrend: (MaimaiRatingTrendProps | ChunithmRatingTrendProps)[] = [];
 
 export const usePlayerRatingTrend = (game: Game, version: number) => {
-  const { data, error, isLoading } = useQuery<(MaimaiRatingTrendProps | ChunithmRatingTrendProps)[]>({
+  const { data, error, isLoading } = useQuery<
+    (MaimaiRatingTrendProps | ChunithmRatingTrendProps)[]
+  >({
     queryKey: queryKeys.player.ratingTrend(game, version),
     enabled: version > 0,
     staleTime: 5 * 60 * 1000,

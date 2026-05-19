@@ -8,8 +8,10 @@ import { useMemo } from "react";
 const emptyHistoryScores: (MaimaiScoreProps | ChunithmScoreProps)[] = [];
 
 function hasNegativeScore(game: Game, score: MaimaiScoreProps | ChunithmScoreProps) {
-  return (game === "maimai" && "achievements" in score && score.achievements < 0) ||
-    (game === "chunithm" && "score" in score && score.score < 0);
+  return (
+    (game === "maimai" && "achievements" in score && score.achievements < 0) ||
+    (game === "chunithm" && "score" in score && score.score < 0)
+  );
 }
 
 function sortByTime(scores: (MaimaiScoreProps | ChunithmScoreProps)[]) {
@@ -22,12 +24,15 @@ function sortByTime(scores: (MaimaiScoreProps | ChunithmScoreProps)[]) {
   });
 }
 
-export const useScoreHistory = (game: Game, score: MaimaiScoreProps | ChunithmScoreProps | null) => {
+export const useScoreHistory = (
+  game: Game,
+  score: MaimaiScoreProps | ChunithmScoreProps | null,
+) => {
   const isLoggedOut = !localStorage.getItem("token");
   const isNegative = score ? hasNegativeScore(game, score) : false;
 
   const params = useMemo(
-    () => score ? buildScoreParams(game, score) : new URLSearchParams(),
+    () => (score ? buildScoreParams(game, score) : new URLSearchParams()),
     [game, score?.id, score?.level_index, score && "type" in score ? score.type : undefined],
   );
 

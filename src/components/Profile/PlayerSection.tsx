@@ -9,7 +9,7 @@ import { navigate } from "vike/client/router";
 export const PlayerSection = () => {
   const [game] = useGame();
   const { player, isLoading } = usePlayer(game);
-  const computedColorScheme = useComputedColorScheme('light');
+  const computedColorScheme = useComputedColorScheme("light");
 
   return (
     <Card className={classes.card} withBorder radius="md" p={0}>
@@ -18,9 +18,12 @@ export const PlayerSection = () => {
       ) : (
         <Card className={classes.card} p={0} radius={0}>
           {!player && (
-            <Overlay color={
-              computedColorScheme === 'dark' ? "#000" : "#FFF"
-            } blur={5} center zIndex={1}>
+            <Overlay
+              color={computedColorScheme === "dark" ? "#000" : "#FFF"}
+              blur={5}
+              center
+              zIndex={1}
+            >
               <Stack>
                 <Text>尚未同步游戏数据</Text>
                 <Button variant="outline" onClick={() => navigate("/user/sync")}>
@@ -33,5 +36,5 @@ export const PlayerSection = () => {
         </Card>
       )}
     </Card>
-  )
-}
+  );
+};

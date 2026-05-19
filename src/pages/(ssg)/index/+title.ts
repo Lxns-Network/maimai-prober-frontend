@@ -1,1 +1,1 @@
-export const title = 'maimai DX 查分器'
+export const title = "maimai DX 查分器";

@@ -39,7 +39,10 @@ export async function solveCaptcha(): Promise<string> {
       }),
       cap.solve(),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("人机验证超时，请检查网络连接后重试")), CAP_SOLVE_TIMEOUT)
+        setTimeout(
+          () => reject(new Error("人机验证超时，请检查网络连接后重试")),
+          CAP_SOLVE_TIMEOUT,
+        ),
       ),
     ]);
     return result.token;

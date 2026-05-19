@@ -1,1 +1,1 @@
-export { ChartCanvas, default } from './ChartCanvas';
+export { ChartCanvas, default } from "./ChartCanvas";

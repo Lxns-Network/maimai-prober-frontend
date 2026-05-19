@@ -1,10 +1,25 @@
 import {
-  ActionIcon, Avatar, Badge, Flex, Group, Modal, Progress, Space, Text, ThemeIcon, Tooltip
+  ActionIcon,
+  Avatar,
+  Badge,
+  Flex,
+  Group,
+  Modal,
+  Progress,
+  Space,
+  Text,
+  ThemeIcon,
+  Tooltip,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useVoteAlias } from "@/hooks/mutations/useAliasMutations.ts";
 import {
-  IconCheck, IconNorthStar, IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled
+  IconCheck,
+  IconNorthStar,
+  IconThumbDown,
+  IconThumbDownFilled,
+  IconThumbUp,
+  IconThumbUpFilled,
 } from "@tabler/icons-react";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { APIError } from "@/utils/errors.ts";
@@ -26,24 +41,41 @@ interface AliasModalProps {
 
 export function calculateNewAliasWeight(
   alias: AliasProps,
-  vote: boolean // true: 支持, false: 反对
+  vote: boolean, // true: 支持, false: 反对
 ): AliasProps {
   let { up, down, total } = alias.weight;
   const current = alias.vote?.weight ?? 0;
   const isUpvote = vote;
 
   if (current === 0) {
-    if (isUpvote) { up++; total++; }
-    else { down++; total++; }
+    if (isUpvote) {
+      up++;
+      total++;
+    } else {
+      down++;
+      total++;
+    }
   } else if (current === 1) {
-    if (isUpvote) { up--; total--; } // 取消支持
-    else { up--; down++; } // 改为反对
+    if (isUpvote) {
+      up--;
+      total--;
+    } // 取消支持
+    else {
+      up--;
+      down++;
+    } // 改为反对
   } else if (current === -1) {
-    if (!isUpvote) { down--; total--; } // 取消反对
-    else { down--; up++; } // 改为支持
+    if (!isUpvote) {
+      down--;
+      total--;
+    } // 取消反对
+    else {
+      down--;
+      up++;
+    } // 改为支持
   }
 
-  const newWeight = (current === (isUpvote ? 1 : -1)) ? 0 : (isUpvote ? 1 : -1);
+  const newWeight = current === (isUpvote ? 1 : -1) ? 0 : isUpvote ? 1 : -1;
 
   return {
     ...alias,
@@ -51,19 +83,23 @@ export function calculateNewAliasWeight(
     vote: {
       ...alias.vote,
       weight: newWeight,
-    }
+    },
   };
 }
 
-const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (alias: AliasProps) => void }) => {
+const AliasModalBody = ({
+  alias,
+  setAlias,
+}: {
+  alias: AliasProps;
+  setAlias: (alias: AliasProps) => void;
+}) => {
   const [progress, setProgress] = useState(0);
   const [weight, setWeight] = useState(0);
   const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [game] = useFixedGame();
 
-  const { songList } = useSongListStore(
-    useShallow((state) => ({ songList: state[game] })),
-  )
+  const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
 
   useEffect(() => {
     setSong(songList.find(alias.song.id) || null);
@@ -81,38 +117,55 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
   }, [alias]);
 
   const voteAliasMutation = useVoteAlias();
-  
+
   if (!alias) return null;
 
   const voteAliasHandler = (alias_id: number, vote: boolean) => {
-    const previousAlias = { ...alias, weight: { ...alias.weight }, vote: alias.vote ? { ...alias.vote } : undefined };
+    const previousAlias = {
+      ...alias,
+      weight: { ...alias.weight },
+      vote: alias.vote ? { ...alias.vote } : undefined,
+    };
     setAlias(calculateNewAliasWeight(alias, vote));
 
-    voteAliasMutation.mutate({ game, aliasId: alias_id, vote }, {
-      onError: (err) => {
-        setAlias(previousAlias);
-        if (err instanceof APIError && err.code === 429) {
-          openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
-        } else {
-          openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote));
-        }
+    voteAliasMutation.mutate(
+      { game, aliasId: alias_id, vote },
+      {
+        onError: (err) => {
+          setAlias(previousAlias);
+          if (err instanceof APIError && err.code === 429) {
+            openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
+          } else {
+            openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote));
+          }
+        },
       },
-    });
-  }
+    );
+  };
 
   return (
     <>
       <Group>
         {game && (
-          <PhotoView src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : 0)}.png`}>
-            <Avatar src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : 0)}.png!webp`} size={94} radius="md">
-              <Text ta="center" fz="xs">曲绘加载失败</Text>
+          <PhotoView
+            src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : 0)}.png`}
+          >
+            <Avatar
+              src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : 0)}.png!webp`}
+              size={94}
+              radius="md"
+            >
+              <Text ta="center" fz="xs">
+                曲绘加载失败
+              </Text>
             </Avatar>
           </PhotoView>
         )}
         <div style={{ flex: 1 }}>
           <div>
-            <Text fz="xs" c="dimmed">曲名</Text>
+            <Text fz="xs" c="dimmed">
+              曲名
+            </Text>
             <Group gap="xs">
               <Text>{alias.song.name || "未知"}</Text>
               {game === "maimai" && alias.song.id >= 100000 && (
@@ -129,8 +182,12 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
           </div>
           <Space h="xs" />
           <div>
-            <Text fz="xs" c="dimmed">曲目别名</Text>
-            <Text fz="xl" fw={700}>{alias.alias}</Text>
+            <Text fz="xs" c="dimmed">
+              曲目别名
+            </Text>
+            <Text fz="xl" fw={700}>
+              {alias.alias}
+            </Text>
           </div>
         </div>
         <Flex direction="column" gap="xs">
@@ -153,50 +210,70 @@ const AliasModalBody = ({ alias, setAlias }: { alias: AliasProps, setAlias: (ali
       <Space h="md" />
       <Group grow>
         <div>
-          <Text fz="xs" c="dimmed">提交者</Text>
+          <Text fz="xs" c="dimmed">
+            提交者
+          </Text>
           <Text>{alias.uploader ? alias.uploader.name : "未知"}</Text>
         </div>
         <div>
-          <Text fz="xs" c="dimmed">提交时间</Text>
+          <Text fz="xs" c="dimmed">
+            提交时间
+          </Text>
           <Text>{new Date(alias.upload_time).toLocaleString()}</Text>
         </div>
       </Group>
       <Space h="md" />
       <div>
-        <Text fz="xs" c="dimmed">投票占比</Text>
+        <Text fz="xs" c="dimmed">
+          投票占比
+        </Text>
         <Progress.Root size="xl" mt={4}>
           <Tooltip label={`共 ${alias.weight.up} 人`}>
-            <Progress.Section value={progress} color="var(--mantine-primary-color-filled)" >
+            <Progress.Section value={progress} color="var(--mantine-primary-color-filled)">
               <Progress.Label>支持</Progress.Label>
             </Progress.Section>
           </Tooltip>
           <Tooltip label={`共 ${alias.weight.down} 人`}>
             <Progress.Section value={100 - progress} color="gray">
-              <Progress.Label>{alias.weight.total === 0 ? '暂无投票' : '反对'}</Progress.Label>
+              <Progress.Label>{alias.weight.total === 0 ? "暂无投票" : "反对"}</Progress.Label>
             </Progress.Section>
           </Tooltip>
         </Progress.Root>
       </div>
       <Space h="xl" />
       <Flex align="center" direction="column" gap="xs">
-        <Text fz="xs" c="dimmed">你的投票</Text>
+        <Text fz="xs" c="dimmed">
+          你的投票
+        </Text>
         <Group>
-          <ActionIcon color="teal" size="xl" variant={(weight === 1) ? "filled" : "light"} onClick={() => {
-            voteAliasHandler(alias.alias_id, true);
-          }}>
-            {(weight === 1) ? <IconThumbUpFilled /> : <IconThumbUp />}
+          <ActionIcon
+            color="teal"
+            size="xl"
+            variant={weight === 1 ? "filled" : "light"}
+            onClick={() => {
+              voteAliasHandler(alias.alias_id, true);
+            }}
+          >
+            {weight === 1 ? <IconThumbUpFilled /> : <IconThumbUp />}
           </ActionIcon>
-          <ActionIcon color="red" size="xl" variant={(weight === -1) ? "filled" : "light"} onClick={() => {
-            voteAliasHandler(alias.alias_id, false);
-          }}>
-            {(weight === -1) ? <IconThumbDownFilled /> : <IconThumbDown />}
+          <ActionIcon
+            color="red"
+            size="xl"
+            variant={weight === -1 ? "filled" : "light"}
+            onClick={() => {
+              voteAliasHandler(alias.alias_id, false);
+            }}
+          >
+            {weight === -1 ? <IconThumbDownFilled /> : <IconThumbDown />}
           </ActionIcon>
         </Group>
-        <Text fz="xs" c="dimmed">共 {alias.weight.total} 人投票</Text>
+        <Text fz="xs" c="dimmed">
+          共 {alias.weight.total} 人投票
+        </Text>
       </Flex>
     </>
   );
-}
+};
 
 export const AliasModal = ({ alias, setAlias, opened, onClose }: AliasModalProps) => {
   return (
@@ -208,11 +285,9 @@ export const AliasModal = ({ alias, setAlias, opened, onClose }: AliasModalProps
           <Modal.CloseButton />
         </Modal.Header>
         <Modal.Body>
-          {alias !== null && (
-            <AliasModalBody alias={alias} setAlias={setAlias} />
-          )}
+          {alias !== null && <AliasModalBody alias={alias} setAlias={setAlias} />}
         </Modal.Body>
       </Modal.Content>
     </Modal.Root>
   );
-}
+};

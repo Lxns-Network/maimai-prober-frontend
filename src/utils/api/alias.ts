@@ -5,7 +5,7 @@ export async function createAlias(game: string, data: object): Promise<Response>
 }
 
 export async function voteAlias(game: string, aliasId: number, vote: boolean): Promise<Response> {
-  return fetchAPI(`user/${game}/alias/${aliasId}/vote/${vote ? 'up' : 'down'}`, { method: "POST" });
+  return fetchAPI(`user/${game}/alias/${aliasId}/vote/${vote ? "up" : "down"}`, { method: "POST" });
 }
 
 export async function deleteUserAlias(game: string, aliasId: number): Promise<Response> {
@@ -39,8 +39,8 @@ export class AliasList {
       alias.aliases.forEach((aliasText: string) => {
         this.searchMap[aliasText] = this.searchMap[aliasText] || [];
         this.searchMap[aliasText].push(alias.song_id);
-      })
-    })
+      });
+    });
   }
 
   async fetch() {

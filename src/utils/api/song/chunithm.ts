@@ -1,5 +1,5 @@
 import { fetchAPI } from "../api.ts";
-import {notifications} from "@mantine/notifications";
+import { notifications } from "@mantine/notifications";
 
 export interface ChunithmDifficultyProps {
   difficulty: number;

@@ -1,7 +1,11 @@
 import { Chip, Divider, Group, Modal, NumberFormatter, Stack, Table, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { MaimaiNotesProps } from "@/utils/api/song/maimai.ts";
-import { DeluxeScoreStars, getDeluxeScoreStars, getTotalNotes } from "@/components/Scores/maimai/ScoreModal.tsx";
+import {
+  DeluxeScoreStars,
+  getDeluxeScoreStars,
+  getTotalNotes,
+} from "@/components/Scores/maimai/ScoreModal.tsx";
 import classes from "./DeluxeRatingCalculator.module.css";
 
 interface DeluxeScoreDetailProps {
@@ -18,7 +22,12 @@ interface RowProps {
   deluxeScore: number;
 }
 
-export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: DeluxeScoreDetailProps) => {
+export const DeluxeScoreDetail = ({
+  deluxeScore,
+  notes,
+  opened,
+  onClose,
+}: DeluxeScoreDetailProps) => {
   const [rows, setRows] = useState<RowProps[]>([]);
   const [mode, setMode] = useState("+");
 
@@ -59,27 +68,29 @@ export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: Delux
               <Group gap={8} align="center">
                 <Text size="sm">距离下一个星级</Text>
                 <Group wrap="nowrap" h={16} gap={0}>
-                  <DeluxeScoreStars
-                    deluxeScore={nextDeluxeScore}
-                    notes={notes}
-                  />
+                  <DeluxeScoreStars deluxeScore={nextDeluxeScore} notes={notes} />
                 </Group>
                 <Text size="sm">
-                  还差 <NumberFormatter value={nextDeluxeScore - deluxeScore} thousandSeparator /> 分
+                  还差 <NumberFormatter value={nextDeluxeScore - deluxeScore} thousandSeparator />{" "}
+                  分
                 </Text>
               </Group>
             ) : (
-              <Text size="sm">
-                已达到最高星级
-              </Text>
+              <Text size="sm">已达到最高星级</Text>
             )}
             <Divider />
             <Group>
-              <Text size="sm" fw={500}>显示类型</Text>
+              <Text size="sm" fw={500}>
+                显示类型
+              </Text>
               <Chip.Group value={mode} onChange={(value) => setMode(value as string)}>
                 <Group>
-                  <Chip size="xs" value="+">+ 型</Chip>
-                  <Chip size="xs" value="-">- 型</Chip>
+                  <Chip size="xs" value="+">
+                    + 型
+                  </Chip>
+                  <Chip size="xs" value="-">
+                    - 型
+                  </Chip>
                 </Group>
               </Chip.Group>
             </Group>
@@ -93,25 +104,34 @@ export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: Delux
               </Table.Thead>
               <Table.Tbody>
                 {rows.map((row, index) => {
-                  return <Table.Tr key={index}>
-                    <Table.Td>
-                      <Group wrap="nowrap" h={16} gap={0}>
-                        <DeluxeScoreStars deluxeScore={row.deluxeScore} notes={notes} />
-                      </Group>
-                    </Table.Td>
-                    <Table.Td>{row.percentage}%</Table.Td>
-                    {rows[index+1] ? (
-                      <Table.Td className={classes.changeLabel} data-label={
-                        `+ ${rows[index+1].deluxeScore - row.deluxeScore}`
-                      }>
-                        <NumberFormatter value={row.deluxeScore - (mode === "+" ? 0 : getTotalNotes(notes) * 3)} thousandSeparator />
-                      </Table.Td>
-                    ) : (
+                  return (
+                    <Table.Tr key={index}>
                       <Table.Td>
-                        <NumberFormatter value={row.deluxeScore - (mode === "+" ? 0 : getTotalNotes(notes) * 3)} thousandSeparator />
+                        <Group wrap="nowrap" h={16} gap={0}>
+                          <DeluxeScoreStars deluxeScore={row.deluxeScore} notes={notes} />
+                        </Group>
                       </Table.Td>
-                    )}
-                  </Table.Tr>
+                      <Table.Td>{row.percentage}%</Table.Td>
+                      {rows[index + 1] ? (
+                        <Table.Td
+                          className={classes.changeLabel}
+                          data-label={`+ ${rows[index + 1].deluxeScore - row.deluxeScore}`}
+                        >
+                          <NumberFormatter
+                            value={row.deluxeScore - (mode === "+" ? 0 : getTotalNotes(notes) * 3)}
+                            thousandSeparator
+                          />
+                        </Table.Td>
+                      ) : (
+                        <Table.Td>
+                          <NumberFormatter
+                            value={row.deluxeScore - (mode === "+" ? 0 : getTotalNotes(notes) * 3)}
+                            thousandSeparator
+                          />
+                        </Table.Td>
+                      )}
+                    </Table.Tr>
+                  );
                 })}
               </Table.Tbody>
             </Table>
@@ -120,4 +140,4 @@ export const DeluxeScoreDetail = ({ deluxeScore, notes, opened, onClose }: Delux
       </Modal.Content>
     </Modal.Root>
   );
-}
+};

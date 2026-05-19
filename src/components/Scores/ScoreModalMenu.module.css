@@ -1,8 +1,11 @@
 .actionIcon {
-    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1)) !important;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1)) !important;
 
-    &:hover {
-        color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1)) !important;
-        background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6)) !important;
-    }
+  &:hover {
+    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1)) !important;
+    background-color: light-dark(
+      var(--mantine-color-gray-0),
+      var(--mantine-color-dark-6)
+    ) !important;
+  }
 }

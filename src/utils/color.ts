@@ -12,32 +12,32 @@ export const getTrophyColor = (color: string) => {
     return "#09B8FF";
   }
   return "#8931B2";
-}
+};
 
 export const getRatingGradient = (rating: number) => {
   if (rating < 4) {
-    return { from: "green", to: "green" }
+    return { from: "green", to: "green" };
   } else if (rating < 7) {
-    return { from: "orange", to: "orange" }
+    return { from: "orange", to: "orange" };
   } else if (rating < 10) {
-    return { from: "red", to: "red" }
+    return { from: "red", to: "red" };
   } else if (rating < 12) {
-    return { from: "violet", to: "violet" }
+    return { from: "violet", to: "violet" };
   } else if (rating < 13.25) {
-    return { from: "brown", to: "orange" }
+    return { from: "brown", to: "orange" };
   } else if (rating < 14.5) {
-    return { from: "gray", to: "silver" }
+    return { from: "gray", to: "silver" };
   } else if (rating < 15.25) {
-    return { from: "orange", to: "gold" }
+    return { from: "orange", to: "gold" };
   } else if (rating < 16) {
-    return { from: "gold", to: "yellow" }
+    return { from: "gold", to: "yellow" };
   }
   return { from: "grape", to: "cyan" };
-}
+};
 
 export const getDeluxeRatingGradient = (rating: number) => {
   if (rating < 1000) {
-    return { from: "lightblue", to: "lightblue" }
+    return { from: "lightblue", to: "lightblue" };
   } else if (rating < 2000) {
     return { from: "blue", to: "blue" };
   } else if (rating < 4000) {
@@ -47,9 +47,9 @@ export const getDeluxeRatingGradient = (rating: number) => {
   } else if (rating < 10000) {
     return { from: "lightcoral", to: "red" };
   } else if (rating < 12000) {
-    return { from: "mediumorchid", to: "purple" }
+    return { from: "mediumorchid", to: "purple" };
   } else if (rating < 13000) {
-    return { from: "peru", to: "brown"};
+    return { from: "peru", to: "brown" };
   } else if (rating < 14000) {
     return { from: "lightblue", to: "blue" };
   } else if (rating < 14500) {
@@ -58,16 +58,10 @@ export const getDeluxeRatingGradient = (rating: number) => {
     return { from: "khaki", to: "goldenrod" };
   }
   return { from: "grape", to: "cyan" };
-}
+};
 
 export const maimaiDifficultyColor = [
-  [
-    "rgb(129,217,85)",
-    "rgb(248,183,9)",
-    "rgb(249,126,138)",
-    "rgb(192,69,227)",
-    "rgb(233,233,233)",
-  ],
+  ["rgb(129,217,85)", "rgb(248,183,9)", "rgb(249,126,138)", "rgb(192,69,227)", "rgb(233,233,233)"],
   [
     "rgb(34,187,91)",
     "rgb(251,156,45)",
@@ -83,17 +77,11 @@ export const maimaiDifficultyColor = [
     "rgb(111,24,173)",
     "rgb(192,69,227)",
     "rgb(204,12,175)",
-  ]
-]
+  ],
+];
 
 export const chunithmDifficultyColor = [
-  [
-    "rgb(0,171,132)",
-    "rgb(255,125,0)",
-    "rgb(241,41,41)",
-    "rgb(142,26,230)",
-    "rgb(255,40,84)",
-  ],
+  ["rgb(0,171,132)", "rgb(255,125,0)", "rgb(241,41,41)", "rgb(142,26,230)", "rgb(255,40,84)"],
   [
     "rgb(0,166,129)",
     "rgb(244,121,0)",
@@ -109,27 +97,27 @@ export const chunithmDifficultyColor = [
     "rgb(120,22,195)",
     "rgb(43,48,51)",
     "rgb(14,45,56)",
-  ]
-]
+  ],
+];
 
 export const getScoreSecondaryColor = (game: string, level_index: number) => {
   if (game === "maimai") {
-    return maimaiDifficultyColor[2][level_index]
+    return maimaiDifficultyColor[2][level_index];
   } else if (game === "chunithm") {
-    return chunithmDifficultyColor[2][level_index]
+    return chunithmDifficultyColor[2][level_index];
   }
   return "black";
-}
+};
 
 export const getScoreCardBackgroundColor = (game: string, level_index: number) => {
   if (game === "maimai") {
-    return maimaiDifficultyColor[1][level_index]
+    return maimaiDifficultyColor[1][level_index];
   } else if (game === "chunithm") {
-    return chunithmDifficultyColor[1][level_index]
+    return chunithmDifficultyColor[1][level_index];
   }
   return "black";
-}
+};
 
 export const getTransparentColor = (color: string, opacity = 0.95) => {
   return color.replace(")", `, ${opacity})`).replace("rgb(", "rgba(");
-}
+};

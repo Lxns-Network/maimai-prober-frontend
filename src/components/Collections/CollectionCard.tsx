@@ -19,7 +19,7 @@ const Trophy = ({ trophy }: { trophy: CollectionProps }) => {
       <AspectRatio ratio={608 / 74} mt="md">
         <Image src={`https://assets2.lxns.net/${game}/trophy/${trophy.id}.png`} />
       </AspectRatio>
-    )
+    );
   }
 
   return (
@@ -32,8 +32,8 @@ const Trophy = ({ trophy }: { trophy: CollectionProps }) => {
       mt="md"
       fontSize="xl"
     />
-  )
-}
+  );
+};
 
 export const CollectionCard = ({ collection, collectionType, style }: CollectionCardProps) => {
   const [game] = useFixedGame();
@@ -54,9 +54,7 @@ export const CollectionCard = ({ collection, collectionType, style }: Collection
             <Image src={`https://assets2.lxns.net/${game}/plate/${collection.id}.png`} />
           </AspectRatio>
         )}
-        {collectionType === "trophy" && (
-          <Trophy trophy={collection} />
-        )}
+        {collectionType === "trophy" && <Trophy trophy={collection} />}
         {collectionType === "icon" && (
           <AspectRatio ratio={1} w={128} mt="md">
             <Image src={`https://assets2.lxns.net/${game}/icon/${collection.id}.png`} />
@@ -79,5 +77,5 @@ export const CollectionCard = ({ collection, collectionType, style }: Collection
         )}
       </Center>
     </Card>
-  )
-}
+  );
+};

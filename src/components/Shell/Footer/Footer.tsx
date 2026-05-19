@@ -1,5 +1,5 @@
 import { Divider, Flex, Group, Text } from "@mantine/core";
-import classes from './Footer.module.css';
+import classes from "./Footer.module.css";
 
 export const Footer = () => {
   return (
@@ -9,8 +9,9 @@ export const Footer = () => {
           maimai DX 查分器
         </Text>
         <Group>
-          <Text size="sm" c="dimmed">&copy; {new Date().getFullYear() + ' '}
-            <Text<'a'>
+          <Text size="sm" c="dimmed">
+            &copy; {new Date().getFullYear() + " "}
+            <Text<"a">
               component="a"
               className={classes.link}
               href="https://lxns.net/"
@@ -20,7 +21,7 @@ export const Footer = () => {
             </Text>
           </Text>
           <Divider orientation="vertical" />
-          <Text<'a'>
+          <Text<"a">
             component="a"
             className={classes.link}
             size="sm"
@@ -32,5 +33,5 @@ export const Footer = () => {
         </Group>
       </Flex>
     </div>
-  )
-}
+  );
+};

@@ -1,8 +1,16 @@
-import { useCallback, useMemo, useRef, useEffect } from 'react';
-import { useGameStore, playbackTimeRef } from '../../stores/useGameStore';
-import { Note, BpmEvent, isTapNote, isHoldStartNote, isSlideNote, isTouchNote, isTouchHoldStartNote } from '../../types';
-import classes from './NoteCountGraph.module.css';
-import clsx from 'clsx';
+import { useCallback, useMemo, useRef, useEffect } from "react";
+import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
+import {
+  Note,
+  BpmEvent,
+  isTapNote,
+  isHoldStartNote,
+  isSlideNote,
+  isTouchNote,
+  isTouchHoldStartNote,
+} from "../../types";
+import classes from "./NoteCountGraph.module.css";
+import clsx from "clsx";
 
 interface NoteCountData {
   tap: number;
@@ -85,7 +93,7 @@ function calculateNoteCounts(notes: Note[], totalDurationMs: number): NoteCountD
     const bucket = buckets[bucketIndex];
 
     if (isTapNote(note)) {
-      if (note.type === 'break') {
+      if (note.type === "break") {
         bucket.break++;
       } else {
         bucket.tap++;
@@ -124,7 +132,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
   const dragAnimationFrameRef = useRef<number | null>(null);
   const pendingSeekRef = useRef<number | null>(null);
   const lastSeekTimeRef = useRef<number>(0);
-  
+
   const chartData = useGameStore((s) => s.chartData);
   const isPlaying = useGameStore((s) => s.isPlaying);
   const preciseTime = useGameStore((s) => s.timeline.preciseTime);
@@ -143,7 +151,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
 
     const maxMeas = Math.max(0, totalMeasures - 1);
     const beats = maxMeas * beatsPerMeasure;
-    
+
     const durationMs = beatsToMs(beats, chartData.bpmEvents, chartData.bpm);
 
     const noteBuckets = calculateNoteCounts(chartData.notes, durationMs);
@@ -217,67 +225,85 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     }
   }, []);
 
-  const calculateSeekPosition = useCallback((clientX: number) => {
-    if (!containerRef.current || !chartData || totalDurationMs <= 0) return null;
+  const calculateSeekPosition = useCallback(
+    (clientX: number) => {
+      if (!containerRef.current || !chartData || totalDurationMs <= 0) return null;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const clickX = Math.max(0, Math.min(clientX - rect.left, rect.width));
-    const percent = (clickX / rect.width) * 100;
-    const targetMs = (percent / 100) * totalDurationMs;
-    const targetBeats = msToBeats(targetMs, chartData.bpmEvents, chartData.bpm);
-    const clampedBeats = Math.max(0, Math.min(maxBeats, targetBeats));
-    const measure = Math.floor(clampedBeats / beatsPerMeasure);
+      const rect = containerRef.current.getBoundingClientRect();
+      const clickX = Math.max(0, Math.min(clientX - rect.left, rect.width));
+      const percent = (clickX / rect.width) * 100;
+      const targetMs = (percent / 100) * totalDurationMs;
+      const targetBeats = msToBeats(targetMs, chartData.bpmEvents, chartData.bpm);
+      const clampedBeats = Math.max(0, Math.min(maxBeats, targetBeats));
+      const measure = Math.floor(clampedBeats / beatsPerMeasure);
 
-    return { percent, beats: clampedBeats, measure };
-  }, [chartData, totalDurationMs, maxBeats, beatsPerMeasure]);
+      return { percent, beats: clampedBeats, measure };
+    },
+    [chartData, totalDurationMs, maxBeats, beatsPerMeasure],
+  );
 
   // 拖动 seek 节流（30fps），落在 throttle 窗口内的最后一次会通过 pendingSeekRef 兜底。
-  const throttledSeekToStore = useCallback((beats: number) => {
-    const now = performance.now();
-    if (now - lastSeekTimeRef.current >= SEEK_THROTTLE_MS) {
-      lastSeekTimeRef.current = now;
-      setPreciseTime(beats, true);
-      pendingSeekRef.current = null;
-    } else {
-      pendingSeekRef.current = beats;
-    }
-  }, [setPreciseTime]);
+  const throttledSeekToStore = useCallback(
+    (beats: number) => {
+      const now = performance.now();
+      if (now - lastSeekTimeRef.current >= SEEK_THROTTLE_MS) {
+        lastSeekTimeRef.current = now;
+        setPreciseTime(beats, true);
+        pendingSeekRef.current = null;
+      } else {
+        pendingSeekRef.current = beats;
+      }
+    },
+    [setPreciseTime],
+  );
 
   // 拖动时的 seek 处理
-  const seekToPosition = useCallback((clientX: number, immediate = false) => {
-    const pos = calculateSeekPosition(clientX);
-    if (!pos) return;
+  const seekToPosition = useCallback(
+    (clientX: number, immediate = false) => {
+      const pos = calculateSeekPosition(clientX);
+      if (!pos) return;
 
-    updatePlayheadVisual(pos.percent, pos.measure);
-    playbackTimeRef.current = pos.beats;
+      updatePlayheadVisual(pos.percent, pos.measure);
+      playbackTimeRef.current = pos.beats;
 
-    // immediate 用于点击 / 拖动结束（直接落 store）；拖动过程走 throttle。
-    if (immediate) {
-      setPreciseTime(pos.beats, true);
-      pendingSeekRef.current = null;
-    } else {
-      throttledSeekToStore(pos.beats);
-    }
-  }, [calculateSeekPosition, updatePlayheadVisual, setPreciseTime, throttledSeekToStore]);
+      // immediate 用于点击 / 拖动结束（直接落 store）；拖动过程走 throttle。
+      if (immediate) {
+        setPreciseTime(pos.beats, true);
+        pendingSeekRef.current = null;
+      } else {
+        throttledSeekToStore(pos.beats);
+      }
+    },
+    [calculateSeekPosition, updatePlayheadVisual, setPreciseTime, throttledSeekToStore],
+  );
 
-  const startDragging = useCallback((clientX: number) => {
-    isDraggingRef.current = true;
-    wasPlayingRef.current = useGameStore.getState().isPlaying;
-    if (wasPlayingRef.current) {
-      pause();
-    }
-    seekToPosition(clientX, true);
-  }, [pause, seekToPosition]);
+  const startDragging = useCallback(
+    (clientX: number) => {
+      isDraggingRef.current = true;
+      wasPlayingRef.current = useGameStore.getState().isPlaying;
+      if (wasPlayingRef.current) {
+        pause();
+      }
+      seekToPosition(clientX, true);
+    },
+    [pause, seekToPosition],
+  );
 
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    startDragging(e.clientX);
-  }, [startDragging]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      startDragging(e.clientX);
+    },
+    [startDragging],
+  );
 
-  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length !== 1) return;
-    startDragging(e.touches[0].clientX);
-  }, [startDragging]);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (e.touches.length !== 1) return;
+      startDragging(e.touches[0].clientX);
+    },
+    [startDragging],
+  );
 
   useEffect(() => {
     let lastClientX = 0;
@@ -285,7 +311,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current) return;
       lastClientX = e.clientX;
-      
+
       // rAF coalescing：mousemove 频率远高于 60fps，把同一帧的更新合并掉。
       if (dragAnimationFrameRef.current === null) {
         dragAnimationFrameRef.current = requestAnimationFrame(() => {
@@ -301,7 +327,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
       if (!isDraggingRef.current || e.touches.length !== 1) return;
       e.preventDefault();
       lastClientX = e.touches[0].clientX;
-      
+
       if (dragAnimationFrameRef.current === null) {
         dragAnimationFrameRef.current = requestAnimationFrame(() => {
           dragAnimationFrameRef.current = null;
@@ -315,7 +341,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     const handleEnd = () => {
       if (!isDraggingRef.current) return;
       isDraggingRef.current = false;
-      
+
       if (dragAnimationFrameRef.current !== null) {
         cancelAnimationFrame(dragAnimationFrameRef.current);
         dragAnimationFrameRef.current = null;
@@ -326,7 +352,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
         setPreciseTime(pendingSeekRef.current, true);
         pendingSeekRef.current = null;
       }
-      
+
       if (wasPlayingRef.current) {
         wasPlayingRef.current = false;
         requestAnimationFrame(() => {
@@ -335,19 +361,19 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleEnd);
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleEnd);
-    document.addEventListener('touchcancel', handleEnd);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleEnd);
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleEnd);
+    document.addEventListener("touchcancel", handleEnd);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleEnd);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleEnd);
-      document.removeEventListener('touchcancel', handleEnd);
-      
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleEnd);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleEnd);
+      document.removeEventListener("touchcancel", handleEnd);
+
       if (dragAnimationFrameRef.current !== null) {
         cancelAnimationFrame(dragAnimationFrameRef.current);
       }
@@ -356,7 +382,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
 
   const measureMarkers = useMemo(() => {
     if (maxMeasure <= 0) return [];
-    
+
     let step = 10;
     if (maxMeasure > 200) step = 20;
     else if (maxMeasure > 100) step = 10;
@@ -378,8 +404,8 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
   }
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className={classes.container}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
@@ -414,14 +440,18 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
               const seconds = Math.floor((timeMs % 60000) / 1000);
               const isFirst = percent === 0;
               const isLast = percent >= 99;
-              const transform = isFirst ? 'translateX(0)' : isLast ? 'translateX(-100%)' : 'translateX(-50%)';
+              const transform = isFirst
+                ? "translateX(0)"
+                : isLast
+                  ? "translateX(-100%)"
+                  : "translateX(-50%)";
               return (
                 <div
                   key={i}
                   className={classes.timeLabel}
                   style={{ left: `${percent}%`, transform }}
                 >
-                  {minutes}:{seconds.toString().padStart(2, '0')}
+                  {minutes}:{seconds.toString().padStart(2, "0")}
                 </div>
               );
             });
@@ -444,25 +474,21 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
             const breakRatio = bucket.break / bucket.total;
 
             return (
-              <div
-                key={i}
-                className={classes.graphBar}
-                style={{ height: `${height}px` }}
-              >
+              <div key={i} className={classes.graphBar} style={{ height: `${height}px` }}>
                 {tapRatio > 0 && (
-                  <div style={{ flex: tapRatio, width: '100%', backgroundColor: '#FFD700' }} />
+                  <div style={{ flex: tapRatio, width: "100%", backgroundColor: "#FFD700" }} />
                 )}
                 {holdRatio > 0 && (
-                  <div style={{ flex: holdRatio, width: '100%', backgroundColor: '#FF8C00' }} />
+                  <div style={{ flex: holdRatio, width: "100%", backgroundColor: "#FF8C00" }} />
                 )}
                 {slideRatio > 0 && (
-                  <div style={{ flex: slideRatio, width: '100%', backgroundColor: '#00CED1' }} />
+                  <div style={{ flex: slideRatio, width: "100%", backgroundColor: "#00CED1" }} />
                 )}
                 {touchRatio > 0 && (
-                  <div style={{ flex: touchRatio, width: '100%', backgroundColor: '#0080FF' }} />
+                  <div style={{ flex: touchRatio, width: "100%", backgroundColor: "#0080FF" }} />
                 )}
                 {breakRatio > 0 && (
-                  <div style={{ flex: breakRatio, width: '100%', backgroundColor: '#ff69b4' }} />
+                  <div style={{ flex: breakRatio, width: "100%", backgroundColor: "#ff69b4" }} />
                 )}
               </div>
             );
@@ -497,10 +523,17 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
             return (
               <div
                 key={m}
-                className={clsx(classes.measureTick, isMajor ? classes.measureTickMajor : isMedium ? classes.measureTickMedium : classes.measureTickSmall)}
+                className={clsx(
+                  classes.measureTick,
+                  isMajor
+                    ? classes.measureTickMajor
+                    : isMedium
+                      ? classes.measureTickMedium
+                      : classes.measureTickSmall,
+                )}
                 style={{
                   left: `${percent}%`,
-                  height: isMajor ? '6px' : isMedium ? '4px' : '2px',
+                  height: isMajor ? "6px" : isMedium ? "4px" : "2px",
                 }}
               />
             );
@@ -511,8 +544,12 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
           {measureMarkers.map(({ measure, percent }) => {
             const isFirst = percent === 0;
             const isLast = percent >= 99;
-            const transform = isFirst ? 'translateX(0)' : isLast ? 'translateX(-100%)' : 'translateX(-50%)';
-            
+            const transform = isFirst
+              ? "translateX(0)"
+              : isLast
+                ? "translateX(-100%)"
+                : "translateX(-50%)";
+
             return (
               <div
                 key={measure}
@@ -538,9 +575,11 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
         className={classes.playheadLabel}
         style={{ transform: `translateX(calc(${progressPercent}cqw - 50%))` }}
       >
-        <div className={clsx(classes.playheadBadge, {
-          [classes.fullscreen]: fullscreen,
-        })}>
+        <div
+          className={clsx(classes.playheadBadge, {
+            [classes.fullscreen]: fullscreen,
+          })}
+        >
           {currentMeasure}
         </div>
       </div>

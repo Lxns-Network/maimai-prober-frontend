@@ -1,7 +1,14 @@
 import { ActionIcon, Container, Group, Slider, Text, Tooltip } from "@mantine/core";
 import {
-  IconDownload, IconPlayerPauseFilled, IconPlayerPlayFilled, IconPlayerTrackNextFilled,
-  IconPlayerTrackPrevFilled, IconRepeat, IconRepeatOff, IconVolume, IconVolumeOff
+  IconDownload,
+  IconPlayerPauseFilled,
+  IconPlayerPlayFilled,
+  IconPlayerTrackNextFilled,
+  IconPlayerTrackPrevFilled,
+  IconRepeat,
+  IconRepeatOff,
+  IconVolume,
+  IconVolumeOff,
 } from "@tabler/icons-react";
 import { useToggle } from "@mantine/hooks";
 import { useAudio } from "react-use";
@@ -15,11 +22,16 @@ interface AudioPlayerProps extends React.ComponentPropsWithoutRef<typeof Contain
   others?: unknown;
 }
 
-export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: AudioPlayerProps) => {
+export const AudioPlayer = ({
+  src,
+  onFrequencyChange,
+  audioProps,
+  ...others
+}: AudioPlayerProps) => {
   const [audio, state, controls, ref] = useAudio({
     src,
     crossOrigin: "anonymous",
-    ...audioProps
+    ...audioProps,
   });
   const [isPlaying, toggleIsPlaying] = useToggle();
   const [isRepeat, toggleIsRepeat] = useToggle();
@@ -27,8 +39,8 @@ export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: A
   const parseTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time - minutes * 60);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
 
   useEffect(() => {
     if (isPlaying) {
@@ -49,31 +61,35 @@ export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: A
   useEffect(() => {
     if (!ref.current) return;
 
-    ref.current.addEventListener('canplaythrough', () => {
-      const context =  new AudioContext();
-      const analyser = context.createAnalyser();
+    ref.current.addEventListener(
+      "canplaythrough",
+      () => {
+        const context = new AudioContext();
+        const analyser = context.createAnalyser();
 
-      try {
-        const source = context.createMediaElementSource(ref.current!);
-        source.connect(analyser);
-      } catch {
-        return;
-      }
+        try {
+          const source = context.createMediaElementSource(ref.current!);
+          source.connect(analyser);
+        } catch {
+          return;
+        }
 
-      analyser.connect(context.destination);
+        analyser.connect(context.destination);
 
-      const bufferLength = analyser.frequencyBinCount;
-      const frequencyData = new Uint8Array(bufferLength);
+        const bufferLength = analyser.frequencyBinCount;
+        const frequencyData = new Uint8Array(bufferLength);
 
-      const renderFrame = () => {
-        analyser.getByteFrequencyData(frequencyData);
-        requestAnimationFrame(renderFrame);
+        const renderFrame = () => {
+          analyser.getByteFrequencyData(frequencyData);
+          requestAnimationFrame(renderFrame);
 
-        onFrequencyChange && onFrequencyChange(frequencyData);
-      }
+          onFrequencyChange && onFrequencyChange(frequencyData);
+        };
 
-      renderFrame();
-    }, { once: true });
+        renderFrame();
+      },
+      { once: true },
+    );
   }, [ref.current]);
 
   return (
@@ -101,36 +117,58 @@ export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: A
             </ActionIcon>
           </Tooltip>
           <Tooltip label="下载" position="bottom">
-            <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => window.open(`${src}?download=true`, '_blank')}>
+            <ActionIcon
+              variant="transparent"
+              c="gray"
+              size="sm"
+              onClick={() => window.open(`${src}?download=true`, "_blank")}
+            >
               <IconDownload />
             </ActionIcon>
           </Tooltip>
         </Group>
         <Group gap="xs" wrap="nowrap">
           <Tooltip label="后退 5 秒" position="bottom">
-            <ActionIcon variant="transparent" c="gray" onClick={() => controls.seek(state.time - 5)}>
+            <ActionIcon
+              variant="transparent"
+              c="gray"
+              onClick={() => controls.seek(state.time - 5)}
+            >
               <IconPlayerTrackPrevFilled />
             </ActionIcon>
           </Tooltip>
-          <ActionIcon radius="50%" size="lg" onClick={() => {
-            toggleIsPlaying();
-            if (isPlaying) {
-              controls.pause();
-            } else {
-              controls.play();
-            }
-          }}>
+          <ActionIcon
+            radius="50%"
+            size="lg"
+            onClick={() => {
+              toggleIsPlaying();
+              if (isPlaying) {
+                controls.pause();
+              } else {
+                controls.play();
+              }
+            }}
+          >
             {isPlaying ? <IconPlayerPauseFilled /> : <IconPlayerPlayFilled />}
           </ActionIcon>
           <Tooltip label="前进 5 秒" position="bottom">
-            <ActionIcon variant="transparent" c="gray" onClick={() => controls.seek(state.time + 5)}>
+            <ActionIcon
+              variant="transparent"
+              c="gray"
+              onClick={() => controls.seek(state.time + 5)}
+            >
               <IconPlayerTrackNextFilled />
             </ActionIcon>
           </Tooltip>
         </Group>
         <Group gap="xs" w="100%" maw="100px">
           <Tooltip label={state.muted ? "取消静音" : "静音"} position="bottom">
-            <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => state.muted ? controls.unmute() : controls.mute()}>
+            <ActionIcon
+              variant="transparent"
+              c="gray"
+              size="sm"
+              onClick={() => (state.muted ? controls.unmute() : controls.mute())}
+            >
               {state.muted ? <IconVolumeOff size={20} /> : <IconVolume />}
             </ActionIcon>
           </Tooltip>
@@ -145,5 +183,5 @@ export const AudioPlayer = ({ src, onFrequencyChange, audioProps, ...others }: A
         </Group>
       </Group>
     </Container>
-  )
-}
+  );
+};

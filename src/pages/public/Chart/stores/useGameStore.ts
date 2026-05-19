@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
-import { Chart, BpmEvent, ChartDifficulty, AvailableDifficulties } from '../types';
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
+import { Chart, BpmEvent, ChartDifficulty, AvailableDifficulties } from "../types";
 
 export const playbackTimeRef = { current: 0 };
 
@@ -115,10 +115,10 @@ const initialState: GameState = {
   playbackSpeed: 1.0,
   timeline: initialTimeline,
   chartData: null,
-  rawSimaiText: '',
+  rawSimaiText: "",
   selectedDifficulty: null,
   availableDifficulties: {},
-  musicUrl: '',
+  musicUrl: "",
   musicLoaded: false,
   musicLoading: false,
   musicError: null,
@@ -216,7 +216,7 @@ export const useGameStore = create<GameStore>()(
       const currentMs = beatsToMs(
         currentBeats,
         state.chartData?.bpmEvents ?? null,
-        state.chartData?.bpm ?? 120
+        state.chartData?.bpm ?? 120,
       );
 
       set({
@@ -283,7 +283,8 @@ export const useGameStore = create<GameStore>()(
     setPosition: (position: number) => {
       const state = get();
       const clampedPosition = Math.max(0, Math.min(position, 511));
-      const newTime = state.timeline.currentMeasure * state.timeline.beatsPerMeasure +
+      const newTime =
+        state.timeline.currentMeasure * state.timeline.beatsPerMeasure +
         (clampedPosition / 512) * state.timeline.beatsPerMeasure;
 
       playbackTimeRef.current = newTime;
@@ -394,11 +395,11 @@ export const useGameStore = create<GameStore>()(
       set({ playbackSpeed: Math.max(0.1, Math.min(1.0, speed)) });
 
       if (state.isPlaying) {
-          const currentBeats = playbackTimeRef.current;
+        const currentBeats = playbackTimeRef.current;
         const currentMs = beatsToMs(
           currentBeats,
           state.chartData?.bpmEvents ?? null,
-          state.chartData?.bpm ?? 120
+          state.chartData?.bpm ?? 120,
         );
         set({
           playbackStartTime: performance.now(),
@@ -409,7 +410,7 @@ export const useGameStore = create<GameStore>()(
 
     setMusicUrl: (url: string) => {
       if (!url) {
-        set({ musicUrl: '', musicLoaded: false, musicLoading: false, musicError: null });
+        set({ musicUrl: "", musicLoaded: false, musicLoading: false, musicError: null });
       } else {
         set({ musicUrl: url });
       }
@@ -446,7 +447,7 @@ export const useGameStore = create<GameStore>()(
       return beatsToMs(
         state.getCurrentTimeInBeats(),
         state.chartData?.bpmEvents ?? null,
-        state.chartData?.bpm ?? 120
+        state.chartData?.bpm ?? 120,
       );
     },
 
@@ -462,7 +463,7 @@ export const useGameStore = create<GameStore>()(
     setIsFullscreen: (isFullscreen: boolean) => set({ isFullscreen }),
 
     toggleFullscreen: () => set((state) => ({ isFullscreen: !state.isFullscreen })),
-  }))
+  })),
 );
 
 export const selectIsPlaying = (state: GameStore) => state.isPlaying;

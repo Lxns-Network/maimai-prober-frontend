@@ -106,11 +106,11 @@ export class MaimaiSongList {
   getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
     try {
       if (type === "utage") {
-        return song.difficulties.utage[level_index]
+        return song.difficulties.utage[level_index];
       } else if (type === "standard") {
-        return song.difficulties.standard[level_index]
+        return song.difficulties.standard[level_index];
       } else {
-        return song.difficulties.dx[level_index]
+        return song.difficulties.dx[level_index];
       }
     } catch {
       return null;

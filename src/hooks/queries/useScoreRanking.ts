@@ -27,12 +27,15 @@ export function buildScoreParams(game: Game, score: MaimaiScoreProps | ChunithmS
 
 const emptyRankingScores: RankingScoreProps[] = [];
 
-export const useScoreRanking = (game: Game, score: MaimaiScoreProps | ChunithmScoreProps | null) => {
+export const useScoreRanking = (
+  game: Game,
+  score: MaimaiScoreProps | ChunithmScoreProps | null,
+) => {
   const { player } = usePlayer(game);
   const isLoggedOut = !localStorage.getItem("token");
 
   const params = useMemo(
-    () => score ? buildScoreParams(game, score) : new URLSearchParams(),
+    () => (score ? buildScoreParams(game, score) : new URLSearchParams()),
     [game, score?.id, score?.level_index, score && "type" in score ? score.type : undefined],
   );
 

@@ -12,8 +12,9 @@ export const useDeveloper = () => {
     developer: data,
     isLoading,
     error,
-    setData: (updater: DeveloperProps | ((prev: DeveloperProps | undefined) => DeveloperProps | undefined)) =>
-      queryClient.setQueryData<DeveloperProps>(queryKeys.developer.apply(), updater),
+    setData: (
+      updater: DeveloperProps | ((prev: DeveloperProps | undefined) => DeveloperProps | undefined),
+    ) => queryClient.setQueryData<DeveloperProps>(queryKeys.developer.apply(), updater),
     invalidate: () => queryClient.invalidateQueries({ queryKey: queryKeys.developer.apply() }),
   };
 };

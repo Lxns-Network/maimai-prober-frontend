@@ -1,1 +1,1 @@
-export const title = '登录 | maimai DX 查分器';
+export const title = "登录 | maimai DX 查分器";

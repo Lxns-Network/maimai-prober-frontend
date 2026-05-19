@@ -1,12 +1,12 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from '../../stores/useGameStore';
-import { useGameSettingsStore } from '../../stores/useGameSettingsStore';
-import { MainRenderer } from '../../renderers/MainRenderer';
-import { useAudio } from '../../hooks/useAudio';
-import { useMusicPlayer } from '../../hooks/useMusicPlayer';
-import { ANSWER_SOUND_BASE_OFFSET_MS } from '../../utils/constants';
-import classes from './ChartCanvas.module.css';
-import clsx from 'clsx';
+import { useEffect, useRef, useCallback } from "react";
+import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from "../../stores/useGameStore";
+import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
+import { MainRenderer } from "../../renderers/MainRenderer";
+import { useAudio } from "../../hooks/useAudio";
+import { useMusicPlayer } from "../../hooks/useMusicPlayer";
+import { ANSWER_SOUND_BASE_OFFSET_MS } from "../../utils/constants";
+import classes from "./ChartCanvas.module.css";
+import clsx from "clsx";
 
 type BpmEvent = { timing: number; bpm: number };
 
@@ -63,11 +63,11 @@ export function ChartCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MainRenderer | null>(null);
-  
+
   const animationFrameRef = useRef<number | null>(null);
   const playbackStartTimeRef = useRef<number>(0);
   const playbackStartMsRef = useRef<number>(0);
-  
+
   const fpsRef = useRef<number>(0);
   const frameTimesRef = useRef<number[]>([]);
   const lastFrameTimeRef = useRef<number>(0);
@@ -140,7 +140,7 @@ export function ChartCanvas() {
   }, []);
 
   const requestWakeLock = useCallback(async () => {
-    if (!isPlaying || document.visibilityState !== 'visible' || wakeLockRef.current) {
+    if (!isPlaying || document.visibilityState !== "visible" || wakeLockRef.current) {
       return;
     }
 
@@ -150,9 +150,9 @@ export function ChartCanvas() {
     }
 
     try {
-      const wakeLock = await wakeLockApi.request('screen');
+      const wakeLock = await wakeLockApi.request("screen");
       wakeLockRef.current = wakeLock;
-      wakeLock.addEventListener?.('release', () => {
+      wakeLock.addEventListener?.("release", () => {
         if (wakeLockRef.current === wakeLock) {
           wakeLockRef.current = null;
         }
@@ -162,14 +162,17 @@ export function ChartCanvas() {
     }
   }, [isPlaying]);
 
-  const resyncAnswerSound = useCallback((currentMs: number, speed: number = playbackSpeedRef.current) => {
-    if (!chartData || !soundEnabled) {
-      return;
-    }
+  const resyncAnswerSound = useCallback(
+    (currentMs: number, speed: number = playbackSpeedRef.current) => {
+      if (!chartData || !soundEnabled) {
+        return;
+      }
 
-    answerSoundRefs.current.reset(currentMs);
-    answerSoundRefs.current.schedule(chartData.notes, currentMs, speed);
-  }, [chartData, soundEnabled]);
+      answerSoundRefs.current.reset(currentMs);
+      answerSoundRefs.current.schedule(chartData.notes, currentMs, speed);
+    },
+    [chartData, soundEnabled],
+  );
 
   const renderFrame = useCallback((beatsOverride?: number) => {
     const renderer = rendererRef.current;
@@ -186,12 +189,12 @@ export function ChartCanvas() {
       return;
     }
     const currentBeats = beatsOverride ?? timeline.preciseTime;
-    
+
     const measure = Math.floor(currentBeats / timeline.beatsPerMeasure);
     const beatInMeasure = currentBeats - measure * timeline.beatsPerMeasure;
     const beat = Math.floor(beatInMeasure) + 1;
     const fraction = beatInMeasure - Math.floor(beatInMeasure);
-    
+
     let divisor = 4;
     if (chart.divisorEvents) {
       for (const event of chart.divisorEvents) {
@@ -199,7 +202,7 @@ export function ChartCanvas() {
         else break;
       }
     }
-    
+
     renderer.setBeatDisplayInfo(measure, beat, fraction, divisor);
     const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
 
@@ -247,11 +250,11 @@ export function ChartCanvas() {
     }
 
     const dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
-    dprMediaQuery.addEventListener('change', handleResize);
+    dprMediaQuery.addEventListener("change", handleResize);
 
     return () => {
       resizeObserver.disconnect();
-      dprMediaQuery.removeEventListener('change', handleResize);
+      dprMediaQuery.removeEventListener("change", handleResize);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -275,7 +278,7 @@ export function ChartCanvas() {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         void requestWakeLock();
         return;
       }
@@ -283,9 +286,9 @@ export function ChartCanvas() {
       void releaseWakeLock();
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [requestWakeLock, releaseWakeLock]);
 
@@ -476,7 +479,11 @@ export function ChartCanvas() {
         anchorInitialized = true;
         const currentPreciseTime = useGameStore.getState().timeline.preciseTime;
         playbackStartTimeRef.current = timestamp;
-        playbackStartMsRef.current = beatsToMs(currentPreciseTime, chartData.bpmEvents, chartData.bpm);
+        playbackStartMsRef.current = beatsToMs(
+          currentPreciseTime,
+          chartData.bpmEvents,
+          chartData.bpm,
+        );
         // 传入当前时间，避免播放之前已经过去的 note 音效
         answerSoundRefs.current.reset(playbackStartMsRef.current, true);
       }
@@ -488,7 +495,8 @@ export function ChartCanvas() {
         if (frameTimesRef.current.length > 60) {
           frameTimesRef.current.shift();
         }
-        const avgDelta = frameTimesRef.current.reduce((a, b) => a + b, 0) / frameTimesRef.current.length;
+        const avgDelta =
+          frameTimesRef.current.reduce((a, b) => a + b, 0) / frameTimesRef.current.length;
         fpsRef.current = Math.round(1000 / avgDelta);
         if (rendererRef.current) {
           rendererRef.current.setFps(fpsRef.current);
@@ -503,7 +511,7 @@ export function ChartCanvas() {
         playbackStartMsRef.current = beatsToMs(
           storeState.timeline.preciseTime,
           chartData.bpmEvents,
-          chartData.bpm
+          chartData.bpm,
         );
         // seek 后让出音频主时钟，本帧走 rAF 新锚点；syncAudio 重定位完成后会再发布
         audioMasterTimeMsRef.current = null;
@@ -532,7 +540,7 @@ export function ChartCanvas() {
 
       const currentBeats = msToBeats(currentMs, chartData.bpmEvents, chartData.bpm);
       playbackTimeRef.current = currentBeats;
-      
+
       renderFrame(currentBeats);
 
       animationFrameRef.current = requestAnimationFrame(animate);
@@ -546,7 +554,16 @@ export function ChartCanvas() {
         animationFrameRef.current = null;
       }
     };
-  }, [isPlaying, chartData, totalMeasures, beatsPerMeasure, pause, setPreciseTime, renderFrame, getPlaybackMs]);
+  }, [
+    isPlaying,
+    chartData,
+    totalMeasures,
+    beatsPerMeasure,
+    pause,
+    setPreciseTime,
+    renderFrame,
+    getPlaybackMs,
+  ]);
 
   // 暂停态：进度条拖动时实时预览（rAF 节流，只在时间变了重渲染）。
   useEffect(() => {
@@ -575,12 +592,18 @@ export function ChartCanvas() {
   }, [isPlaying, renderFrame]);
 
   return (
-    <div ref={containerRef} className={clsx(classes.container, {
-      [classes.fullscreen]: isFullscreen,
-    })}>
-      <canvas ref={canvasRef} className={clsx(classes.canvas, {
+    <div
+      ref={containerRef}
+      className={clsx(classes.container, {
         [classes.fullscreen]: isFullscreen,
-      })} />
+      })}
+    >
+      <canvas
+        ref={canvasRef}
+        className={clsx(classes.canvas, {
+          [classes.fullscreen]: isFullscreen,
+        })}
+      />
     </div>
   );
 }

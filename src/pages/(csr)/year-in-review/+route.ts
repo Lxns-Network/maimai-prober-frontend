@@ -1,4 +1,4 @@
-import { isSupportedYear } from './config';
+import { isSupportedYear } from "./config";
 
 export default function route(pageContext: { urlPathname: string }) {
   const { urlPathname } = pageContext;
@@ -15,7 +15,7 @@ export default function route(pageContext: { urlPathname: string }) {
   if (shareMatch) {
     const year = parseInt(shareMatch[1]);
     if (isSupportedYear(year)) {
-      return { routeParams: { year: shareMatch[1], '*': shareMatch[2] } };
+      return { routeParams: { year: shareMatch[1], "*": shareMatch[2] } };
     }
   }
 

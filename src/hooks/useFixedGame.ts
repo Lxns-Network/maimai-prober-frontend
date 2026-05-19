@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Game } from "@/types/game";
 
-function useFixedGame(defaultGame = 'maimai'): [Game, (game: Game) => void] {
+function useFixedGame(defaultGame = "maimai"): [Game, (game: Game) => void] {
   const [game, setGame] = useState(() => {
-    const storedGame = localStorage.getItem('game');
+    const storedGame = localStorage.getItem("game");
     return storedGame ? JSON.parse(storedGame) : defaultGame;
   });
 

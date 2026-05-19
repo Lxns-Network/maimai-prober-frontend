@@ -1,6 +1,6 @@
-import { Container, Title, Text, Button, Group, Center, Image } from '@mantine/core';
+import { Container, Title, Text, Button, Group, Center, Image } from "@mantine/core";
 import classes from "./ErrorPage.module.css";
-import { navigate } from 'vike/client/router';
+import { navigate } from "vike/client/router";
 
 export default function NotFound() {
   return (
@@ -13,7 +13,9 @@ export default function NotFound() {
         你访问的页面不存在，可能已经被删除或者地址错误。
       </Text>
       <Group justify="center" mt="lg">
-        <Button className={classes.control} size="lg" onClick={() => navigate("/")}>返回首页</Button>
+        <Button className={classes.control} size="lg" onClick={() => navigate("/")}>
+          返回首页
+        </Button>
       </Group>
     </Container>
   );

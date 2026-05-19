@@ -11,7 +11,7 @@ async function refreshToken() {
       method: "GET",
       credentials: "include",
       headers: {
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
         "Content-Type": "application/json",
       },
     });
@@ -40,7 +40,10 @@ async function ensureTokenValid() {
   }
 }
 
-export async function fetchAPI(endpoint: string, options: { method: string, body?: unknown, headers?: Record<string, string> }): Promise<Response> {
+export async function fetchAPI(
+  endpoint: string,
+  options: { method: string; body?: unknown; headers?: Record<string, string> },
+): Promise<Response> {
   if (endpoint !== "user/refresh") {
     await ensureTokenValid();
   }
@@ -51,12 +54,12 @@ export async function fetchAPI(endpoint: string, options: { method: string, body
     method,
     credentials: "include",
     headers: {
-      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
       "Content-Type": "application/json",
       ...headers,
     },
     body: body ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,
-  })
+  });
 }
 
 export async function uploadFile(endpoint: string, file: File): Promise<Response> {
@@ -69,7 +72,7 @@ export async function uploadFile(endpoint: string, file: File): Promise<Response
     method: "POST",
     credentials: "include",
     headers: {
-      "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
     body: formData,
   });

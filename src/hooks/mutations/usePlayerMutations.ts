@@ -1,16 +1,31 @@
 import { useMutation, UseMutationOptions } from "@tanstack/react-query";
 import { apiMutationFn } from "@/hooks/queries/mutationFn.ts";
 import {
-  updatePlayerData, unbindPlayer, deletePlayerScores, createPlayerScores,
-  deletePlayerScore, deletePlayerScoreHistory,
+  updatePlayerData,
+  unbindPlayer,
+  deletePlayerScores,
+  createPlayerScores,
+  deletePlayerScore,
+  deletePlayerScoreHistory,
 } from "@/utils/api/player.ts";
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
 import { Game } from "@/types/game";
 
-export const useUpdatePlayerData = (options?: UseMutationOptions<unknown, Error, { game: Game; player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps> }>) => {
+export const useUpdatePlayerData = (
+  options?: UseMutationOptions<
+    unknown,
+    Error,
+    { game: Game; player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps> }
+  >,
+) => {
   return useMutation({
-    mutationFn: ({ game, player }: { game: Game; player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps> }) =>
-      apiMutationFn(() => updatePlayerData(game, player)),
+    mutationFn: ({
+      game,
+      player,
+    }: {
+      game: Game;
+      player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>;
+    }) => apiMutationFn(() => updatePlayerData(game, player)),
     ...options,
   });
 };
@@ -29,7 +44,9 @@ export const useDeletePlayerScores = (options?: UseMutationOptions<unknown, Erro
   });
 };
 
-export const useCreatePlayerScores = (options?: UseMutationOptions<unknown, Error, { game: Game; scores: object[] }>) => {
+export const useCreatePlayerScores = (
+  options?: UseMutationOptions<unknown, Error, { game: Game; scores: object[] }>,
+) => {
   return useMutation({
     mutationFn: ({ game, scores }: { game: Game; scores: object[] }) =>
       apiMutationFn(() => createPlayerScores(game, scores)),
@@ -37,7 +54,9 @@ export const useCreatePlayerScores = (options?: UseMutationOptions<unknown, Erro
   });
 };
 
-export const useDeletePlayerScore = (options?: UseMutationOptions<unknown, Error, { game: Game; params: URLSearchParams }>) => {
+export const useDeletePlayerScore = (
+  options?: UseMutationOptions<unknown, Error, { game: Game; params: URLSearchParams }>,
+) => {
   return useMutation({
     mutationFn: ({ game, params }: { game: Game; params: URLSearchParams }) =>
       apiMutationFn(() => deletePlayerScore(game, params)),
@@ -45,7 +64,9 @@ export const useDeletePlayerScore = (options?: UseMutationOptions<unknown, Error
   });
 };
 
-export const useDeletePlayerScoreHistory = (options?: UseMutationOptions<unknown, Error, { game: Game; params: URLSearchParams }>) => {
+export const useDeletePlayerScoreHistory = (
+  options?: UseMutationOptions<unknown, Error, { game: Game; params: URLSearchParams }>,
+) => {
   return useMutation({
     mutationFn: ({ game, params }: { game: Game; params: URLSearchParams }) =>
       apiMutationFn(() => deletePlayerScoreHistory(game, params)),

@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
 import {
-  Title, Text, Button, Card, List, ThemeIcon, Group, Container, Box, Divider, Anchor, Loader, Alert, Avatar, CopyButton,
+  Title,
+  Text,
+  Button,
+  Card,
+  List,
+  ThemeIcon,
+  Group,
+  Container,
+  Box,
+  Divider,
+  Anchor,
+  Loader,
+  Alert,
+  Avatar,
+  CopyButton,
   Stack,
 } from "@mantine/core";
 import { IconCheck, IconCopy, IconExclamationCircle, IconLink } from "@tabler/icons-react";
@@ -13,14 +27,16 @@ import { usePageContext } from "vike-react/usePageContext";
 
 function isOOBRedirectUri(redirectUri: string | null): boolean {
   if (!redirectUri) return false;
-  return redirectUri === "urn:ietf:wg:oauth:2.0:oob" || redirectUri === "urn:ietf:wg:oauth:2.0:oob:auto";
+  return (
+    redirectUri === "urn:ietf:wg:oauth:2.0:oob" || redirectUri === "urn:ietf:wg:oauth:2.0:oob:auto"
+  );
 }
 
 function isAppSchemeRedirectUri(redirectUri: string | null): boolean {
   if (!redirectUri) return false;
   try {
-    const scheme = new URL(redirectUri).protocol.replace(/:$/, '');
-    return scheme !== 'http' && scheme !== 'https';
+    const scheme = new URL(redirectUri).protocol.replace(/:$/, "");
+    return scheme !== "http" && scheme !== "https";
   } catch {
     return false;
   }
@@ -33,7 +49,7 @@ export default function Authorize() {
   const confirmOAuthAuthorize = useConfirmOAuthAuthorize();
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [code, setCode] = useState("");
-  
+
   useEffect(() => {
     if (!app) return;
     if (app.user_authorized && !isOOBRedirectUri(app.redirect_uri)) {
@@ -98,13 +114,17 @@ export default function Authorize() {
   if (error || !app) {
     return (
       <Container className={classes.root} size={420}>
-        <Alert radius="md" icon={<IconExclamationCircle />} title={`无效的应用`} color="red" mb="md">
-          <Text size="sm">
-            {error instanceof Error && error.message}
-          </Text>
+        <Alert
+          radius="md"
+          icon={<IconExclamationCircle />}
+          title={`无效的应用`}
+          color="red"
+          mb="md"
+        >
+          <Text size="sm">{error instanceof Error && error.message}</Text>
         </Alert>
       </Container>
-    )
+    );
   }
 
   return (
@@ -121,16 +141,21 @@ export default function Authorize() {
       </Title>
       {app.developer && (
         <Text c="dimmed" size="sm" ta="center" mt="sm">
-          由 <Anchor className={classes.externalLink} href={app.developer.url} target="_blank" rel="noreferrer">
+          由{" "}
+          <Anchor
+            className={classes.externalLink}
+            href={app.developer.url}
+            target="_blank"
+            rel="noreferrer"
+          >
             {app.developer.name}
-          </Anchor> 开发的应用
+          </Anchor>{" "}
+          开发的应用
         </Text>
       )}
       <Card className={classes.card} withBorder shadow="md" p={0} mt={30} radius="md">
         <Box p="lg">
-          <Text fz="sm">
-            该应用将会获得以下权限：
-          </Text>
+          <Text fz="sm">该应用将会获得以下权限：</Text>
           <List
             spacing="xs"
             size="sm"
@@ -144,16 +169,14 @@ export default function Authorize() {
             {(params.get("scope") || "").split(" ").map((scope) => {
               const s = scope as keyof typeof scopeData;
 
-              if (!scopeData[s]) return (
-                <List.Item key={scope}>
-                  {scope}
-                </List.Item>
-              );
+              if (!scopeData[s]) return <List.Item key={scope}>{scope}</List.Item>;
 
               return (
                 <List.Item key={scope}>
                   <Text fz="sm">{scopeData[s].title}</Text>
-                  <Text fz="xs" c="gray">{scopeData[s].description}</Text>
+                  <Text fz="xs" c="gray">
+                    {scopeData[s].description}
+                  </Text>
                 </List.Item>
               );
             })}
@@ -167,7 +190,9 @@ export default function Authorize() {
                 <Text fz="sm" mb="xs" c="red">
                   授权已取消
                 </Text>
-                <Text c="dimmed" size="xs">你已取消授权，请关闭此窗口并返回你的应用。</Text>
+                <Text c="dimmed" size="xs">
+                  你已取消授权，请关闭此窗口并返回你的应用。
+                </Text>
               </>
             )}
             {code === "authorized" && (
@@ -183,15 +208,23 @@ export default function Authorize() {
                 <Text fz="sm" mb="xs">
                   授权成功！请将以下授权码复制到应用中：
                 </Text>
-                <Text fz="lg" fw={500} mb="xs">{code}</Text>
-                <Text c="dimmed" size="xs">一次性授权码将在十分钟后失效，请尽快使用。</Text>
+                <Text fz="lg" fw={500} mb="xs">
+                  {code}
+                </Text>
+                <Text c="dimmed" size="xs">
+                  一次性授权码将在十分钟后失效，请尽快使用。
+                </Text>
                 <Group grow mt="md">
                   <Button variant="light" color="gray" onClick={() => setCode("")}>
                     重新授权
                   </Button>
                   <CopyButton value={code} timeout={2000}>
                     {({ copied, copy }) => (
-                      <Button onClick={copy} leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />} color={copied ? "teal" : undefined}>
+                      <Button
+                        onClick={copy}
+                        leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                        color={copied ? "teal" : undefined}
+                      >
                         {copied ? "已复制" : "复制授权码"}
                       </Button>
                     )}
@@ -213,17 +246,27 @@ export default function Authorize() {
 
             {isOOBRedirectUri(app.redirect_uri) ? (
               <Box mt="sm">
-                <Text size="xs" c="dimmed">授权后将会显示授权码，请将其复制到应用中</Text>
+                <Text size="xs" c="dimmed">
+                  授权后将会显示授权码，请将其复制到应用中
+                </Text>
               </Box>
             ) : isAppSchemeRedirectUri(app.redirect_uri) ? (
               <Box mt="sm">
-                <Text size="xs" c="dimmed">授权后将会跳转回</Text>
-                <Text size="xs" fw={500} mt={2}>{app.name}</Text>
+                <Text size="xs" c="dimmed">
+                  授权后将会跳转回
+                </Text>
+                <Text size="xs" fw={500} mt={2}>
+                  {app.name}
+                </Text>
               </Box>
             ) : (
               <Box mt="sm">
-                <Text size="xs" c="dimmed">授权后将会跳转到</Text>
-                <Text size="xs" fw={500} mt={2}>{app.redirect_uri.replace(/^(http|https):\/\/([^/]+).+/, '$1://$2')}</Text>
+                <Text size="xs" c="dimmed">
+                  授权后将会跳转到
+                </Text>
+                <Text size="xs" fw={500} mt={2}>
+                  {app.redirect_uri.replace(/^(http|https):\/\/([^/]+).+/, "$1://$2")}
+                </Text>
               </Box>
             )}
           </Box>

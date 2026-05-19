@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 
-function useShellViewportSize(): { width: number, height: number } {
+function useShellViewportSize(): { width: number; height: number } {
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     const scrollArea = document.querySelector(
-      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport"
+      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
     );
 
     const updateSize = () => {

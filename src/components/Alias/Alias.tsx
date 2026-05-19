@@ -1,14 +1,25 @@
 import { ActionIcon, Button, Card, Container, Group, Menu, Progress } from "@mantine/core";
-import { useApproveAlias, useDeleteAlias, useDeleteUserAlias, useVoteAlias } from "@/hooks/mutations/useAliasMutations.ts";
+import {
+  useApproveAlias,
+  useDeleteAlias,
+  useDeleteUserAlias,
+  useVoteAlias,
+} from "@/hooks/mutations/useAliasMutations.ts";
 import { useSetState } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { AliasButton } from "./AliasButton.tsx";
 import {
-  IconCheck, IconDotsVertical, IconFlag2Filled, IconThumbDown, IconThumbDownFilled, IconThumbUp, IconThumbUpFilled,
-  IconTrash
+  IconCheck,
+  IconDotsVertical,
+  IconFlag2Filled,
+  IconThumbDown,
+  IconThumbDownFilled,
+  IconThumbUp,
+  IconThumbUpFilled,
+  IconTrash,
 } from "@tabler/icons-react";
-import classes from "./Alias.module.css"
+import classes from "./Alias.module.css";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { AliasProps } from "@/types/alias";
@@ -35,17 +46,20 @@ export const Alias = ({ alias, onClick, onVote, onMutate }: AliasCardProps) => {
   const voteAliasHandler = (alias_id: number, vote: boolean) => {
     const revert = onVote(vote);
 
-    voteAliasMutation.mutate({ game, aliasId: alias_id, vote }, {
-      onError: (err) => {
-        revert();
-        if (err instanceof APIError && err.code === 429) {
-          openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
-        } else {
-          openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote));
-        }
+    voteAliasMutation.mutate(
+      { game, aliasId: alias_id, vote },
+      {
+        onError: (err) => {
+          revert();
+          if (err instanceof APIError && err.code === 429) {
+            openAlertModal("投票失败", "请求过于频繁，请稍后再试。");
+          } else {
+            openRetryModal("投票失败", `${err}`, () => voteAliasHandler(alias_id, vote));
+          }
+        },
       },
-    });
-  }
+    );
+  };
 
   const deleteUserAliasHandler = () => {
     const mutationOptions = {
@@ -62,7 +76,7 @@ export const Alias = ({ alias, onClick, onVote, onMutate }: AliasCardProps) => {
     } else {
       deleteUserAliasMutation.mutate({ game, aliasId: alias.alias_id }, mutationOptions);
     }
-  }
+  };
 
   useEffect(() => {
     if (alias.vote) setWeight(alias.vote.weight);
@@ -82,18 +96,40 @@ export const Alias = ({ alias, onClick, onVote, onMutate }: AliasCardProps) => {
       <Container p={5} w="100%">
         <Group justify="space-between" gap={0} wrap="nowrap">
           <Button.Group borderWidth={0}>
-            <Button className={classes.voteButton} variant="default" color="default" size="compact-md" leftSection={
-              (weight === 1) ? <IconThumbUpFilled size={20} /> : <IconThumbUp size={20} stroke={1.5} />
-            } onClick={() => {
-              voteAliasHandler(alias.alias_id, true);
-            }}>
+            <Button
+              className={classes.voteButton}
+              variant="default"
+              color="default"
+              size="compact-md"
+              leftSection={
+                weight === 1 ? (
+                  <IconThumbUpFilled size={20} />
+                ) : (
+                  <IconThumbUp size={20} stroke={1.5} />
+                )
+              }
+              onClick={() => {
+                voteAliasHandler(alias.alias_id, true);
+              }}
+            >
               {alias.weight.up}
             </Button>
-            <Button className={classes.voteButton} variant="default" color="default" size="compact-md" leftSection={
-              (weight === -1) ? <IconThumbDownFilled size={20} /> : <IconThumbDown size={20} stroke={1.5} />
-            } onClick={() => {
-              voteAliasHandler(alias.alias_id, false);
-            }}>
+            <Button
+              className={classes.voteButton}
+              variant="default"
+              color="default"
+              size="compact-md"
+              leftSection={
+                weight === -1 ? (
+                  <IconThumbDownFilled size={20} />
+                ) : (
+                  <IconThumbDown size={20} stroke={1.5} />
+                )
+              }
+              onClick={() => {
+                voteAliasHandler(alias.alias_id, false);
+              }}
+            >
               {alias.weight.down}
             </Button>
           </Button.Group>
@@ -106,22 +142,44 @@ export const Alias = ({ alias, onClick, onVote, onMutate }: AliasCardProps) => {
             <Menu.Dropdown>
               <Menu.Label>更多操作</Menu.Label>
               {checkPermission(UserPermission.Administrator) && !alias.approved && (
-                <Menu.Item c="teal" leftSection={<IconCheck size={20} stroke={1.5} />} onClick={() => {
-                  approveAliasMutation.mutate({ game, aliasId: alias.alias_id }, {
-                    onSuccess: () => {
-                      setDisplayAlias({ approved: true });
-                      onMutate();
-                    },
-                  });
-                }}>批准</Menu.Item>
+                <Menu.Item
+                  c="teal"
+                  leftSection={<IconCheck size={20} stroke={1.5} />}
+                  onClick={() => {
+                    approveAliasMutation.mutate(
+                      { game, aliasId: alias.alias_id },
+                      {
+                        onSuccess: () => {
+                          setDisplayAlias({ approved: true });
+                          onMutate();
+                        },
+                      },
+                    );
+                  }}
+                >
+                  批准
+                </Menu.Item>
               )}
               {alias.uploader && alias.uploader.id !== getLoginUserId() && (
-                <Menu.Item c="red" leftSection={<IconFlag2Filled size={20} stroke={1.5} />} disabled>举报滥用</Menu.Item>
+                <Menu.Item
+                  c="red"
+                  leftSection={<IconFlag2Filled size={20} stroke={1.5} />}
+                  disabled
+                >
+                  举报滥用
+                </Menu.Item>
               )}
-              {(checkPermission(UserPermission.Administrator) || (alias.uploader && alias.uploader.id === getLoginUserId())) && (
-                <Menu.Item c="red" leftSection={<IconTrash size={20} stroke={1.5} />} onClick={() => {
-                  deleteUserAliasHandler();
-                }}>删除</Menu.Item>
+              {(checkPermission(UserPermission.Administrator) ||
+                (alias.uploader && alias.uploader.id === getLoginUserId())) && (
+                <Menu.Item
+                  c="red"
+                  leftSection={<IconTrash size={20} stroke={1.5} />}
+                  onClick={() => {
+                    deleteUserAliasHandler();
+                  }}
+                >
+                  删除
+                </Menu.Item>
               )}
             </Menu.Dropdown>
           </Menu>
@@ -129,5 +187,5 @@ export const Alias = ({ alias, onClick, onVote, onMutate }: AliasCardProps) => {
       </Container>
       <Progress size="xs" radius={0} value={progress} />
     </Card>
-  )
-}
+  );
+};

@@ -13,7 +13,7 @@ export const ProfileSection = () => {
       <Group justify="center" mt="xl">
         <Loader />
       </Group>
-    )
+    );
   }
 
   return (
@@ -23,5 +23,5 @@ export const ProfileSection = () => {
       <UserSection />
       <YearInReviewSection />
     </Stack>
-  )
-}
+  );
+};

@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  Title,
-  Text,
-  Group,
-  Button,
-  LoadingOverlay,
-  PasswordInput, Card
-} from '@mantine/core';
-import { Container } from '@mantine/core';
+import { Title, Text, Group, Button, LoadingOverlay, PasswordInput, Card } from "@mantine/core";
+import { Container } from "@mantine/core";
 import { validatePassword } from "@/utils/validator.ts";
 import { useForm } from "@mantine/form";
 import { IconLock } from "@tabler/icons-react";
@@ -32,7 +25,7 @@ export default function ResetPassword() {
     if (!token) {
       navigate("/login", { overwriteLastHistoryEntry: true });
     }
-  }, [])
+  }, []);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -42,25 +35,29 @@ export default function ResetPassword() {
 
     validate: {
       password: (value) => validatePassword(value, { allowEmpty: false }),
-      confirm_password: (value, values) => value === values.password ? null : "两次输入的密码不一致",
+      confirm_password: (value, values) =>
+        value === values.password ? null : "两次输入的密码不一致",
     },
   });
 
   const resetPasswordHandler = (values: FormValues) => {
     setVisible(true);
 
-    resetPassword({ token: token!, values }, {
-      onSuccess: () => {
-        navigate("/login", { pageContext: { ...pageContext, loginState: { reset: true } } });
+    resetPassword(
+      { token: token!, values },
+      {
+        onSuccess: () => {
+          navigate("/login", { pageContext: { ...pageContext, loginState: { reset: true } } });
+        },
+        onError: (error) => {
+          openRetryModal("重置失败", `${error}`, () => resetPasswordHandler(values));
+        },
+        onSettled: () => {
+          setVisible(false);
+        },
       },
-      onError: (error) => {
-        openRetryModal("重置失败", `${error}`, () => resetPasswordHandler(values));
-      },
-      onSettled: () => {
-        setVisible(false);
-      },
-    });
-  }
+    );
+  };
 
   return (
     <Container className={classes.root} size={420}>
@@ -80,7 +77,7 @@ export default function ResetPassword() {
             placeholder="请输入你的密码"
             mb="sm"
             leftSection={<IconLock size={20} stroke={1.5} />}
-            {...form.getInputProps('password')}
+            {...form.getInputProps("password")}
           />
           <PasswordInput
             name="confirm-password"
@@ -89,10 +86,12 @@ export default function ResetPassword() {
             placeholder="请再次输入你的密码"
             mb="sm"
             leftSection={<IconLock size={20} stroke={1.5} />}
-            {...form.getInputProps('confirm_password')}
+            {...form.getInputProps("confirm_password")}
           />
           <Group justify="flex-end" mt="xl">
-            <Button size="sm" type="submit">重置密码</Button>
+            <Button size="sm" type="submit">
+              重置密码
+            </Button>
           </Group>
         </form>
       </Card>

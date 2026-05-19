@@ -1,11 +1,18 @@
-import { Point2D, RendererConfig, BpmEvent, SlidePathType, TouchPosition, ButtonPosition } from '../types';
+import {
+  Point2D,
+  RendererConfig,
+  BpmEvent,
+  SlidePathType,
+  TouchPosition,
+  ButtonPosition,
+} from "../types";
 import {
   BASE_ANGLE,
   BUTTON_ANGLE_OFFSET,
   BUTTON_ANGLE_STEP,
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
-} from '../utils/constants';
+} from "../utils/constants";
 
 export interface RenderContext {
   canvas: HTMLCanvasElement;
@@ -31,43 +38,54 @@ export abstract class BaseRenderer {
 
   protected mirrorPosition(position: ButtonPosition): ButtonPosition {
     const mode = this.context.config.mirrorMode;
-    if (mode === 'none') return position;
+    if (mode === "none") return position;
 
     const mirrorH = [0, 8, 7, 6, 5, 4, 3, 2, 1];
     const mirrorV = [0, 4, 3, 2, 1, 8, 7, 6, 5];
     const rotate180 = [0, 5, 6, 7, 8, 1, 2, 3, 4];
 
     switch (mode) {
-      case 'horizontal': return mirrorH[position] as ButtonPosition;
-      case 'vertical': return mirrorV[position] as ButtonPosition;
-      case 'rotate180': return rotate180[position] as ButtonPosition;
-      default: return position;
+      case "horizontal":
+        return mirrorH[position] as ButtonPosition;
+      case "vertical":
+        return mirrorV[position] as ButtonPosition;
+      case "rotate180":
+        return rotate180[position] as ButtonPosition;
+      default:
+        return position;
     }
   }
 
   protected mirrorPathType(pathType: SlidePathType): SlidePathType {
     const mode = this.context.config.mirrorMode;
-    if (mode === 'none' || mode === 'rotate180') return pathType;
+    if (mode === "none" || mode === "rotate180") return pathType;
 
     switch (pathType) {
-      case '>': return '<';
-      case '<': return '>';
-      case 'p': return 'q';
-      case 'q': return 'p';
-      case 'pp': return 'qq';
-      case 'qq': return 'pp';
-      default: return pathType;
+      case ">":
+        return "<";
+      case "<":
+        return ">";
+      case "p":
+        return "q";
+      case "q":
+        return "p";
+      case "pp":
+        return "qq";
+      case "qq":
+        return "pp";
+      default:
+        return pathType;
     }
   }
 
   protected mirrorTouchPosition(touchPosition: TouchPosition): TouchPosition {
     const mode = this.context.config.mirrorMode;
-    if (mode === 'none') return touchPosition;
+    if (mode === "none") return touchPosition;
 
     const region = touchPosition[0];
     const sensorNum = touchPosition.length > 1 ? parseInt(touchPosition[1]) : 0;
 
-    if (region === 'C') {
+    if (region === "C") {
       return touchPosition;
     }
 
@@ -89,10 +107,10 @@ export abstract class BaseRenderer {
     if (!map) return touchPosition;
 
     let key: string;
-    if (mode === 'rotate180') {
-      key = 'ABDE';
+    if (mode === "rotate180") {
+      key = "ABDE";
     } else {
-      key = (region === 'A' || region === 'B') ? 'AB' : 'DE';
+      key = region === "A" || region === "B" ? "AB" : "DE";
     }
 
     const mapping = map[key];
@@ -117,17 +135,16 @@ export abstract class BaseRenderer {
 
   protected getApproachTimeMs(): number {
     if (this.context.config.alwaysKeepHiSpeed) {
-      return this.context.baseApproachTimeMs / (this.context.hiSpeed / this.context.config.playbackSpeed);
+      return (
+        this.context.baseApproachTimeMs / (this.context.hiSpeed / this.context.config.playbackSpeed)
+      );
     }
 
     return this.context.baseApproachTimeMs / this.context.hiSpeed;
   }
 
   protected distanceToCenter(x: number, y: number): number {
-    return Math.sqrt(
-      Math.pow(x - this.context.centerX, 2) +
-      Math.pow(y - this.context.centerY, 2)
-    );
+    return Math.sqrt(Math.pow(x - this.context.centerX, 2) + Math.pow(y - this.context.centerY, 2));
   }
 
   protected scaleByRadius(ratio: number): number {
@@ -163,7 +180,11 @@ export abstract class BaseRenderer {
     return (60000 * duration) / bpm;
   }
 
-  protected getBpmAtTiming(timing: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
+  protected getBpmAtTiming(
+    timing: number,
+    bpmEvents: BpmEvent[] | null,
+    defaultBpm: number,
+  ): number {
     if (!bpmEvents || bpmEvents.length === 0) {
       return defaultBpm;
     }

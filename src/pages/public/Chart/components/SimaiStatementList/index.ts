@@ -1,2 +1,2 @@
-export { SimaiStatementList } from './SimaiStatementList';
-export { default } from './SimaiStatementList';
+export { SimaiStatementList } from "./SimaiStatementList";
+export { default } from "./SimaiStatementList";

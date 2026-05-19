@@ -19,7 +19,7 @@ export const Icon = forwardRef<SVGSVGElement, MdiIconProps>(
         <path d={path} fill={color} />
       </svg>
     );
-  }
+  },
 );
 
 Icon.displayName = "Icon";

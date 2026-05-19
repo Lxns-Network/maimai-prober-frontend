@@ -2,7 +2,18 @@ import { useCallback, useState, useEffect } from "react";
 import { MaimaiRatingTrend, MaimaiRatingTrendProps } from "./maimai/RatingTrend.tsx";
 import { ChunithmRatingTrend, ChunithmRatingTrendProps } from "./chunithm/RatingTrend.tsx";
 import {
-  Accordion, ActionIcon, Center, CheckIcon, Combobox, Container, Group, Loader, Modal, Paper, ScrollArea, useCombobox,
+  Accordion,
+  ActionIcon,
+  Center,
+  CheckIcon,
+  Combobox,
+  Container,
+  Group,
+  Loader,
+  Modal,
+  Paper,
+  ScrollArea,
+  useCombobox,
   Text,
 } from "@mantine/core";
 import { openRetryModal } from "@/utils/modal.tsx";
@@ -30,10 +41,15 @@ interface EditButtonProps {
 
 export const EditButton = ({ title, description, onClick }: EditButtonProps) => {
   return (
-    <Paper className={[classes.subParameters, classes.subParametersButton].join(' ')} onClick={onClick}>
+    <Paper
+      className={[classes.subParameters, classes.subParametersButton].join(" ")}
+      onClick={onClick}
+    >
       <Group justify="space-between" wrap="nowrap" gap="xs">
         <div>
-          <Text fz="xs" c="dimmed">{title}</Text>
+          <Text fz="xs" c="dimmed">
+            {title}
+          </Text>
           <Text fz="sm">
             <Marquee>{description}</Marquee>
           </Text>
@@ -42,8 +58,8 @@ export const EditButton = ({ title, description, onClick }: EditButtonProps) => 
         <IconEdit size={20} color="gray" />
       </Group>
     </Paper>
-  )
-}
+  );
+};
 
 interface PlayerContentProps {
   player: MaimaiPlayerProps | ChunithmPlayerProps;
@@ -58,8 +74,8 @@ export const PlayerContent = ({ player, onCollectionEdit, editable }: PlayerCont
       {isMaimaiPlayerProps(player) && <MaimaiPlayerContent player={player} {...props} />}
       {isChunithmPlayerProps(player) && <ChunithmPlayerContent player={player} {...props} />}
     </Container>
-  )
-}
+  );
+};
 
 interface ModalProps {
   game: Game;
@@ -69,26 +85,34 @@ interface ModalProps {
 }
 
 const versionData = {
-  maimai: [{
-    title: "舞萌DX 2025",
-    version: 25000,
-  }, {
-    title: "舞萌DX 2024",
-    version: 24000,
-  }, {
-    title: "舞萌DX 2023",
-    version: 23000,
-  }],
-  chunithm: [{
-    title: "中二节奏 2026",
-    version: 23000,
-  }, {
-    title: "中二节奏 2025",
-    version: 22000,
-  }, {
-    title: "中二节奏 2024",
-    version: 20500,
-  }],
+  maimai: [
+    {
+      title: "舞萌DX 2025",
+      version: 25000,
+    },
+    {
+      title: "舞萌DX 2024",
+      version: 24000,
+    },
+    {
+      title: "舞萌DX 2023",
+      version: 23000,
+    },
+  ],
+  chunithm: [
+    {
+      title: "中二节奏 2026",
+      version: 23000,
+    },
+    {
+      title: "中二节奏 2025",
+      version: 22000,
+    },
+    {
+      title: "中二节奏 2024",
+      version: 20500,
+    },
+  ],
 };
 
 export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
@@ -99,37 +123,48 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
-  const small = useMediaQuery('(max-width: 30rem)');
+  const small = useMediaQuery("(max-width: 30rem)");
 
   const [editCollectionOpened, setEditCollectionOpened] = useState(false);
   const [editCollectionType, setEditCollectionType] = useState<Collection>("icons");
   const [editCollectionValue, setEditCollectionValue] = useState<number>(0);
 
-  const updatePlayerDataHandler = useCallback((playerData: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>) => {
-    const previousPlayer = player;
+  const updatePlayerDataHandler = useCallback(
+    (playerData: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>) => {
+      const previousPlayer = player;
 
-    if (player) {
-      const merged = { ...player } as Record<string, unknown>;
-      for (const [key, value] of Object.entries(playerData)) {
-        if (typeof value === 'object' && value !== null && typeof merged[key] === 'object' && merged[key] !== null) {
-          merged[key] = { ...(merged[key] as Record<string, unknown>), ...value };
-        } else {
-          merged[key] = value;
+      if (player) {
+        const merged = { ...player } as Record<string, unknown>;
+        for (const [key, value] of Object.entries(playerData)) {
+          if (
+            typeof value === "object" &&
+            value !== null &&
+            typeof merged[key] === "object" &&
+            merged[key] !== null
+          ) {
+            merged[key] = { ...(merged[key] as Record<string, unknown>), ...value };
+          } else {
+            merged[key] = value;
+          }
         }
+        setPlayerData(merged as unknown as MaimaiPlayerProps | ChunithmPlayerProps);
       }
-      setPlayerData(merged as unknown as MaimaiPlayerProps | ChunithmPlayerProps);
-    }
 
-    updatePlayer({ game, player: playerData }, {
-      onSuccess: () => {
-        invalidate();
-      },
-      onError: (error) => {
-        if (previousPlayer) setPlayerData(previousPlayer);
-        openRetryModal("更新失败", `${error}`, () => updatePlayerDataHandler(playerData));
-      },
-    });
-  }, [game, player, updatePlayer, setPlayerData, invalidate]);
+      updatePlayer(
+        { game, player: playerData },
+        {
+          onSuccess: () => {
+            invalidate();
+          },
+          onError: (error) => {
+            if (previousPlayer) setPlayerData(previousPlayer);
+            openRetryModal("更新失败", `${error}`, () => updatePlayerDataHandler(playerData));
+          },
+        },
+      );
+    },
+    [game, player, updatePlayer, setPlayerData, invalidate],
+  );
 
   useEffect(() => {
     if (!opened || version > 0) return;
@@ -144,7 +179,7 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
       onClose={() => onClose()}
       fullScreen={small}
       transitionProps={{
-        transition: small ? 'pop' : 'fade-down',
+        transition: small ? "pop" : "fade-down",
       }}
       centered
     >
@@ -214,10 +249,15 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
                     setVersion(parseInt(val));
                     combobox.closeDropdown();
                   }}
-                  transitionProps={{ transition: 'fade', duration: 100, timingFunction: 'ease' }}
+                  transitionProps={{ transition: "fade", duration: 100, timingFunction: "ease" }}
                 >
                   <Combobox.Target>
-                    <ActionIcon className={classes.actionIcon} variant="subtle" mr="xs" onClick={() => combobox.toggleDropdown()}>
+                    <ActionIcon
+                      className={classes.actionIcon}
+                      variant="subtle"
+                      mr="xs"
+                      onClick={() => combobox.toggleDropdown()}
+                    >
                       <IconDots size={18} stroke={1.5} />
                     </ActionIcon>
                   </Combobox.Target>
@@ -226,9 +266,13 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
                       <Combobox.Options>
                         {versionData[game].map((item) => {
                           return (
-                            <Combobox.Option value={item.version.toString()} key={item.version} active={item.version === version}>
+                            <Combobox.Option
+                              value={item.version.toString()}
+                              key={item.version}
+                              active={item.version === version}
+                            >
                               <Group gap="sm">
-                                {item.version === version && <CheckIcon color="gray" size={12}/>}
+                                {item.version === version && <CheckIcon color="gray" size={12} />}
                                 <span>{item.title}</span>
                               </Group>
                             </Combobox.Option>
@@ -246,8 +290,12 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
                   </Center>
                 ) : (
                   <>
-                    {game === "maimai" && <MaimaiRatingTrend trend={trend as MaimaiRatingTrendProps[]} />}
-                    {game === "chunithm" && <ChunithmRatingTrend trend={trend as ChunithmRatingTrendProps[]} />}
+                    {game === "maimai" && (
+                      <MaimaiRatingTrend trend={trend as MaimaiRatingTrendProps[]} />
+                    )}
+                    {game === "chunithm" && (
+                      <ChunithmRatingTrend trend={trend as ChunithmRatingTrendProps[]} />
+                    )}
                   </>
                 )}
               </Accordion.Panel>
@@ -257,4 +305,4 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
       </Modal.Content>
     </Modal.Root>
   );
-}
+};

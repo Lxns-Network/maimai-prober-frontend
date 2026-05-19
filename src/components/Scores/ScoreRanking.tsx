@@ -1,11 +1,26 @@
 import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { Badge, Center, Divider, Flex, Group, Loader, NumberFormatter, Paper, rem, Stack, Text } from "@mantine/core";
+import {
+  Badge,
+  Center,
+  Divider,
+  Flex,
+  Group,
+  Loader,
+  NumberFormatter,
+  Paper,
+  rem,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { useScoreRanking } from "@/hooks/queries/useScoreRanking.ts";
 
-export const ScoreRanking = ({ game, score }: {
+export const ScoreRanking = ({
+  game,
+  score,
+}: {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
 }) => {
@@ -36,7 +51,7 @@ export const ScoreRanking = ({ game, score }: {
         <IconDatabaseOff size={64} stroke={1.5} />
         <Text fz="sm">暂无排行数据</Text>
       </Flex>
-    )
+    );
   }
 
   return (
@@ -56,7 +71,9 @@ export const ScoreRanking = ({ game, score }: {
         }
 
         return (
-          <div key={`${game}:${score.id}:${"type" in score && score.type}:${score.level_index}:${index}`}>
+          <div
+            key={`${game}:${score.id}:${"type" in score && score.type}:${score.level_index}:${index}`}
+          >
             {rankingScore.ranking > 11 && (
               <Divider
                 variant="dashed"
@@ -65,24 +82,27 @@ export const ScoreRanking = ({ game, score }: {
                 mb="xs"
               />
             )}
-            <Paper key={index} radius="md" withBorder style={{
-              position: rankingScore.ranking > 10 ? "sticky" : "static",
-              padding: "6px 12px",
-              bottom: "16px",
-            }}>
+            <Paper
+              key={index}
+              radius="md"
+              withBorder
+              style={{
+                position: rankingScore.ranking > 10 ? "sticky" : "static",
+                padding: "6px 12px",
+                bottom: "16px",
+              }}
+            >
               <Group>
                 <Badge variant="light" color={badgeColor} circle={rankingScore.ranking < 100}>
                   {rankingScore.ranking}
                 </Badge>
-                <Text style={{ flex: 1 }}>
-                  {rankingScore.player_name || "[已隐藏]"}
-                </Text>
+                <Text style={{ flex: 1 }}>{rankingScore.player_name || "[已隐藏]"}</Text>
                 {"achievements" in rankingScore && (
                   <Text fz={rem(18)} style={{ lineHeight: rem(18) }}>
                     {parseInt(String(rankingScore.achievements))}
-                    <span style={{ fontSize: rem(14) }}>.{
-                      (String(rankingScore.achievements).split(".")[1] || "0").padEnd(4, "0")
-                    }%</span>
+                    <span style={{ fontSize: rem(14) }}>
+                      .{(String(rankingScore.achievements).split(".")[1] || "0").padEnd(4, "0")}%
+                    </span>
                   </Text>
                 )}
                 {"score" in rankingScore && (
@@ -95,7 +115,9 @@ export const ScoreRanking = ({ game, score }: {
           </div>
         );
       })}
-      <Text fz="xs" c="dimmed">※ 该排行榜基于落雪咖啡屋 maimai DX 查分器数据，结果仅供参考。</Text>
+      <Text fz="xs" c="dimmed">
+        ※ 该排行榜基于落雪咖啡屋 maimai DX 查分器数据，结果仅供参考。
+      </Text>
     </Stack>
   );
-}
+};

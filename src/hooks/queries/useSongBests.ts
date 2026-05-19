@@ -30,10 +30,7 @@ function getMaimaiTypes(song: MaimaiSongProps): string[] {
 
 const emptyScores: (MaimaiScoreProps | ChunithmScoreProps)[] = [];
 
-export const useSongBests = (
-  game: Game,
-  song: MaimaiSongProps | ChunithmSongProps | null,
-) => {
+export const useSongBests = (game: Game, song: MaimaiSongProps | ChunithmSongProps | null) => {
   const isLoggedOut = !localStorage.getItem("token");
 
   const { data, error, isLoading } = useQuery<(MaimaiScoreProps | ChunithmScoreProps)[]>({
@@ -43,7 +40,7 @@ export const useSongBests = (
 
       if (game === "maimai") {
         const types = getMaimaiTypes(song as MaimaiSongProps);
-        const results = await Promise.all(types.map(type => fetchBests(game, song.id, type)));
+        const results = await Promise.all(types.map((type) => fetchBests(game, song.id, type)));
         return results.flat().filter(Boolean);
       } else {
         return await fetchBests(game, song.id);

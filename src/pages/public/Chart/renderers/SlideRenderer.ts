@@ -1,6 +1,14 @@
-import { BaseRenderer, RenderContext } from './BaseRenderer';
-import { SlideNote, SlideSegment, SlidePathType, Point2D, ButtonPosition, NoteRenderPosition, SlideArcLutPoint } from '../types';
-import { NoteRenderer } from './NoteRenderer';
+import { BaseRenderer, RenderContext } from "./BaseRenderer";
+import {
+  SlideNote,
+  SlideSegment,
+  SlidePathType,
+  Point2D,
+  ButtonPosition,
+  NoteRenderPosition,
+  SlideArcLutPoint,
+} from "../types";
+import { NoteRenderer } from "./NoteRenderer";
 import {
   SLIDE_ARROW_WIDTH_RATIO,
   SLIDE_ARROW_SPACING,
@@ -8,11 +16,11 @@ import {
   COLORS,
   APPROACH_START_SCALE,
   NOTE_VISIBILITY_AFTER_MS,
-} from '../utils/constants';
-import { detectSlideShape, SLIDE_AREA_STEP_MAP } from '../utils/slideAreaSteps';
-import { SLIDE_BARS } from '../utils/slideBars';
+} from "../utils/constants";
+import { detectSlideShape, SLIDE_AREA_STEP_MAP } from "../utils/slideAreaSteps";
+import { SLIDE_BARS } from "../utils/slideBars";
 
-export type SlideRenderMode = 'tracks' | 'stars';
+export type SlideRenderMode = "tracks" | "stars";
 
 export class SlideRenderer extends BaseRenderer {
   private noteRenderer: NoteRenderer;
@@ -42,12 +50,12 @@ export class SlideRenderer extends BaseRenderer {
     const cy = this.context.centerY;
     // 用户 mirror（h 翻 x / v 翻 y / rotate180 双翻），跟 mirrorPosition 配套。
     const mode = this.context.config.mirrorMode;
-    const sx = mode === 'horizontal' || mode === 'rotate180' ? -1 : 1;
-    const sy = mode === 'vertical' || mode === 'rotate180' ? -1 : 1;
+    const sx = mode === "horizontal" || mode === "rotate180" ? -1 : 1;
+    const sy = mode === "vertical" || mode === "rotate180" ? -1 : 1;
 
     // Circle prefab 原意是 π/32 等距 grid（8 bar/button-step）+ 半径 ~0.993，源数据
     // 有 float 漂移。snap 到精确 grid + 固定半径，让 π/4 倍数的旋转后 overlap 对齐。
-    const isCircle = shape.shape.startsWith('circle');
+    const isCircle = shape.shape.startsWith("circle");
     const CIRCLE_BAR_R = 0.993;
     const GRID_PER_PI = 32;
 
@@ -70,7 +78,7 @@ export class SlideRenderer extends BaseRenderer {
   calculateSlideStartPosition(
     note: SlideNote,
     _currentBeat: number,
-    currentTimeMs: number
+    currentTimeMs: number,
   ): NoteRenderPosition {
     const angle = this.getButtonAngle(note.position);
     const timeDiff = note.timingMs - currentTimeMs;
@@ -109,7 +117,7 @@ export class SlideRenderer extends BaseRenderer {
     note: SlideNote,
     currentBeat: number,
     currentTimeMs: number,
-    mode: SlideRenderMode = 'tracks'
+    mode: SlideRenderMode = "tracks",
   ): void {
     if (note.isSplitSlide && note.allSlideSegments) {
       for (let i = 0; i < note.allSlideSegments.length; i++) {
@@ -129,13 +137,15 @@ export class SlideRenderer extends BaseRenderer {
     currentTimeMs: number,
     segments: SlideSegment[],
     pathIndex: number = 0,
-    mode: SlideRenderMode = 'tracks'
+    mode: SlideRenderMode = "tracks",
   ): void {
     const approachHalf = this.getApproachTimeMs() / 2;
     const visibilityStart = note.timingMs - approachHalf;
 
     const durationMs = note.allDurationMs ? note.allDurationMs[pathIndex] : note.durationMs;
-    const delayMs = note.allDelayMs ? note.allDelayMs[pathIndex] : (note.delayMs ?? 60000 / note.bpm);
+    const delayMs = note.allDelayMs
+      ? note.allDelayMs[pathIndex]
+      : (note.delayMs ?? 60000 / note.bpm);
     const slideStart = note.timingMs + delayMs;
 
     if (currentTimeMs < visibilityStart || currentTimeMs > slideStart + durationMs) {
@@ -157,9 +167,10 @@ export class SlideRenderer extends BaseRenderer {
         progress = Math.min(1, elapsed / durationMs);
       }
 
-      const isSimultaneous = (note.simultaneousSlideCount ?? 0) >= 2 || (note.isSplitSlide ?? false);
+      const isSimultaneous =
+        (note.simultaneousSlideCount ?? 0) >= 2 || (note.isSplitSlide ?? false);
 
-      if (mode === 'tracks') {
+      if (mode === "tracks") {
         const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
 
         const segmentLengths = segments.map((seg) => this.getSegmentLength(seg));
@@ -181,9 +192,8 @@ export class SlideRenderer extends BaseRenderer {
 
           let segmentProgress = 0;
           if (progress > range.start) {
-            segmentProgress = progress >= range.end
-              ? 1
-              : (progress - range.start) / (range.end - range.start);
+            segmentProgress =
+              progress >= range.end ? 1 : (progress - range.start) / (range.end - range.start);
           }
 
           this.renderSlideSegment(
@@ -191,7 +201,7 @@ export class SlideRenderer extends BaseRenderer {
             isBreak,
             segmentProgress,
             isSimultaneous,
-            this.context.config.normalColorBreakSlide
+            this.context.config.normalColorBreakSlide,
           );
         }
       } else {
@@ -207,11 +217,11 @@ export class SlideRenderer extends BaseRenderer {
     isBreak: boolean,
     progress: number = 0,
     isSimultaneous: boolean = false,
-    normalBreakColor: boolean = false
+    normalBreakColor: boolean = false,
   ): boolean {
     const startPos = this.noteRenderer.getPositionOnRing(segment.startPos);
     const endPos = this.noteRenderer.getPositionOnRing(segment.endPos);
-    
+
     const mirroredType = this.mirrorPathType(segment.type);
 
     this.withContext(() => {
@@ -226,10 +236,10 @@ export class SlideRenderer extends BaseRenderer {
         ctx.strokeStyle = COLORS.SLIDE_CYAN;
       }
 
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
 
-      if (segment.type === 'w') {
+      if (segment.type === "w") {
         this.renderWifiBars(segment, progress);
         return;
       }
@@ -242,29 +252,29 @@ export class SlideRenderer extends BaseRenderer {
       }
 
       switch (mirroredType) {
-        case '-':
+        case "-":
           this.renderStraightPath(startPos, endPos, progress);
           break;
-        case '>':
+        case ">":
           this.renderClockwiseArc(segment.startPos, segment.endPos, progress);
           break;
-        case '<':
+        case "<":
           this.renderCounterClockwiseArc(segment.startPos, segment.endPos, progress);
           break;
-        case '^':
+        case "^":
           return this.renderShortArc(segment.startPos, segment.endPos, progress);
-        case 'v':
+        case "v":
           return this.renderVPath(segment.startPos, segment.endPos, progress);
-        case 'p':
-        case 'pp':
-        case 'q':
-        case 'qq':
+        case "p":
+        case "pp":
+        case "q":
+        case "qq":
           this.renderCurvePath(segment.startPos, segment.endPos, segment.type, progress);
           break;
-        case 's':
+        case "s":
           this.renderSPath(startPos, endPos, progress);
           break;
-        case 'z':
+        case "z":
           this.renderZPath(startPos, endPos, progress);
           break;
       }
@@ -288,7 +298,7 @@ export class SlideRenderer extends BaseRenderer {
     const chain = this.getBarChain(segment);
     if (!chain || chain.length < 2) return;
 
-    const steps = SLIDE_AREA_STEP_MAP['wifi'];
+    const steps = SLIDE_AREA_STEP_MAP["wifi"];
     let hiddenCount = 0;
     if (progress > 0 && steps && steps.length >= 2) {
       const i = Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)));
@@ -307,14 +317,17 @@ export class SlideRenderer extends BaseRenderer {
     const dFirst = Math.hypot(chain[0].x - pivot.x, chain[0].y - pivot.y) * CHAIN_SCALE;
     const dLast = Math.hypot(chain[N - 1].x - pivot.x, chain[N - 1].y - pivot.y) * CHAIN_SCALE;
 
-    const ARM_HALF_ANGLE = (135 / 2) * Math.PI / 180; // 67.5°
+    const ARM_HALF_ANGLE = ((135 / 2) * Math.PI) / 180; // 67.5°
     const cosA = Math.cos(ARM_HALF_ANGLE); // ≈ 0.383
     const sinA = Math.sin(ARM_HALF_ANGLE); // ≈ 0.924
 
     const chevrons: {
-      x: number; y: number;
-      arm1Dx: number; arm1Dy: number;
-      arm2Dx: number; arm2Dy: number;
+      x: number;
+      y: number;
+      arm1Dx: number;
+      arm1Dy: number;
+      arm2Dx: number;
+      arm2Dy: number;
     }[] = [];
     for (let i = N - 1; i >= hiddenCount; i--) {
       const d = dFirst + (dLast - dFirst) * (i / (N - 1));
@@ -322,8 +335,10 @@ export class SlideRenderer extends BaseRenderer {
       chevrons.push({
         x: pivot.x + axisUx * d,
         y: pivot.y + axisUy * d,
-        arm1Dx: -armLen * cosA, arm1Dy: +armLen * sinA,
-        arm2Dx: -armLen * cosA, arm2Dy: -armLen * sinA,
+        arm1Dx: -armLen * cosA,
+        arm1Dy: +armLen * sinA,
+        arm2Dx: -armLen * cosA,
+        arm2Dy: -armLen * sinA,
       });
     }
     if (chevrons.length === 0) return;
@@ -332,9 +347,9 @@ export class SlideRenderer extends BaseRenderer {
 
   private getVisibleBarsForSegment(
     segment: SlideSegment,
-    progress: number
+    progress: number,
   ): { x: number; y: number; angle: number }[] | null {
-    if (segment.type === 'w') return null;
+    if (segment.type === "w") return null;
     const chain = this.getBarChain(segment);
     if (!chain) return null;
     const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos)!;
@@ -371,11 +386,15 @@ export class SlideRenderer extends BaseRenderer {
         x: start.x + dx * t,
         y: start.y + dy * t,
       }),
-      progress
+      progress,
     );
   }
 
-  private renderClockwiseArc(startPos: ButtonPosition, endPos: ButtonPosition, progress: number): void {
+  private renderClockwiseArc(
+    startPos: ButtonPosition,
+    endPos: ButtonPosition,
+    progress: number,
+  ): void {
     const startAngle = this.getButtonAngle(startPos);
     let endAngle = this.getButtonAngle(endPos);
     let angleDiff = endAngle - startAngle;
@@ -392,19 +411,20 @@ export class SlideRenderer extends BaseRenderer {
 
     endAngle = startAngle + angleDiff;
 
-    this.iterateArrowsAlongPath(
-      (t) => {
-        const angle = startAngle + angleDiff * t;
-        return {
-          x: this.context.centerX + Math.cos(angle) * this.context.radius,
-          y: this.context.centerY + Math.sin(angle) * this.context.radius,
-        };
-      },
-      progress
-    );
+    this.iterateArrowsAlongPath((t) => {
+      const angle = startAngle + angleDiff * t;
+      return {
+        x: this.context.centerX + Math.cos(angle) * this.context.radius,
+        y: this.context.centerY + Math.sin(angle) * this.context.radius,
+      };
+    }, progress);
   }
 
-  private renderCounterClockwiseArc(startPos: ButtonPosition, endPos: ButtonPosition, progress: number): void {
+  private renderCounterClockwiseArc(
+    startPos: ButtonPosition,
+    endPos: ButtonPosition,
+    progress: number,
+  ): void {
     const startAngle = this.getButtonAngle(startPos);
     let endAngle = this.getButtonAngle(endPos);
     let angleDiff = endAngle - startAngle;
@@ -421,19 +441,20 @@ export class SlideRenderer extends BaseRenderer {
 
     endAngle = startAngle + angleDiff;
 
-    this.iterateArrowsAlongPath(
-      (t) => {
-        const angle = startAngle + angleDiff * t;
-        return {
-          x: this.context.centerX + Math.cos(angle) * this.context.radius,
-          y: this.context.centerY + Math.sin(angle) * this.context.radius,
-        };
-      },
-      progress
-    );
+    this.iterateArrowsAlongPath((t) => {
+      const angle = startAngle + angleDiff * t;
+      return {
+        x: this.context.centerX + Math.cos(angle) * this.context.radius,
+        y: this.context.centerY + Math.sin(angle) * this.context.radius,
+      };
+    }, progress);
   }
 
-  private renderShortArc(startPos: ButtonPosition, endPos: ButtonPosition, progress: number): boolean {
+  private renderShortArc(
+    startPos: ButtonPosition,
+    endPos: ButtonPosition,
+    progress: number,
+  ): boolean {
     const startAngle = this.getButtonAngle(startPos);
     let endAngle = this.getButtonAngle(endPos);
     let angleDiff = endAngle - startAngle;
@@ -446,16 +467,13 @@ export class SlideRenderer extends BaseRenderer {
 
     endAngle = startAngle + angleDiff;
 
-    this.iterateArrowsAlongPath(
-      (t) => {
-        const angle = startAngle + angleDiff * t;
-        return {
-          x: this.context.centerX + Math.cos(angle) * this.context.radius,
-          y: this.context.centerY + Math.sin(angle) * this.context.radius,
-        };
-      },
-      progress
-    );
+    this.iterateArrowsAlongPath((t) => {
+      const angle = startAngle + angleDiff * t;
+      return {
+        x: this.context.centerX + Math.cos(angle) * this.context.radius,
+        y: this.context.centerY + Math.sin(angle) * this.context.radius,
+      };
+    }, progress);
 
     return true;
   }
@@ -472,24 +490,21 @@ export class SlideRenderer extends BaseRenderer {
     const distFromCenter = this.distanceToCenter(endPt.x, endPt.y);
     const totalDist = distToCenter + distFromCenter;
 
-    this.iterateArrowsAlongPath(
-      (t) => {
-        if (t < distToCenter / totalDist) {
-          const subT = t / (distToCenter / totalDist);
-          return {
-            x: startPt.x + (center.x - startPt.x) * subT,
-            y: startPt.y + (center.y - startPt.y) * subT,
-          };
-        } else {
-          const subT = (t - distToCenter / totalDist) / (distFromCenter / totalDist);
-          return {
-            x: center.x + (endPt.x - center.x) * subT,
-            y: center.y + (endPt.y - center.y) * subT,
-          };
-        }
-      },
-      progress
-    );
+    this.iterateArrowsAlongPath((t) => {
+      if (t < distToCenter / totalDist) {
+        const subT = t / (distToCenter / totalDist);
+        return {
+          x: startPt.x + (center.x - startPt.x) * subT,
+          y: startPt.y + (center.y - startPt.y) * subT,
+        };
+      } else {
+        const subT = (t - distToCenter / totalDist) / (distFromCenter / totalDist);
+        return {
+          x: center.x + (endPt.x - center.x) * subT,
+          y: center.y + (endPt.y - center.y) * subT,
+        };
+      }
+    }, progress);
 
     return true;
   }
@@ -518,24 +533,21 @@ export class SlideRenderer extends BaseRenderer {
     const seg3Len = Math.sqrt(Math.pow(end.x - mid2.x, 2) + Math.pow(end.y - mid2.y, 2));
     const totalLen = seg1Len + seg2Len + seg3Len;
 
-    this.iterateArrowsAlongPath(
-      (t) => {
-        const r1 = seg1Len / totalLen;
-        const r2 = seg2Len / totalLen;
+    this.iterateArrowsAlongPath((t) => {
+      const r1 = seg1Len / totalLen;
+      const r2 = seg2Len / totalLen;
 
-        if (t < r1) {
-          const subT = t / r1;
-          return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
-        } else if (t < r1 + r2) {
-          const subT = (t - r1) / r2;
-          return { x: mid1.x + (mid2.x - mid1.x) * subT, y: mid1.y + (mid2.y - mid1.y) * subT };
-        } else {
-          const subT = (t - r1 - r2) / (1 - r1 - r2);
-          return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
-        }
-      },
-      progress
-    );
+      if (t < r1) {
+        const subT = t / r1;
+        return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
+      } else if (t < r1 + r2) {
+        const subT = (t - r1) / r2;
+        return { x: mid1.x + (mid2.x - mid1.x) * subT, y: mid1.y + (mid2.y - mid1.y) * subT };
+      } else {
+        const subT = (t - r1 - r2) / (1 - r1 - r2);
+        return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
+      }
+    }, progress);
   }
 
   private renderZPath(start: Point2D, end: Point2D, progress: number): void {
@@ -563,27 +575,29 @@ export class SlideRenderer extends BaseRenderer {
     const seg3Len = Math.sqrt(Math.pow(end.x - mid2.x, 2) + Math.pow(end.y - mid2.y, 2));
     const totalLen = seg1Len + seg2Len + seg3Len;
 
-    this.iterateArrowsAlongPath(
-      (t) => {
-        const r1 = seg1Len / totalLen;
-        const r2 = seg2Len / totalLen;
+    this.iterateArrowsAlongPath((t) => {
+      const r1 = seg1Len / totalLen;
+      const r2 = seg2Len / totalLen;
 
-        if (t < r1) {
-          const subT = t / r1;
-          return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
-        } else if (t < r1 + r2) {
-          const subT = (t - r1) / r2;
-          return { x: mid1.x + (mid2.x - mid1.x) * subT, y: mid1.y + (mid2.y - mid1.y) * subT };
-        } else {
-          const subT = (t - r1 - r2) / (1 - r1 - r2);
-          return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
-        }
-      },
-      progress
-    );
+      if (t < r1) {
+        const subT = t / r1;
+        return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
+      } else if (t < r1 + r2) {
+        const subT = (t - r1) / r2;
+        return { x: mid1.x + (mid2.x - mid1.x) * subT, y: mid1.y + (mid2.y - mid1.y) * subT };
+      } else {
+        const subT = (t - r1 - r2) / (1 - r1 - r2);
+        return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
+      }
+    }, progress);
   }
 
-  private renderCurvePath(startPos: ButtonPosition, endPos: ButtonPosition, originalType: SlidePathType, progress: number): void {
+  private renderCurvePath(
+    startPos: ButtonPosition,
+    endPos: ButtonPosition,
+    originalType: SlidePathType,
+    progress: number,
+  ): void {
     const segment: SlideSegment = {
       type: originalType,
       startPos,
@@ -592,10 +606,7 @@ export class SlideRenderer extends BaseRenderer {
     this.iterateArrowsAlongPath((t) => this.getPointOnSegment(segment, t), progress);
   }
 
-  private iterateArrowsAlongPath(
-    pathFn: (t: number) => Point2D,
-    progress: number
-  ): void {
+  private iterateArrowsAlongPath(pathFn: (t: number) => Point2D, progress: number): void {
     // 一次性采样路径并累计弧长，箭头按弧长均布（而非按 t 均布）。
     // 直线/圆弧/V/S/Z 这些恒速参数化路径视觉不变；p/pp/q/qq 等变曲率
     // bend 曲线下，箭头间距不再随曲率忽密忽疏。
@@ -603,7 +614,7 @@ export class SlideRenderer extends BaseRenderer {
     const totalLength = lut[lut.length - 1].s;
     if (totalLength <= 0) return;
 
-    const spacing = SLIDE_ARROW_SPACING * this.context.radius / 300;
+    const spacing = (SLIDE_ARROW_SPACING * this.context.radius) / 300;
     const arrowCount = Math.floor(totalLength / spacing);
     if (arrowCount === 0) return;
 
@@ -624,10 +635,7 @@ export class SlideRenderer extends BaseRenderer {
    * 沿 pathFn 等步长采样 t∈[0,1]，输出每点位置、入向切线角和累计弧长。
    * 第 0 点的角度用 t→0 的"出向"方向，避免首段方向缺失。
    */
-  private buildArcLut(
-    pathFn: (t: number) => Point2D,
-    samples: number = 64
-  ): SlideArcLutPoint[] {
+  private buildArcLut(pathFn: (t: number) => Point2D, samples: number = 64): SlideArcLutPoint[] {
     const lut: SlideArcLutPoint[] = new Array(samples + 1);
     const p0 = pathFn(0);
     const p1 = pathFn(1 / samples);
@@ -674,7 +682,7 @@ export class SlideRenderer extends BaseRenderer {
    */
   private sampleArcLut(
     lut: readonly SlideArcLutPoint[],
-    s: number
+    s: number,
   ): { x: number; y: number; angle: number } {
     if (s <= 0) {
       const f = lut[0];
@@ -705,8 +713,8 @@ export class SlideRenderer extends BaseRenderer {
   private drawSlideArrowsBatch(arrows: { x: number; y: number; angle: number }[]): void {
     if (arrows.length === 0) return;
     const ctx = this.context.ctx;
-    const arrowHeight = 32 * this.context.radius / 300;
-    const arrowWidth = 6 * 1.6 * this.context.radius / 300;
+    const arrowHeight = (32 * this.context.radius) / 300;
+    const arrowWidth = (6 * 1.6 * this.context.radius) / 300;
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
     const radiusScale = this.context.radius / 300;
     const mainStroke = ctx.strokeStyle;
@@ -718,8 +726,8 @@ export class SlideRenderer extends BaseRenderer {
     ];
 
     ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     // 逐箭头叠绘 outline → 拖影 → 主体（不按层批量）：arrows[0] 在远端、arrows[N-1]
     // 靠 star 头，正向迭代让靠 star 的盖在远端上，自重叠路径处可见黑边切割下层。
@@ -740,7 +748,7 @@ export class SlideRenderer extends BaseRenderer {
       main.lineTo(x3, y3);
 
       ctx.lineWidth = lineWidth + 2;
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = "#000000";
       ctx.stroke(main);
 
       for (const shadow of shadows) {
@@ -770,7 +778,6 @@ export class SlideRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-
   /**
    * 画 chevron：每条 chevron 由 corner + 两条 arm tip 在 fan-local 帧的偏移定义。
    * path = `M arm1 L corner L arm2`，stroke 同 slide arrow（外黑边 + 两层 drop shadow
@@ -778,15 +785,18 @@ export class SlideRenderer extends BaseRenderer {
    */
   private drawWifiChevronsBatch(
     chevrons: {
-      x: number; y: number;
-      arm1Dx: number; arm1Dy: number;
-      arm2Dx: number; arm2Dy: number;
+      x: number;
+      y: number;
+      arm1Dx: number;
+      arm1Dy: number;
+      arm2Dx: number;
+      arm2Dy: number;
     }[],
     fanAngle: number,
   ): void {
     if (chevrons.length === 0) return;
     const ctx = this.context.ctx;
-    const lineWidth = 19.2 * this.context.radius / 300;
+    const lineWidth = (19.2 * this.context.radius) / 300;
     const radiusScale = this.context.radius / 300;
     const mainStroke = ctx.strokeStyle;
     const cos = Math.cos(fanAngle);
@@ -798,8 +808,8 @@ export class SlideRenderer extends BaseRenderer {
     ];
 
     ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     for (const c of chevrons) {
       const a1x = c.x + cos * c.arm1Dx - sin * c.arm1Dy;
@@ -813,7 +823,7 @@ export class SlideRenderer extends BaseRenderer {
       main.lineTo(a2x, a2y);
 
       ctx.lineWidth = lineWidth + 2;
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = "#000000";
       ctx.stroke(main);
 
       for (const shadow of shadows) {
@@ -847,9 +857,9 @@ export class SlideRenderer extends BaseRenderer {
     segments: SlideSegment[],
     pathIndex: number,
     currentTimeMs: number,
-    isSimultaneous: boolean
+    isSimultaneous: boolean,
   ): void {
-    if (segments.length > 0 && segments[0].type === 'w') {
+    if (segments.length > 0 && segments[0].type === "w") {
       this.renderWifiStars(note, progress, segments, currentTimeMs, isSimultaneous, pathIndex);
       return;
     }
@@ -863,7 +873,7 @@ export class SlideRenderer extends BaseRenderer {
     const isSliding = currentTimeMs >= slideStart;
 
     if (!isSliding) {
-      if (note.headlessMode === 'pop') return;
+      if (note.headlessMode === "pop") return;
 
       starPos = this.noteRenderer.getPositionOnRing(segments[0].startPos);
       const elapsed = currentTimeMs - note.timingMs;
@@ -885,11 +895,12 @@ export class SlideRenderer extends BaseRenderer {
 
     this.withContext(() => {
       this.context.ctx.globalAlpha = 1;
-      const size = this.context.radius / 10.42 * starScale * 1.2;
+      const size = (this.context.radius / 10.42) * starScale * 1.2;
 
       let color: string;
-      const isBreak = note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
-      
+      const isBreak =
+        note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
+
       if (isBreak) {
         color = COLORS.BREAK_ORANGE;
       } else if (isSimultaneous) {
@@ -908,7 +919,7 @@ export class SlideRenderer extends BaseRenderer {
     segments: SlideSegment[],
     currentTimeMs: number,
     isSimultaneous: boolean,
-    pathIndex: number
+    pathIndex: number,
   ): void {
     const delayMs = note.allDelayMs?.[pathIndex] ?? note.delayMs ?? 60000 / note.bpm;
     const slideStart = note.timingMs + delayMs;
@@ -917,8 +928,8 @@ export class SlideRenderer extends BaseRenderer {
 
     const fanPositions = [
       { startPos, endPos },
-      { startPos, endPos: ((endPos - 1 - 1 + 8) % 8 + 1) as ButtonPosition },
-      { startPos, endPos: ((endPos - 1 + 1) % 8 + 1) as ButtonPosition },
+      { startPos, endPos: (((endPos - 1 - 1 + 8) % 8) + 1) as ButtonPosition },
+      { startPos, endPos: (((endPos - 1 + 1) % 8) + 1) as ButtonPosition },
     ];
 
     this.withContext(() => {
@@ -935,7 +946,7 @@ export class SlideRenderer extends BaseRenderer {
         let starScale = 1;
 
         if (currentTimeMs < slideStart) {
-          if (note.headlessMode === 'pop') continue;
+          if (note.headlessMode === "pop") continue;
 
           starPos = start;
           const elapsed = currentTimeMs - note.timingMs;
@@ -948,8 +959,9 @@ export class SlideRenderer extends BaseRenderer {
         }
 
         if (starPos) {
-          const size = this.context.radius / 10.42 * starScale * 1.2;
-          const isBreak = note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
+          const size = (this.context.radius / 10.42) * starScale * 1.2;
+          const isBreak =
+            note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
 
           let color: string;
           if (isBreak) {
@@ -966,10 +978,17 @@ export class SlideRenderer extends BaseRenderer {
     });
   }
 
-  drawStar(x: number, y: number, size: number, color: string, rotation: number = 0, isEx: boolean = false): void {
+  drawStar(
+    x: number,
+    y: number,
+    size: number,
+    color: string,
+    rotation: number = 0,
+    isEx: boolean = false,
+  ): void {
     this.withContext(() => {
       const ctx = this.context.ctx;
-      
+
       if (rotation !== 0) {
         ctx.translate(x, y);
         ctx.rotate(rotation);
@@ -986,7 +1005,7 @@ export class SlideRenderer extends BaseRenderer {
       // EX 占用外圈，跳过外星的黑边但保留内孔。wider = strokeW*3 让可见黑边 ≈
       // strokeW，跟随画布缩放避免小屏下过粗。
       ctx.lineWidth = strokeW * 3;
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = "#000000";
 
       if (!isEx) {
         ctx.beginPath();
@@ -1072,16 +1091,16 @@ export class SlideRenderer extends BaseRenderer {
   }
 
   renderExStarRing(
-    x: number, 
-    y: number, 
-    size: number, 
-    isBreak: boolean = false, 
-    isSimultaneous: boolean = false, 
-    scaleFactor: number = 1
+    x: number,
+    y: number,
+    size: number,
+    isBreak: boolean = false,
+    isSimultaneous: boolean = false,
+    scaleFactor: number = 1,
   ): void {
     this.withContext(() => {
       const ctx = this.context.ctx;
-      
+
       const scale = 1.19 * scaleFactor;
       const outerRadius = size * scale;
       const outerInner = size * 0.5 * scale;
@@ -1090,19 +1109,19 @@ export class SlideRenderer extends BaseRenderer {
 
       let color: string;
       if (isBreak) {
-        color = 'rgba(255, 200, 120, 0.8)';
+        color = "rgba(255, 200, 120, 0.8)";
       } else if (isSimultaneous) {
-        color = 'rgba(255, 245, 150, 0.8)';
+        color = "rgba(255, 245, 150, 0.8)";
       } else if (this.context.config.pinkSlideStart) {
-        color = 'rgba(255, 180, 210, 0.8)';
+        color = "rgba(255, 180, 210, 0.8)";
       } else {
-        color = 'rgba(100, 230, 230, 0.8)';
+        color = "rgba(100, 230, 230, 0.8)";
       }
 
       ctx.beginPath();
       // 外星形状
       for (let i = 0; i < 10; i++) {
-        const angle = (i * Math.PI / 5) - Math.PI / 2;
+        const angle = (i * Math.PI) / 5 - Math.PI / 2;
         const radius = i % 2 === 0 ? outerRadius : outerInner;
         const px = x + Math.cos(angle) * radius;
         const py = y + Math.sin(angle) * radius;
@@ -1113,7 +1132,7 @@ export class SlideRenderer extends BaseRenderer {
 
       // 内孔 (星形孔)
       for (let i = 9; i >= 0; i--) {
-        const angle = (i * Math.PI / 5) - Math.PI / 2;
+        const angle = (i * Math.PI) / 5 - Math.PI / 2;
         const radius = i % 2 === 0 ? innerRadius : innerInner;
         const px = x + Math.cos(angle) * radius;
         const py = y + Math.sin(angle) * radius;
@@ -1128,16 +1147,16 @@ export class SlideRenderer extends BaseRenderer {
   }
 
   renderExSplitStarRing(
-    x: number, 
-    y: number, 
-    size: number, 
-    isBreak: boolean = false, 
-    isSimultaneous: boolean = false, 
-    scaleFactor: number = 1
+    x: number,
+    y: number,
+    size: number,
+    isBreak: boolean = false,
+    isSimultaneous: boolean = false,
+    scaleFactor: number = 1,
   ): void {
     this.withContext(() => {
       const ctx = this.context.ctx;
-      
+
       const scale = 1.19 * scaleFactor;
       const outerRadius = size * scale;
       const outerInner = size * 0.5 * scale;
@@ -1146,19 +1165,19 @@ export class SlideRenderer extends BaseRenderer {
 
       let color: string;
       if (isBreak) {
-        color = 'rgba(255, 200, 120, 0.8)';
+        color = "rgba(255, 200, 120, 0.8)";
       } else if (isSimultaneous) {
-        color = 'rgba(255, 245, 150, 0.8)';
+        color = "rgba(255, 245, 150, 0.8)";
       } else if (this.context.config.pinkSlideStart) {
-        color = 'rgba(255, 180, 210, 0.8)';
+        color = "rgba(255, 180, 210, 0.8)";
       } else {
-        color = 'rgba(100, 230, 230, 0.8)';
+        color = "rgba(100, 230, 230, 0.8)";
       }
 
       // 第一个星星 (指向向上，baseAngle = -PI/2)
       ctx.beginPath();
       for (let i = 0; i < 10; i++) {
-        const angle = (i * Math.PI / 5) - Math.PI / 2;
+        const angle = (i * Math.PI) / 5 - Math.PI / 2;
         const radius = i % 2 === 0 ? outerRadius : outerInner;
         const px = x + Math.cos(angle) * radius;
         const py = y + Math.sin(angle) * radius;
@@ -1168,7 +1187,7 @@ export class SlideRenderer extends BaseRenderer {
       ctx.closePath();
 
       for (let i = 9; i >= 0; i--) {
-        const angle = (i * Math.PI / 5) - Math.PI / 2;
+        const angle = (i * Math.PI) / 5 - Math.PI / 2;
         const radius = i % 2 === 0 ? innerRadius : innerInner;
         const px = x + Math.cos(angle) * radius;
         const py = y + Math.sin(angle) * radius;
@@ -1183,7 +1202,7 @@ export class SlideRenderer extends BaseRenderer {
       // 第二个星星 (指向向下，baseAngle = PI/2)
       ctx.beginPath();
       for (let i = 0; i < 10; i++) {
-        const angle = (i * Math.PI / 5) + Math.PI / 2;
+        const angle = (i * Math.PI) / 5 + Math.PI / 2;
         const radius = i % 2 === 0 ? outerRadius : outerInner;
         const px = x + Math.cos(angle) * radius;
         const py = y + Math.sin(angle) * radius;
@@ -1193,7 +1212,7 @@ export class SlideRenderer extends BaseRenderer {
       ctx.closePath();
 
       for (let i = 9; i >= 0; i--) {
-        const angle = (i * Math.PI / 5) + Math.PI / 2;
+        const angle = (i * Math.PI) / 5 + Math.PI / 2;
         const radius = i % 2 === 0 ? innerRadius : innerInner;
         const px = x + Math.cos(angle) * radius;
         const py = y + Math.sin(angle) * radius;
@@ -1209,7 +1228,7 @@ export class SlideRenderer extends BaseRenderer {
   private calculateStarRotation(note: SlideNote, currentTimeMs: number): number {
     const durationMs = note.allDurationMs ? note.allDurationMs[0] : note.durationMs;
     const segments = note.allSlideSegments ? note.allSlideSegments[0] : note.slideSegments;
-    
+
     if (!segments || segments.length === 0 || !durationMs || durationMs === 0) return 0;
 
     let totalLengthPixels = 0;
@@ -1279,15 +1298,15 @@ export class SlideRenderer extends BaseRenderer {
     const end = this.noteRenderer.getPositionOnRing(segment.endPos);
 
     switch (mirroredType) {
-      case '-':
+      case "-":
         return {
           x: start.x + (end.x - start.x) * t,
           y: start.y + (end.y - start.y) * t,
         };
 
-      case '>':
-      case '<':
-      case '^': {
+      case ">":
+      case "<":
+      case "^": {
         const startAngle = this.getButtonAngle(segment.startPos);
         const endAngle = this.getButtonAngle(segment.endPos);
         let angleDiff = endAngle - startAngle;
@@ -1295,12 +1314,12 @@ export class SlideRenderer extends BaseRenderer {
         while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
         while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-        if (mirroredType === '>') {
+        if (mirroredType === ">") {
           const isLeft = [1, 2, 7, 8].includes(segment.startPos);
           if (isLeft ? angleDiff <= 0 : angleDiff >= 0) {
             angleDiff += (isLeft ? 1 : -1) * 2 * Math.PI;
           }
-        } else if (mirroredType === '<') {
+        } else if (mirroredType === "<") {
           const isLeft = [1, 2, 7, 8].includes(segment.startPos);
           if (isLeft ? angleDiff >= 0 : angleDiff <= 0) {
             angleDiff += (isLeft ? -1 : 1) * 2 * Math.PI;
@@ -1314,7 +1333,7 @@ export class SlideRenderer extends BaseRenderer {
         };
       }
 
-      case 'v':
+      case "v":
         if (Math.abs(mirroredEndPos - mirroredStartPos) === 4) {
           return {
             x: start.x + (end.x - start.x) * t,
@@ -1335,7 +1354,7 @@ export class SlideRenderer extends BaseRenderer {
           };
         }
 
-      case 's': {
+      case "s": {
         // S 曲线: start → ctrl1 → ctrl2 → end
         const dx = end.x - start.x;
         const dy = end.y - start.y;
@@ -1370,7 +1389,7 @@ export class SlideRenderer extends BaseRenderer {
         }
       }
 
-      case 'z': {
+      case "z": {
         // Z 曲线: S 的反向
         const dx = end.x - start.x;
         const dy = end.y - start.y;
@@ -1406,111 +1425,156 @@ export class SlideRenderer extends BaseRenderer {
         }
       }
 
-      case 'q':
-      case 'qq': {
+      case "q":
+      case "qq": {
         // 逆时针曲线
-        if (mirroredType === 'qq') {
+        if (mirroredType === "qq") {
           // 双曲线: entry → arc around offset circle → exit
-          const interPos = ((mirroredStartPos - 1 + 4) % 8 + 1) as ButtonPosition;
+          const interPos = (((mirroredStartPos - 1 + 4) % 8) + 1) as ButtonPosition;
           const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
-          
+
           // 入口点在 40% 处靠近中间
           const entryX = start.x + 0.4 * (interPoint.x - start.x);
           const entryY = start.y + 0.4 * (interPoint.y - start.y);
-          
+
           // 方向向量
           const dirX = interPoint.x - start.x;
           const dirY = interPoint.y - start.y;
           const dirLen = Math.sqrt(dirX * dirX + dirY * dirY);
           const unitX = dirX / dirLen;
           const unitY = dirY / dirLen;
-          
+
           // 圆心 (q 的垂直偏移: -unitY, +unitX)
           const circleRadius = 0.45 * this.context.radius;
-          const circleX = entryX + (-unitY) * circleRadius;
+          const circleX = entryX + -unitY * circleRadius;
           const circleY = entryY + unitX * circleRadius;
-          
+
           // 圆上的起始角度
           const startAngle = Math.atan2(entryY - circleY, entryX - circleX);
-          
+
           // 根据镜像后的位置差计算扫掠角度
           const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
           let sweepAngle: number;
           switch (posDiff) {
-            case 0: sweepAngle = 1.25 * Math.PI; break;
-            case 1: sweepAngle = 1.5 * Math.PI; break;
-            case 2: sweepAngle = 1.625 * Math.PI; break;
-            case 3: sweepAngle = 1.875 * Math.PI; break;
-            case 4: default: sweepAngle = 2 * Math.PI; break;
-            case 5: sweepAngle = 2.25 * Math.PI; break;
-            case 6: sweepAngle = 0.75 * Math.PI; break;
-            case 7: sweepAngle = 1.125 * Math.PI; break;
+            case 0:
+              sweepAngle = 1.25 * Math.PI;
+              break;
+            case 1:
+              sweepAngle = 1.5 * Math.PI;
+              break;
+            case 2:
+              sweepAngle = 1.625 * Math.PI;
+              break;
+            case 3:
+              sweepAngle = 1.875 * Math.PI;
+              break;
+            case 4:
+            default:
+              sweepAngle = 2 * Math.PI;
+              break;
+            case 5:
+              sweepAngle = 2.25 * Math.PI;
+              break;
+            case 6:
+              sweepAngle = 0.75 * Math.PI;
+              break;
+            case 7:
+              sweepAngle = 1.125 * Math.PI;
+              break;
           }
-          
+
           const endAngle = startAngle + sweepAngle;
           const arcLen = Math.abs(sweepAngle) * circleRadius;
           const exitX = circleX + Math.cos(endAngle) * circleRadius;
           const exitY = circleY + Math.sin(endAngle) * circleRadius;
-          
+
           const len1 = Math.sqrt((entryX - start.x) ** 2 + (entryY - start.y) ** 2);
           const len3 = Math.sqrt((end.x - exitX) ** 2 + (end.y - exitY) ** 2);
           const total = len1 + arcLen + len3;
           const r1 = len1 / total;
           const r2 = arcLen / total;
-          
+
           if (t < r1) {
             const subT = t / r1;
-            return { x: start.x + (entryX - start.x) * subT, y: start.y + (entryY - start.y) * subT };
+            return {
+              x: start.x + (entryX - start.x) * subT,
+              y: start.y + (entryY - start.y) * subT,
+            };
           } else if (t < r1 + r2) {
             const angle = startAngle + ((t - r1) / r2) * sweepAngle;
-            return { x: circleX + Math.cos(angle) * circleRadius, y: circleY + Math.sin(angle) * circleRadius };
+            return {
+              x: circleX + Math.cos(angle) * circleRadius,
+              y: circleY + Math.sin(angle) * circleRadius,
+            };
           } else {
             const subT = (t - r1 - r2) / (1 - r1 - r2);
             return { x: exitX + (end.x - exitX) * subT, y: exitY + (end.y - exitY) * subT };
           }
         } else {
           // 单曲线: 围绕中心弧
-          const interPos = ((mirroredStartPos + 3 - 1) % 8 + 1) as ButtonPosition;
+          const interPos = (((mirroredStartPos + 3 - 1) % 8) + 1) as ButtonPosition;
           const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
-          
+
           // 起点和中间点之间的中点
           const midX = (start.x + interPoint.x) / 2;
           const midY = (start.y + interPoint.y) / 2;
-          
-          const circleRadius = Math.sqrt((midX - this.context.centerX) ** 2 + (midY - this.context.centerY) ** 2);
+
+          const circleRadius = Math.sqrt(
+            (midX - this.context.centerX) ** 2 + (midY - this.context.centerY) ** 2,
+          );
           const startAngle = Math.atan2(midY - this.context.centerY, midX - this.context.centerX);
-          
+
           // 根据镜像后的位置差计算扫掠角度
           const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
           let sweepAngle: number;
           switch (posDiff) {
-            case 0: sweepAngle = 1.25 * Math.PI; break;
-            case 1: sweepAngle = 1.5 * Math.PI; break;
-            case 2: sweepAngle = 1.75 * Math.PI; break;
-            case 3: default: sweepAngle = 2 * Math.PI; break;
-            case 4: sweepAngle = 0.25 * Math.PI; break;
-            case 5: sweepAngle = 0.5 * Math.PI; break;
-            case 6: sweepAngle = 0.75 * Math.PI; break;
-            case 7: sweepAngle = Math.PI; break;
+            case 0:
+              sweepAngle = 1.25 * Math.PI;
+              break;
+            case 1:
+              sweepAngle = 1.5 * Math.PI;
+              break;
+            case 2:
+              sweepAngle = 1.75 * Math.PI;
+              break;
+            case 3:
+            default:
+              sweepAngle = 2 * Math.PI;
+              break;
+            case 4:
+              sweepAngle = 0.25 * Math.PI;
+              break;
+            case 5:
+              sweepAngle = 0.5 * Math.PI;
+              break;
+            case 6:
+              sweepAngle = 0.75 * Math.PI;
+              break;
+            case 7:
+              sweepAngle = Math.PI;
+              break;
           }
-          
+
           const endAngle = startAngle + sweepAngle;
           const arcLen = Math.abs(sweepAngle) * circleRadius;
           const exitX = this.context.centerX + Math.cos(endAngle) * circleRadius;
           const exitY = this.context.centerY + Math.sin(endAngle) * circleRadius;
-          
+
           const len1 = Math.sqrt((midX - start.x) ** 2 + (midY - start.y) ** 2);
           const len3 = Math.sqrt((end.x - exitX) ** 2 + (end.y - exitY) ** 2);
           const total = len1 + arcLen + len3;
           const r1 = len1 / total;
           const r2 = arcLen / total;
-          
+
           if (t < r1) {
             const subT = t / r1;
             return { x: start.x + (midX - start.x) * subT, y: start.y + (midY - start.y) * subT };
           } else if (t < r1 + r2) {
             const angle = startAngle + ((t - r1) / r2) * sweepAngle;
-            return { x: this.context.centerX + Math.cos(angle) * circleRadius, y: this.context.centerY + Math.sin(angle) * circleRadius };
+            return {
+              x: this.context.centerX + Math.cos(angle) * circleRadius,
+              y: this.context.centerY + Math.sin(angle) * circleRadius,
+            };
           } else {
             const subT = (t - r1 - r2) / (1 - r1 - r2);
             return { x: exitX + (end.x - exitX) * subT, y: exitY + (end.y - exitY) * subT };
@@ -1518,111 +1582,156 @@ export class SlideRenderer extends BaseRenderer {
         }
       }
 
-      case 'p':
-      case 'pp': {
+      case "p":
+      case "pp": {
         // 顺时针曲线
-        if (mirroredType === 'pp') {
+        if (mirroredType === "pp") {
           // 双曲线: 入口 → 围绕偏移圆弧 → 退出
-          const interPos = ((mirroredStartPos - 1 + 4) % 8 + 1) as ButtonPosition;
+          const interPos = (((mirroredStartPos - 1 + 4) % 8) + 1) as ButtonPosition;
           const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
-          
+
           // 入口点在 40% 处靠近中间
           const entryX = start.x + 0.4 * (interPoint.x - start.x);
           const entryY = start.y + 0.4 * (interPoint.y - start.y);
-          
+
           // 方向向量
           const dirX = interPoint.x - start.x;
           const dirY = interPoint.y - start.y;
           const dirLen = Math.sqrt(dirX * dirX + dirY * dirY);
           const unitX = dirX / dirLen;
           const unitY = dirY / dirLen;
-          
+
           // 圆心 (p 的垂直偏移: +unitY, -unitX)
           const circleRadius = 0.45 * this.context.radius;
           const circleX = entryX + unitY * circleRadius;
-          const circleY = entryY + (-unitX) * circleRadius;
-          
+          const circleY = entryY + -unitX * circleRadius;
+
           // 圆上的起始角度
           const startAngle = Math.atan2(entryY - circleY, entryX - circleX);
-          
+
           // 根据镜像后的位置差计算扫掠角度 (顺时针为负)
           const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
           let sweepAngle: number;
           switch (posDiff) {
-            case 0: sweepAngle = -1.25 * Math.PI; break;
-            case 1: sweepAngle = -1.125 * Math.PI; break;
-            case 2: sweepAngle = -0.75 * Math.PI; break;
-            case 3: sweepAngle = -2.25 * Math.PI; break;
-            case 4: default: sweepAngle = -2 * Math.PI; break;
-            case 5: sweepAngle = -1.875 * Math.PI; break;
-            case 6: sweepAngle = -1.625 * Math.PI; break;
-            case 7: sweepAngle = -1.5 * Math.PI; break;
+            case 0:
+              sweepAngle = -1.25 * Math.PI;
+              break;
+            case 1:
+              sweepAngle = -1.125 * Math.PI;
+              break;
+            case 2:
+              sweepAngle = -0.75 * Math.PI;
+              break;
+            case 3:
+              sweepAngle = -2.25 * Math.PI;
+              break;
+            case 4:
+            default:
+              sweepAngle = -2 * Math.PI;
+              break;
+            case 5:
+              sweepAngle = -1.875 * Math.PI;
+              break;
+            case 6:
+              sweepAngle = -1.625 * Math.PI;
+              break;
+            case 7:
+              sweepAngle = -1.5 * Math.PI;
+              break;
           }
-          
+
           const endAngle = startAngle + sweepAngle;
           const arcLen = Math.abs(sweepAngle) * circleRadius;
           const exitX = circleX + Math.cos(endAngle) * circleRadius;
           const exitY = circleY + Math.sin(endAngle) * circleRadius;
-          
+
           const len1 = Math.sqrt((entryX - start.x) ** 2 + (entryY - start.y) ** 2);
           const len3 = Math.sqrt((end.x - exitX) ** 2 + (end.y - exitY) ** 2);
           const total = len1 + arcLen + len3;
           const r1 = len1 / total;
           const r2 = arcLen / total;
-          
+
           if (t < r1) {
             const subT = t / r1;
-            return { x: start.x + (entryX - start.x) * subT, y: start.y + (entryY - start.y) * subT };
+            return {
+              x: start.x + (entryX - start.x) * subT,
+              y: start.y + (entryY - start.y) * subT,
+            };
           } else if (t < r1 + r2) {
             const angle = startAngle + ((t - r1) / r2) * sweepAngle;
-            return { x: circleX + Math.cos(angle) * circleRadius, y: circleY + Math.sin(angle) * circleRadius };
+            return {
+              x: circleX + Math.cos(angle) * circleRadius,
+              y: circleY + Math.sin(angle) * circleRadius,
+            };
           } else {
             const subT = (t - r1 - r2) / (1 - r1 - r2);
             return { x: exitX + (end.x - exitX) * subT, y: exitY + (end.y - exitY) * subT };
           }
         } else {
           // 单曲线: 围绕中心弧
-          const interPos = ((mirroredStartPos + 5 - 1) % 8 + 1) as ButtonPosition;
+          const interPos = (((mirroredStartPos + 5 - 1) % 8) + 1) as ButtonPosition;
           const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
-          
+
           // 起点和中间点之间的中点
           const midX = (start.x + interPoint.x) / 2;
           const midY = (start.y + interPoint.y) / 2;
-          
-          const circleRadius = Math.sqrt((midX - this.context.centerX) ** 2 + (midY - this.context.centerY) ** 2);
+
+          const circleRadius = Math.sqrt(
+            (midX - this.context.centerX) ** 2 + (midY - this.context.centerY) ** 2,
+          );
           const startAngle = Math.atan2(midY - this.context.centerY, midX - this.context.centerX);
-          
+
           // 根据镜像后的位置差计算扫掠角度 (顺时针为负)
           const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
           let sweepAngle: number;
           switch (posDiff) {
-            case 0: sweepAngle = -1.25 * Math.PI; break;
-            case 1: sweepAngle = -Math.PI; break;
-            case 2: sweepAngle = -0.75 * Math.PI; break;
-            case 3: sweepAngle = -0.5 * Math.PI; break;
-            case 4: sweepAngle = -0.25 * Math.PI; break;
-            case 5: default: sweepAngle = -2 * Math.PI; break;
-            case 6: sweepAngle = -1.75 * Math.PI; break;
-            case 7: sweepAngle = -1.5 * Math.PI; break;
+            case 0:
+              sweepAngle = -1.25 * Math.PI;
+              break;
+            case 1:
+              sweepAngle = -Math.PI;
+              break;
+            case 2:
+              sweepAngle = -0.75 * Math.PI;
+              break;
+            case 3:
+              sweepAngle = -0.5 * Math.PI;
+              break;
+            case 4:
+              sweepAngle = -0.25 * Math.PI;
+              break;
+            case 5:
+            default:
+              sweepAngle = -2 * Math.PI;
+              break;
+            case 6:
+              sweepAngle = -1.75 * Math.PI;
+              break;
+            case 7:
+              sweepAngle = -1.5 * Math.PI;
+              break;
           }
-          
+
           const endAngle = startAngle + sweepAngle;
           const arcLen = Math.abs(sweepAngle) * circleRadius;
           const exitX = this.context.centerX + Math.cos(endAngle) * circleRadius;
           const exitY = this.context.centerY + Math.sin(endAngle) * circleRadius;
-          
+
           const len1 = Math.sqrt((midX - start.x) ** 2 + (midY - start.y) ** 2);
           const len3 = Math.sqrt((end.x - exitX) ** 2 + (end.y - exitY) ** 2);
           const total = len1 + arcLen + len3;
           const r1 = len1 / total;
           const r2 = arcLen / total;
-          
+
           if (t < r1) {
             const subT = t / r1;
             return { x: start.x + (midX - start.x) * subT, y: start.y + (midY - start.y) * subT };
           } else if (t < r1 + r2) {
             const angle = startAngle + ((t - r1) / r2) * sweepAngle;
-            return { x: this.context.centerX + Math.cos(angle) * circleRadius, y: this.context.centerY + Math.sin(angle) * circleRadius };
+            return {
+              x: this.context.centerX + Math.cos(angle) * circleRadius,
+              y: this.context.centerY + Math.sin(angle) * circleRadius,
+            };
           } else {
             const subT = (t - r1 - r2) / (1 - r1 - r2);
             return { x: exitX + (end.x - exitX) * subT, y: exitY + (end.y - exitY) * subT };
@@ -1692,7 +1801,6 @@ export class SlideRenderer extends BaseRenderer {
     const lastLut = luts[luts.length - 1];
     return lastLut[lastLut.length - 1].angle;
   }
-
 }
 
 export default SlideRenderer;

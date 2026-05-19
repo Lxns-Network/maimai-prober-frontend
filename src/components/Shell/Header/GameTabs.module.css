@@ -1,27 +1,27 @@
 .tabs {
-    position: relative;
+  position: relative;
 
-    @mixin larger-than $mantine-breakpoint-xs {
-        display: none !important;
-    }
+  @mixin larger-than $mantine-breakpoint-xs {
+    display: none !important;
+  }
 }
 
 .tab {
-    height: 32px;
-    text-wrap: nowrap;
-    border-radius: 4px 4px 0 0;
+  height: 32px;
+  text-wrap: nowrap;
+  border-radius: 4px 4px 0 0;
 
-    &:hover {
-        background: var(--mantine-color-default-hover);
-    }
+  &:hover {
+    background: var(--mantine-color-default-hover);
+  }
 
-    &[data-active='true'] {
-        color: var(--mantine-primary-color-light-color);
-    }
+  &[data-active="true"] {
+    color: var(--mantine-primary-color-light-color);
+  }
 }
 
 .indicator {
-    height: 33px !important;
-    pointer-events: none;
-    border-bottom: 1px solid var(--mantine-primary-color-light-color);
+  height: 33px !important;
+  pointer-events: none;
+  border-bottom: 1px solid var(--mantine-primary-color-light-color);
 }

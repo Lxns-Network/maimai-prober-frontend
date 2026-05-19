@@ -34,7 +34,12 @@ export const LoginAlert = ({ content, ...props }: LoginAlertProps) => {
             {content}
           </Text>
           <Group>
-            <Button variant="filled" onClick={() => navigate("/login", { pageContext: { redirect: window.location.pathname } })}>
+            <Button
+              variant="filled"
+              onClick={() =>
+                navigate("/login", { pageContext: { redirect: window.location.pathname } })
+              }
+            >
               登录
             </Button>
             <Button variant="outline" onClick={() => navigate("/register")}>
@@ -44,5 +49,5 @@ export const LoginAlert = ({ content, ...props }: LoginAlertProps) => {
         </Alert>
       )}
     </Transition>
-  )
-}
+  );
+};

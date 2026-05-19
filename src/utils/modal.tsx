@@ -4,55 +4,57 @@ import { ReactNode } from "react";
 
 type ModalOverrides = Partial<Parameters<typeof modals.openConfirmModal>[0]>;
 
-export const openAlertModal = (title: string, content: string | ReactNode, { ...props }: ModalOverrides = {}) => {
+export const openAlertModal = (
+  title: string,
+  content: string | ReactNode,
+  { ...props }: ModalOverrides = {},
+) => {
   modals.openConfirmModal({
     title,
     centered: true,
     withCloseButton: false,
-    children: (
-      <Text size="sm">
-        {content}
-      </Text>
-    ),
-    labels: { confirm: '确定', cancel: '取消' },
+    children: <Text size="sm">{content}</Text>,
+    labels: { confirm: "确定", cancel: "取消" },
     onConfirm: () => modals.closeAll(),
     ...props,
   });
-}
+};
 
-export const openConfirmModal = (title: string, content: string | ReactNode, onConfirm: () => void, { ...props }: ModalOverrides = {}) => {
+export const openConfirmModal = (
+  title: string,
+  content: string | ReactNode,
+  onConfirm: () => void,
+  { ...props }: ModalOverrides = {},
+) => {
   modals.openConfirmModal({
     title,
     centered: true,
     withCloseButton: false,
-    children: (
-      <Text size="sm">
-        {content}
-      </Text>
-    ),
-    labels: { confirm: '确定', cancel: '取消' },
+    children: <Text size="sm">{content}</Text>,
+    labels: { confirm: "确定", cancel: "取消" },
     onCancel: () => modals.closeAll(),
     onConfirm: onConfirm,
     ...props,
   });
-}
+};
 
-export const openRetryModal = (title: string, content: string | ReactNode, onConfirm: () => void, { ...props }: ModalOverrides = {}) => {
+export const openRetryModal = (
+  title: string,
+  content: string | ReactNode,
+  onConfirm: () => void,
+  { ...props }: ModalOverrides = {},
+) => {
   modals.openConfirmModal({
     title,
     centered: true,
     withCloseButton: false,
-    children: (
-      <Text size="sm">
-        {content}
-      </Text>
-    ),
-    labels: { confirm: '重试', cancel: '取消' },
+    children: <Text size="sm">{content}</Text>,
+    labels: { confirm: "重试", cancel: "取消" },
     onCancel: () => modals.closeAll(),
     onConfirm: onConfirm,
     ...props,
   });
-}
+};
 
 export const openFormModal = (
   title: string,
@@ -64,9 +66,9 @@ export const openFormModal = (
     required?: boolean;
   },
   onSubmit: (value: string) => void,
-  { ...props }: ModalOverrides = {}
+  { ...props }: ModalOverrides = {},
 ) => {
-  let inputValue = inputProps.defaultValue || '';
+  let inputValue = inputProps.defaultValue || "";
 
   modals.openConfirmModal({
     title,
@@ -90,7 +92,7 @@ export const openFormModal = (
         />
       </>
     ),
-    labels: { confirm: '确定', cancel: '取消' },
+    labels: { confirm: "确定", cancel: "取消" },
     onCancel: () => modals.closeAll(),
     onConfirm: () => {
       if (inputProps.required && !inputValue.trim()) {
@@ -100,4 +102,4 @@ export const openFormModal = (
     },
     ...props,
   });
-}
+};

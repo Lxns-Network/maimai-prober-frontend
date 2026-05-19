@@ -34,11 +34,21 @@ export const usePlayer = (game: Game) => {
     player: data ?? undefined,
     isLoading,
     error,
-    setData: (newData: (MaimaiPlayerProps | ChunithmPlayerProps) | ((prev: (MaimaiPlayerProps | ChunithmPlayerProps) | undefined) => (MaimaiPlayerProps | ChunithmPlayerProps) | undefined)) =>
+    setData: (
+      newData:
+        | (MaimaiPlayerProps | ChunithmPlayerProps)
+        | ((
+            prev: (MaimaiPlayerProps | ChunithmPlayerProps) | undefined,
+          ) => (MaimaiPlayerProps | ChunithmPlayerProps) | undefined),
+    ) =>
       queryClient.setQueryData<PlayerData>(queryKeys.player.root(game), (prev) => {
         const prevValue = prev ?? undefined;
         return typeof newData === "function"
-          ? (newData as (p: MaimaiPlayerProps | ChunithmPlayerProps | undefined) => MaimaiPlayerProps | ChunithmPlayerProps | undefined)(prevValue) ?? null
+          ? ((
+              newData as (
+                p: MaimaiPlayerProps | ChunithmPlayerProps | undefined,
+              ) => MaimaiPlayerProps | ChunithmPlayerProps | undefined
+            )(prevValue) ?? null)
           : newData;
       }),
     invalidate: () => queryClient.invalidateQueries({ queryKey: queryKeys.player.root(game) }),

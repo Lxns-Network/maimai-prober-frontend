@@ -1,4 +1,4 @@
-@import '@/pages/Page.module.css';
+@import "@/pages/Page.module.css";
 
 .viewportWrap {
   position: relative;
@@ -22,7 +22,9 @@
   align-items: flex-start;
   cursor: pointer;
   border-left: 2px solid transparent;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
 }
 
 .row:hover {
@@ -68,12 +70,14 @@
   cursor: pointer;
   word-break: break-all;
   overflow-wrap: anywhere;
-  transition: background-color 120ms ease, box-shadow 120ms ease;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 /* 分割线放在每个 chunk 的右侧 gap 中间（最后一个除外），不依赖 border，只占中间 ~50% 高度 */
 .chunk:not(:last-child)::after {
-  content: '';
+  content: "";
   position: absolute;
   right: -4px;
   top: 25%;

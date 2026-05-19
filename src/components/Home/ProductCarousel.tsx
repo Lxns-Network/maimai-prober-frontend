@@ -6,18 +6,20 @@ import useShellViewportSize from "@/hooks/useShellViewportSize.ts";
 import Autoplay from "embla-carousel-autoplay";
 
 import { Product } from "@/components/Home/Product.tsx";
-import products from '@/data/products.json';
+import products from "@/data/products.json";
 
 const isTouchScreen = () => {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(pointer: coarse)').matches;
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(pointer: coarse)").matches;
 };
 
 export const ProductCarousel = () => {
-  const autoplay = useRef(Autoplay({
-    delay: 2000,
-    playOnInit: false,
-  }));
+  const autoplay = useRef(
+    Autoplay({
+      delay: 2000,
+      playOnInit: false,
+    }),
+  );
   const { ref, inViewport } = useInViewport();
   const { width } = useShellViewportSize();
   const [containerWidth, setContainerWidth] = useState(width);
@@ -47,7 +49,7 @@ export const ProductCarousel = () => {
 
   return (
     <Carousel
-      slideSize={{ base: '100%', sm: '80%' }}
+      slideSize={{ base: "100%", sm: "80%" }}
       slideGap="md"
       emblaOptions={{ loop: true }}
       draggable={isTouchScreen()}
@@ -66,4 +68,4 @@ export const ProductCarousel = () => {
       ))}
     </Carousel>
   );
-}
+};

@@ -23,8 +23,7 @@ const useScoreStore = create<ModalState>((set, get) => ({
   opened: false,
   game: "maimai",
 
-  openModal: ({ game, score = null, onClose }) =>
-    set({ opened: true, game, score, onClose }),
+  openModal: ({ game, score = null, onClose }) => set({ opened: true, game, score, onClose }),
 
   closeModal: (score?: MaimaiScoreProps | ChunithmScoreProps) => {
     const { onClose } = get();

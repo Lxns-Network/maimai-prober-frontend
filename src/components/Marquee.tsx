@@ -1,7 +1,7 @@
 import { Children, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Group, GroupProps } from "@mantine/core";
 import { useHoverDirty } from "react-use";
-import { useAnimationFrame } from "motion/react"
+import { useAnimationFrame } from "motion/react";
 
 interface MarqueeProps {
   speed?: number;
@@ -11,9 +11,14 @@ interface MarqueeProps {
   children: ReactNode;
 }
 
-export const Marquee = (
-  { speed = 0.5, startDelay = 1000, intervalDelay = 1000, pauseOnHover = true, children, ...props }: MarqueeProps & GroupProps
-) => {
+export const Marquee = ({
+  speed = 0.5,
+  startDelay = 1000,
+  intervalDelay = 1000,
+  pauseOnHover = true,
+  children,
+  ...props
+}: MarqueeProps & GroupProps) => {
   const [isScrolling, setIsScrolling] = useState(false); // 是否需要滚动
   const [isPaused, setIsPaused] = useState(false); // 是否暂停滚动
   const [translateX, setTranslateX] = useState(0);
@@ -67,17 +72,25 @@ export const Marquee = (
   });
 
   return (
-    <Group ref={ref} style={{
-      ...props.style,
-      overflowX: "hidden"
-    }} {...props}>
+    <Group
+      ref={ref}
+      style={{
+        ...props.style,
+        overflowX: "hidden",
+      }}
+      {...props}
+    >
       {Children.map(children, (child) => (
-        <div style={{
-          flexShrink: 0,
-          transform: `translateX(${translateX}px)`,
-          wordBreak: 'break-all'
-        }}>{child}</div>
+        <div
+          style={{
+            flexShrink: 0,
+            transform: `translateX(${translateX}px)`,
+            wordBreak: "break-all",
+          }}
+        >
+          {child}
+        </div>
       ))}
     </Group>
-  )
-}
+  );
+};

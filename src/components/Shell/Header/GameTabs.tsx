@@ -41,4 +41,4 @@ export const GameTabs = ({ tabs, activeTab, onTabChange, style }: GameTabsProps)
       />
     </SimpleGrid>
   );
-}
+};

@@ -1,9 +1,18 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionIcon, Card, Collapse, Group, ScrollArea, Text, Tooltip, UnstyledButton } from '@mantine/core';
-import { IconChevronDown, IconCurrentLocation, IconListNumbers } from '@tabler/icons-react';
-import { useGameStore, playbackTimeRef } from '../../stores/useGameStore';
-import { ChartDifficulty } from '../../types';
-import classes from './SimaiStatementList.module.css';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActionIcon,
+  Card,
+  Collapse,
+  Group,
+  ScrollArea,
+  Text,
+  Tooltip,
+  UnstyledButton,
+} from "@mantine/core";
+import { IconChevronDown, IconCurrentLocation, IconListNumbers } from "@tabler/icons-react";
+import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
+import { ChartDifficulty } from "../../types";
+import classes from "./SimaiStatementList.module.css";
 
 // 跟 ChartParser 给 chart.notes 加的 1 小节 lead-in 偏移保持一致，让 statement
 // beat 与 playbackTimeRef 处于同一坐标系。
@@ -18,9 +27,12 @@ interface SimaiStatement {
   chunks: SimaiChunk[];
 }
 
-function parseSimaiStatements(simaiText: string, difficulty: ChartDifficulty | null): SimaiStatement[] {
+function parseSimaiStatements(
+  simaiText: string,
+  difficulty: ChartDifficulty | null,
+): SimaiStatement[] {
   if (!simaiText || !difficulty) return [];
-  const lines = simaiText.split('\n');
+  const lines = simaiText.split("\n");
   const inoteHeader = `&inote_${difficulty}=`;
 
   const out: SimaiStatement[] = [];
@@ -34,23 +46,23 @@ function parseSimaiStatements(simaiText: string, difficulty: ChartDifficulty | n
     if (!content.trim()) return;
     const chunks: SimaiChunk[] = [];
     const lineStartBeat = beat;
-    let buf = '';
+    let buf = "";
     let bufBeat = beat;
     const flush = () => {
       const t = buf.trim();
       if (t) chunks.push({ text: t, beat: bufBeat });
-      buf = '';
+      buf = "";
       bufBeat = beat;
     };
     let i = 0;
     while (i < content.length) {
       const c = content[i];
-      if (c === ',') {
+      if (c === ",") {
         flush();
         beat += 4 / divisor;
         bufBeat = beat;
         i++;
-      } else if (c === '(') {
+      } else if (c === "(") {
         const m = content.substring(i).match(/^\((\d+(?:\.\d+)?)\)(\{(\d+(?:\.\d+)?)\})?/);
         if (m) {
           if (m[3]) divisor = parseFloat(m[3]);
@@ -60,7 +72,7 @@ function parseSimaiStatements(simaiText: string, difficulty: ChartDifficulty | n
           buf += c;
           i++;
         }
-      } else if (c === '{') {
+      } else if (c === "{") {
         const m = content.substring(i).match(/^\{(\d+(?:\.\d+)?)\}/);
         if (m) {
           divisor = parseFloat(m[1]);
@@ -83,8 +95,8 @@ function parseSimaiStatements(simaiText: string, difficulty: ChartDifficulty | n
     const trimmed = line.trim();
     if (trimmed.toLowerCase().startsWith(inoteHeader.toLowerCase())) {
       inInote = true;
-      processLine(line.substring(line.indexOf('=') + 1));
-    } else if (trimmed.startsWith('&')) {
+      processLine(line.substring(line.indexOf("=") + 1));
+    } else if (trimmed.startsWith("&")) {
       inInote = false;
     } else if (inInote) {
       processLine(line);
@@ -114,13 +126,17 @@ interface StatementRowProps {
 const MARKER_ONLY_RE = /^[({][^a-zA-Z0-9/]*[\d.]+[)}](\{[\d.]+\})?$/;
 
 const StatementRow = memo(function StatementRow({
-  statement, index, isActive, activeChunkIdx, isMarkerOnly, seekTo, registerRef,
+  statement,
+  index,
+  isActive,
+  activeChunkIdx,
+  isMarkerOnly,
+  seekTo,
+  registerRef,
 }: StatementRowProps) {
-  const rowClass = [
-    classes.row,
-    isActive && classes.rowActive,
-    isMarkerOnly && classes.rowMarker,
-  ].filter(Boolean).join(' ');
+  const rowClass = [classes.row, isActive && classes.rowActive, isMarkerOnly && classes.rowMarker]
+    .filter(Boolean)
+    .join(" ");
   return (
     <div
       ref={(el) => registerRef(index, el)}
@@ -134,8 +150,11 @@ const StatementRow = memo(function StatementRow({
           return (
             <span
               key={ci}
-              className={`${classes.chunk}${isActiveChunk ? ` ${classes.chunkActive}` : ''}`}
-              onClick={(e) => { e.stopPropagation(); seekTo(c.beat); }}
+              className={`${classes.chunk}${isActiveChunk ? ` ${classes.chunkActive}` : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                seekTo(c.beat);
+              }}
             >
               {c.text}
             </span>
@@ -153,7 +172,10 @@ export function SimaiStatementList({
   simaiText: string;
   difficulty: ChartDifficulty | null;
 }) {
-  const statements = useMemo(() => parseSimaiStatements(simaiText, difficulty), [simaiText, difficulty]);
+  const statements = useMemo(
+    () => parseSimaiStatements(simaiText, difficulty),
+    [simaiText, difficulty],
+  );
   const markerFlags = useMemo(
     () => statements.map((s) => s.chunks.every((c) => MARKER_ONLY_RE.test(c.text.trim()))),
     [statements],
@@ -162,10 +184,13 @@ export function SimaiStatementList({
   const preciseTime = useGameStore((s) => s.timeline.preciseTime);
   const setPreciseTime = useGameStore((s) => s.setPreciseTime);
 
-  const seekTo = useCallback((beat: number) => {
-    playbackTimeRef.current = beat;
-    setPreciseTime(beat, true);
-  }, [setPreciseTime]);
+  const seekTo = useCallback(
+    (beat: number) => {
+      playbackTimeRef.current = beat;
+      setPreciseTime(beat, true);
+    },
+    [setPreciseTime],
+  );
 
   const [active, setActive] = useState<{ line: number; chunk: number }>({ line: -1, chunk: -1 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -223,7 +248,9 @@ export function SimaiStatementList({
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => { if (raf !== null) cancelAnimationFrame(raf); };
+    return () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+    };
   }, [statements, isPlaying, preciseTime, expanded]);
 
   // 用户用 wheel/touch 滚动后停止自动跟随，按下"居中"按钮恢复。
@@ -234,8 +261,9 @@ export function SimaiStatementList({
     const el = itemRefs.current[active.line];
     const container = containerRef.current;
     if (!el || !container) return;
-    const target = el.offsetTop - container.offsetTop - container.clientHeight / 2 + el.offsetHeight / 2;
-    container.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+    const target =
+      el.offsetTop - container.offsetTop - container.clientHeight / 2 + el.offsetHeight / 2;
+    container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   }, [active.line]);
 
   // 活跃行变化 / 重新启用 autoScroll 时居中。
@@ -251,13 +279,15 @@ export function SimaiStatementList({
         <Group justify="space-between">
           <Group gap="xs">
             <IconListNumbers size={20} />
-            <Text size="sm" fw={500}>Simai 语句</Text>
+            <Text size="sm" fw={500}>
+              Simai 语句
+            </Text>
           </Group>
           <IconChevronDown
             size={16}
             style={{
-              transition: 'transform 0.2s',
-              transform: expanded ? 'rotate(180deg)' : 'none',
+              transition: "transform 0.2s",
+              transform: expanded ? "rotate(180deg)" : "none",
             }}
           />
         </Group>
@@ -270,7 +300,7 @@ export function SimaiStatementList({
             viewportRef={containerRef}
             onWheel={pauseAutoScroll}
             onTouchMove={pauseAutoScroll}
-            styles={{ viewport: { fontFamily: 'monospace', fontSize: 12, lineHeight: 1.55 } }}
+            styles={{ viewport: { fontFamily: "monospace", fontSize: 12, lineHeight: 1.55 } }}
           >
             {statements.map((s, i) => {
               const isActive = i === active.line;
