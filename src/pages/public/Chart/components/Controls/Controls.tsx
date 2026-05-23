@@ -285,11 +285,15 @@ export function Controls() {
 
   useEffect(() => {
     return () => {
-      if (importedMusicUrlRef.current) {
-        URL.revokeObjectURL(importedMusicUrlRef.current);
+      const importedMusicUrl = importedMusicUrlRef.current;
+      if (importedMusicUrl) {
+        if (useGameStore.getState().musicUrl === importedMusicUrl) {
+          setMusicUrl("");
+        }
+        URL.revokeObjectURL(importedMusicUrl);
       }
     };
-  }, []);
+  }, [setMusicUrl]);
 
   const jumpToDifficulty = useCallback((anchor: DifficultyAnchor) => {
     const textarea = debugSimaiTextareaRef.current;
