@@ -34,6 +34,7 @@ import {
   IconHelp,
   IconMaximize,
   IconMinimize,
+  IconCamera,
 } from "@tabler/icons-react";
 import { useGameStore } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
@@ -71,6 +72,10 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 
   const getPlayButtonTooltip = () => {
     return isPlaying ? "暂停" : "播放";
+  };
+
+  const exportCurrentFrame = () => {
+    window.dispatchEvent(new Event('maimai-chart-export-frame'));
   };
 
   return (
@@ -160,6 +165,17 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
               onClick={() => setSoundEnabled(!soundEnabled)}
             >
               {soundEnabled ? <IconVolume size={20} /> : <IconVolumeOff size={20} />}
+            </ActionIcon>
+          </Tooltip>
+
+          <Tooltip label="导出当前帧">
+            <ActionIcon
+              variant="subtle"
+              color={isFullscreen ? 'white' : 'gray'}
+              size="lg"
+              onClick={exportCurrentFrame}
+            >
+              <IconCamera size={20} />
             </ActionIcon>
           </Tooltip>
 

@@ -2,7 +2,6 @@ import { BaseRenderer, RenderContext } from "./BaseRenderer";
 import {
   SlideNote,
   SlideSegment,
-  SlidePathType,
   Point2D,
   ButtonPosition,
   NoteRenderPosition,
@@ -219,9 +218,6 @@ export class SlideRenderer extends BaseRenderer {
     isSimultaneous: boolean = false,
     normalBreakColor: boolean = false,
   ): boolean {
-    const startPos = this.noteRenderer.getPositionOnRing(segment.startPos);
-    const endPos = this.noteRenderer.getPositionOnRing(segment.endPos);
-
     const mirroredType = this.mirrorPathType(segment.type);
 
     this.withContext(() => {
@@ -253,29 +249,33 @@ export class SlideRenderer extends BaseRenderer {
 
       switch (mirroredType) {
         case "-":
-          this.renderStraightPath(startPos, endPos, progress);
+          this.renderSegmentPath(segment, progress);
           break;
         case ">":
-          this.renderClockwiseArc(segment.startPos, segment.endPos, progress);
+          this.renderSegmentPath(segment, progress);
           break;
         case "<":
-          this.renderCounterClockwiseArc(segment.startPos, segment.endPos, progress);
+          this.renderSegmentPath(segment, progress);
           break;
         case "^":
-          return this.renderShortArc(segment.startPos, segment.endPos, progress);
+          if (Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4) return false;
+          this.renderSegmentPath(segment, progress);
+          break;
         case "v":
-          return this.renderVPath(segment.startPos, segment.endPos, progress);
+          if (Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4) return false;
+          this.renderSegmentPath(segment, progress);
+          break;
         case "p":
         case "pp":
         case "q":
         case "qq":
-          this.renderCurvePath(segment.startPos, segment.endPos, segment.type, progress);
+          this.renderSegmentPath(segment, progress);
           break;
         case "s":
-          this.renderSPath(startPos, endPos, progress);
+          this.renderSegmentPath(segment, progress);
           break;
         case "z":
-          this.renderZPath(startPos, endPos, progress);
+          this.renderSegmentPath(segment, progress);
           break;
       }
     });
@@ -377,240 +377,8 @@ export class SlideRenderer extends BaseRenderer {
     return result;
   }
 
-  private renderStraightPath(start: Point2D, end: Point2D, progress: number): void {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-
-    this.iterateArrowsAlongPath(
-      (t) => ({
-        x: start.x + dx * t,
-        y: start.y + dy * t,
-      }),
-      progress,
-    );
-  }
-
-  private renderClockwiseArc(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    progress: number,
-  ): void {
-    const startAngle = this.getButtonAngle(startPos);
-    let endAngle = this.getButtonAngle(endPos);
-    let angleDiff = endAngle - startAngle;
-
-    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
-    const isLeftSide = startPos === 1 || startPos === 2 || startPos === 7 || startPos === 8;
-    if (isLeftSide) {
-      if (angleDiff <= 0) angleDiff += 2 * Math.PI;
-    } else {
-      if (angleDiff >= 0) angleDiff -= 2 * Math.PI;
-    }
-
-    endAngle = startAngle + angleDiff;
-
-    this.iterateArrowsAlongPath((t) => {
-      const angle = startAngle + angleDiff * t;
-      return {
-        x: this.context.centerX + Math.cos(angle) * this.context.radius,
-        y: this.context.centerY + Math.sin(angle) * this.context.radius,
-      };
-    }, progress);
-  }
-
-  private renderCounterClockwiseArc(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    progress: number,
-  ): void {
-    const startAngle = this.getButtonAngle(startPos);
-    let endAngle = this.getButtonAngle(endPos);
-    let angleDiff = endAngle - startAngle;
-
-    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
-    const isLeftSide = startPos === 1 || startPos === 2 || startPos === 7 || startPos === 8;
-    if (isLeftSide) {
-      if (angleDiff >= 0) angleDiff -= 2 * Math.PI;
-    } else {
-      if (angleDiff <= 0) angleDiff += 2 * Math.PI;
-    }
-
-    endAngle = startAngle + angleDiff;
-
-    this.iterateArrowsAlongPath((t) => {
-      const angle = startAngle + angleDiff * t;
-      return {
-        x: this.context.centerX + Math.cos(angle) * this.context.radius,
-        y: this.context.centerY + Math.sin(angle) * this.context.radius,
-      };
-    }, progress);
-  }
-
-  private renderShortArc(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    progress: number,
-  ): boolean {
-    const startAngle = this.getButtonAngle(startPos);
-    let endAngle = this.getButtonAngle(endPos);
-    let angleDiff = endAngle - startAngle;
-
-    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
-    // 起止 180° 相对时无法判定方向，跳过这一段
-    if (Math.abs(angleDiff) === Math.PI) return false;
-
-    endAngle = startAngle + angleDiff;
-
-    this.iterateArrowsAlongPath((t) => {
-      const angle = startAngle + angleDiff * t;
-      return {
-        x: this.context.centerX + Math.cos(angle) * this.context.radius,
-        y: this.context.centerY + Math.sin(angle) * this.context.radius,
-      };
-    }, progress);
-
-    return true;
-  }
-
-  private renderVPath(startPos: ButtonPosition, endPos: ButtonPosition, progress: number): boolean {
-    // 起止 180° 相对 = 直线穿心，应由 '-' 处理
-    if (Math.abs(endPos - startPos) === 4) return false;
-
-    const startPt = this.noteRenderer.getPositionOnRing(startPos);
-    const endPt = this.noteRenderer.getPositionOnRing(endPos);
-    const center = { x: this.context.centerX, y: this.context.centerY };
-
-    const distToCenter = this.distanceToCenter(startPt.x, startPt.y);
-    const distFromCenter = this.distanceToCenter(endPt.x, endPt.y);
-    const totalDist = distToCenter + distFromCenter;
-
-    this.iterateArrowsAlongPath((t) => {
-      if (t < distToCenter / totalDist) {
-        const subT = t / (distToCenter / totalDist);
-        return {
-          x: startPt.x + (center.x - startPt.x) * subT,
-          y: startPt.y + (center.y - startPt.y) * subT,
-        };
-      } else {
-        const subT = (t - distToCenter / totalDist) / (distFromCenter / totalDist);
-        return {
-          x: center.x + (endPt.x - center.x) * subT,
-          y: center.y + (endPt.y - center.y) * subT,
-        };
-      }
-    }, progress);
-
-    return true;
-  }
-
-  private renderSPath(start: Point2D, end: Point2D, progress: number): void {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const nx = dx / length;
-    const ny = dy / length;
-    const perpX = -ny;
-    const perpY = nx;
-    const offset = this.context.radius * SLIDE_CURVE_OFFSET_RATIO;
-
-    const mid1 = {
-      x: start.x + nx * length * 0.49 + perpX * offset,
-      y: start.y + ny * length * 0.49 + perpY * offset,
-    };
-    const mid2 = {
-      x: start.x + nx * length * 0.51 - perpX * offset,
-      y: start.y + ny * length * 0.51 - perpY * offset,
-    };
-
-    const seg1Len = Math.sqrt(Math.pow(mid1.x - start.x, 2) + Math.pow(mid1.y - start.y, 2));
-    const seg2Len = Math.sqrt(Math.pow(mid2.x - mid1.x, 2) + Math.pow(mid2.y - mid1.y, 2));
-    const seg3Len = Math.sqrt(Math.pow(end.x - mid2.x, 2) + Math.pow(end.y - mid2.y, 2));
-    const totalLen = seg1Len + seg2Len + seg3Len;
-
-    this.iterateArrowsAlongPath((t) => {
-      const r1 = seg1Len / totalLen;
-      const r2 = seg2Len / totalLen;
-
-      if (t < r1) {
-        const subT = t / r1;
-        return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
-      } else if (t < r1 + r2) {
-        const subT = (t - r1) / r2;
-        return { x: mid1.x + (mid2.x - mid1.x) * subT, y: mid1.y + (mid2.y - mid1.y) * subT };
-      } else {
-        const subT = (t - r1 - r2) / (1 - r1 - r2);
-        return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
-      }
-    }, progress);
-  }
-
-  private renderZPath(start: Point2D, end: Point2D, progress: number): void {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const nx = dx / length;
-    const ny = dy / length;
-    const perpX = -ny;
-    const perpY = nx;
-    const offset = this.context.radius * SLIDE_CURVE_OFFSET_RATIO;
-
-    // Z 是 S 沿主轴的镜像
-    const mid1 = {
-      x: start.x + nx * length * 0.49 - perpX * offset,
-      y: start.y + ny * length * 0.49 - perpY * offset,
-    };
-    const mid2 = {
-      x: start.x + nx * length * 0.51 + perpX * offset,
-      y: start.y + ny * length * 0.51 + perpY * offset,
-    };
-
-    const seg1Len = Math.sqrt(Math.pow(mid1.x - start.x, 2) + Math.pow(mid1.y - start.y, 2));
-    const seg2Len = Math.sqrt(Math.pow(mid2.x - mid1.x, 2) + Math.pow(mid2.y - mid1.y, 2));
-    const seg3Len = Math.sqrt(Math.pow(end.x - mid2.x, 2) + Math.pow(end.y - mid2.y, 2));
-    const totalLen = seg1Len + seg2Len + seg3Len;
-
-    this.iterateArrowsAlongPath((t) => {
-      const r1 = seg1Len / totalLen;
-      const r2 = seg2Len / totalLen;
-
-      if (t < r1) {
-        const subT = t / r1;
-        return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
-      } else if (t < r1 + r2) {
-        const subT = (t - r1) / r2;
-        return { x: mid1.x + (mid2.x - mid1.x) * subT, y: mid1.y + (mid2.y - mid1.y) * subT };
-      } else {
-        const subT = (t - r1 - r2) / (1 - r1 - r2);
-        return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
-      }
-    }, progress);
-  }
-
-  private renderCurvePath(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    originalType: SlidePathType,
-    progress: number,
-  ): void {
-    const segment: SlideSegment = {
-      type: originalType,
-      startPos,
-      endPos,
-    };
-    this.iterateArrowsAlongPath((t) => this.getPointOnSegment(segment, t), progress);
-  }
-
-  private iterateArrowsAlongPath(pathFn: (t: number) => Point2D, progress: number): void {
-    // 一次性采样路径并累计弧长，箭头按弧长均布（而非按 t 均布）。
-    // 直线/圆弧/V/S/Z 这些恒速参数化路径视觉不变；p/pp/q/qq 等变曲率
-    // bend 曲线下，箭头间距不再随曲率忽密忽疏。
-    const lut = this.buildArcLut(pathFn);
+  private renderSegmentPath(segment: SlideSegment, progress: number): void {
+    const lut = this.getSegmentLut(segment);
     const totalLength = lut[lut.length - 1].s;
     if (totalLength <= 0) return;
 
@@ -1363,7 +1131,7 @@ export class SlideRenderer extends BaseRenderer {
         const uy = dy / len;
         const perpX = -uy;
         const perpY = ux;
-        const offset = 0.4 * this.context.radius;
+        const offset = SLIDE_CURVE_OFFSET_RATIO * this.context.radius;
 
         const ctrl1X = start.x + ux * len * 0.49 + perpX * offset;
         const ctrl1Y = start.y + uy * len * 0.49 + perpY * offset;
@@ -1398,7 +1166,7 @@ export class SlideRenderer extends BaseRenderer {
         const uy = dy / len;
         const perpX = -uy;
         const perpY = ux;
-        const offset = 0.4 * this.context.radius;
+        const offset = SLIDE_CURVE_OFFSET_RATIO * this.context.radius;
 
         // Z 路线: start → ctrl1 (右侧) → ctrl2 (左侧) → end
         const ctrl1X = start.x + ux * len * 0.49 + perpX * offset;

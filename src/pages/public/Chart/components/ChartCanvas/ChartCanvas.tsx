@@ -59,6 +59,19 @@ function msToBeats(ms: number, bpmEvents: BpmEvent[] | null, defaultBpm: number)
   return totalBeats;
 }
 
+function formatChartTimeForFilename(ms: number): string {
+  const totalMs = Math.max(0, Math.round(ms));
+  const minutes = Math.floor(totalMs / 60000);
+  const seconds = Math.floor((totalMs % 60000) / 1000);
+  const milliseconds = totalMs % 1000;
+
+  return `${String(minutes).padStart(2, "0")}m${String(seconds).padStart(2, "0")}s${String(milliseconds).padStart(3, "0")}ms`;
+}
+
+function getChartIdForFilename(): string {
+  return new URLSearchParams(window.location.search).get("chart_id") ?? "unknown";
+}
+
 export function ChartCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -260,6 +273,31 @@ export function ChartCanvas() {
       }
     };
   }, [renderFrame, chartData?.bpm]);
+
+  useEffect(() => {
+    const exportFrame = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const chart = useGameStore.getState().chartData;
+        const currentMs = chart ? beatsToMs(playbackTimeRef.current, chart.bpmEvents, chart.bpm) : 0;
+        const chartId = getChartIdForFilename();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `maimai-chart-${chartId}-${formatChartTimeForFilename(currentMs)}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    };
+
+    window.addEventListener("maimai-chart-export-frame", exportFrame);
+    return () => {
+      window.removeEventListener("maimai-chart-export-frame", exportFrame);
+    };
+  }, []);
 
   useEffect(() => {
     if (rendererRef.current) {
