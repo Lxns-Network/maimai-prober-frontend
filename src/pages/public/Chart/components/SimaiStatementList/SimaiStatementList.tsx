@@ -81,6 +81,9 @@ function parseSimaiChunks(simaiText: string, difficulty: ChartDifficulty | null)
       beat += BEATS_PER_MEASURE / divisor;
       bufBeat = beat;
       i++;
+    } else if (c === "\n" || c === "\r") {
+      flush();
+      i += c === "\r" && content[i + 1] === "\n" ? 2 : 1;
     } else if (c === "(") {
       const m = content.substring(i).match(/^\((\d+(?:\.\d+)?)\)(\{(\d+(?:\.\d+)?)\})?/);
       if (m) {

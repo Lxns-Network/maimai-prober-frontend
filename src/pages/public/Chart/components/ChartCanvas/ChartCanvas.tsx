@@ -290,8 +290,11 @@ export function ChartCanvas() {
         const link = document.createElement("a");
         link.href = url;
         link.download = `maimai-chart-${chartId}-${formatChartTimeForFilename(currentMs)}.png`;
+        link.style.display = "none";
+        document.body.appendChild(link);
         link.click();
-        URL.revokeObjectURL(url);
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
       }, "image/png");
     };
 

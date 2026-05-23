@@ -311,8 +311,8 @@ export function Controls() {
 
   const applyDebugSimai = useCallback(() => {
     try {
-      setRawSimaiText(debugSimai);
       const chart = parseSimaiChart(debugSimai, selectedDifficulty ?? undefined);
+      setRawSimaiText(debugSimai);
       setChartData(chart);
       notifications.show({
         title: "谱面已重载",
