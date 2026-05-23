@@ -258,11 +258,21 @@ export class SlideRenderer extends BaseRenderer {
           this.renderSegmentPath(segment, progress);
           break;
         case "^":
-          if (Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4) return false;
+          if (
+            Math.abs(
+              this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos),
+            ) === 4
+          )
+            return false;
           this.renderSegmentPath(segment, progress);
           break;
         case "v":
-          if (Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4) return false;
+          if (
+            Math.abs(
+              this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos),
+            ) === 4
+          )
+            return false;
           this.renderSegmentPath(segment, progress);
           break;
         case "p":

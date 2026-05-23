@@ -282,7 +282,9 @@ export function ChartCanvas() {
       canvas.toBlob((blob) => {
         if (!blob) return;
         const chart = useGameStore.getState().chartData;
-        const currentMs = chart ? beatsToMs(playbackTimeRef.current, chart.bpmEvents, chart.bpm) : 0;
+        const currentMs = chart
+          ? beatsToMs(playbackTimeRef.current, chart.bpmEvents, chart.bpm)
+          : 0;
         const chartId = getChartIdForFilename();
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");

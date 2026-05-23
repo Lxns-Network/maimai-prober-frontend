@@ -120,7 +120,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
   };
 
   const exportCurrentFrame = () => {
-    window.dispatchEvent(new Event('maimai-chart-export-frame'));
+    window.dispatchEvent(new Event("maimai-chart-export-frame"));
   };
 
   return (
@@ -216,7 +216,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
           <Tooltip label="导出当前帧">
             <ActionIcon
               variant="subtle"
-              color={isFullscreen ? 'white' : 'gray'}
+              color={isFullscreen ? "white" : "gray"}
               size="lg"
               onClick={exportCurrentFrame}
             >

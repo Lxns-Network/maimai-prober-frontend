@@ -509,11 +509,13 @@ export class MainRenderer {
     }
 
     for (const note of notes) {
-      if (isTapNote(note) ||
-          isHoldEndNote(note) ||
-          (isSlideNote(note) && !note.isHeadless) ||
-          isTouchNote(note) ||
-          note.type === "touch-hold-end") {
+      if (
+        isTapNote(note) ||
+        isHoldEndNote(note) ||
+        (isSlideNote(note) && !note.isHeadless) ||
+        isTouchNote(note) ||
+        note.type === "touch-hold-end"
+      ) {
         noteCompletionTimes.push(note.timingMs);
       }
 
@@ -527,9 +529,10 @@ export class MainRenderer {
         }
       }
 
-      const isBreak = note.type === "break" ||
-                      (isSlideNote(note) && note.isStartBreak) ||
-                      (isHoldStartNote(note) && note.isBreakHold);
+      const isBreak =
+        note.type === "break" ||
+        (isSlideNote(note) && note.isStartBreak) ||
+        (isHoldStartNote(note) && note.isBreakHold);
 
       if (isBreak) {
         breakCompletionTimes.push(note.timingMs);
@@ -1078,7 +1081,10 @@ export class MainRenderer {
     const totalBreaks = prepared.breakCompletionTimes.length;
     const completedBreaks = this.countCompleted(prepared.breakCompletionTimes, currentTimeMs);
     const totalBreaksNoEx = prepared.breakNoExCompletionTimes.length;
-    const completedBreaksNoEx = this.countCompleted(prepared.breakNoExCompletionTimes, currentTimeMs);
+    const completedBreaksNoEx = this.countCompleted(
+      prepared.breakNoExCompletionTimes,
+      currentTimeMs,
+    );
 
     const fontSize = Math.round((22 * this.radius) / 300);
     const smallFontSize = Math.round((18 * this.radius) / 300);
