@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { notifications } from "@mantine/notifications";
 import {
@@ -10,6 +10,7 @@ import {
   Group,
   HoverCard,
   SegmentedControl,
+  Select,
   Slider,
   Stack,
   Switch,
@@ -57,6 +58,35 @@ function isSupportedAudioFile(file: File): boolean {
   return [".mp3", ".wav", ".ogg", ".m4a", ".flac"].some((extension) =>
     lowerName.endsWith(extension),
   );
+}
+
+type DifficultyAnchor = {
+  difficulty: number;
+  index: number;
+  line: number;
+};
+
+const DEBUG_DIFFICULTY_NAMES: Record<number, string> = {
+  0: "EASY",
+  ...DIFFICULTY_NAMES,
+};
+
+function getDebugDifficultyLabel(difficulty: number): string {
+  return DEBUG_DIFFICULTY_NAMES[difficulty] ?? String(difficulty);
+}
+
+function getDifficultyAnchors(simaiText: string): DifficultyAnchor[] {
+  const anchors: DifficultyAnchor[] = [];
+  const pattern = /^&inote_(\d+)=/gim;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(simaiText)) !== null) {
+    const difficulty = Number(match[1]);
+    const line = simaiText.slice(0, match.index).split("\n").length;
+    anchors.push({ difficulty, index: match.index, line });
+  }
+
+  return anchors;
 }
 
 type PlaybackControlsProps = {
@@ -228,10 +258,30 @@ export function Controls() {
 
   // 临时调试：手动编辑当前 simai 文本并重新加载
   const [debugSimai, setDebugSimai] = useState(rawSimaiText);
+  const debugSimaiTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const importedMusicUrlRef = useRef<string | null>(null);
+  const difficultyAnchors = useMemo(() => getDifficultyAnchors(debugSimai), [debugSimai]);
+  const difficultyAnchorOptions = useMemo(
+    () =>
+      difficultyAnchors.map((anchor) => ({
+        value: String(anchor.index),
+        label: `${getDebugDifficultyLabel(anchor.difficulty)} #${anchor.difficulty}`,
+      })),
+    [difficultyAnchors],
+  );
+  const [selectedDifficultyAnchor, setSelectedDifficultyAnchor] = useState<string | null>(null);
   useEffect(() => {
     setDebugSimai(rawSimaiText);
   }, [rawSimaiText]);
+
+  useEffect(() => {
+    if (
+      selectedDifficultyAnchor &&
+      !difficultyAnchors.some((anchor) => String(anchor.index) === selectedDifficultyAnchor)
+    ) {
+      setSelectedDifficultyAnchor(null);
+    }
+  }, [difficultyAnchors, selectedDifficultyAnchor]);
 
   useEffect(() => {
     return () => {
@@ -239,6 +289,20 @@ export function Controls() {
         URL.revokeObjectURL(importedMusicUrlRef.current);
       }
     };
+  }, []);
+
+  const jumpToDifficulty = useCallback((anchor: DifficultyAnchor) => {
+    const textarea = debugSimaiTextareaRef.current;
+    if (!textarea) return;
+
+    textarea.focus();
+    textarea.setSelectionRange(anchor.index, anchor.index);
+
+    requestAnimationFrame(() => {
+      const styles = window.getComputedStyle(textarea);
+      const lineHeight = parseFloat(styles.lineHeight) || 18;
+      textarea.scrollTop = Math.max(0, (anchor.line - 2) * lineHeight);
+    });
   }, []);
 
   const applyDebugSimai = useCallback(() => {
@@ -353,7 +417,23 @@ export function Controls() {
             <Text size="sm" fw={500}>
               Simai 调试
             </Text>
+            {difficultyAnchors.length > 0 && (
+              <Select
+                size="xs"
+                label="跳转到难度段"
+                placeholder="选择 inote 段"
+                data={difficultyAnchorOptions}
+                value={selectedDifficultyAnchor}
+                onChange={(value) => {
+                  setSelectedDifficultyAnchor(value);
+                  const anchor = difficultyAnchors.find((anchor) => String(anchor.index) === value);
+                  if (anchor) jumpToDifficulty(anchor);
+                }}
+                allowDeselect={false}
+              />
+            )}
             <Textarea
+              ref={debugSimaiTextareaRef}
               value={debugSimai}
               onChange={(e) => setDebugSimai(e.currentTarget.value)}
               autosize
