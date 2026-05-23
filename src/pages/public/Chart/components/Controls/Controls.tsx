@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { notifications } from "@mantine/notifications";
 import {
   ActionIcon,
   Button,
@@ -35,6 +36,7 @@ import {
   IconMaximize,
   IconMinimize,
   IconCamera,
+  IconUpload,
 } from "@tabler/icons-react";
 import { useGameStore } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
@@ -43,6 +45,19 @@ import { ChartDifficulty, DIFFICULTY_NAMES, DIFFICULTY_COLORS } from "../../type
 import { NoteCountGraph } from "../NoteCountGraph";
 import { SimaiStatementList } from "../SimaiStatementList";
 import classes from "./Controls.module.css";
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isSupportedAudioFile(file: File): boolean {
+  if (file.type.startsWith("audio/")) return true;
+
+  const lowerName = file.name.toLowerCase();
+  return [".mp3", ".wav", ".ogg", ".m4a", ".flac"].some((extension) =>
+    lowerName.endsWith(extension),
+  );
+}
 
 type PlaybackControlsProps = {
   onToggleFullscreen?: () => void;
@@ -208,18 +223,80 @@ export function Controls() {
     setChartData,
     setSelectedDifficulty,
     setRawSimaiText,
+    setMusicUrl,
   } = useGameStore(useShallow((state) => state));
 
   // 临时调试：手动编辑当前 simai 文本并重新加载
   const [debugSimai, setDebugSimai] = useState(rawSimaiText);
+  const importedMusicUrlRef = useRef<string | null>(null);
   useEffect(() => {
     setDebugSimai(rawSimaiText);
   }, [rawSimaiText]);
+
+  useEffect(() => {
+    return () => {
+      if (importedMusicUrlRef.current) {
+        URL.revokeObjectURL(importedMusicUrlRef.current);
+      }
+    };
+  }, []);
+
   const applyDebugSimai = useCallback(() => {
-    setRawSimaiText(debugSimai);
-    const chart = parseSimaiChart(debugSimai, selectedDifficulty ?? undefined);
-    setChartData(chart);
+    try {
+      setRawSimaiText(debugSimai);
+      const chart = parseSimaiChart(debugSimai, selectedDifficulty ?? undefined);
+      setChartData(chart);
+      notifications.show({
+        title: "谱面已重载",
+        message: "当前 Simai 文本已重新解析",
+        color: "green",
+      });
+    } catch (error) {
+      notifications.show({
+        title: "谱面重载失败",
+        message: getErrorMessage(error),
+        color: "red",
+      });
+    }
   }, [debugSimai, selectedDifficulty, setRawSimaiText, setChartData]);
+
+  const handleMusicImport = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.currentTarget.files?.[0];
+      event.currentTarget.value = "";
+
+      if (!file) return;
+
+      try {
+        if (!isSupportedAudioFile(file)) {
+          throw new Error("请选择音频文件");
+        }
+
+        const musicUrl = URL.createObjectURL(file);
+        const previousMusicUrl = importedMusicUrlRef.current;
+
+        importedMusicUrlRef.current = musicUrl;
+        setMusicUrl(musicUrl);
+
+        if (previousMusicUrl) {
+          URL.revokeObjectURL(previousMusicUrl);
+        }
+
+        notifications.show({
+          title: "音乐已导入",
+          message: `${file.name} 已覆盖当前音乐`,
+          color: "green",
+        });
+      } catch (error) {
+        notifications.show({
+          title: "音乐导入失败",
+          message: getErrorMessage(error),
+          color: "red",
+        });
+      }
+    },
+    [setMusicUrl],
+  );
 
   const {
     hiSpeed,
@@ -284,9 +361,25 @@ export function Controls() {
               maxRows={10}
               styles={{ input: { fontFamily: "monospace", fontSize: 12 } }}
             />
-            <Button size="xs" onClick={applyDebugSimai}>
-              应用并重新解析
-            </Button>
+            <Group gap="xs">
+              <Button size="xs" onClick={applyDebugSimai}>
+                应用并重新解析
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                component="label"
+                leftSection={<IconUpload size={14} />}
+              >
+                导入音乐
+                <input
+                  type="file"
+                  accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac"
+                  hidden
+                  onChange={handleMusicImport}
+                />
+              </Button>
+            </Group>
           </Stack>
         </Card>
       )}

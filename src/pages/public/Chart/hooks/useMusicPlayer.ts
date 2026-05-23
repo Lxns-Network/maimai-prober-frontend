@@ -288,7 +288,7 @@ export function useMusicPlayer() {
   useEffect(() => {
     const state = audioStateRef.current;
     if (!musicUrl) return;
-    const shouldLoad = pendingPlay || (!state.audioBuffer && musicUrl !== lastUrlRef.current);
+    const shouldLoad = pendingPlay || musicUrl !== lastUrlRef.current || !state.audioBuffer;
     if (!shouldLoad) return;
     if (state.audioBuffer && musicUrl === lastUrlRef.current) return;
     if (loadingUrlRef.current === musicUrl) return;

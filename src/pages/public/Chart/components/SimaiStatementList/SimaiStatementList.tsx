@@ -261,8 +261,11 @@ export function SimaiStatementList({
     const el = itemRefs.current[active.line];
     const container = containerRef.current;
     if (!el || !container) return;
+    const rowTop = el.offsetTop - container.offsetTop;
     const target =
-      el.offsetTop - container.offsetTop - container.clientHeight / 2 + el.offsetHeight / 2;
+      el.offsetHeight > container.clientHeight
+        ? rowTop
+        : rowTop - container.clientHeight / 2 + el.offsetHeight / 2;
     container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   }, [active.line]);
 
