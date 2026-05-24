@@ -495,7 +495,6 @@ export class SlideRenderer extends BaseRenderer {
     const arrowWidth = (6 * 1.6 * this.context.radius) / 300;
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
     const radiusScale = this.context.radius / 300;
-    const mainStroke = ctx.strokeStyle;
 
     // 拖影参数：从弱到强（先弱后强叠加，靠近本体的色更浓）
     const shadows = [
@@ -504,8 +503,8 @@ export class SlideRenderer extends BaseRenderer {
     ];
 
     ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
 
     // 逐箭头叠绘 outline → 拖影 → 主体（不按层批量）：arrows[0] 在远端、arrows[N-1]
     // 靠 star 头，正向迭代让靠 star 的盖在远端上，自重叠路径处可见黑边切割下层。
@@ -548,9 +547,49 @@ export class SlideRenderer extends BaseRenderer {
         ctx.stroke(trail);
       }
 
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = mainStroke;
-      ctx.stroke(main);
+      // 双拼色：两个平行四边形共享沿角平分线的边，拼成 V
+      {
+        const rLen = Math.hypot(x1 - x2, y1 - y2);
+        const lLen = Math.hypot(x3 - x2, y3 - y2);
+        const rux = (x1 - x2) / rLen;
+        const ruy = (y1 - y2) / rLen;
+        const lux = (x3 - x2) / lLen;
+        const luy = (y3 - y2) / lLen;
+        const cosAngle = rux * lux + ruy * luy;
+        const sinHalf = Math.sqrt((1 - cosAngle) / 2);
+        if (sinHalf > 0.001) {
+          const midX = (x1 + x3) / 2;
+          const midY = (y1 + y3) / 2;
+          const bdx = midX - x2;
+          const bdy = midY - y2;
+          const bLen = Math.hypot(bdx, bdy);
+          const bux = bdx / bLen;
+          const buy = bdy / bLen;
+          const edgeLen = lineWidth / sinHalf;
+          const bx = x2 + bux * edgeLen;
+          const by = y2 + buy * edgeLen;
+
+          // 右平行四边形：共享边 (x2,y2)→(bx,by)，沿右臂方向延伸
+          ctx.beginPath();
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(bx, by);
+          ctx.lineTo(bx + x1 - x2, by + y1 - y2);
+          ctx.lineTo(x1, y1);
+          ctx.closePath();
+          ctx.fillStyle = COLORS.SLIDE_ARROW_RIGHT;
+          ctx.fill();
+
+          // 左平行四边形：共享边相同，沿左臂方向延伸
+          ctx.beginPath();
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(bx, by);
+          ctx.lineTo(bx + x3 - x2, by + y3 - y2);
+          ctx.lineTo(x3, y3);
+          ctx.closePath();
+          ctx.fillStyle = COLORS.SLIDE_SIMULTANEOUS;
+          ctx.fill();
+        }
+      }
     }
 
     ctx.restore();
