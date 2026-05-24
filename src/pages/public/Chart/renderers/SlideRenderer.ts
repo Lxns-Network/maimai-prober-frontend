@@ -10,6 +10,8 @@ import {
 import { NoteRenderer } from "./NoteRenderer";
 import {
   SLIDE_ARROW_WIDTH_RATIO,
+  SLIDE_ARROW_HEIGHT,
+  SLIDE_ARROW_SPAN,
   SLIDE_ARROW_SPACING,
   SLIDE_CURVE_OFFSET_RATIO,
   COLORS,
@@ -491,9 +493,13 @@ export class SlideRenderer extends BaseRenderer {
   private drawSlideArrowsBatch(arrows: { x: number; y: number; angle: number }[]): void {
     if (arrows.length === 0) return;
     const ctx = this.context.ctx;
-    const arrowHeight = (32 * this.context.radius) / 300;
-    const arrowWidth = (6 * 1.6 * this.context.radius) / 300;
+    const arrowHeight = (SLIDE_ARROW_HEIGHT * this.context.radius) / 300;
+    const arrowWidth = (SLIDE_ARROW_SPAN * this.context.radius) / 300;
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
+    const mainStroke = ctx.strokeStyle as string;
+    const isBreak = mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
+    const leftColor = isBreak ? COLORS.SLIDE_SIMULTANEOUS : mainStroke;
+    const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
     const radiusScale = this.context.radius / 300;
 
     // 拖影参数：从弱到强（先弱后强叠加，靠近本体的色更浓）
@@ -547,46 +553,38 @@ export class SlideRenderer extends BaseRenderer {
         ctx.stroke(trail);
       }
 
-      // 双拼色：两个平行四边形共享沿角平分线的边，拼成 V
+      // 双平行四边形拼成 V：共享沿角平分线的边，形状统一，颜色按类型区分
       {
         const rLen = Math.hypot(x1 - x2, y1 - y2);
         const lLen = Math.hypot(x3 - x2, y3 - y2);
-        const rux = (x1 - x2) / rLen;
-        const ruy = (y1 - y2) / rLen;
-        const lux = (x3 - x2) / lLen;
-        const luy = (y3 - y2) / lLen;
-        const cosAngle = rux * lux + ruy * luy;
+        const cosAngle = ((x1 - x2) * (x3 - x2) + (y1 - y2) * (y3 - y2)) / (rLen * lLen);
         const sinHalf = Math.sqrt((1 - cosAngle) / 2);
         if (sinHalf > 0.001) {
           const midX = (x1 + x3) / 2;
           const midY = (y1 + y3) / 2;
-          const bdx = midX - x2;
-          const bdy = midY - y2;
-          const bLen = Math.hypot(bdx, bdy);
-          const bux = bdx / bLen;
-          const buy = bdy / bLen;
+          const bLen = Math.hypot(midX - x2, midY - y2);
+          const bux = (midX - x2) / bLen;
+          const buy = (midY - y2) / bLen;
           const edgeLen = lineWidth / sinHalf;
           const bx = x2 + bux * edgeLen;
           const by = y2 + buy * edgeLen;
 
-          // 右平行四边形：共享边 (x2,y2)→(bx,by)，沿右臂方向延伸
           ctx.beginPath();
           ctx.moveTo(x2, y2);
           ctx.lineTo(bx, by);
           ctx.lineTo(bx + x1 - x2, by + y1 - y2);
           ctx.lineTo(x1, y1);
           ctx.closePath();
-          ctx.fillStyle = COLORS.SLIDE_ARROW_RIGHT;
+          ctx.fillStyle = rightColor;
           ctx.fill();
 
-          // 左平行四边形：共享边相同，沿左臂方向延伸
           ctx.beginPath();
           ctx.moveTo(x2, y2);
           ctx.lineTo(bx, by);
           ctx.lineTo(bx + x3 - x2, by + y3 - y2);
           ctx.lineTo(x3, y3);
           ctx.closePath();
-          ctx.fillStyle = COLORS.SLIDE_SIMULTANEOUS;
+          ctx.fillStyle = leftColor;
           ctx.fill();
         }
       }

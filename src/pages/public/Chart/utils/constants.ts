@@ -52,6 +52,11 @@ export const JUDGMENT_LINE_WIDTH_RATIO = 3 / 300;
 /** 滑条箭头线宽 */
 export const SLIDE_ARROW_WIDTH_RATIO = 12.8 / 300;
 
+/** 滑条箭头 V 形高度（基半径时像素），越大 V 越张开 */
+export const SLIDE_ARROW_HEIGHT = 38;
+/** 滑条箭头 V 形半展宽（基半径时像素），越大前端顶点越突 */
+export const SLIDE_ARROW_SPAN = 9.6;
+
 /** 滑条箭头间距（基半径时像素） */
 export const SLIDE_ARROW_SPACING = 26.896180742334582;
 
