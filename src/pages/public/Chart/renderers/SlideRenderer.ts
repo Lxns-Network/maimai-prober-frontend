@@ -332,6 +332,7 @@ export class SlideRenderer extends BaseRenderer {
     const ARM_HALF_ANGLE = ((135 / 2) * Math.PI) / 180; // 67.5°
     const cosA = Math.cos(ARM_HALF_ANGLE); // ≈ 0.383
     const sinA = Math.sin(ARM_HALF_ANGLE); // ≈ 0.924
+    const START_ARM_EXTRA = this.context.radius * 0.08;
 
     const chevrons: {
       x: number;
@@ -343,7 +344,8 @@ export class SlideRenderer extends BaseRenderer {
     }[] = [];
     for (let i = N - 1; i >= hiddenCount; i--) {
       const d = dFirst + (dLast - dFirst) * (i / (N - 1));
-      const armLen = cosA * d;
+      const startRatio = 1 - i / (N - 1);
+      const armLen = cosA * d + START_ARM_EXTRA * startRatio;
       chevrons.push({
         x: pivot.x + axisUx * d,
         y: pivot.y + axisUy * d,
@@ -594,9 +596,8 @@ export class SlideRenderer extends BaseRenderer {
   }
 
   /**
-   * 画 chevron：每条 chevron 由 corner + 两条 arm tip 在 fan-local 帧的偏移定义。
-   * path = `M arm1 L corner L arm2`，stroke 同 slide arrow（外黑边 + 两层 drop shadow
-   * + 主色）。arm1/arm2 是 arm tip 相对 corner 的偏移，在调用方按 fanAngle 旋转。
+   * 画 chevron：每条 chevron 由两块共享斜切面的四边形拼成，避免圆头线段感。
+   * arm1/arm2 是 arm tip 相对 corner 的偏移，在调用方按 fanAngle 旋转。
    */
   private drawWifiChevronsBatch(
     chevrons: {
@@ -622,10 +623,61 @@ export class SlideRenderer extends BaseRenderer {
       { offset: 3, alpha: 0.4, extra: 3 },
     ];
 
+    const buildChevronPath = (
+      cornerX: number,
+      cornerY: number,
+      arm1X: number,
+      arm1Y: number,
+      arm2X: number,
+      arm2Y: number,
+      width: number,
+    ): Path2D | null => {
+      const arm1Dx = arm1X - cornerX;
+      const arm1Dy = arm1Y - cornerY;
+      const arm2Dx = arm2X - cornerX;
+      const arm2Dy = arm2Y - cornerY;
+      const arm1Len = Math.hypot(arm1Dx, arm1Dy);
+      const arm2Len = Math.hypot(arm2Dx, arm2Dy);
+      if (arm1Len === 0 || arm2Len === 0) return null;
+
+      const cosAngle = Math.max(
+        -1,
+        Math.min(1, (arm1Dx * arm2Dx + arm1Dy * arm2Dy) / (arm1Len * arm2Len)),
+      );
+      const sinHalf = Math.sqrt((1 - cosAngle) / 2);
+      if (sinHalf <= 0.001) return null;
+
+      const armAxisProjection = -((arm1Dx * cos + arm1Dy * sin) / arm1Len);
+      if (armAxisProjection <= 0) return null;
+
+      const outerDistance = arm1Len / armAxisProjection;
+      const innerDistance = Math.max(0, outerDistance - width / sinHalf);
+      const innerScale = innerDistance / outerDistance;
+      const pivotX = cornerX - cos * outerDistance;
+      const pivotY = cornerY - sin * outerDistance;
+      const innerCornerX = pivotX + (cornerX - pivotX) * innerScale;
+      const innerCornerY = pivotY + (cornerY - pivotY) * innerScale;
+      const innerArm1X = pivotX + (arm1X - pivotX) * innerScale;
+      const innerArm1Y = pivotY + (arm1Y - pivotY) * innerScale;
+      const innerArm2X = pivotX + (arm2X - pivotX) * innerScale;
+      const innerArm2Y = pivotY + (arm2Y - pivotY) * innerScale;
+
+      const path = new Path2D();
+      path.moveTo(arm1X, arm1Y);
+      path.lineTo(cornerX, cornerY);
+      path.lineTo(arm2X, arm2Y);
+      path.lineTo(innerArm2X, innerArm2Y);
+      path.lineTo(innerCornerX, innerCornerY);
+      path.lineTo(innerArm1X, innerArm1Y);
+      path.closePath();
+
+      return path;
+    };
+
     ctx.save();
     ctx.globalAlpha = 0.6;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
 
     for (const c of chevrons) {
       const a1x = c.x + cos * c.arm1Dx - sin * c.arm1Dy;
@@ -633,35 +685,39 @@ export class SlideRenderer extends BaseRenderer {
       const a2x = c.x + cos * c.arm2Dx - sin * c.arm2Dy;
       const a2y = c.y + sin * c.arm2Dx + cos * c.arm2Dy;
 
-      const main = new Path2D();
-      main.moveTo(a1x, a1y);
-      main.lineTo(c.x, c.y);
-      main.lineTo(a2x, a2y);
+      const outline = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth + 2);
+      if (!outline) continue;
 
-      ctx.lineWidth = lineWidth + 2;
+      ctx.fillStyle = "#000000";
+      ctx.fill(outline);
+      ctx.lineWidth = 2;
       ctx.strokeStyle = "#000000";
-      ctx.stroke(main);
+      ctx.stroke(outline);
 
       for (const shadow of shadows) {
         const offsetX = -shadow.offset * radiusScale;
-        const s1x = a1x + cos * offsetX;
-        const s1y = a1y + sin * offsetX;
-        const scx = c.x + cos * offsetX;
-        const scy = c.y + sin * offsetX;
-        const s2x = a2x + cos * offsetX;
-        const s2y = a2y + sin * offsetX;
-        const trail = new Path2D();
-        trail.moveTo(s1x, s1y);
-        trail.lineTo(scx, scy);
-        trail.lineTo(s2x, s2y);
-        ctx.lineWidth = lineWidth + shadow.extra;
-        ctx.strokeStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
-        ctx.stroke(trail);
+        const offsetY = sin * offsetX;
+        const offsetFanX = cos * offsetX;
+        const trail = buildChevronPath(
+          c.x + offsetFanX,
+          c.y + offsetY,
+          a1x + offsetFanX,
+          a1y + offsetY,
+          a2x + offsetFanX,
+          a2y + offsetY,
+          lineWidth + shadow.extra,
+        );
+        if (!trail) continue;
+
+        ctx.fillStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
+        ctx.fill(trail);
       }
 
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = mainStroke;
-      ctx.stroke(main);
+      const main = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth);
+      if (!main) continue;
+
+      ctx.fillStyle = mainStroke;
+      ctx.fill(main);
     }
 
     ctx.restore();
