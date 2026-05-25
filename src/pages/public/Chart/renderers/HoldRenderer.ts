@@ -7,6 +7,7 @@ import {
   HOLD_INNER_RATIO,
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
+  NOTE_LIGHTEN_RATIO,
 } from "../utils/constants";
 
 export class HoldRenderer extends BaseRenderer {
@@ -192,7 +193,7 @@ export class HoldRenderer extends BaseRenderer {
       ctx.closePath();
       ctx.stroke();
 
-      const lightColor = this.mixHexColor(color[0], "#ffffff", 0.18);
+      const lightColor = this.mixHexColor(color[0], "#ffffff", NOTE_LIGHTEN_RATIO);
       const segments = [
         { os: startTip, oe: startLeft, is: innerStartTip, ie: innerStartLeft },
         { os: startLeft, oe: endBackLeft, is: innerStartLeft, ie: innerEndBackLeft },

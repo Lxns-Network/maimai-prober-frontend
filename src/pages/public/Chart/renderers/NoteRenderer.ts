@@ -1,4 +1,4 @@
-import { BaseRenderer, RenderContext } from "./BaseRenderer";
+import { BaseRenderer, RenderContext, getGradientColors } from "./BaseRenderer";
 import { Note, Point2D, NoteRenderPosition, ButtonPosition } from "../types";
 import {
   NOTE_SIZE_RATIO,
@@ -8,6 +8,7 @@ import {
   COLORS,
   NOTE_VISIBILITY_AFTER_MS,
   NOTE_HIT_EFFECT_DURATION_MS,
+  NOTE_LIGHTEN_RATIO,
 } from "../utils/constants";
 
 export class NoteRenderer extends BaseRenderer {
@@ -328,19 +329,7 @@ export class NoteRenderer extends BaseRenderer {
     isBreak: boolean,
     isSimultaneous: boolean,
   ): [string, string] {
-    if (ddrColor) {
-      return [ddrColor, this.mixHexColor(ddrColor, "#000000", 0.25)];
-    }
-
-    if (isBreak) {
-      return [COLORS.BREAK_GRADIENT_START, COLORS.BREAK_GRADIENT_END];
-    }
-
-    if (isSimultaneous) {
-      return [COLORS.SIMULTANEOUS_GRADIENT_START, COLORS.SIMULTANEOUS_GRADIENT_END];
-    }
-
-    return [COLORS.TAP_GRADIENT_START, COLORS.TAP_GRADIENT_END];
+    return getGradientColors(ddrColor, isBreak, isSimultaneous);
   }
 
   private renderDirectionalTapRing(
@@ -353,7 +342,7 @@ export class NoteRenderer extends BaseRenderer {
   ): void {
     const ctx = this.context.ctx;
     const startAngle = this.getButtonAngle(position);
-    const lightColor = this.mixHexColor(colors[0], "#ffffff", 0.18);
+    const lightColor = this.mixHexColor(colors[0], "#ffffff", NOTE_LIGHTEN_RATIO);
 
     for (let i = 0; i < 4; i++) {
       const sectorStart = startAngle + (i * Math.PI) / 2;

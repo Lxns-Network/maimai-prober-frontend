@@ -79,11 +79,14 @@ function getDifficultyAnchors(simaiText: string): DifficultyAnchor[] {
   const anchors: DifficultyAnchor[] = [];
   const pattern = /^&inote_(\d+)=/gim;
   let match: RegExpExecArray | null;
+  let line = 1;
+  let lastNewlineIdx = -1;
 
   while ((match = pattern.exec(simaiText)) !== null) {
-    const difficulty = Number(match[1]);
-    const line = simaiText.slice(0, match.index).split("\n").length;
-    anchors.push({ difficulty, index: match.index, line });
+    for (; lastNewlineIdx < match.index; lastNewlineIdx++) {
+      if (simaiText[lastNewlineIdx] === "\n") line++;
+    }
+    anchors.push({ difficulty: Number(match[1]), index: match.index, line });
   }
 
   return anchors;
@@ -256,7 +259,7 @@ export function Controls() {
     setMusicUrl,
   } = useGameStore(useShallow((state) => state));
 
-  // 临时调试：手动编辑当前 simai 文本并重新加载
+  // 手动编辑当前 simai 文本并重新加载
   const [debugSimai, setDebugSimai] = useState(rawSimaiText);
   const debugSimaiTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const importedMusicUrlRef = useRef<string | null>(null);

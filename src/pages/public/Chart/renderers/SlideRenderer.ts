@@ -249,47 +249,14 @@ export class SlideRenderer extends BaseRenderer {
         return;
       }
 
-      switch (mirroredType) {
-        case "-":
-          this.renderSegmentPath(segment, progress);
-          break;
-        case ">":
-          this.renderSegmentPath(segment, progress);
-          break;
-        case "<":
-          this.renderSegmentPath(segment, progress);
-          break;
-        case "^":
-          if (
-            Math.abs(
-              this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos),
-            ) === 4
-          )
-            return false;
-          this.renderSegmentPath(segment, progress);
-          break;
-        case "v":
-          if (
-            Math.abs(
-              this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos),
-            ) === 4
-          )
-            return false;
-          this.renderSegmentPath(segment, progress);
-          break;
-        case "p":
-        case "pp":
-        case "q":
-        case "qq":
-          this.renderSegmentPath(segment, progress);
-          break;
-        case "s":
-          this.renderSegmentPath(segment, progress);
-          break;
-        case "z":
-          this.renderSegmentPath(segment, progress);
-          break;
-      }
+      if (
+        (mirroredType === "^" || mirroredType === "v") &&
+        Math.abs(
+          this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos),
+        ) === 4
+      )
+        return false;
+      this.renderSegmentPath(segment, progress);
     });
 
     return true;
@@ -504,7 +471,6 @@ export class SlideRenderer extends BaseRenderer {
     const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
     const radiusScale = this.context.radius / 300;
 
-    // 拖影参数：从弱到强（先弱后强叠加，靠近本体的色更浓）
     const shadows = [
       { offset: 5, alpha: 0.2, extra: 6 },
       { offset: 3, alpha: 0.5, extra: 3 },
@@ -514,8 +480,6 @@ export class SlideRenderer extends BaseRenderer {
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
 
-    // 逐箭头叠绘 outline → 拖影 → 主体（不按层批量）：arrows[0] 在远端、arrows[N-1]
-    // 靠 star 头，正向迭代让靠 star 的盖在远端上，自重叠路径处可见黑边切割下层。
     for (const arrow of arrows) {
       const cos = Math.cos(arrow.angle);
       const sin = Math.sin(arrow.angle);
@@ -555,7 +519,6 @@ export class SlideRenderer extends BaseRenderer {
         ctx.stroke(trail);
       }
 
-      // 双平行四边形拼成 V：共享沿角平分线的边，形状统一，颜色按类型区分
       {
         const rLen = Math.hypot(x1 - x2, y1 - y2);
         const lLen = Math.hypot(x3 - x2, y3 - y2);

@@ -1,4 +1,4 @@
-import { RenderContext, mixHexColor } from "./BaseRenderer";
+import { RenderContext, getGradientColors } from "./BaseRenderer";
 import { NoteRenderer } from "./NoteRenderer";
 import { SlideRenderer } from "./SlideRenderer";
 import { HoldRenderer } from "./HoldRenderer";
@@ -676,13 +676,7 @@ export class MainRenderer {
       const isSimultaneous = (hold.simultaneousNoteCount ?? 0) >= 2;
 
       const ddrColor = this.config.ddrColorMode ? this.getDdrColor(hold.timing) : null;
-      const color: [string, string] = ddrColor
-        ? [ddrColor, mixHexColor(ddrColor, "#000000", 0.25)]
-        : hold.isBreakHold
-          ? [COLORS.BREAK_GRADIENT_START, COLORS.BREAK_GRADIENT_END]
-          : isSimultaneous
-            ? [COLORS.SIMULTANEOUS_GRADIENT_START, COLORS.SIMULTANEOUS_GRADIENT_END]
-            : [COLORS.TAP_GRADIENT_START, COLORS.TAP_GRADIENT_END];
+      const color = getGradientColors(ddrColor, hold.isBreakHold ?? false, isSimultaneous);
 
       this.holdRenderer.renderHold(
         startPos,

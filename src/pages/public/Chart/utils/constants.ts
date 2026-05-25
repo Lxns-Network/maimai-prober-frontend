@@ -115,6 +115,12 @@ export const PLAYBACK_SPEED_MAX = 1.0;
 /** 默认播放速度 */
 export const PLAYBACK_SPEED_DEFAULT = 1.0;
 
+/** 音符亮色混合比例（lighten） */
+export const NOTE_LIGHTEN_RATIO = 0.18;
+
+/** DDR 模式暗色混合比例 */
+export const DDR_DARKEN_RATIO = 0.25;
+
 export const COLORS = {
   TAP_PINK: "#ff69b4",
   TAP_GRADIENT_START: "#FD197D",
