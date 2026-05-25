@@ -33,6 +33,10 @@ import {
   NOTE_HIT_EFFECT_DURATION_MS,
 } from "../utils/constants";
 
+const MAX_DPR = 2;
+const FULLSCREEN_MAX_CANVAS_PIXELS = 3_500_000;
+const FULLSCREEN_MIN_DPR = 1;
+
 interface PreparedRenderNotes {
   slides: SlideNote[];
   touches: (TouchNote | TouchHoldStartNote)[];
@@ -164,7 +168,7 @@ export class MainRenderer {
     this.sensorImage.src = "/assets/maimai/chart/sensor.webp";
   }
 
-  resize(): void {
+  resize(isFullscreen: boolean = false): void {
     const parent = this.canvas.parentElement;
     if (!parent) return;
 
@@ -173,17 +177,24 @@ export class MainRenderer {
 
     const rect = parent.getBoundingClientRect();
     const size = Math.min(rect.width, rect.height);
+    if (size <= 0) return;
     // 144Hz 显示器的 vsync 预算只有 6.9ms，按完整 DPR=2/3 渲染时浏览器
     // composite canvas backing store 的成本会顶满预算导致掉帧；不过手机屏幕通常
     // 物理面积小，按 DPR=2 渲染仍可接受，上限 2 在 DPR=3 设备节省 ~56% 像素。
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rawDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    const fullscreenBudgetDpr = Math.sqrt(FULLSCREEN_MAX_CANVAS_PIXELS / (size * size));
+    const dpr = isFullscreen
+      ? Math.min(rawDpr, Math.max(FULLSCREEN_MIN_DPR, fullscreenBudgetDpr))
+      : rawDpr;
+    const backingSize = Math.round(size * dpr);
+    const effectiveDpr = backingSize / size;
 
     this.logicalSize = size;
 
-    this.canvas.width = size * dpr;
-    this.canvas.height = size * dpr;
+    this.canvas.width = backingSize;
+    this.canvas.height = backingSize;
 
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.ctx.setTransform(effectiveDpr, 0, 0, effectiveDpr, 0, 0);
 
     this.centerX = size / 2;
     this.centerY = size / 2;

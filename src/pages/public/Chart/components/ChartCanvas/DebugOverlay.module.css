@@ -1,0 +1,95 @@
+.debugInfo {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #fff;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 12px;
+  line-height: 1.35;
+  z-index: 10;
+}
+
+.debugSummary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--mantine-radius-sm);
+  background: rgb(0 0 0 / 0.65);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.debugPanel {
+  min-width: 260px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: var(--mantine-radius-sm);
+  background: rgb(0 0 0 / 0.65);
+}
+
+.debugTitle {
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.debugGrid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 10px;
+  row-gap: 2px;
+
+  & > span:nth-child(odd) {
+    color: rgb(255 255 255 / 0.62);
+  }
+
+  & > span:nth-child(even) {
+    text-align: right;
+  }
+}
+
+.debugGraphHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: rgb(255 255 255 / 0.75);
+}
+
+.debugGraph {
+  display: block;
+  width: 240px;
+  height: 48px;
+  margin-top: 4px;
+
+  & line {
+    stroke: rgb(255 255 255 / 0.16);
+    stroke-width: 1;
+  }
+
+  & polyline {
+    fill: none;
+    stroke: #22c55e;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.debugGraph .debugGraphCursor {
+  stroke: rgb(255 255 255 / 0.45);
+  stroke-width: 1;
+}
+
+.debugGraph .debugGraphAverage {
+  stroke: rgb(250 204 21 / 0.7);
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+}
+
+.debugGraph .debugGraphPoint {
+  fill: #fff;
+  stroke: #22c55e;
+  stroke-width: 2;
+}

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
 import { MainRenderer } from "../../renderers/MainRenderer";
 import { useAudio } from "../../hooks/useAudio";
 import { useMusicPlayer } from "../../hooks/useMusicPlayer";
 import { ANSWER_SOUND_BASE_OFFSET_MS } from "../../utils/constants";
+import { DebugOverlay, type CanvasDebugInfo } from "./DebugOverlay";
 import classes from "./ChartCanvas.module.css";
 import clsx from "clsx";
 
@@ -76,6 +77,7 @@ export function ChartCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MainRenderer | null>(null);
+  const [canvasDebugInfo, setCanvasDebugInfo] = useState<CanvasDebugInfo | null>(null);
 
   const animationFrameRef = useRef<number | null>(null);
   const playbackStartTimeRef = useRef<number>(0);
@@ -86,6 +88,7 @@ export function ChartCanvas() {
   const lastFrameTimeRef = useRef<number>(0);
   const lastRenderTimeRef = useRef<number>(0);
   const accumulatedTimeRef = useRef<number>(0);
+  const lastDebugInfoTimeRef = useRef<number>(0);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const answerSound = useAudio({ autoInit: true });
@@ -234,6 +237,40 @@ export function ChartCanvas() {
     }
   }, []);
 
+  const updateCanvasDebugInfo = useCallback((force: boolean = false) => {
+    if (!import.meta.env.DEV) return;
+
+    const now = performance.now();
+    if (!force && now - lastDebugInfoTimeRef.current < 250) return;
+    lastDebugInfoTimeRef.current = now;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const gameState = useGameStore.getState();
+    setCanvasDebugInfo((previous) => {
+      const fps = fpsRef.current;
+      const previousHistory = previous?.fpsHistory ?? [];
+      const fpsHistory =
+        gameState.isPlaying && fps > 0
+          ? [...previousHistory, fps].slice(-80)
+          : previousHistory;
+
+      return {
+        cssWidth: Math.round(rect.width),
+        cssHeight: Math.round(rect.height),
+        backingWidth: canvas.width,
+        backingHeight: canvas.height,
+        canvasDpr: rect.width > 0 ? canvas.width / rect.width : 0,
+        deviceDpr: window.devicePixelRatio || 1,
+        clockSource: audioMasterTimeMsRef.current !== null ? "audio" : "raf",
+        fps,
+        fpsHistory,
+      };
+    });
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -256,7 +293,8 @@ export function ChartCanvas() {
     renderer.setPlaybackSpeed(useGameStore.getState().playbackSpeed);
 
     const handleResize = () => {
-      renderer.resize();
+      renderer.resize(useGameStore.getState().isFullscreen);
+      updateCanvasDebugInfo(true);
       renderFrame(playbackTimeRef.current);
     };
 
@@ -277,7 +315,26 @@ export function ChartCanvas() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [renderFrame, chartData?.bpm]);
+  }, [renderFrame, chartData?.bpm, updateCanvasDebugInfo]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+
+    renderer.resize(isFullscreen);
+    updateCanvasDebugInfo(true);
+    renderFrame(playbackTimeRef.current);
+  }, [isFullscreen, renderFrame, updateCanvasDebugInfo]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
+    updateCanvasDebugInfo(true);
+    const intervalId = window.setInterval(() => updateCanvasDebugInfo(), 250);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [updateCanvasDebugInfo]);
 
   useEffect(() => {
     const exportFrame = () => {
@@ -665,6 +722,7 @@ export function ChartCanvas() {
           [classes.fullscreen]: isFullscreen,
         })}
       />
+      {import.meta.env.DEV && canvasDebugInfo && <DebugOverlay debugInfo={canvasDebugInfo} />}
     </div>
   );
 }
