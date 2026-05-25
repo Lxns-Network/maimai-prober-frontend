@@ -217,8 +217,6 @@ export function SimaiStatementList({
     () => statements.map((s) => s.chunks.every((c) => MARKER_ONLY_RE.test(c.text.trim()))),
     [statements],
   );
-  const isPlaying = useGameStore((s) => s.isPlaying);
-  const preciseTime = useGameStore((s) => s.timeline.preciseTime);
   const setPreciseTime = useGameStore((s) => s.setPreciseTime);
 
   const seekTo = useCallback(
@@ -250,6 +248,7 @@ export function SimaiStatementList({
     let raf: number | null = null;
     let lastLine = -1;
     let lastChunk = -1;
+    let lastBeat = -1;
     const findChunkLocationAt = (beat: number) => {
       let lo = 0;
       let hi = chunkLocations.length;
@@ -262,7 +261,13 @@ export function SimaiStatementList({
       return chunkLocations[index] ?? null;
     };
     const tick = () => {
-      const curBeat = isPlaying ? playbackTimeRef.current : preciseTime;
+      const state = useGameStore.getState();
+      const curBeat = state.isPlaying ? playbackTimeRef.current : state.timeline.preciseTime;
+      if (curBeat === lastBeat) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      lastBeat = curBeat;
       const location = findChunkLocationAt(curBeat);
       const lineIdx = location?.line ?? -1;
       const chunkIdx = location?.chunk ?? -1;
@@ -277,7 +282,7 @@ export function SimaiStatementList({
     return () => {
       if (raf !== null) cancelAnimationFrame(raf);
     };
-  }, [chunkLocations, isPlaying, preciseTime, expanded]);
+  }, [chunkLocations, expanded]);
 
   // 用户用 wheel/touch 滚动后停止自动跟随，按下"居中"按钮恢复。
   const [autoScroll, setAutoScroll] = useState(true);

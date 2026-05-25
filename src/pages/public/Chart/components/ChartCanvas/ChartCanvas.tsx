@@ -133,9 +133,6 @@ export function ChartCanvas() {
   const normalColorBreakSlide = useGameSettingsStore((s) => s.normalColorBreakSlide);
   const showFireworks = useGameSettingsStore((s) => s.showFireworks);
   const showHitEffect = useGameSettingsStore((s) => s.showHitEffect);
-  const fpsLimit = useGameSettingsStore((s) => s.fpsLimit);
-  const fpsLimitRef = useRef(fpsLimit);
-  fpsLimitRef.current = fpsLimit;
   const soundEnabled = useGameSettingsStore((s) => s.soundEnabled);
   const soundVolume = useGameSettingsStore((s) => s.soundVolume);
   const soundOffset = useGameSettingsStore((s) => s.soundOffset);
@@ -253,9 +250,7 @@ export function ChartCanvas() {
       const fps = fpsRef.current;
       const previousHistory = previous?.fpsHistory ?? [];
       const fpsHistory =
-        gameState.isPlaying && fps > 0
-          ? [...previousHistory, fps].slice(-80)
-          : previousHistory;
+        gameState.isPlaying && fps > 0 ? [...previousHistory, fps].slice(-80) : previousHistory;
 
       return {
         cssWidth: Math.round(rect.width),
@@ -594,7 +589,7 @@ export function ChartCanvas() {
       }
 
       // 帧数限制：跳过帧的时间累积到 accumulatedTimeRef，攒够目标间隔才渲染
-      const limit = fpsLimitRef.current;
+      const limit = useGameSettingsStore.getState().fpsLimit;
       if (limit > 0 && lastRenderTimeRef.current > 0) {
         accumulatedTimeRef.current += timestamp - lastRenderTimeRef.current;
         lastRenderTimeRef.current = timestamp;

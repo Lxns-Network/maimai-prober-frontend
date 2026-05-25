@@ -554,8 +554,8 @@ export function Controls() {
         </Stack>
       </Card>
 
-      {chartData?.title.indexOf("UTAGE") !== -1 ||
-        (Object.keys(availableDifficulties).length > 0 && (
+      {chartData?.title.indexOf("UTAGE") === -1 &&
+        Object.keys(availableDifficulties).length > 0 && (
           <Group gap="xs" grow>
             {([1, 2, 3, 4, 5, 6] as ChartDifficulty[]).map((diff) => {
               const isAvailable = availableDifficulties[diff];
@@ -590,7 +590,7 @@ export function Controls() {
               );
             })}
           </Group>
-        ))}
+        )}
 
       <Card className={classes.card} radius="lg" withBorder>
         <UnstyledButton onClick={() => setShowDisplaySettings(!showDisplaySettings)} w="100%">

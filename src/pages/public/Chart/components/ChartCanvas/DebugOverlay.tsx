@@ -58,7 +58,6 @@ function getFpsGraphPoints(fpsHistory: number[]): string {
       const point = getFpsGraphPoint(fpsHistory, index, maxFps);
       return point ? `${point.x.toFixed(1)},${point.y.toFixed(1)}` : "";
     })
-    .filter(Boolean)
     .join(" ");
 }
 
@@ -74,9 +73,7 @@ export function DebugOverlay({ debugInfo }: { debugInfo: CanvasDebugInfo | null 
   const averageFpsY = averageFps !== null ? getFpsGraphY(averageFps, fpsGraphMax) : null;
 
   const hoveredFps =
-    hoverIndex !== null && fpsHistory[hoverIndex] !== undefined
-      ? fpsHistory[hoverIndex]
-      : null;
+    hoverIndex !== null && fpsHistory[hoverIndex] !== undefined ? fpsHistory[hoverIndex] : null;
   const hoveredFpsPoint =
     hoverIndex !== null && hoveredFps !== null
       ? getFpsGraphPoint(fpsHistory, hoverIndex, fpsGraphMax)
@@ -97,14 +94,8 @@ export function DebugOverlay({ debugInfo }: { debugInfo: CanvasDebugInfo | null 
 
   return (
     <div className={classes.debugInfo}>
-      <button
-        type="button"
-        className={classes.debugSummary}
-        onClick={() => setExpanded((e) => !e)}
-      >
-        <span>
-          {((debugInfo.backingWidth * debugInfo.backingHeight) / 1_000_000).toFixed(2)}MP
-        </span>
+      <button type="button" className={classes.debugSummary} onClick={() => setExpanded((e) => !e)}>
+        <span>{((debugInfo.backingWidth * debugInfo.backingHeight) / 1_000_000).toFixed(2)}MP</span>
         <span>DPR {debugInfo.canvasDpr.toFixed(2)}</span>
         <span>{debugInfo.clockSource}</span>
       </button>
@@ -145,12 +136,7 @@ export function DebugOverlay({ debugInfo }: { debugInfo: CanvasDebugInfo | null 
             }}
             onPointerLeave={() => setHoverIndex(null)}
           >
-            <line
-              x1="0"
-              y1={FPS_GRAPH_HEIGHT / 2}
-              x2={FPS_GRAPH_WIDTH}
-              y2={FPS_GRAPH_HEIGHT / 2}
-            />
+            <line x1="0" y1={FPS_GRAPH_HEIGHT / 2} x2={FPS_GRAPH_WIDTH} y2={FPS_GRAPH_HEIGHT / 2} />
             {averageFpsY !== null && (
               <line
                 className={classes.debugGraphAverage}
