@@ -9,6 +9,7 @@ import {
   Collapse,
   Group,
   HoverCard,
+  Menu,
   SegmentedControl,
   Select,
   Slider,
@@ -37,6 +38,8 @@ import {
   IconMaximize,
   IconMinimize,
   IconCamera,
+  IconDownload,
+  IconClipboard,
   IconUpload,
 } from "@tabler/icons-react";
 import { useGameStore } from "../../stores/useGameStore";
@@ -125,6 +128,23 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
   const exportCurrentFrame = () => {
     window.dispatchEvent(new Event("maimai-chart-export-frame"));
   };
+
+  const copyCurrentFrame = () => {
+    window.dispatchEvent(new Event("maimai-chart-copy-frame"));
+  };
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const { title, message, color } = (event as CustomEvent).detail as {
+        title: string;
+        message: string;
+        color: string;
+      };
+      notifications.show({ title, message, color });
+    };
+    window.addEventListener("maimai-chart-notify", handler);
+    return () => window.removeEventListener("maimai-chart-notify", handler);
+  }, []);
 
   return (
     <Card
@@ -216,16 +236,23 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="导出当前帧">
-            <ActionIcon
-              variant="subtle"
-              color={isFullscreen ? "white" : "gray"}
-              size="lg"
-              onClick={exportCurrentFrame}
-            >
-              <IconCamera size={20} />
-            </ActionIcon>
-          </Tooltip>
+          <Menu shadow="md" width={160}>
+            <Menu.Target>
+              <Tooltip label="导出当前帧">
+                <ActionIcon variant="subtle" color={isFullscreen ? "white" : "gray"} size="lg">
+                  <IconCamera size={20} />
+                </ActionIcon>
+              </Tooltip>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconDownload size={14} />} onClick={exportCurrentFrame}>
+                下载 PNG
+              </Menu.Item>
+              <Menu.Item leftSection={<IconClipboard size={14} />} onClick={copyCurrentFrame}>
+                复制到剪贴板
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
 
           {onToggleFullscreen && (
             <Tooltip label={isFullscreen ? "退出全屏" : "全屏预览"}>

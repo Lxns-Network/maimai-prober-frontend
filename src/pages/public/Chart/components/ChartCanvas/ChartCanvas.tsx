@@ -332,6 +332,12 @@ export function ChartCanvas() {
   }, [updateCanvasDebugInfo]);
 
   useEffect(() => {
+    const notify = (title: string, message: string, color: string) => {
+      window.dispatchEvent(
+        new CustomEvent("maimai-chart-notify", { detail: { title, message, color } }),
+      );
+    };
+
     const exportFrame = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -353,11 +359,29 @@ export function ChartCanvas() {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 0);
       }, "image/png");
+      notify("已保存", "当前帧已下载为 PNG", "green");
+    };
+
+    const copyFrame = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          notify("已复制", "当前帧已复制到剪贴板", "green");
+        } catch {
+          notify("复制失败", "剪贴板不可用", "red");
+        }
+      }, "image/png");
     };
 
     window.addEventListener("maimai-chart-export-frame", exportFrame);
+    window.addEventListener("maimai-chart-copy-frame", copyFrame);
     return () => {
       window.removeEventListener("maimai-chart-export-frame", exportFrame);
+      window.removeEventListener("maimai-chart-copy-frame", copyFrame);
     };
   }, []);
 
