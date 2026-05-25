@@ -623,6 +623,7 @@ export class SlideRenderer extends BaseRenderer {
     ];
 
     ctx.save();
+    ctx.globalAlpha = 0.6;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
