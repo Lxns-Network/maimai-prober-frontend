@@ -251,9 +251,7 @@ export class SlideRenderer extends BaseRenderer {
 
       if (
         (mirroredType === "^" || mirroredType === "v") &&
-        Math.abs(
-          this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos),
-        ) === 4
+        Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4
       )
         return false;
       this.renderSegmentPath(segment, progress);
@@ -638,9 +636,9 @@ export class SlideRenderer extends BaseRenderer {
     };
 
     ctx.save();
-    ctx.globalAlpha = 0.6;
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
+    ctx.globalAlpha = ctx.globalAlpha * 0.6;
 
     for (const c of chevrons) {
       const a1x = c.x + cos * c.arm1Dx - sin * c.arm1Dy;

@@ -84,6 +84,8 @@ export function ChartCanvas() {
   const fpsRef = useRef<number>(0);
   const frameTimesRef = useRef<number[]>([]);
   const lastFrameTimeRef = useRef<number>(0);
+  const lastRenderTimeRef = useRef<number>(0);
+  const accumulatedTimeRef = useRef<number>(0);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const answerSound = useAudio({ autoInit: true });
@@ -128,6 +130,9 @@ export function ChartCanvas() {
   const normalColorBreakSlide = useGameSettingsStore((s) => s.normalColorBreakSlide);
   const showFireworks = useGameSettingsStore((s) => s.showFireworks);
   const showHitEffect = useGameSettingsStore((s) => s.showHitEffect);
+  const fpsLimit = useGameSettingsStore((s) => s.fpsLimit);
+  const fpsLimitRef = useRef(fpsLimit);
+  fpsLimitRef.current = fpsLimit;
   const soundEnabled = useGameSettingsStore((s) => s.soundEnabled);
   const soundVolume = useGameSettingsStore((s) => s.soundVolume);
   const soundOffset = useGameSettingsStore((s) => s.soundOffset);
@@ -530,6 +535,19 @@ export function ChartCanvas() {
         // 传入当前时间，避免播放之前已经过去的 note 音效
         answerSoundRefs.current.reset(playbackStartMsRef.current, true);
       }
+
+      // 帧数限制：跳过帧的时间累积到 accumulatedTimeRef，攒够目标间隔才渲染
+      const limit = fpsLimitRef.current;
+      if (limit > 0 && lastRenderTimeRef.current > 0) {
+        accumulatedTimeRef.current += timestamp - lastRenderTimeRef.current;
+        lastRenderTimeRef.current = timestamp;
+        if (accumulatedTimeRef.current < 1000 / limit) {
+          animationFrameRef.current = requestAnimationFrame(animate);
+          return;
+        }
+        accumulatedTimeRef.current -= 1000 / limit;
+      }
+      lastRenderTimeRef.current = timestamp;
 
       // FPS 统计
       if (lastFrameTimeRef.current > 0) {

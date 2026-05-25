@@ -393,6 +393,8 @@ export function Controls() {
     setNormalColorBreakSlide,
     setShowFireworks,
     setShowHitEffect,
+    fpsLimit,
+    setFpsLimit,
     setMusicVolume,
     setMusicOffset,
     setSoundOffset,
@@ -699,6 +701,23 @@ export function Controls() {
                 onChange={(e) => setShowFireworks(e.currentTarget.checked)}
               />
             </Group>
+
+            <div>
+              <Text size="sm" mb={4}>
+                帧数限制
+              </Text>
+              <SegmentedControl
+                value={String(fpsLimit)}
+                onChange={(value) => setFpsLimit(Number(value))}
+                data={[
+                  { value: "0", label: "无限制" },
+                  { value: "120", label: "120 FPS" },
+                  { value: "60", label: "60 FPS" },
+                ]}
+                size="xs"
+                fullWidth
+              />
+            </div>
           </Stack>
         </Collapse>
       </Card>
