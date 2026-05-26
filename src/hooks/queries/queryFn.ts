@@ -21,7 +21,7 @@ export const defaultQueryFn = async <T = unknown>({
   if (!data.success) {
     throw new APIError(data.message, { status: res.status, code: data.code });
   }
-  return data.data as T;
+  return data.data;
 };
 
 // 用于直接返回数据的 API 端点（如公开的 /{game}/song/* 端点），通过 HTTP 状态码判断错误

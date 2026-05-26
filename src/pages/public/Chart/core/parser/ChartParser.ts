@@ -549,8 +549,14 @@ function parseNoteString(
       pathStartIndex >= 0 ? slideNotation.slice(0, pathStartIndex).toLowerCase() : "";
     // simai 无头滑条：`?` 让 tracing star 渐显，`!` 让 tracing star 在滑条启动时突然出现。
     const headlessMarker = match(startModifiers)
-      .when((s) => s.includes("!"), () => "!" as const)
-      .when((s) => s.includes("?"), () => "?" as const)
+      .when(
+        (s) => s.includes("!"),
+        () => "!" as const,
+      )
+      .when(
+        (s) => s.includes("?"),
+        () => "?" as const,
+      )
       .otherwise(() => null);
     const isStartBreak = startModifiers.includes("b");
     const isHeadless = headlessMarker !== null;

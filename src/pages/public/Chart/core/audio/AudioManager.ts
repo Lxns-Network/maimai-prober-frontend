@@ -122,25 +122,13 @@ export class AudioManager {
       .with({ type: "slide" }, (n) => !n.isHeadless)
       .with(
         {
-          type: P.union(
-            "tap",
-            "break",
-            "simultaneous",
-            "hold-start",
-            "hold-start-simultaneous",
-          ),
+          type: P.union("tap", "break", "simultaneous", "hold-start", "hold-start-simultaneous"),
         },
         () => true,
       )
       .with({ type: P.union("touch", "touch-hold-start") }, () => this.touchSoundEnabled)
-      .with(
-        { type: "touch-hold-end" },
-        () => this.touchSoundEnabled && this.holdEndSoundEnabled,
-      )
-      .with(
-        { type: P.union("hold-end", "hold-end-simultaneous") },
-        () => this.holdEndSoundEnabled,
-      )
+      .with({ type: "touch-hold-end" }, () => this.touchSoundEnabled && this.holdEndSoundEnabled)
+      .with({ type: P.union("hold-end", "hold-end-simultaneous") }, () => this.holdEndSoundEnabled)
       .exhaustive();
   }
 
