@@ -138,7 +138,7 @@ export class MainRenderer {
 
     this.noteRenderer = new NoteRenderer(context);
     this.slideRenderer = new SlideRenderer(context, this.noteRenderer);
-    this.holdRenderer = new HoldRenderer(context, this.noteRenderer);
+    this.holdRenderer = new HoldRenderer(context);
     this.touchRenderer = new TouchRenderer(context);
   }
 

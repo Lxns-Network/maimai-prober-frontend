@@ -79,6 +79,7 @@
     "shiki": "3.23.0",
     "stylelint": "16.26.1",
     "stylelint-config-standard-scss": "13.1.0",
+    "ts-pattern": "^5.9.0",
     "vike": "0.4.257",
     "vike-react": "0.6.21",
     "wanakana": "5.3.1",

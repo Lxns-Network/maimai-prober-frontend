@@ -1,5 +1,6 @@
 import { Note, AudioConfig } from "../../types";
 import { ANSWER_SOUND_BASE_OFFSET_MS } from "../../utils/constants";
+import { match, P } from "ts-pattern";
 
 const SCHEDULE_LOOKAHEAD_MS = 1500;
 
@@ -117,29 +118,18 @@ export class AudioManager {
   }
 
   private shouldPlaySound(note: Note): boolean {
-    switch (note.type) {
-      case "tap":
-      case "break":
-      case "simultaneous":
-      case "hold-start":
-      case "hold-start-simultaneous":
-      case "slide":
-        return note.type !== "slide" || !note.isHeadless;
-
-      case "touch":
-      case "touch-hold-start":
-        return this.touchSoundEnabled;
-
-      case "touch-hold-end":
-        return this.touchSoundEnabled && this.holdEndSoundEnabled;
-
-      case "hold-end":
-      case "hold-end-simultaneous":
-        return this.holdEndSoundEnabled;
-
-      default:
-        return false;
-    }
+    return match(note)
+      .with({ type: "slide" }, (n) => !n.isHeadless)
+      .with(
+        {
+          type: P.union("tap", "break", "simultaneous", "hold-start", "hold-start-simultaneous"),
+        },
+        () => true,
+      )
+      .with({ type: P.union("touch", "touch-hold-start") }, () => this.touchSoundEnabled)
+      .with({ type: "touch-hold-end" }, () => this.touchSoundEnabled && this.holdEndSoundEnabled)
+      .with({ type: P.union("hold-end", "hold-end-simultaneous") }, () => this.holdEndSoundEnabled)
+      .exhaustive();
   }
 
   private getEventKey(note: Note): string {

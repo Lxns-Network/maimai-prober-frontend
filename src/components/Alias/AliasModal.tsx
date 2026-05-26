@@ -31,6 +31,7 @@ import useFixedGame from "@/hooks/useFixedGame.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { AliasProps } from "@/types/alias";
+import { match, P } from "ts-pattern";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -75,7 +76,11 @@ export function calculateNewAliasWeight(
     } // 改为支持
   }
 
-  const newWeight = current === (isUpvote ? 1 : -1) ? 0 : isUpvote ? 1 : -1;
+  const newWeight = match([current, isUpvote] as const)
+    .with([1, true], () => 0)
+    .with([-1, false], () => 0)
+    .with([P._, true], () => 1)
+    .otherwise(() => -1);
 
   return {
     ...alias,

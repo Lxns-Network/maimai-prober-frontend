@@ -5438,6 +5438,7 @@ __metadata:
     shiki: "npm:3.23.0"
     stylelint: "npm:16.26.1"
     stylelint-config-standard-scss: "npm:13.1.0"
+    ts-pattern: "npm:^5.9.0"
     typescript: "npm:5.9.3"
     vike: "npm:0.4.257"
     vike-react: "npm:0.6.21"
@@ -8672,6 +8673,13 @@ __metadata:
   version: 0.2.0
   resolution: "ts-easing@npm:0.2.0"
   checksum: 10c0/84ec20192310c697ff890ca2e0625e131a32596a7c5956326c9632faca9037abf2dd3de4d81ac358ae9f26a6a2cfe2300f13756b26995f753d882e3d0463e327
+  languageName: node
+  linkType: hard
+
+"ts-pattern@npm:^5.9.0":
+  version: 5.9.0
+  resolution: "ts-pattern@npm:5.9.0"
+  checksum: 10c0/7640db25c39d29b287471b2b82d4f7b4674a02098c6ba4d10fed180adfb07d0e0c71930d9e59dc0d90654145e02fd320af63cf0df3c41e100d4154658a612a0a
   languageName: node
   linkType: hard
 
