@@ -41,6 +41,7 @@ import {
   IconDownload,
   IconClipboard,
   IconUpload,
+  IconLink,
 } from "@tabler/icons-react";
 import { useGameStore } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
@@ -108,6 +109,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     restartCurrentMeasure,
     stepMeasure,
     stepPosition,
+    getCurrentTimeInBeats,
   } = useGameStore(useShallow((state) => state));
 
   const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
@@ -131,6 +133,26 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 
   const copyCurrentFrame = () => {
     window.dispatchEvent(new Event("maimai-chart-copy-frame"));
+  };
+
+  const copyCurrentTimeUrl = async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("beat", String(Math.round(getCurrentTimeInBeats())));
+
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      notifications.show({
+        title: "已复制",
+        message: "当前时间点链接已复制到剪贴板",
+        color: "green",
+      });
+    } catch {
+      notifications.show({
+        title: "复制失败",
+        message: "剪贴板不可用",
+        color: "red",
+      });
+    }
   };
 
   useEffect(() => {
@@ -253,6 +275,18 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
+
+          <Tooltip label="复制当前时间点 URL">
+            <ActionIcon
+              variant="subtle"
+              color={isFullscreen ? "white" : "gray"}
+              size="lg"
+              onClick={() => void copyCurrentTimeUrl()}
+              aria-label="复制当前时间点 URL"
+            >
+              <IconLink size={20} />
+            </ActionIcon>
+          </Tooltip>
 
           {onToggleFullscreen && (
             <Tooltip label={isFullscreen ? "退出全屏" : "全屏预览"}>
