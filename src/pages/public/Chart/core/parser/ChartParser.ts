@@ -1,3 +1,4 @@
+import { match } from "ts-pattern";
 import {
   Chart,
   ChartMetadata,
@@ -56,7 +57,7 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
     throw new Error("Invalid input: expected a non-empty string");
   }
 
-  if (!/[0-9,\(\)\{\}\/\n&\-><^vpqszVwhb\[\]:\.=\s]/.test(simaiText)) {
+  if (!/[0-9,(){}/\n&\-><^vpqszVwhb[\]:.=\s]/.test(simaiText)) {
     throw new Error("Invalid simai format: expected digits, commas, brackets, and note markers");
   }
 
@@ -547,11 +548,10 @@ function parseNoteString(
     const startModifiers =
       pathStartIndex >= 0 ? slideNotation.slice(0, pathStartIndex).toLowerCase() : "";
     // simai 无头滑条：`?` 让 tracing star 渐显，`!` 让 tracing star 在滑条启动时突然出现。
-    const headlessMarker = startModifiers.includes("!")
-      ? "!"
-      : startModifiers.includes("?")
-        ? "?"
-        : null;
+    const headlessMarker = match(startModifiers)
+      .when((s) => s.includes("!"), () => "!" as const)
+      .when((s) => s.includes("?"), () => "?" as const)
+      .otherwise(() => null);
     const isStartBreak = startModifiers.includes("b");
     const isHeadless = headlessMarker !== null;
     const isEx = /x/i.test(noteStr);
@@ -666,7 +666,11 @@ function parseNoteString(
         scale: 1,
         bpm,
         isHeadless,
-        headlessMode: headlessMarker === "!" ? "pop" : headlessMarker === "?" ? "fade" : undefined,
+        headlessMode: match(headlessMarker)
+          .with("!", () => "pop" as const)
+          .with("?", () => "fade" as const)
+          .with(null, () => undefined)
+          .exhaustive(),
         isStartBreak,
         allSlideBreaks,
         isEx,

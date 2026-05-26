@@ -12,24 +12,28 @@ async function parseJSON<T>(res: Response): Promise<T> {
 }
 
 // 用于返回 { success, data } 包装格式的 API 端点（大部分 /user/* 端点）
-export const defaultQueryFn = async ({ queryKey }: QueryFunctionContext) => {
+export const defaultQueryFn = async <T = unknown>({
+  queryKey,
+}: QueryFunctionContext): Promise<T> => {
   const url = queryKey[0] as string;
   const res = await fetchAPI(url, { method: "GET" });
-  const data = await parseJSON<ApiResponse<any>>(res);
+  const data = await parseJSON<ApiResponse<T>>(res);
   if (!data.success) {
     throw new APIError(data.message, { status: res.status, code: data.code });
   }
-  return data.data;
+  return data.data as T;
 };
 
 // 用于直接返回数据的 API 端点（如公开的 /{game}/song/* 端点），通过 HTTP 状态码判断错误
-export const resourceQueryFn = async ({ queryKey }: QueryFunctionContext) => {
+export const resourceQueryFn = async <T = unknown>({
+  queryKey,
+}: QueryFunctionContext): Promise<T> => {
   const url = queryKey[0] as string;
   const res = await fetchAPI(url, { method: "GET" });
-  const data = await parseJSON<any>(res);
+  const data = await parseJSON<unknown>(res);
   if (!res.ok) {
     const error = data as ApiResponse;
     throw new APIError(error.message, { status: res.status, code: error.code });
   }
-  return data;
+  return data as T;
 };

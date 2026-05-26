@@ -1,16 +1,9 @@
 import { useCallback, useMemo, useRef, useEffect } from "react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
-import {
-  Note,
-  BpmEvent,
-  isTapNote,
-  isHoldStartNote,
-  isSlideNote,
-  isTouchNote,
-  isTouchHoldStartNote,
-} from "../../types";
+import { Note, BpmEvent } from "../../types";
 import classes from "./NoteCountGraph.module.css";
 import clsx from "clsx";
+import { match, P } from "ts-pattern";
 
 interface NoteCountData {
   tap: number;
@@ -92,21 +85,18 @@ function calculateNoteCounts(notes: Note[], totalDurationMs: number): NoteCountD
 
     const bucket = buckets[bucketIndex];
 
-    if (isTapNote(note)) {
-      if (note.type === "break") {
-        bucket.break++;
-      } else {
-        bucket.tap++;
-      }
-      bucket.total++;
-    } else if (isHoldStartNote(note)) {
-      bucket.hold++;
-      bucket.total++;
-    } else if (isSlideNote(note)) {
-      bucket.slide++;
-      bucket.total++;
-    } else if (isTouchNote(note) || isTouchHoldStartNote(note)) {
-      bucket.touch++;
+    const bucketKey = match(note.type)
+      .returnType<"tap" | "hold" | "slide" | "touch" | "break" | null>()
+      .with("break", () => "break")
+      .with(P.union("tap", "simultaneous"), () => "tap")
+      .with(P.union("hold-start", "hold-start-simultaneous"), () => "hold")
+      .with("slide", () => "slide")
+      .with(P.union("touch", "touch-hold-start"), () => "touch")
+      .with(P.union("hold-end", "hold-end-simultaneous", "touch-hold-end"), () => null)
+      .exhaustive();
+
+    if (bucketKey) {
+      bucket[bucketKey]++;
       bucket.total++;
     }
   }
@@ -533,7 +523,10 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
                 )}
                 style={{
                   left: `${percent}%`,
-                  height: isMajor ? "6px" : isMedium ? "4px" : "2px",
+                  height: match([isMajor, isMedium] as const)
+                    .with([true, P._], () => "6px")
+                    .with([false, true], () => "4px")
+                    .otherwise(() => "2px"),
                 }}
               />
             );

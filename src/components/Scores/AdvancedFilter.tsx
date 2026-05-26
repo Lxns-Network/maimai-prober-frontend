@@ -24,6 +24,7 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import { useScoreFilters } from "@/hooks/useScoreFilters.ts";
+import { match, P } from "ts-pattern";
 
 const filterData = {
   maimai: {
@@ -580,7 +581,10 @@ export const AdvancedFilter = ({
                 options={[
                   { value: "0", label: "无" },
                   ...[1, 2, 3, 4, 5].map((count) => {
-                    const rate = count <= 2 ? 1 : count <= 4 ? 2 : 3;
+                    const rate = match(count)
+                      .with(P.number.lte(2), () => 1)
+                      .with(P.number.lte(4), () => 2)
+                      .otherwise(() => 3);
                     return {
                       value: count.toString(),
                       label: (

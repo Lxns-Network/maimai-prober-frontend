@@ -1,6 +1,5 @@
 import { BaseRenderer, RenderContext } from "./BaseRenderer";
 import { HoldStartNote, HoldEndNote, NoteRenderPosition, ButtonPosition, Point2D } from "../types";
-import { NoteRenderer } from "./NoteRenderer";
 import {
   NOTE_SIZE_RATIO,
   HOLD_WIDTH_RATIO,
@@ -11,7 +10,7 @@ import {
 } from "../utils/constants";
 
 export class HoldRenderer extends BaseRenderer {
-  constructor(context: RenderContext, _noteRenderer: NoteRenderer) {
+  constructor(context: RenderContext) {
     super(context);
   }
 

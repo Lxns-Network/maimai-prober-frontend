@@ -1,5 +1,6 @@
 import { ActionIcon, Group, rem, Tooltip, useMantineColorScheme } from "@mantine/core";
 import { IconMoonStars, IconSun, IconSunMoon } from "@tabler/icons-react";
+import { match } from "ts-pattern";
 
 const colorSchemes = {
   auto: {
@@ -30,7 +31,11 @@ export const ColorSchemeToggle = () => {
           size={rem(32)}
           onClick={() =>
             setColorScheme(
-              colorScheme === "auto" ? "dark" : colorScheme === "dark" ? "light" : "auto",
+              match(colorScheme)
+                .with("auto", () => "dark" as const)
+                .with("dark", () => "light" as const)
+                .with("light", () => "auto" as const)
+                .exhaustive(),
             )
           }
           color={colorSchemes[colorScheme].color}
