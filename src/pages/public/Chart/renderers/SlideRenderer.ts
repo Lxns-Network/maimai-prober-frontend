@@ -2,7 +2,6 @@ import { BaseRenderer, RenderContext } from "./BaseRenderer";
 import {
   SlideNote,
   SlideSegment,
-  SlidePathType,
   Point2D,
   ButtonPosition,
   NoteRenderPosition,
@@ -11,6 +10,8 @@ import {
 import { NoteRenderer } from "./NoteRenderer";
 import {
   SLIDE_ARROW_WIDTH_RATIO,
+  SLIDE_ARROW_HEIGHT,
+  SLIDE_ARROW_SPAN,
   SLIDE_ARROW_SPACING,
   SLIDE_CURVE_OFFSET_RATIO,
   COLORS,
@@ -219,9 +220,6 @@ export class SlideRenderer extends BaseRenderer {
     isSimultaneous: boolean = false,
     normalBreakColor: boolean = false,
   ): boolean {
-    const startPos = this.noteRenderer.getPositionOnRing(segment.startPos);
-    const endPos = this.noteRenderer.getPositionOnRing(segment.endPos);
-
     const mirroredType = this.mirrorPathType(segment.type);
 
     this.withContext(() => {
@@ -251,33 +249,12 @@ export class SlideRenderer extends BaseRenderer {
         return;
       }
 
-      switch (mirroredType) {
-        case "-":
-          this.renderStraightPath(startPos, endPos, progress);
-          break;
-        case ">":
-          this.renderClockwiseArc(segment.startPos, segment.endPos, progress);
-          break;
-        case "<":
-          this.renderCounterClockwiseArc(segment.startPos, segment.endPos, progress);
-          break;
-        case "^":
-          return this.renderShortArc(segment.startPos, segment.endPos, progress);
-        case "v":
-          return this.renderVPath(segment.startPos, segment.endPos, progress);
-        case "p":
-        case "pp":
-        case "q":
-        case "qq":
-          this.renderCurvePath(segment.startPos, segment.endPos, segment.type, progress);
-          break;
-        case "s":
-          this.renderSPath(startPos, endPos, progress);
-          break;
-        case "z":
-          this.renderZPath(startPos, endPos, progress);
-          break;
-      }
+      if (
+        (mirroredType === "^" || mirroredType === "v") &&
+        Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4
+      )
+        return false;
+      this.renderSegmentPath(segment, progress);
     });
 
     return true;
@@ -320,6 +297,7 @@ export class SlideRenderer extends BaseRenderer {
     const ARM_HALF_ANGLE = ((135 / 2) * Math.PI) / 180; // 67.5°
     const cosA = Math.cos(ARM_HALF_ANGLE); // ≈ 0.383
     const sinA = Math.sin(ARM_HALF_ANGLE); // ≈ 0.924
+    const START_ARM_EXTRA = this.context.radius * 0.08;
 
     const chevrons: {
       x: number;
@@ -331,7 +309,8 @@ export class SlideRenderer extends BaseRenderer {
     }[] = [];
     for (let i = N - 1; i >= hiddenCount; i--) {
       const d = dFirst + (dLast - dFirst) * (i / (N - 1));
-      const armLen = cosA * d;
+      const startRatio = 1 - i / (N - 1);
+      const armLen = cosA * d + START_ARM_EXTRA * startRatio;
       chevrons.push({
         x: pivot.x + axisUx * d,
         y: pivot.y + axisUy * d,
@@ -377,240 +356,8 @@ export class SlideRenderer extends BaseRenderer {
     return result;
   }
 
-  private renderStraightPath(start: Point2D, end: Point2D, progress: number): void {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-
-    this.iterateArrowsAlongPath(
-      (t) => ({
-        x: start.x + dx * t,
-        y: start.y + dy * t,
-      }),
-      progress,
-    );
-  }
-
-  private renderClockwiseArc(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    progress: number,
-  ): void {
-    const startAngle = this.getButtonAngle(startPos);
-    let endAngle = this.getButtonAngle(endPos);
-    let angleDiff = endAngle - startAngle;
-
-    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
-    const isLeftSide = startPos === 1 || startPos === 2 || startPos === 7 || startPos === 8;
-    if (isLeftSide) {
-      if (angleDiff <= 0) angleDiff += 2 * Math.PI;
-    } else {
-      if (angleDiff >= 0) angleDiff -= 2 * Math.PI;
-    }
-
-    endAngle = startAngle + angleDiff;
-
-    this.iterateArrowsAlongPath((t) => {
-      const angle = startAngle + angleDiff * t;
-      return {
-        x: this.context.centerX + Math.cos(angle) * this.context.radius,
-        y: this.context.centerY + Math.sin(angle) * this.context.radius,
-      };
-    }, progress);
-  }
-
-  private renderCounterClockwiseArc(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    progress: number,
-  ): void {
-    const startAngle = this.getButtonAngle(startPos);
-    let endAngle = this.getButtonAngle(endPos);
-    let angleDiff = endAngle - startAngle;
-
-    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
-    const isLeftSide = startPos === 1 || startPos === 2 || startPos === 7 || startPos === 8;
-    if (isLeftSide) {
-      if (angleDiff >= 0) angleDiff -= 2 * Math.PI;
-    } else {
-      if (angleDiff <= 0) angleDiff += 2 * Math.PI;
-    }
-
-    endAngle = startAngle + angleDiff;
-
-    this.iterateArrowsAlongPath((t) => {
-      const angle = startAngle + angleDiff * t;
-      return {
-        x: this.context.centerX + Math.cos(angle) * this.context.radius,
-        y: this.context.centerY + Math.sin(angle) * this.context.radius,
-      };
-    }, progress);
-  }
-
-  private renderShortArc(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    progress: number,
-  ): boolean {
-    const startAngle = this.getButtonAngle(startPos);
-    let endAngle = this.getButtonAngle(endPos);
-    let angleDiff = endAngle - startAngle;
-
-    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
-    // 起止 180° 相对时无法判定方向，跳过这一段
-    if (Math.abs(angleDiff) === Math.PI) return false;
-
-    endAngle = startAngle + angleDiff;
-
-    this.iterateArrowsAlongPath((t) => {
-      const angle = startAngle + angleDiff * t;
-      return {
-        x: this.context.centerX + Math.cos(angle) * this.context.radius,
-        y: this.context.centerY + Math.sin(angle) * this.context.radius,
-      };
-    }, progress);
-
-    return true;
-  }
-
-  private renderVPath(startPos: ButtonPosition, endPos: ButtonPosition, progress: number): boolean {
-    // 起止 180° 相对 = 直线穿心，应由 '-' 处理
-    if (Math.abs(endPos - startPos) === 4) return false;
-
-    const startPt = this.noteRenderer.getPositionOnRing(startPos);
-    const endPt = this.noteRenderer.getPositionOnRing(endPos);
-    const center = { x: this.context.centerX, y: this.context.centerY };
-
-    const distToCenter = this.distanceToCenter(startPt.x, startPt.y);
-    const distFromCenter = this.distanceToCenter(endPt.x, endPt.y);
-    const totalDist = distToCenter + distFromCenter;
-
-    this.iterateArrowsAlongPath((t) => {
-      if (t < distToCenter / totalDist) {
-        const subT = t / (distToCenter / totalDist);
-        return {
-          x: startPt.x + (center.x - startPt.x) * subT,
-          y: startPt.y + (center.y - startPt.y) * subT,
-        };
-      } else {
-        const subT = (t - distToCenter / totalDist) / (distFromCenter / totalDist);
-        return {
-          x: center.x + (endPt.x - center.x) * subT,
-          y: center.y + (endPt.y - center.y) * subT,
-        };
-      }
-    }, progress);
-
-    return true;
-  }
-
-  private renderSPath(start: Point2D, end: Point2D, progress: number): void {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const nx = dx / length;
-    const ny = dy / length;
-    const perpX = -ny;
-    const perpY = nx;
-    const offset = this.context.radius * SLIDE_CURVE_OFFSET_RATIO;
-
-    const mid1 = {
-      x: start.x + nx * length * 0.49 + perpX * offset,
-      y: start.y + ny * length * 0.49 + perpY * offset,
-    };
-    const mid2 = {
-      x: start.x + nx * length * 0.51 - perpX * offset,
-      y: start.y + ny * length * 0.51 - perpY * offset,
-    };
-
-    const seg1Len = Math.sqrt(Math.pow(mid1.x - start.x, 2) + Math.pow(mid1.y - start.y, 2));
-    const seg2Len = Math.sqrt(Math.pow(mid2.x - mid1.x, 2) + Math.pow(mid2.y - mid1.y, 2));
-    const seg3Len = Math.sqrt(Math.pow(end.x - mid2.x, 2) + Math.pow(end.y - mid2.y, 2));
-    const totalLen = seg1Len + seg2Len + seg3Len;
-
-    this.iterateArrowsAlongPath((t) => {
-      const r1 = seg1Len / totalLen;
-      const r2 = seg2Len / totalLen;
-
-      if (t < r1) {
-        const subT = t / r1;
-        return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
-      } else if (t < r1 + r2) {
-        const subT = (t - r1) / r2;
-        return { x: mid1.x + (mid2.x - mid1.x) * subT, y: mid1.y + (mid2.y - mid1.y) * subT };
-      } else {
-        const subT = (t - r1 - r2) / (1 - r1 - r2);
-        return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
-      }
-    }, progress);
-  }
-
-  private renderZPath(start: Point2D, end: Point2D, progress: number): void {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const nx = dx / length;
-    const ny = dy / length;
-    const perpX = -ny;
-    const perpY = nx;
-    const offset = this.context.radius * SLIDE_CURVE_OFFSET_RATIO;
-
-    // Z 是 S 沿主轴的镜像
-    const mid1 = {
-      x: start.x + nx * length * 0.49 - perpX * offset,
-      y: start.y + ny * length * 0.49 - perpY * offset,
-    };
-    const mid2 = {
-      x: start.x + nx * length * 0.51 + perpX * offset,
-      y: start.y + ny * length * 0.51 + perpY * offset,
-    };
-
-    const seg1Len = Math.sqrt(Math.pow(mid1.x - start.x, 2) + Math.pow(mid1.y - start.y, 2));
-    const seg2Len = Math.sqrt(Math.pow(mid2.x - mid1.x, 2) + Math.pow(mid2.y - mid1.y, 2));
-    const seg3Len = Math.sqrt(Math.pow(end.x - mid2.x, 2) + Math.pow(end.y - mid2.y, 2));
-    const totalLen = seg1Len + seg2Len + seg3Len;
-
-    this.iterateArrowsAlongPath((t) => {
-      const r1 = seg1Len / totalLen;
-      const r2 = seg2Len / totalLen;
-
-      if (t < r1) {
-        const subT = t / r1;
-        return { x: start.x + (mid1.x - start.x) * subT, y: start.y + (mid1.y - start.y) * subT };
-      } else if (t < r1 + r2) {
-        const subT = (t - r1) / r2;
-        return { x: mid1.x + (mid2.x - mid1.x) * subT, y: mid1.y + (mid2.y - mid1.y) * subT };
-      } else {
-        const subT = (t - r1 - r2) / (1 - r1 - r2);
-        return { x: mid2.x + (end.x - mid2.x) * subT, y: mid2.y + (end.y - mid2.y) * subT };
-      }
-    }, progress);
-  }
-
-  private renderCurvePath(
-    startPos: ButtonPosition,
-    endPos: ButtonPosition,
-    originalType: SlidePathType,
-    progress: number,
-  ): void {
-    const segment: SlideSegment = {
-      type: originalType,
-      startPos,
-      endPos,
-    };
-    this.iterateArrowsAlongPath((t) => this.getPointOnSegment(segment, t), progress);
-  }
-
-  private iterateArrowsAlongPath(pathFn: (t: number) => Point2D, progress: number): void {
-    // 一次性采样路径并累计弧长，箭头按弧长均布（而非按 t 均布）。
-    // 直线/圆弧/V/S/Z 这些恒速参数化路径视觉不变；p/pp/q/qq 等变曲率
-    // bend 曲线下，箭头间距不再随曲率忽密忽疏。
-    const lut = this.buildArcLut(pathFn);
+  private renderSegmentPath(segment: SlideSegment, progress: number): void {
+    const lut = this.getSegmentLut(segment);
     const totalLength = lut[lut.length - 1].s;
     if (totalLength <= 0) return;
 
@@ -713,24 +460,24 @@ export class SlideRenderer extends BaseRenderer {
   private drawSlideArrowsBatch(arrows: { x: number; y: number; angle: number }[]): void {
     if (arrows.length === 0) return;
     const ctx = this.context.ctx;
-    const arrowHeight = (32 * this.context.radius) / 300;
-    const arrowWidth = (6 * 1.6 * this.context.radius) / 300;
+    const arrowHeight = (SLIDE_ARROW_HEIGHT * this.context.radius) / 300;
+    const arrowWidth = (SLIDE_ARROW_SPAN * this.context.radius) / 300;
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
+    const mainStroke = ctx.strokeStyle as string;
+    const isBreak = mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
+    const leftColor = isBreak ? COLORS.SLIDE_SIMULTANEOUS : mainStroke;
+    const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
     const radiusScale = this.context.radius / 300;
-    const mainStroke = ctx.strokeStyle;
 
-    // 拖影参数：从弱到强（先弱后强叠加，靠近本体的色更浓）
     const shadows = [
       { offset: 5, alpha: 0.2, extra: 6 },
       { offset: 3, alpha: 0.5, extra: 3 },
     ];
 
     ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
 
-    // 逐箭头叠绘 outline → 拖影 → 主体（不按层批量）：arrows[0] 在远端、arrows[N-1]
-    // 靠 star 头，正向迭代让靠 star 的盖在远端上，自重叠路径处可见黑边切割下层。
     for (const arrow of arrows) {
       const cos = Math.cos(arrow.angle);
       const sin = Math.sin(arrow.angle);
@@ -770,18 +517,48 @@ export class SlideRenderer extends BaseRenderer {
         ctx.stroke(trail);
       }
 
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = mainStroke;
-      ctx.stroke(main);
+      {
+        const rLen = Math.hypot(x1 - x2, y1 - y2);
+        const lLen = Math.hypot(x3 - x2, y3 - y2);
+        const cosAngle = ((x1 - x2) * (x3 - x2) + (y1 - y2) * (y3 - y2)) / (rLen * lLen);
+        const sinHalf = Math.sqrt((1 - cosAngle) / 2);
+        if (sinHalf > 0.001) {
+          const midX = (x1 + x3) / 2;
+          const midY = (y1 + y3) / 2;
+          const bLen = Math.hypot(midX - x2, midY - y2);
+          const bux = (midX - x2) / bLen;
+          const buy = (midY - y2) / bLen;
+          const edgeLen = lineWidth / sinHalf;
+          const bx = x2 + bux * edgeLen;
+          const by = y2 + buy * edgeLen;
+
+          ctx.beginPath();
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(bx, by);
+          ctx.lineTo(bx + x1 - x2, by + y1 - y2);
+          ctx.lineTo(x1, y1);
+          ctx.closePath();
+          ctx.fillStyle = rightColor;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(bx, by);
+          ctx.lineTo(bx + x3 - x2, by + y3 - y2);
+          ctx.lineTo(x3, y3);
+          ctx.closePath();
+          ctx.fillStyle = leftColor;
+          ctx.fill();
+        }
+      }
     }
 
     ctx.restore();
   }
 
   /**
-   * 画 chevron：每条 chevron 由 corner + 两条 arm tip 在 fan-local 帧的偏移定义。
-   * path = `M arm1 L corner L arm2`，stroke 同 slide arrow（外黑边 + 两层 drop shadow
-   * + 主色）。arm1/arm2 是 arm tip 相对 corner 的偏移，在调用方按 fanAngle 旋转。
+   * 画 chevron：每条 chevron 由两块共享斜切面的四边形拼成，避免圆头线段感。
+   * arm1/arm2 是 arm tip 相对 corner 的偏移，在调用方按 fanAngle 旋转。
    */
   private drawWifiChevronsBatch(
     chevrons: {
@@ -807,9 +584,61 @@ export class SlideRenderer extends BaseRenderer {
       { offset: 3, alpha: 0.4, extra: 3 },
     ];
 
+    const buildChevronPath = (
+      cornerX: number,
+      cornerY: number,
+      arm1X: number,
+      arm1Y: number,
+      arm2X: number,
+      arm2Y: number,
+      width: number,
+    ): Path2D | null => {
+      const arm1Dx = arm1X - cornerX;
+      const arm1Dy = arm1Y - cornerY;
+      const arm2Dx = arm2X - cornerX;
+      const arm2Dy = arm2Y - cornerY;
+      const arm1Len = Math.hypot(arm1Dx, arm1Dy);
+      const arm2Len = Math.hypot(arm2Dx, arm2Dy);
+      if (arm1Len === 0 || arm2Len === 0) return null;
+
+      const cosAngle = Math.max(
+        -1,
+        Math.min(1, (arm1Dx * arm2Dx + arm1Dy * arm2Dy) / (arm1Len * arm2Len)),
+      );
+      const sinHalf = Math.sqrt((1 - cosAngle) / 2);
+      if (sinHalf <= 0.001) return null;
+
+      const armAxisProjection = -((arm1Dx * cos + arm1Dy * sin) / arm1Len);
+      if (armAxisProjection <= 0) return null;
+
+      const outerDistance = arm1Len / armAxisProjection;
+      const innerDistance = Math.max(0, outerDistance - width / sinHalf);
+      const innerScale = innerDistance / outerDistance;
+      const pivotX = cornerX - cos * outerDistance;
+      const pivotY = cornerY - sin * outerDistance;
+      const innerCornerX = pivotX + (cornerX - pivotX) * innerScale;
+      const innerCornerY = pivotY + (cornerY - pivotY) * innerScale;
+      const innerArm1X = pivotX + (arm1X - pivotX) * innerScale;
+      const innerArm1Y = pivotY + (arm1Y - pivotY) * innerScale;
+      const innerArm2X = pivotX + (arm2X - pivotX) * innerScale;
+      const innerArm2Y = pivotY + (arm2Y - pivotY) * innerScale;
+
+      const path = new Path2D();
+      path.moveTo(arm1X, arm1Y);
+      path.lineTo(cornerX, cornerY);
+      path.lineTo(arm2X, arm2Y);
+      path.lineTo(innerArm2X, innerArm2Y);
+      path.lineTo(innerCornerX, innerCornerY);
+      path.lineTo(innerArm1X, innerArm1Y);
+      path.closePath();
+
+      return path;
+    };
+
     ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+    ctx.globalAlpha = ctx.globalAlpha * 0.6;
 
     for (const c of chevrons) {
       const a1x = c.x + cos * c.arm1Dx - sin * c.arm1Dy;
@@ -817,35 +646,39 @@ export class SlideRenderer extends BaseRenderer {
       const a2x = c.x + cos * c.arm2Dx - sin * c.arm2Dy;
       const a2y = c.y + sin * c.arm2Dx + cos * c.arm2Dy;
 
-      const main = new Path2D();
-      main.moveTo(a1x, a1y);
-      main.lineTo(c.x, c.y);
-      main.lineTo(a2x, a2y);
+      const outline = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth + 2);
+      if (!outline) continue;
 
-      ctx.lineWidth = lineWidth + 2;
+      ctx.fillStyle = "#000000";
+      ctx.fill(outline);
+      ctx.lineWidth = 2;
       ctx.strokeStyle = "#000000";
-      ctx.stroke(main);
+      ctx.stroke(outline);
 
       for (const shadow of shadows) {
         const offsetX = -shadow.offset * radiusScale;
-        const s1x = a1x + cos * offsetX;
-        const s1y = a1y + sin * offsetX;
-        const scx = c.x + cos * offsetX;
-        const scy = c.y + sin * offsetX;
-        const s2x = a2x + cos * offsetX;
-        const s2y = a2y + sin * offsetX;
-        const trail = new Path2D();
-        trail.moveTo(s1x, s1y);
-        trail.lineTo(scx, scy);
-        trail.lineTo(s2x, s2y);
-        ctx.lineWidth = lineWidth + shadow.extra;
-        ctx.strokeStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
-        ctx.stroke(trail);
+        const offsetY = sin * offsetX;
+        const offsetFanX = cos * offsetX;
+        const trail = buildChevronPath(
+          c.x + offsetFanX,
+          c.y + offsetY,
+          a1x + offsetFanX,
+          a1y + offsetY,
+          a2x + offsetFanX,
+          a2y + offsetY,
+          lineWidth + shadow.extra,
+        );
+        if (!trail) continue;
+
+        ctx.fillStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
+        ctx.fill(trail);
       }
 
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = mainStroke;
-      ctx.stroke(main);
+      const main = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth);
+      if (!main) continue;
+
+      ctx.fillStyle = mainStroke;
+      ctx.fill(main);
     }
 
     ctx.restore();
@@ -1363,7 +1196,7 @@ export class SlideRenderer extends BaseRenderer {
         const uy = dy / len;
         const perpX = -uy;
         const perpY = ux;
-        const offset = 0.4 * this.context.radius;
+        const offset = SLIDE_CURVE_OFFSET_RATIO * this.context.radius;
 
         const ctrl1X = start.x + ux * len * 0.49 + perpX * offset;
         const ctrl1Y = start.y + uy * len * 0.49 + perpY * offset;
@@ -1398,7 +1231,7 @@ export class SlideRenderer extends BaseRenderer {
         const uy = dy / len;
         const perpX = -uy;
         const perpY = ux;
-        const offset = 0.4 * this.context.radius;
+        const offset = SLIDE_CURVE_OFFSET_RATIO * this.context.radius;
 
         // Z 路线: start → ctrl1 (右侧) → ctrl2 (左侧) → end
         const ctrl1X = start.x + ux * len * 0.49 + perpX * offset;

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { notifications } from "@mantine/notifications";
 import {
   ActionIcon,
   Button,
@@ -8,7 +9,9 @@ import {
   Collapse,
   Group,
   HoverCard,
+  Menu,
   SegmentedControl,
+  Select,
   Slider,
   Stack,
   Switch,
@@ -34,6 +37,11 @@ import {
   IconHelp,
   IconMaximize,
   IconMinimize,
+  IconCamera,
+  IconDownload,
+  IconClipboard,
+  IconUpload,
+  IconLink,
 } from "@tabler/icons-react";
 import { useGameStore } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
@@ -42,6 +50,51 @@ import { ChartDifficulty, DIFFICULTY_NAMES, DIFFICULTY_COLORS } from "../../type
 import { NoteCountGraph } from "../NoteCountGraph";
 import { SimaiStatementList } from "../SimaiStatementList";
 import classes from "./Controls.module.css";
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isSupportedAudioFile(file: File): boolean {
+  if (file.type.startsWith("audio/")) return true;
+
+  const lowerName = file.name.toLowerCase();
+  return [".mp3", ".wav", ".ogg", ".m4a", ".flac"].some((extension) =>
+    lowerName.endsWith(extension),
+  );
+}
+
+type DifficultyAnchor = {
+  difficulty: number;
+  index: number;
+  line: number;
+};
+
+const DEBUG_DIFFICULTY_NAMES: Record<number, string> = {
+  0: "EASY",
+  ...DIFFICULTY_NAMES,
+};
+
+function getDebugDifficultyLabel(difficulty: number): string {
+  return DEBUG_DIFFICULTY_NAMES[difficulty] ?? String(difficulty);
+}
+
+function getDifficultyAnchors(simaiText: string): DifficultyAnchor[] {
+  const anchors: DifficultyAnchor[] = [];
+  const pattern = /^&inote_(\d+)=/gim;
+  let match: RegExpExecArray | null;
+  let line = 1;
+  let lastNewlineIdx = -1;
+
+  while ((match = pattern.exec(simaiText)) !== null) {
+    for (; lastNewlineIdx < match.index; lastNewlineIdx++) {
+      if (simaiText[lastNewlineIdx] === "\n") line++;
+    }
+    anchors.push({ difficulty: Number(match[1]), index: match.index, line });
+  }
+
+  return anchors;
+}
 
 type PlaybackControlsProps = {
   onToggleFullscreen?: () => void;
@@ -56,6 +109,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     restartCurrentMeasure,
     stepMeasure,
     stepPosition,
+    getCurrentTimeInBeats,
   } = useGameStore(useShallow((state) => state));
 
   const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
@@ -72,6 +126,47 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
   const getPlayButtonTooltip = () => {
     return isPlaying ? "暂停" : "播放";
   };
+
+  const exportCurrentFrame = () => {
+    window.dispatchEvent(new Event("maimai-chart-export-frame"));
+  };
+
+  const copyCurrentFrame = () => {
+    window.dispatchEvent(new Event("maimai-chart-copy-frame"));
+  };
+
+  const copyCurrentTimeUrl = async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("beat", String(Math.round(getCurrentTimeInBeats())));
+
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      notifications.show({
+        title: "已复制",
+        message: "当前时间点链接已复制到剪贴板",
+        color: "green",
+      });
+    } catch {
+      notifications.show({
+        title: "复制失败",
+        message: "剪贴板不可用",
+        color: "red",
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const { title, message, color } = (event as CustomEvent).detail as {
+        title: string;
+        message: string;
+        color: string;
+      };
+      notifications.show({ title, message, color });
+    };
+    window.addEventListener("maimai-chart-notify", handler);
+    return () => window.removeEventListener("maimai-chart-notify", handler);
+  }, []);
 
   return (
     <Card
@@ -163,6 +258,36 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
             </ActionIcon>
           </Tooltip>
 
+          <Menu shadow="md" width={160}>
+            <Menu.Target>
+              <Tooltip label="导出当前帧">
+                <ActionIcon variant="subtle" color={isFullscreen ? "white" : "gray"} size="lg">
+                  <IconCamera size={20} />
+                </ActionIcon>
+              </Tooltip>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconDownload size={14} />} onClick={exportCurrentFrame}>
+                下载 PNG
+              </Menu.Item>
+              <Menu.Item leftSection={<IconClipboard size={14} />} onClick={copyCurrentFrame}>
+                复制到剪贴板
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+
+          <Tooltip label="复制当前时间点 URL">
+            <ActionIcon
+              variant="subtle"
+              color={isFullscreen ? "white" : "gray"}
+              size="lg"
+              onClick={() => void copyCurrentTimeUrl()}
+              aria-label="复制当前时间点 URL"
+            >
+              <IconLink size={20} />
+            </ActionIcon>
+          </Tooltip>
+
           {onToggleFullscreen && (
             <Tooltip label={isFullscreen ? "退出全屏" : "全屏预览"}>
               <ActionIcon
@@ -192,18 +317,118 @@ export function Controls() {
     setChartData,
     setSelectedDifficulty,
     setRawSimaiText,
+    setMusicUrl,
   } = useGameStore(useShallow((state) => state));
 
-  // 临时调试：手动编辑当前 simai 文本并重新加载
+  // 手动编辑当前 simai 文本并重新加载
   const [debugSimai, setDebugSimai] = useState(rawSimaiText);
+  const debugSimaiTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const importedMusicUrlRef = useRef<string | null>(null);
+  const difficultyAnchors = useMemo(() => getDifficultyAnchors(debugSimai), [debugSimai]);
+  const difficultyAnchorOptions = useMemo(
+    () =>
+      difficultyAnchors.map((anchor) => ({
+        value: String(anchor.index),
+        label: `${getDebugDifficultyLabel(anchor.difficulty)} #${anchor.difficulty}`,
+      })),
+    [difficultyAnchors],
+  );
+  const [selectedDifficultyAnchor, setSelectedDifficultyAnchor] = useState<string | null>(null);
   useEffect(() => {
     setDebugSimai(rawSimaiText);
   }, [rawSimaiText]);
+
+  useEffect(() => {
+    if (
+      selectedDifficultyAnchor &&
+      !difficultyAnchors.some((anchor) => String(anchor.index) === selectedDifficultyAnchor)
+    ) {
+      setSelectedDifficultyAnchor(null);
+    }
+  }, [difficultyAnchors, selectedDifficultyAnchor]);
+
+  useEffect(() => {
+    return () => {
+      const importedMusicUrl = importedMusicUrlRef.current;
+      if (importedMusicUrl) {
+        if (useGameStore.getState().musicUrl === importedMusicUrl) {
+          setMusicUrl("");
+        }
+        URL.revokeObjectURL(importedMusicUrl);
+      }
+    };
+  }, [setMusicUrl]);
+
+  const jumpToDifficulty = useCallback((anchor: DifficultyAnchor) => {
+    const textarea = debugSimaiTextareaRef.current;
+    if (!textarea) return;
+
+    textarea.focus();
+    textarea.setSelectionRange(anchor.index, anchor.index);
+
+    requestAnimationFrame(() => {
+      const styles = window.getComputedStyle(textarea);
+      const lineHeight = parseFloat(styles.lineHeight) || 18;
+      textarea.scrollTop = Math.max(0, (anchor.line - 2) * lineHeight);
+    });
+  }, []);
+
   const applyDebugSimai = useCallback(() => {
-    setRawSimaiText(debugSimai);
-    const chart = parseSimaiChart(debugSimai, selectedDifficulty ?? undefined);
-    setChartData(chart);
+    try {
+      const chart = parseSimaiChart(debugSimai, selectedDifficulty ?? undefined);
+      setRawSimaiText(debugSimai);
+      setChartData(chart);
+      notifications.show({
+        title: "谱面已重载",
+        message: "当前 Simai 文本已重新解析",
+        color: "green",
+      });
+    } catch (error) {
+      notifications.show({
+        title: "谱面重载失败",
+        message: getErrorMessage(error),
+        color: "red",
+      });
+    }
   }, [debugSimai, selectedDifficulty, setRawSimaiText, setChartData]);
+
+  const handleMusicImport = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.currentTarget.files?.[0];
+      event.currentTarget.value = "";
+
+      if (!file) return;
+
+      try {
+        if (!isSupportedAudioFile(file)) {
+          throw new Error("请选择音频文件");
+        }
+
+        const musicUrl = URL.createObjectURL(file);
+        const previousMusicUrl = importedMusicUrlRef.current;
+
+        importedMusicUrlRef.current = musicUrl;
+        setMusicUrl(musicUrl);
+
+        if (previousMusicUrl) {
+          URL.revokeObjectURL(previousMusicUrl);
+        }
+
+        notifications.show({
+          title: "音乐已导入",
+          message: `${file.name} 已覆盖当前音乐`,
+          color: "green",
+        });
+      } catch (error) {
+        notifications.show({
+          title: "音乐导入失败",
+          message: getErrorMessage(error),
+          color: "red",
+        });
+      }
+    },
+    [setMusicUrl],
+  );
 
   const {
     hiSpeed,
@@ -229,6 +454,8 @@ export function Controls() {
     setNormalColorBreakSlide,
     setShowFireworks,
     setShowHitEffect,
+    fpsLimit,
+    setFpsLimit,
     setMusicVolume,
     setMusicOffset,
     setSoundOffset,
@@ -260,7 +487,23 @@ export function Controls() {
             <Text size="sm" fw={500}>
               Simai 调试
             </Text>
+            {difficultyAnchors.length > 0 && (
+              <Select
+                size="xs"
+                label="跳转到难度段"
+                placeholder="选择 inote 段"
+                data={difficultyAnchorOptions}
+                value={selectedDifficultyAnchor}
+                onChange={(value) => {
+                  setSelectedDifficultyAnchor(value);
+                  const anchor = difficultyAnchors.find((anchor) => String(anchor.index) === value);
+                  if (anchor) jumpToDifficulty(anchor);
+                }}
+                allowDeselect={false}
+              />
+            )}
             <Textarea
+              ref={debugSimaiTextareaRef}
               value={debugSimai}
               onChange={(e) => setDebugSimai(e.currentTarget.value)}
               autosize
@@ -268,9 +511,25 @@ export function Controls() {
               maxRows={10}
               styles={{ input: { fontFamily: "monospace", fontSize: 12 } }}
             />
-            <Button size="xs" onClick={applyDebugSimai}>
-              应用并重新解析
-            </Button>
+            <Group gap="xs">
+              <Button size="xs" onClick={applyDebugSimai}>
+                应用并重新解析
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                component="label"
+                leftSection={<IconUpload size={14} />}
+              >
+                导入音乐
+                <input
+                  type="file"
+                  accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac"
+                  hidden
+                  onChange={handleMusicImport}
+                />
+              </Button>
+            </Group>
           </Stack>
         </Card>
       )}
@@ -356,8 +615,8 @@ export function Controls() {
         </Stack>
       </Card>
 
-      {chartData?.title.indexOf("UTAGE") !== -1 ||
-        (Object.keys(availableDifficulties).length > 0 && (
+      {chartData?.title.indexOf("UTAGE") === -1 &&
+        Object.keys(availableDifficulties).length > 0 && (
           <Group gap="xs" grow>
             {([1, 2, 3, 4, 5, 6] as ChartDifficulty[]).map((diff) => {
               const isAvailable = availableDifficulties[diff];
@@ -392,7 +651,7 @@ export function Controls() {
               );
             })}
           </Group>
-        ))}
+        )}
 
       <Card className={classes.card} radius="lg" withBorder>
         <UnstyledButton onClick={() => setShowDisplaySettings(!showDisplaySettings)} w="100%">
@@ -503,6 +762,23 @@ export function Controls() {
                 onChange={(e) => setShowFireworks(e.currentTarget.checked)}
               />
             </Group>
+
+            <div>
+              <Text size="sm" mb={4}>
+                帧数限制
+              </Text>
+              <SegmentedControl
+                value={String(fpsLimit)}
+                onChange={(value) => setFpsLimit(Number(value))}
+                data={[
+                  { value: "0", label: "无限制" },
+                  { value: "120", label: "120 FPS" },
+                  { value: "60", label: "60 FPS" },
+                ]}
+                size="xs"
+                fullWidth
+              />
+            </div>
           </Stack>
         </Collapse>
       </Card>

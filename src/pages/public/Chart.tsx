@@ -125,6 +125,7 @@ function ChartContent() {
   const setRawSimaiText = useGameStore((s) => s.setRawSimaiText);
   const setMusicUrl = useGameStore((s) => s.setMusicUrl);
   const setChartData = useGameStore((s) => s.setChartData);
+  const setPreciseTime = useGameStore((s) => s.setPreciseTime);
   const setAvailableDifficulties = useGameStore((s) => s.setAvailableDifficulties);
   const setSelectedDifficulty = useGameStore((s) => s.setSelectedDifficulty);
   const chartData = useGameStore((s) => s.chartData);
@@ -141,8 +142,11 @@ function ChartContent() {
   const searchParams = usePageContext().urlParsed.search;
   const chartIdParam = searchParams.chart_id;
   const difficultyParam = searchParams.difficulty;
+  const beatParam = searchParams.beat;
   const chartId = chartIdParam ? parseInt(chartIdParam) : null;
   const difficulty = difficultyParam ? ((parseInt(difficultyParam) + 2) as ChartDifficulty) : null;
+  const beatValue = Number(beatParam);
+  const initialBeat = beatParam && Number.isFinite(beatValue) && beatValue >= 0 ? beatValue : null;
 
   useKeyboardShortcuts();
 
@@ -171,6 +175,11 @@ function ChartContent() {
           setSelectedDifficulty(diffToUse);
           const chart = parseSimaiChart(simai, diffToUse);
           setChartData(chart);
+          if (initialBeat !== null) {
+            const totalBeats = chart.measures * 4;
+            const beats = Math.max(0, Math.min(initialBeat, totalBeats));
+            setPreciseTime(beats, true);
+          }
         }
       } catch (error) {
         console.error("Failed to parse chart:", error);
@@ -179,9 +188,11 @@ function ChartContent() {
   }, [
     chartId,
     difficulty,
+    initialBeat,
     setRawSimaiText,
     setMusicUrl,
     setChartData,
+    setPreciseTime,
     setAvailableDifficulties,
     setSelectedDifficulty,
   ]);

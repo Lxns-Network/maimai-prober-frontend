@@ -1,10 +1,11 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
 import { MainRenderer } from "../../renderers/MainRenderer";
 import { useAudio } from "../../hooks/useAudio";
 import { useMusicPlayer } from "../../hooks/useMusicPlayer";
 import { ANSWER_SOUND_BASE_OFFSET_MS } from "../../utils/constants";
+import { DebugOverlay, type CanvasDebugInfo } from "./DebugOverlay";
 import classes from "./ChartCanvas.module.css";
 import clsx from "clsx";
 
@@ -59,10 +60,24 @@ function msToBeats(ms: number, bpmEvents: BpmEvent[] | null, defaultBpm: number)
   return totalBeats;
 }
 
+function formatChartTimeForFilename(ms: number): string {
+  const totalMs = Math.max(0, Math.round(ms));
+  const minutes = Math.floor(totalMs / 60000);
+  const seconds = Math.floor((totalMs % 60000) / 1000);
+  const milliseconds = totalMs % 1000;
+
+  return `${String(minutes).padStart(2, "0")}m${String(seconds).padStart(2, "0")}s${String(milliseconds).padStart(3, "0")}ms`;
+}
+
+function getChartIdForFilename(): string {
+  return new URLSearchParams(window.location.search).get("chart_id") ?? "unknown";
+}
+
 export function ChartCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MainRenderer | null>(null);
+  const [canvasDebugInfo, setCanvasDebugInfo] = useState<CanvasDebugInfo | null>(null);
 
   const animationFrameRef = useRef<number | null>(null);
   const playbackStartTimeRef = useRef<number>(0);
@@ -71,6 +86,9 @@ export function ChartCanvas() {
   const fpsRef = useRef<number>(0);
   const frameTimesRef = useRef<number[]>([]);
   const lastFrameTimeRef = useRef<number>(0);
+  const lastRenderTimeRef = useRef<number>(0);
+  const accumulatedTimeRef = useRef<number>(0);
+  const lastDebugInfoTimeRef = useRef<number>(0);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const answerSound = useAudio({ autoInit: true });
@@ -216,6 +234,38 @@ export function ChartCanvas() {
     }
   }, []);
 
+  const updateCanvasDebugInfo = useCallback((force: boolean = false) => {
+    if (!import.meta.env.DEV) return;
+
+    const now = performance.now();
+    if (!force && now - lastDebugInfoTimeRef.current < 250) return;
+    lastDebugInfoTimeRef.current = now;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const gameState = useGameStore.getState();
+    setCanvasDebugInfo((previous) => {
+      const fps = fpsRef.current;
+      const previousHistory = previous?.fpsHistory ?? [];
+      const fpsHistory =
+        gameState.isPlaying && fps > 0 ? [...previousHistory, fps].slice(-80) : previousHistory;
+
+      return {
+        cssWidth: Math.round(rect.width),
+        cssHeight: Math.round(rect.height),
+        backingWidth: canvas.width,
+        backingHeight: canvas.height,
+        canvasDpr: rect.width > 0 ? canvas.width / rect.width : 0,
+        deviceDpr: window.devicePixelRatio || 1,
+        clockSource: audioMasterTimeMsRef.current !== null ? "audio" : "raf",
+        fps,
+        fpsHistory,
+      };
+    });
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -238,7 +288,8 @@ export function ChartCanvas() {
     renderer.setPlaybackSpeed(useGameStore.getState().playbackSpeed);
 
     const handleResize = () => {
-      renderer.resize();
+      renderer.resize(useGameStore.getState().isFullscreen);
+      updateCanvasDebugInfo(true);
       renderFrame(playbackTimeRef.current);
     };
 
@@ -259,7 +310,80 @@ export function ChartCanvas() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [renderFrame, chartData?.bpm]);
+  }, [renderFrame, chartData?.bpm, updateCanvasDebugInfo]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+
+    renderer.resize(isFullscreen);
+    updateCanvasDebugInfo(true);
+    renderFrame(playbackTimeRef.current);
+  }, [isFullscreen, renderFrame, updateCanvasDebugInfo]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
+    updateCanvasDebugInfo(true);
+    const intervalId = window.setInterval(() => updateCanvasDebugInfo(), 250);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [updateCanvasDebugInfo]);
+
+  useEffect(() => {
+    const notify = (title: string, message: string, color: string) => {
+      window.dispatchEvent(
+        new CustomEvent("maimai-chart-notify", { detail: { title, message, color } }),
+      );
+    };
+
+    const exportFrame = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const chart = useGameStore.getState().chartData;
+        const currentMs = chart
+          ? beatsToMs(playbackTimeRef.current, chart.bpmEvents, chart.bpm)
+          : 0;
+        const chartId = getChartIdForFilename();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `maimai-chart-${chartId}-${formatChartTimeForFilename(currentMs)}.png`;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      }, "image/png");
+      notify("已保存", "当前帧已下载为 PNG", "green");
+    };
+
+    const copyFrame = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          notify("已复制", "当前帧已复制到剪贴板", "green");
+        } catch {
+          notify("复制失败", "剪贴板不可用", "red");
+        }
+      }, "image/png");
+    };
+
+    window.addEventListener("maimai-chart-export-frame", exportFrame);
+    window.addEventListener("maimai-chart-copy-frame", copyFrame);
+    return () => {
+      window.removeEventListener("maimai-chart-export-frame", exportFrame);
+      window.removeEventListener("maimai-chart-copy-frame", copyFrame);
+    };
+  }, []);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -488,6 +612,19 @@ export function ChartCanvas() {
         answerSoundRefs.current.reset(playbackStartMsRef.current, true);
       }
 
+      // 帧数限制：跳过帧的时间累积到 accumulatedTimeRef，攒够目标间隔才渲染
+      const limit = useGameSettingsStore.getState().fpsLimit;
+      if (limit > 0 && lastRenderTimeRef.current > 0) {
+        accumulatedTimeRef.current += timestamp - lastRenderTimeRef.current;
+        lastRenderTimeRef.current = timestamp;
+        if (accumulatedTimeRef.current < 1000 / limit) {
+          animationFrameRef.current = requestAnimationFrame(animate);
+          return;
+        }
+        accumulatedTimeRef.current -= 1000 / limit;
+      }
+      lastRenderTimeRef.current = timestamp;
+
       // FPS 统计
       if (lastFrameTimeRef.current > 0) {
         const delta = timestamp - lastFrameTimeRef.current;
@@ -604,6 +741,7 @@ export function ChartCanvas() {
           [classes.fullscreen]: isFullscreen,
         })}
       />
+      {import.meta.env.DEV && canvasDebugInfo && <DebugOverlay debugInfo={canvasDebugInfo} />}
     </div>
   );
 }

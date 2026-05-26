@@ -435,7 +435,9 @@ export const useGameStore = create<GameStore>()(
     setPendingPlay: (pending: boolean) => set({ pendingPlay: pending }),
 
     getCurrentTimeInBeats: () => {
-      const { timeline } = get();
+      const { isPlaying, timeline } = get();
+      if (isPlaying) return playbackTimeRef.current;
+
       return (
         timeline.currentMeasure * timeline.beatsPerMeasure +
         (timeline.currentPosition / 512) * timeline.beatsPerMeasure

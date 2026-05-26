@@ -7,6 +7,7 @@ import {
   HOLD_INNER_RATIO,
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
+  NOTE_LIGHTEN_RATIO,
 } from "../utils/constants";
 
 export class HoldRenderer extends BaseRenderer {
@@ -18,7 +19,7 @@ export class HoldRenderer extends BaseRenderer {
     startPosition: NoteRenderPosition,
     endPosition: NoteRenderPosition,
     buttonPosition: ButtonPosition,
-    color: string,
+    color: [string, string],
     isEx: boolean = false,
     startNote: HoldStartNote | null = null,
     endNote: HoldEndNote | null = null,
@@ -192,25 +193,30 @@ export class HoldRenderer extends BaseRenderer {
       ctx.closePath();
       ctx.stroke();
 
-      // 主体 ring fill（外六 + 内六反向缠绕）；同时覆盖前面 wider stroke 的内侧 halo。
-      ctx.beginPath();
-      ctx.moveTo(startTip.x, startTip.y);
-      ctx.lineTo(startLeft.x, startLeft.y);
-      ctx.lineTo(endBackLeft.x, endBackLeft.y);
-      ctx.lineTo(endBack.x, endBack.y);
-      ctx.lineTo(endBackRight.x, endBackRight.y);
-      ctx.lineTo(startRight.x, startRight.y);
-      ctx.closePath();
-      ctx.moveTo(innerStartTip.x, innerStartTip.y);
-      ctx.lineTo(innerStartRight.x, innerStartRight.y);
-      ctx.lineTo(innerEndBackRight.x, innerEndBackRight.y);
-      ctx.lineTo(innerEndBack.x, innerEndBack.y);
-      ctx.lineTo(innerEndBackLeft.x, innerEndBackLeft.y);
-      ctx.lineTo(innerStartLeft.x, innerStartLeft.y);
-      ctx.closePath();
+      const lightColor = this.mixHexColor(color[0], "#ffffff", NOTE_LIGHTEN_RATIO);
+      const segments = [
+        { os: startTip, oe: startLeft, is: innerStartTip, ie: innerStartLeft },
+        { os: startLeft, oe: endBackLeft, is: innerStartLeft, ie: innerEndBackLeft },
+        { os: endBackLeft, oe: endBack, is: innerEndBackLeft, ie: innerEndBack },
+        { os: endBack, oe: endBackRight, is: innerEndBack, ie: innerEndBackRight },
+        { os: endBackRight, oe: startRight, is: innerEndBackRight, ie: innerStartRight },
+        { os: startRight, oe: startTip, is: innerStartRight, ie: innerStartTip },
+      ];
 
-      ctx.fillStyle = color;
-      ctx.fill();
+      for (const { os, oe, is: innerS, ie: innerE } of segments) {
+        const gradient = ctx.createLinearGradient(os.x, os.y, oe.x, oe.y);
+        gradient.addColorStop(0, lightColor);
+        gradient.addColorStop(1, color[1]);
+
+        ctx.beginPath();
+        ctx.moveTo(os.x, os.y);
+        ctx.lineTo(oe.x, oe.y);
+        ctx.lineTo(innerE.x, innerE.y);
+        ctx.lineTo(innerS.x, innerS.y);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      }
 
       ctx.strokeStyle = COLORS.WHITE;
       ctx.lineWidth = strokeWidth;
@@ -238,7 +244,7 @@ export class HoldRenderer extends BaseRenderer {
       const centerSize = holdWidth * 0.15;
       ctx.beginPath();
       ctx.arc(startX, startY, centerSize, 0, Math.PI * 2);
-      ctx.fillStyle = color;
+      ctx.fillStyle = color[0];
       ctx.fill();
 
       // 终点 dot 只在终点进入 approach 后半段才显示（与终点展开节奏一致）。
@@ -249,7 +255,7 @@ export class HoldRenderer extends BaseRenderer {
           const endCenterSize = endWidth * 0.15;
           ctx.beginPath();
           ctx.arc(endX, endY, endCenterSize, 0, Math.PI * 2);
-          ctx.fillStyle = color;
+          ctx.fillStyle = color[0];
           ctx.fill();
         }
       }

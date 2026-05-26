@@ -52,6 +52,12 @@ export const JUDGMENT_LINE_WIDTH_RATIO = 3 / 300;
 /** 滑条箭头线宽 */
 export const SLIDE_ARROW_WIDTH_RATIO = 12.8 / 300;
 
+/** 滑条箭头 V 形高度（基半径时像素），越大 V 越张开 */
+export const SLIDE_ARROW_HEIGHT = 38;
+
+/** 滑条箭头 V 形半展宽（基半径时像素），越大前端顶点越突 */
+export const SLIDE_ARROW_SPAN = 9.6;
+
 /** 滑条箭头间距（基半径时像素） */
 export const SLIDE_ARROW_SPACING = 26.896180742334582;
 
@@ -109,17 +115,27 @@ export const PLAYBACK_SPEED_MAX = 1.0;
 /** 默认播放速度 */
 export const PLAYBACK_SPEED_DEFAULT = 1.0;
 
+/** 音符亮色混合比例（lighten） */
+export const NOTE_LIGHTEN_RATIO = 0.18;
+
+/** DDR 模式暗色混合比例 */
+export const DDR_DARKEN_RATIO = 0.25;
+
 export const COLORS = {
   TAP_PINK: "#ff69b4",
+  TAP_GRADIENT_START: "#FD197D",
+  TAP_GRADIENT_END: "#FF7DD5",
   SIMULTANEOUS_GOLD: "#FFD700",
+  SIMULTANEOUS_GRADIENT_START: "#FCB600",
+  SIMULTANEOUS_GRADIENT_END: "#FFFE00",
   BREAK_ORANGE: "#FF8C00",
   BREAK_GRADIENT_START: "#FFB347",
-  BREAK_GRADIENT_MID: "#FF8C00",
   BREAK_GRADIENT_END: "#FF6600",
 
-  SLIDE_CYAN: "#00CED1",
+  SLIDE_CYAN: "#01FBFD",
+  SLIDE_ARROW_RIGHT: "#FF9001",
   SLIDE_PINK: "#ff69b4",
-  SLIDE_SIMULTANEOUS: "#FFE44D",
+  SLIDE_SIMULTANEOUS: "#FFED24",
 
   HOLD_PINK: "#ff69b4",
   HOLD_BREAK: "#FF8C00",

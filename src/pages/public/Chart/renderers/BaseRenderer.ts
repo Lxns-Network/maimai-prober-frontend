@@ -12,7 +12,38 @@ import {
   BUTTON_ANGLE_STEP,
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
+  DDR_DARKEN_RATIO,
 } from "../utils/constants";
+
+export function mixHexColor(color: string, target: string, amount: number): string {
+  const parse = (value: string) => Number.parseInt(value, 16);
+  const r = parse(color.slice(1, 3));
+  const g = parse(color.slice(3, 5));
+  const b = parse(color.slice(5, 7));
+  const tr = parse(target.slice(1, 3));
+  const tg = parse(target.slice(3, 5));
+  const tb = parse(target.slice(5, 7));
+  const mix = (from: number, to: number) => Math.round(from + (to - from) * amount);
+  const toHex = (value: number) => value.toString(16).padStart(2, "0");
+  return `#${toHex(mix(r, tr))}${toHex(mix(g, tg))}${toHex(mix(b, tb))}`;
+}
+
+export function getGradientColors(
+  ddrColor: string | null,
+  isBreak: boolean,
+  isSimultaneous: boolean,
+): [string, string] {
+  if (ddrColor) {
+    return [ddrColor, mixHexColor(ddrColor, "#000000", DDR_DARKEN_RATIO)];
+  }
+  if (isBreak) {
+    return [COLORS.BREAK_GRADIENT_START, COLORS.BREAK_GRADIENT_END];
+  }
+  if (isSimultaneous) {
+    return [COLORS.SIMULTANEOUS_GRADIENT_START, COLORS.SIMULTANEOUS_GRADIENT_END];
+  }
+  return [COLORS.TAP_GRADIENT_START, COLORS.TAP_GRADIENT_END];
+}
 
 export interface RenderContext {
   canvas: HTMLCanvasElement;
@@ -254,6 +285,10 @@ export abstract class BaseRenderer {
   protected drawCircle(x: number, y: number, radius: number): void {
     this.context.ctx.beginPath();
     this.context.ctx.arc(x, y, radius, 0, Math.PI * 2);
+  }
+
+  protected mixHexColor(color: string, target: string, amount: number): string {
+    return mixHexColor(color, target, amount);
   }
 
   protected drawRing(x: number, y: number, innerRadius: number, outerRadius: number): void {

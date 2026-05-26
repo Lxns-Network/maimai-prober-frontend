@@ -47,10 +47,11 @@
 
 .beat {
   opacity: 0.5;
-  min-width: 48px;
+  min-width: 32px;
   text-align: right;
   flex-shrink: 0;
   user-select: none;
+  font-weight: 700;
 }
 
 .chunks {

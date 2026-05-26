@@ -1,4 +1,4 @@
-import { BaseRenderer, RenderContext } from "./BaseRenderer";
+import { BaseRenderer, RenderContext, getGradientColors } from "./BaseRenderer";
 import { Note, Point2D, NoteRenderPosition, ButtonPosition } from "../types";
 import {
   NOTE_SIZE_RATIO,
@@ -8,6 +8,7 @@ import {
   COLORS,
   NOTE_VISIBILITY_AFTER_MS,
   NOTE_HIT_EFFECT_DURATION_MS,
+  NOTE_LIGHTEN_RATIO,
 } from "../utils/constants";
 
 export class NoteRenderer extends BaseRenderer {
@@ -323,10 +324,54 @@ export class NoteRenderer extends BaseRenderer {
     });
   }
 
+  private getTapRingColors(
+    ddrColor: string | null,
+    isBreak: boolean,
+    isSimultaneous: boolean,
+  ): [string, string] {
+    return getGradientColors(ddrColor, isBreak, isSimultaneous);
+  }
+
+  private renderDirectionalTapRing(
+    x: number,
+    y: number,
+    innerRadius: number,
+    outerRadius: number,
+    position: ButtonPosition,
+    colors: [string, string],
+  ): void {
+    const ctx = this.context.ctx;
+    const startAngle = this.getButtonAngle(position);
+    const lightColor = this.mixHexColor(colors[0], "#ffffff", NOTE_LIGHTEN_RATIO);
+
+    for (let i = 0; i < 4; i++) {
+      const sectorStart = startAngle + (i * Math.PI) / 2;
+      const sectorEnd = sectorStart + Math.PI / 2;
+
+      const midR = (innerRadius + outerRadius) / 2;
+      const x0 = x + Math.cos(sectorStart) * midR;
+      const y0 = y + Math.sin(sectorStart) * midR;
+      const x1 = x + Math.cos(sectorEnd) * midR;
+      const y1 = y + Math.sin(sectorEnd) * midR;
+
+      const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+      gradient.addColorStop(0, lightColor);
+      gradient.addColorStop(1, colors[1]);
+
+      ctx.beginPath();
+      ctx.arc(x, y, outerRadius, sectorStart, sectorEnd, false);
+      ctx.arc(x, y, innerRadius, sectorEnd, sectorStart, true);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+  }
+
   renderTapNote(
     x: number,
     y: number,
     noteScale: number,
+    position: ButtonPosition,
     isBreak: boolean,
     isSimultaneous: boolean,
     isEx: boolean,
@@ -351,21 +396,9 @@ export class NoteRenderer extends BaseRenderer {
         );
       }
 
-      this.drawRing(x, y, innerRadius, outerRadius);
-
       const ddrColor = this.getDdrColor(timing);
-      if (ddrColor) {
-        ctx.fillStyle = ddrColor;
-      } else if (isBreak) {
-        const gradient = ctx.createRadialGradient(x, y, innerRadius, x, y, outerRadius);
-        gradient.addColorStop(0, COLORS.BREAK_GRADIENT_START);
-        gradient.addColorStop(0.5, COLORS.BREAK_GRADIENT_MID);
-        gradient.addColorStop(1, COLORS.BREAK_GRADIENT_END);
-        ctx.fillStyle = gradient;
-      } else {
-        ctx.fillStyle = isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.TAP_PINK;
-      }
-      ctx.fill();
+      const ringColors = this.getTapRingColors(ddrColor, isBreak, isSimultaneous);
+      this.renderDirectionalTapRing(x, y, innerRadius, outerRadius, position, ringColors);
 
       // 外侧 + 内侧空心各加一圈黑边（贴在白描边之外）。EX 占用外圈，跳过外侧黑边
       // 但保留内侧。黑边宽度跟随 strokeW 缩放，避免小屏下显得过粗。

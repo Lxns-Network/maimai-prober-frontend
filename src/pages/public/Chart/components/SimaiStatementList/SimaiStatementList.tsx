@@ -17,103 +17,129 @@ import classes from "./SimaiStatementList.module.css";
 // 跟 ChartParser 给 chart.notes 加的 1 小节 lead-in 偏移保持一致，让 statement
 // beat 与 playbackTimeRef 处于同一坐标系。
 const LEAD_IN_BEATS = 4;
+const BEATS_PER_MEASURE = 4;
 
 interface SimaiChunk {
   text: string;
   beat: number;
 }
-interface SimaiStatement {
+interface SimaiMeasure {
+  measure: number;
   beat: number;
   chunks: SimaiChunk[];
 }
 
-function parseSimaiStatements(
-  simaiText: string,
-  difficulty: ChartDifficulty | null,
-): SimaiStatement[] {
-  if (!simaiText || !difficulty) return [];
+function extractDifficultyBody(simaiText: string, difficulty: ChartDifficulty | null): string {
+  if (!simaiText) return "";
   const lines = simaiText.split("\n");
+  if (!difficulty) return lines.filter((line) => !line.trim().startsWith("&")).join("\n");
+
   const inoteHeader = `&inote_${difficulty}=`;
-
-  const out: SimaiStatement[] = [];
-  let beat = LEAD_IN_BEATS;
-  let divisor = 4;
+  const body: string[] = [];
   let inInote = false;
-
-  // 每行 = 一条 statement，行内按 `,` 切成 chunks，每个 chunk 记自己的起始 beat。
-  // `,` 推进 beat（步长 = 4 / divisor），`{N}` / `(bpm){N}` 跟 parser 同步更新 divisor。
-  const processLine = (content: string) => {
-    if (!content.trim()) return;
-    const chunks: SimaiChunk[] = [];
-    const lineStartBeat = beat;
-    let buf = "";
-    let bufBeat = beat;
-    const flush = () => {
-      const t = buf.trim();
-      if (t) chunks.push({ text: t, beat: bufBeat });
-      buf = "";
-      bufBeat = beat;
-    };
-    let i = 0;
-    while (i < content.length) {
-      const c = content[i];
-      if (c === ",") {
-        flush();
-        beat += 4 / divisor;
-        bufBeat = beat;
-        i++;
-      } else if (c === "(") {
-        const m = content.substring(i).match(/^\((\d+(?:\.\d+)?)\)(\{(\d+(?:\.\d+)?)\})?/);
-        if (m) {
-          if (m[3]) divisor = parseFloat(m[3]);
-          buf += m[0];
-          i += m[0].length;
-        } else {
-          buf += c;
-          i++;
-        }
-      } else if (c === "{") {
-        const m = content.substring(i).match(/^\{(\d+(?:\.\d+)?)\}/);
-        if (m) {
-          divisor = parseFloat(m[1]);
-          buf += m[0];
-          i += m[0].length;
-        } else {
-          buf += c;
-          i++;
-        }
-      } else {
-        buf += c;
-        i++;
-      }
-    }
-    flush();
-    if (chunks.length > 0) out.push({ beat: lineStartBeat, chunks });
-  };
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.toLowerCase().startsWith(inoteHeader.toLowerCase())) {
       inInote = true;
-      processLine(line.substring(line.indexOf("=") + 1));
+      body.push(line.substring(line.indexOf("=") + 1));
     } else if (trimmed.startsWith("&")) {
       inInote = false;
     } else if (inInote) {
-      processLine(line);
+      body.push(line);
     }
   }
 
-  if (out.length === 0 && simaiText.trim()) {
-    beat = LEAD_IN_BEATS;
-    divisor = 4;
-    for (const line of lines) processLine(line);
+  return body.length > 0
+    ? body.join("\n")
+    : lines.filter((line) => !line.trim().startsWith("&")).join("\n");
+}
+
+function parseSimaiChunks(simaiText: string, difficulty: ChartDifficulty | null): SimaiChunk[] {
+  const content = extractDifficultyBody(simaiText, difficulty);
+  if (!content.trim()) return [];
+
+  const chunks: SimaiChunk[] = [];
+  let beat = LEAD_IN_BEATS;
+  let divisor = 4;
+
+  let buf = "";
+  let bufBeat = beat;
+
+  const flush = () => {
+    const text = buf.trim();
+    if (text) chunks.push({ text, beat: bufBeat });
+    buf = "";
+    bufBeat = beat;
+  };
+
+  let i = 0;
+  while (i < content.length) {
+    const c = content[i];
+    if (c === ",") {
+      flush();
+      beat += BEATS_PER_MEASURE / divisor;
+      bufBeat = beat;
+      i++;
+    } else if (c === "\n" || c === "\r") {
+      flush();
+      i += c === "\r" && content[i + 1] === "\n" ? 2 : 1;
+    } else if (c === "(") {
+      const m = content.substring(i).match(/^\((\d+(?:\.\d+)?)\)(\{(\d+(?:\.\d+)?)\})?/);
+      if (m) {
+        if (m[3]) divisor = parseFloat(m[3]);
+        buf += m[0];
+        i += m[0].length;
+      } else {
+        buf += c;
+        i++;
+      }
+    } else if (c === "{") {
+      const m = content.substring(i).match(/^\{(\d+(?:\.\d+)?)\}/);
+      if (m) {
+        divisor = parseFloat(m[1]);
+        buf += m[0];
+        i += m[0].length;
+      } else {
+        buf += c;
+        i++;
+      }
+    } else {
+      buf += c;
+      i++;
+    }
+  }
+  flush();
+
+  return chunks;
+}
+
+function getMeasureIndex(beat: number): number {
+  return Math.floor(Math.max(0, beat - LEAD_IN_BEATS) / BEATS_PER_MEASURE);
+}
+
+function groupChunksByMeasure(chunks: SimaiChunk[]): SimaiMeasure[] {
+  const measures: SimaiMeasure[] = [];
+
+  for (const chunk of chunks) {
+    const measure = getMeasureIndex(chunk.beat);
+    let group = measures[measures.length - 1];
+    if (!group || group.measure !== measure) {
+      group = {
+        measure,
+        beat: LEAD_IN_BEATS + measure * BEATS_PER_MEASURE,
+        chunks: [],
+      };
+      measures.push(group);
+    }
+    group.chunks.push(chunk);
   }
 
-  return out;
+  return measures;
 }
 
 interface StatementRowProps {
-  statement: SimaiStatement;
+  statement: SimaiMeasure;
   index: number;
   isActive: boolean;
   activeChunkIdx: number;
@@ -143,7 +169,9 @@ const StatementRow = memo(function StatementRow({
       className={rowClass}
       onClick={() => seekTo(statement.beat)}
     >
-      <span className={classes.beat}>{statement.beat.toFixed(2)}</span>
+      <span className={classes.beat} title={`beat ${statement.beat.toFixed(2)}`}>
+        #{statement.measure}
+      </span>
       <span className={classes.chunks}>
         {statement.chunks.map((c, ci) => {
           const isActiveChunk = isActive && ci === activeChunkIdx;
@@ -172,16 +200,23 @@ export function SimaiStatementList({
   simaiText: string;
   difficulty: ChartDifficulty | null;
 }) {
-  const statements = useMemo(
-    () => parseSimaiStatements(simaiText, difficulty),
-    [simaiText, difficulty],
+  const chunks = useMemo(() => parseSimaiChunks(simaiText, difficulty), [simaiText, difficulty]);
+  const statements = useMemo(() => groupChunksByMeasure(chunks), [chunks]);
+  const chunkLocations = useMemo(
+    () =>
+      statements.flatMap((statement, line) =>
+        statement.chunks.map((chunk, chunkIndex) => ({
+          beat: chunk.beat,
+          line,
+          chunk: chunkIndex,
+        })),
+      ),
+    [statements],
   );
   const markerFlags = useMemo(
     () => statements.map((s) => s.chunks.every((c) => MARKER_ONLY_RE.test(c.text.trim()))),
     [statements],
   );
-  const isPlaying = useGameStore((s) => s.isPlaying);
-  const preciseTime = useGameStore((s) => s.timeline.preciseTime);
   const setPreciseTime = useGameStore((s) => s.setPreciseTime);
 
   const seekTo = useCallback(
@@ -213,33 +248,29 @@ export function SimaiStatementList({
     let raf: number | null = null;
     let lastLine = -1;
     let lastChunk = -1;
-    const findChunkAt = (lineIdx: number, beat: number) => {
-      if (lineIdx < 0) return -1;
-      const chunks = statements[lineIdx].chunks;
+    let lastBeat = -1;
+    const findChunkLocationAt = (beat: number) => {
       let lo = 0;
-      let hi = chunks.length;
+      let hi = chunkLocations.length;
       while (lo < hi) {
         const mid = (lo + hi) >> 1;
-        if (chunks[mid].beat <= beat) lo = mid + 1;
+        if (chunkLocations[mid].beat <= beat) lo = mid + 1;
         else hi = mid;
       }
-      return lo - 1;
-    };
-    const findLineAt = (beat: number) => {
-      let lo = 0;
-      let hi = statements.length;
-      while (lo < hi) {
-        const mid = (lo + hi) >> 1;
-        if (statements[mid].beat <= beat) lo = mid + 1;
-        else hi = mid;
-      }
-      return lo - 1;
+      const index = Math.max(0, lo - 1);
+      return chunkLocations[index] ?? null;
     };
     const tick = () => {
-      const curBeat = isPlaying ? playbackTimeRef.current : preciseTime;
-      let lineIdx = findLineAt(curBeat);
-      if (lineIdx < 0 && statements.length > 0) lineIdx = 0;
-      const chunkIdx = findChunkAt(lineIdx, curBeat);
+      const state = useGameStore.getState();
+      const curBeat = state.isPlaying ? playbackTimeRef.current : state.timeline.preciseTime;
+      if (curBeat === lastBeat) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      lastBeat = curBeat;
+      const location = findChunkLocationAt(curBeat);
+      const lineIdx = location?.line ?? -1;
+      const chunkIdx = location?.chunk ?? -1;
       if (lineIdx !== lastLine || chunkIdx !== lastChunk) {
         lastLine = lineIdx;
         lastChunk = chunkIdx;
@@ -251,7 +282,7 @@ export function SimaiStatementList({
     return () => {
       if (raf !== null) cancelAnimationFrame(raf);
     };
-  }, [statements, isPlaying, preciseTime, expanded]);
+  }, [chunkLocations, expanded]);
 
   // 用户用 wheel/touch 滚动后停止自动跟随，按下"居中"按钮恢复。
   const [autoScroll, setAutoScroll] = useState(true);
@@ -261,8 +292,11 @@ export function SimaiStatementList({
     const el = itemRefs.current[active.line];
     const container = containerRef.current;
     if (!el || !container) return;
+    const rowTop = el.offsetTop - container.offsetTop;
     const target =
-      el.offsetTop - container.offsetTop - container.clientHeight / 2 + el.offsetHeight / 2;
+      el.offsetHeight > container.clientHeight
+        ? rowTop
+        : rowTop - container.clientHeight / 2 + el.offsetHeight / 2;
     container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   }, [active.line]);
 

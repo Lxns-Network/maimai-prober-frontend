@@ -1,4 +1,4 @@
-import { RenderContext } from "./BaseRenderer";
+import { RenderContext, getGradientColors } from "./BaseRenderer";
 import { NoteRenderer } from "./NoteRenderer";
 import { SlideRenderer } from "./SlideRenderer";
 import { HoldRenderer } from "./HoldRenderer";
@@ -32,6 +32,21 @@ import {
   RAINBOW_SPEED_DEG_PER_SEC,
   NOTE_HIT_EFFECT_DURATION_MS,
 } from "../utils/constants";
+
+const MAX_DPR = 2;
+const FULLSCREEN_MAX_CANVAS_PIXELS = 3_500_000;
+const FULLSCREEN_MIN_DPR = 1;
+
+interface PreparedRenderNotes {
+  slides: SlideNote[];
+  touches: (TouchNote | TouchHoldStartNote)[];
+  holds: HoldStartNote[];
+  taps: TapNote[];
+  hitEffectNotes: Note[];
+  noteCompletionTimes: number[];
+  breakCompletionTimes: number[];
+  breakNoExCompletionTimes: number[];
+}
 
 export class MainRenderer {
   private canvas: HTMLCanvasElement;
@@ -87,7 +102,16 @@ export class MainRenderer {
   // simulCounts / breakIdx 是静态元数据，只依赖 chart 本身。
   // 用 notes 数组引用做缓存键——chart 切换时引用变化自然 invalidate。
   private preparedNotesRef: Note[] | null = null;
-  private hitEffectNotes: Note[] = [];
+  private preparedRenderNotes: PreparedRenderNotes = {
+    slides: [],
+    touches: [],
+    holds: [],
+    taps: [],
+    hitEffectNotes: [],
+    noteCompletionTimes: [],
+    breakCompletionTimes: [],
+    breakNoExCompletionTimes: [],
+  };
 
   constructor(canvas: HTMLCanvasElement, initialBpm: number = 120) {
     this.canvas = canvas;
@@ -144,7 +168,7 @@ export class MainRenderer {
     this.sensorImage.src = "/assets/maimai/chart/sensor.webp";
   }
 
-  resize(): void {
+  resize(isFullscreen: boolean = false): void {
     const parent = this.canvas.parentElement;
     if (!parent) return;
 
@@ -153,17 +177,24 @@ export class MainRenderer {
 
     const rect = parent.getBoundingClientRect();
     const size = Math.min(rect.width, rect.height);
+    if (size <= 0) return;
     // 144Hz 显示器的 vsync 预算只有 6.9ms，按完整 DPR=2/3 渲染时浏览器
     // composite canvas backing store 的成本会顶满预算导致掉帧；不过手机屏幕通常
     // 物理面积小，按 DPR=2 渲染仍可接受，上限 2 在 DPR=3 设备节省 ~56% 像素。
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rawDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    const fullscreenBudgetDpr = Math.sqrt(FULLSCREEN_MAX_CANVAS_PIXELS / (size * size));
+    const dpr = isFullscreen
+      ? Math.min(rawDpr, Math.max(FULLSCREEN_MIN_DPR, fullscreenBudgetDpr))
+      : rawDpr;
+    const backingSize = Math.round(size * dpr);
+    const effectiveDpr = backingSize / size;
 
     this.logicalSize = size;
 
-    this.canvas.width = size * dpr;
-    this.canvas.height = size * dpr;
+    this.canvas.width = backingSize;
+    this.canvas.height = backingSize;
 
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.ctx.setTransform(effectiveDpr, 0, 0, effectiveDpr, 0, 0);
 
     this.centerX = size / 2;
     this.centerY = size / 2;
@@ -352,7 +383,7 @@ export class MainRenderer {
     if (this.preparedNotesRef !== notes) {
       this.calculateSimultaneousCounts(notes);
       this.assignBreakIndices(notes);
-      this.hitEffectNotes = this.prepareHitEffectNotes(notes);
+      this.preparedRenderNotes = this.prepareRenderNotes(notes);
       this.preparedNotesRef = notes;
     }
 
@@ -361,29 +392,12 @@ export class MainRenderer {
     }
 
     if (this.config.showNoteTotal || this.config.showBreakCount) {
-      this.renderNoteCounts(notes, currentTimeMs);
+      this.renderNoteCounts(this.preparedRenderNotes, currentTimeMs);
     }
 
     this.ctx.save();
 
-    const slides: SlideNote[] = [];
-    const touches: (TouchNote | TouchHoldStartNote)[] = [];
-    const holds: HoldStartNote[] = [];
-    const taps: TapNote[] = [];
-
-    for (let i = notes.length - 1; i >= 0; i--) {
-      const note = notes[i];
-
-      if (isSlideNote(note)) {
-        slides.push(note);
-      } else if (isTouchNote(note) || isTouchHoldStartNote(note)) {
-        touches.push(note);
-      } else if (isHoldStartNote(note)) {
-        holds.push(note);
-      } else if (isTapNote(note) && !isHoldEndNote(note)) {
-        taps.push(note);
-      }
-    }
+    const { slides, touches, holds, taps, hitEffectNotes } = this.preparedRenderNotes;
 
     for (const slide of slides) {
       this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, "tracks");
@@ -411,7 +425,7 @@ export class MainRenderer {
 
     // 击打特效画在最上层，盖住所有 note。
     if (this.config.showHitEffect) {
-      this.renderTapHitEffect(this.hitEffectNotes, currentTimeMs);
+      this.renderTapHitEffect(hitEffectNotes, currentTimeMs);
     }
 
     this.ctx.restore();
@@ -481,17 +495,100 @@ export class MainRenderer {
     }
   }
 
-  private prepareHitEffectNotes(notes: Note[]): Note[] {
-    return notes
-      .filter(
-        (note) =>
-          isButtonNote(note) &&
-          !isTouchNote(note) &&
-          !isTouchHoldStartNote(note) &&
-          !isHoldStartNote(note) &&
-          !(isSlideNote(note) && note.isHeadless),
-      )
-      .sort((a, b) => a.timingMs - b.timingMs);
+  private prepareRenderNotes(notes: Note[]): PreparedRenderNotes {
+    const slides: SlideNote[] = [];
+    const touches: (TouchNote | TouchHoldStartNote)[] = [];
+    const holds: HoldStartNote[] = [];
+    const taps: TapNote[] = [];
+    const hitEffectNotes: Note[] = [];
+    const noteCompletionTimes: number[] = [];
+    const breakCompletionTimes: number[] = [];
+    const breakNoExCompletionTimes: number[] = [];
+
+    for (let i = notes.length - 1; i >= 0; i--) {
+      const note = notes[i];
+
+      if (isSlideNote(note)) {
+        slides.push(note);
+      } else if (isTouchNote(note) || isTouchHoldStartNote(note)) {
+        touches.push(note);
+      } else if (isHoldStartNote(note)) {
+        holds.push(note);
+      } else if (isTapNote(note) && !isHoldEndNote(note)) {
+        taps.push(note);
+      }
+    }
+
+    for (const note of notes) {
+      if (
+        isTapNote(note) ||
+        isHoldEndNote(note) ||
+        (isSlideNote(note) && !note.isHeadless) ||
+        isTouchNote(note) ||
+        note.type === "touch-hold-end"
+      ) {
+        noteCompletionTimes.push(note.timingMs);
+      }
+
+      if (isSlideNote(note)) {
+        const pathCount = note.allSlideSegments?.length ?? 1;
+
+        for (let i = 0; i < pathCount; i++) {
+          const pathDelayMs = note.allDelayMs?.[i] ?? note.delayMs ?? 0;
+          const pathDurationMs = note.allDurationMs?.[i] ?? note.durationMs ?? 0;
+          noteCompletionTimes.push(note.timingMs + pathDelayMs + pathDurationMs);
+        }
+      }
+
+      const isBreak =
+        note.type === "break" ||
+        (isSlideNote(note) && note.isStartBreak) ||
+        (isHoldStartNote(note) && note.isBreakHold);
+
+      if (isBreak) {
+        breakCompletionTimes.push(note.timingMs);
+
+        if (!(note as TapNote).isEx) {
+          breakNoExCompletionTimes.push(note.timingMs);
+        }
+      }
+
+      if (isSlideNote(note) && note.allSlideBreaks) {
+        for (let i = 0; i < note.allSlideBreaks.length; i++) {
+          if (note.allSlideBreaks[i]) {
+            const pathDelayMs = note.allDelayMs?.[i] ?? note.delayMs ?? 0;
+            const pathDurationMs = note.allDurationMs?.[i] ?? note.durationMs ?? 0;
+            breakCompletionTimes.push(note.timingMs + pathDelayMs + pathDurationMs);
+          }
+        }
+      }
+
+      if (
+        isButtonNote(note) &&
+        !isTouchNote(note) &&
+        !isTouchHoldStartNote(note) &&
+        !isHoldStartNote(note) &&
+        !(isSlideNote(note) && note.isHeadless)
+      ) {
+        hitEffectNotes.push(note);
+      }
+    }
+
+    hitEffectNotes.sort((a, b) => a.timingMs - b.timingMs);
+    noteCompletionTimes.sort((a, b) => a - b);
+    breakCompletionTimes.sort((a, b) => a - b);
+    breakNoExCompletionTimes.sort((a, b) => a - b);
+
+    return {
+      slides,
+      touches,
+      holds,
+      taps,
+      hitEffectNotes,
+      noteCompletionTimes,
+      breakCompletionTimes,
+      breakNoExCompletionTimes,
+    };
   }
 
   private renderApproachIndicators(
@@ -590,13 +687,7 @@ export class MainRenderer {
       const isSimultaneous = (hold.simultaneousNoteCount ?? 0) >= 2;
 
       const ddrColor = this.config.ddrColorMode ? this.getDdrColor(hold.timing) : null;
-      const color =
-        ddrColor ??
-        (hold.isBreakHold
-          ? COLORS.BREAK_ORANGE
-          : isSimultaneous
-            ? COLORS.SIMULTANEOUS_GOLD
-            : COLORS.TAP_PINK);
+      const color = getGradientColors(ddrColor, hold.isBreakHold ?? false, isSimultaneous);
 
       this.holdRenderer.renderHold(
         startPos,
@@ -830,6 +921,7 @@ export class MainRenderer {
         pos.x,
         pos.y,
         pos.scale,
+        tap.position,
         tap.type === "break",
         isSimultaneous,
         tap.isEx ?? false,
@@ -989,69 +1081,16 @@ export class MainRenderer {
     return rounded > 0 && 3600 % rounded === 0;
   }
 
-  private renderNoteCounts(notes: Note[], currentTimeMs: number): void {
-    let totalNotes = 0;
-    let completedNotes = 0;
-    let totalBreaks = 0;
-    let completedBreaks = 0;
-    let totalBreaksNoEx = 0;
-    let completedBreaksNoEx = 0;
-
-    for (const note of notes) {
-      const isCompleted = note.timingMs <= currentTimeMs;
-
-      if (
-        isTapNote(note) ||
-        isHoldEndNote(note) ||
-        (isSlideNote(note) && !note.isHeadless) ||
-        isTouchNote(note) ||
-        note.type === "touch-hold-end"
-      ) {
-        totalNotes++;
-        if (isCompleted) completedNotes++;
-      }
-
-      if (isSlideNote(note)) {
-        const pathCount = note.allSlideSegments?.length ?? 1;
-        totalNotes += pathCount;
-
-        for (let i = 0; i < pathCount; i++) {
-          const pathDelayMs = note.allDelayMs?.[i] ?? note.delayMs ?? 0;
-          const pathDurationMs = note.allDurationMs?.[i] ?? note.durationMs ?? 0;
-          if (currentTimeMs >= note.timingMs + pathDelayMs + pathDurationMs) {
-            completedNotes++;
-          }
-        }
-      }
-
-      const isBreak =
-        note.type === "break" ||
-        (isSlideNote(note) && note.isStartBreak) ||
-        (isHoldStartNote(note) && note.isBreakHold);
-
-      if (isBreak) {
-        totalBreaks++;
-        if (isCompleted) completedBreaks++;
-
-        if (!(note as TapNote).isEx) {
-          totalBreaksNoEx++;
-          if (isCompleted) completedBreaksNoEx++;
-        }
-      }
-
-      if (isSlideNote(note) && note.allSlideBreaks) {
-        for (let i = 0; i < note.allSlideBreaks.length; i++) {
-          if (note.allSlideBreaks[i]) {
-            totalBreaks++;
-            const pathDelayMs = note.allDelayMs?.[i] ?? note.delayMs ?? 0;
-            const pathDurationMs = note.allDurationMs?.[i] ?? note.durationMs ?? 0;
-            if (currentTimeMs >= note.timingMs + pathDelayMs + pathDurationMs) {
-              completedBreaks++;
-            }
-          }
-        }
-      }
-    }
+  private renderNoteCounts(prepared: PreparedRenderNotes, currentTimeMs: number): void {
+    const totalNotes = prepared.noteCompletionTimes.length;
+    const completedNotes = this.countCompleted(prepared.noteCompletionTimes, currentTimeMs);
+    const totalBreaks = prepared.breakCompletionTimes.length;
+    const completedBreaks = this.countCompleted(prepared.breakCompletionTimes, currentTimeMs);
+    const totalBreaksNoEx = prepared.breakNoExCompletionTimes.length;
+    const completedBreaksNoEx = this.countCompleted(
+      prepared.breakNoExCompletionTimes,
+      currentTimeMs,
+    );
 
     const fontSize = Math.round((22 * this.radius) / 300);
     const smallFontSize = Math.round((18 * this.radius) / 300);
@@ -1101,6 +1140,17 @@ export class MainRenderer {
     }
 
     this.ctx.restore();
+  }
+
+  private countCompleted(sortedTimes: number[], currentTimeMs: number): number {
+    let lo = 0;
+    let hi = sortedTimes.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (sortedTimes[mid] <= currentTimeMs) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
   }
 
   private beatsToMs(beats: number, bpmEvents: BpmEvent[] | null): number {
