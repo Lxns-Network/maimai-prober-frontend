@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useEffect } from "react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
-import { Note, BpmEvent } from "../../types";
+import type { Note, BpmEvent } from "@lxns-network/maimai-chart-engine";
 import classes from "./NoteCountGraph.module.css";
 import clsx from "clsx";
 import { match, P } from "ts-pattern";

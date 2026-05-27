@@ -45,8 +45,12 @@ import {
 } from "@tabler/icons-react";
 import { useGameStore } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
-import { parseSimaiChart } from "../../core/parser/ChartParser";
-import { ChartDifficulty, DIFFICULTY_NAMES, DIFFICULTY_COLORS } from "../../types";
+import {
+  parseSimaiChart,
+  type ChartDifficulty,
+  DIFFICULTY_NAMES,
+  DIFFICULTY_COLORS,
+} from "@lxns-network/maimai-chart-engine";
 import { NoteCountGraph } from "../NoteCountGraph";
 import { SimaiStatementList } from "../SimaiStatementList";
 import classes from "./Controls.module.css";

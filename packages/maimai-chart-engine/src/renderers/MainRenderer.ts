@@ -37,6 +37,10 @@ const MAX_DPR = 2;
 const FULLSCREEN_MAX_CANVAS_PIXELS = 3_500_000;
 const FULLSCREEN_MIN_DPR = 1;
 
+export interface MainRendererConfig {
+  sensorImagePath?: string;
+}
+
 interface PreparedRenderNotes {
   slides: SlideNote[];
   touches: (TouchNote | TouchHoldStartNote)[];
@@ -98,6 +102,7 @@ export class MainRenderer {
   private touchRenderer!: TouchRenderer;
 
   private sensorImage: HTMLImageElement | null = null;
+  private sensorImagePath: string;
 
   // simulCounts / breakIdx 是静态元数据，只依赖 chart 本身。
   // 用 notes 数组引用做缓存键——chart 切换时引用变化自然 invalidate。
@@ -113,9 +118,14 @@ export class MainRenderer {
     breakNoExCompletionTimes: [],
   };
 
-  constructor(canvas: HTMLCanvasElement, initialBpm: number = 120) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    initialBpm: number = 120,
+    config: MainRendererConfig = {},
+  ) {
     this.canvas = canvas;
     this.bpm = initialBpm;
+    this.sensorImagePath = config.sensorImagePath ?? "/assets/maimai/chart/sensor.webp";
 
     // alpha: false 让浏览器知道 canvas 不透明（CSS 已经把 background 设成 #000），
     // 合成时走 RGB 路径而不是 RGBA，省一次 alpha blend pass。
@@ -165,7 +175,7 @@ export class MainRenderer {
 
   private loadAssets(): void {
     this.sensorImage = new Image();
-    this.sensorImage.src = "/assets/maimai/chart/sensor.webp";
+    this.sensorImage.src = this.sensorImagePath;
   }
 
   resize(isFullscreen: boolean = false): void {

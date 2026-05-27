@@ -19,8 +19,8 @@ import { useGameSettingsStore } from "@/pages/public/Chart/stores/useGameSetting
 import {
   parseSimaiChart,
   getAvailableDifficulties,
-} from "@/pages/public/Chart/core/parser/ChartParser";
-import { ChartDifficulty } from "@/pages/public/Chart/types";
+  type ChartDifficulty,
+} from "@lxns-network/maimai-chart-engine";
 import classes from "./Chart.module.css";
 import { usePageContext } from "vike-react/usePageContext";
 

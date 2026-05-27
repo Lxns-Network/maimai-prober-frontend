@@ -1,10 +1,9 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
-import { MainRenderer } from "../../renderers/MainRenderer";
+import { MainRenderer, ANSWER_SOUND_BASE_OFFSET_MS } from "@lxns-network/maimai-chart-engine";
 import { useAudio } from "../../hooks/useAudio";
 import { useMusicPlayer } from "../../hooks/useMusicPlayer";
-import { ANSWER_SOUND_BASE_OFFSET_MS } from "../../utils/constants";
 import { DebugOverlay, type CanvasDebugInfo } from "./DebugOverlay";
 import classes from "./ChartCanvas.module.css";
 import clsx from "clsx";
