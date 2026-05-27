@@ -2,6 +2,19 @@
 
 ---
 
+## 2026/5/26
+
+- 舞萌 DX 谱面预览：
+  - 支持判定线打击效果（[#27](https://github.com/Lxns-Network/maimai-prober-frontend/pull/27)）
+  - 适配 Simai 无头星星（[#29](https://github.com/Lxns-Network/maimai-prober-frontend/pull/29)）
+  - 修复打击特效丢失与重新播放小节失效的问题（[#29](https://github.com/Lxns-Network/maimai-prober-frontend/pull/29)）
+  - 支持导出当前谱面帧为图片或复制到剪贴板（[#30](https://github.com/Lxns-Network/maimai-prober-frontend/pull/30)）
+  - 支持导入本地音乐文件作为伴奏（[#30](https://github.com/Lxns-Network/maimai-prober-frontend/pull/30)）
+  - 支持跳转到指定时间点播放（[#30](https://github.com/Lxns-Network/maimai-prober-frontend/pull/30)）
+  - Simai 语句面板按小节拆分展示（[#30](https://github.com/Lxns-Network/maimai-prober-frontend/pull/30)）
+  - 新增播放器调试面板（[#30](https://github.com/Lxns-Network/maimai-prober-frontend/pull/30)）
+- 成绩管理现在支持根据游戏内等级预设来筛选定数（[#26](https://github.com/Lxns-Network/maimai-prober-frontend/pull/26)）
+
 ## 2026/4/25
 
 - 修复舞萌 DX 新成绩的 DX 星级没有被计算的问题
