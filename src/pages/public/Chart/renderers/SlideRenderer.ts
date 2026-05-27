@@ -457,22 +457,47 @@ export class SlideRenderer extends BaseRenderer {
     };
   }
 
+  private getBisectorPoint(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    x3: number,
+    y3: number,
+    width: number,
+  ): { bx: number; by: number } | null {
+    const rLen = Math.hypot(x1 - x2, y1 - y2);
+    const lLen = Math.hypot(x3 - x2, y3 - y2);
+    if (rLen === 0 || lLen === 0) return null;
+    const cosAngle = Math.max(
+      -1,
+      Math.min(1, ((x1 - x2) * (x3 - x2) + (y1 - y2) * (y3 - y2)) / (rLen * lLen)),
+    );
+    const sinHalf = Math.sqrt((1 - cosAngle) / 2);
+    if (sinHalf <= 0.001) return null;
+
+    const midX = (x1 + x3) / 2;
+    const midY = (y1 + y3) / 2;
+    const bLen = Math.hypot(midX - x2, midY - y2);
+    const bux = (midX - x2) / bLen;
+    const buy = (midY - y2) / bLen;
+    const edgeLen = width / sinHalf;
+    return { bx: x2 + bux * edgeLen, by: y2 + buy * edgeLen };
+  }
+
   private drawSlideArrowsBatch(arrows: { x: number; y: number; angle: number }[]): void {
     if (arrows.length === 0) return;
     const ctx = this.context.ctx;
     const arrowHeight = (SLIDE_ARROW_HEIGHT * this.context.radius) / 300;
     const arrowWidth = (SLIDE_ARROW_SPAN * this.context.radius) / 300;
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
-    const mainStroke = ctx.strokeStyle as string;
-    const isBreak = mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
+    const outlineWidth = this.getNoteStrokeWidth();
+    const mainStroke = ctx.strokeStyle;
+    const isBreak =
+      typeof mainStroke === "string" &&
+      mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
     const leftColor = isBreak ? COLORS.SLIDE_SIMULTANEOUS : mainStroke;
     const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
-    const radiusScale = this.context.radius / 300;
-
-    const shadows = [
-      { offset: 5, alpha: 0.2, extra: 6 },
-      { offset: 3, alpha: 0.5, extra: 3 },
-    ];
 
     ctx.save();
     ctx.lineCap = "butt";
@@ -489,75 +514,48 @@ export class SlideRenderer extends BaseRenderer {
       const x3 = arrow.x + cos * (-arrowWidth / 2) - sin * (arrowHeight / 2);
       const y3 = arrow.y + sin * (-arrowWidth / 2) + cos * (arrowHeight / 2);
 
-      const main = new Path2D();
-      main.moveTo(x1, y1);
-      main.lineTo(x2, y2);
-      main.lineTo(x3, y3);
+      const bp = this.getBisectorPoint(x1, y1, x2, y2, x3, y3, lineWidth);
+      if (!bp) continue;
+      const { bx, by } = bp;
+      const bx3 = bx + x3 - x2;
+      const by3 = by + y3 - y2;
+      const bx1 = bx + x1 - x2;
+      const by1 = by + y1 - y2;
 
-      ctx.lineWidth = lineWidth + 2;
-      ctx.strokeStyle = "#000000";
-      ctx.stroke(main);
+      const arrowPath = new Path2D();
+      arrowPath.moveTo(x2, y2);
+      arrowPath.lineTo(x3, y3);
+      arrowPath.lineTo(bx3, by3);
+      arrowPath.lineTo(bx, by);
+      arrowPath.lineTo(bx1, by1);
+      arrowPath.lineTo(x1, y1);
+      arrowPath.closePath();
 
-      for (const shadow of shadows) {
-        const offsetX = -shadow.offset * radiusScale;
-        const sx1 = arrow.x + cos * (-arrowWidth / 2 + offsetX) - sin * (-arrowHeight / 2);
-        const sy1 = arrow.y + sin * (-arrowWidth / 2 + offsetX) + cos * (-arrowHeight / 2);
-        const sx2 = arrow.x + cos * (arrowWidth / 2 + offsetX);
-        const sy2 = arrow.y + sin * (arrowWidth / 2 + offsetX);
-        const sx3 = arrow.x + cos * (-arrowWidth / 2 + offsetX) - sin * (arrowHeight / 2);
-        const sy3 = arrow.y + sin * (-arrowWidth / 2 + offsetX) + cos * (arrowHeight / 2);
+      ctx.fillStyle = rightColor;
+      ctx.fill(arrowPath);
 
-        const trail = new Path2D();
-        trail.moveTo(sx1, sy1);
-        trail.lineTo(sx2, sy2);
-        trail.lineTo(sx3, sy3);
-
-        ctx.lineWidth = lineWidth + shadow.extra;
-        ctx.strokeStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
-        ctx.stroke(trail);
+      // break 时左半覆盖左色：两层不透明色叠加，抗锯齿接缝不可见
+      if (isBreak) {
+        const leftPath = new Path2D();
+        leftPath.moveTo(x2, y2);
+        leftPath.lineTo(bx, by);
+        leftPath.lineTo(bx3, by3);
+        leftPath.lineTo(x3, y3);
+        leftPath.closePath();
+        ctx.fillStyle = leftColor;
+        ctx.fill(leftPath);
       }
 
-      {
-        const rLen = Math.hypot(x1 - x2, y1 - y2);
-        const lLen = Math.hypot(x3 - x2, y3 - y2);
-        const cosAngle = ((x1 - x2) * (x3 - x2) + (y1 - y2) * (y3 - y2)) / (rLen * lLen);
-        const sinHalf = Math.sqrt((1 - cosAngle) / 2);
-        if (sinHalf > 0.001) {
-          const midX = (x1 + x3) / 2;
-          const midY = (y1 + y3) / 2;
-          const bLen = Math.hypot(midX - x2, midY - y2);
-          const bux = (midX - x2) / bLen;
-          const buy = (midY - y2) / bLen;
-          const edgeLen = lineWidth / sinHalf;
-          const bx = x2 + bux * edgeLen;
-          const by = y2 + buy * edgeLen;
-
-          ctx.beginPath();
-          ctx.moveTo(x2, y2);
-          ctx.lineTo(bx, by);
-          ctx.lineTo(bx + x1 - x2, by + y1 - y2);
-          ctx.lineTo(x1, y1);
-          ctx.closePath();
-          ctx.fillStyle = rightColor;
-          ctx.fill();
-
-          ctx.beginPath();
-          ctx.moveTo(x2, y2);
-          ctx.lineTo(bx, by);
-          ctx.lineTo(bx + x3 - x2, by + y3 - y2);
-          ctx.lineTo(x3, y3);
-          ctx.closePath();
-          ctx.fillStyle = leftColor;
-          ctx.fill();
-        }
-      }
+      ctx.lineWidth = outlineWidth;
+      ctx.strokeStyle = COLORS.BLACK;
+      ctx.stroke(arrowPath);
     }
 
     ctx.restore();
   }
 
   /**
-   * 画 chevron：每条 chevron 由两块共享斜切面的四边形拼成，避免圆头线段感。
+   * 画 chevron：单个六边形一笔填充，外三角正向 + 内三角反向构成 V 形环面，避免圆头线段感。
    * arm1/arm2 是 arm tip 相对 corner 的偏移，在调用方按 fanAngle 旋转。
    */
   private drawWifiChevronsBatch(
@@ -574,15 +572,10 @@ export class SlideRenderer extends BaseRenderer {
     if (chevrons.length === 0) return;
     const ctx = this.context.ctx;
     const lineWidth = (19.2 * this.context.radius) / 300;
-    const radiusScale = this.context.radius / 300;
+    const outlineWidth = this.getNoteStrokeWidth() * 2;
     const mainStroke = ctx.strokeStyle;
     const cos = Math.cos(fanAngle);
     const sin = Math.sin(fanAngle);
-
-    const shadows = [
-      { offset: 5, alpha: 0.15, extra: 6 },
-      { offset: 3, alpha: 0.4, extra: 3 },
-    ];
 
     const buildChevronPath = (
       cornerX: number,
@@ -646,32 +639,10 @@ export class SlideRenderer extends BaseRenderer {
       const a2x = c.x + cos * c.arm2Dx - sin * c.arm2Dy;
       const a2y = c.y + sin * c.arm2Dx + cos * c.arm2Dy;
 
-      const outline = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth + 2);
-      if (!outline) continue;
-
-      ctx.fillStyle = "#000000";
-      ctx.fill(outline);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#000000";
-      ctx.stroke(outline);
-
-      for (const shadow of shadows) {
-        const offsetX = -shadow.offset * radiusScale;
-        const offsetY = sin * offsetX;
-        const offsetFanX = cos * offsetX;
-        const trail = buildChevronPath(
-          c.x + offsetFanX,
-          c.y + offsetY,
-          a1x + offsetFanX,
-          a1y + offsetY,
-          a2x + offsetFanX,
-          a2y + offsetY,
-          lineWidth + shadow.extra,
-        );
-        if (!trail) continue;
-
-        ctx.fillStyle = `rgba(0, 0, 0, ${shadow.alpha})`;
-        ctx.fill(trail);
+      const outline = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth + outlineWidth);
+      if (outline) {
+        ctx.fillStyle = COLORS.BLACK;
+        ctx.fill(outline);
       }
 
       const main = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth);
@@ -837,8 +808,6 @@ export class SlideRenderer extends BaseRenderer {
       // 外星 + 内孔各做一圈 wider black，ring fill 覆盖内侧 halo 只剩外缘黑边。
       // EX 占用外圈，跳过外星的黑边但保留内孔。wider = strokeW*3 让可见黑边 ≈
       // strokeW，跟随画布缩放避免小屏下过粗。
-      ctx.lineWidth = strokeW * 3;
-      ctx.strokeStyle = "#000000";
 
       if (!isEx) {
         ctx.beginPath();
@@ -851,7 +820,7 @@ export class SlideRenderer extends BaseRenderer {
           else ctx.lineTo(px, py);
         }
         ctx.closePath();
-        ctx.stroke();
+        this.stroke(COLORS.BLACK, strokeW * 3);
       }
 
       ctx.beginPath();
@@ -864,7 +833,7 @@ export class SlideRenderer extends BaseRenderer {
         else ctx.lineTo(px, py);
       }
       ctx.closePath();
-      ctx.stroke();
+      this.stroke(COLORS.BLACK, strokeW * 3);
 
       // 外星 + 内孔（同向 path 描外环，反向 path 挖内孔 = 环形效果）
       ctx.beginPath();
@@ -889,8 +858,6 @@ export class SlideRenderer extends BaseRenderer {
       ctx.fillStyle = color;
       ctx.fill();
 
-      ctx.strokeStyle = COLORS.WHITE;
-      ctx.lineWidth = this.getNoteStrokeWidth();
       ctx.beginPath();
       for (let i = 0; i < 10; i++) {
         const angle = (i * Math.PI) / 5 - Math.PI / 2;
@@ -901,7 +868,7 @@ export class SlideRenderer extends BaseRenderer {
         else ctx.lineTo(px, py);
       }
       ctx.closePath();
-      ctx.stroke();
+      this.stroke(COLORS.WHITE);
 
       ctx.beginPath();
       for (let i = 0; i < 10; i++) {
@@ -913,7 +880,7 @@ export class SlideRenderer extends BaseRenderer {
         else ctx.lineTo(px, py);
       }
       ctx.closePath();
-      ctx.stroke();
+      this.stroke(COLORS.WHITE);
 
       const centerSize = size * 0.15;
       ctx.beginPath();

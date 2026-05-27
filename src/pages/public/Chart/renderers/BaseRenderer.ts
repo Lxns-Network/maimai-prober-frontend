@@ -34,7 +34,7 @@ export function getGradientColors(
   isSimultaneous: boolean,
 ): [string, string] {
   if (ddrColor) {
-    return [ddrColor, mixHexColor(ddrColor, "#000000", DDR_DARKEN_RATIO)];
+    return [ddrColor, mixHexColor(ddrColor, COLORS.BLACK, DDR_DARKEN_RATIO)];
   }
   if (isBreak) {
     return [COLORS.BREAK_GRADIENT_START, COLORS.BREAK_GRADIENT_END];
@@ -184,6 +184,13 @@ export abstract class BaseRenderer {
 
   protected getNoteStrokeWidth(): number {
     return this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
+  }
+
+  protected stroke(color: string, width?: number): void {
+    const ctx = this.context.ctx;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width ?? this.getNoteStrokeWidth();
+    ctx.stroke();
   }
 
   protected beatsToMs(beats: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {

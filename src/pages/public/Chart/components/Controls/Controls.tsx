@@ -38,7 +38,7 @@ import {
   IconMaximize,
   IconMinimize,
   IconCamera,
-  IconDownload,
+  IconShare,
   IconClipboard,
   IconUpload,
   IconLink,
@@ -260,15 +260,15 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 
           <Menu shadow="md" width={160}>
             <Menu.Target>
-              <Tooltip label="导出当前帧">
+              <Tooltip label="分享当前帧">
                 <ActionIcon variant="subtle" color={isFullscreen ? "white" : "gray"} size="lg">
                   <IconCamera size={20} />
                 </ActionIcon>
               </Tooltip>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Item leftSection={<IconDownload size={14} />} onClick={exportCurrentFrame}>
-                下载 PNG
+              <Menu.Item leftSection={<IconShare size={14} />} onClick={exportCurrentFrame}>
+                分享图片
               </Menu.Item>
               <Menu.Item leftSection={<IconClipboard size={14} />} onClick={copyCurrentFrame}>
                 复制到剪贴板

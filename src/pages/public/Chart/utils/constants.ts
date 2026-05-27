@@ -50,7 +50,7 @@ export const NOTE_STROKE_WIDTH_RATIO = 2 / 300;
 export const JUDGMENT_LINE_WIDTH_RATIO = 3 / 300;
 
 /** 滑条箭头线宽 */
-export const SLIDE_ARROW_WIDTH_RATIO = 12.8 / 300;
+export const SLIDE_ARROW_WIDTH_RATIO = 13.6 / 300;
 
 /** 滑条箭头 V 形高度（基半径时像素），越大 V 越张开 */
 export const SLIDE_ARROW_HEIGHT = 38;
@@ -122,6 +122,7 @@ export const NOTE_LIGHTEN_RATIO = 0.18;
 export const DDR_DARKEN_RATIO = 0.25;
 
 export const COLORS = {
+  BLACK: "#000000",
   TAP_PINK: "#ff69b4",
   TAP_GRADIENT_START: "#FD197D",
   TAP_GRADIENT_END: "#FF7DD5",

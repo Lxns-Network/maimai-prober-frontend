@@ -196,8 +196,6 @@ export class NoteRenderer extends BaseRenderer {
     const lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
 
     ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
 
     // i=0 是主弧（按钮中心 ±π/8），i>0 是左右两侧的拖影（按 alpha 递减）。
     for (let i = 4; i >= 0; i--) {
@@ -229,7 +227,7 @@ export class NoteRenderer extends BaseRenderer {
           false,
         );
       }
-      ctx.stroke();
+      this.stroke(color, lineWidth);
     }
 
     ctx.restore();
@@ -253,8 +251,6 @@ export class NoteRenderer extends BaseRenderer {
     this.withContext(() => {
       const ctx = this.context.ctx;
       ctx.globalAlpha = 0.7;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
 
       ctx.beginPath();
       if (isFullCircle) {
@@ -263,7 +259,7 @@ export class NoteRenderer extends BaseRenderer {
         const [arcStart, arcEnd] = angleDiff > 0 ? [startAngle, endAngle] : [endAngle, startAngle];
         ctx.arc(this.context.centerX, this.context.centerY, distance, arcStart, arcEnd, false);
       }
-      ctx.stroke();
+      this.stroke(color);
     });
   }
 
@@ -318,9 +314,7 @@ export class NoteRenderer extends BaseRenderer {
       ctx.lineTo(rightX, rightY);
       ctx.closePath();
 
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-      ctx.lineWidth = this.scaleByRadius(4 / 300);
-      ctx.stroke();
+      this.stroke("rgba(255, 255, 255, 0.8)", this.scaleByRadius(4 / 300));
     });
   }
 
@@ -404,25 +398,21 @@ export class NoteRenderer extends BaseRenderer {
       // 但保留内侧。黑边宽度跟随 strokeW 缩放，避免小屏下显得过粗。
       const strokeW = this.getNoteStrokeWidth();
       const blackBandW = strokeW;
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = blackBandW;
       if (!isEx) {
         this.drawCircle(x, y, outerRadius + strokeW / 2 + blackBandW / 2);
-        ctx.stroke();
+        this.stroke(COLORS.BLACK, blackBandW);
       }
       const innerBlackR = innerRadius - strokeW / 2 - blackBandW / 2;
       if (innerBlackR > 0) {
         this.drawCircle(x, y, innerBlackR);
-        ctx.stroke();
+        this.stroke(COLORS.BLACK, blackBandW);
       }
 
       this.drawCircle(x, y, outerRadius);
-      ctx.strokeStyle = COLORS.WHITE;
-      ctx.lineWidth = strokeW;
-      ctx.stroke();
+      this.stroke(COLORS.WHITE, strokeW);
 
       this.drawCircle(x, y, innerRadius);
-      ctx.stroke();
+      this.stroke(COLORS.WHITE, strokeW);
 
       const centerSize = outerRadius * 0.15;
       this.drawCircle(x, y, centerSize);

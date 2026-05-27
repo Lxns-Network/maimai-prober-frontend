@@ -167,8 +167,6 @@ export class HoldRenderer extends BaseRenderer {
       // 外六 + 内六各做一圈 wider black，环 fill 覆盖内侧 halo 只剩外缘黑边。
       // EX 占用外圈，跳过外六的黑边但保留内六。wider = strokeWidth*3 让可见黑边
       // ≈ strokeWidth，跟随画布缩放避免小屏下显得过粗。
-      ctx.lineWidth = strokeWidth * 3;
-      ctx.strokeStyle = "#000000";
 
       if (!isEx) {
         ctx.beginPath();
@@ -179,7 +177,7 @@ export class HoldRenderer extends BaseRenderer {
         ctx.lineTo(endBackRight.x, endBackRight.y);
         ctx.lineTo(startRight.x, startRight.y);
         ctx.closePath();
-        ctx.stroke();
+        this.stroke(COLORS.BLACK, strokeWidth * 3);
       }
 
       ctx.beginPath();
@@ -190,7 +188,7 @@ export class HoldRenderer extends BaseRenderer {
       ctx.lineTo(innerEndBackRight.x, innerEndBackRight.y);
       ctx.lineTo(innerStartRight.x, innerStartRight.y);
       ctx.closePath();
-      ctx.stroke();
+      this.stroke(COLORS.BLACK, strokeWidth * 3);
 
       const lightColor = this.mixHexColor(color[0], "#ffffff", NOTE_LIGHTEN_RATIO);
       const segments = [
@@ -217,9 +215,6 @@ export class HoldRenderer extends BaseRenderer {
         ctx.fill();
       }
 
-      ctx.strokeStyle = COLORS.WHITE;
-      ctx.lineWidth = strokeWidth;
-
       ctx.beginPath();
       ctx.moveTo(startTip.x, startTip.y);
       ctx.lineTo(startLeft.x, startLeft.y);
@@ -228,7 +223,7 @@ export class HoldRenderer extends BaseRenderer {
       ctx.lineTo(endBackRight.x, endBackRight.y);
       ctx.lineTo(startRight.x, startRight.y);
       ctx.closePath();
-      ctx.stroke();
+      this.stroke(COLORS.WHITE, strokeWidth);
 
       ctx.beginPath();
       ctx.moveTo(innerStartTip.x, innerStartTip.y);
@@ -238,7 +233,7 @@ export class HoldRenderer extends BaseRenderer {
       ctx.lineTo(innerEndBackRight.x, innerEndBackRight.y);
       ctx.lineTo(innerStartRight.x, innerStartRight.y);
       ctx.closePath();
-      ctx.stroke();
+      this.stroke(COLORS.WHITE, strokeWidth);
 
       const centerSize = holdWidth * 0.15;
       ctx.beginPath();

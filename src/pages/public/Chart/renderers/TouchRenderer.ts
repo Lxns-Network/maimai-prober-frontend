@@ -317,14 +317,12 @@ export class TouchRenderer extends BaseRenderer {
 
     // 外三角 + 内三角洞各做 wider black，逐花瓣 fill 覆盖内侧 halo 只剩外缘 + 空心。
     // wider = strokeWidth*3 让可见黑边跟随画布缩放，避免小屏下显得过粗。
-    ctx.lineWidth = strokeWidth * 3;
-    ctx.strokeStyle = "#000000";
     ctx.beginPath();
     for (let i = 0; i < 4; i++) {
       const p = petals[i];
       this.drawRoundedTriangle(p.tipX, p.tipY, p.leftX, p.leftY, p.rightX, p.rightY, cornerRadius);
     }
-    ctx.stroke();
+    this.stroke(COLORS.BLACK, strokeWidth * 3);
     if (!isHold) {
       ctx.beginPath();
       for (let i = 0; i < 4; i++) {
@@ -339,7 +337,7 @@ export class TouchRenderer extends BaseRenderer {
           innerCornerRadius,
         );
       }
-      ctx.stroke();
+      this.stroke(COLORS.BLACK, strokeWidth * 3);
     }
 
     // 绘制花瓣填充
@@ -381,8 +379,6 @@ export class TouchRenderer extends BaseRenderer {
       ctx.fill();
     }
 
-    ctx.strokeStyle = COLORS.WHITE;
-    ctx.lineWidth = strokeWidth;
     ctx.beginPath();
     for (let i = 0; i < 4; i++) {
       const p = petals[i];
@@ -399,21 +395,17 @@ export class TouchRenderer extends BaseRenderer {
         );
       }
     }
-    ctx.stroke();
+    this.stroke(COLORS.WHITE, strokeWidth);
 
     // 中心点：wider black → fill → white，fill 覆盖内侧 halo。
     ctx.globalAlpha = alpha;
     const centerSize = this.scaleByRadius(TOUCH_CENTER_DOT_RATIO) * 0.8;
     ctx.beginPath();
     ctx.arc(position.x, position.y, centerSize, 0, Math.PI * 2);
-    ctx.lineWidth = strokeWidth * 3;
-    ctx.strokeStyle = "#000000";
-    ctx.stroke();
+    this.stroke(COLORS.BLACK, strokeWidth * 3);
     ctx.fillStyle = isSimultaneous ? "#FFFF00" : "#00BFFF";
     ctx.fill();
-    ctx.strokeStyle = COLORS.WHITE;
-    ctx.lineWidth = strokeWidth;
-    ctx.stroke();
+    this.stroke(COLORS.WHITE, strokeWidth);
 
     ctx.restore();
   }
