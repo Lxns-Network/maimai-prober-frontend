@@ -308,6 +308,8 @@ export class MainRenderer {
     this.config.showHitEffect = enabled;
   }
 
+  // fillRect 保证导出的背景不透明。
+  // clearRect 依赖 alpha:false，移动端 Safari 不可靠，会导致导出图透明。
   clear(): void {
     this.ctx.fillStyle = COLORS.BLACK;
     this.ctx.fillRect(0, 0, this.logicalSize, this.logicalSize);

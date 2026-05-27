@@ -340,7 +340,10 @@ export function ChartCanvas() {
 
     const canvasToBlob = (canvas: HTMLCanvasElement) =>
       new Promise<Blob>((resolve, reject) =>
-        canvas.toBlob((b) => (b ? resolve(b) : reject()), "image/png"),
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("Canvas toBlob returned null"))),
+          "image/png",
+        ),
       );
 
     const exportFrame = async () => {
@@ -352,7 +355,14 @@ export function ChartCanvas() {
       const chartId = getChartIdForFilename();
       const filename = `maimai-chart-${chartId}-${formatChartTimeForFilename(currentMs)}.png`;
 
-      const blob = await canvasToBlob(canvas);
+      let blob: Blob;
+      try {
+        blob = await canvasToBlob(canvas);
+      } catch {
+        notify("导出失败", "无法获取当前帧", "red");
+        return;
+      }
+
       const file = new File([blob], filename, { type: "image/png" });
 
       try {

@@ -468,7 +468,11 @@ export class SlideRenderer extends BaseRenderer {
   ): { bx: number; by: number } | null {
     const rLen = Math.hypot(x1 - x2, y1 - y2);
     const lLen = Math.hypot(x3 - x2, y3 - y2);
-    const cosAngle = ((x1 - x2) * (x3 - x2) + (y1 - y2) * (y3 - y2)) / (rLen * lLen);
+    if (rLen === 0 || lLen === 0) return null;
+    const cosAngle = Math.max(
+      -1,
+      Math.min(1, ((x1 - x2) * (x3 - x2) + (y1 - y2) * (y3 - y2)) / (rLen * lLen)),
+    );
     const sinHalf = Math.sqrt((1 - cosAngle) / 2);
     if (sinHalf <= 0.001) return null;
 
@@ -488,8 +492,10 @@ export class SlideRenderer extends BaseRenderer {
     const arrowWidth = (SLIDE_ARROW_SPAN * this.context.radius) / 300;
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
     const outlineWidth = this.getNoteStrokeWidth();
-    const mainStroke = ctx.strokeStyle as string;
-    const isBreak = mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
+    const mainStroke = ctx.strokeStyle;
+    const isBreak =
+      typeof mainStroke === "string" &&
+      mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
     const leftColor = isBreak ? COLORS.SLIDE_SIMULTANEOUS : mainStroke;
     const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
 
