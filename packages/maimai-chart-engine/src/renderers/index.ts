@@ -3,4 +3,4 @@ export { NoteRenderer } from "./NoteRenderer";
 export { SlideRenderer } from "./SlideRenderer";
 export { HoldRenderer } from "./HoldRenderer";
 export { TouchRenderer } from "./TouchRenderer";
-export { MainRenderer } from "./MainRenderer";
+export { MainRenderer, type MainRendererConfig } from "./MainRenderer";

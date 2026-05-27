@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { Chart, BpmEvent, ChartDifficulty, AvailableDifficulties } from "../types";
+import type {
+  Chart,
+  BpmEvent,
+  ChartDifficulty,
+  AvailableDifficulties,
+} from "@lxns-network/maimai-chart-engine";
 
 export const playbackTimeRef = { current: 0 };
 

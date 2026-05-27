@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from "../stores/useGameStore";
 import { useGameSettingsStore } from "../stores/useGameSettingsStore";
-import { BpmEvent } from "../types";
+import type { BpmEvent } from "@lxns-network/maimai-chart-engine";
 
 const LEAD_IN_BEATS = 4;
 const SEEK_THROTTLE_MS = 50;

@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { IconChevronDown, IconCurrentLocation, IconListNumbers } from "@tabler/icons-react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
-import { ChartDifficulty } from "../../types";
+import type { ChartDifficulty } from "@lxns-network/maimai-chart-engine";
 import classes from "./SimaiStatementList.module.css";
 
 // 跟 ChartParser 给 chart.notes 加的 1 小节 lead-in 偏移保持一致，让 statement

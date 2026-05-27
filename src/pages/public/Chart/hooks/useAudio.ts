@@ -1,7 +1,11 @@
 import { useRef, useEffect, useCallback, useState } from "react";
-import { AudioManager, AudioManagerConfig } from "../core/audio/AudioManager";
-import { Note, AudioConfig } from "../types";
-import { ANSWER_SOUND_BASE_OFFSET_MS } from "../utils/constants";
+import {
+  AudioManager,
+  type AudioManagerConfig,
+  type Note,
+  type AudioConfig,
+  ANSWER_SOUND_BASE_OFFSET_MS,
+} from "@lxns-network/maimai-chart-engine";
 
 export interface UseAudioOptions extends AudioManagerConfig {
   autoInit?: boolean;

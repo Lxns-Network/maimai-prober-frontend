@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { MirrorMode, JudgmentLineDesign } from "../types";
+import type { MirrorMode, JudgmentLineDesign } from "@lxns-network/maimai-chart-engine";
 
 export interface GameSettingsState {
   hiSpeed: number;
