@@ -309,12 +309,8 @@ export class MainRenderer {
   }
 
   clear(): void {
-    if (this.config.judgmentLineDesign === "sensor") {
-      this.ctx.fillStyle = COLORS.BLACK;
-      this.ctx.fillRect(0, 0, this.logicalSize, this.logicalSize);
-    } else {
-      this.ctx.clearRect(0, 0, this.logicalSize, this.logicalSize);
-    }
+    this.ctx.fillStyle = COLORS.BLACK;
+    this.ctx.fillRect(0, 0, this.logicalSize, this.logicalSize);
   }
 
   renderJudgmentLine(): void {

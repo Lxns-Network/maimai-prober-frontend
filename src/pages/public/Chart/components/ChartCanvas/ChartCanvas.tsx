@@ -338,43 +338,52 @@ export function ChartCanvas() {
       );
     };
 
-    const exportFrame = () => {
+    const canvasToBlob = (canvas: HTMLCanvasElement) =>
+      new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob((b) => (b ? resolve(b) : reject()), "image/png"),
+      );
+
+    const exportFrame = async () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const chart = useGameStore.getState().chartData;
-        const currentMs = chart
-          ? beatsToMs(playbackTimeRef.current, chart.bpmEvents, chart.bpm)
-          : 0;
-        const chartId = getChartIdForFilename();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `maimai-chart-${chartId}-${formatChartTimeForFilename(currentMs)}.png`;
-        link.style.display = "none";
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 0);
-      }, "image/png");
+      const chart = useGameStore.getState().chartData;
+      const currentMs = chart ? beatsToMs(playbackTimeRef.current, chart.bpmEvents, chart.bpm) : 0;
+      const chartId = getChartIdForFilename();
+      const filename = `maimai-chart-${chartId}-${formatChartTimeForFilename(currentMs)}.png`;
+
+      const blob = await canvasToBlob(canvas);
+      const file = new File([blob], filename, { type: "image/png" });
+
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
       notify("已保存", "当前帧已下载为 PNG", "green");
     };
 
-    const copyFrame = () => {
+    const copyFrame = async () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        try {
-          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-          notify("已复制", "当前帧已复制到剪贴板", "green");
-        } catch {
-          notify("复制失败", "剪贴板不可用", "red");
-        }
-      }, "image/png");
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": canvasToBlob(canvas) })]);
+        notify("已复制", "当前帧已复制到剪贴板", "green");
+      } catch {
+        notify("复制失败", "剪贴板不可用", "red");
+      }
     };
 
     window.addEventListener("maimai-chart-export-frame", exportFrame);
