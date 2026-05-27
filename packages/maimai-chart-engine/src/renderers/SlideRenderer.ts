@@ -343,12 +343,13 @@ export class SlideRenderer extends BaseRenderer {
     // 各 bar 自带的朝向数据不一致，从相邻 bar 算 tangent。central difference
     // 让索引无关：两条 overlap slide 同 prefab 旋转后，同位置的 bar 在两侧索引
     // 可能不同（一条的 last 可能是另一条的中间），forward-only 会算出不同 tangent。
+    // ±3 采样间距抑制 prefab 坐标精度不足（5 位小数）导致的切线锯齿抖动。
     // 倒序 push 让近 star 的 bar 落数组末尾 = 最后画 = 最上层。
     const result: { x: number; y: number; angle: number }[] = [];
     const last = chain.length - 1;
     for (let i = last; i >= hiddenCount; i--) {
-      const lo = i === 0 ? 0 : i - 1;
-      const hi = i === last ? last : i + 1;
+      const lo = Math.max(0, i - 3);
+      const hi = Math.min(last, i + 3);
       const dx = chain[hi].x - chain[lo].x;
       const dy = chain[hi].y - chain[lo].y;
       result.push({ x: chain[i].x, y: chain[i].y, angle: Math.atan2(dy, dx) });
