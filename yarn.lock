@@ -5413,7 +5413,7 @@ __metadata:
     eslint-plugin-react-refresh: "npm:0.4.26"
     hast-util-from-html-isomorphic: "npm:2.0.0"
     immer: "npm:10.2.0"
-    mantine-datatable: "patch:mantine-datatable@npm%3A8.3.13#~/.yarn/patches/mantine-datatable-npm-8.3.13-babf176244.patch"
+    mantine-datatable: "npm:9.2.2"
     motion: "npm:12.38.0"
     node-vibrant: "npm:3.2.1-alpha.1"
     postcss: "npm:8.5.9"
@@ -5478,29 +5478,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mantine-datatable@npm:8.3.13":
-  version: 8.3.13
-  resolution: "mantine-datatable@npm:8.3.13"
+"mantine-datatable@npm:9.2.2":
+  version: 9.2.2
+  resolution: "mantine-datatable@npm:9.2.2"
   peerDependencies:
-    "@mantine/core": ">=8.3"
-    "@mantine/hooks": ">=8.3"
+    "@mantine/core": ">=9.0"
+    "@mantine/hooks": ">=9.0"
     clsx: ">=2"
     react: ">=19"
     react-dom: ">=19"
-  checksum: 10c0/47f5338c449d4c2559cebc218fbd363470710e5369a5869f5c82a1260e2e758248ff7f097982734aacba621f614fe42cbbe5f1f2396d650605ca876c49334672
-  languageName: node
-  linkType: hard
-
-"mantine-datatable@patch:mantine-datatable@npm%3A8.3.13#~/.yarn/patches/mantine-datatable-npm-8.3.13-babf176244.patch":
-  version: 8.3.13
-  resolution: "mantine-datatable@patch:mantine-datatable@npm%3A8.3.13#~/.yarn/patches/mantine-datatable-npm-8.3.13-babf176244.patch::version=8.3.13&hash=236df8"
-  peerDependencies:
-    "@mantine/core": ">=8.3"
-    "@mantine/hooks": ">=8.3"
-    clsx: ">=2"
-    react: ">=19"
-    react-dom: ">=19"
-  checksum: 10c0/ff503fea8f03c1ef90e5ab745b6d096a8a0a84d57021db3c58bf67022136c3f2c83f46bbe40797cfc656ed2eb917b2cd0b583ffb52f8d7edb9ababa96164efe2
+  checksum: 10c0/318ac8b78447083c2baf4851de9a2a8b83c80f6fe001d763624bb1fa1fcfbe871f114032ec6caa25e9e3965b6c4481d4d94b273eaaf02c48ccec1ddc5da01221
   languageName: node
   linkType: hard
 
