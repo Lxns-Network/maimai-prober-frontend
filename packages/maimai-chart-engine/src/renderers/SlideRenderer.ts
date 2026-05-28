@@ -62,7 +62,7 @@ export class SlideRenderer extends BaseRenderer {
     const CIRCLE_BAR_R = 0.993;
     const GRID_PER_PI = 32;
 
-    return bars.map((bar) => {
+    const chain = bars.map((bar) => {
       let bx = shape.mirror ? -bar.x : bar.x;
       let by = bar.y;
       if (isCircle) {
@@ -76,6 +76,8 @@ export class SlideRenderer extends BaseRenderer {
         y: cy + sy * r * (bx * sinR + by * cosR),
       };
     });
+
+    return chain;
   }
 
   calculateSlideStartPosition(
@@ -189,7 +191,9 @@ export class SlideRenderer extends BaseRenderer {
 
         // 反向迭代让后画的段叠在前画的段上；chunky snap 让内部函数查 areaStep，
         // 外层只传原始 progress（双层 snap 会在 chunk 边界处错位）。
-        for (let i = segments.length - 1; i >= 0; i--) {
+        // segmentOffset 传递各段在整条路径中的累计弧长偏移，让箭头按全局弧长对齐。
+        let segmentOffset = 0;
+        for (let i = 0; i < segments.length; i++) {
           const segment = segments[i];
           const range = segmentRanges[i];
 
@@ -205,7 +209,10 @@ export class SlideRenderer extends BaseRenderer {
             segmentProgress,
             isSimultaneous,
             this.context.config.normalColorBreakSlide,
+            segmentOffset,
           );
+
+          segmentOffset += segmentLengths[i];
         }
       } else {
         if (currentTimeMs >= note.timingMs) {
@@ -221,6 +228,7 @@ export class SlideRenderer extends BaseRenderer {
     progress: number = 0,
     isSimultaneous: boolean = false,
     normalBreakColor: boolean = false,
+    segmentOffset: number = 0,
   ): boolean {
     const mirroredType = this.mirrorPathType(segment.type);
 
@@ -247,6 +255,17 @@ export class SlideRenderer extends BaseRenderer {
       // 其他形状：prefab bar 位置 + drawSlideArrowsBatch（均匀箭头）。
       const bars = this.getVisibleBarsForSegment(segment, progress);
       if (bars !== null) {
+        // DEBUG: 对比两个 slide 的同类型段
+        const chain = this.getBarChain(segment);
+        if (chain && chain.length > 0) {
+          const f = chain[0];
+          const l = chain[chain.length - 1];
+          console.log(
+            `[bar] type=${segment.type} start=${segment.startPos} end=${segment.endPos} ` +
+            `first=(${f.x.toFixed(4)},${f.y.toFixed(4)}) last=(${l.x.toFixed(4)},${l.y.toFixed(4)}) ` +
+            `n=${chain.length} bars=${bars.length} progress=${progress.toFixed(4)}`,
+          );
+        }
         if (bars.length > 0) this.drawSlideArrowsBatch(bars);
         return;
       }
@@ -256,7 +275,7 @@ export class SlideRenderer extends BaseRenderer {
         Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4
       )
         return false;
-      this.renderSegmentPath(segment, progress);
+      this.renderSegmentPath(segment, progress, segmentOffset);
     });
 
     return true;
@@ -359,20 +378,29 @@ export class SlideRenderer extends BaseRenderer {
     return result;
   }
 
-  private renderSegmentPath(segment: SlideSegment, progress: number): void {
+  private renderSegmentPath(
+    segment: SlideSegment,
+    progress: number,
+    segmentOffset: number = 0,
+  ): void {
     const lut = this.getSegmentLut(segment);
     const totalLength = lut[lut.length - 1].s;
     if (totalLength <= 0) return;
 
     const spacing = this.scaleByRadius(SLIDE_ARROW_SPACING_RATIO);
+    // 基于段自身长度计算箭头数量（不依赖总路径长度）
     const arrowCount = Math.floor(totalLength / spacing);
     if (arrowCount === 0) return;
+
+    // 相位对齐：段在全局路径中的偏移模掉间距，让重合段的箭头位置一致
+    const phase = ((segmentOffset % spacing) + spacing) % spacing;
 
     const minS = progress * totalLength;
     const arrows: { x: number; y: number; angle: number }[] = [];
 
     for (let i = arrowCount - 1; i >= 0; i--) {
-      const s = (i + 0.5) * spacing;
+      const s = phase + (i + 0.5) * spacing;
+      if (s > totalLength) continue;
       if (s < minS) continue;
       arrows.push(this.sampleArcLut(lut, s));
     }
@@ -739,7 +767,7 @@ export class SlideRenderer extends BaseRenderer {
 
     this.withContext(() => {
       this.context.ctx.globalAlpha = 1;
-      const size = (this.context.radius * SLIDE_STAR_SIZE_RATIO) * starScale;
+      const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
 
       let color: string;
       const isBreak =
@@ -803,7 +831,7 @@ export class SlideRenderer extends BaseRenderer {
         }
 
         if (starPos) {
-          const size = (this.context.radius * SLIDE_STAR_SIZE_RATIO) * starScale;
+          const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
           const isBreak =
             note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
 
