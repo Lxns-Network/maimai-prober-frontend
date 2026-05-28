@@ -10,9 +10,11 @@ import {
 import { NoteRenderer } from "./NoteRenderer";
 import {
   SLIDE_ARROW_WIDTH_RATIO,
-  SLIDE_ARROW_HEIGHT,
-  SLIDE_ARROW_SPAN,
-  SLIDE_ARROW_SPACING,
+  SLIDE_ARROW_HEIGHT_RATIO,
+  SLIDE_ARROW_SPAN_RATIO,
+  SLIDE_ARROW_SPACING_RATIO,
+  SLIDE_WIFI_LINE_WIDTH_RATIO,
+  SLIDE_STAR_SIZE_RATIO,
   SLIDE_CURVE_OFFSET_RATIO,
   COLORS,
   APPROACH_START_SCALE,
@@ -362,7 +364,7 @@ export class SlideRenderer extends BaseRenderer {
     const totalLength = lut[lut.length - 1].s;
     if (totalLength <= 0) return;
 
-    const spacing = (SLIDE_ARROW_SPACING * this.context.radius) / 300;
+    const spacing = this.scaleByRadius(SLIDE_ARROW_SPACING_RATIO);
     const arrowCount = Math.floor(totalLength / spacing);
     if (arrowCount === 0) return;
 
@@ -489,8 +491,8 @@ export class SlideRenderer extends BaseRenderer {
   private drawSlideArrowsBatch(arrows: { x: number; y: number; angle: number }[]): void {
     if (arrows.length === 0) return;
     const ctx = this.context.ctx;
-    const arrowHeight = (SLIDE_ARROW_HEIGHT * this.context.radius) / 300;
-    const arrowWidth = (SLIDE_ARROW_SPAN * this.context.radius) / 300;
+    const arrowHeight = this.scaleByRadius(SLIDE_ARROW_HEIGHT_RATIO);
+    const arrowWidth = this.scaleByRadius(SLIDE_ARROW_SPAN_RATIO);
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
     const outlineWidth = this.getNoteStrokeWidth();
     const mainStroke = ctx.strokeStyle;
@@ -499,6 +501,12 @@ export class SlideRenderer extends BaseRenderer {
       mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
     const leftColor = isBreak ? COLORS.SLIDE_SIMULTANEOUS : mainStroke;
     const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
+
+    // 拖影：从弱到强叠加，靠近本体的色更浓
+    const shadows = [
+      { offset: this.scaleByRadius(5 / 300), alpha: 0.2 },
+      { offset: this.scaleByRadius(3 / 300), alpha: 0.5 },
+    ];
 
     ctx.save();
     ctx.lineCap = "butt";
@@ -522,6 +530,37 @@ export class SlideRenderer extends BaseRenderer {
       const by3 = by + y3 - y2;
       const bx1 = bx + x1 - x2;
       const by1 = by + y1 - y2;
+
+      // 拖影：沿轨迹反方向偏移翅膀，尖端不动
+      const initialAlpha = ctx.globalAlpha;
+      for (const shadow of shadows) {
+        const ox = cos * shadow.offset;
+        const oy = sin * shadow.offset;
+        const sx1 = x1 - ox;
+        const sy1 = y1 - oy;
+        const sx3 = x3 - ox;
+        const sy3 = y3 - oy;
+        const sbp = this.getBisectorPoint(sx1, sy1, x2, y2, sx3, sy3, lineWidth);
+        if (!sbp) continue;
+        const sbx3 = sbp.bx + sx3 - x2;
+        const sby3 = sbp.by + sy3 - y2;
+        const sbx1 = sbp.bx + sx1 - x2;
+        const sby1 = sbp.by + sy1 - y2;
+
+        const shadowPath = new Path2D();
+        shadowPath.moveTo(x2, y2);
+        shadowPath.lineTo(sx3, sy3);
+        shadowPath.lineTo(sbx3, sby3);
+        shadowPath.lineTo(sbp.bx, sbp.by);
+        shadowPath.lineTo(sbx1, sby1);
+        shadowPath.lineTo(sx1, sy1);
+        shadowPath.closePath();
+
+        ctx.globalAlpha = shadow.alpha;
+        ctx.fillStyle = COLORS.BLACK;
+        ctx.fill(shadowPath);
+      }
+      ctx.globalAlpha = initialAlpha;
 
       const arrowPath = new Path2D();
       arrowPath.moveTo(x2, y2);
@@ -572,7 +611,7 @@ export class SlideRenderer extends BaseRenderer {
   ): void {
     if (chevrons.length === 0) return;
     const ctx = this.context.ctx;
-    const lineWidth = (19.2 * this.context.radius) / 300;
+    const lineWidth = this.scaleByRadius(SLIDE_WIFI_LINE_WIDTH_RATIO);
     const outlineWidth = this.getNoteStrokeWidth() * 2;
     const mainStroke = ctx.strokeStyle;
     const cos = Math.cos(fanAngle);
@@ -700,7 +739,7 @@ export class SlideRenderer extends BaseRenderer {
 
     this.withContext(() => {
       this.context.ctx.globalAlpha = 1;
-      const size = (this.context.radius / 10.42) * starScale * 1.2;
+      const size = (this.context.radius * SLIDE_STAR_SIZE_RATIO) * starScale;
 
       let color: string;
       const isBreak =
@@ -764,7 +803,7 @@ export class SlideRenderer extends BaseRenderer {
         }
 
         if (starPos) {
-          const size = (this.context.radius / 10.42) * starScale * 1.2;
+          const size = (this.context.radius * SLIDE_STAR_SIZE_RATIO) * starScale;
           const isBreak =
             note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
 
