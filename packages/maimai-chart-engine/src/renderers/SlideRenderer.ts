@@ -530,12 +530,6 @@ export class SlideRenderer extends BaseRenderer {
     const leftColor = isBreak ? COLORS.SLIDE_SIMULTANEOUS : mainStroke;
     const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
 
-    // 拖影：从弱到强叠加，靠近本体的色更浓
-    const shadows = [
-      { offset: this.scaleByRadius(5 / 300), alpha: 0.2 },
-      { offset: this.scaleByRadius(3 / 300), alpha: 0.5 },
-    ];
-
     ctx.save();
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
@@ -558,37 +552,6 @@ export class SlideRenderer extends BaseRenderer {
       const by3 = by + y3 - y2;
       const bx1 = bx + x1 - x2;
       const by1 = by + y1 - y2;
-
-      // 拖影：沿轨迹反方向偏移翅膀，尖端不动
-      const initialAlpha = ctx.globalAlpha;
-      for (const shadow of shadows) {
-        const ox = cos * shadow.offset;
-        const oy = sin * shadow.offset;
-        const sx1 = x1 - ox;
-        const sy1 = y1 - oy;
-        const sx3 = x3 - ox;
-        const sy3 = y3 - oy;
-        const sbp = this.getBisectorPoint(sx1, sy1, x2, y2, sx3, sy3, lineWidth);
-        if (!sbp) continue;
-        const sbx3 = sbp.bx + sx3 - x2;
-        const sby3 = sbp.by + sy3 - y2;
-        const sbx1 = sbp.bx + sx1 - x2;
-        const sby1 = sbp.by + sy1 - y2;
-
-        const shadowPath = new Path2D();
-        shadowPath.moveTo(x2, y2);
-        shadowPath.lineTo(sx3, sy3);
-        shadowPath.lineTo(sbx3, sby3);
-        shadowPath.lineTo(sbp.bx, sbp.by);
-        shadowPath.lineTo(sbx1, sby1);
-        shadowPath.lineTo(sx1, sy1);
-        shadowPath.closePath();
-
-        ctx.globalAlpha = shadow.alpha;
-        ctx.fillStyle = COLORS.BLACK;
-        ctx.fill(shadowPath);
-      }
-      ctx.globalAlpha = initialAlpha;
 
       const arrowPath = new Path2D();
       arrowPath.moveTo(x2, y2);
