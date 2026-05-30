@@ -478,9 +478,10 @@ function parseHoldDuration(
   secondsOnly: string | undefined,
   bpm: number,
 ): number {
-  return divisorOrSeconds
-    ? (4 / parseFloat(divisorOrSeconds)) * parseFloat(beats!)
-    : (parseFloat(secondsOnly!) * bpm) / 60;
+  if (divisorOrSeconds) {
+    return (4 / parseFloat(divisorOrSeconds)) * parseFloat(beats!);
+  }
+  return (parseFloat(secondsOnly!) * bpm) / 60;
 }
 
 function parseNoteString(
@@ -744,7 +745,9 @@ function parseNoteString(
   }
 
   // 尝试匹配触摸 Note：A1, B5h[4:1], C1f, B5h[#2.5], etc.
-  const touchMatch = noteStr.match(/^([ABCDE])(\d*)([hbfx]*)(?:\[(?:([\d.]+):([\d.]+)|#([\d.]+))\])?$/i);
+  const touchMatch = noteStr.match(
+    /^([ABCDE])(\d*)([hbfx]*)(?:\[(?:([\d.]+):([\d.]+)|#([\d.]+))\])?$/i,
+  );
   if (touchMatch) {
     const region = touchMatch[1].toUpperCase();
     const sensorNum = touchMatch[2] ? parseInt(touchMatch[2]) : null;

@@ -62,7 +62,7 @@ export class SlideRenderer extends BaseRenderer {
     const CIRCLE_BAR_R = 0.993;
     const GRID_PER_PI = 32;
 
-    const chain = bars.map((bar) => {
+    return bars.map((bar) => {
       let bx = shape.mirror ? -bar.x : bar.x;
       let by = bar.y;
       if (isCircle) {
@@ -76,8 +76,6 @@ export class SlideRenderer extends BaseRenderer {
         y: cy + sy * r * (bx * sinR + by * cosR),
       };
     });
-
-    return chain;
   }
 
   calculateSlideStartPosition(
@@ -189,9 +187,8 @@ export class SlideRenderer extends BaseRenderer {
           segmentRanges.push({ start, end });
         }
 
-        // 反向迭代让后画的段叠在前画的段上；chunky snap 让内部函数查 areaStep，
-        // 外层只传原始 progress（双层 snap 会在 chunk 边界处错位）。
-        // segmentOffset 传递各段在整条路径中的累计弧长偏移，让箭头按全局弧长对齐。
+        // 正序迭代，segmentOffset 传递各段在整条路径中的累计弧长偏移，让箭头按全局弧长对齐。
+        // chunky snap 让内部函数查 areaStep，外层只传原始 progress（双层 snap 会在 chunk 边界处错位）。
         let segmentOffset = 0;
         for (let i = 0; i < segments.length; i++) {
           const segment = segments[i];
@@ -255,17 +252,6 @@ export class SlideRenderer extends BaseRenderer {
       // 其他形状：prefab bar 位置 + drawSlideArrowsBatch（均匀箭头）。
       const bars = this.getVisibleBarsForSegment(segment, progress);
       if (bars !== null) {
-        // DEBUG: 对比两个 slide 的同类型段
-        const chain = this.getBarChain(segment);
-        if (chain && chain.length > 0) {
-          const f = chain[0];
-          const l = chain[chain.length - 1];
-          console.log(
-            `[bar] type=${segment.type} start=${segment.startPos} end=${segment.endPos} ` +
-            `first=(${f.x.toFixed(4)},${f.y.toFixed(4)}) last=(${l.x.toFixed(4)},${l.y.toFixed(4)}) ` +
-            `n=${chain.length} bars=${bars.length} progress=${progress.toFixed(4)}`,
-          );
-        }
         if (bars.length > 0) this.drawSlideArrowsBatch(bars);
         return;
       }
