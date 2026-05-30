@@ -471,6 +471,18 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   };
 }
 
+/** 解析 hold 时长：支持 [divisor:beats] 和 [#seconds] 两种格式 */
+function parseHoldDuration(
+  divisorOrSeconds: string | undefined,
+  beats: string | undefined,
+  secondsOnly: string | undefined,
+  bpm: number,
+): number {
+  return divisorOrSeconds
+    ? (4 / parseFloat(divisorOrSeconds)) * parseFloat(beats!)
+    : (parseFloat(secondsOnly!) * bpm) / 60;
+}
+
 function parseNoteString(
   noteStr: string,
   timing: number,
@@ -484,11 +496,11 @@ function parseNoteString(
   const notes: Note[] = [];
   const delayOffset = hasDelayMarker ? 1 : 0; // 反引号延迟 1 毫秒
 
-  // 尝试匹配 Hold Note 模式：1h[4:1] 或 1hb[4:1]
-  const holdMatch = noteStr.match(/^(\d+)[hbx]{1,3}\[([\d.]+):([\d.]+)\][bx]*$/i);
+  // 尝试匹配 Hold Note 模式：1h[4:1] 或 1hb[4:1] 或 1h[#2.5]
+  const holdMatch = noteStr.match(/^(\d+)[hbx]{1,3}\[(?:([\d.]+):([\d.]+)|#([\d.]+))\][bx]*$/i);
   if (holdMatch) {
     const position = parseInt(holdMatch[1]) as ButtonPosition;
-    const holdDuration = (4 / parseFloat(holdMatch[2])) * parseFloat(holdMatch[3]);
+    const holdDuration = parseHoldDuration(holdMatch[2], holdMatch[3], holdMatch[4], bpm);
     const isBreakHold = /b/i.test(noteStr);
     const isEx = /x/i.test(noteStr);
 
@@ -731,8 +743,8 @@ function parseNoteString(
     }
   }
 
-  // 尝试匹配触摸 Note：A1, B5h[4:1], C1f, etc.
-  const touchMatch = noteStr.match(/^([ABCDE])(\d*)([hbfx]*)(?:\[([\d.]+):([\d.]+)\])?$/i);
+  // 尝试匹配触摸 Note：A1, B5h[4:1], C1f, B5h[#2.5], etc.
+  const touchMatch = noteStr.match(/^([ABCDE])(\d*)([hbfx]*)(?:\[(?:([\d.]+):([\d.]+)|#([\d.]+))\])?$/i);
   if (touchMatch) {
     const region = touchMatch[1].toUpperCase();
     const sensorNum = touchMatch[2] ? parseInt(touchMatch[2]) : null;
@@ -751,9 +763,9 @@ function parseNoteString(
       const isHold = modifiers.includes("h");
       const hasFirework = modifiers.includes("f");
 
-      if (isHold && touchMatch[4] && touchMatch[5]) {
+      if (isHold && (touchMatch[4] || touchMatch[6])) {
         // 触摸 Hold
-        const holdDuration = (4 / parseFloat(touchMatch[4])) * parseFloat(touchMatch[5]);
+        const holdDuration = parseHoldDuration(touchMatch[4], touchMatch[5], touchMatch[6], bpm);
         const durationMs = (60000 * holdDuration) / bpm;
 
         const touchHoldStart: TouchHoldStartNote = {
