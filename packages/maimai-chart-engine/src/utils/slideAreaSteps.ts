@@ -53,10 +53,14 @@ export function detectSlideShape(
   const rel = relativeEnd(startPos, endPos);
 
   switch (slideType) {
-    case "-":
+    case "-": {
       // 必须至少隔一键：rel ∈ [3, 7]
       if (rel < 3 || rel > 7) return null;
-      return { shape: `line${rel}`, mirror: false };
+      // 归一化到短弧方向：line6→line4, line7→line3，消除正反向的模板冗余
+      const normRel = rel > 5 ? 8 - rel + 2 : rel;
+      const mirror = normRel !== rel;
+      return { shape: `line${normRel}`, mirror };
+    }
 
     case ">":
       // 顺时针弧；起点在上半盘走原版，否则走镜像版本（保证视觉永远偏外侧）
@@ -119,8 +123,7 @@ export const SLIDE_AREA_STEP_MAP: { readonly [shape: string]: readonly number[] 
   line3: [0, 2, 8, 13],
   line4: [0, 3, 8, 12, 18],
   line5: [0, 3, 6, 11, 15, 19],
-  line6: [0, 3, 8, 12, 18],
-  line7: [0, 2, 8, 13],
+  // line6/line7 已归一化到 line4/line3
 
   circle1: [0, 3, 11, 19, 27, 35, 43, 50, 58, 63],
   circle2: [0, 3, 7],

@@ -10,9 +10,11 @@ import {
 import { NoteRenderer } from "./NoteRenderer";
 import {
   SLIDE_ARROW_WIDTH_RATIO,
-  SLIDE_ARROW_HEIGHT,
-  SLIDE_ARROW_SPAN,
-  SLIDE_ARROW_SPACING,
+  SLIDE_ARROW_HEIGHT_RATIO,
+  SLIDE_ARROW_SPAN_RATIO,
+  SLIDE_ARROW_SPACING_RATIO,
+  SLIDE_WIFI_LINE_WIDTH_RATIO,
+  SLIDE_STAR_SIZE_RATIO,
   SLIDE_CURVE_OFFSET_RATIO,
   COLORS,
   APPROACH_START_SCALE,
@@ -185,9 +187,10 @@ export class SlideRenderer extends BaseRenderer {
           segmentRanges.push({ start, end });
         }
 
-        // 反向迭代让后画的段叠在前画的段上；chunky snap 让内部函数查 areaStep，
-        // 外层只传原始 progress（双层 snap 会在 chunk 边界处错位）。
-        for (let i = segments.length - 1; i >= 0; i--) {
+        // 正序迭代，segmentOffset 传递各段在整条路径中的累计弧长偏移，让箭头按全局弧长对齐。
+        // chunky snap 让内部函数查 areaStep，外层只传原始 progress（双层 snap 会在 chunk 边界处错位）。
+        let segmentOffset = 0;
+        for (let i = 0; i < segments.length; i++) {
           const segment = segments[i];
           const range = segmentRanges[i];
 
@@ -203,7 +206,10 @@ export class SlideRenderer extends BaseRenderer {
             segmentProgress,
             isSimultaneous,
             this.context.config.normalColorBreakSlide,
+            segmentOffset,
           );
+
+          segmentOffset += segmentLengths[i];
         }
       } else {
         if (currentTimeMs >= note.timingMs) {
@@ -219,6 +225,7 @@ export class SlideRenderer extends BaseRenderer {
     progress: number = 0,
     isSimultaneous: boolean = false,
     normalBreakColor: boolean = false,
+    segmentOffset: number = 0,
   ): boolean {
     const mirroredType = this.mirrorPathType(segment.type);
 
@@ -254,7 +261,7 @@ export class SlideRenderer extends BaseRenderer {
         Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4
       )
         return false;
-      this.renderSegmentPath(segment, progress);
+      this.renderSegmentPath(segment, progress, segmentOffset);
     });
 
     return true;
@@ -343,12 +350,13 @@ export class SlideRenderer extends BaseRenderer {
     // 各 bar 自带的朝向数据不一致，从相邻 bar 算 tangent。central difference
     // 让索引无关：两条 overlap slide 同 prefab 旋转后，同位置的 bar 在两侧索引
     // 可能不同（一条的 last 可能是另一条的中间），forward-only 会算出不同 tangent。
+    // ±3 采样间距抑制 prefab 坐标精度不足（5 位小数）导致的切线锯齿抖动。
     // 倒序 push 让近 star 的 bar 落数组末尾 = 最后画 = 最上层。
     const result: { x: number; y: number; angle: number }[] = [];
     const last = chain.length - 1;
     for (let i = last; i >= hiddenCount; i--) {
-      const lo = i === 0 ? 0 : i - 1;
-      const hi = i === last ? last : i + 1;
+      const lo = Math.max(0, i - 3);
+      const hi = Math.min(last, i + 3);
       const dx = chain[hi].x - chain[lo].x;
       const dy = chain[hi].y - chain[lo].y;
       result.push({ x: chain[i].x, y: chain[i].y, angle: Math.atan2(dy, dx) });
@@ -356,20 +364,29 @@ export class SlideRenderer extends BaseRenderer {
     return result;
   }
 
-  private renderSegmentPath(segment: SlideSegment, progress: number): void {
+  private renderSegmentPath(
+    segment: SlideSegment,
+    progress: number,
+    segmentOffset: number = 0,
+  ): void {
     const lut = this.getSegmentLut(segment);
     const totalLength = lut[lut.length - 1].s;
     if (totalLength <= 0) return;
 
-    const spacing = (SLIDE_ARROW_SPACING * this.context.radius) / 300;
+    const spacing = this.scaleByRadius(SLIDE_ARROW_SPACING_RATIO);
+    // 基于段自身长度计算箭头数量（不依赖总路径长度）
     const arrowCount = Math.floor(totalLength / spacing);
     if (arrowCount === 0) return;
+
+    // 相位对齐：段在全局路径中的偏移模掉间距，让重合段的箭头位置一致
+    const phase = ((segmentOffset % spacing) + spacing) % spacing;
 
     const minS = progress * totalLength;
     const arrows: { x: number; y: number; angle: number }[] = [];
 
     for (let i = arrowCount - 1; i >= 0; i--) {
-      const s = (i + 0.5) * spacing;
+      const s = phase + (i + 0.5) * spacing;
+      if (s > totalLength) continue;
       if (s < minS) continue;
       arrows.push(this.sampleArcLut(lut, s));
     }
@@ -488,8 +505,8 @@ export class SlideRenderer extends BaseRenderer {
   private drawSlideArrowsBatch(arrows: { x: number; y: number; angle: number }[]): void {
     if (arrows.length === 0) return;
     const ctx = this.context.ctx;
-    const arrowHeight = (SLIDE_ARROW_HEIGHT * this.context.radius) / 300;
-    const arrowWidth = (SLIDE_ARROW_SPAN * this.context.radius) / 300;
+    const arrowHeight = this.scaleByRadius(SLIDE_ARROW_HEIGHT_RATIO);
+    const arrowWidth = this.scaleByRadius(SLIDE_ARROW_SPAN_RATIO);
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
     const outlineWidth = this.getNoteStrokeWidth();
     const mainStroke = ctx.strokeStyle;
@@ -571,7 +588,7 @@ export class SlideRenderer extends BaseRenderer {
   ): void {
     if (chevrons.length === 0) return;
     const ctx = this.context.ctx;
-    const lineWidth = (19.2 * this.context.radius) / 300;
+    const lineWidth = this.scaleByRadius(SLIDE_WIFI_LINE_WIDTH_RATIO);
     const outlineWidth = this.getNoteStrokeWidth() * 2;
     const mainStroke = ctx.strokeStyle;
     const cos = Math.cos(fanAngle);
@@ -699,7 +716,7 @@ export class SlideRenderer extends BaseRenderer {
 
     this.withContext(() => {
       this.context.ctx.globalAlpha = 1;
-      const size = (this.context.radius / 10.42) * starScale * 1.2;
+      const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
 
       let color: string;
       const isBreak =
@@ -763,7 +780,7 @@ export class SlideRenderer extends BaseRenderer {
         }
 
         if (starPos) {
-          const size = (this.context.radius / 10.42) * starScale * 1.2;
+          const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
           const isBreak =
             note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
 
