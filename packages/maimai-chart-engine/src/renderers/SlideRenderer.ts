@@ -189,6 +189,8 @@ export class SlideRenderer extends BaseRenderer {
 
         // 正序迭代，segmentOffset 传递各段在整条路径中的累计弧长偏移，让箭头按全局弧长对齐。
         // chunky snap 让内部函数查 areaStep，外层只传原始 progress（双层 snap 会在 chunk 边界处错位）。
+        // 注：原反向迭代用于保证后段 z-order 更高（画在上面）；现在改用正序 + segmentOffset
+        // 相位对齐后，每段箭头位置由全局弧长决定，段间不再有 overlap 依赖 z-order 的情况。
         let segmentOffset = 0;
         for (let i = 0; i < segments.length; i++) {
           const segment = segments[i];
@@ -350,13 +352,14 @@ export class SlideRenderer extends BaseRenderer {
     // 各 bar 自带的朝向数据不一致，从相邻 bar 算 tangent。central difference
     // 让索引无关：两条 overlap slide 同 prefab 旋转后，同位置的 bar 在两侧索引
     // 可能不同（一条的 last 可能是另一条的中间），forward-only 会算出不同 tangent。
-    // ±3 采样间距抑制 prefab 坐标精度不足（5 位小数）导致的切线锯齿抖动。
+    // 采样窗口按链长缩放：短链（<7 bars）用 ±1 避免端点不对称窗口把切线拉平。
     // 倒序 push 让近 star 的 bar 落数组末尾 = 最后画 = 最上层。
     const result: { x: number; y: number; angle: number }[] = [];
     const last = chain.length - 1;
+    const halfWin = chain.length < 7 ? 1 : 3;
     for (let i = last; i >= hiddenCount; i--) {
-      const lo = Math.max(0, i - 3);
-      const hi = Math.min(last, i + 3);
+      const lo = Math.max(0, i - halfWin);
+      const hi = Math.min(last, i + halfWin);
       const dx = chain[hi].x - chain[lo].x;
       const dy = chain[hi].y - chain[lo].y;
       result.push({ x: chain[i].x, y: chain[i].y, angle: Math.atan2(dy, dx) });
@@ -374,12 +377,13 @@ export class SlideRenderer extends BaseRenderer {
     if (totalLength <= 0) return;
 
     const spacing = this.scaleByRadius(SLIDE_ARROW_SPACING_RATIO);
-    // 基于段自身长度计算箭头数量（不依赖总路径长度）
-    const arrowCount = Math.floor(totalLength / spacing);
-    if (arrowCount === 0) return;
 
     // 相位对齐：段在全局路径中的偏移模掉间距，让重合段的箭头位置一致
     const phase = ((segmentOffset % spacing) + spacing) % spacing;
+
+    // 箭头数量需考虑 phase 偏移：phase + (N-0.5)*spacing ≤ totalLength
+    const arrowCount = Math.floor((totalLength - phase) / spacing + 0.5);
+    if (arrowCount <= 0) return;
 
     const minS = progress * totalLength;
     const arrows: { x: number; y: number; angle: number }[] = [];

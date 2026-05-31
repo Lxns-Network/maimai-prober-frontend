@@ -473,15 +473,15 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
 
 /** 解析 hold 时长：支持 [divisor:beats] 和 [#seconds] 两种格式 */
 function parseHoldDuration(
-  divisorOrSeconds: string | undefined,
+  divisor: string | undefined,
   beats: string | undefined,
-  secondsOnly: string | undefined,
+  seconds: string | undefined,
   bpm: number,
 ): number {
-  if (divisorOrSeconds) {
-    return (4 / parseFloat(divisorOrSeconds)) * parseFloat(beats!);
+  if (divisor) {
+    return (4 / parseFloat(divisor)) * parseFloat(beats!);
   }
-  return (parseFloat(secondsOnly!) * bpm) / 60;
+  return (parseFloat(seconds!) * bpm) / 60;
 }
 
 function parseNoteString(

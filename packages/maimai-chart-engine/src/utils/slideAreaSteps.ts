@@ -56,8 +56,8 @@ export function detectSlideShape(
     case "-": {
       // 必须至少隔一键：rel ∈ [3, 7]
       if (rel < 3 || rel > 7) return null;
-      // 归一化到短弧方向：line6→line4, line7→line3，消除正反向的模板冗余
-      const normRel = rel > 5 ? 8 - rel + 2 : rel;
+      // 归一化到短弧方向：line6→line4, line7→line3，bar 数和 area step 完全一致。
+      const normRel = rel > 5 ? 10 - rel : rel;
       const mirror = normRel !== rel;
       return { shape: `line${normRel}`, mirror };
     }
