@@ -827,26 +827,34 @@ function parseNoteString(
     }
   }
 
-  // 尝试匹配简单按下/中断：1, 1b, 1x, 1bx
-  const isBreak = /b/i.test(noteStr);
-  const isEx = /x/i.test(noteStr);
-  const positionOnly = noteStr.replace(/[bx]/gi, "");
-  const position = parseInt(positionOnly);
+  // 尝试匹配简单按下/中断/星形 TAP：1, 1b, 1x, 1bx, 1$, 1$$
+  const tapMatch = noteStr.match(/^(\d+)([bx]*)(\${0,2})$/i);
+  if (tapMatch) {
+    const position = parseInt(tapMatch[1]);
+    const modifiers = tapMatch[2].toLowerCase();
+    const stars = tapMatch[3];
+    const isBreak = modifiers.includes("b");
+    const isEx = modifiers.includes("x");
+    const isStar = stars.length > 0;
+    const isSpinningStar = stars.length === 2;
 
-  if (position >= 1 && position <= 8) {
-    const tapNote: TapNote = {
-      position: position as ButtonPosition,
-      timing,
-      timingMs: timingMs + delayOffset,
-      type: isBreak ? "break" : isSimultaneous ? "simultaneous" : "tap",
-      measure,
-      positionInMeasure,
-      scale: 1,
-      bpm,
-      isEx,
-      hasDelayMarker,
-    };
-    notes.push(tapNote);
+    if (position >= 1 && position <= 8) {
+      const tapNote: TapNote = {
+        position: position as ButtonPosition,
+        timing,
+        timingMs: timingMs + delayOffset,
+        type: isBreak ? "break" : isSimultaneous ? "simultaneous" : "tap",
+        measure,
+        positionInMeasure,
+        scale: 1,
+        bpm,
+        isStar,
+        isSpinningStar,
+        isEx,
+        hasDelayMarker,
+      };
+      notes.push(tapNote);
+    }
   }
 
   return notes;

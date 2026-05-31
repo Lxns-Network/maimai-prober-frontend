@@ -199,6 +199,10 @@ export interface BaseNote {
 export interface TapNote extends BaseNote {
   type: "tap" | "break" | "simultaneous";
   position: ButtonPosition;
+  /** 是否为星形 TAP（simai `$`） */
+  isStar?: boolean;
+  /** 星形 TAP 是否旋转（simai `$$`） */
+  isSpinningStar?: boolean;
   /** 是否有保护套 */
   isEx?: boolean;
 }

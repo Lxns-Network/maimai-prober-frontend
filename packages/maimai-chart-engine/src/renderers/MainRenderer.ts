@@ -36,6 +36,7 @@ import {
 const MAX_DPR = 2;
 const FULLSCREEN_MAX_CANVAS_PIXELS = 3_500_000;
 const FULLSCREEN_MIN_DPR = 1;
+const STAR_TAP_ROTATION_SPEED_RAD_PER_MS = (2 * Math.PI) / 1000;
 
 export interface MainRendererConfig {
   sensorImagePath?: string;
@@ -763,7 +764,6 @@ export class MainRenderer {
       if (!pos.visible) continue;
 
       const isSimultaneous = (slide.simultaneousNoteCount ?? 0) >= 2;
-      const noteSize = (this.radius / 12.5) * pos.scale * 1.15 * 1.25;
 
       if (slide.timing - currentBeat > 0) {
         const color = slide.isStartBreak
@@ -774,48 +774,40 @@ export class MainRenderer {
         this.noteRenderer.renderApproachArc(slide.position, pos.x, pos.y, color);
       }
 
-      if (slide.isEx) {
-        const scale = this.config.highlightExNotes ? 1.2 : 1;
-        if (slide.isSplitSlide) {
-          this.slideRenderer.renderExSplitStarRing(
-            pos.x,
-            pos.y,
-            noteSize,
-            slide.isStartBreak ?? false,
-            isSimultaneous,
-            scale,
-          );
-        } else {
-          this.slideRenderer.renderExStarRing(
-            pos.x,
-            pos.y,
-            noteSize,
-            slide.isStartBreak ?? false,
-            isSimultaneous,
-            scale,
-          );
-        }
-      }
-
-      const ddrColor = this.config.ddrColorMode ? this.getDdrColor(slide.timing) : null;
-      const color =
-        ddrColor ??
-        (slide.isStartBreak
-          ? COLORS.BREAK_ORANGE
-          : isSimultaneous
-            ? COLORS.SLIDE_SIMULTANEOUS
-            : this.config.pinkSlideStart
-              ? COLORS.SLIDE_PINK
-              : COLORS.SLIDE_CYAN);
+      const color = this.getStarHeadColor(
+        slide.timing,
+        slide.isStartBreak ?? false,
+        isSimultaneous,
+      );
 
       const rotation = this.config.slideRotation
         ? this.slideRenderer["calculateStarRotation"](slide, currentTimeMs)
         : 0;
 
       if (slide.isSplitSlide) {
+        const noteSize = this.getStarNoteSize(pos.scale);
+        if (slide.isEx) {
+          this.slideRenderer.renderExSplitStarRing(
+            pos.x,
+            pos.y,
+            noteSize,
+            slide.isStartBreak ?? false,
+            isSimultaneous,
+            this.config.highlightExNotes ? 1.2 : 1,
+          );
+        }
         this.renderSplitSlideStar(pos.x, pos.y, noteSize, color, rotation);
       } else {
-        this.slideRenderer.drawStar(pos.x, pos.y, noteSize, color, rotation, slide.isEx ?? false);
+        this.renderStarHead(
+          pos.x,
+          pos.y,
+          pos.scale,
+          color,
+          rotation,
+          slide.isEx ?? false,
+          slide.isStartBreak ?? false,
+          isSimultaneous,
+        );
       }
 
       if (this.config.showBreakIndex && slide.isStartBreak && slide.noExBreakIndex && !slide.isEx) {
@@ -907,6 +899,48 @@ export class MainRenderer {
     this.ctx.restore();
   }
 
+  private renderStarHead(
+    x: number,
+    y: number,
+    scale: number,
+    color: string,
+    rotation: number,
+    isEx: boolean,
+    isBreak: boolean,
+    isSimultaneous: boolean,
+  ): void {
+    const noteSize = this.getStarNoteSize(scale);
+
+    if (isEx) {
+      this.slideRenderer.renderExStarRing(
+        x,
+        y,
+        noteSize,
+        isBreak,
+        isSimultaneous,
+        this.config.highlightExNotes ? 1.2 : 1,
+      );
+    }
+
+    this.slideRenderer.drawStar(x, y, noteSize, color, rotation, isEx);
+  }
+
+  private getStarNoteSize(scale: number): number {
+    return (this.radius / 12.5) * scale * 1.15 * 1.25;
+  }
+
+  private getStarHeadColor(timing: number, isBreak: boolean, isSimultaneous: boolean): string {
+    if (this.config.ddrColorMode) {
+      const ddrColor = this.getDdrColor(timing);
+      if (ddrColor) return ddrColor;
+    }
+
+    if (isBreak) return COLORS.BREAK_ORANGE;
+    if (isSimultaneous) return COLORS.SLIDE_SIMULTANEOUS;
+    if (this.config.pinkSlideStart) return COLORS.SLIDE_PINK;
+    return COLORS.SLIDE_CYAN;
+  }
+
   private renderTapNotes(taps: TapNote[], currentBeat: number, currentTimeMs: number): void {
     for (const tap of taps) {
       const pos = this.noteRenderer.calculateNotePosition(tap, currentBeat, currentTimeMs);
@@ -916,31 +950,63 @@ export class MainRenderer {
       const timeDiff = tap.timing - currentBeat;
 
       if (timeDiff > 0) {
-        const color =
-          tap.type === "break"
-            ? COLORS.BREAK_ORANGE
-            : isSimultaneous
-              ? COLORS.SIMULTANEOUS_GOLD
-              : COLORS.TAP_PINK;
-        this.noteRenderer.renderApproachArc(tap.position, pos.x, pos.y, color);
+        this.noteRenderer.renderApproachArc(
+          tap.position,
+          pos.x,
+          pos.y,
+          this.getTapApproachColor(tap, isSimultaneous),
+        );
       }
 
-      this.noteRenderer.renderTapNote(
-        pos.x,
-        pos.y,
-        pos.scale,
-        tap.position,
-        tap.type === "break",
-        isSimultaneous,
-        tap.isEx ?? false,
-        tap.timing,
-        this.config.highlightExNotes ? 1.2 : 1,
-      );
+      if (tap.isStar) {
+        this.renderStarTapNote(tap, pos.x, pos.y, pos.scale, isSimultaneous, currentTimeMs);
+      } else {
+        this.noteRenderer.renderTapNote(
+          pos.x,
+          pos.y,
+          pos.scale,
+          tap.position,
+          tap.type === "break",
+          isSimultaneous,
+          tap.isEx ?? false,
+          tap.timing,
+          this.config.highlightExNotes ? 1.2 : 1,
+        );
+      }
 
       if (this.config.showBreakIndex && tap.type === "break" && tap.noExBreakIndex && !tap.isEx) {
         this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, tap.noExBreakIndex);
       }
     }
+  }
+
+  private getTapApproachColor(tap: TapNote, isSimultaneous: boolean): string {
+    if (tap.type === "break") return COLORS.BREAK_ORANGE;
+    if (isSimultaneous) return COLORS.SIMULTANEOUS_GOLD;
+    if (tap.isStar) return COLORS.SLIDE_CYAN;
+    return COLORS.TAP_PINK;
+  }
+
+  private renderStarTapNote(
+    tap: TapNote,
+    x: number,
+    y: number,
+    scale: number,
+    isSimultaneous: boolean,
+    currentTimeMs: number,
+  ): void {
+    const rotation = tap.isSpinningStar ? -currentTimeMs * STAR_TAP_ROTATION_SPEED_RAD_PER_MS : 0;
+
+    this.renderStarHead(
+      x,
+      y,
+      scale,
+      this.getStarHeadColor(tap.timing, tap.type === "break", isSimultaneous),
+      rotation,
+      tap.isEx ?? false,
+      tap.type === "break",
+      isSimultaneous,
+    );
   }
 
   private renderTapHitEffect(notes: Note[], currentTimeMs: number): void {
@@ -980,7 +1046,7 @@ export class MainRenderer {
         note.position as ButtonPosition,
         COLORS.HIT_EFFECT_GOLD,
         pos.progress,
-        note.type === "break" ? "star" : "hexagon",
+        note.type === "break" || (isTapNote(note) && note.isStar) ? "star" : "hexagon",
       );
     }
   }
