@@ -463,6 +463,8 @@ export function Controls() {
     setMusicVolume,
     setMusicOffset,
     setSoundOffset,
+    fullscreenQuality,
+    setFullscreenQuality,
   } = useGameSettingsStore(useShallow((state) => state));
 
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);
@@ -778,6 +780,23 @@ export function Controls() {
                   { value: "0", label: "无限制" },
                   { value: "120", label: "120 FPS" },
                   { value: "60", label: "60 FPS" },
+                ]}
+                size="xs"
+                fullWidth
+              />
+            </div>
+
+            <div>
+              <Text size="sm" mb={4}>
+                全屏画质
+              </Text>
+              <SegmentedControl
+                value={fullscreenQuality}
+                onChange={(value) => setFullscreenQuality(value as "smooth" | "balanced" | "high")}
+                data={[
+                  { value: "smooth", label: "流畅" },
+                  { value: "balanced", label: "均衡" },
+                  { value: "high", label: "高画质" },
                 ]}
                 size="xs"
                 fullWidth

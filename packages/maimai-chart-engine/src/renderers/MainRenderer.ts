@@ -34,7 +34,6 @@ import {
 } from "../utils/constants";
 
 const MAX_DPR = 2;
-const FULLSCREEN_MAX_CANVAS_PIXELS = 3_500_000;
 const FULLSCREEN_MIN_DPR = 1;
 const STAR_TAP_ROTATION_SPEED_RAD_PER_MS = (2 * Math.PI) / 1000;
 
@@ -61,6 +60,7 @@ export class MainRenderer {
   private centerY: number = 0;
   private radius: number = 0;
   private logicalSize: number = 0;
+  private fullscreenMaxPixels: number = 2_500_000;
 
   private config: RendererConfig = {
     hiSpeed: HI_SPEED_DEFAULT * HI_SPEED_CONVERSION_FACTOR,
@@ -193,7 +193,7 @@ export class MainRenderer {
     // composite canvas backing store 的成本会顶满预算导致掉帧；不过手机屏幕通常
     // 物理面积小，按 DPR=2 渲染仍可接受，上限 2 在 DPR=3 设备节省 ~56% 像素。
     const rawDpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-    const fullscreenBudgetDpr = Math.sqrt(FULLSCREEN_MAX_CANVAS_PIXELS / (size * size));
+    const fullscreenBudgetDpr = Math.sqrt(this.fullscreenMaxPixels / (size * size));
     const dpr = isFullscreen
       ? Math.min(rawDpr, Math.max(FULLSCREEN_MIN_DPR, fullscreenBudgetDpr))
       : rawDpr;
@@ -317,6 +317,10 @@ export class MainRenderer {
 
   setShowHitEffect(enabled: boolean): void {
     this.config.showHitEffect = enabled;
+  }
+
+  setFullscreenMaxPixels(maxPixels: number): void {
+    this.fullscreenMaxPixels = maxPixels;
   }
 
   // fillRect 保证导出的背景不透明。
@@ -709,7 +713,7 @@ export class MainRenderer {
         currentTimeMs,
         hold.isBreakHold ?? false,
         isSimultaneous,
-        this.config.highlightExNotes ? 1.2 : 1,
+        this.exScale,
       );
 
       if (
@@ -793,7 +797,7 @@ export class MainRenderer {
             noteSize,
             slide.isStartBreak ?? false,
             isSimultaneous,
-            this.config.highlightExNotes ? 1.2 : 1,
+            this.exScale,
           );
         }
         this.renderSplitSlideStar(pos.x, pos.y, noteSize, color, rotation);
@@ -912,17 +916,14 @@ export class MainRenderer {
     const noteSize = this.getStarNoteSize(scale);
 
     if (isEx) {
-      this.slideRenderer.renderExStarRing(
-        x,
-        y,
-        noteSize,
-        isBreak,
-        isSimultaneous,
-        this.config.highlightExNotes ? 1.2 : 1,
-      );
+      this.slideRenderer.renderExStarRing(x, y, noteSize, isBreak, isSimultaneous, this.exScale);
     }
 
     this.slideRenderer.drawStar(x, y, noteSize, color, rotation, isEx);
+  }
+
+  private get exScale(): number {
+    return this.config.highlightExNotes ? 1.2 : 1;
   }
 
   private getStarNoteSize(scale: number): number {
@@ -970,7 +971,7 @@ export class MainRenderer {
           isSimultaneous,
           tap.isEx ?? false,
           tap.timing,
-          this.config.highlightExNotes ? 1.2 : 1,
+          this.exScale,
         );
       }
 
