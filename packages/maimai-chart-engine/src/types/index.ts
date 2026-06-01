@@ -165,6 +165,10 @@ export interface SlideSegment {
   cachedRadius?: number;
   /** 缓存对应的 mirror mode，切换 mirror 时用于失效 */
   cachedMirrorMode?: string;
+  /** 缓存 bar chain（懒计算，每帧不变；按 radius/mirror 失效，与 LUT 同源依赖） */
+  cachedChain?: { x: number; y: number; angle: number }[];
+  cachedChainRadius?: number;
+  cachedChainMirror?: string;
 }
 
 export interface BaseNote {

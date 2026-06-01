@@ -41,11 +41,15 @@ export interface MainRendererConfig {
   sensorImagePath?: string;
 }
 
+// tap+hold 同层、按时间分层（早的在上）的合并列表，按 timingMs 降序（晚的先画/在底）。
+type LayeredNote = { kind: "tap"; note: TapNote } | { kind: "hold"; note: HoldStartNote };
+
 interface PreparedRenderNotes {
   slides: SlideNote[];
   touches: (TouchNote | TouchHoldStartNote)[];
   holds: HoldStartNote[];
   taps: TapNote[];
+  tapsAndHolds: LayeredNote[];
   hitEffectNotes: Note[];
   noteCompletionTimes: number[];
   breakCompletionTimes: number[];
@@ -113,6 +117,7 @@ export class MainRenderer {
     touches: [],
     holds: [],
     taps: [],
+    tapsAndHolds: [],
     hitEffectNotes: [],
     noteCompletionTimes: [],
     breakCompletionTimes: [],
@@ -410,7 +415,7 @@ export class MainRenderer {
 
     this.ctx.save();
 
-    const { slides, touches, holds, taps, hitEffectNotes } = this.preparedRenderNotes;
+    const { slides, touches, holds, hitEffectNotes, tapsAndHolds } = this.preparedRenderNotes;
 
     for (const slide of slides) {
       this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, "tracks");
@@ -424,10 +429,8 @@ export class MainRenderer {
 
     this.renderSlideStarts(slides, currentBeat, currentTimeMs);
 
-    this.renderTapNotes(taps, currentBeat, currentTimeMs);
-
-    // hold 在 tap/slide-star 之上，避免后到的 tap 盖住前面的 hold。
-    this.renderHoldNotes(holds, notes, currentBeat, currentTimeMs);
+    // tap 与 hold 同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
+    this.renderTapsAndHolds(tapsAndHolds, notes, currentBeat, currentTimeMs);
 
     // touch 最上层，覆盖普通 note。
     this.renderTouchBorders(touches, currentTimeMs);
@@ -592,11 +595,20 @@ export class MainRenderer {
     breakCompletionTimes.sort((a, b) => a - b);
     breakNoExCompletionTimes.sort((a, b) => a - b);
 
+    // tap+hold 同层按 timingMs 降序（早到的后画/在上层，与 maimai noteSortOrder 一致）。在此
+    // 预算一次（本函数被 notes 引用 memoize），渲染热路径直接迭代，省每帧的合并+排序+分配。
+    const tapsAndHolds: LayeredNote[] = [
+      ...taps.map((note) => ({ kind: "tap" as const, note })),
+      ...holds.map((note) => ({ kind: "hold" as const, note })),
+    ];
+    tapsAndHolds.sort((a, b) => b.note.timingMs - a.note.timingMs);
+
     return {
       slides,
       touches,
       holds,
       taps,
+      tapsAndHolds,
       hitEffectNotes,
       noteCompletionTimes,
       breakCompletionTimes,
@@ -679,57 +691,49 @@ export class MainRenderer {
     }
   }
 
-  private renderHoldNotes(
-    holds: HoldStartNote[],
+  private renderSingleHold(
+    hold: HoldStartNote,
     allNotes: Note[],
     currentBeat: number,
     currentTimeMs: number,
   ): void {
-    for (const hold of holds) {
-      const startPos = this.noteRenderer.calculateNotePosition(hold, currentBeat, currentTimeMs);
-      if (!startPos.visible) continue;
+    const startPos = this.noteRenderer.calculateNotePosition(hold, currentBeat, currentTimeMs);
+    if (!startPos.visible) return;
 
-      const holdEnd = allNotes.find(
-        (n) =>
-          isHoldEndNote(n) && n.position === hold.position && n.holdStartTiming === hold.timing,
-      ) as HoldEndNote | undefined;
+    const holdEnd = allNotes.find(
+      (n) => isHoldEndNote(n) && n.position === hold.position && n.holdStartTiming === hold.timing,
+    ) as HoldEndNote | undefined;
 
-      if (!holdEnd) continue;
+    if (!holdEnd) return;
 
-      const endPos = this.noteRenderer.calculateNotePosition(holdEnd, currentBeat, currentTimeMs);
-      const isSimultaneous = (hold.simultaneousNoteCount ?? 0) >= 2;
+    const endPos = this.noteRenderer.calculateNotePosition(holdEnd, currentBeat, currentTimeMs);
+    const isSimultaneous = (hold.simultaneousNoteCount ?? 0) >= 2;
 
-      const ddrColor = this.config.ddrColorMode ? this.getDdrColor(hold.timing) : null;
-      const color = getGradientColors(ddrColor, hold.isBreakHold ?? false, isSimultaneous);
+    const ddrColor = this.config.ddrColorMode ? this.getDdrColor(hold.timing) : null;
+    const color = getGradientColors(ddrColor, hold.isBreakHold ?? false, isSimultaneous);
 
-      this.holdRenderer.renderHold(
-        startPos,
-        endPos,
-        hold.position,
-        color,
-        hold.isEx,
-        hold,
-        holdEnd,
-        currentTimeMs,
-        hold.isBreakHold ?? false,
-        isSimultaneous,
-        this.exScale,
-      );
+    this.holdRenderer.renderHold(
+      startPos,
+      endPos,
+      hold.position,
+      color,
+      hold.isEx,
+      hold,
+      holdEnd,
+      currentTimeMs,
+      hold.isBreakHold ?? false,
+      isSimultaneous,
+      this.exScale,
+    );
 
-      if (
-        this.config.showBreakIndex &&
-        hold.isBreakHold &&
-        hold.noExBreakIndex &&
-        !hold.isEx &&
-        startPos.visible
-      ) {
-        this.noteRenderer.renderBreakIndex(
-          startPos.x,
-          startPos.y,
-          startPos.scale,
-          hold.noExBreakIndex,
-        );
-      }
+    if (
+      this.config.showBreakIndex &&
+      hold.isBreakHold &&
+      hold.noExBreakIndex &&
+      !hold.isEx &&
+      startPos.visible
+    ) {
+      this.noteRenderer.renderBreakIndex(startPos.x, startPos.y, startPos.scale, hold.noExBreakIndex);
     }
   }
 
@@ -942,42 +946,53 @@ export class MainRenderer {
     return COLORS.SLIDE_CYAN;
   }
 
-  private renderTapNotes(taps: TapNote[], currentBeat: number, currentTimeMs: number): void {
-    for (const tap of taps) {
-      const pos = this.noteRenderer.calculateNotePosition(tap, currentBeat, currentTimeMs);
-      if (!pos.visible) continue;
+  // 按 prepareRenderNotes 预排好的时间分层顺序（早到的 note 在上层）绘制 tap/hold。
+  private renderTapsAndHolds(
+    layered: LayeredNote[],
+    allNotes: Note[],
+    currentBeat: number,
+    currentTimeMs: number,
+  ): void {
+    for (const item of layered) {
+      if (item.kind === "tap") this.renderSingleTap(item.note, currentBeat, currentTimeMs);
+      else this.renderSingleHold(item.note, allNotes, currentBeat, currentTimeMs);
+    }
+  }
 
-      const isSimultaneous = (tap.simultaneousNoteCount ?? 0) >= 2;
-      const timeDiff = tap.timing - currentBeat;
+  private renderSingleTap(tap: TapNote, currentBeat: number, currentTimeMs: number): void {
+    const pos = this.noteRenderer.calculateNotePosition(tap, currentBeat, currentTimeMs);
+    if (!pos.visible) return;
 
-      if (timeDiff > 0) {
-        this.noteRenderer.renderApproachArc(
-          tap.position,
-          pos.x,
-          pos.y,
-          this.getTapApproachColor(tap, isSimultaneous),
-        );
-      }
+    const isSimultaneous = (tap.simultaneousNoteCount ?? 0) >= 2;
+    const timeDiff = tap.timing - currentBeat;
 
-      if (tap.isStar) {
-        this.renderStarTapNote(tap, pos.x, pos.y, pos.scale, isSimultaneous, currentTimeMs);
-      } else {
-        this.noteRenderer.renderTapNote(
-          pos.x,
-          pos.y,
-          pos.scale,
-          tap.position,
-          tap.type === "break",
-          isSimultaneous,
-          tap.isEx ?? false,
-          tap.timing,
-          this.exScale,
-        );
-      }
+    if (timeDiff > 0) {
+      this.noteRenderer.renderApproachArc(
+        tap.position,
+        pos.x,
+        pos.y,
+        this.getTapApproachColor(tap, isSimultaneous),
+      );
+    }
 
-      if (this.config.showBreakIndex && tap.type === "break" && tap.noExBreakIndex && !tap.isEx) {
-        this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, tap.noExBreakIndex);
-      }
+    if (tap.isStar) {
+      this.renderStarTapNote(tap, pos.x, pos.y, pos.scale, isSimultaneous, currentTimeMs);
+    } else {
+      this.noteRenderer.renderTapNote(
+        pos.x,
+        pos.y,
+        pos.scale,
+        tap.position,
+        tap.type === "break",
+        isSimultaneous,
+        tap.isEx ?? false,
+        tap.timing,
+        this.exScale,
+      );
+    }
+
+    if (this.config.showBreakIndex && tap.type === "break" && tap.noExBreakIndex && !tap.isEx) {
+      this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, tap.noExBreakIndex);
     }
   }
 

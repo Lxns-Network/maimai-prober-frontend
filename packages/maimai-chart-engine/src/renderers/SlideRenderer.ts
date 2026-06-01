@@ -37,11 +37,23 @@ export class SlideRenderer extends BaseRenderer {
    * 把 prefab bar 列表（unit-disc）变换到当前 canvas 坐标。返回的 polyline 同时
    * 喂给箭头渲染和 getPointOnSegment（星头），保证两者跟同一条曲线。
    */
-  private getBarChain(segment: SlideSegment): { x: number; y: number }[] | null {
+  private getBarChain(
+    segment: SlideSegment,
+  ): { x: number; y: number; angle: number }[] | null {
     const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos);
     if (!shape) return null;
     const bars = SLIDE_BARS[shape.shape];
     if (!bars) return null;
+
+    // chain 仅依赖 (segment, radius, mirrorMode)，每帧不变 → 缓存到 segment（按 radius/mirror 失效）。
+    const mode = this.context.config.mirrorMode;
+    if (
+      segment.cachedChain &&
+      segment.cachedChainRadius === this.context.radius &&
+      segment.cachedChainMirror === mode
+    ) {
+      return segment.cachedChain;
+    }
 
     // 模板按 startPos=1 设计：非镜像时旋 (startPos-1)·π/4 把 button 1 → startPos；
     // shape.mirror 先 x→-x 把 button 1 翻到 button 8，要多旋 45° 才能转回。
@@ -52,7 +64,6 @@ export class SlideRenderer extends BaseRenderer {
     const cx = this.context.centerX;
     const cy = this.context.centerY;
     // 用户 mirror（h 翻 x / v 翻 y / rotate180 双翻），跟 mirrorPosition 配套。
-    const mode = this.context.config.mirrorMode;
     const sx = mode === "horizontal" || mode === "rotate180" ? -1 : 1;
     const sy = mode === "vertical" || mode === "rotate180" ? -1 : 1;
 
@@ -62,7 +73,16 @@ export class SlideRenderer extends BaseRenderer {
     const CIRCLE_BAR_R = 0.993;
     const GRID_PER_PI = 32;
 
-    return bars.map((bar) => {
+    // Line prefab 源数据有 ~1px 横向漂移使直线箭头左右锯齿；把 bar 投影到首尾连线去掉漂移
+    // （保留沿线间距）。line4 本就共线，投影是 no-op。
+    const isLine = shape.shape.startsWith("line");
+    const lfx = shape.mirror ? -bars[0].x : bars[0].x;
+    const lfy = bars[0].y;
+    const lineDx = (shape.mirror ? -bars[bars.length - 1].x : bars[bars.length - 1].x) - lfx;
+    const lineDy = bars[bars.length - 1].y - lfy;
+    const lineLen2 = lineDx * lineDx + lineDy * lineDy || 1;
+
+    const chain = bars.map((bar) => {
       let bx = shape.mirror ? -bar.x : bar.x;
       let by = bar.y;
       if (isCircle) {
@@ -70,12 +90,25 @@ export class SlideRenderer extends BaseRenderer {
         const snapped = Math.round((angle * GRID_PER_PI) / Math.PI) * (Math.PI / GRID_PER_PI);
         bx = Math.cos(snapped) * CIRCLE_BAR_R;
         by = Math.sin(snapped) * CIRCLE_BAR_R;
+      } else if (isLine) {
+        // 投影到首尾连线（去横向漂移）
+        const t = ((bx - lfx) * lineDx + (by - lfy) * lineDy) / lineLen2;
+        bx = lfx + t * lineDx;
+        by = lfy + t * lineDy;
       }
+      // bar 烘焙旋转：prefab mirror（x→-x ⇒ π-θ）后旋 startRotation，再跟随 user mirror。
+      // 仅 v/s/z 用它（每腿恒定、尖角处突变）；其余形状走切线，见 getVisibleBarsForSegment。
+      const baked = (shape.mirror ? Math.PI - bar.r : bar.r) + startRotation;
       return {
         x: cx + sx * r * (bx * cosR - by * sinR),
         y: cy + sy * r * (bx * sinR + by * cosR),
+        angle: Math.atan2(sy * Math.sin(baked), sx * Math.cos(baked)),
       };
     });
+    segment.cachedChain = chain;
+    segment.cachedChainRadius = r;
+    segment.cachedChainMirror = mode;
+    return chain;
   }
 
   calculateSlideStartPosition(
@@ -187,12 +220,18 @@ export class SlideRenderer extends BaseRenderer {
           segmentRanges.push({ start, end });
         }
 
-        // 正序迭代，segmentOffset 传递各段在整条路径中的累计弧长偏移，让箭头按全局弧长对齐。
-        // chunky snap 让内部函数查 areaStep，外层只传原始 progress（双层 snap 会在 chunk 边界处错位）。
-        // 注：原反向迭代用于保证后段 z-order 更高（画在上面）；现在改用正序 + segmentOffset
-        // 相位对齐后，每段箭头位置由全局弧长决定，段间不再有 overlap 依赖 z-order 的情况。
-        let segmentOffset = 0;
+        // segmentOffset = 各段在整条路径中的累计弧长偏移（正序累计），喂给 renderSegmentPath
+        // 让箭头按全局弧长相位对齐（chunky snap 在内部查 areaStep，外层只传原始 progress）。
+        const segmentOffsets: number[] = [];
+        let acc = 0;
         for (let i = 0; i < segments.length; i++) {
+          segmentOffsets.push(acc);
+          acc += segmentLengths[i];
+        }
+
+        // 反序绘制：先拼接的段（i 小）后画 = 在上层。拼接拐点处前段（含补的 junction 箭头）
+        // 盖住后段起点，符合"先拼接的星星在上层"。
+        for (let i = segments.length - 1; i >= 0; i--) {
           const segment = segments[i];
           const range = segmentRanges[i];
 
@@ -208,10 +247,9 @@ export class SlideRenderer extends BaseRenderer {
             segmentProgress,
             isSimultaneous,
             this.context.config.normalColorBreakSlide,
-            segmentOffset,
+            segmentOffsets[i],
+            i < segments.length - 1, // 非末段：末端是拼接拐点，需补 junction 箭头
           );
-
-          segmentOffset += segmentLengths[i];
         }
       } else {
         if (currentTimeMs >= note.timingMs) {
@@ -228,6 +266,7 @@ export class SlideRenderer extends BaseRenderer {
     isSimultaneous: boolean = false,
     normalBreakColor: boolean = false,
     segmentOffset: number = 0,
+    isJunctionEnd: boolean = false,
   ): boolean {
     const mirroredType = this.mirrorPathType(segment.type);
 
@@ -252,7 +291,7 @@ export class SlideRenderer extends BaseRenderer {
       }
 
       // 其他形状：prefab bar 位置 + drawSlideArrowsBatch（均匀箭头）。
-      const bars = this.getVisibleBarsForSegment(segment, progress);
+      const bars = this.getVisibleBarsForSegment(segment, progress, isJunctionEnd);
       if (bars !== null) {
         if (bars.length > 0) this.drawSlideArrowsBatch(bars);
         return;
@@ -336,6 +375,7 @@ export class SlideRenderer extends BaseRenderer {
   private getVisibleBarsForSegment(
     segment: SlideSegment,
     progress: number,
+    isJunctionEnd: boolean = false,
   ): { x: number; y: number; angle: number }[] | null {
     if (segment.type === "w") return null;
     const chain = this.getBarChain(segment);
@@ -349,20 +389,42 @@ export class SlideRenderer extends BaseRenderer {
         ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
         : 0;
 
-    // 各 bar 自带的朝向数据不一致，从相邻 bar 算 tangent。central difference
-    // 让索引无关：两条 overlap slide 同 prefab 旋转后，同位置的 bar 在两侧索引
-    // 可能不同（一条的 last 可能是另一条的中间），forward-only 会算出不同 tangent。
-    // 采样窗口按链长缩放：短链（<7 bars）用 ±1 避免端点不对称窗口把切线拉平。
-    // 倒序 push 让近 star 的 bar 落数组末尾 = 最后画 = 最上层。
+    // 箭头朝向默认用相邻 bar 的 ±1 切线（沿走向、紧贴曲线）。例外 v/s/z：穿心 V / S 在中心是
+    // 尖角，±1 跨过尖角会把两腿切线平均掉，改用每腿恒定的烘焙 r（chain[i].angle）；自回 v
+    // （1v1 起点==终点）烘焙 r 是常量会让回程箭头指反，故排除。pq 等 loop 烘焙 r 垂直走向，不用。
+    const useBakedAngle =
+      (segment.type === "v" && segment.startPos !== segment.endPos) ||
+      segment.type === "s" ||
+      segment.type === "z";
     const result: { x: number; y: number; angle: number }[] = [];
     const last = chain.length - 1;
-    const halfWin = chain.length < 7 ? 1 : 3;
+
+    // 拼接拐点：非末段在 junction 处沿末端方向外推一格补一个箭头——standalone 末端内缩是为收尾
+    // 留白，但拼接滑条继续穿过拐点，否则两段双重内缩在拐点留下大缺口。放数组首位 = 最底层
+    // （离 star 最远）；段完成后不补。
+    if (isJunctionEnd && chain.length >= 2 && hiddenCount < chain.length) {
+      const a = chain[last];
+      const b = chain[last - 1];
+      const jx = 2 * a.x - b.x;
+      const jy = 2 * a.y - b.y;
+      // 越界守卫：外推点越过 button ring（到圆心距离 > radius）就不补——末端已贴近 button 的
+      // 形状（如 line4）外推会跑到拐点外。radius 镜像不变，对任意 mirror mode 都成立。
+      if (this.distanceToCenter(jx, jy) <= this.context.radius) {
+        const angle = useBakedAngle ? a.angle : Math.atan2(a.y - b.y, a.x - b.x);
+        result.push({ x: jx, y: jy, angle });
+      }
+    }
+
     for (let i = last; i >= hiddenCount; i--) {
-      const lo = Math.max(0, i - halfWin);
-      const hi = Math.min(last, i + halfWin);
-      const dx = chain[hi].x - chain[lo].x;
-      const dy = chain[hi].y - chain[lo].y;
-      result.push({ x: chain[i].x, y: chain[i].y, angle: Math.atan2(dy, dx) });
+      let angle: number;
+      if (useBakedAngle) {
+        angle = chain[i].angle;
+      } else {
+        const lo = Math.max(0, i - 1);
+        const hi = Math.min(last, i + 1);
+        angle = Math.atan2(chain[hi].y - chain[lo].y, chain[hi].x - chain[lo].x);
+      }
+      result.push({ x: chain[i].x, y: chain[i].y, angle });
     }
     return result;
   }
@@ -524,6 +586,9 @@ export class SlideRenderer extends BaseRenderer {
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
 
+    // 阴影沿箭头反方向（轨迹后方）偏移；逐箭头先投影后本体，自交叉处后画的会压住先画的。
+    const shadowOffset = this.scaleByRadius(5 / 300);
+
     for (const arrow of arrows) {
       const cos = Math.cos(arrow.angle);
       const sin = Math.sin(arrow.angle);
@@ -551,6 +616,13 @@ export class SlideRenderer extends BaseRenderer {
       arrowPath.lineTo(bx1, by1);
       arrowPath.lineTo(x1, y1);
       arrowPath.closePath();
+
+      ctx.save();
+      ctx.translate(-cos * shadowOffset, -sin * shadowOffset);
+      ctx.globalAlpha = ctx.globalAlpha * 0.4;
+      ctx.fillStyle = COLORS.BLACK;
+      ctx.fill(arrowPath);
+      ctx.restore();
 
       ctx.fillStyle = rightColor;
       ctx.fill(arrowPath);
