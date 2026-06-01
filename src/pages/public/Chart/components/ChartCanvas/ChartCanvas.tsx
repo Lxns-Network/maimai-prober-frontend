@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from "../../stores/useGameStore";
-import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
+import { useGameSettingsStore, FULLSCREEN_QUALITY_MP } from "../../stores/useGameSettingsStore";
 import { MainRenderer, ANSWER_SOUND_BASE_OFFSET_MS } from "@lxns-network/maimai-chart-engine";
 import { useAudio } from "../../hooks/useAudio";
 import { useMusicPlayer } from "../../hooks/useMusicPlayer";
@@ -311,14 +311,16 @@ export function ChartCanvas() {
     };
   }, [renderFrame, chartData?.bpm, updateCanvasDebugInfo]);
 
+  const fullscreenQuality = useGameSettingsStore((s) => s.fullscreenQuality);
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer) return;
 
+    renderer.setFullscreenMaxPixels(FULLSCREEN_QUALITY_MP[fullscreenQuality]);
     renderer.resize(isFullscreen);
     updateCanvasDebugInfo(true);
     renderFrame(playbackTimeRef.current);
-  }, [isFullscreen, renderFrame, updateCanvasDebugInfo]);
+  }, [isFullscreen, fullscreenQuality, renderFrame, updateCanvasDebugInfo]);
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;

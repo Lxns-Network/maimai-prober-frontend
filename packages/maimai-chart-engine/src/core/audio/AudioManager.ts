@@ -151,13 +151,15 @@ export class AudioManager {
     const adjustedLookAheadTime = adjustedCurrentTime + lookAheadMs;
 
     for (const note of notes) {
+      const noteTime = note.timingMs;
+      // 只处理调度窗口内的 note，窗口外直接跳过——否则每帧都对全谱每个 note 跑昂贵的
+      // shouldPlaySound / getEventKey（长谱会掉帧 + GC 卡顿）。
+      if (noteTime > adjustedLookAheadTime || noteTime < adjustedLastTime) continue;
+
       if (!this.shouldPlaySound(note)) continue;
 
       const eventKey = this.getEventKey(note);
       if (this.handledEvents.has(eventKey)) continue;
-
-      const noteTime = note.timingMs;
-      if (noteTime > adjustedLookAheadTime) continue;
 
       if (noteTime <= adjustedCurrentTime) {
         this.handledEvents.add(eventKey);

@@ -2,6 +2,14 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { MirrorMode, JudgmentLineDesign } from "@lxns-network/maimai-chart-engine";
 
+export type FullscreenQuality = "smooth" | "balanced" | "high";
+
+export const FULLSCREEN_QUALITY_MP: Record<FullscreenQuality, number> = {
+  smooth: 2_000_000,
+  balanced: 2_500_000,
+  high: 3_500_000,
+};
+
 export interface GameSettingsState {
   hiSpeed: number;
   alwaysKeepHiSpeed: boolean;
@@ -19,6 +27,7 @@ export interface GameSettingsState {
   soundOffset: number;
   musicVolume: number;
   musicOffset: number;
+  fullscreenQuality: FullscreenQuality;
 }
 
 export interface GameSettingsActions {
@@ -38,6 +47,7 @@ export interface GameSettingsActions {
   setSoundOffset: (offset: number) => void;
   setMusicVolume: (volume: number) => void;
   setMusicOffset: (offset: number) => void;
+  setFullscreenQuality: (quality: FullscreenQuality) => void;
 }
 
 export type GameSettingsStore = GameSettingsState & GameSettingsActions;
@@ -61,6 +71,7 @@ const initialState: GameSettingsState = {
   soundOffset: 0,
   musicVolume: 0.8,
   musicOffset: 0,
+  fullscreenQuality: "balanced",
 };
 
 export const useGameSettingsStore = create<GameSettingsStore>()(
@@ -83,6 +94,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       setSoundOffset: (offset: number) => set({ soundOffset: offset }),
       setMusicVolume: (volume: number) => set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
       setMusicOffset: (offset: number) => set({ musicOffset: offset }),
+      setFullscreenQuality: (quality: FullscreenQuality) => set({ fullscreenQuality: quality }),
     }),
     {
       name: "maimai_chart_preview_settings",
@@ -108,6 +120,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
         soundOffset: state.soundOffset,
         musicVolume: state.musicVolume,
         musicOffset: state.musicOffset,
+        fullscreenQuality: state.fullscreenQuality,
       }),
     },
   ),
