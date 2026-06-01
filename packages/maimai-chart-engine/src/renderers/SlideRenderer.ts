@@ -37,9 +37,7 @@ export class SlideRenderer extends BaseRenderer {
    * 把 prefab bar 列表（unit-disc）变换到当前 canvas 坐标。返回的 polyline 同时
    * 喂给箭头渲染和 getPointOnSegment（星头），保证两者跟同一条曲线。
    */
-  private getBarChain(
-    segment: SlideSegment,
-  ): { x: number; y: number; angle: number }[] | null {
+  private getBarChain(segment: SlideSegment): { x: number; y: number; angle: number }[] | null {
     const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos);
     if (!shape) return null;
     const bars = SLIDE_BARS[shape.shape];

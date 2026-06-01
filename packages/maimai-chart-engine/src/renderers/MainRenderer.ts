@@ -733,7 +733,12 @@ export class MainRenderer {
       !hold.isEx &&
       startPos.visible
     ) {
-      this.noteRenderer.renderBreakIndex(startPos.x, startPos.y, startPos.scale, hold.noExBreakIndex);
+      this.noteRenderer.renderBreakIndex(
+        startPos.x,
+        startPos.y,
+        startPos.scale,
+        hold.noExBreakIndex,
+      );
     }
   }
 
