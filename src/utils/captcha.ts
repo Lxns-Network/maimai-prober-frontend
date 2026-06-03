@@ -6,6 +6,19 @@ const CAP_SOLVE_TIMEOUT = 60000;
 
 let scriptPromise: Promise<void> | null = null;
 
+// cap.js 的挑战/令牌带有过期时间，校验依赖客户端系统时钟。
+// 当设备时间不准（如双系统未同步、未开启 NTP）时，服务端会返回类似
+// "invalid expiration time" 的错误，对用户而言难以理解。这里将这类
+// 时间相关错误转换为更明确的提示。
+export function friendlyCaptchaError(message?: string): string {
+  const fallback = "人机验证失败，请刷新页面后重试";
+  if (!message) return fallback;
+  if (/expir|invalid.*time|time.*invalid|clock|timestamp/i.test(message)) {
+    return "人机验证失败，可能是设备系统时间不准，请校准时间（开启自动同步）后重试";
+  }
+  return message;
+}
+
 function loadCapScript(): Promise<void> {
   if (scriptPromise) return scriptPromise;
   scriptPromise = new Promise((resolve, reject) => {
@@ -34,7 +47,7 @@ export async function solveCaptcha(): Promise<string> {
     const result = await Promise.race([
       new Promise<never>((_, reject) => {
         cap.addEventListener("error", (event) => {
-          reject(new Error(event.detail?.message || "人机验证失败，请刷新页面后重试"));
+          reject(new Error(friendlyCaptchaError(event.detail?.message)));
         });
       }),
       cap.solve(),
