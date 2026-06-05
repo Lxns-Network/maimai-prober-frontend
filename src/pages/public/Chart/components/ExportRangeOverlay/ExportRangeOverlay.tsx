@@ -19,6 +19,7 @@ export function ExportRangeOverlay({
   onPreview,
 }: ExportRangeOverlayProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const rootWidthRef = useRef(0);
   const draggingHandleRef = useRef<"start" | "end" | null>(null);
   const rangeRef = useRef(range);
   rangeRef.current = range;
@@ -35,11 +36,12 @@ export function ExportRangeOverlay({
 
   const updateHandle = useCallback((clientX: number) => {
     const rect = rootRef.current?.getBoundingClientRect();
+    const width = rootWidthRef.current;
     const durationMs = totalDurationMsRef.current;
-    if (!rect || rect.width <= 0 || durationMs <= 0) return;
+    if (!rect || width <= 0 || durationMs <= 0) return;
 
-    const x = clamp(clientX - rect.left, 0, rect.width);
-    const targetMs = (x / rect.width) * durationMs;
+    const x = clamp(clientX - rect.left, 0, width);
+    const targetMs = (x / width) * durationMs;
 
     const handle = draggingHandleRef.current;
     if (!handle) return;
@@ -70,6 +72,7 @@ export function ExportRangeOverlay({
   }, []);
 
   const startDragging = (handle: "start" | "end", clientX: number) => {
+    rootWidthRef.current = rootRef.current?.getBoundingClientRect().width ?? 0;
     draggingHandleRef.current = handle;
     updateHandle(clientX);
   };

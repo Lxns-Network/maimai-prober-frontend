@@ -1,16 +1,16 @@
 {
   "name": "maimai-prober-frontend",
-  "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "private": true,
   "workspaces": [
     "packages/*"
   ],
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "stylelint": "stylelint ./src/**/*.css --cache",
     "preview": "vite preview"
@@ -103,10 +103,10 @@
     "eslint": "8.57.1",
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-plugin-react-refresh": "0.4.26",
+    "oxfmt": "^0.53.0",
     "postcss": "8.5.9",
     "postcss-preset-mantine": "1.18.0",
     "postcss-simple-vars": "7.0.1",
-    "prettier": "3.6.2",
     "typescript": "5.9.3",
     "vite": "8.0.8"
   },

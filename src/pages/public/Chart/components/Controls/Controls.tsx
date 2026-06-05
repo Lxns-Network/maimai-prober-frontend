@@ -67,6 +67,17 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function getDifficultyTextColor(
+  isSelected: boolean,
+  isLightColor: boolean,
+  fallback: string,
+): string {
+  if (isSelected && isLightColor) return "#BE6FF8";
+  if (isSelected) return "#fff";
+  if (isLightColor) return "#c4b5fd";
+  return fallback;
+}
+
 function isSupportedAudioFile(file: File): boolean {
   if (file.type.startsWith("audio/")) return true;
 
@@ -207,7 +218,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     });
 
     try {
-      // Yield so the progress UI paints before the blocking export begins.
+      // 让出主线程，使进度条 UI 在阻塞式导出开始前完成渲染。
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => window.setTimeout(resolve, 0));
       });
@@ -773,13 +784,7 @@ export function Controls() {
               if (!isAvailable) return null;
 
               const isLightColor = diff === 6;
-              const textColor = isSelected
-                ? isLightColor
-                  ? "#BE6FF8"
-                  : "#fff"
-                : isLightColor
-                  ? "#c4b5fd"
-                  : color;
+              const textColor = getDifficultyTextColor(isSelected, isLightColor, color);
 
               return (
                 <UnstyledButton
