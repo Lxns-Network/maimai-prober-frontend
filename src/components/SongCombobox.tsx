@@ -1,25 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  CloseButton,
-  Combobox,
-  InputBase,
-  ScrollArea,
-  Text,
-  useVirtualizedCombobox,
-  InputBaseProps,
-  ElementProps,
-  Group,
-  Badge,
-} from "@mantine/core";
+import { Text, InputBaseProps, ElementProps, Group, Badge } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.ts";
-import { IconSearch } from "@tabler/icons-react";
 import { toHiragana } from "wanakana";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import useSongListStore from "../hooks/useSongListStore.ts";
 import useAliasListStore from "../hooks/useAliasListStore.ts";
 import useGame from "@/hooks/useGame.ts";
+import { VirtualizedCombobox } from "./VirtualizedCombobox.tsx";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<"input", keyof InputBaseProps> {
   value?: number;
@@ -93,7 +81,9 @@ function searchSongs(
   return result;
 }
 
-const ITEM_HEIGHT = 48;
+type SongProps = MaimaiSongProps | ChunithmSongProps;
+
+const ITEM_HEIGHT = 52;
 
 export const SongCombobox = ({
   value,
@@ -111,43 +101,9 @@ export const SongCombobox = ({
     () => searchSongs(searchIndex, debouncedSearch),
     [searchIndex, debouncedSearch],
   );
-  const [opened, setOpened] = useState(false);
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState(-1);
-  const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
 
   const getSongList = useSongListStore((state) => state.getSongList);
   const getAliasList = useAliasListStore((state) => state.getAliasList);
-
-  const virtualizer = useVirtualizer({
-    count: filteredSongs.length,
-    getScrollElement: () => scrollParent,
-    estimateSize: () => ITEM_HEIGHT,
-    overscan: 10,
-  });
-
-  function onOptionSubmitHandler(index: number) {
-    const song = filteredSongs[index];
-    if (!song) return;
-    onOptionSubmit && onOptionSubmit(song.id);
-    setSearch(song.title);
-    combobox.closeDropdown();
-    combobox.resetSelectedOption();
-  }
-
-  const combobox = useVirtualizedCombobox({
-    opened,
-    onOpenedChange: setOpened,
-    totalOptionsCount: filteredSongs.length,
-    getOptionId: (index) => (filteredSongs[index] ? `song-${filteredSongs[index].id}` : null),
-    selectedOptionIndex,
-    setSelectedOptionIndex: (index) => {
-      setSelectedOptionIndex(index);
-      if (index >= 0) {
-        virtualizer.scrollToIndex(index, { align: "auto" });
-      }
-    },
-    onSelectedOptionSubmit: onOptionSubmitHandler,
-  });
 
   const latestSongList = getSongList(game);
   const latestAliases = getAliasList(game).aliases;
@@ -173,123 +129,54 @@ export const SongCombobox = ({
   }, [songList?.songs, value]);
 
   const renderOption = useCallback(
-    (index: number) => {
-      const song = filteredSongs[index];
-      if (!song) return null;
-
-      return (
-        <Group justify="space-between" wrap="nowrap">
-          <div>
-            <Text fz="sm" fw={500}>
-              {song.title}
-            </Text>
-            <Text fz="xs" opacity={0.6}>
-              {song.artist}
-            </Text>
-          </div>
-          {songList instanceof MaimaiSongList && song.id >= 100000 && (
-            <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
-              宴
-            </Badge>
-          )}
-          {songList instanceof ChunithmSongList && song.id >= 8000 && (
-            <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
-              {(song as ChunithmSongProps).difficulties[0].kanji}
-            </Badge>
-          )}
-        </Group>
-      );
-    },
-    [filteredSongs, songList],
+    (song: SongProps) => (
+      <Group justify="space-between" wrap="nowrap">
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <Text fz="sm" fw={500} truncate>
+            {song.title}
+          </Text>
+          <Text fz="xs" opacity={0.6} truncate>
+            {song.artist}
+          </Text>
+        </div>
+        {songList instanceof MaimaiSongList && song.id >= 100000 && (
+          <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
+            宴
+          </Badge>
+        )}
+        {songList instanceof ChunithmSongList && song.id >= 8000 && (
+          <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
+            {(song as ChunithmSongProps).difficulties[0].kanji}
+          </Badge>
+        )}
+      </Group>
+    ),
+    [songList],
   );
 
   return (
-    <Combobox
-      store={combobox}
-      resetSelectionOnOptionHover={false}
-      keepMounted
-      onOptionSubmit={(value) => {
-        onOptionSubmit && onOptionSubmit(parseInt(value));
-        setSearch(songList?.songs.find((song) => song.id === parseInt(value))?.title || "");
-        combobox.closeDropdown();
+    <VirtualizedCombobox<SongProps>
+      options={filteredSongs}
+      search={search}
+      onSearchChange={setSearch}
+      getOptionId={(song) => `song-${song.id}`}
+      getOptionValue={(song) => song.id.toString()}
+      renderOption={renderOption}
+      onOptionSubmit={(submitted) => {
+        const id = parseInt(submitted);
+        onOptionSubmit && onOptionSubmit(id);
+        setSearch(songList?.songs.find((song) => song.id === id)?.title || "");
       }}
-    >
-      <Combobox.Target>
-        <InputBase
-          placeholder="请选择曲目"
-          leftSection={<IconSearch size={18} />}
-          rightSection={
-            search.length !== 0 && !others.disabled ? (
-              <CloseButton
-                size="sm"
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => {
-                  setSearch("");
-                  onOptionSubmit && onOptionSubmit(0);
-                }}
-              />
-            ) : (
-              <Combobox.Chevron />
-            )
-          }
-          rightSectionPointerEvents={search.length !== 0 ? "auto" : "none"}
-          value={search}
-          disabled={songList?.songs.length === 0}
-          loading={!songList || songList.songs.length === 0}
-          onChange={(event) => {
-            combobox.openDropdown();
-            setSearch(event.currentTarget.value);
-          }}
-          onClick={() => combobox.openDropdown()}
-          onFocus={() => combobox.openDropdown()}
-          onBlur={() => {
-            combobox.closeDropdown();
-            setSearch(search || "");
-          }}
-          {...others}
-        />
-      </Combobox.Target>
-
-      <Combobox.Dropdown>
-        <Combobox.Options>
-          {filteredSongs.length === 0 ? (
-            <Combobox.Empty>没有找到符合条件的曲目</Combobox.Empty>
-          ) : (
-            <ScrollArea.Autosize
-              mah={200}
-              type="scroll"
-              scrollbarSize={4}
-              viewportRef={setScrollParent}
-              onMouseDown={(event) => event.preventDefault()}
-            >
-              <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
-                {virtualizer.getVirtualItems().map((virtualItem) => {
-                  const song = filteredSongs[virtualItem.index];
-                  if (!song) return null;
-                  return (
-                    <Combobox.Option
-                      value={song.id.toString()}
-                      key={song.id}
-                      active={virtualItem.index === selectedOptionIndex}
-                      onClick={() => onOptionSubmitHandler(virtualItem.index)}
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: virtualItem.size,
-                        transform: `translateY(${virtualItem.start}px)`,
-                      }}
-                    >
-                      {renderOption(virtualItem.index)}
-                    </Combobox.Option>
-                  );
-                })}
-              </div>
-            </ScrollArea.Autosize>
-          )}
-        </Combobox.Options>
-      </Combobox.Dropdown>
-    </Combobox>
+      onClear={() => {
+        setSearch("");
+        onOptionSubmit && onOptionSubmit(0);
+      }}
+      placeholder="请选择曲目"
+      emptyText="没有找到符合条件的曲目"
+      itemHeight={ITEM_HEIGHT}
+      disabled={songList?.songs.length === 0}
+      loading={!songList || songList.songs.length === 0}
+      {...others}
+    />
   );
 };
