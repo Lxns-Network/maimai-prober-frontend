@@ -1673,24 +1673,14 @@ export class SlideRenderer extends BaseRenderer {
   private getPathTangentAngle(progress: number, segments: SlideSegment[]): number {
     if (!segments || segments.length === 0) return 0;
 
-    const luts = segments.map((seg) => this.getSegmentLut(seg));
-    const lengths = luts.map((lut) => lut[lut.length - 1].s);
-    const totalLength = lengths.reduce((a, b) => a + b, 0);
-
-    if (totalLength === 0) return 0;
-
-    const targetDist = progress * totalLength;
-    let cumulative = 0;
-
-    for (let i = 0; i < segments.length; i++) {
-      if (cumulative + lengths[i] >= targetDist) {
-        return this.sampleArcLut(luts[i], targetDist - cumulative).angle;
-      }
-      cumulative += lengths[i];
-    }
-
-    const lastLut = luts[luts.length - 1];
-    return lastLut[lastLut.length - 1].angle;
+    // 用星头前后一小段的弦方向作朝向，对路径折线低通平滑，消除逐 cell 的方向/角速度跳变。
+    const win = 0.03;
+    const back = this.getPointAlongPath(Math.max(0, progress - win), segments);
+    const fwd = this.getPointAlongPath(Math.min(1, progress + win), segments);
+    const dx = fwd.x - back.x;
+    const dy = fwd.y - back.y;
+    if (dx === 0 && dy === 0) return 0;
+    return Math.atan2(dy, dx);
   }
 }
 
