@@ -186,15 +186,16 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
         endTiming = note.timing + note.duration;
       }
 
-      // 考虑滑条持续时间
+      // 用实际 ms 的 delay+duration（含 ## 显式延迟）换算成拍，覆盖滑条真实结束时间。
       if (note.type === "slide") {
         const slideNote = note as SlideNote;
-        if (slideNote.allDurations && slideNote.allDurations.length > 0) {
-          const maxDuration = Math.max(...slideNote.allDurations);
-          endTiming = note.timing + 1 + maxDuration;
-        } else {
-          endTiming = note.timing + 1 + slideNote.duration;
+        const delays = slideNote.allDelayMs ?? [slideNote.delayMs ?? 0];
+        const durations = slideNote.allDurationMs ?? [slideNote.durationMs ?? 0];
+        let maxEndMs = 0;
+        for (let i = 0; i < Math.max(delays.length, durations.length); i++) {
+          maxEndMs = Math.max(maxEndMs, (delays[i] ?? 0) + (durations[i] ?? 0));
         }
+        endTiming = note.timing + (maxEndMs * slideNote.bpm) / 60000;
       }
 
       // 考虑触摸 Hold 持续时间
