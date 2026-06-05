@@ -4232,6 +4232,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"gifenc@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "gifenc@npm:1.0.3"
+  checksum: 10c0/34fc6b2c66c305fc556cd2f475154ce2ad68384a52ceb8253b901c8c7d9c63f2c0a5d109ceb3cb46e44c2c6155009920a286cf08a621105863aa43468e345229
+  languageName: node
+  linkType: hard
+
 "github-slugger@npm:^1.0.0":
   version: 1.5.0
   resolution: "github-slugger@npm:1.5.0"
@@ -5411,6 +5418,7 @@ __metadata:
     eslint: "npm:8.57.1"
     eslint-plugin-react-hooks: "npm:4.6.2"
     eslint-plugin-react-refresh: "npm:0.4.26"
+    gifenc: "npm:^1.0.3"
     hast-util-from-html-isomorphic: "npm:2.0.0"
     immer: "npm:10.2.0"
     mantine-datatable: "npm:9.2.2"

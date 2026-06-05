@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useEffect } from "react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
-import type { Note, BpmEvent } from "@lxns-network/maimai-chart-engine";
+import type { Note } from "@lxns-network/maimai-chart-engine";
+import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import classes from "./NoteCountGraph.module.css";
 import clsx from "clsx";
 import { match, P } from "ts-pattern";
@@ -16,55 +17,6 @@ interface NoteCountData {
 
 const BUCKET_DURATION_MS = 500;
 const BAR_MAX_HEIGHT = 32;
-
-function beatsToMs(beats: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-  if (!bpmEvents || bpmEvents.length === 0) {
-    return (60000 * beats) / defaultBpm;
-  }
-
-  let totalMs = 0;
-  let lastBeat = 0;
-  let currentBpm = bpmEvents[0].bpm;
-
-  for (const event of bpmEvents) {
-    if (event.timing >= beats) break;
-    totalMs += (60000 * (event.timing - lastBeat)) / currentBpm;
-    lastBeat = event.timing;
-    currentBpm = event.bpm;
-  }
-
-  totalMs += (60000 * (beats - lastBeat)) / currentBpm;
-  return totalMs;
-}
-
-function msToBeats(ms: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-  if (!bpmEvents || bpmEvents.length === 0) {
-    return (ms * defaultBpm) / 60000;
-  }
-
-  let remainingMs = ms;
-  let totalBeats = 0;
-  let lastBeat = 0;
-  let currentBpm = bpmEvents[0].bpm;
-
-  for (const event of bpmEvents) {
-    const segmentBeats = event.timing - lastBeat;
-    const segmentMs = (60000 * segmentBeats) / currentBpm;
-
-    if (remainingMs <= segmentMs) {
-      totalBeats += (remainingMs * currentBpm) / 60000;
-      return totalBeats;
-    }
-
-    remainingMs -= segmentMs;
-    totalBeats += segmentBeats;
-    lastBeat = event.timing;
-    currentBpm = event.bpm;
-  }
-
-  totalBeats += (remainingMs * currentBpm) / 60000;
-  return totalBeats;
-}
 
 function calculateNoteCounts(notes: Note[], totalDurationMs: number): NoteCountData[] {
   if (!notes.length || totalDurationMs <= 0) return [];

@@ -51,6 +51,7 @@
     "embla-carousel": "8.6.0",
     "embla-carousel-autoplay": "8.6.0",
     "embla-carousel-react": "8.6.0",
+    "gifenc": "^1.0.3",
     "hast-util-from-html-isomorphic": "2.0.0",
     "immer": "10.2.0",
     "mantine-datatable": "9.2.2",

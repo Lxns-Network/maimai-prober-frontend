@@ -2,10 +2,10 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import type {
   Chart,
-  BpmEvent,
   ChartDifficulty,
   AvailableDifficulties,
 } from "@lxns-network/maimai-chart-engine";
+import { beatsToMs } from "../utils/timeConversion";
 
 export const playbackTimeRef = { current: 0 };
 
@@ -133,26 +133,6 @@ const initialState: GameState = {
   seekVersion: 0,
   isFullscreen: false,
 };
-
-function beatsToMs(beats: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-  if (!bpmEvents || bpmEvents.length === 0) {
-    return (60000 * beats) / defaultBpm;
-  }
-
-  let totalMs = 0;
-  let lastBeat = 0;
-  let currentBpm = bpmEvents[0].bpm;
-
-  for (const event of bpmEvents) {
-    if (event.timing >= beats) break;
-    totalMs += (60000 * (event.timing - lastBeat)) / currentBpm;
-    lastBeat = event.timing;
-    currentBpm = event.bpm;
-  }
-
-  totalMs += (60000 * (beats - lastBeat)) / currentBpm;
-  return totalMs;
-}
 
 // 步进时的最大分拍（避免 1/384 等过细分拍导致步进过小）
 const MAX_STEP_DIVISOR = 32;

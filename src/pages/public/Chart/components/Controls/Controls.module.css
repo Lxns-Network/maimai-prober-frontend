@@ -7,6 +7,21 @@
   margin: 0 4px;
 }
 
+.timelineExportHost {
+  position: relative;
+}
+
+.exportConfirmBar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+}
+
+.exportProgress {
+  width: min(240px, 100%);
+}
+
 .difficultyButton {
   display: flex;
   flex-direction: column;

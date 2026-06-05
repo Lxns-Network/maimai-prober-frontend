@@ -5,72 +5,11 @@ import { MainRenderer, ANSWER_SOUND_BASE_OFFSET_MS } from "@lxns-network/maimai-
 import { useAudio } from "../../hooks/useAudio";
 import { useMusicPlayer } from "../../hooks/useMusicPlayer";
 import { DebugOverlay, type CanvasDebugInfo } from "./DebugOverlay";
+import { beatsToMs, msToBeats } from "../../utils/timeConversion";
+import { formatChartTimeForFilename } from "../../utils/format";
+import { getChartIdForFilename, downloadBlob } from "../../utils/fileDownload";
 import classes from "./ChartCanvas.module.css";
 import clsx from "clsx";
-
-type BpmEvent = { timing: number; bpm: number };
-
-function beatsToMs(beats: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-  if (!bpmEvents || bpmEvents.length === 0) {
-    return (60000 * beats) / defaultBpm;
-  }
-
-  let totalMs = 0;
-  let lastBeat = 0;
-  let currentBpm = bpmEvents[0].bpm;
-
-  for (const event of bpmEvents) {
-    if (event.timing >= beats) break;
-    totalMs += (60000 * (event.timing - lastBeat)) / currentBpm;
-    lastBeat = event.timing;
-    currentBpm = event.bpm;
-  }
-
-  totalMs += (60000 * (beats - lastBeat)) / currentBpm;
-  return totalMs;
-}
-
-function msToBeats(ms: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-  if (!bpmEvents || bpmEvents.length === 0) {
-    return (ms * defaultBpm) / 60000;
-  }
-
-  let remainingMs = ms;
-  let totalBeats = 0;
-  let lastBeat = 0;
-  let currentBpm = bpmEvents[0].bpm;
-
-  for (const event of bpmEvents) {
-    const segmentBeats = event.timing - lastBeat;
-    const segmentMs = (60000 * segmentBeats) / currentBpm;
-
-    if (remainingMs <= segmentMs) {
-      totalBeats += (remainingMs * currentBpm) / 60000;
-      return totalBeats;
-    }
-
-    remainingMs -= segmentMs;
-    totalBeats += segmentBeats;
-    lastBeat = event.timing;
-    currentBpm = event.bpm;
-  }
-
-  totalBeats += (remainingMs * currentBpm) / 60000;
-  return totalBeats;
-}
-
-function formatChartTimeForFilename(ms: number): string {
-  const totalMs = Math.max(0, Math.round(ms));
-  const minutes = Math.floor(totalMs / 60000);
-  const seconds = Math.floor((totalMs % 60000) / 1000);
-  const milliseconds = totalMs % 1000;
-
-  return `${String(minutes).padStart(2, "0")}m${String(seconds).padStart(2, "0")}s${String(milliseconds).padStart(3, "0")}ms`;
-}
-
-function getChartIdForFilename(): string {
-  return new URLSearchParams(window.location.search).get("chart_id") ?? "unknown";
-}
 
 export function ChartCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -207,26 +146,9 @@ export function ChartCanvas() {
     }
     const currentBeats = beatsOverride ?? timeline.preciseTime;
 
-    const measure = Math.floor(currentBeats / timeline.beatsPerMeasure);
-    const beatInMeasure = currentBeats - measure * timeline.beatsPerMeasure;
-    const beat = Math.floor(beatInMeasure) + 1;
-    const fraction = beatInMeasure - Math.floor(beatInMeasure);
+    renderer.renderFrame(chart, currentBeats, timeline.beatsPerMeasure);
 
-    let divisor = 4;
-    if (chart.divisorEvents) {
-      for (const event of chart.divisorEvents) {
-        if (event.timing <= currentBeats) divisor = event.divisor;
-        else break;
-      }
-    }
-
-    renderer.setBeatDisplayInfo(measure, beat, fraction, divisor);
     const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
-
-    renderer.clear();
-    renderer.renderJudgmentLine();
-    renderer.renderFireworks(chart.notes, currentBeats, chart.bpmEvents);
-    renderer.renderNotes(chart.notes, currentBeats, chart.bpmEvents);
 
     if (sound && playing) {
       answerSoundRefs.current.schedule(chart.notes, currentMs, playbackSpeedRef.current);
@@ -373,15 +295,7 @@ export function ChartCanvas() {
         if (err instanceof DOMException && err.name === "AbortError") return;
       }
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 0);
+      downloadBlob(blob, filename);
       notify("已保存", "当前帧已下载为 PNG", "green");
     };
 

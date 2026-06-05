@@ -10,6 +10,7 @@ import {
   Group,
   HoverCard,
   Menu,
+  Progress,
   SegmentedControl,
   Select,
   Slider,
@@ -40,6 +41,7 @@ import {
   IconCamera,
   IconShare,
   IconClipboard,
+  IconMovie,
   IconUpload,
   IconLink,
 } from "@tabler/icons-react";
@@ -52,7 +54,13 @@ import {
   DIFFICULTY_COLORS,
 } from "@lxns-network/maimai-chart-engine";
 import { NoteCountGraph } from "../NoteCountGraph";
+import { ExportRangeOverlay } from "../ExportRangeOverlay/ExportRangeOverlay";
 import { SimaiStatementList } from "../SimaiStatementList";
+import { exportChartGif } from "../../utils/exportChartGif";
+import { useExportRange } from "../../hooks/useExportRange";
+import { getChartIdForFilename, downloadBlob } from "../../utils/fileDownload";
+import { formatDuration } from "../../utils/format";
+import { msToBeats } from "../../utils/timeConversion";
 import classes from "./Controls.module.css";
 
 function getErrorMessage(error: unknown): string {
@@ -114,7 +122,24 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     stepMeasure,
     stepPosition,
     getCurrentTimeInBeats,
+    getCurrentTimeInMs,
+    getTotalDurationMs,
+    setPreciseTime,
+    chartData,
+    pause,
   } = useGameStore(useShallow((state) => state));
+
+  const totalDurationMs = chartData ? getTotalDurationMs() : 0;
+  const {
+    range: exportRange,
+    start: startExportRange,
+    update: updateExportRange,
+    clear: clearExportRange,
+  } = useExportRange(totalDurationMs);
+  const exportActive = exportRange !== null;
+  const [isExportingGif, setIsExportingGif] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const exportOriginalBeatsRef = useRef<number | null>(null);
 
   const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
     useShallow((state) => ({
@@ -123,13 +148,12 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     })),
   );
 
-  const getPlayButtonIcon = () => {
-    return isPlaying ? <IconPlayerPause size={24} /> : <IconPlayerPlay size={24} />;
-  };
-
-  const getPlayButtonTooltip = () => {
-    return isPlaying ? "暂停" : "播放";
-  };
+  const restoreExportPosition = useCallback(() => {
+    if (exportOriginalBeatsRef.current !== null) {
+      setPreciseTime(exportOriginalBeatsRef.current, true);
+      exportOriginalBeatsRef.current = null;
+    }
+  }, [setPreciseTime]);
 
   const exportCurrentFrame = () => {
     window.dispatchEvent(new Event("maimai-chart-export-frame"));
@@ -137,6 +161,75 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 
   const copyCurrentFrame = () => {
     window.dispatchEvent(new Event("maimai-chart-copy-frame"));
+  };
+
+  const startGifExportSelection = () => {
+    if (!chartData || totalDurationMs <= 0) {
+      notifications.show({ title: "无法导出", message: "当前没有可导出的谱面", color: "red" });
+      return;
+    }
+
+    pause();
+    const currentBeats = getCurrentTimeInBeats();
+    exportOriginalBeatsRef.current = currentBeats;
+    startExportRange(getCurrentTimeInMs());
+  };
+
+  const cancelGifExportSelection = () => {
+    if (isExportingGif) return;
+    clearExportRange();
+    restoreExportPosition();
+  };
+
+  const previewExportPosition = useCallback(
+    (ms: number) => {
+      if (!chartData) return;
+      setPreciseTime(msToBeats(ms, chartData.bpmEvents, chartData.bpm), true);
+    },
+    [chartData, setPreciseTime],
+  );
+
+  const confirmGifExport = async () => {
+    if (!chartData || !exportRange) return;
+
+    const durationMs = exportRange.endMs - exportRange.startMs;
+    if (durationMs <= 0) {
+      notifications.show({ title: "无法导出", message: "导出范围为空", color: "red" });
+      return;
+    }
+
+    setIsExportingGif(true);
+    setExportProgress(0);
+    notifications.show({
+      title: "正在导出",
+      message: "导出中",
+      color: "blue",
+    });
+
+    try {
+      // Yield so the progress UI paints before the blocking export begins.
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => window.setTimeout(resolve, 0));
+      });
+      const blob = await exportChartGif({
+        chart: chartData,
+        range: exportRange,
+        settings: useGameSettingsStore.getState(),
+        onProgress: setExportProgress,
+      });
+      const chartId = getChartIdForFilename();
+      const filename = `maimai-chart-${chartId}-${Math.round(exportRange.startMs)}ms-${formatDuration(durationMs, "s")}.gif`;
+
+      downloadBlob(blob, filename);
+      notifications.show({ title: "已保存", message: "GIF 已下载", color: "green" });
+      clearExportRange();
+      restoreExportPosition();
+    } catch (error) {
+      notifications.show({ title: "导出失败", message: getErrorMessage(error), color: "red" });
+    } finally {
+      setIsExportingGif(false);
+      setExportProgress(0);
+    }
   };
 
   const copyCurrentTimeUrl = async () => {
@@ -181,7 +274,46 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
       style={isFullscreen ? { background: "transparent" } : undefined}
     >
       <Stack gap="sm">
-        <NoteCountGraph fullscreen={isFullscreen} />
+        <div className={classes.timelineExportHost}>
+          <NoteCountGraph fullscreen={isFullscreen} />
+          {exportActive && (
+            <ExportRangeOverlay
+              range={exportRange}
+              totalDurationMs={totalDurationMs}
+              onChange={updateExportRange}
+              onPreview={previewExportPosition}
+            />
+          )}
+        </div>
+
+        {exportActive && (
+          <div className={classes.exportConfirmBar}>
+            {isExportingGif ? (
+              <>
+                <Text size="xs" c="dimmed">
+                  正在生成 GIF
+                </Text>
+                <Progress
+                  className={classes.exportProgress}
+                  size="sm"
+                  radius="xl"
+                  value={exportProgress * 100}
+                />
+              </>
+            ) : (
+              <>
+                <Group gap="xs" justify="center">
+                  <Button size="xs" variant="light" color="gray" onClick={cancelGifExportSelection}>
+                    取消
+                  </Button>
+                  <Button size="xs" onClick={() => void confirmGifExport()}>
+                    确认导出
+                  </Button>
+                </Group>
+              </>
+            )}
+          </div>
+        )}
 
         <Group justify="center" gap="xs" wrap="wrap">
           <Tooltip label="上一小节">
@@ -209,9 +341,9 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
           {pendingPlay && !isPlaying ? (
             <ActionIcon variant="filled" size="xl" radius="xl" loading={true} />
           ) : (
-            <Tooltip label={getPlayButtonTooltip()}>
+            <Tooltip label={isPlaying ? "暂停" : "播放"}>
               <ActionIcon variant="filled" size="xl" radius="xl" onClick={togglePlayback}>
-                {getPlayButtonIcon()}
+                {isPlaying ? <IconPlayerPause size={24} /> : <IconPlayerPlay size={24} />}
               </ActionIcon>
             </Tooltip>
           )}
@@ -276,6 +408,14 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
               </Menu.Item>
               <Menu.Item leftSection={<IconClipboard size={14} />} onClick={copyCurrentFrame}>
                 复制到剪贴板
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconMovie size={14} />}
+                onClick={exportActive ? cancelGifExportSelection : startGifExportSelection}
+                disabled={isExportingGif}
+                color={exportActive ? "red" : undefined}
+              >
+                {exportActive ? "取消 GIF 导出" : "导出 GIF"}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>

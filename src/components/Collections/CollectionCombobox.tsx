@@ -4,8 +4,7 @@ import { CollectionProps } from "@/types/player";
 import { VirtualizedCombobox } from "@/components/VirtualizedCombobox.tsx";
 
 interface CollectionComboboxProps
-  extends InputBaseProps,
-    ElementProps<"input", keyof InputBaseProps> {
+  extends InputBaseProps, ElementProps<"input", keyof InputBaseProps> {
   collections: CollectionProps[];
   loading?: boolean;
   value?: number;
