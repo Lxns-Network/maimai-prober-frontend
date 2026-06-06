@@ -1,5 +1,13 @@
+const MAX_FILENAME_CHART_ID_LENGTH = 80;
+
 export function getChartIdForFilename(): string {
-  return new URLSearchParams(window.location.search).get("chart_id") ?? "unknown";
+  const chartId = new URLSearchParams(window.location.search).get("chart_id") ?? "";
+  const safeChartId = chartId
+    .replace(/[^a-zA-Z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, MAX_FILENAME_CHART_ID_LENGTH);
+
+  return safeChartId || "unknown";
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {

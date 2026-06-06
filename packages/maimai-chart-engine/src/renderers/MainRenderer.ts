@@ -230,7 +230,7 @@ export class MainRenderer {
     }
   }
 
-  renderFrame(chart: Chart, currentBeats: number, beatsPerMeasure: number = 4): void {
+  renderFrame(chart: Chart, currentBeats: number, beatsPerMeasure: number): void {
     const measure = Math.floor(currentBeats / beatsPerMeasure);
     const beatInMeasure = currentBeats - measure * beatsPerMeasure;
     const beat = Math.floor(beatInMeasure) + 1;

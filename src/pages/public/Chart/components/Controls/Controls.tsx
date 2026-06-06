@@ -305,6 +305,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
       const blob = await exportChartGif({
         chart: chartData,
         range: exportRange,
+        beatsPerMeasure: timeline.beatsPerMeasure,
         settings: useGameSettingsStore.getState(),
         onProgress: setExportProgress,
       });

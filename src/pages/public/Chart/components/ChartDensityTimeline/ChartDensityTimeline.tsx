@@ -220,10 +220,17 @@ export function ChartDensityTimeline({
             return null;
           }
 
+          const windowEndMs = windowStartMs + durationMs;
+          const visibleStartMs = Math.max(bucket.startMs, windowStartMs);
+          const visibleEndMs = Math.min(bucket.startMs + bucketDurationMs, windowEndMs);
+          if (visibleEndMs <= visibleStartMs) {
+            return null;
+          }
+
           const heightRatio = bucket.total / maxCount;
           const height = Math.max(2, heightRatio * barMaxHeight);
-          const leftPercent = ((bucket.startMs - windowStartMs) / durationMs) * 100;
-          const widthPercent = (bucketDurationMs / durationMs) * 100;
+          const leftPercent = ((visibleStartMs - windowStartMs) / durationMs) * 100;
+          const widthPercent = ((visibleEndMs - visibleStartMs) / durationMs) * 100;
 
           return (
             <div
