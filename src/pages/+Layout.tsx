@@ -47,6 +47,14 @@ import useGame from "@/hooks/useGame.ts";
 import { useThemeColor } from "@/hooks/useThemeColor.ts";
 import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 
+// Tag iOS so index.css can force inputs to >=16px and avoid Safari's focus-zoom.
+if (typeof document !== "undefined") {
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua))) {
+    document.documentElement.classList.add("ios");
+  }
+}
+
 const baseTheme = {
   primaryShade: 9 as const,
   focusRing: "never" as const,

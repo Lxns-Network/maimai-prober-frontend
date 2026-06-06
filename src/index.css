@@ -28,3 +28,11 @@ button:focus-visible {
 img {
   opacity: light-dark(1, 0.8);
 }
+
+/* iOS only (`ios` class set in +Layout): force inputs to >=16px so Safari does
+   not zoom on focus; max() keeps larger sizes intact. */
+html.ios input,
+html.ios textarea,
+html.ios select {
+  font-size: max(16px, var(--_input-fz, var(--input-fz, var(--mantine-font-size-md))));
+}
