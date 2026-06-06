@@ -5,11 +5,15 @@ import { clamp } from "../../utils/math";
 import { formatDuration } from "../../utils/format";
 import classes from "./ExportRangeOverlay.module.css";
 
+type DragMode = "start" | "end" | "selection" | "viewport";
+
 type ExportRangeOverlayProps = {
   range: ChartExportRange;
   totalDurationMs: number;
   onChange: (range: ChartExportRange) => void;
   onPreview?: (ms: number) => void;
+  /** 非空时启用空白区域拖拽视口；选区和手柄仍用于调整导出范围。 */
+  onViewportPan?: (deltaMs: number) => void;
 };
 
 export function ExportRangeOverlay({
@@ -17,10 +21,14 @@ export function ExportRangeOverlay({
   totalDurationMs,
   onChange,
   onPreview,
+  onViewportPan,
 }: ExportRangeOverlayProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const rootWidthRef = useRef(0);
-  const draggingHandleRef = useRef<"start" | "end" | null>(null);
+  const draggingModeRef = useRef<DragMode | null>(null);
+  const handleDragOffsetMsRef = useRef(0);
+  const selectionDragOffsetMsRef = useRef(0);
+  const viewportDragClientXRef = useRef(0);
   const rangeRef = useRef(range);
   rangeRef.current = range;
   const totalDurationMsRef = useRef(totalDurationMs);
@@ -29,33 +37,56 @@ export function ExportRangeOverlay({
   onChangeRef.current = onChange;
   const onPreviewRef = useRef(onPreview);
   onPreviewRef.current = onPreview;
+  const onViewportPanRef = useRef(onViewportPan);
+  onViewportPanRef.current = onViewportPan;
 
   const startPercent = totalDurationMs > 0 ? (range.startMs / totalDurationMs) * 100 : 0;
   const endPercent = totalDurationMs > 0 ? (range.endMs / totalDurationMs) * 100 : 0;
   const durationMs = Math.max(0, range.endMs - range.startMs);
 
-  const updateHandle = useCallback((clientX: number) => {
+  const updateDragging = useCallback((clientX: number) => {
     const rect = rootRef.current?.getBoundingClientRect();
     const width = rootWidthRef.current;
     const durationMs = totalDurationMsRef.current;
     if (!rect || width <= 0 || durationMs <= 0) return;
 
     const x = clamp(clientX - rect.left, 0, width);
-    const targetMs = (x / width) * durationMs;
+    const pointerMs = (x / width) * durationMs;
 
-    const handle = draggingHandleRef.current;
-    if (!handle) return;
+    const mode = draggingModeRef.current;
+    if (!mode) return;
+
+    if (mode === "viewport") {
+      const deltaX = clientX - viewportDragClientXRef.current;
+      viewportDragClientXRef.current = clientX;
+      onViewportPanRef.current?.(-(deltaX / width) * durationMs);
+      return;
+    }
 
     const currentRange = rangeRef.current;
+    const targetMs =
+      mode === "start" || mode === "end" ? pointerMs - handleDragOffsetMsRef.current : pointerMs;
     let newRange: ChartExportRange;
 
-    if (handle === "start") {
+    if (mode === "start") {
       newRange = {
         startMs: Math.max(
           currentRange.endMs - MAX_EXPORT_DURATION_MS,
           Math.min(targetMs, currentRange.endMs - MIN_EXPORT_DURATION_MS),
         ),
         endMs: currentRange.endMs,
+      };
+    } else if (mode === "selection") {
+      const rangeDurationMs = currentRange.endMs - currentRange.startMs;
+      const startMs = clamp(
+        targetMs - selectionDragOffsetMsRef.current,
+        0,
+        durationMs - rangeDurationMs,
+      );
+
+      newRange = {
+        startMs,
+        endMs: startMs + rangeDurationMs,
       };
     } else {
       newRange = {
@@ -68,24 +99,50 @@ export function ExportRangeOverlay({
     }
 
     onChangeRef.current(newRange);
-    onPreviewRef.current?.(handle === "start" ? newRange.startMs : newRange.endMs);
+    onPreviewRef.current?.(mode === "end" ? newRange.endMs : newRange.startMs);
   }, []);
 
-  const startDragging = (handle: "start" | "end", clientX: number) => {
+  const startDragging = (mode: DragMode, clientX: number) => {
     rootWidthRef.current = rootRef.current?.getBoundingClientRect().width ?? 0;
-    draggingHandleRef.current = handle;
-    updateHandle(clientX);
+    draggingModeRef.current = mode;
+
+    if (mode === "selection") {
+      const rect = rootRef.current?.getBoundingClientRect();
+      const width = rootWidthRef.current;
+      const durationMs = totalDurationMsRef.current;
+      if (rect && width > 0 && durationMs > 0) {
+        const x = clamp(clientX - rect.left, 0, width);
+        selectionDragOffsetMsRef.current = (x / width) * durationMs - rangeRef.current.startMs;
+      }
+    } else if (mode === "viewport") {
+      viewportDragClientXRef.current = clientX;
+    } else if (mode === "start" || mode === "end") {
+      const rect = rootRef.current?.getBoundingClientRect();
+      const width = rootWidthRef.current;
+      const durationMs = totalDurationMsRef.current;
+      if (rect && width > 0 && durationMs > 0) {
+        const x = clamp(clientX - rect.left, 0, width);
+        const pointerMs = (x / width) * durationMs;
+        const currentRange = rangeRef.current;
+        const handleMs = mode === "start" ? currentRange.startMs : currentRange.endMs;
+        handleDragOffsetMsRef.current = pointerMs - handleMs;
+        onPreviewRef.current?.(handleMs);
+      }
+      return;
+    }
+
+    updateDragging(clientX);
   };
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
-      if (!draggingHandleRef.current) return;
+      if (!draggingModeRef.current) return;
       event.preventDefault();
-      updateHandle(event.clientX);
+      updateDragging(event.clientX);
     };
 
     const handlePointerUp = () => {
-      draggingHandleRef.current = null;
+      draggingModeRef.current = null;
     };
 
     document.addEventListener("pointermove", handlePointerMove);
@@ -97,13 +154,21 @@ export function ExportRangeOverlay({
       document.removeEventListener("pointerup", handlePointerUp);
       document.removeEventListener("pointercancel", handlePointerUp);
     };
-  }, [updateHandle]);
+  }, [updateDragging]);
+
+  const pannable = Boolean(onViewportPan);
 
   return (
     <div
       ref={rootRef}
-      className={classes.overlay}
-      onPointerDown={(event) => event.preventDefault()}
+      className={`${classes.overlay} ${pannable ? classes.overlayPannable : ""}`}
+      onPointerDown={(event) => {
+        if (!pannable) return;
+        event.preventDefault();
+        if (!draggingModeRef.current) {
+          startDragging("viewport", event.clientX);
+        }
+      }}
     >
       <div className={classes.shade} style={{ left: 0, width: `${startPercent}%` }} />
       <div
@@ -112,25 +177,35 @@ export function ExportRangeOverlay({
       />
       <div
         className={classes.selection}
-        style={{ left: `${startPercent}%`, width: `${endPercent - startPercent}%` }}
+        style={{
+          left: `${startPercent}%`,
+          width: `${endPercent - startPercent}%`,
+        }}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          startDragging("selection", event.clientX);
+        }}
       >
         <div className={classes.durationLabel}>{formatDuration(durationMs)}</div>
       </div>
       <div
-        className={classes.handle}
+        className={`${classes.handle} ${classes.startHandle}`}
         style={{ left: `${startPercent}%` }}
         onPointerDown={(event) => {
           event.preventDefault();
+          event.stopPropagation();
           startDragging("start", event.clientX);
         }}
       >
         <div className={classes.handleGrip} />
       </div>
       <div
-        className={classes.handle}
+        className={`${classes.handle} ${classes.endHandle}`}
         style={{ left: `${endPercent}%` }}
         onPointerDown={(event) => {
           event.preventDefault();
+          event.stopPropagation();
           startDragging("end", event.clientX);
         }}
       >

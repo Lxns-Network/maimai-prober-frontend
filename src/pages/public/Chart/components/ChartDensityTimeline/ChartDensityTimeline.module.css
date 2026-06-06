@@ -1,0 +1,66 @@
+.timeline {
+  --density-bars-top: 14px;
+  --density-bars-height: 32px;
+  --density-marker-top: 12px;
+  --density-label-top: 0;
+
+  position: relative;
+  width: 100%;
+  height: var(--density-timeline-height, 52px);
+}
+
+.timeMarkerLines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.timeMarkerLine {
+  position: absolute;
+  top: var(--density-marker-top);
+  bottom: 0;
+  width: 1px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--mantine-color-gray-6) 0,
+    var(--mantine-color-gray-6) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+.timeLabels {
+  position: absolute;
+  top: var(--density-label-top);
+  left: 0;
+  right: 0;
+  height: 12px;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.timeLabel {
+  position: absolute;
+  top: 0;
+  font-size: 9px;
+  color: var(--mantine-color-dimmed);
+  font-family: var(--mantine-font-family-monospace);
+}
+
+.graphBars {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--density-bars-top);
+  height: var(--density-bars-height);
+  overflow: hidden;
+}
+
+.graphBar {
+  position: absolute;
+  bottom: 0;
+  min-width: 1px;
+  display: flex;
+  flex-direction: column-reverse;
+}

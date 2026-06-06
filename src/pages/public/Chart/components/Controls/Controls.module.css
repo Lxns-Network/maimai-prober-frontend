@@ -11,6 +11,70 @@
   position: relative;
 }
 
+.exportOverviewOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.exportOverviewShade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-color: light-dark(rgba(255, 255, 255, 0.62), rgba(0, 0, 0, 0.5));
+}
+
+.exportOverviewSelection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 1px solid light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-3));
+  border-radius: var(--mantine-radius-xs);
+  background-color: light-dark(rgba(34, 139, 230, 0.16), rgba(34, 211, 238, 0.2));
+}
+
+.exportZoomTrack {
+  position: relative;
+  height: 44px;
+  overflow: hidden;
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-sm);
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.exportZoomDensityTimeline {
+  --density-timeline-height: 100%;
+  --density-bars-top: 16px;
+  --density-bars-height: 22px;
+  --density-marker-top: 14px;
+  --density-label-top: 2px;
+}
+
+.exportZoomLabel {
+  position: absolute;
+  top: 2px;
+  z-index: 35;
+  padding: 0 4px;
+  color: var(--mantine-color-dimmed);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 9px;
+  pointer-events: none;
+}
+
+.exportZoomPlayhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 45;
+  width: 2px;
+  transform: translateX(-1px);
+  border-radius: 2px;
+  background-color: light-dark(var(--mantine-color-dark-7), white);
+  box-shadow: 0 0 8px light-dark(rgba(0, 0, 0, 0.45), rgba(255, 255, 255, 0.7));
+  pointer-events: none;
+}
+
 .exportConfirmBar {
   display: flex;
   flex-direction: column;

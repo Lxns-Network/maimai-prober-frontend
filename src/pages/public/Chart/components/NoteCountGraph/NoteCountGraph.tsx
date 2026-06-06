@@ -1,67 +1,17 @@
 import { useCallback, useMemo, useRef, useEffect } from "react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
-import type { Note } from "@lxns-network/maimai-chart-engine";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import classes from "./NoteCountGraph.module.css";
 import clsx from "clsx";
 import { match, P } from "ts-pattern";
+import { ChartDensityTimeline } from "../ChartDensityTimeline/ChartDensityTimeline";
 
-interface NoteCountData {
-  tap: number;
-  hold: number;
-  slide: number;
-  touch: number;
-  break: number;
-  total: number;
-}
+const TIME_MARKER_INTERVAL_MS = 30000;
 
-const BUCKET_DURATION_MS = 500;
-const BAR_MAX_HEIGHT = 32;
-
-function calculateNoteCounts(notes: Note[], totalDurationMs: number): NoteCountData[] {
-  if (!notes.length || totalDurationMs <= 0) return [];
-
-  const bucketCount = Math.ceil(totalDurationMs / BUCKET_DURATION_MS);
-  const buckets: NoteCountData[] = Array.from({ length: bucketCount }, () => ({
-    tap: 0,
-    hold: 0,
-    slide: 0,
-    touch: 0,
-    break: 0,
-    total: 0,
-  }));
-
-  for (const note of notes) {
-    const bucketIndex = Math.floor(note.timingMs / BUCKET_DURATION_MS);
-    if (bucketIndex < 0 || bucketIndex >= bucketCount) continue;
-
-    const bucket = buckets[bucketIndex];
-
-    const bucketKey = match(note.type)
-      .returnType<"tap" | "hold" | "slide" | "touch" | "break" | null>()
-      .with("break", () => "break")
-      .with(P.union("tap", "simultaneous"), () => "tap")
-      .with(P.union("hold-start", "hold-start-simultaneous"), () => "hold")
-      .with("slide", () => "slide")
-      .with(P.union("touch", "touch-hold-start"), () => "touch")
-      .with(P.union("hold-end", "hold-end-simultaneous", "touch-hold-end"), () => null)
-      .exhaustive();
-
-    if (bucketKey) {
-      bucket[bucketKey]++;
-      bucket.total++;
-    }
-  }
-
-  return buckets;
-}
-
-function getMaxCount(buckets: NoteCountData[]): number {
-  let max = 0;
-  for (const bucket of buckets) {
-    max = Math.max(max, bucket.total);
-  }
-  return max || 1;
+function getLabelTransform(percent: number): string {
+  if (percent === 0) return "translateX(0)";
+  if (percent >= 99) return "translateX(-100%)";
+  return "translateX(-50%)";
 }
 
 export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
@@ -86,9 +36,9 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
 
   const SEEK_THROTTLE_MS = 32;
 
-  const { buckets, totalDurationMs, maxCount, maxBeats, maxMeasure } = useMemo(() => {
+  const { totalDurationMs, maxBeats, maxMeasure } = useMemo(() => {
     if (!chartData) {
-      return { buckets: [], totalDurationMs: 0, maxCount: 1, maxBeats: 0, maxMeasure: 0 };
+      return { totalDurationMs: 0, maxBeats: 0, maxMeasure: 0 };
     }
 
     const maxMeas = Math.max(0, totalMeasures - 1);
@@ -96,13 +46,8 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
 
     const durationMs = beatsToMs(beats, chartData.bpmEvents, chartData.bpm);
 
-    const noteBuckets = calculateNoteCounts(chartData.notes, durationMs);
-    const max = getMaxCount(noteBuckets);
-
     return {
-      buckets: noteBuckets,
       totalDurationMs: durationMs,
-      maxCount: max,
       maxBeats: beats,
       maxMeasure: maxMeas,
     };
@@ -341,7 +286,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     return markers;
   }, [maxMeasure]);
 
-  if (!chartData || buckets.length === 0) {
+  if (!chartData || totalDurationMs <= 0) {
     return null;
   }
 
@@ -352,104 +297,26 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
     >
-      <div className={classes.graphArea}>
-        <div className={classes.timeMarkerLines}>
-          {(() => {
-            if (totalDurationMs <= 0) return null;
-            return Array.from({ length: Math.ceil(totalDurationMs / 30000) + 1 }).map((_, i) => {
-              const timeMs = i * 30000;
-              const percent = (timeMs / totalDurationMs) * 100;
-              if (percent > 100 || percent === 0) return null;
-              return (
-                <div
-                  key={`line-${i}`}
-                  className={classes.timeMarkerLine}
-                  style={{ left: `${percent}%` }}
-                />
-              );
-            });
-          })()}
-        </div>
-
-        <div className={classes.timeLabels}>
-          {(() => {
-            if (totalDurationMs <= 0) return null;
-            return Array.from({ length: Math.ceil(totalDurationMs / 30000) + 1 }).map((_, i) => {
-              const timeMs = i * 30000;
-              const percent = (timeMs / totalDurationMs) * 100;
-              if (percent > 100) return null;
-              const minutes = Math.floor(timeMs / 60000);
-              const seconds = Math.floor((timeMs % 60000) / 1000);
-              const isFirst = percent === 0;
-              const isLast = percent >= 99;
-              const transform = isFirst
-                ? "translateX(0)"
-                : isLast
-                  ? "translateX(-100%)"
-                  : "translateX(-50%)";
-              return (
-                <div
-                  key={i}
-                  className={classes.timeLabel}
-                  style={{ left: `${percent}%`, transform }}
-                >
-                  {minutes}:{seconds.toString().padStart(2, "0")}
-                </div>
-              );
-            });
-          })()}
-        </div>
-
-        <div className={classes.graphBars}>
-          {buckets.map((bucket, i) => {
-            if (bucket.total === 0) {
-              return <div key={i} className={classes.graphBarEmpty} />;
-            }
-
-            const heightRatio = bucket.total / maxCount;
-            const height = Math.max(2, heightRatio * BAR_MAX_HEIGHT);
-
-            const tapRatio = bucket.tap / bucket.total;
-            const holdRatio = bucket.hold / bucket.total;
-            const slideRatio = bucket.slide / bucket.total;
-            const touchRatio = bucket.touch / bucket.total;
-            const breakRatio = bucket.break / bucket.total;
-
-            return (
-              <div key={i} className={classes.graphBar} style={{ height: `${height}px` }}>
-                {tapRatio > 0 && (
-                  <div style={{ flex: tapRatio, width: "100%", backgroundColor: "#FFD700" }} />
-                )}
-                {holdRatio > 0 && (
-                  <div style={{ flex: holdRatio, width: "100%", backgroundColor: "#FF8C00" }} />
-                )}
-                {slideRatio > 0 && (
-                  <div style={{ flex: slideRatio, width: "100%", backgroundColor: "#00CED1" }} />
-                )}
-                {touchRatio > 0 && (
-                  <div style={{ flex: touchRatio, width: "100%", backgroundColor: "#0080FF" }} />
-                )}
-                {breakRatio > 0 && (
-                  <div style={{ flex: breakRatio, width: "100%", backgroundColor: "#ff69b4" }} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <ChartDensityTimeline
+        notes={chartData.notes}
+        durationMs={totalDurationMs}
+        className={classes.graphArea}
+      />
 
       <div className={classes.measureRuler}>
-        <div className={classes.timeMarkerLines}>
+        <div className={classes.measureTimeMarkerLines}>
           {(() => {
             if (totalDurationMs <= 0) return null;
-            return Array.from({ length: Math.ceil(totalDurationMs / 30000) + 1 }).map((_, i) => {
-              const timeMs = i * 30000;
+            return Array.from({
+              length: Math.ceil(totalDurationMs / TIME_MARKER_INTERVAL_MS) + 1,
+            }).map((_, i) => {
+              const timeMs = i * TIME_MARKER_INTERVAL_MS;
               const percent = (timeMs / totalDurationMs) * 100;
               if (percent > 100 || percent === 0) return null;
               return (
                 <div
                   key={`bottom-line-${i}`}
-                  className={classes.timeMarkerLine}
+                  className={classes.measureTimeMarkerLine}
                   style={{ left: `${percent}%`, top: 0, bottom: 0 }}
                 />
               );
@@ -487,13 +354,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
 
         <div className={classes.measureLabelsContainer}>
           {measureMarkers.map(({ measure, percent }) => {
-            const isFirst = percent === 0;
-            const isLast = percent >= 99;
-            const transform = isFirst
-              ? "translateX(0)"
-              : isLast
-                ? "translateX(-100%)"
-                : "translateX(-50%)";
+            const transform = getLabelTransform(percent);
 
             return (
               <div

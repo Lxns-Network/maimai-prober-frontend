@@ -45,7 +45,7 @@ import {
   IconUpload,
   IconLink,
 } from "@tabler/icons-react";
-import { useGameStore } from "../../stores/useGameStore";
+import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
 import {
   parseSimaiChart,
@@ -54,13 +54,15 @@ import {
   DIFFICULTY_COLORS,
 } from "@lxns-network/maimai-chart-engine";
 import { NoteCountGraph } from "../NoteCountGraph";
+import { ChartDensityTimeline } from "../ChartDensityTimeline/ChartDensityTimeline";
 import { ExportRangeOverlay } from "../ExportRangeOverlay/ExportRangeOverlay";
 import { SimaiStatementList } from "../SimaiStatementList";
 import { exportChartGif } from "../../utils/exportChartGif";
 import { useExportRange } from "../../hooks/useExportRange";
 import { getChartIdForFilename, downloadBlob } from "../../utils/fileDownload";
 import { formatDuration } from "../../utils/format";
-import { msToBeats } from "../../utils/timeConversion";
+import { clamp } from "../../utils/math";
+import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import classes from "./Controls.module.css";
 
 function getErrorMessage(error: unknown): string {
@@ -134,13 +136,19 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     stepPosition,
     getCurrentTimeInBeats,
     getCurrentTimeInMs,
-    getTotalDurationMs,
     setPreciseTime,
     chartData,
     pause,
+    timeline,
   } = useGameStore(useShallow((state) => state));
 
-  const totalDurationMs = chartData ? getTotalDurationMs() : 0;
+  const totalDurationMs = chartData
+    ? beatsToMs(
+        Math.max(0, timeline.totalMeasures - 1) * timeline.beatsPerMeasure,
+        chartData.bpmEvents,
+        chartData.bpm,
+      )
+    : 0;
   const {
     range: exportRange,
     start: startExportRange,
@@ -148,9 +156,41 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     clear: clearExportRange,
   } = useExportRange(totalDurationMs);
   const exportActive = exportRange !== null;
+
+  // 放大镜窗口：全长 / 4，限制在 15s-60s，可在全曲范围拖拽。
+  const [panStartMs, setPanStartMs] = useState<number | null>(null);
+  const zoomWindowDurationMs = useMemo(() => {
+    if (totalDurationMs <= 0) return 0;
+    return clamp(totalDurationMs / 4, 15000, 60000);
+  }, [totalDurationMs]);
+  const getCenteredZoomStart = useCallback(
+    (range: { startMs: number; endMs: number }) => {
+      const centerMs = (range.startMs + range.endMs) / 2;
+      return clamp(
+        centerMs - zoomWindowDurationMs / 2,
+        0,
+        Math.max(0, totalDurationMs - zoomWindowDurationMs),
+      );
+    },
+    [totalDurationMs, zoomWindowDurationMs],
+  );
+  // 可拖拽的窗口起点。下方放大轴里的背景、标签、playhead 和选区 overlay 都使用它。
+  const zoomStartMs = useMemo(() => {
+    if (!exportRange || totalDurationMs <= 0) return 0;
+    return panStartMs ?? getCenteredZoomStart(exportRange);
+  }, [exportRange, totalDurationMs, panStartMs, getCenteredZoomStart]);
+  const zoomEndMs = zoomStartMs + zoomWindowDurationMs;
+
+  const zoomStartMsRef = useRef(zoomStartMs);
+  zoomStartMsRef.current = zoomStartMs;
+  const zoomWindowDurationMsRef = useRef(zoomWindowDurationMs);
+  zoomWindowDurationMsRef.current = zoomWindowDurationMs;
+
+  const currentMs = chartData ? getCurrentTimeInMs() : 0;
   const [isExportingGif, setIsExportingGif] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const exportOriginalBeatsRef = useRef<number | null>(null);
+  const exportZoomPlayheadRef = useRef<HTMLDivElement>(null);
 
   const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
     useShallow((state) => ({
@@ -183,11 +223,13 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     pause();
     const currentBeats = getCurrentTimeInBeats();
     exportOriginalBeatsRef.current = currentBeats;
+    setPanStartMs(null);
     startExportRange(getCurrentTimeInMs());
   };
 
   const cancelGifExportSelection = () => {
     if (isExportingGif) return;
+    setPanStartMs(null);
     clearExportRange();
     restoreExportPosition();
   };
@@ -198,6 +240,49 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
       setPreciseTime(msToBeats(ms, chartData.bpmEvents, chartData.bpm), true);
     },
     [chartData, setPreciseTime],
+  );
+
+  const updateExportZoomPlayhead = useCallback((ms: number) => {
+    const el = exportZoomPlayheadRef.current;
+    const dur = zoomWindowDurationMsRef.current;
+    if (!el || dur <= 0) return;
+    el.style.left = `${clamp(((ms - zoomStartMsRef.current) / dur) * 100, 0, 100)}%`;
+  }, []);
+
+  const panZoomWindow = useCallback(
+    (deltaMs: number) => {
+      if (!exportRange || totalDurationMs <= 0) return;
+
+      const currentStart = panStartMs ?? zoomStartMs;
+      const nextStart = clamp(
+        currentStart + deltaMs,
+        0,
+        Math.max(0, totalDurationMs - zoomWindowDurationMs),
+      );
+      const actualDeltaMs = nextStart - currentStart;
+      const rangeDurationMs = exportRange.endMs - exportRange.startMs;
+      const nextRangeStartMs = clamp(
+        exportRange.startMs + actualDeltaMs,
+        0,
+        Math.max(0, totalDurationMs - rangeDurationMs),
+      );
+
+      setPanStartMs(nextStart);
+      updateExportRange({
+        startMs: nextRangeStartMs,
+        endMs: nextRangeStartMs + rangeDurationMs,
+      });
+      previewExportPosition(nextRangeStartMs);
+    },
+    [
+      totalDurationMs,
+      zoomWindowDurationMs,
+      zoomStartMs,
+      panStartMs,
+      exportRange,
+      updateExportRange,
+      previewExportPosition,
+    ],
   );
 
   const confirmGifExport = async () => {
@@ -211,11 +296,6 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 
     setIsExportingGif(true);
     setExportProgress(0);
-    notifications.show({
-      title: "正在导出",
-      message: "导出中",
-      color: "blue",
-    });
 
     try {
       // 让出主线程，使进度条 UI 在阻塞式导出开始前完成渲染。
@@ -228,18 +308,35 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
         settings: useGameSettingsStore.getState(),
         onProgress: setExportProgress,
       });
-      const chartId = getChartIdForFilename();
-      const filename = `maimai-chart-${chartId}-${Math.round(exportRange.startMs)}ms-${formatDuration(durationMs, "s")}.gif`;
 
-      downloadBlob(blob, filename);
-      notifications.show({ title: "已保存", message: "GIF 已下载", color: "green" });
-      clearExportRange();
-      restoreExportPosition();
-    } catch (error) {
-      notifications.show({ title: "导出失败", message: getErrorMessage(error), color: "red" });
-    } finally {
+      // GIF 已生成，关闭进度条。
       setIsExportingGif(false);
       setExportProgress(0);
+
+      const chartId = getChartIdForFilename();
+      const filename = `maimai-chart-${chartId}-${Math.round(exportRange.startMs)}ms-${formatDuration(durationMs, "s")}.gif`;
+      const file = new File([blob], filename, { type: "image/gif" });
+
+      const canShare = navigator.canShare?.({ files: [file] });
+      if (canShare) {
+        try {
+          await navigator.share({ files: [file] });
+          clearExportRange();
+          restoreExportPosition();
+          return;
+        } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+        }
+      }
+
+      downloadBlob(blob, filename);
+      clearExportRange();
+      restoreExportPosition();
+      notifications.show({ title: "已保存", message: "GIF 已下载", color: "green" });
+    } catch (error) {
+      setIsExportingGif(false);
+      setExportProgress(0);
+      notifications.show({ title: "导出失败", message: getErrorMessage(error), color: "red" });
     }
   };
 
@@ -276,6 +373,37 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     return () => window.removeEventListener("maimai-chart-notify", handler);
   }, []);
 
+  useEffect(() => {
+    if (!exportRange || totalDurationMs <= 0 || panStartMs !== null) return;
+    setPanStartMs(getCenteredZoomStart(exportRange));
+  }, [exportRange, totalDurationMs, panStartMs, getCenteredZoomStart]);
+
+  useEffect(() => {
+    if (!exportRange || !chartData || zoomWindowDurationMs <= 0) return;
+
+    updateExportZoomPlayhead(getCurrentTimeInMs());
+
+    if (!isPlaying) return;
+
+    let animationFrameId: number | null = null;
+    const update = () => {
+      updateExportZoomPlayhead(
+        beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm),
+      );
+      animationFrameId = requestAnimationFrame(update);
+    };
+
+    animationFrameId = requestAnimationFrame(update);
+
+    return () => {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+    // updateExportZoomPlayhead 通过 ref 读取最新值，引用稳定，无需列入 deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exportRange, chartData, zoomWindowDurationMs, isPlaying]);
+
   return (
     <Card
       className={classes.card}
@@ -287,15 +415,73 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
       <Stack gap="sm">
         <div className={classes.timelineExportHost}>
           <NoteCountGraph fullscreen={isFullscreen} />
-          {exportActive && (
-            <ExportRangeOverlay
-              range={exportRange}
-              totalDurationMs={totalDurationMs}
-              onChange={updateExportRange}
-              onPreview={previewExportPosition}
-            />
+          {exportRange && totalDurationMs > 0 && (
+            <div className={classes.exportOverviewOverlay}>
+              <div
+                className={classes.exportOverviewShade}
+                style={{ left: 0, width: `${(exportRange.startMs / totalDurationMs) * 100}%` }}
+              />
+              <div
+                className={classes.exportOverviewSelection}
+                style={{
+                  left: `${(exportRange.startMs / totalDurationMs) * 100}%`,
+                  width: `${((exportRange.endMs - exportRange.startMs) / totalDurationMs) * 100}%`,
+                }}
+              />
+              <div
+                className={classes.exportOverviewShade}
+                style={{
+                  left: `${(exportRange.endMs / totalDurationMs) * 100}%`,
+                  width: `${100 - (exportRange.endMs / totalDurationMs) * 100}%`,
+                }}
+              />
+            </div>
           )}
         </div>
+
+        {exportRange && zoomWindowDurationMs > 0 && (
+          <div className={classes.exportZoomTrack}>
+            {chartData && (
+              <ChartDensityTimeline
+                notes={chartData.notes}
+                windowStartMs={zoomStartMs}
+                durationMs={zoomWindowDurationMs}
+                scaleWindowStartMs={0}
+                scaleDurationMs={totalDurationMs}
+                barMaxHeight={22}
+                className={classes.exportZoomDensityTimeline}
+              />
+            )}
+            <div className={classes.exportZoomLabel} style={{ left: 0 }}>
+              {formatDuration(zoomStartMs, "s")}
+            </div>
+            <div className={classes.exportZoomLabel} style={{ right: 0 }}>
+              {formatDuration(zoomEndMs, "s")}
+            </div>
+            <div
+              ref={exportZoomPlayheadRef}
+              className={classes.exportZoomPlayhead}
+              style={{
+                left: `${clamp(((currentMs - zoomStartMs) / zoomWindowDurationMs) * 100, 0, 100)}%`,
+              }}
+            />
+            <ExportRangeOverlay
+              range={{
+                startMs: exportRange.startMs - zoomStartMs,
+                endMs: exportRange.endMs - zoomStartMs,
+              }}
+              totalDurationMs={zoomWindowDurationMs}
+              onChange={(nextRange) =>
+                updateExportRange({
+                  startMs: nextRange.startMs + zoomStartMs,
+                  endMs: nextRange.endMs + zoomStartMs,
+                })
+              }
+              onPreview={(ms) => previewExportPosition(ms + zoomStartMs)}
+              onViewportPan={panZoomWindow}
+            />
+          </div>
+        )}
 
         {exportActive && (
           <div className={classes.exportConfirmBar}>
