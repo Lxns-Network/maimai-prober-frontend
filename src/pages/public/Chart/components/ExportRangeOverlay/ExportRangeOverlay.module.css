@@ -18,7 +18,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background-color: light-dark(rgba(255, 255, 255, 0.62), rgba(0, 0, 0, 0.5));
+  background-color: light-dark(rgb(255 255 255 / 0.62), rgb(0 0 0 / 0.5));
   pointer-events: none;
 }
 
@@ -29,7 +29,7 @@
   z-index: 1;
   border: 1px solid light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-3));
   border-radius: var(--mantine-radius-xs);
-  background-color: light-dark(rgba(34, 139, 230, 0.16), rgba(34, 211, 238, 0.2));
+  background-color: light-dark(rgb(34 139 230 / 0.16), rgb(34 211 238 / 0.2));
   cursor: grab;
 }
 
@@ -84,5 +84,5 @@
   height: 26px;
   border-radius: 3px;
   background-color: light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-3));
-  box-shadow: 0 0 0 2px light-dark(rgba(34, 139, 230, 0.28), rgba(34, 211, 238, 0.28));
+  box-shadow: 0 0 0 2px light-dark(rgb(34 139 230 / 0.28), rgb(34 211 238 / 0.28));
 }

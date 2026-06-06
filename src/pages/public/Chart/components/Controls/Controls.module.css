@@ -22,7 +22,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background-color: light-dark(rgba(255, 255, 255, 0.62), rgba(0, 0, 0, 0.5));
+  background-color: light-dark(rgb(255 255 255 / 0.62), rgb(0 0 0 / 0.5));
 }
 
 .exportOverviewSelection {
@@ -31,7 +31,7 @@
   bottom: 0;
   border: 1px solid light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-3));
   border-radius: var(--mantine-radius-xs);
-  background-color: light-dark(rgba(34, 139, 230, 0.16), rgba(34, 211, 238, 0.2));
+  background-color: light-dark(rgb(34 139 230 / 0.16), rgb(34 211 238 / 0.2));
 }
 
 .exportZoomTrack {
@@ -71,7 +71,7 @@
   transform: translateX(-1px);
   border-radius: 2px;
   background-color: light-dark(var(--mantine-color-dark-7), white);
-  box-shadow: 0 0 8px light-dark(rgba(0, 0, 0, 0.45), rgba(255, 255, 255, 0.7));
+  box-shadow: 0 0 8px light-dark(rgb(0 0 0 / 0.45), rgb(255 255 255 / 0.7));
   pointer-events: none;
 }
 
