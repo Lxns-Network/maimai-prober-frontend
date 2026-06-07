@@ -96,6 +96,8 @@ type DifficultyAnchor = {
   line: number;
 };
 
+const UTAGE_COLOR = "rgb(234, 61, 232)";
+
 const DEBUG_DIFFICULTY_NAMES: Record<number, string> = {
   0: "EASY",
   ...DIFFICULTY_NAMES,
@@ -125,9 +127,14 @@ function getDifficultyAnchors(simaiText: string): DifficultyAnchor[] {
 type PlaybackControlsProps = {
   onToggleFullscreen?: () => void;
   isFullscreen?: boolean;
+  portalTarget?: HTMLElement | null;
 };
 
-export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackControlsProps) {
+export function PlaybackControls({
+  onToggleFullscreen,
+  isFullscreen,
+  portalTarget,
+}: PlaybackControlsProps) {
   const {
     isPlaying,
     pendingPlay,
@@ -303,12 +310,26 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => window.setTimeout(resolve, 0));
       });
+      const settings = useGameSettingsStore.getState();
+      let video: { url: string; leadInMs: number; musicOffset: number } | undefined;
+      if (import.meta.env.DEV && settings.showVideo) {
+        const numId = Number(getChartIdForFilename());
+        if (Number.isFinite(numId)) {
+          const base = settings.videoServer.replace(/\/+$/, "");
+          video = {
+            url: `${base}/${String(numId % 10000).padStart(6, "0")}.mp4`,
+            leadInMs: (60000 * 4) / chartData.bpm,
+            musicOffset: settings.musicOffset,
+          };
+        }
+      }
       const blob = await exportChartGif({
         chart: chartData,
         range: exportRange,
         beatsPerMeasure: timeline.beatsPerMeasure,
-        settings: useGameSettingsStore.getState(),
+        settings,
         onProgress: setExportProgress,
+        video,
       });
 
       // GIF 已生成，关闭进度条。
@@ -406,6 +427,10 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportRange, chartData, zoomWindowDurationMs, isPlaying]);
 
+  const fullscreenPortalProps = isFullscreen && portalTarget ? { target: portalTarget } : undefined;
+  // 全屏下让导出 UI 的 light-dark()（postcss-mantine 编译成 [data-mantine-color-scheme] 选择器）取深色变体
+  const exportSchemeProps = isFullscreen ? { "data-mantine-color-scheme": "dark" } : {};
+
   return (
     <Card
       className={classes.card}
@@ -418,7 +443,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
         <div className={classes.timelineExportHost}>
           <NoteCountGraph fullscreen={isFullscreen} />
           {exportRange && totalDurationMs > 0 && (
-            <div className={classes.exportOverviewOverlay}>
+            <div className={classes.exportOverviewOverlay} {...exportSchemeProps}>
               <div
                 className={classes.exportOverviewShade}
                 style={{ left: 0, width: `${(exportRange.startMs / totalDurationMs) * 100}%` }}
@@ -437,51 +462,63 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
                   width: `${100 - (exportRange.endMs / totalDurationMs) * 100}%`,
                 }}
               />
+              <div
+                className={classes.exportOverviewPlayhead}
+                style={{ left: `${clamp((currentMs / totalDurationMs) * 100, 0, 100)}%` }}
+              />
+              <div
+                className={classes.exportOverviewPlayheadBadge}
+                style={{ left: `${clamp((currentMs / totalDurationMs) * 100, 0, 100)}%` }}
+              >
+                {timeline.currentMeasure}
+              </div>
             </div>
           )}
         </div>
 
         {exportRange && zoomWindowDurationMs > 0 && (
-          <div className={classes.exportZoomTrack}>
-            {chartData && (
-              <ChartDensityTimeline
-                notes={chartData.notes}
-                windowStartMs={zoomStartMs}
-                durationMs={zoomWindowDurationMs}
-                scaleWindowStartMs={0}
-                scaleDurationMs={totalDurationMs}
-                barMaxHeight={22}
-                className={classes.exportZoomDensityTimeline}
+          <div {...exportSchemeProps}>
+            <div className={classes.exportZoomTrack}>
+              {chartData && (
+                <ChartDensityTimeline
+                  notes={chartData.notes}
+                  windowStartMs={zoomStartMs}
+                  durationMs={zoomWindowDurationMs}
+                  scaleWindowStartMs={0}
+                  scaleDurationMs={totalDurationMs}
+                  barMaxHeight={22}
+                  className={classes.exportZoomDensityTimeline}
+                />
+              )}
+              <div className={classes.exportZoomLabel} style={{ left: 0 }}>
+                {formatDuration(zoomStartMs, "s")}
+              </div>
+              <div className={classes.exportZoomLabel} style={{ right: 0 }}>
+                {formatDuration(zoomEndMs, "s")}
+              </div>
+              <div
+                ref={exportZoomPlayheadRef}
+                className={classes.exportZoomPlayhead}
+                style={{
+                  left: `${clamp(((currentMs - zoomStartMs) / zoomWindowDurationMs) * 100, 0, 100)}%`,
+                }}
               />
-            )}
-            <div className={classes.exportZoomLabel} style={{ left: 0 }}>
-              {formatDuration(zoomStartMs, "s")}
+              <ExportRangeOverlay
+                range={{
+                  startMs: exportRange.startMs - zoomStartMs,
+                  endMs: exportRange.endMs - zoomStartMs,
+                }}
+                totalDurationMs={zoomWindowDurationMs}
+                onChange={(nextRange) =>
+                  updateExportRange({
+                    startMs: nextRange.startMs + zoomStartMs,
+                    endMs: nextRange.endMs + zoomStartMs,
+                  })
+                }
+                onPreview={(ms) => previewExportPosition(ms + zoomStartMs)}
+                onViewportPan={panZoomWindow}
+              />
             </div>
-            <div className={classes.exportZoomLabel} style={{ right: 0 }}>
-              {formatDuration(zoomEndMs, "s")}
-            </div>
-            <div
-              ref={exportZoomPlayheadRef}
-              className={classes.exportZoomPlayhead}
-              style={{
-                left: `${clamp(((currentMs - zoomStartMs) / zoomWindowDurationMs) * 100, 0, 100)}%`,
-              }}
-            />
-            <ExportRangeOverlay
-              range={{
-                startMs: exportRange.startMs - zoomStartMs,
-                endMs: exportRange.endMs - zoomStartMs,
-              }}
-              totalDurationMs={zoomWindowDurationMs}
-              onChange={(nextRange) =>
-                updateExportRange({
-                  startMs: nextRange.startMs + zoomStartMs,
-                  endMs: nextRange.endMs + zoomStartMs,
-                })
-              }
-              onPreview={(ms) => previewExportPosition(ms + zoomStartMs)}
-              onViewportPan={panZoomWindow}
-            />
           </div>
         )}
 
@@ -515,7 +552,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
         )}
 
         <Group justify="center" gap="xs" wrap="wrap">
-          <Tooltip label="上一小节">
+          <Tooltip label="上一小节" portalProps={fullscreenPortalProps}>
             <ActionIcon
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
@@ -526,7 +563,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="上一位置">
+          <Tooltip label="上一位置" portalProps={fullscreenPortalProps}>
             <ActionIcon
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
@@ -540,14 +577,14 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
           {pendingPlay && !isPlaying ? (
             <ActionIcon variant="filled" size="xl" radius="xl" loading={true} />
           ) : (
-            <Tooltip label={isPlaying ? "暂停" : "播放"}>
+            <Tooltip label={isPlaying ? "暂停" : "播放"} portalProps={fullscreenPortalProps}>
               <ActionIcon variant="filled" size="xl" radius="xl" onClick={togglePlayback}>
                 {isPlaying ? <IconPlayerPause size={24} /> : <IconPlayerPlay size={24} />}
               </ActionIcon>
             </Tooltip>
           )}
 
-          <Tooltip label="下一位置">
+          <Tooltip label="下一位置" portalProps={fullscreenPortalProps}>
             <ActionIcon
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
@@ -558,7 +595,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label="下一小节">
+          <Tooltip label="下一小节" portalProps={fullscreenPortalProps}>
             <ActionIcon
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
@@ -571,7 +608,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
 
           <div className={classes.separator} />
 
-          <Tooltip label="重新播放当前小节">
+          <Tooltip label="重新播放当前小节" portalProps={fullscreenPortalProps}>
             <ActionIcon
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
@@ -582,7 +619,10 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip label={soundEnabled ? "关闭正解音" : "开启正解音"}>
+          <Tooltip
+            label={soundEnabled ? "关闭正解音" : "开启正解音"}
+            portalProps={fullscreenPortalProps}
+          >
             <ActionIcon
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
@@ -593,9 +633,9 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
             </ActionIcon>
           </Tooltip>
 
-          <Menu shadow="md" width={160}>
+          <Menu shadow="md" width={160} portalProps={fullscreenPortalProps}>
             <Menu.Target>
-              <Tooltip label="分享当前帧">
+              <Tooltip label="分享当前帧" portalProps={fullscreenPortalProps}>
                 <ActionIcon variant="subtle" color={isFullscreen ? "white" : "gray"} size="lg">
                   <IconCamera size={20} />
                 </ActionIcon>
@@ -619,7 +659,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
             </Menu.Dropdown>
           </Menu>
 
-          <Tooltip label="复制当前时间点 URL">
+          <Tooltip label="复制当前时间点 URL" portalProps={fullscreenPortalProps}>
             <ActionIcon
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
@@ -632,7 +672,10 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
           </Tooltip>
 
           {onToggleFullscreen && (
-            <Tooltip label={isFullscreen ? "退出全屏" : "全屏预览"}>
+            <Tooltip
+              label={isFullscreen ? "退出全屏" : "全屏预览"}
+              portalProps={fullscreenPortalProps}
+            >
               <ActionIcon
                 variant="subtle"
                 color={isFullscreen ? "white" : "gray"}
@@ -649,7 +692,7 @@ export function PlaybackControls({ onToggleFullscreen, isFullscreen }: PlaybackC
   );
 }
 
-export function Controls() {
+export function Controls({ isUtage }: { isUtage?: boolean }) {
   const {
     playbackSpeed,
     rawSimaiText,
@@ -965,37 +1008,38 @@ export function Controls() {
         </Stack>
       </Card>
 
-      {chartData?.title.indexOf("UTAGE") === -1 &&
-        Object.keys(availableDifficulties).length > 0 && (
-          <Group gap="xs" grow>
-            {([1, 2, 3, 4, 5, 6] as ChartDifficulty[]).map((diff) => {
-              const isAvailable = availableDifficulties[diff];
-              const isSelected = selectedDifficulty === diff;
-              const level = chartData?.level?.[`lv_${diff}` as keyof typeof chartData.level];
-              const color = DIFFICULTY_COLORS[diff];
+      {Object.keys(availableDifficulties).length > 0 && (
+        <Group gap="xs" grow>
+          {([1, 2, 3, 4, 5, 6] as ChartDifficulty[]).map((diff) => {
+            const isAvailable = availableDifficulties[diff];
+            if (!isAvailable) return null;
 
-              if (!isAvailable) return null;
+            const isSelected = selectedDifficulty === diff;
+            const level = chartData?.level?.[`lv_${diff}` as keyof typeof chartData.level];
+            const isLightColor = !isUtage && diff === 6;
+            const color = isUtage ? UTAGE_COLOR : DIFFICULTY_COLORS[diff];
+            const textColor = getDifficultyTextColor(isSelected, isLightColor, color);
+            const name = isUtage ? "U·TA·GE" : DIFFICULTY_NAMES[diff];
+            const displayLevel =
+              level && isUtage ? (level.endsWith("?") ? level : `${level}?`) : level;
 
-              const isLightColor = diff === 6;
-              const textColor = getDifficultyTextColor(isSelected, isLightColor, color);
-
-              return (
-                <UnstyledButton
-                  key={diff}
-                  onClick={() => handleDifficultyChange(diff)}
-                  className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
-                  style={{
-                    backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
-                    color: textColor,
-                  }}
-                >
-                  <span className={classes.difficultyName}>{DIFFICULTY_NAMES[diff]}</span>
-                  {level && <span className={classes.difficultyLevel}>{level}</span>}
-                </UnstyledButton>
-              );
-            })}
-          </Group>
-        )}
+            return (
+              <UnstyledButton
+                key={diff}
+                onClick={() => handleDifficultyChange(diff)}
+                className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
+                style={{
+                  backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
+                  color: textColor,
+                }}
+              >
+                <span className={classes.difficultyName}>{name}</span>
+                {displayLevel && <span className={classes.difficultyLevel}>{displayLevel}</span>}
+              </UnstyledButton>
+            );
+          })}
+        </Group>
+      )}
 
       <Card className={classes.card} radius="lg" withBorder>
         <UnstyledButton onClick={() => setShowDisplaySettings(!showDisplaySettings)} w="100%">
@@ -1038,7 +1082,6 @@ export function Controls() {
               />
             </div>
 
-            {/* Judgment Line Design */}
             <div>
               <Text size="sm" mb={4}>
                 判定线

@@ -28,6 +28,11 @@ type ExportChartGifOptions = {
   size?: number;
   fps?: number;
   onProgress?: (progress: number) => void;
+  video?: {
+    url: string;
+    leadInMs: number;
+    musicOffset: number;
+  };
 };
 
 const DEFAULT_EXPORT_SIZE = 480;
@@ -39,6 +44,47 @@ function yieldToBrowser(): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, 0));
 }
 
+function loadExportVideo(url: string): Promise<HTMLVideoElement | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.crossOrigin = "anonymous";
+    const cleanup = () => {
+      video.removeEventListener("loadeddata", onLoaded);
+      video.removeEventListener("error", onError);
+    };
+    const onLoaded = () => {
+      cleanup();
+      resolve(video);
+    };
+    const onError = () => {
+      cleanup();
+      resolve(null);
+    };
+    video.addEventListener("loadeddata", onLoaded);
+    video.addEventListener("error", onError);
+    video.src = url;
+    video.load();
+  });
+}
+
+function seekExportVideo(video: HTMLVideoElement, time: number): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      video.removeEventListener("seeked", finish);
+      resolve();
+    };
+    video.addEventListener("seeked", finish);
+    video.currentTime = time;
+    window.setTimeout(finish, 1000);
+  });
+}
+
 export async function exportChartGif({
   chart,
   range,
@@ -47,11 +93,14 @@ export async function exportChartGif({
   size = DEFAULT_EXPORT_SIZE,
   fps = DEFAULT_EXPORT_FPS,
   onProgress,
+  video: videoOption,
 }: ExportChartGifOptions): Promise<Blob> {
   const durationMs = Math.max(0, range.endMs - range.startMs);
   if (durationMs <= 0) {
     throw new Error("导出范围为空");
   }
+
+  const bgVideo = videoOption ? await loadExportVideo(videoOption.url) : null;
 
   const canvas = document.createElement("canvas");
   const renderer = new MainRenderer(canvas, chart.bpm);
@@ -87,6 +136,18 @@ export async function exportChartGif({
   for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
     const currentMs = Math.min(range.endMs, range.startMs + frameIndex * frameDurationMs);
     const currentBeats = msToBeats(currentMs, chart.bpmEvents, chart.bpm);
+
+    if (bgVideo && videoOption) {
+      const videoTime = (currentMs - videoOption.leadInMs - videoOption.musicOffset) / 1000;
+      const dur = bgVideo.duration;
+      if (videoTime > 0 && (!Number.isFinite(dur) || videoTime < dur)) {
+        await seekExportVideo(bgVideo, videoTime);
+        renderer.setBackgroundVideo(bgVideo);
+      } else {
+        renderer.setBackgroundVideo(null);
+      }
+    }
+
     renderer.renderFrame(chart, currentBeats, beatsPerMeasure);
 
     const imageData = ctx.getImageData(0, 0, size, size);
@@ -106,6 +167,11 @@ export async function exportChartGif({
     if (frameIndex % EXPORT_YIELD_INTERVAL_FRAMES === EXPORT_YIELD_INTERVAL_FRAMES - 1) {
       await yieldToBrowser();
     }
+  }
+
+  if (bgVideo) {
+    bgVideo.removeAttribute("src");
+    bgVideo.load();
   }
 
   gif.finish();

@@ -34,6 +34,35 @@
   background-color: light-dark(rgb(34 139 230 / 0.16), rgb(34 211 238 / 0.2));
 }
 
+/* 概览播放头：画在 overlay 最上层（NoteCountGraph 自带的 playhead 被遮罩盖住，且受 container-type 堆叠上下文限制无法上浮） */
+.exportOverviewPlayhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-1px);
+  border-radius: 2px;
+  background-color: light-dark(var(--mantine-color-dark-7), white);
+  box-shadow: 0 0 6px light-dark(rgb(0 0 0 / 0.45), rgb(255 255 255 / 0.7));
+  pointer-events: none;
+}
+
+/* 概览播放头上的当前小节徽标，跟 playhead 一样画在 overlay 顶层 */
+.exportOverviewPlayheadBadge {
+  position: absolute;
+  top: 40px;
+  transform: translateX(-50%);
+  background-color: light-dark(var(--mantine-color-dark-7), white);
+  color: light-dark(white, var(--mantine-color-dark-7));
+  font-size: 10px;
+  font-family: var(--mantine-font-family-monospace);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--mantine-radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .exportZoomTrack {
   position: relative;
   height: 44px;

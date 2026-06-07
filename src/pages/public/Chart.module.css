@@ -32,6 +32,10 @@
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
+  /* 全屏黑底下深色 tooltip 看不清；覆盖 Mantine tooltip 变量为亮色背景，
+     portal 进 .fullscreen 子树的 tooltip 会继承这些变量 */
+  --tooltip-bg: var(--mantine-color-gray-2);
+  --tooltip-color: var(--mantine-color-black);
 }
 
 .fullscreenControls {

@@ -11,6 +11,7 @@ import {
   Container,
   Badge,
 } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import { IconArrowLeft, IconLock, IconLockOpen } from "@tabler/icons-react";
 import { ChartCanvas } from "@/pages/public/Chart/components/ChartCanvas";
 import { Controls, PlaybackControls } from "@/pages/public/Chart/components/Controls";
@@ -138,12 +139,19 @@ function ChartContent() {
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const chartCanvasRef = useRef<HTMLDivElement>(null);
   const fullscreenElementRef = useRef<HTMLDivElement>(null);
+  const [fullscreenEl, setFullscreenEl] = useState<HTMLDivElement | null>(null);
+  const setFullscreenElement = useCallback((el: HTMLDivElement | null) => {
+    fullscreenElementRef.current = el;
+    setFullscreenEl(el);
+  }, []);
 
   const searchParams = usePageContext().urlParsed.search;
   const chartIdParam = searchParams.chart_id;
   const difficultyParam = searchParams.difficulty;
   const beatParam = searchParams.beat;
   const chartId = chartIdParam ? parseInt(chartIdParam) : null;
+  // 宴谱（UTAGE）曲目 id ≥ 100000
+  const isUtage = chartId !== null && chartId >= 100000;
   const difficulty = difficultyParam ? ((parseInt(difficultyParam) + 2) as ChartDifficulty) : null;
   const beatValue = Number(beatParam);
   const initialBeat = beatParam && Number.isFinite(beatValue) && beatValue >= 0 ? beatValue : null;
@@ -458,14 +466,14 @@ function ChartContent() {
           </Stack>
 
           <Stack gap="md" className={classes.sidebar}>
-            <Controls />
+            <Controls isUtage={isUtage} />
             <KeyboardShortcuts />
           </Stack>
         </div>
       </Container>
 
       {isFullscreen && (
-        <div className={classes.fullscreen} ref={fullscreenElementRef}>
+        <div className={classes.fullscreen} ref={setFullscreenElement}>
           <div
             id="fullscreen-chart-container"
             style={{ cursor: showControls ? "default" : "none" }}
@@ -473,7 +481,11 @@ function ChartContent() {
           <div
             className={`${classes.fullscreenControls} ${showControls ? classes.showControls : ""}`}
           >
-            <PlaybackControls onToggleFullscreen={toggleFullscreen} isFullscreen={true} />
+            <PlaybackControls
+              onToggleFullscreen={toggleFullscreen}
+              isFullscreen={true}
+              portalTarget={fullscreenEl}
+            />
           </div>
           <ActionIcon
             className={`${classes.lockButton} ${isLocked || showControls ? classes.showButton : ""}`}
@@ -486,6 +498,7 @@ function ChartContent() {
           >
             {isLocked ? <IconLock size={20} /> : <IconLockOpen size={20} />}
           </ActionIcon>
+          <Notifications withinPortal={false} />
         </div>
       )}
     </>
