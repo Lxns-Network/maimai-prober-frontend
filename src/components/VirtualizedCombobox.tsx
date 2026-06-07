@@ -19,8 +19,7 @@ import { AnimatePresence, motion } from "motion/react";
 const HERO_TRANSITION = { type: "spring", stiffness: 400, damping: 36 } as const;
 
 export interface VirtualizedComboboxProps<T>
-  extends InputBaseProps,
-    ElementProps<"input", keyof InputBaseProps> {
+  extends InputBaseProps, ElementProps<"input", keyof InputBaseProps> {
   options: T[];
   search: string;
   onSearchChange: (search: string) => void;

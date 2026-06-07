@@ -1,0 +1,4 @@
+{
+  "sortPackageJson": false,
+  "ignorePatterns": ["dist", "node_modules", ".yarn", ".stylelintcache", "yarn.lock"]
+}

@@ -12,16 +12,14 @@
   height: 52px;
 }
 
-.timeMarkerLines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 10;
+.measureRuler {
+  position: relative;
+  height: 16px;
 }
 
-.timeMarkerLine {
+.measureTimeMarkerLine {
   position: absolute;
-  top: 12px;
+  top: 0;
   bottom: 0;
   width: 1px;
   background-image: repeating-linear-gradient(
@@ -33,53 +31,17 @@
   );
 }
 
-.timeLabels {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 12px;
-  pointer-events: none;
-  z-index: 20;
-}
-
-.timeLabel {
-  position: absolute;
-  top: 0;
-  font-size: 9px;
-  color: var(--mantine-color-dimmed);
-  font-family: var(--mantine-font-family-monospace);
-}
-
-.graphBars {
-  position: absolute;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: flex-end;
-  top: 14px;
-  height: 32px;
-}
-
-.graphBar {
-  flex: 1;
-  display: flex;
-  flex-direction: column-reverse;
-}
-
-.graphBarEmpty {
-  flex: 1;
-}
-
-.measureRuler {
-  position: relative;
-  height: 16px;
-}
-
 .measureMarkerLines {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+.measureTimeMarkerLines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .measureTick {

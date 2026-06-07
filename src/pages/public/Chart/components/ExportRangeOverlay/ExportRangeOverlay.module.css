@@ -1,0 +1,88 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  cursor: default;
+  touch-action: none;
+}
+
+.overlayPannable {
+  cursor: grab;
+}
+
+.overlayPannable:active {
+  cursor: grabbing;
+}
+
+.shade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-color: light-dark(rgb(255 255 255 / 0.62), rgb(0 0 0 / 0.5));
+  pointer-events: none;
+}
+
+.selection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  border: 1px solid light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-3));
+  border-radius: var(--mantine-radius-xs);
+  background-color: light-dark(rgb(34 139 230 / 0.16), rgb(34 211 238 / 0.2));
+  cursor: grab;
+}
+
+.selection:active {
+  cursor: grabbing;
+}
+
+.durationLabel {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  padding: 1px 5px;
+  border-radius: var(--mantine-radius-xs);
+  background-color: light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-4));
+  color: white;
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 44px;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  cursor: ew-resize;
+}
+
+.startHandle {
+  bottom: 50%;
+  align-items: flex-start;
+  padding-top: 6px;
+}
+
+.endHandle {
+  top: 50%;
+  align-items: flex-end;
+  padding-bottom: 6px;
+}
+
+.handleGrip {
+  position: relative;
+  width: 6px;
+  height: 26px;
+  border-radius: 3px;
+  background-color: light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-3));
+  box-shadow: 0 0 0 2px light-dark(rgb(34 139 230 / 0.28), rgb(34 211 238 / 0.28));
+}

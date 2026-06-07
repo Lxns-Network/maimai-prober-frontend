@@ -3,33 +3,12 @@ import { useShallow } from "zustand/react/shallow";
 import { useGameStore, playbackTimeRef, audioMasterTimeMsRef } from "../stores/useGameStore";
 import { useGameSettingsStore } from "../stores/useGameSettingsStore";
 import type { BpmEvent } from "@lxns-network/maimai-chart-engine";
+import { beatsToMs } from "../utils/timeConversion";
+import { clamp } from "../utils/math";
 
 const LEAD_IN_BEATS = 4;
 const SEEK_THROTTLE_MS = 50;
 const SOURCE_FADE_TIME_S = 0.015;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(min, value), max);
-}
-
-function beatsToMs(beats: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-  if (!bpmEvents?.length) {
-    return (60000 * beats) / defaultBpm;
-  }
-
-  let totalMs = 0;
-  let lastBeat = 0;
-  let currentBpm = bpmEvents[0].bpm;
-
-  for (const event of bpmEvents) {
-    if (event.timing >= beats) break;
-    totalMs += (60000 * (event.timing - lastBeat)) / currentBpm;
-    lastBeat = event.timing;
-    currentBpm = event.bpm;
-  }
-
-  return totalMs + (60000 * (beats - lastBeat)) / currentBpm;
-}
 
 function calculateMusicTime(
   preciseTime: number,

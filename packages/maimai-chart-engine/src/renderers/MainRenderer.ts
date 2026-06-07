@@ -6,6 +6,7 @@ import { TouchRenderer } from "./TouchRenderer";
 import {
   Note,
   BpmEvent,
+  Chart,
   RendererConfig,
   SlideNote,
   HoldStartNote,
@@ -210,20 +211,47 @@ export class MainRenderer {
     const backingSize = Math.round(size * dpr);
     const effectiveDpr = backingSize / size;
 
-    this.logicalSize = size;
+    this.applySize(size, effectiveDpr);
+  }
 
-    this.canvas.width = backingSize;
-    this.canvas.height = backingSize;
+  resizeToSize(size: number): void {
+    this.applySize(size, 1);
+  }
 
-    this.ctx.setTransform(effectiveDpr, 0, 0, effectiveDpr, 0, 0);
+  private applySize(logicalSize: number, dpr: number): void {
+    this.logicalSize = logicalSize;
 
-    this.centerX = size / 2;
-    this.centerY = size / 2;
-    this.radius = size * 0.45;
+    this.canvas.width = Math.round(logicalSize * dpr);
+    this.canvas.height = Math.round(logicalSize * dpr);
+
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    this.centerX = logicalSize / 2;
+    this.centerY = logicalSize / 2;
+    this.radius = logicalSize * 0.45;
 
     if (this.noteRenderer) {
       this.updateRenderersContext();
     }
+  }
+
+  renderFrame(chart: Chart, currentBeats: number, beatsPerMeasure: number): void {
+    const measure = Math.floor(currentBeats / beatsPerMeasure);
+    const beatInMeasure = currentBeats - measure * beatsPerMeasure;
+    const beat = Math.floor(beatInMeasure) + 1;
+    const fraction = beatInMeasure - Math.floor(beatInMeasure);
+
+    let divisor = 4;
+    for (const event of chart.divisorEvents ?? []) {
+      if (event.timing <= currentBeats) divisor = event.divisor;
+      else break;
+    }
+
+    this.setBeatDisplayInfo(measure, beat, fraction, divisor);
+    this.clear();
+    this.renderJudgmentLine();
+    this.renderFireworks(chart.notes, currentBeats, chart.bpmEvents);
+    this.renderNotes(chart.notes, currentBeats, chart.bpmEvents);
   }
 
   setHiSpeed(hiSpeed: number): void {
