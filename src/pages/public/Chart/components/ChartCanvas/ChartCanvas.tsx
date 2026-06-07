@@ -76,6 +76,7 @@ export function ChartCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MainRenderer | null>(null);
+  const bgVideoRef = useRef<HTMLVideoElement>(null);
   const [canvasDebugInfo, setCanvasDebugInfo] = useState<CanvasDebugInfo | null>(null);
 
   const animationFrameRef = useRef<number | null>(null);
@@ -129,6 +130,8 @@ export function ChartCanvas() {
   const judgmentLineDesign = useGameSettingsStore((s) => s.judgmentLineDesign);
   const pinkSlideStart = useGameSettingsStore((s) => s.pinkSlideStart);
   const highlightExNotes = useGameSettingsStore((s) => s.highlightExNotes);
+  const showVideo = useGameSettingsStore((s) => s.showVideo);
+  const videoServer = useGameSettingsStore((s) => s.videoServer);
   const normalColorBreakSlide = useGameSettingsStore((s) => s.normalColorBreakSlide);
   const showFireworks = useGameSettingsStore((s) => s.showFireworks);
   const showHitEffect = useGameSettingsStore((s) => s.showHitEffect);
@@ -222,6 +225,43 @@ export function ChartCanvas() {
 
     renderer.setBeatDisplayInfo(measure, beat, fraction, divisor);
     const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
+
+    // 背景视频
+    if (import.meta.env.DEV) {
+      const bgVideo = bgVideoRef.current;
+      const enabled = !!bgVideo && useGameSettingsStore.getState().showVideo;
+      if (enabled && bgVideo) {
+        const leadInMs = (60000 * 4) / chart.bpm;
+        const musicOffset = useGameSettingsStore.getState().musicOffset;
+        const target = (currentMs - leadInMs - musicOffset) / 1000;
+        const duration = bgVideo.duration;
+        const totalBeats = timeline.totalMeasures * timeline.beatsPerMeasure;
+        const stoppedAtEnd = !playing && currentBeats >= totalBeats;
+        const inWindow =
+          target > 0 && !stoppedAtEnd && (!Number.isFinite(duration) || target < duration);
+        renderer.setBackgroundVideo(inWindow ? bgVideo : null);
+        if (!inWindow) {
+          if (!bgVideo.paused) bgVideo.pause();
+          if (target <= 0 && bgVideo.currentTime > 0) bgVideo.currentTime = 0;
+        } else if (playing) {
+          const speed = useGameStore.getState().playbackSpeed;
+          const drift = bgVideo.currentTime - target;
+          if (Math.abs(drift) > 0.3) {
+            bgVideo.currentTime = target;
+            bgVideo.playbackRate = speed;
+          } else {
+            bgVideo.playbackRate =
+              drift < -0.02 ? speed + 0.1 : drift > 0.02 ? Math.max(0.1, speed - 0.1) : speed;
+          }
+          if (bgVideo.paused) void bgVideo.play().catch(() => {});
+        } else {
+          if (!bgVideo.paused) bgVideo.pause();
+          if (Math.abs(bgVideo.currentTime - target) > 0.04) bgVideo.currentTime = target;
+        }
+      } else {
+        renderer.setBackgroundVideo(null);
+      }
+    }
 
     renderer.clear();
     renderer.renderJudgmentLine();
@@ -409,7 +449,35 @@ export function ChartCanvas() {
     if (rendererRef.current) {
       rendererRef.current.setIsPlaying(isPlaying);
     }
+    if (!isPlaying) bgVideoRef.current?.pause();
   }, [isPlaying]);
+
+  // 背景视频
+  useEffect(() => {
+    const video = bgVideoRef.current;
+    if (!video) return;
+    const refresh = () => {
+      if (!useGameStore.getState().isPlaying) renderFrame(playbackTimeRef.current);
+    };
+    if (import.meta.env.DEV && showVideo) {
+      const numId = Number(getChartIdForFilename());
+      if (Number.isFinite(numId)) {
+        const base = videoServer.replace(/\/+$/, "");
+        video.src = `${base}/${String(numId % 10000).padStart(6, "0")}.mp4`;
+        video.load();
+        video.addEventListener("loadeddata", refresh);
+        video.addEventListener("seeked", refresh);
+      }
+    } else {
+      video.removeAttribute("src");
+      video.load();
+    }
+    renderFrame(playbackTimeRef.current);
+    return () => {
+      video.removeEventListener("loadeddata", refresh);
+      video.removeEventListener("seeked", refresh);
+    };
+  }, [showVideo, videoServer, chartData, renderFrame]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -755,6 +823,23 @@ export function ChartCanvas() {
         [classes.fullscreen]: isFullscreen,
       })}
     >
+      {import.meta.env.DEV && (
+        <video
+          ref={bgVideoRef}
+          muted
+          playsInline
+          preload="auto"
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            opacity: 0,
+            pointerEvents: "none",
+            top: 0,
+            left: 0,
+          }}
+        />
+      )}
       <canvas
         ref={canvasRef}
         className={clsx(classes.canvas, {

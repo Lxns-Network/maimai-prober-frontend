@@ -28,6 +28,8 @@ export interface GameSettingsState {
   musicVolume: number;
   musicOffset: number;
   fullscreenQuality: FullscreenQuality;
+  showVideo: boolean;
+  videoServer: string;
 }
 
 export interface GameSettingsActions {
@@ -48,6 +50,8 @@ export interface GameSettingsActions {
   setMusicVolume: (volume: number) => void;
   setMusicOffset: (offset: number) => void;
   setFullscreenQuality: (quality: FullscreenQuality) => void;
+  setShowVideo: (enabled: boolean) => void;
+  setVideoServer: (server: string) => void;
 }
 
 export type GameSettingsStore = GameSettingsState & GameSettingsActions;
@@ -72,6 +76,8 @@ const initialState: GameSettingsState = {
   musicVolume: 0.8,
   musicOffset: 0,
   fullscreenQuality: "balanced",
+  showVideo: false,
+  videoServer: "/__video/",
 };
 
 export const useGameSettingsStore = create<GameSettingsStore>()(
@@ -95,6 +101,8 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       setMusicVolume: (volume: number) => set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
       setMusicOffset: (offset: number) => set({ musicOffset: offset }),
       setFullscreenQuality: (quality: FullscreenQuality) => set({ fullscreenQuality: quality }),
+      setShowVideo: (enabled: boolean) => set({ showVideo: enabled }),
+      setVideoServer: (server: string) => set({ videoServer: server }),
     }),
     {
       name: "maimai_chart_preview_settings",
@@ -121,6 +129,8 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
         musicVolume: state.musicVolume,
         musicOffset: state.musicOffset,
         fullscreenQuality: state.fullscreenQuality,
+        showVideo: state.showVideo,
+        videoServer: state.videoServer,
       }),
     },
   ),

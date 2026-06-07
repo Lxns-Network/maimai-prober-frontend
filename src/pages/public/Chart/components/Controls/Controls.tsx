@@ -17,6 +17,7 @@ import {
   Switch,
   Text,
   Textarea,
+  TextInput,
   ThemeIcon,
   Tooltip,
   UnstyledButton,
@@ -32,6 +33,7 @@ import {
   IconVolume,
   IconVolumeOff,
   IconMusic,
+  IconMovie,
   IconChevronDown,
   IconAdjustments,
   IconHelp,
@@ -465,10 +467,15 @@ export function Controls() {
     setSoundOffset,
     fullscreenQuality,
     setFullscreenQuality,
+    showVideo,
+    setShowVideo,
+    videoServer,
+    setVideoServer,
   } = useGameSettingsStore(useShallow((state) => state));
 
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);
   const [showMusicSettings, setShowMusicSettings] = useState(false);
+  const [showVideoSettings, setShowVideoSettings] = useState(false);
 
   const handleDifficultyChange = useCallback(
     (difficulty: ChartDifficulty) => {
@@ -923,6 +930,48 @@ export function Controls() {
           </Stack>
         </Collapse>
       </Card>
+
+      {import.meta.env.DEV && (
+        <Card className={classes.card} radius="lg" withBorder>
+          <UnstyledButton onClick={() => setShowVideoSettings(!showVideoSettings)} w="100%">
+            <Group justify="space-between">
+              <Group gap="xs">
+                <IconMovie size={20} />
+                <Text size="sm" fw={500}>
+                  视频设置
+                </Text>
+              </Group>
+              <IconChevronDown
+                size={16}
+                style={{
+                  transition: "transform 0.2s",
+                  transform: showVideoSettings ? "rotate(180deg)" : "none",
+                }}
+              />
+            </Group>
+          </UnstyledButton>
+
+          <Collapse expanded={showVideoSettings}>
+            <Stack gap="md" mt="md">
+              <Group justify="space-between">
+                <Text size="sm">显示背景视频</Text>
+                <Switch
+                  checked={showVideo}
+                  onChange={(e) => setShowVideo(e.currentTarget.checked)}
+                />
+              </Group>
+
+              <TextInput
+                label="视频服务器"
+                description="输入视频服务器地址"
+                placeholder="/__video/"
+                value={videoServer}
+                onChange={(e) => setVideoServer(e.currentTarget.value)}
+              />
+            </Stack>
+          </Collapse>
+        </Card>
+      )}
     </Stack>
   );
 }

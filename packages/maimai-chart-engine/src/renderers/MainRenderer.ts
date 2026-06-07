@@ -109,6 +109,11 @@ export class MainRenderer {
   private sensorImage: HTMLImageElement | null = null;
   private sensorImagePath: string;
 
+  private backgroundVideo: HTMLVideoElement | null = null;
+  private backgroundVideoCache: HTMLCanvasElement | null = null;
+  private backgroundVideoCacheReady = false;
+  private backgroundVideoSrc = "";
+
   // simulCounts / breakIdx 是静态元数据，只依赖 chart 本身。
   // 用 notes 数组引用做缓存键——chart 切换时引用变化自然 invalidate。
   private preparedNotesRef: Note[] | null = null;
@@ -328,11 +333,65 @@ export class MainRenderer {
     this.fullscreenMaxPixels = maxPixels;
   }
 
+  setBackgroundVideo(video: HTMLVideoElement | null): void {
+    if (video && video.src !== this.backgroundVideoSrc) {
+      this.backgroundVideoSrc = video.src;
+      this.backgroundVideoCacheReady = false;
+    }
+    this.backgroundVideo = video;
+  }
+
+  private cacheBackgroundVideoFrame(video: HTMLVideoElement): void {
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (w === 0 || h === 0) return;
+    let cache = this.backgroundVideoCache;
+    if (!cache) {
+      cache = document.createElement("canvas");
+      this.backgroundVideoCache = cache;
+    }
+    if (cache.width !== w || cache.height !== h) {
+      cache.width = w;
+      cache.height = h;
+    }
+    const cctx = cache.getContext("2d");
+    if (!cctx) return;
+    cctx.drawImage(video, 0, 0, w, h);
+    this.backgroundVideoCacheReady = true;
+  }
+
   // fillRect 保证导出的背景不透明。
   // clearRect 依赖 alpha:false，移动端 Safari 不可靠，会导致导出图透明。
   clear(): void {
+    const s = this.logicalSize;
+    const video = this.backgroundVideo;
+    if (video && video.videoWidth > 0) {
+      let source: CanvasImageSource | null = null;
+      if (video.readyState >= 2) {
+        this.cacheBackgroundVideoFrame(video);
+        source = video;
+      } else if (this.backgroundVideoCacheReady) {
+        source = this.backgroundVideoCache;
+      }
+      if (source) {
+        this.ctx.fillStyle = COLORS.BLACK;
+        this.ctx.fillRect(0, 0, s, s);
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(this.centerX, this.centerY, s / 2, 0, Math.PI * 2);
+        this.ctx.clip();
+        const scale = Math.min(s / video.videoWidth, s / video.videoHeight);
+        const dw = video.videoWidth * scale;
+        const dh = video.videoHeight * scale;
+        this.ctx.drawImage(source, (s - dw) / 2, (s - dh) / 2, dw, dh);
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        this.ctx.fillRect(0, 0, s, s);
+        this.ctx.restore();
+        return;
+      }
+    }
     this.ctx.fillStyle = COLORS.BLACK;
-    this.ctx.fillRect(0, 0, this.logicalSize, this.logicalSize);
+    this.ctx.fillRect(0, 0, s, s);
   }
 
   renderJudgmentLine(): void {
