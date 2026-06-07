@@ -42,15 +42,18 @@ export interface MainRendererConfig {
   sensorImagePath?: string;
 }
 
-// tap+hold 同层、按时间分层（早的在上）的合并列表，按 timingMs 降序（晚的先画/在底）。
-type LayeredNote = { kind: "tap"; note: TapNote } | { kind: "hold"; note: HoldStartNote };
+// tap / hold / slide 星星头同层、按时间分层（早的在上）的合并列表，按 timingMs 降序（晚的先画/在底）。
+type LayeredNote =
+  | { kind: "tap"; note: TapNote }
+  | { kind: "hold"; note: HoldStartNote }
+  | { kind: "slideStart"; note: SlideNote };
 
 interface PreparedRenderNotes {
   slides: SlideNote[];
   touches: (TouchNote | TouchHoldStartNote)[];
   holds: HoldStartNote[];
   taps: TapNote[];
-  tapsAndHolds: LayeredNote[];
+  layeredHeads: LayeredNote[];
   hitEffectNotes: Note[];
   noteCompletionTimes: number[];
   breakCompletionTimes: number[];
@@ -123,7 +126,7 @@ export class MainRenderer {
     touches: [],
     holds: [],
     taps: [],
-    tapsAndHolds: [],
+    layeredHeads: [],
     hitEffectNotes: [],
     noteCompletionTimes: [],
     breakCompletionTimes: [],
@@ -502,7 +505,7 @@ export class MainRenderer {
 
     this.ctx.save();
 
-    const { slides, touches, holds, hitEffectNotes, tapsAndHolds } = this.preparedRenderNotes;
+    const { slides, touches, holds, hitEffectNotes, layeredHeads } = this.preparedRenderNotes;
 
     for (const slide of slides) {
       this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, "tracks");
@@ -514,10 +517,8 @@ export class MainRenderer {
 
     this.renderApproachIndicators(notes, holds, slides, currentBeat, currentTimeMs);
 
-    this.renderSlideStarts(slides, currentBeat, currentTimeMs);
-
-    // tap 与 hold 同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
-    this.renderTapsAndHolds(tapsAndHolds, notes, currentBeat, currentTimeMs);
+    // tap / hold / slide 星星头同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
+    this.renderLayeredHeads(layeredHeads, notes, currentBeat, currentTimeMs);
 
     // touch 最上层，覆盖普通 note。
     this.renderTouchBorders(touches, currentTimeMs);
@@ -682,20 +683,23 @@ export class MainRenderer {
     breakCompletionTimes.sort((a, b) => a - b);
     breakNoExCompletionTimes.sort((a, b) => a - b);
 
-    // tap+hold 同层按 timingMs 降序（早到的后画/在上层，与 maimai noteSortOrder 一致）。在此
-    // 预算一次（本函数被 notes 引用 memoize），渲染热路径直接迭代，省每帧的合并+排序+分配。
-    const tapsAndHolds: LayeredNote[] = [
+    // tap / hold / slide 星星头同层按 timingMs 降序（早到的后画/在上层，与 maimai noteSortOrder 一致）。
+    // 在此预算一次（本函数被 notes 引用 memoize），渲染热路径直接迭代，省每帧的合并+排序+分配。
+    const layeredHeads: LayeredNote[] = [
       ...taps.map((note) => ({ kind: "tap" as const, note })),
       ...holds.map((note) => ({ kind: "hold" as const, note })),
+      ...slides
+        .filter((note) => !note.isHeadless)
+        .map((note) => ({ kind: "slideStart" as const, note })),
     ];
-    tapsAndHolds.sort((a, b) => b.note.timingMs - a.note.timingMs);
+    layeredHeads.sort((a, b) => b.note.timingMs - a.note.timingMs);
 
     return {
       slides,
       touches,
       holds,
       taps,
-      tapsAndHolds,
+      layeredHeads,
       hitEffectNotes,
       noteCompletionTimes,
       breakCompletionTimes,
@@ -856,63 +860,50 @@ export class MainRenderer {
     }
   }
 
-  private renderSlideStarts(slides: SlideNote[], currentBeat: number, currentTimeMs: number): void {
-    for (const slide of slides) {
-      if (slide.isHeadless) continue;
+  private renderSingleSlideStart(
+    slide: SlideNote,
+    currentBeat: number,
+    currentTimeMs: number,
+  ): void {
+    const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
+    if (!pos.visible) return;
 
-      const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
-      if (!pos.visible) continue;
+    const isSimultaneous = (slide.simultaneousNoteCount ?? 0) >= 2;
+    // 接近圈由 renderApproachIndicators 统一画（在底层），这里只画星星头。
+    const color = this.getStarHeadColor(slide.timing, slide.isStartBreak ?? false, isSimultaneous);
 
-      const isSimultaneous = (slide.simultaneousNoteCount ?? 0) >= 2;
+    const rotation = this.config.slideRotation
+      ? this.slideRenderer["calculateStarRotation"](slide, currentTimeMs)
+      : 0;
 
-      if (slide.timing - currentBeat > 0) {
-        const color = slide.isStartBreak
-          ? COLORS.BREAK_ORANGE
-          : isSimultaneous
-            ? COLORS.SIMULTANEOUS_GOLD
-            : COLORS.SLIDE_CYAN;
-        this.noteRenderer.renderApproachArc(slide.position, pos.x, pos.y, color);
+    if (slide.isSplitSlide) {
+      const noteSize = this.getStarNoteSize(pos.scale);
+      if (slide.isEx) {
+        this.slideRenderer.renderExSplitStarRing(
+          pos.x,
+          pos.y,
+          noteSize,
+          slide.isStartBreak ?? false,
+          isSimultaneous,
+          this.exScale,
+        );
       }
-
-      const color = this.getStarHeadColor(
-        slide.timing,
+      this.renderSplitSlideStar(pos.x, pos.y, noteSize, color, rotation, slide.isEx ?? false);
+    } else {
+      this.renderStarHead(
+        pos.x,
+        pos.y,
+        pos.scale,
+        color,
+        rotation,
+        slide.isEx ?? false,
         slide.isStartBreak ?? false,
         isSimultaneous,
       );
+    }
 
-      const rotation = this.config.slideRotation
-        ? this.slideRenderer["calculateStarRotation"](slide, currentTimeMs)
-        : 0;
-
-      if (slide.isSplitSlide) {
-        const noteSize = this.getStarNoteSize(pos.scale);
-        if (slide.isEx) {
-          this.slideRenderer.renderExSplitStarRing(
-            pos.x,
-            pos.y,
-            noteSize,
-            slide.isStartBreak ?? false,
-            isSimultaneous,
-            this.exScale,
-          );
-        }
-        this.renderSplitSlideStar(pos.x, pos.y, noteSize, color, rotation);
-      } else {
-        this.renderStarHead(
-          pos.x,
-          pos.y,
-          pos.scale,
-          color,
-          rotation,
-          slide.isEx ?? false,
-          slide.isStartBreak ?? false,
-          isSimultaneous,
-        );
-      }
-
-      if (this.config.showBreakIndex && slide.isStartBreak && slide.noExBreakIndex && !slide.isEx) {
-        this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, slide.noExBreakIndex);
-      }
+    if (this.config.showBreakIndex && slide.isStartBreak && slide.noExBreakIndex && !slide.isEx) {
+      this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, slide.noExBreakIndex);
     }
   }
 
@@ -922,6 +913,7 @@ export class MainRenderer {
     size: number,
     color: string,
     rotation: number,
+    isEx: boolean,
   ): void {
     this.ctx.save();
 
@@ -929,6 +921,25 @@ export class MainRenderer {
       this.ctx.translate(x, y);
       this.ctx.rotate(rotation);
       this.ctx.translate(-x, -y);
+    }
+
+    // 黑色描边（同 drawStar 的 strokeW*3 黑边）画最底层；EX 时外圈让给 EX 环，跳过
+    if (!isEx) {
+      this.ctx.strokeStyle = COLORS.BLACK;
+      this.ctx.lineWidth = ((2 * this.radius) / 300) * 3;
+      for (const baseAngle of [-Math.PI / 2, Math.PI / 2]) {
+        this.ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const angle = (i * Math.PI) / 5 + baseAngle;
+          const r = i % 2 === 0 ? size : size * 0.5;
+          const px = x + Math.cos(angle) * r;
+          const py = y + Math.sin(angle) * r;
+          if (i === 0) this.ctx.moveTo(px, py);
+          else this.ctx.lineTo(px, py);
+        }
+        this.ctx.closePath();
+        this.ctx.stroke();
+      }
     }
 
     const drawStarHalf = (baseAngle: number) => {
@@ -1038,8 +1049,8 @@ export class MainRenderer {
     return COLORS.SLIDE_CYAN;
   }
 
-  // 按 prepareRenderNotes 预排好的时间分层顺序（早到的 note 在上层）绘制 tap/hold。
-  private renderTapsAndHolds(
+  // 按 prepareRenderNotes 预排好的时间分层顺序（早到的 note 在上层）渲染 tap/hold/slideStart 星星头。
+  private renderLayeredHeads(
     layered: LayeredNote[],
     allNotes: Note[],
     currentBeat: number,
@@ -1047,7 +1058,9 @@ export class MainRenderer {
   ): void {
     for (const item of layered) {
       if (item.kind === "tap") this.renderSingleTap(item.note, currentBeat, currentTimeMs);
-      else this.renderSingleHold(item.note, allNotes, currentBeat, currentTimeMs);
+      else if (item.kind === "hold")
+        this.renderSingleHold(item.note, allNotes, currentBeat, currentTimeMs);
+      else this.renderSingleSlideStart(item.note, currentBeat, currentTimeMs);
     }
   }
 

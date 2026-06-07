@@ -154,10 +154,18 @@ export class SlideRenderer extends BaseRenderer {
     mode: SlideRenderMode = "tracks",
   ): void {
     if (note.isSplitSlide && note.allSlideSegments) {
-      for (let i = 0; i < note.allSlideSegments.length; i++) {
-        const segments = note.allSlideSegments[i];
-        if (segments && segments.length > 0) {
-          this.renderSlidePath(note, currentBeat, currentTimeMs, segments, i, mode);
+      const paths = note.allSlideSegments;
+      // wifi 路径（扇形大）先画垫底，再画其它路径，避免盖住同条滑条其它分段的箭头和星星。
+      for (let i = 0; i < paths.length; i++) {
+        const segs = paths[i];
+        if (segs && segs.length > 0 && segs[0].type === "w") {
+          this.renderSlidePath(note, currentBeat, currentTimeMs, segs, i, mode);
+        }
+      }
+      for (let i = 0; i < paths.length; i++) {
+        const segs = paths[i];
+        if (segs && segs.length > 0 && segs[0].type !== "w") {
+          this.renderSlidePath(note, currentBeat, currentTimeMs, segs, i, mode);
         }
       }
     } else if (note.slideSegments && note.slideSegments.length > 0) {
@@ -663,7 +671,7 @@ export class SlideRenderer extends BaseRenderer {
     if (chevrons.length === 0) return;
     const ctx = this.context.ctx;
     const lineWidth = this.scaleByRadius(SLIDE_WIFI_LINE_WIDTH_RATIO);
-    const outlineWidth = this.getNoteStrokeWidth() * 2;
+    const shadowOffset = this.scaleByRadius(5 / 300);
     const mainStroke = ctx.strokeStyle;
     const cos = Math.cos(fanAngle);
     const sin = Math.sin(fanAngle);
@@ -724,24 +732,28 @@ export class SlideRenderer extends BaseRenderer {
     ctx.lineJoin = "miter";
     ctx.globalAlpha = ctx.globalAlpha * 0.6;
 
+    // 整片扇形拼成一个 Path2D，投影（整体偏移）和本体各填充一次。
+    const fanPath = new Path2D();
     for (const c of chevrons) {
       const a1x = c.x + cos * c.arm1Dx - sin * c.arm1Dy;
       const a1y = c.y + sin * c.arm1Dx + cos * c.arm1Dy;
       const a2x = c.x + cos * c.arm2Dx - sin * c.arm2Dy;
       const a2y = c.y + sin * c.arm2Dx + cos * c.arm2Dy;
-
-      const outline = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth + outlineWidth);
-      if (outline) {
-        ctx.fillStyle = COLORS.BLACK;
-        ctx.fill(outline);
-      }
-
-      const main = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth);
-      if (!main) continue;
-
-      ctx.fillStyle = mainStroke;
-      ctx.fill(main);
+      const shape = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth);
+      if (shape) fanPath.addPath(shape);
     }
+
+    // 投影：整体向后偏移
+    ctx.save();
+    ctx.translate(-cos * shadowOffset, -sin * shadowOffset);
+    ctx.globalAlpha = ctx.globalAlpha * 0.4;
+    ctx.fillStyle = COLORS.BLACK;
+    ctx.fill(fanPath);
+    ctx.restore();
+
+    // 本体
+    ctx.fillStyle = mainStroke;
+    ctx.fill(fanPath);
 
     ctx.restore();
   }
