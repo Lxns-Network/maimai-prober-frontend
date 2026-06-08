@@ -77,7 +77,7 @@ const initialState: GameSettingsState = {
   musicOffset: 0,
   fullscreenQuality: "balanced",
   showVideo: false,
-  videoServer: "/__video/",
+  videoServer: "https://maimai-video.lxns.net/",
 };
 
 export const useGameSettingsStore = create<GameSettingsStore>()(

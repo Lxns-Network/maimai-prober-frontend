@@ -64,6 +64,7 @@ import { getChartIdForFilename, downloadBlob } from "../../utils/fileDownload";
 import { formatDuration } from "../../utils/format";
 import { clamp } from "../../utils/math";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
+import { openConfirmModal } from "@/utils/modal";
 import classes from "./Controls.module.css";
 
 function getErrorMessage(error: unknown): string {
@@ -312,12 +313,12 @@ export function PlaybackControls({
       });
       const settings = useGameSettingsStore.getState();
       let video: { url: string; leadInMs: number; musicOffset: number } | undefined;
-      if (import.meta.env.DEV && settings.showVideo) {
+      if (settings.showVideo) {
         const numId = Number(getChartIdForFilename());
         if (Number.isFinite(numId)) {
           const base = settings.videoServer.replace(/\/+$/, "");
           video = {
-            url: `${base}/${String(numId % 10000).padStart(6, "0")}.mp4`,
+            url: `${base}/${numId % 10000}.mp4`,
             leadInMs: (60000 * 4) / chartData.bpm,
             musicOffset: settings.musicOffset,
           };
@@ -1305,47 +1306,55 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
         </Collapse>
       </Card>
 
-      {import.meta.env.DEV && (
-        <Card className={classes.card} radius="lg" withBorder>
-          <UnstyledButton onClick={() => setShowVideoSettings(!showVideoSettings)} w="100%">
+      <Card className={classes.card} radius="lg" withBorder>
+        <UnstyledButton onClick={() => setShowVideoSettings(!showVideoSettings)} w="100%">
+          <Group justify="space-between">
+            <Group gap="xs">
+              <IconMovie size={20} />
+              <Text size="sm" fw={500}>
+                视频设置
+              </Text>
+            </Group>
+            <IconChevronDown
+              size={16}
+              style={{
+                transition: "transform 0.2s",
+                transform: showVideoSettings ? "rotate(180deg)" : "none",
+              }}
+            />
+          </Group>
+        </UnstyledButton>
+
+        <Collapse expanded={showVideoSettings}>
+          <Stack gap="md" mt="md">
             <Group justify="space-between">
-              <Group gap="xs">
-                <IconMovie size={20} />
-                <Text size="sm" fw={500}>
-                  视频设置
-                </Text>
-              </Group>
-              <IconChevronDown
-                size={16}
-                style={{
-                  transition: "transform 0.2s",
-                  transform: showVideoSettings ? "rotate(180deg)" : "none",
+              <Text size="sm">显示背景视频</Text>
+              <Switch
+                checked={showVideo}
+                onChange={(e) => {
+                  if (e.currentTarget.checked) {
+                    openConfirmModal(
+                      "开启背景视频",
+                      "背景视频需要从视频服务器加载，会消耗较多流量，确定开启吗？",
+                      () => setShowVideo(true),
+                    );
+                  } else {
+                    setShowVideo(false);
+                  }
                 }}
               />
             </Group>
-          </UnstyledButton>
 
-          <Collapse expanded={showVideoSettings}>
-            <Stack gap="md" mt="md">
-              <Group justify="space-between">
-                <Text size="sm">显示背景视频</Text>
-                <Switch
-                  checked={showVideo}
-                  onChange={(e) => setShowVideo(e.currentTarget.checked)}
-                />
-              </Group>
-
-              <TextInput
-                label="视频服务器"
-                description="输入视频服务器地址"
-                placeholder="/__video/"
-                value={videoServer}
-                onChange={(e) => setVideoServer(e.currentTarget.value)}
-              />
-            </Stack>
-          </Collapse>
-        </Card>
-      )}
+            <TextInput
+              label="视频服务器"
+              description="输入视频服务器地址"
+              placeholder="https://maimai-video.lxns.net/"
+              value={videoServer}
+              onChange={(e) => setVideoServer(e.currentTarget.value)}
+            />
+          </Stack>
+        </Collapse>
+      </Card>
     </Stack>
   );
 }

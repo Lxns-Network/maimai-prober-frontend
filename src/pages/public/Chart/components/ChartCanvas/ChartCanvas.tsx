@@ -150,41 +150,39 @@ export function ChartCanvas() {
     const currentBeats = beatsOverride ?? timeline.preciseTime;
     const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
 
-    // 背景视频（dev）：必须在 renderFrame 之前注入帧源（renderFrame 内部 clear 时绘制背景）
-    if (import.meta.env.DEV) {
-      const bgVideo = bgVideoRef.current;
-      const enabled = !!bgVideo && useGameSettingsStore.getState().showVideo;
-      if (enabled && bgVideo) {
-        const leadInMs = (60000 * 4) / chart.bpm;
-        const musicOffset = useGameSettingsStore.getState().musicOffset;
-        const target = (currentMs - leadInMs - musicOffset) / 1000;
-        const duration = bgVideo.duration;
-        const totalBeats = timeline.totalMeasures * timeline.beatsPerMeasure;
-        const stoppedAtEnd = !playing && currentBeats >= totalBeats;
-        const inWindow =
-          target > 0 && !stoppedAtEnd && (!Number.isFinite(duration) || target < duration);
-        renderer.setBackgroundVideo(inWindow ? bgVideo : null);
-        if (!inWindow) {
-          if (!bgVideo.paused) bgVideo.pause();
-          if (target <= 0 && bgVideo.currentTime > 0) bgVideo.currentTime = 0;
-        } else if (playing) {
-          const speed = useGameStore.getState().playbackSpeed;
-          const drift = bgVideo.currentTime - target;
-          if (Math.abs(drift) > 0.3) {
-            bgVideo.currentTime = target;
-            bgVideo.playbackRate = speed;
-          } else {
-            bgVideo.playbackRate =
-              drift < -0.02 ? speed + 0.1 : drift > 0.02 ? Math.max(0.1, speed - 0.1) : speed;
-          }
-          if (bgVideo.paused) void bgVideo.play().catch(() => {});
+    // 背景视频：必须在 renderFrame 之前注入帧源（renderFrame 内部 clear 时绘制背景）
+    const bgVideo = bgVideoRef.current;
+    const enabled = !!bgVideo && useGameSettingsStore.getState().showVideo;
+    if (enabled && bgVideo) {
+      const leadInMs = (60000 * 4) / chart.bpm;
+      const musicOffset = useGameSettingsStore.getState().musicOffset;
+      const target = (currentMs - leadInMs - musicOffset) / 1000;
+      const duration = bgVideo.duration;
+      const totalBeats = timeline.totalMeasures * timeline.beatsPerMeasure;
+      const stoppedAtEnd = !playing && currentBeats >= totalBeats;
+      const inWindow =
+        target > 0 && !stoppedAtEnd && (!Number.isFinite(duration) || target < duration);
+      renderer.setBackgroundVideo(inWindow ? bgVideo : null);
+      if (!inWindow) {
+        if (!bgVideo.paused) bgVideo.pause();
+        if (target <= 0 && bgVideo.currentTime > 0) bgVideo.currentTime = 0;
+      } else if (playing) {
+        const speed = useGameStore.getState().playbackSpeed;
+        const drift = bgVideo.currentTime - target;
+        if (Math.abs(drift) > 0.3) {
+          bgVideo.currentTime = target;
+          bgVideo.playbackRate = speed;
         } else {
-          if (!bgVideo.paused) bgVideo.pause();
-          if (Math.abs(bgVideo.currentTime - target) > 0.04) bgVideo.currentTime = target;
+          bgVideo.playbackRate =
+            drift < -0.02 ? speed + 0.1 : drift > 0.02 ? Math.max(0.1, speed - 0.1) : speed;
         }
+        if (bgVideo.paused) void bgVideo.play().catch(() => {});
       } else {
-        renderer.setBackgroundVideo(null);
+        if (!bgVideo.paused) bgVideo.pause();
+        if (Math.abs(bgVideo.currentTime - target) > 0.04) bgVideo.currentTime = target;
       }
+    } else {
+      renderer.setBackgroundVideo(null);
     }
 
     renderer.renderFrame(chart, currentBeats, timeline.beatsPerMeasure);
@@ -372,11 +370,11 @@ export function ChartCanvas() {
     const refresh = () => {
       if (!useGameStore.getState().isPlaying) renderFrame(playbackTimeRef.current);
     };
-    if (import.meta.env.DEV && showVideo) {
+    if (showVideo) {
       const numId = Number(getChartIdForFilename());
       if (Number.isFinite(numId)) {
         const base = videoServer.replace(/\/+$/, "");
-        video.src = `${base}/${String(numId % 10000).padStart(6, "0")}.mp4`;
+        video.src = `${base}/${numId % 10000}.mp4`;
         video.load();
         video.addEventListener("loadeddata", refresh);
         video.addEventListener("seeked", refresh);
@@ -736,23 +734,21 @@ export function ChartCanvas() {
         [classes.fullscreen]: isFullscreen,
       })}
     >
-      {import.meta.env.DEV && (
-        <video
-          ref={bgVideoRef}
-          muted
-          playsInline
-          preload="auto"
-          style={{
-            position: "absolute",
-            width: 1,
-            height: 1,
-            opacity: 0,
-            pointerEvents: "none",
-            top: 0,
-            left: 0,
-          }}
-        />
-      )}
+      <video
+        ref={bgVideoRef}
+        muted
+        playsInline
+        preload="auto"
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          opacity: 0,
+          pointerEvents: "none",
+          top: 0,
+          left: 0,
+        }}
+      />
       <canvas
         ref={canvasRef}
         className={clsx(classes.canvas, {
