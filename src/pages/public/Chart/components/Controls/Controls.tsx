@@ -1349,8 +1349,13 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               label="视频服务器"
               description="输入视频服务器地址"
               placeholder="https://maimai-video.lxns.net/"
-              value={videoServer}
-              onChange={(e) => setVideoServer(e.currentTarget.value)}
+              defaultValue={videoServer}
+              onBlur={(e) => {
+                const value = e.currentTarget.value.trim();
+                if (value !== videoServer) {
+                  setVideoServer(value);
+                }
+              }}
             />
           </Stack>
         </Collapse>
