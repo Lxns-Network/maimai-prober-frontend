@@ -151,7 +151,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isSiteConfigLoading || !config) return;
 
-    localStorage.setItem("maimai_version", (config.resource_version.maimai || 25000).toString());
+    localStorage.setItem("maimai_version", (config.resource_version.maimai || 25500).toString());
     localStorage.setItem(
       "chunithm_version",
       (config.resource_version.chunithm || 23000).toString(),

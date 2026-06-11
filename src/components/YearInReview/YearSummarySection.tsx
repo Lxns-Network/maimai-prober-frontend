@@ -50,6 +50,9 @@ const getGameChartData = (game: Game, year: number) => {
     if (year >= 2025) {
       versions.push({ id: 25000, name: "舞萌 DX 2025 谱面", color: "cyan.6" });
     }
+    if (year >= 2026) {
+      versions.push({ id: 25500, name: "舞萌 DX 2026 谱面", color: "cyan.6" });
+    }
 
     return [...versions.map((v) => ({ ...v, value: 0 })), ...baseData];
   } else {

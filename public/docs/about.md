@@ -8,10 +8,7 @@
 
 如果你在使用过程中遇到任何问题，或者有任何建议和反馈，欢迎通过以下方式联系我们：
 
-QQ 群：
-
-- 用户交流群：[https://qm.qq.com/q/9GGlKX3Qty](https://qm.qq.com/q/9GGlKX3Qty)
-- 开发者交流群（普通用户勿进）：[https://qm.qq.com/q/6mHqGzRO6I](https://qm.qq.com/q/6mHqGzRO6I)
+QQ 群：[https://qm.qq.com/q/9GGlKX3Qty](https://qm.qq.com/q/9GGlKX3Qty)
 
 GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 
