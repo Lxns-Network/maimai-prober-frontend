@@ -14,77 +14,70 @@ import {
   Text,
 } from "@mantine/core";
 import { IconReload } from "@tabler/icons-react";
-import { MaimaiDifficultyProps, MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { useMediaQuery } from "@mantine/hooks";
-import React, { useEffect, useMemo } from "react";
+import { MaimaiSongList } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongList } from "@/utils/api/song/chunithm.ts";
+import React from "react";
 import { DatePickerInput, DatesProvider } from "@mantine/dates";
 import "dayjs/locale/zh-cn";
 import useSongListStore from "@/hooks/useSongListStore.ts";
-import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
-import { useScoreFilters } from "@/hooks/useScoreFilters.ts";
+import { ScoreFilters } from "@/hooks/useScoreFilters.ts";
+import { scoreRatingRanges } from "@/hooks/useFilteredScores.ts";
 import { match, P } from "ts-pattern";
 
-const filterData = {
-  maimai: {
-    rating: [1, 15] as [number, number],
-    difficulties: [
-      {
-        value: "0",
-        label: "🟢 BASIC",
-      },
-      {
-        value: "1",
-        label: "🟡 ADVANCED",
-      },
-      {
-        value: "2",
-        label: "🔴 EXPERT",
-      },
-      {
-        value: "3",
-        label: "🟣 MASTER",
-      },
-      {
-        value: "4",
-        label: "⚪ Re:MASTER",
-      },
-      {
-        value: "5",
-        label: "💮 U·TA·GE",
-      },
-    ],
-  },
-  chunithm: {
-    rating: [1, 16] as [number, number],
-    difficulties: [
-      {
-        value: "0",
-        label: "🟢 BASIC",
-      },
-      {
-        value: "1",
-        label: "🟡 ADVANCED",
-      },
-      {
-        value: "2",
-        label: "🔴 EXPERT",
-      },
-      {
-        value: "3",
-        label: "🟣 MASTER",
-      },
-      {
-        value: "4",
-        label: "⚫ ULTIMA",
-      },
-      {
-        value: "5",
-        label: "🌈 WORLD'S END",
-      },
-    ],
-  },
+const difficultyData = {
+  maimai: [
+    {
+      value: "0",
+      label: "🟢 BASIC",
+    },
+    {
+      value: "1",
+      label: "🟡 ADVANCED",
+    },
+    {
+      value: "2",
+      label: "🔴 EXPERT",
+    },
+    {
+      value: "3",
+      label: "🟣 MASTER",
+    },
+    {
+      value: "4",
+      label: "⚪ Re:MASTER",
+    },
+    {
+      value: "5",
+      label: "💮 U·TA·GE",
+    },
+  ],
+  chunithm: [
+    {
+      value: "0",
+      label: "🟢 BASIC",
+    },
+    {
+      value: "1",
+      label: "🟡 ADVANCED",
+    },
+    {
+      value: "2",
+      label: "🔴 EXPERT",
+    },
+    {
+      value: "3",
+      label: "🟣 MASTER",
+    },
+    {
+      value: "4",
+      label: "⚫ ULTIMA",
+    },
+    {
+      value: "5",
+      label: "🌈 WORLD'S END",
+    },
+  ],
 };
 
 type RatingPreset = {
@@ -189,19 +182,15 @@ const FilterChips = ({
   );
 };
 
-export const AdvancedFilter = ({
-  scores,
-  onChange,
-}: {
-  scores: (MaimaiScoreProps | ChunithmScoreProps)[];
-  onChange: (filteredScores: (MaimaiScoreProps | ChunithmScoreProps)[]) => void;
-}) => {
+interface AdvancedFilterProps {
+  filters: ScoreFilters;
+  setFilter: <K extends keyof ScoreFilters>(key: K, value: ScoreFilters[K]) => void;
+  resetFilters: () => void;
+}
+
+export const AdvancedFilter = ({ filters, setFilter, resetFilters }: AdvancedFilterProps) => {
   const [game] = useGame();
 
-  const { filters, setFilter, resetFilters, isDefault } = useScoreFilters({
-    rating: filterData[game].rating,
-    endRating: filterData[game].rating,
-  });
   const {
     difficulty,
     type,
@@ -217,192 +206,19 @@ export const AdvancedFilter = ({
   } = filters;
 
   const getSongList = useSongListStore((state) => state.getSongList);
-  const small = useMediaQuery("(max-width: 30rem)");
   const songList = getSongList(game);
+  const ratingRange = scoreRatingRanges[game];
   const currentRatingPresets = ratingPresets[game];
   const selectedRatingPreset = findRatingPreset(currentRatingPresets, endRating);
 
-  useEffect(() => {
-    resetFilters();
-  }, [game]);
-
-  const filteredScores = useMemo(() => {
-    if (!scores) return [];
-
-    let filteredData = [...scores];
-
-    if (showUnplayed) {
-      if (songList instanceof MaimaiSongList) {
-        const scoreKeys = new Set(
-          filteredData.map(
-            (item) => `${item.id}-${(item as MaimaiScoreProps).type}-${item.level_index}`,
-          ),
-        );
-
-        songList.songs.forEach((song) => {
-          Object.entries(song.difficulties).forEach(([type, difficulties]) => {
-            if (!difficulties) return;
-            difficulties.forEach((difficulty: MaimaiDifficultyProps) => {
-              if (!scoreKeys.has(`${song.id}-${type}-${difficulty.difficulty}`))
-                filteredData.push({
-                  id: song.id,
-                  song_name: song.title,
-                  level: difficulty.level,
-                  level_index: difficulty.difficulty,
-                  achievements: -1,
-                  type,
-                } as MaimaiScoreProps);
-            });
-          });
-        });
-      } else if (songList instanceof ChunithmSongList) {
-        const scoreKeys = new Set(filteredData.map((item) => `${item.id}-${item.level_index}`));
-
-        songList.songs.forEach((song) => {
-          song.difficulties.forEach((difficulty) => {
-            if (!scoreKeys.has(`${song.id}-${difficulty.difficulty}`))
-              filteredData.push({
-                id: song.id,
-                song_name: song.title,
-                level: difficulty.level,
-                level_index: difficulty.difficulty,
-                score: -1,
-              } as ChunithmScoreProps);
-          });
-        });
-      }
-    }
-
-    // 如果没有任何筛选条件，直接返回
-    if (isDefault) {
-      return filteredData;
-    }
-
-    // 不需要 song 和 difficulty 信息，提前过滤掉可以减少后续的计算量
-    filteredData = filteredData.filter((score) => {
-      if (songList instanceof MaimaiSongList) {
-        score = score as MaimaiScoreProps;
-        if (type.length > 0 && !type.includes(score.type) && score.type !== "utage") {
-          // 过滤谱面类型
-          return false;
-        }
-        if (fullCombo.length > 0) {
-          // 过滤 Full Combo
-          const matchNoFc = fullCombo.includes("nofc") && !score.fc;
-          const matchFc = fullCombo.filter((v) => v !== "nofc").includes(score.fc);
-          if (!matchNoFc && !matchFc) return false;
-        }
-        if (fullSync.length > 0) {
-          // 过滤 Full Sync
-          const matchNoFs = fullSync.includes("nofs") && !score.fs;
-          const matchFs = fullSync.filter((v) => v !== "nofs").includes(score.fs);
-          if (!matchNoFs && !matchFs) return false;
-        }
-        if (deluxeStar.length > 0 && !deluxeStar.includes(score.dx_star)) {
-          // 过滤 DX 星级
-          return false;
-        }
-        // 宴谱的 level_index 基本都是 0，需要提前过滤
-        if (score.type === "utage" && (difficulty.includes("5") || difficulty.length === 0)) {
-          return true;
-        }
-      } else {
-        score = score as ChunithmScoreProps;
-        if (fullCombo.length > 0) {
-          // 过滤 Full Combo
-          const matchNoFc = fullCombo.includes("nofullcombo") && !score.full_combo;
-          const matchFc = fullCombo.filter((v) => v !== "nofullcombo").includes(score.full_combo);
-          if (!matchNoFc && !matchFc) return false;
-        }
-        if (fullSync.length > 0) {
-          // 过滤 Full Chain
-          const matchNoChain = fullSync.includes("nofullchain") && !score.full_chain;
-          const matchChain = fullSync.filter((v) => v !== "nofullchain").includes(score.full_chain);
-          if (!matchNoChain && !matchChain) return false;
-        }
-      }
-      return difficulty.includes(score.level_index.toString()) || difficulty.length === 0; // 过滤难度
-    });
-
-    // 过滤乐曲分类、版本和定数
-    filteredData = filteredData.filter((score) => {
-      if (!songList) return false;
-
-      let song = songList.find(score.id);
-      if (!song) return false;
-
-      let matchGenre, matchVersion, matchRating;
-
-      if (songList instanceof MaimaiSongList) {
-        song = song as MaimaiSongProps;
-        score = score as MaimaiScoreProps;
-
-        const difficulty = songList.getDifficulty(song, score.type, score.level_index);
-        if (!difficulty) return false;
-
-        matchGenre =
-          genre.some(
-            (selected) =>
-              songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre,
-          ) || genre.length === 0; // 过滤乐曲分类
-        matchVersion =
-          version.some(
-            (selected) =>
-              difficulty.version >= selected &&
-              difficulty.version <
-                (songList.versions[
-                  songList.versions.findIndex((value) => value.version === selected) + 1
-                ]?.version || selected + 1000),
-          ) || version.length === 0; // 过滤版本
-        matchRating =
-          (difficulty.level_value >= endRating[0] && difficulty.level_value <= endRating[1]) ||
-          (endRating.every((v, i) => v === filterData[game].rating[i]) && score.type === "utage"); // 过滤定数
-      } else {
-        song = song as ChunithmSongProps;
-        score = score as ChunithmScoreProps;
-
-        const difficulty = songList.getDifficulty(song, score.level_index);
-        if (!difficulty) return false;
-
-        matchGenre =
-          genre.some(
-            (selected) =>
-              songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre,
-          ) || genre.length === 0; // 过滤乐曲分类
-        matchVersion =
-          version.some(
-            (selected) =>
-              difficulty.version >= selected &&
-              difficulty.version <
-                (songList.versions[
-                  songList.versions.findIndex((value) => value.version === selected) + 1
-                ]?.version || selected + 500),
-          ) || version.length === 0; // 过滤版本
-        matchRating =
-          (difficulty.level_value >= endRating[0] && difficulty.level_value <= endRating[1]) ||
-          (endRating.every((v, i) => v === filterData[game].rating[i]) && score.level_index === 5); // 过滤定数
-      }
-
-      return matchGenre && matchVersion && matchRating;
-    });
-
-    // 过滤上传时间
-    const startTime = uploadTime[0] ? new Date(uploadTime[0]).getTime() : null;
-    const endTime = uploadTime[1] ? new Date(uploadTime[1]).getTime() : null;
-
-    filteredData = filteredData.filter((score) => {
-      const t = Date.parse(score.upload_time);
-      if (startTime && t < startTime) return false;
-      if (endTime && t >= endTime + 24 * 60 * 60 * 1000) return false;
-      return true;
-    });
-
-    return filteredData;
-  }, [filters, game, isDefault, scores, songList]);
-
-  useEffect(() => {
-    onChange(filteredScores);
-  }, [filteredScores]);
+  // 稀疏刻度：隔 2 标注一个，避免窄容器（侧栏/抽屉/移动端）下刻度重叠
+  const sliderMarks: { value: number; label: string }[] = [];
+  for (let value = ratingRange[0]; value <= ratingRange[1]; value += 2) {
+    sliderMarks.push({ value, label: String(value) });
+  }
+  if (sliderMarks[sliderMarks.length - 1].value !== ratingRange[1]) {
+    sliderMarks.push({ value: ratingRange[1], label: String(ratingRange[1]) });
+  }
 
   if (!songList) return null;
 
@@ -415,7 +231,7 @@ export const AdvancedFilter = ({
           </Text>
           <MultiSelect
             variant="filled"
-            data={(filterData[game] || {}).difficulties}
+            data={difficultyData[game]}
             placeholder="请选择难度"
             value={difficulty}
             onChange={(value) => setFilter("difficulty", value)}
@@ -494,10 +310,10 @@ export const AdvancedFilter = ({
           <Group gap="xs">
             <NumberInput
               variant="filled"
-              w={60}
+              w={75}
               size="xs"
-              min={filterData[game].rating[0]}
-              max={filterData[game].rating[1]}
+              min={ratingRange[0]}
+              max={ratingRange[1]}
               step={0.1}
               decimalScale={1}
               value={rating[0]}
@@ -513,32 +329,13 @@ export const AdvancedFilter = ({
               stepHoldInterval={100}
               fixedDecimalScale
             />
-            {small ? (
-              "~"
-            ) : (
-              <RangeSlider
-                style={{ flex: 1 }}
-                min={filterData[game].rating[0]}
-                max={filterData[game].rating[1]}
-                step={0.1}
-                minRange={0}
-                precision={1}
-                value={rating}
-                marks={Array.from({ length: filterData[game].rating[1] }, (_, index) => ({
-                  value: index + 1,
-                  label: String(index + 1),
-                }))}
-                onChange={(value) => setFilter("rating", value as [number, number])}
-                onChangeEnd={(value) => setFilter("endRating", value as [number, number])}
-                mb={24}
-              />
-            )}
+            ~
             <NumberInput
               variant="filled"
-              w={60}
+              w={75}
               size="xs"
-              min={filterData[game].rating[0]}
-              max={filterData[game].rating[1]}
+              min={ratingRange[0]}
+              max={ratingRange[1]}
               step={0.1}
               decimalScale={1}
               value={rating[1]}
@@ -557,7 +354,8 @@ export const AdvancedFilter = ({
             <Select
               variant="filled"
               size="xs"
-              w={72}
+              style={{ flex: 1 }}
+              maw={75}
               data={currentRatingPresets.map(({ value, label }) => ({ value, label }))}
               placeholder={selectedRatingPreset ? "快捷等级" : "自定义"}
               value={selectedRatingPreset}
@@ -570,6 +368,19 @@ export const AdvancedFilter = ({
               allowDeselect={false}
             />
           </Group>
+          <RangeSlider
+            mt="xs"
+            mb={24}
+            min={ratingRange[0]}
+            max={ratingRange[1]}
+            step={0.1}
+            minRange={0}
+            precision={1}
+            value={rating}
+            marks={sliderMarks}
+            onChange={(value) => setFilter("rating", value as [number, number])}
+            onChangeEnd={(value) => setFilter("endRating", value as [number, number])}
+          />
         </Grid.Col>
         {songList instanceof MaimaiSongList && (
           <>

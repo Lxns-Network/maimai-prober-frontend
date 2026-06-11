@@ -1,22 +1,37 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { useMediaQuery } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useScores } from "@/hooks/queries/useScores.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
-import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
 import {
-  Accordion,
+  IconArrowsSort,
+  IconDatabaseOff,
+  IconFilter,
+  IconPlus,
+  IconRestore,
+  IconSortAscending,
+  IconSortDescending,
+  IconX,
+} from "@tabler/icons-react";
+import {
+  ActionIcon,
+  Badge,
+  Box,
   Button,
   Card,
+  Drawer,
   Flex,
   Group,
+  Indicator,
   Loader,
+  Menu,
   Pagination,
+  ScrollArea,
   Space,
   Text,
 } from "@mantine/core";
-import classes from "@/pages/Page.module.css";
+import classes from "./ScoreListSection.module.css";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
@@ -26,6 +41,12 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
+import { useScoreFilters } from "@/hooks/useScoreFilters.ts";
+import {
+  countActiveFilters,
+  scoreRatingRanges,
+  useFilteredScores,
+} from "@/hooks/useFilteredScores.ts";
 
 const sortKeys = {
   maimai: [
@@ -34,7 +55,6 @@ const sortKeys = {
     { name: "定数", key: "level_value" },
     { name: "达成率", key: "achievements" },
     { name: "DX Rating", key: "dx_rating" },
-    // { name: '上传时间', key: 'upload_time' },
     { name: "最后游玩时间", key: "last_played_time" },
   ],
   chunithm: [
@@ -43,41 +63,57 @@ const sortKeys = {
     { name: "定数", key: "level_value" },
     { name: "成绩", key: "score" },
     { name: "Rating", key: "rating" },
-    // { name: '上传时间', key: 'upload_time' },
     { name: "最后游玩时间", key: "last_played_time" },
   ],
 };
+
+const PAGE_SIZE = 20;
+
+// 桌面端筛选面板从该断点起常驻侧栏，以下则使用抽屉
+const FILTER_PANEL_BREAKPOINT = "lg";
 
 export const ScoreListSection = () => {
   const [game] = useGame();
 
   const { player } = usePlayer(game);
   const { scores, isLoading, invalidate } = useScores(game);
-  const [filteredScores, setFilteredScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>(
-    [],
-  );
   const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
   const [songId, setSongId] = useState<number>(0);
 
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
-  const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
+  const [filterOpened, { open: openFilter, close: closeFilter }] = useDisclosure(false);
+
+  const ratingRange = scoreRatingRanges[game];
+  const { filters, setFilter, resetFilters, isDefault } = useScoreFilters({
+    rating: ratingRange,
+    endRating: ratingRange,
+  });
+  const filteredScores = useFilteredScores(scores, filters, isDefault);
+  const activeFilterCount = useMemo(
+    () => countActiveFilters(filters, ratingRange),
+    [filters, ratingRange],
+  );
 
   const { openModal: openCreateScoreModal } = useCreateScoreStore();
   const getSongList = useSongListStore((state) => state.getSongList);
   const songList = getSongList(game);
   const small = useMediaQuery("(max-width: 30rem)");
 
+  const topRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     setSongId(0);
+    setSortBy(null);
+    setReverseSortDirection(false);
+    resetFilters();
   }, [game]);
 
   useEffect(() => {
-    setFilteredScores(scores);
     setPage(1);
-  }, [scores]);
+  }, [filteredScores]);
 
   const searchedScores = useMemo(() => {
     if (!filteredScores || isLoading) return [];
@@ -142,124 +178,222 @@ export const ScoreListSection = () => {
 
   const totalPages = Math.ceil(sortedScores.length / PAGE_SIZE);
   const displayScores = sortedScores.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const currentSortKey = sortKeys[game].find((item) => item.key === sortBy);
 
-  const renderSortIndicator = (key: string) => {
+  const handleSort = (key: string) => {
     if (sortBy === key) {
-      return <>{reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}</>;
+      setReverseSortDirection(!reverseSortDirection);
+    } else {
+      setSortBy(key);
+      setReverseSortDirection(false);
     }
-    return null;
+    setPage(1);
   };
 
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleCreateScore = () => {
+    openCreateScoreModal({
+      game,
+      onClose: (values) => {
+        values && invalidate();
+      },
+    });
+  };
+
+  const renderSortDirectionIcon = (size: number) =>
+    reverseSortDirection ? <IconSortAscending size={size} /> : <IconSortDescending size={size} />;
+
+  const sortMenu = (
+    <Menu shadow="md" position="bottom-end" width={200} closeOnItemClick={false}>
+      <Menu.Target>
+        {small ? (
+          <Indicator size={8} disabled={!sortBy} withBorder>
+            <ActionIcon variant="default" size="input-sm" aria-label="排序方式">
+              <IconArrowsSort size={20} />
+            </ActionIcon>
+          </Indicator>
+        ) : (
+          <Button
+            variant="default"
+            leftSection={sortBy ? renderSortDirectionIcon(20) : <IconArrowsSort size={20} />}
+          >
+            {currentSortKey ? currentSortKey.name : "排序"}
+          </Button>
+        )}
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Label>排序方式</Menu.Label>
+        {sortKeys[game].map((item) => (
+          <Menu.Item
+            key={item.key}
+            fw={sortBy === item.key ? 500 : undefined}
+            rightSection={sortBy === item.key ? renderSortDirectionIcon(16) : null}
+            onClick={() => handleSort(item.key)}
+          >
+            {item.name}
+          </Menu.Item>
+        ))}
+        <Menu.Divider />
+        <Menu.Item
+          leftSection={<IconRestore size={16} />}
+          disabled={!sortBy}
+          onClick={() => {
+            setSortBy(null);
+            setReverseSortDirection(false);
+            setPage(1);
+          }}
+        >
+          恢复默认排序
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
+  );
+
+  const filterTrigger = small ? (
+    <Indicator
+      label={activeFilterCount}
+      size={16}
+      disabled={activeFilterCount === 0}
+      withBorder
+      hiddenFrom={FILTER_PANEL_BREAKPOINT}
+    >
+      <ActionIcon variant="default" size="input-sm" aria-label="筛选成绩" onClick={openFilter}>
+        <IconFilter size={20} />
+      </ActionIcon>
+    </Indicator>
+  ) : (
+    <Button
+      variant="default"
+      leftSection={<IconFilter size={20} />}
+      rightSection={
+        activeFilterCount > 0 ? (
+          <Badge size="sm" circle>
+            {activeFilterCount}
+          </Badge>
+        ) : null
+      }
+      onClick={openFilter}
+      hiddenFrom={FILTER_PANEL_BREAKPOINT}
+    >
+      筛选
+    </Button>
+  );
+
+  const createButton = small ? (
+    <ActionIcon
+      size="input-sm"
+      variant="filled"
+      disabled={!player}
+      aria-label="创建成绩"
+      onClick={handleCreateScore}
+    >
+      <IconPlus size={20} />
+    </ActionIcon>
+  ) : (
+    <Button leftSection={<IconPlus size={20} />} disabled={!player} onClick={handleCreateScore}>
+      创建成绩
+    </Button>
+  );
+
+  const filterPanelTitle = (
+    // 固定行高，避免角标出现/消失时标题行高度变化
+    <Group gap="xs" wrap="nowrap" h={25}>
+      <IconFilter size={20} />
+      <Text fw={700}>筛选成绩</Text>
+      {activeFilterCount > 0 && (
+        <Badge variant="light" size="sm">
+          {activeFilterCount}
+        </Badge>
+      )}
+    </Group>
+  );
+
   return (
-    <div>
-      <Card withBorder radius="md" className={classes.card} p={0}>
-        <Group justify="space-between" m="md">
-          <div>
-            <Text fz="lg" fw={700}>
-              排序方式
-            </Text>
-            <Text fz="xs" c="dimmed" mt={3}>
-              选择成绩的排序方式
-            </Text>
-          </div>
-        </Group>
-        <Flex m="md" gap="md" mt={0} wrap="wrap">
-          {sortKeys[game].map((item) => (
-            <Button
-              key={item.key}
-              onClick={() => {
-                const reversed = item.key === sortBy ? !reverseSortDirection : false;
-                setReverseSortDirection(reversed);
-                setSortBy(item.key);
-                setPage(1);
-              }}
-              size="xs"
-              variant="light"
-              radius="xl"
-              rightSection={renderSortIndicator(item.key)}
-            >
-              {item.name}
-            </Button>
-          ))}
-        </Flex>
-        <Accordion variant="filled" chevronPosition="left">
-          <Accordion.Item value="advanced-filter">
-            <Accordion.Control>高级筛选设置</Accordion.Control>
-            <Accordion.Panel>
-              <AdvancedFilter
-                scores={scores}
-                onChange={(result) => {
-                  setFilteredScores(result);
-                  setPage(1);
-                }}
-              />
-            </Accordion.Panel>
-          </Accordion.Item>
-        </Accordion>
-      </Card>
-      <Space h="md" />
-      <Flex align="center" justify="space-between" gap="xs">
+    <div ref={topRef}>
+      <Flex gap="xs" align="center" wrap="nowrap">
         <SongCombobox
           value={songId}
           onSongsChange={(filteredSongs) => {
             setFilteredSongs(filteredSongs);
             setPage(1);
           }}
-          placeholder="请输入曲名或曲目别名"
-          radius="md"
-          style={{ flex: 1 }}
+          placeholder="搜索曲名、别名或曲目 ID"
+          style={{ flex: 1, minWidth: 0 }}
         />
-        <Button
-          radius="md"
-          leftSection={<IconPlus size={20} />}
-          disabled={!player}
-          onClick={() => {
-            openCreateScoreModal({
-              game,
-              onClose: (values) => {
-                values && invalidate();
-              },
-            });
-          }}
-        >
-          创建成绩
-        </Button>
+        {sortMenu}
+        {filterTrigger}
+        {createButton}
       </Flex>
-      <Space h="md" />
-      {isLoading && totalPages === 0 ? (
-        <Group justify="center" mt="md" mb="md">
-          <Loader />
-        </Group>
-      ) : (
-        totalPages === 0 && (
-          <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
-            <IconDatabaseOff size={64} stroke={1.5} />
-            <Text fz="sm">没有获取或筛选到任何成绩</Text>
-          </Flex>
-        )
-      )}
-      <Group justify="center">
-        <Pagination
-          total={totalPages}
-          value={page}
-          onChange={setPage}
-          size={small ? "sm" : "md"}
-          disabled={isLoading}
-        />
-        <ScoreList
-          scores={displayScores}
-          onScoreChange={(score) => {
-            score && invalidate();
-          }}
-        />
-        <Pagination
-          total={totalPages}
-          value={page}
-          onChange={setPage}
-          size={small ? "sm" : "md"}
-          disabled={isLoading}
-        />
+      <Group justify="space-between" mt="sm" mb="sm" wrap="nowrap" h={22}>
+        <Text fz="sm" c="dimmed">
+          {sortedScores.length > 0 && `共 ${sortedScores.length} 条成绩`}
+        </Text>
+        {activeFilterCount > 0 && (
+          <Button
+            variant="subtle"
+            color="gray"
+            size="compact-xs"
+            leftSection={<IconX size={14} />}
+            onClick={() => resetFilters()}
+          >
+            清除筛选
+          </Button>
+        )}
       </Group>
+      <Flex gap="md" align="flex-start">
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          {isLoading && totalPages === 0 && (
+            <Group justify="center" mt="md" mb="md">
+              <Loader />
+            </Group>
+          )}
+          {!isLoading && totalPages === 0 && (
+            <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
+              <IconDatabaseOff size={64} stroke={1.5} />
+              <Text fz="sm">没有获取或筛选到任何成绩</Text>
+              {activeFilterCount > 0 && (
+                <Button mt="xs" variant="light" size="xs" onClick={() => resetFilters()}>
+                  重置筛选条件
+                </Button>
+              )}
+            </Flex>
+          )}
+          <ScoreList
+            scores={displayScores}
+            cols={{ base: 1, "400px": 2 }}
+            onScoreChange={(score) => {
+              score && invalidate();
+            }}
+          />
+          {totalPages > 1 && (
+            <Group justify="center" mt="md">
+              <Pagination
+                total={totalPages}
+                value={page}
+                onChange={handlePageChange}
+                size={small ? "sm" : "md"}
+                disabled={isLoading}
+              />
+            </Group>
+          )}
+        </Box>
+        <Card
+          withBorder
+          radius="md"
+          w={360}
+          visibleFrom={FILTER_PANEL_BREAKPOINT}
+          style={{ flexShrink: 0 }}
+        >
+          <Group justify="space-between" mb="md">
+            {filterPanelTitle}
+          </Group>
+          <AdvancedFilter filters={filters} setFilter={setFilter} resetFilters={resetFilters} />
+        </Card>
+      </Flex>
       <Space h="md" />
       {game === "maimai" && (
         <MaimaiStatisticsSection scores={searchedScores as MaimaiScoreProps[]} />
@@ -267,6 +401,21 @@ export const ScoreListSection = () => {
       {game === "chunithm" && (
         <ChunithmStatisticsSection scores={searchedScores as ChunithmScoreProps[]} />
       )}
+      <Drawer
+        opened={filterOpened}
+        onClose={closeFilter}
+        position={small ? "bottom" : "right"}
+        size={small ? "85%" : "md"}
+        classNames={small ? { content: classes.bottomSheetContent } : undefined}
+        scrollAreaComponent={ScrollArea.Autosize}
+        title={filterPanelTitle}
+      >
+        <AdvancedFilter filters={filters} setFilter={setFilter} resetFilters={resetFilters} />
+        <Space h="md" />
+        <Button fullWidth onClick={closeFilter}>
+          查看 {sortedScores.length} 条结果
+        </Button>
+      </Drawer>
     </div>
   );
 };

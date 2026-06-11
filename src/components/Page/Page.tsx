@@ -10,6 +10,7 @@ export interface PageProps {
     title: string;
     description: string;
   };
+  maxWidth?: number;
   tabs?: {
     id: string;
     name: string;
@@ -23,7 +24,9 @@ export const Page = (props: PageProps) => {
     <div
       style={
         {
-          "--page-max-width": `calc(${NAVBAR_BREAKPOINT}px - var(--navbar-width))`,
+          "--page-max-width": props.maxWidth
+            ? `${props.maxWidth}px`
+            : `calc(${NAVBAR_BREAKPOINT}px - var(--navbar-width))`,
         } as React.CSSProperties
       }
     >

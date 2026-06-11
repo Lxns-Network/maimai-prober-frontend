@@ -1,6 +1,6 @@
 import { useMemo, useReducer } from "react";
 
-type Filters = {
+export type ScoreFilters = {
   difficulty: string[];
   type: string[];
   rating: [number, number];
@@ -14,7 +14,7 @@ type Filters = {
   uploadTime: [string | null, string | null];
 };
 
-const defaultFilters: Filters = {
+const defaultFilters: ScoreFilters = {
   difficulty: [],
   type: [],
   rating: [0, 0],
@@ -29,10 +29,10 @@ const defaultFilters: Filters = {
 };
 
 type Action =
-  | { type: keyof Filters; payload: Filters[keyof Filters] }
-  | { type: "reset"; payload: Filters };
+  | { type: keyof ScoreFilters; payload: ScoreFilters[keyof ScoreFilters] }
+  | { type: "reset"; payload: ScoreFilters };
 
-const reducer = (state: Filters, action: Action): Filters => {
+const reducer = (state: ScoreFilters, action: Action): ScoreFilters => {
   switch (action.type) {
     case "reset":
       return { ...defaultFilters, ...action.payload };
@@ -41,12 +41,12 @@ const reducer = (state: Filters, action: Action): Filters => {
   }
 };
 
-export function useScoreFilters(initialFilters: Partial<Filters> = {}) {
+export function useScoreFilters(initialFilters: Partial<ScoreFilters> = {}) {
   const mergedInitial = { ...defaultFilters, ...initialFilters };
 
   const [filters, dispatch] = useReducer(reducer, mergedInitial);
 
-  const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
+  const setFilter = <K extends keyof ScoreFilters>(key: K, value: ScoreFilters[K]) => {
     dispatch({ type: key, payload: value });
   };
 
@@ -56,7 +56,7 @@ export function useScoreFilters(initialFilters: Partial<Filters> = {}) {
 
   const isDefault = useMemo(() => {
     for (const key in defaultFilters) {
-      const k = key as keyof Filters;
+      const k = key as keyof ScoreFilters;
       const val = filters[k];
       const defVal = mergedInitial[k];
       if (Array.isArray(val) && Array.isArray(defVal)) {

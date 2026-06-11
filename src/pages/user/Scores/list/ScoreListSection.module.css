@@ -1,0 +1,16 @@
+.bottomSheetContent {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  height: auto;
+  max-height: 85vh;
+  border-radius: var(--mantine-radius-lg) var(--mantine-radius-lg) 0 0;
+
+  @supports (max-height: 85dvh) {
+    max-height: 85dvh;
+  }
+
+  > div {
+    height: auto !important;
+    max-height: 100%;
+  }
+}

@@ -1,4 +1,11 @@
-import { BackgroundImage, Box, Card, SimpleGrid, useComputedColorScheme } from "@mantine/core";
+import {
+  BackgroundImage,
+  Box,
+  Card,
+  SimpleGrid,
+  SimpleGridProps,
+  useComputedColorScheme,
+} from "@mantine/core";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { MaimaiScoreContent } from "./maimai/Score.tsx";
 import { ChunithmScoreContent } from "./chunithm/Score.tsx";
@@ -70,9 +77,10 @@ const Score = ({ score, onClick }: ScoreProps) => {
 interface ScoreListProps {
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
   onScoreChange?: (score: MaimaiScoreProps | ChunithmScoreProps) => void;
+  cols?: SimpleGridProps["cols"];
 }
 
-export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
+export const ScoreList = ({ scores, onScoreChange, cols }: ScoreListProps) => {
   const [game] = useGame();
   const [ref] = useAutoAnimate();
 
@@ -90,7 +98,12 @@ export const ScoreList = ({ scores, onScoreChange }: ScoreListProps) => {
 
   return (
     <Box w="100%">
-      <SimpleGrid type="container" cols={{ base: 1, "400px": 2 }} spacing="xs" ref={ref}>
+      <SimpleGrid
+        type="container"
+        cols={cols ?? { base: 1, "400px": 2, "700px": 3 }}
+        spacing="xs"
+        ref={ref}
+      >
         {scores.map((score) => (
           <Score
             key={`${score.id}:${"type" in score && score.type}:${score.level_index}`}

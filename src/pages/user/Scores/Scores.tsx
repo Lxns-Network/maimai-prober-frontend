@@ -10,6 +10,7 @@ export function Scores() {
         title: "成绩管理",
         description: "管理你的 maimai DX 查分器账号的成绩",
       }}
+      maxWidth={1100}
       tabs={[
         { id: "list", name: "成绩列表", children: <ScoreListSection /> },
         { id: "bests", name: "分数构成", children: <ScoreBestsSection /> },
