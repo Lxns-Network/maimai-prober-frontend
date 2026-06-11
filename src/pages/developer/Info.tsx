@@ -17,7 +17,7 @@ import {
   Alert,
 } from "@mantine/core";
 import { Icon } from "@/components/MdiIcon";
-import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
+import { mdiEye, mdiEyeOff, mdiWebOff, mdiQqchat } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import classes from "../Page.module.css";
@@ -140,6 +140,30 @@ const DeveloperInfoContent = () => {
             </Flex>
           </Stack>
         )}
+      </Card>
+
+      <Card withBorder radius="md" className={classes.card}>
+        <Group justify="space-between" gap="md" align="center">
+          <div>
+            <Text fz="lg" fw={700}>
+              开发者交流群
+            </Text>
+            <Text fz="xs" c="dimmed" mt={3}>
+              加入开发者交流群，与其他开发者交流，获取最新的 API 更新和使用支持
+            </Text>
+          </div>
+          <Button
+            size="sm"
+            component="a"
+            href="https://qm.qq.com/q/SfEFsTAAYm"
+            target="_blank"
+            rel="noreferrer"
+            leftSection={<Icon path={mdiQqchat} size={0.8} />}
+            style={{ flexShrink: 0 }}
+          >
+            加入 QQ 群
+          </Button>
+        </Group>
       </Card>
 
       <Card withBorder radius="md" className={classes.card}>
