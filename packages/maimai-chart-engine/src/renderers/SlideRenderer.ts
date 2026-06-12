@@ -775,7 +775,7 @@ export class SlideRenderer extends BaseRenderer {
     const slideStart = note.timingMs + delayMs;
 
     let starPos: Point2D;
-    let starScale = 1;
+    let starAlpha = 1;
     let rotation = 0;
     const isSliding = currentTimeMs >= slideStart;
 
@@ -784,14 +784,14 @@ export class SlideRenderer extends BaseRenderer {
 
       starPos = this.noteRenderer.getPositionOnRing(segments[0].startPos);
       const elapsed = currentTimeMs - note.timingMs;
-      starScale = Math.min(1, elapsed / delayMs);
+      starAlpha = Math.min(1, elapsed / delayMs);
 
       if (this.context.config.slideRotation) {
-        rotation = this.calculateStarRotation(note, currentTimeMs);
+        rotation = this.calculateStarRotation(note, note.timingMs);
       }
     } else {
       starPos = this.getPointAlongPath(progress, segments);
-      starScale = 1;
+      starAlpha = 1;
 
       if (this.context.config.slideRotation) {
         rotation = this.getPathTangentAngle(progress, segments) + Math.PI / 2;
@@ -801,8 +801,8 @@ export class SlideRenderer extends BaseRenderer {
     if (!starPos) return;
 
     this.withContext(() => {
-      this.context.ctx.globalAlpha = 1;
-      const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
+      this.context.ctx.globalAlpha = starAlpha;
+      const size = this.context.radius * SLIDE_STAR_SIZE_RATIO;
 
       let color: string;
       const isBreak =
@@ -850,14 +850,14 @@ export class SlideRenderer extends BaseRenderer {
         const rotation = this.context.config.slideRotation ? direction + Math.PI / 2 : 0;
 
         let starPos: Point2D;
-        let starScale = 1;
+        let starAlpha = 1;
 
         if (currentTimeMs < slideStart) {
           if (note.headlessMode === "pop") continue;
 
           starPos = start;
           const elapsed = currentTimeMs - note.timingMs;
-          starScale = Math.min(1, elapsed / delayMs);
+          starAlpha = Math.min(1, elapsed / delayMs);
         } else {
           starPos = {
             x: start.x + (end.x - start.x) * progress,
@@ -866,7 +866,8 @@ export class SlideRenderer extends BaseRenderer {
         }
 
         if (starPos) {
-          const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
+          this.context.ctx.globalAlpha = starAlpha;
+          const size = this.context.radius * SLIDE_STAR_SIZE_RATIO;
           const isBreak =
             note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
 
