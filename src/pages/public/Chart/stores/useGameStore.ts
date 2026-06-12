@@ -453,12 +453,4 @@ export const useGameStore = create<GameStore>()(
   })),
 );
 
-export const selectIsPlaying = (state: GameStore) => state.isPlaying;
-export const selectCurrentMeasure = (state: GameStore) => state.timeline.currentMeasure;
-export const selectTotalMeasures = (state: GameStore) => state.timeline.totalMeasures;
-export const selectChartData = (state: GameStore) => state.chartData;
-export const selectPlaybackSpeed = (state: GameStore) => state.playbackSpeed;
-export const selectTimeline = (state: GameStore) => state.timeline;
-export const selectMusicUrl = (state: GameStore) => state.musicUrl;
-
 export default useGameStore;
