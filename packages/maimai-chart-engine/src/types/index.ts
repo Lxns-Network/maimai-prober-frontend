@@ -1,20 +1,4 @@
 /**
- * 所有可能的 Note 类型
- */
-export type NoteType =
-  | "tap"
-  | "break"
-  | "simultaneous"
-  | "hold-start"
-  | "hold-start-simultaneous"
-  | "hold-end"
-  | "hold-end-simultaneous"
-  | "slide"
-  | "touch"
-  | "touch-hold-start"
-  | "touch-hold-end";
-
-/**
  * 滑条类型
  * - `-`: 直线
  * - `>`: 顺时针弧线（从左侧开始）
@@ -112,14 +96,6 @@ export type MirrorMode = "none" | "horizontal" | "vertical" | "rotate180";
  * - sensor: 判定点 + 判定线 + 判定区
  */
 export type JudgmentLineDesign = "blind" | "noLine" | "simple" | "sensor";
-
-/**
- * DDR 风格颜色模式选项
- * - off: 关闭
- * - on: 开启
- * - extended: 扩展
- */
-export type DdrColorMode = "off" | "on" | "extended";
 
 export type ChartDifficulty = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -405,26 +381,6 @@ export interface ChartMetadata {
   inotes: Record<number, string>;
 }
 
-export interface RestartPosition {
-  /** 小节 */
-  measure: number;
-  /** 位置 */
-  position: number;
-}
-
-export interface TimelineState {
-  /** 总小节数 */
-  totalMeasures: number;
-  /** 每小节拍数 */
-  beatsPerMeasure: number;
-  /** 当前小节 */
-  currentMeasure: number;
-  /** 当前位置 */
-  currentPosition: number;
-  /** 精确时间（拍） */
-  preciseTime: number;
-}
-
 export interface NoteRenderPosition {
   x: number;
   y: number;
@@ -513,41 +469,6 @@ export function isTouchHoldStartNote(note: Note): note is TouchHoldStartNote {
   return note.type === "touch-hold-start";
 }
 
-export function isTouchHoldEndNote(note: Note): note is TouchHoldEndNote {
-  return note.type === "touch-hold-end";
-}
-
-export function isHoldNote(note: Note): note is HoldStartNote | HoldEndNote {
-  return isHoldStartNote(note) || isHoldEndNote(note);
-}
-
-export function isTouchHoldNote(note: Note): note is TouchHoldStartNote | TouchHoldEndNote {
-  return isTouchHoldStartNote(note) || isTouchHoldEndNote(note);
-}
-
 export function isButtonNote(note: Note): boolean {
   return typeof note.position === "number" && note.position >= 1 && note.position <= 8;
-}
-
-export function countDisplayNotes(notes: Note[]): number {
-  let totalNotes = 0;
-
-  for (const note of notes) {
-    if (
-      isTapNote(note) ||
-      isHoldEndNote(note) ||
-      isSlideNote(note) ||
-      isTouchNote(note) ||
-      note.type === "touch-hold-end"
-    ) {
-      totalNotes++;
-    }
-
-    if (isSlideNote(note)) {
-      const pathCount = note.allSlideSegments?.length ?? 1;
-      totalNotes += pathCount;
-    }
-  }
-
-  return totalNotes;
 }

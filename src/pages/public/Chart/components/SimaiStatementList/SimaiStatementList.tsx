@@ -17,129 +17,104 @@ import classes from "./SimaiStatementList.module.css";
 // 跟 ChartParser 给 chart.notes 加的 1 小节 lead-in 偏移保持一致，让 statement
 // beat 与 playbackTimeRef 处于同一坐标系。
 const LEAD_IN_BEATS = 4;
-const BEATS_PER_MEASURE = 4;
 
 interface SimaiChunk {
   text: string;
   beat: number;
 }
-interface SimaiMeasure {
-  measure: number;
+interface SimaiStatement {
   beat: number;
   chunks: SimaiChunk[];
 }
 
-function extractDifficultyBody(simaiText: string, difficulty: ChartDifficulty | null): string {
-  if (!simaiText) return "";
+function parseSimaiStatements(
+  simaiText: string,
+  difficulty: ChartDifficulty | null,
+): SimaiStatement[] {
+  if (!simaiText) return [];
   const lines = simaiText.split("\n");
-  if (!difficulty) return lines.filter((line) => !line.trim().startsWith("&")).join("\n");
-
-  const inoteHeader = `&inote_${difficulty}=`;
-  const body: string[] = [];
+  const inoteHeader = difficulty ? `&inote_${difficulty}=` : null;
+  const out: SimaiStatement[] = [];
+  let beat = LEAD_IN_BEATS;
+  let divisor = 4;
   let inInote = false;
+
+  const processLine = (content: string) => {
+    if (!content.trim()) return;
+    const chunks: SimaiChunk[] = [];
+    const lineStartBeat = beat;
+    let buf = "";
+    let bufBeat = beat;
+
+    const flush = () => {
+      const text = buf.trim();
+      if (text) chunks.push({ text, beat: bufBeat });
+      buf = "";
+      bufBeat = beat;
+    };
+
+    let i = 0;
+    while (i < content.length) {
+      const c = content[i];
+      if (c === ",") {
+        flush();
+        beat += 4 / divisor;
+        bufBeat = beat;
+        i++;
+      } else if (c === "(") {
+        const m = content.substring(i).match(/^\((\d+(?:\.\d+)?)\)(\{(\d+(?:\.\d+)?)\})?/);
+        if (m) {
+          if (m[3]) divisor = parseFloat(m[3]);
+          buf += m[0];
+          i += m[0].length;
+        } else {
+          buf += c;
+          i++;
+        }
+      } else if (c === "{") {
+        const m = content.substring(i).match(/^\{(\d+(?:\.\d+)?)\}/);
+        if (m) {
+          divisor = parseFloat(m[1]);
+          buf += m[0];
+          i += m[0].length;
+        } else {
+          buf += c;
+          i++;
+        }
+      } else {
+        buf += c;
+        i++;
+      }
+    }
+    flush();
+    if (chunks.length > 0) out.push({ beat: lineStartBeat, chunks });
+  };
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.toLowerCase().startsWith(inoteHeader.toLowerCase())) {
+    if (inoteHeader && trimmed.toLowerCase().startsWith(inoteHeader.toLowerCase())) {
       inInote = true;
-      body.push(line.substring(line.indexOf("=") + 1));
+      processLine(line.substring(line.indexOf("=") + 1));
     } else if (trimmed.startsWith("&")) {
       inInote = false;
-    } else if (inInote) {
-      body.push(line);
+    } else if (inInote || !difficulty) {
+      processLine(line);
     }
   }
 
-  return body.length > 0
-    ? body.join("\n")
-    : lines.filter((line) => !line.trim().startsWith("&")).join("\n");
-}
-
-function parseSimaiChunks(simaiText: string, difficulty: ChartDifficulty | null): SimaiChunk[] {
-  const content = extractDifficultyBody(simaiText, difficulty);
-  if (!content.trim()) return [];
-
-  const chunks: SimaiChunk[] = [];
-  let beat = LEAD_IN_BEATS;
-  let divisor = 4;
-
-  let buf = "";
-  let bufBeat = beat;
-
-  const flush = () => {
-    const text = buf.trim();
-    if (text) chunks.push({ text, beat: bufBeat });
-    buf = "";
-    bufBeat = beat;
-  };
-
-  let i = 0;
-  while (i < content.length) {
-    const c = content[i];
-    if (c === ",") {
-      flush();
-      beat += BEATS_PER_MEASURE / divisor;
-      bufBeat = beat;
-      i++;
-    } else if (c === "\n" || c === "\r") {
-      flush();
-      i += c === "\r" && content[i + 1] === "\n" ? 2 : 1;
-    } else if (c === "(") {
-      const m = content.substring(i).match(/^\((\d+(?:\.\d+)?)\)(\{(\d+(?:\.\d+)?)\})?/);
-      if (m) {
-        if (m[3]) divisor = parseFloat(m[3]);
-        buf += m[0];
-        i += m[0].length;
-      } else {
-        buf += c;
-        i++;
-      }
-    } else if (c === "{") {
-      const m = content.substring(i).match(/^\{(\d+(?:\.\d+)?)\}/);
-      if (m) {
-        divisor = parseFloat(m[1]);
-        buf += m[0];
-        i += m[0].length;
-      } else {
-        buf += c;
-        i++;
-      }
-    } else {
-      buf += c;
-      i++;
+  if (out.length === 0 && simaiText.trim()) {
+    beat = LEAD_IN_BEATS;
+    divisor = 4;
+    for (const line of lines) {
+      if (!line.trim().startsWith("&")) processLine(line);
     }
   }
-  flush();
 
-  return chunks;
-}
-
-function getMeasureIndex(beat: number): number {
-  return Math.floor(Math.max(0, beat - LEAD_IN_BEATS) / BEATS_PER_MEASURE);
-}
-
-function groupChunksByMeasure(chunks: SimaiChunk[]): SimaiMeasure[] {
-  const measures: SimaiMeasure[] = [];
-
-  for (const chunk of chunks) {
-    const measure = getMeasureIndex(chunk.beat);
-    let group = measures[measures.length - 1];
-    if (!group || group.measure !== measure) {
-      group = {
-        measure,
-        beat: LEAD_IN_BEATS + measure * BEATS_PER_MEASURE,
-        chunks: [],
-      };
-      measures.push(group);
-    }
-    group.chunks.push(chunk);
-  }
-
-  return measures;
+  return out;
 }
 
 interface StatementRowProps {
-  statement: SimaiMeasure;
+  statement: SimaiStatement;
   index: number;
   isActive: boolean;
   activeChunkIdx: number;
@@ -169,9 +144,7 @@ const StatementRow = memo(function StatementRow({
       className={rowClass}
       onClick={() => seekTo(statement.beat)}
     >
-      <span className={classes.beat} title={`beat ${statement.beat.toFixed(2)}`}>
-        #{statement.measure}
-      </span>
+      <span className={classes.beat}>{statement.beat.toFixed(2)}</span>
       <span className={classes.chunks}>
         {statement.chunks.map((c, ci) => {
           const isActiveChunk = isActive && ci === activeChunkIdx;
@@ -200,8 +173,10 @@ export function SimaiStatementList({
   simaiText: string;
   difficulty: ChartDifficulty | null;
 }) {
-  const chunks = useMemo(() => parseSimaiChunks(simaiText, difficulty), [simaiText, difficulty]);
-  const statements = useMemo(() => groupChunksByMeasure(chunks), [chunks]);
+  const statements = useMemo(
+    () => parseSimaiStatements(simaiText, difficulty),
+    [simaiText, difficulty],
+  );
   const chunkLocations = useMemo(
     () =>
       statements.flatMap((statement, line) =>

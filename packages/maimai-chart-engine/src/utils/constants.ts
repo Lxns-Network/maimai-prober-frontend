@@ -1,26 +1,14 @@
 /** Note 接近判定线基础时间（毫秒） */
 export const BASE_APPROACH_TIME_MS = 2250;
 
-/** 标准拍子（4/4 拍子） */
-export const BEATS_PER_MEASURE = 4;
-
-/** 小节内位置分辨率（0-511） */
-export const POSITION_TICKS_PER_MEASURE = 512;
-
 /** 正解音基础偏移（毫秒） */
 export const ANSWER_SOUND_BASE_OFFSET_MS = -50;
-
-/** Note 声音播放窗口（毫秒） */
-export const NOTE_PLAY_WINDOW_MS = 20;
 
 /** 默认 Note 超过判定线后不可见时间（毫秒） */
 export const NOTE_VISIBILITY_AFTER_MS = 0;
 
 /** 打击效果持续时间（毫秒） */
 export const NOTE_HIT_EFFECT_DURATION_MS = 450;
-
-/** 圆圈周围按钮数量 */
-export const BUTTON_COUNT = 8;
 
 /** 相邻按钮之间的角度（弧度） */
 export const BUTTON_ANGLE_STEP = Math.PI / 4;
@@ -88,9 +76,6 @@ export const TOUCH_PETAL_OPEN_RATIO = 1 / 6.25;
 /** 触摸 Note 关闭时花瓣距离 */
 export const TOUCH_PETAL_CLOSED_RATIO = 1 / 12.5;
 
-/** 触摸 Hold 进度条宽度比例 */
-export const TOUCH_HOLD_PROGRESS_WIDTH_RATIO = 1 / 31.25;
-
 /** 触摸传感器半径（占 panel radius 的比例）。 */
 export const TOUCH_SENSOR_RADII: Record<string, number> = {
   A: 0.854,
@@ -100,26 +85,11 @@ export const TOUCH_SENSOR_RADII: Record<string, number> = {
   E: 0.625,
 };
 
-/** 最慢流速 */
-export const HI_SPEED_MIN = 3;
-
-/** 最快流速 */
-export const HI_SPEED_MAX = 9;
-
 /** 默认流速 */
 export const HI_SPEED_DEFAULT = 6;
 
 /** 流速转换因子 */
 export const HI_SPEED_CONVERSION_FACTOR = (2 / 3) * 0.9;
-
-/** 最小播放速度 */
-export const PLAYBACK_SPEED_MIN = 0.1;
-
-/** 最大播放速度 */
-export const PLAYBACK_SPEED_MAX = 1.0;
-
-/** 默认播放速度 */
-export const PLAYBACK_SPEED_DEFAULT = 1.0;
 
 /** 音符亮色混合比例（lighten） */
 export const NOTE_LIGHTEN_RATIO = 0.18;
@@ -173,21 +143,5 @@ export const COLORS = {
   DDR_CYAN: "#00DDFF", // 1/6（扩展）
 } as const;
 
-/** 淡入效果持续时间（毫秒） */
-export const FADE_IN_DURATION_MS = 150;
-
 /** 彩虹 BPM 动画速度（每秒角度数） */
 export const RAINBOW_SPEED_DEG_PER_SEC = 60;
-
-/** 渲染顺序 */
-export const RENDER_ORDER = {
-  JUDGMENT_LINE: 0,
-  SLIDE_TRACKS: 1,
-  SLIDE_TRACKS_STARS: 2,
-  CONNECTORS: 3,
-  HOLD_NOTES: 4,
-  TOUCH_NOTES: 5,
-  SLIDE_STARTS: 6,
-  TAP_NOTES: 7,
-  UI_OVERLAY: 8,
-} as const;
