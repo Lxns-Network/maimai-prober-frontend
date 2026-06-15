@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
@@ -26,9 +26,11 @@ import {
   Indicator,
   Loader,
   Menu,
+  NumberFormatter,
   Pagination,
   ScrollArea,
   Space,
+  Stack,
   Text,
 } from "@mantine/core";
 import classes from "./ScoreListSection.module.css";
@@ -204,6 +206,43 @@ export const ScoreListSection = () => {
     });
   };
 
+  // 底部抽屉下滑关闭手势
+  const sheetDrag = useRef<{ startY: number; content: HTMLElement } | null>(null);
+
+  const handleSheetPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const content = event.currentTarget.closest(".mantine-Drawer-content") as HTMLElement | null;
+    if (!content) return;
+    sheetDrag.current = { startY: event.clientY, content };
+    content.style.transition = "none";
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleSheetPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = sheetDrag.current;
+    if (!drag) return;
+    const offsetY = Math.max(0, event.clientY - drag.startY);
+    drag.content.style.transform = `translateY(${offsetY}px)`;
+  };
+
+  const handleSheetPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = sheetDrag.current;
+    if (!drag) return;
+    sheetDrag.current = null;
+    const offsetY = Math.max(0, event.clientY - drag.startY);
+    drag.content.style.transition = "transform 200ms ease";
+    if (event.type !== "pointercancel" && offsetY > 72) {
+      drag.content.style.transform = "translateY(100%)";
+      const overlay = document.querySelector<HTMLElement>(".mantine-Drawer-overlay");
+      if (overlay) {
+        overlay.style.transition = "opacity 200ms ease";
+        overlay.style.opacity = "0";
+      }
+      window.setTimeout(closeFilter, 200);
+    } else {
+      drag.content.style.transform = "";
+    }
+  };
+
   const renderSortDirectionIcon = (size: number) =>
     reverseSortDirection ? <IconSortAscending size={size} /> : <IconSortDescending size={size} />;
 
@@ -314,7 +353,7 @@ export const ScoreListSection = () => {
 
   return (
     <div ref={topRef}>
-      <Flex gap="xs" align="center" wrap="nowrap">
+      <Flex gap="xs" align="center" wrap="nowrap" mb="sm">
         <SongCombobox
           value={songId}
           onSongsChange={(filteredSongs) => {
@@ -328,22 +367,24 @@ export const ScoreListSection = () => {
         {filterTrigger}
         {createButton}
       </Flex>
-      <Group justify="space-between" mt="sm" mb="sm" wrap="nowrap" h={22}>
-        <Text fz="sm" c="dimmed">
-          {sortedScores.length > 0 && `共 ${sortedScores.length} 条成绩`}
-        </Text>
-        {activeFilterCount > 0 && (
-          <Button
-            variant="subtle"
-            color="gray"
-            size="compact-xs"
-            leftSection={<IconX size={14} />}
-            onClick={() => resetFilters()}
-          >
-            清除筛选
-          </Button>
-        )}
-      </Group>
+      {sortedScores.length > 0 && (
+        <Group justify="space-between" wrap="nowrap" mb="sm">
+          <Text fz="sm" c="dimmed">
+            共 <NumberFormatter value={sortedScores.length} thousandSeparator /> 条成绩
+          </Text>
+          {activeFilterCount > 0 && (
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              leftSection={<IconX size={14} />}
+              onClick={() => resetFilters()}
+            >
+              清除筛选
+            </Button>
+          )}
+        </Group>
+      )}
       <Flex gap="md" align="flex-start">
         <Box style={{ flex: 1, minWidth: 0 }}>
           {isLoading && totalPages === 0 && (
@@ -406,15 +447,36 @@ export const ScoreListSection = () => {
         onClose={closeFilter}
         position={small ? "bottom" : "right"}
         size={small ? "85%" : "md"}
-        classNames={small ? { content: classes.bottomSheetContent } : undefined}
+        withCloseButton={!small}
+        classNames={
+          small
+            ? {
+                content: classes.bottomSheetContent,
+                title: classes.bottomSheetTitle,
+                body: classes.bottomSheetBody,
+              }
+            : undefined
+        }
         scrollAreaComponent={ScrollArea.Autosize}
-        title={filterPanelTitle}
+        title={
+          small ? (
+            <Stack
+              gap={8}
+              style={{ touchAction: "none" }}
+              onPointerDown={handleSheetPointerDown}
+              onPointerMove={handleSheetPointerMove}
+              onPointerUp={handleSheetPointerEnd}
+              onPointerCancel={handleSheetPointerEnd}
+            >
+              <div className={classes.dragHandle} />
+              {filterPanelTitle}
+            </Stack>
+          ) : (
+            filterPanelTitle
+          )
+        }
       >
         <AdvancedFilter filters={filters} setFilter={setFilter} resetFilters={resetFilters} />
-        <Space h="md" />
-        <Button fullWidth onClick={closeFilter}>
-          查看 {sortedScores.length} 条结果
-        </Button>
       </Drawer>
     </div>
   );
