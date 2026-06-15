@@ -873,7 +873,7 @@ export class MainRenderer {
     const color = this.getStarHeadColor(slide.timing, slide.isStartBreak ?? false, isSimultaneous);
 
     const rotation = this.config.slideRotation
-      ? this.slideRenderer["calculateStarRotation"](slide, currentTimeMs)
+      ? this.slideRenderer.calculateStarRotation(slide, currentTimeMs)
       : 0;
 
     if (slide.isSplitSlide) {
