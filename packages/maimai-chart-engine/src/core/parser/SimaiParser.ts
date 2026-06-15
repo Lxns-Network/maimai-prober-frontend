@@ -29,14 +29,45 @@ interface ParseNotesResult {
   divisorEvents: DivisorEvent[];
 }
 
-const INOTE_PATTERNS = Array.from({ length: 6 }, (_, i) => new RegExp(`&inote_${i + 1}=`, "i"));
+const INOTE_MARKERS = [
+  "&inote_1=",
+  "&inote_2=",
+  "&inote_3=",
+  "&inote_4=",
+  "&inote_5=",
+  "&inote_6=",
+];
+
+function hasChartDigit(text: string): boolean {
+  for (const char of text) {
+    if (char >= "1" && char <= "8") return true;
+  }
+  return false;
+}
+
+function splitLines(text: string): string[] {
+  return text.split("\n").map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line));
+}
+
+function isWhitespace(char: string): boolean {
+  return char === " " || char === "\t" || char === "\r" || char === "\n";
+}
+
+function isMultiDigitNote(noteStr: string): boolean {
+  if (noteStr.length < 2) return false;
+  for (const char of noteStr) {
+    if (char < "0" || char > "9") return false;
+  }
+  return true;
+}
 
 export function getAvailableDifficulties(simaiText: string): AvailableDifficulties {
   const available: AvailableDifficulties = {};
+  const lowerSimaiText = simaiText.toLowerCase();
 
   // 检查 &inote_X
-  for (let i = 0; i < INOTE_PATTERNS.length; i++) {
-    if (INOTE_PATTERNS[i].test(simaiText)) {
+  for (let i = 0; i < INOTE_MARKERS.length; i++) {
+    if (lowerSimaiText.includes(INOTE_MARKERS[i])) {
       available[(i + 1) as ChartDifficulty] = true;
     }
   }
@@ -44,7 +75,11 @@ export function getAvailableDifficulties(simaiText: string): AvailableDifficulti
   // 如果没有找到 inote 段，假设它是单难度谱面
   if (Object.keys(available).length === 0) {
     // 检查是否有谱面内容（不只是元数据）
-    const hasChartContent = /[1-8]/.test(simaiText.replace(/&[^=]+=.*$/gm, ""));
+    const hasChartContent = hasChartDigit(
+      splitLines(simaiText)
+        .filter((line) => !line.trimStart().startsWith("&"))
+        .join(""),
+    );
     if (hasChartContent) {
       available[4] = true; // 默认 MASTER
     }
@@ -58,18 +93,15 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
     throw new Error("Invalid input: expected a non-empty string");
   }
 
-  if (!/[0-9,(){}/\n&\-><^vpqszVwhb[\]:.=\s]/.test(simaiText)) {
-    throw new Error("Invalid simai format: expected digits, commas, brackets, and note markers");
-  }
+  const lines = splitLines(simaiText);
 
   // Simai 格式必须包含 & 元数据标记
-  if (!/^&/m.test(simaiText)) {
+  if (!lines.some((line) => line.startsWith("&"))) {
     throw new Error("Invalid simai format: expected & metadata lines (e.g. &title=, &inote_4=)");
   }
 
-  const lines = simaiText.split("\n");
   const metadata: ChartMetadata = {
-    bpm: 120,
+    bpm: Number.NaN,
     title: "",
     artist: "",
     designer: "",
@@ -131,6 +163,10 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
     if (currentInote !== null) {
       metadata.inotes[currentInote] = currentInoteContent.join("\n");
       metadata.availableDifficulties[currentInote as ChartDifficulty] = true;
+    }
+
+    if (Number.isNaN(metadata.bpm)) {
+      throw new Error("Simai 文件缺少 bpm 元数据声明");
     }
 
     // 确定要解析的难度
@@ -329,7 +365,7 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   let pos = 0;
 
   const skipWhitespace = () => {
-    while (pos < chartBody.length && /[\s\r\n]/.test(chartBody[pos])) {
+    while (pos < chartBody.length && isWhitespace(chartBody[pos])) {
       pos++;
     }
   };
@@ -387,7 +423,7 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
       // 如果遇到节拍变化标记，停止
       if (char === "(" || char === "{") break;
       // 跳过空白字符（空格、换行、制表符、回车符）
-      if (/[\s\r\n]/.test(char)) {
+      if (isWhitespace(char)) {
         pos++;
         continue;
       }
@@ -510,8 +546,9 @@ function parseNoteString(
   if (holdMatch) {
     const position = parseInt(holdMatch[1]) as ButtonPosition;
     const holdDuration = parseHoldDuration(holdMatch[2], holdMatch[3], holdMatch[4], bpm);
-    const isBreakHold = /b/i.test(noteStr);
-    const isEx = /x/i.test(noteStr);
+    const lowerNoteStr = noteStr.toLowerCase();
+    const isBreakHold = lowerNoteStr.includes("b");
+    const isEx = lowerNoteStr.includes("x");
 
     if (position >= 1 && position <= 8) {
       const durationMs = (60000 * holdDuration) / bpm;
@@ -581,7 +618,7 @@ function parseNoteString(
       .otherwise(() => null);
     const isStartBreak = startModifiers.includes("b");
     const isHeadless = headlessMarker !== null;
-    const isEx = /x/i.test(noteStr);
+    const isEx = noteStr.toLowerCase().includes("x");
 
     // 按 * 分割滑条
     const slideParts = slideNotation.split("*");
@@ -619,13 +656,13 @@ function parseNoteString(
         // 解析节拍：[a##b] 秒
         const secondsMatch = part.match(/\[([\d.]+)##([\d.]+)\]/);
         // [#X] 单 #：整条 slide 持续 X 秒（与 MajdataView 行为一致）
-        const seconfsOnlyMatch = part.match(/\[#([\d.]+)\]/);
+        const secondsOnlyMatch = part.match(/\[#([\d.]+)\]/);
         if (secondsMatch) {
           customDelay = parseFloat(secondsMatch[1]);
           customLengthSeconds = parseFloat(secondsMatch[2]);
           duration = customLengthSeconds;
-        } else if (seconfsOnlyMatch) {
-          customLengthSeconds = parseFloat(seconfsOnlyMatch[1]);
+        } else if (secondsOnlyMatch) {
+          customLengthSeconds = parseFloat(secondsOnlyMatch[1]);
           duration = customLengthSeconds;
         } else {
           // 解析节拍：[delay#a:b##length] 或 [a:b]
@@ -710,7 +747,7 @@ function parseNoteString(
   }
 
   // 尝试匹配多个同时按下：12 或 135
-  if (/^\d{2,}$/.test(noteStr)) {
+  if (isMultiDigitNote(noteStr)) {
     const digits = noteStr.split("");
     let allValid = true;
 
@@ -956,13 +993,13 @@ function parseSlideSegmentsWithTiming(
           // 检查秒数标记：a##b
           const secondsMatch = timingStr.match(/^([\d.]+)##([\d.]+)$/);
           // [#X] 单 #：整条 slide 持续 X 秒（与 MajdataView 行为一致）
-          const seconfsOnlyMatch = timingStr.match(/^#([\d.]+)$/);
+          const secondsOnlyMatch = timingStr.match(/^#([\d.]+)$/);
           if (secondsMatch) {
             // 延迟##持续时间（秒）
             segDuration = parseFloat(secondsMatch[2]);
             segDurationMs = segDuration * 1000;
-          } else if (seconfsOnlyMatch) {
-            segDurationMs = parseFloat(seconfsOnlyMatch[1]) * 1000;
+          } else if (secondsOnlyMatch) {
+            segDurationMs = parseFloat(secondsOnlyMatch[1]) * 1000;
             segDuration = (segDurationMs * defaultBpm) / 60000;
           } else {
             // 检查标准标记：[delay#]a:b[##length]

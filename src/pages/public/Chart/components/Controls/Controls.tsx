@@ -933,6 +933,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     [debugChartFileType, debugSimai, rawSimaiText, setSelectedDifficulty, setChartData],
   );
 
+  const availableDifficulties = chartData?.availableDifficulties;
+
   return (
     <Stack gap="md">
       {import.meta.env.DEV && (
@@ -1094,39 +1096,38 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
         </Stack>
       </Card>
 
-      {chartData?.availableDifficulties &&
-        Object.keys(chartData.availableDifficulties).length > 0 && (
-          <Group gap="xs" grow>
-            {([1, 2, 3, 4, 5, 6] as ChartDifficulty[]).map((diff) => {
-              const isAvailable = chartData.availableDifficulties![diff];
-              if (!isAvailable) return null;
+      {availableDifficulties && Object.keys(availableDifficulties).length > 0 && (
+        <Group gap="xs" grow>
+          {([1, 2, 3, 4, 5, 6] as ChartDifficulty[]).map((diff) => {
+            const isAvailable = availableDifficulties[diff];
+            if (!isAvailable) return null;
 
-              const isSelected = selectedDifficulty === diff;
-              const level = chartData?.level?.[`lv_${diff}` as keyof typeof chartData.level];
-              const isLightColor = !isUtage && diff === 6;
-              const color = isUtage ? UTAGE_COLOR : DIFFICULTY_COLORS[diff];
-              const textColor = getDifficultyTextColor(isSelected, isLightColor, color);
-              const name = isUtage ? "U·TA·GE" : DIFFICULTY_NAMES[diff];
-              const displayLevel =
-                level && isUtage ? (level.endsWith("?") ? level : `${level}?`) : level;
+            const isSelected = selectedDifficulty === diff;
+            const level = chartData?.level?.[`lv_${diff}` as keyof typeof chartData.level];
+            const isLightColor = !isUtage && diff === 6;
+            const color = isUtage ? UTAGE_COLOR : DIFFICULTY_COLORS[diff];
+            const textColor = getDifficultyTextColor(isSelected, isLightColor, color);
+            const name = isUtage ? "U·TA·GE" : DIFFICULTY_NAMES[diff];
+            const displayLevel =
+              level && isUtage ? (level.endsWith("?") ? level : `${level}?`) : level;
 
-              return (
-                <UnstyledButton
-                  key={diff}
-                  onClick={() => handleDifficultyChange(diff)}
-                  className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
-                  style={{
-                    backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
-                    color: textColor,
-                  }}
-                >
-                  <span className={classes.difficultyName}>{name}</span>
-                  {displayLevel && <span className={classes.difficultyLevel}>{displayLevel}</span>}
-                </UnstyledButton>
-              );
-            })}
-          </Group>
-        )}
+            return (
+              <UnstyledButton
+                key={diff}
+                onClick={() => handleDifficultyChange(diff)}
+                className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
+                style={{
+                  backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
+                  color: textColor,
+                }}
+              >
+                <span className={classes.difficultyName}>{name}</span>
+                {displayLevel && <span className={classes.difficultyLevel}>{displayLevel}</span>}
+              </UnstyledButton>
+            );
+          })}
+        </Group>
+      )}
 
       <Card className={classes.card} radius="lg" withBorder>
         <UnstyledButton onClick={() => setShowDisplaySettings(!showDisplaySettings)} w="100%">

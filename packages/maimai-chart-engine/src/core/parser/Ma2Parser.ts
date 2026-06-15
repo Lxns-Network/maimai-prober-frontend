@@ -534,7 +534,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
     }
   }
 
-  // 保证至少有一个默认 of BPM 事件
+  // 保证至少有一个默认 BPM 事件
   if (rawBpmEvents.length === 0) {
     rawBpmEvents.push({ timing: 0, bpm: initialBpm });
   }
