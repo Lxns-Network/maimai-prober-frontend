@@ -132,7 +132,6 @@ export const useAuthenticatePasskey = (
   });
 };
 
-// Admin mutations
 export const useDeleteUsers = (options?: UseMutationOptions<unknown, Error, object>) => {
   return useMutation({
     mutationFn: (data: object) => apiMutationFn(() => deleteUsers(data)),

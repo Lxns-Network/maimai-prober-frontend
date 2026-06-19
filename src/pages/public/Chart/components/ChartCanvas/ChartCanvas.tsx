@@ -363,7 +363,6 @@ export function ChartCanvas() {
     if (!isPlaying) bgVideoRef.current?.pause();
   }, [isPlaying]);
 
-  // 背景视频
   useEffect(() => {
     const video = bgVideoRef.current;
     if (!video) return;
@@ -624,7 +623,6 @@ export function ChartCanvas() {
       }
       lastRenderTimeRef.current = timestamp;
 
-      // FPS 统计
       if (lastFrameTimeRef.current > 0) {
         const delta = timestamp - lastFrameTimeRef.current;
         frameTimesRef.current.push(delta);

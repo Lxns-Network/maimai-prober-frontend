@@ -285,7 +285,6 @@ const Content = ({ markdown }: { markdown: string }) => {
                 scrollTo(decodeURIComponent(href.slice(1)));
                 return;
               }
-              // 对于其他链接，使用默认行为
             }} {...props}>
               {children}
             </a>

@@ -329,7 +329,6 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   };
 
   while (pos < chartBody.length) {
-    // 跳过空白字符
     skipWhitespace();
     if (pos >= chartBody.length) break;
     // 检查 BPM 变化并带有拍子数：(bpm){divisor}
@@ -458,7 +457,6 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
     currentBeat += beatIncrement;
     currentMs += (60000 * beatIncrement) / currentBpm;
 
-    // 跳过逗号
     if (pos < chartBody.length && chartBody[pos] === ",") {
       pos++;
     }

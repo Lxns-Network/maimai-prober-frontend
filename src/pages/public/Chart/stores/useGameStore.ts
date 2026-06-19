@@ -22,86 +22,50 @@ interface TimelineState {
 }
 
 interface GameState {
-  /** 是否正在播放 */
   isPlaying: boolean;
-  /** 播放速度 */
   playbackSpeed: number;
-  /** 时间线 */
   timeline: TimelineState;
-  /** 谱面数据 */
   chartData: Chart | null;
-  /** 原始谱面文本 */
   rawSimaiText: string;
-  /** 选定的难度 */
   selectedDifficulty: ChartDifficulty | null;
-  /** 可用的难度 */
   availableDifficulties: AvailableDifficulties;
-  /** 音乐 URL */
   musicUrl: string;
-  /** 音乐是否加载完成 */
   musicLoaded: boolean;
-  /** 音乐是否正在加载 */
   musicLoading: boolean;
-  /** 音乐加载错误 */
   musicError: string | null;
-  /** 等待音乐加载后播放 */
+  /** 等待音乐加载完成后自动开始播放 */
   pendingPlay: boolean;
-  /** 播放开始时间 */
   playbackStartTime: number;
-  /** 播放开始位置（毫秒） */
   playbackStartPositionMs: number;
-  /** 搜索索引 */
+  /** 跳转计数器：用户每次 seek（拖动/跳转）时自增，消费者比对该值以重新定位音频与动画 */
   seekVersion: number;
-  /** 是否全屏 */
   isFullscreen: boolean;
 }
 
 interface GameActions {
-  /** 播放 */
   play: () => void;
-  /** 暂停 */
   pause: () => void;
-  /** 切换播放状态 */
   togglePlayback: () => void;
-  /** 重新播放当前小节 */
   restartCurrentMeasure: () => void;
-  /** 设置小节 */
   setMeasure: (measure: number) => void;
-  /** 设置位置 */
   setPosition: (position: number) => void;
-  /** 设置精确时间 */
+  /** incrementSeekVersion 为 true 时自增 seekVersion，通知音频/动画重新定位 */
   setPreciseTime: (time: number, incrementSeekVersion?: boolean) => void;
-  /** 步进位置 */
   stepPosition: (steps: number) => void;
-  /** 步进小节 */
   stepMeasure: (measures: number) => void;
-  /** 设置谱面数据 */
   setChartData: (chart: Chart | null) => void;
-  /** 设置原始谱面文本 */
   setRawSimaiText: (text: string) => void;
-  /** 设置选定的难度 */
   setSelectedDifficulty: (difficulty: ChartDifficulty) => void;
-  /** 设置可用的难度 */
   setAvailableDifficulties: (difficulties: AvailableDifficulties) => void;
-  /** 设置播放速度 */
   setPlaybackSpeed: (speed: number) => void;
-  /** 设置音乐 URL */
   setMusicUrl: (url: string) => void;
-  /** 设置音乐状态 */
   setMusicState: (loaded: boolean, loading: boolean, error: string | null) => void;
-  /** 设置等待播放状态 */
   setPendingPlay: (pending: boolean) => void;
-  /** 获取当前时间（节拍） */
   getCurrentTimeInBeats: () => number;
-  /** 获取当前时间（毫秒） */
   getCurrentTimeInMs: () => number;
-  /** 获取总时间（毫秒） */
   getTotalDurationMs: () => number;
-  /** 重置 */
   reset: () => void;
-  /** 设置全屏模式 */
   setIsFullscreen: (isFullscreen: boolean) => void;
-  /** 切换全屏模式 */
   toggleFullscreen: () => void;
 }
 
@@ -224,7 +188,7 @@ export const useGameStore = create<GameStore>()(
 
       set({
         isPlaying: false,
-        pendingPlay: false, // 取消等待播放状态
+        pendingPlay: false,
         timeline: {
           ...state.timeline,
           currentMeasure: clampedMeasure,

@@ -19,14 +19,12 @@ async function refreshToken() {
     if (response.ok) {
       const data = await response.json();
       localStorage.setItem("token", data.data.token);
-      // 通知 TanStack Query 缓存更新
       queryClient.setQueryData(["user/refresh"], data.data);
     } else {
       // 刷新失败，清除过期 token，后续请求将由全局错误处理引导登录
       localStorage.removeItem("token");
     }
   } finally {
-    // 重置刷新 Promise，允许下次刷新
     refreshPromise = null;
   }
 }

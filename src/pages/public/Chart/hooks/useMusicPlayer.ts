@@ -192,7 +192,6 @@ export function useMusicPlayer() {
       sourceNode.connect(sourceGainNode);
       sourceGainNode.connect(state.gainNode);
 
-      // 处理播放结束
       sourceNode.onended = () => {
         if (state.sourceNode === sourceNode) {
           state.sourceNode = null;
@@ -358,7 +357,6 @@ export function useMusicPlayer() {
     }
   }, [playbackSpeed, getCurrentTime]);
 
-  // 播放控制和时间同步
   useEffect(() => {
     const state = audioStateRef.current;
     if (!state.audioBuffer || !isLoaded) return;
@@ -462,7 +460,6 @@ export function useMusicPlayer() {
         audioMasterTimeMsRef.current = null;
       };
     } else {
-      // 暂停播放
       if (state.isSourcePlaying) {
         state.startOffset = getCurrentTime();
         stopSource();

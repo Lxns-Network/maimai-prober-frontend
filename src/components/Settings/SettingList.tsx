@@ -24,7 +24,6 @@ export interface SettingProps {
   title: string;
   description: string;
   optionType: "switch" | "select" | "multi-select" | "button" | "group" | "custom";
-  // 可选参数
   placeholder?: string;
   color?: string; // 选项类型为 'button' 时需要
   defaultValue?: string | boolean | string[]; // string[] 选项类型为 'multi-select' 时需要

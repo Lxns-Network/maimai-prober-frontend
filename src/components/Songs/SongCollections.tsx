@@ -139,7 +139,6 @@ const CollectionSection = ({
 export const SongCollections = ({ collections, style }: SongCollectionsComponentProps) => {
   const [game] = useFixedGame();
 
-  // 按类型分组收藏品
   const groupedCollections = useMemo(() => {
     if (!collections || collections.length === 0) return null;
 

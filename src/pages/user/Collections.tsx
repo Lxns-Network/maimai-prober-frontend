@@ -65,7 +65,7 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         collectionType: action.payload.collectionType,
-        collectionId: null, // Reset collectionId when collectionType changes from Select
+        collectionId: null,
       };
     case "RESET_COLLECTION_ID":
       return {
@@ -161,7 +161,7 @@ const CollectionsContent = () => {
 
     // 先设置为基本信息，等待接口返回完整信息
     setCollection(collections.find((collection) => collection.id === collectionId) || null);
-    setRecords([]); // 清空记录
+    setRecords([]);
 
     if (!isLoggedOut) {
       getPlayerCollectionHandler(collectionId);

@@ -38,7 +38,6 @@ export const useDeleteUserAlias = (
   });
 };
 
-// Admin
 export const useDeleteAlias = (
   options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>,
 ) => {

@@ -127,7 +127,6 @@ export const DeveloperOAuthSection = () => {
             </Stack>
           )
         }
-        // 数据
         columns={[
           {
             accessor: "name",
@@ -185,7 +184,6 @@ export const DeveloperOAuthSection = () => {
         ]}
         records={apps}
         idAccessor="client_id"
-        // 展开
         rowExpansion={{
           content: ({ record }) => (
             <Box p="md">
@@ -206,7 +204,6 @@ export const DeveloperOAuthSection = () => {
             </Box>
           ),
         }}
-        // 其它
         fetching={isLoading}
       />
       {apps.length !== 0 && apps.length < 5 && (

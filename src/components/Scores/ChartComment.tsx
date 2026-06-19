@@ -217,7 +217,6 @@ const CommentItem = ({
       { game, commentId: comment.comment_id },
       {
         onError: (error) => {
-          // Revert on error
           onUpdate && onUpdate(prevComment);
           openRetryModal("评论点赞失败", `${error}`, () => likeCommentHandler(is_liked));
         },

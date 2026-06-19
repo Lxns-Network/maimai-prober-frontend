@@ -36,15 +36,11 @@ const AliasVoteContent = () => {
 
   const { openModal: openCreateAliasModal } = useAliasStore();
 
-  // 排序相关
   const [sortBy, setSortBy] = useState<SortKey | undefined>(undefined);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
 
-  // 筛选相关
   const [songId, setSongId] = useState<number>(0);
 
-  // 分页相关
-  // const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
   const small = useMediaQuery("(max-width: 30rem)");
 

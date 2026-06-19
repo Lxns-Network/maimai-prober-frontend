@@ -11,7 +11,7 @@ const generateRandomHeatmap = (start: Date, end: Date): Record<string, number> =
   const day = 24 * 60 * 60 * 1000;
   for (let d = start.getTime(); d <= end.getTime(); d += day) {
     const dateStr = new Date(d).toISOString().split("T")[0];
-    const random = Math.floor(Math.random() * 30); // 0 到 29 个成绩
+    const random = Math.floor(Math.random() * 30);
     data[dateStr] = Math.random() < 0.6 ? 0 : random; // 有 60% 的天是空的
   }
   return data;

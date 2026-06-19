@@ -84,10 +84,8 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   );
   const viewport = useRef<HTMLDivElement>(null);
 
-  // 版本检查
   useVersionChecker();
 
-  // 侧边栏手势
   const ref = useRef<HTMLDivElement>(null);
   const { onTouchStart, onTouchEnd } = useTouchEvents(ref as React.RefObject<HTMLDivElement>);
   const [touchStartX, setTouchStartX] = useState(0);
@@ -106,7 +104,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     }
   });
 
-  // 侧边栏开关
   const toggleNavbarOpened = () => {
     if (window.innerWidth <= NAVBAR_BREAKPOINT) setOpened(!opened);
   };

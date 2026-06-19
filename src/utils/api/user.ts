@@ -79,7 +79,6 @@ export async function revokeUserOAuthApp(clientId: string): Promise<Response> {
   return fetchAPI(`user/oauth/authorize/app/${clientId}`, { method: "DELETE" });
 }
 
-// Passkey APIs
 export async function registerPasskey(data: PasskeyRegisterData): Promise<Response> {
   return fetchAPI("user/passkeys", { method: "POST", body: data });
 }

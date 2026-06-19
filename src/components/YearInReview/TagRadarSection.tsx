@@ -46,7 +46,6 @@ const WordCloudSection = ({ data }: { data: { name: string; value: number }[] })
   }, [width]);
 
   useEffect(() => {
-    // 只在进入视口且未渲染过时才渲染
     if (!inViewport || hasRendered.current) return;
 
     const container = document.getElementById("word-cloud-container");

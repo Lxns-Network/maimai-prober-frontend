@@ -5,9 +5,9 @@ import { useAnimationFrame } from "motion/react";
 
 interface MarqueeProps {
   speed?: number;
-  startDelay?: number; // 开始滚动的延迟
-  intervalDelay?: number; // 滚动间隔
-  pauseOnHover?: boolean; // 鼠标悬停暂停滚动
+  startDelay?: number;
+  intervalDelay?: number;
+  pauseOnHover?: boolean;
   children: ReactNode;
 }
 
@@ -19,20 +19,19 @@ export const Marquee = ({
   children,
   ...props
 }: MarqueeProps & GroupProps) => {
-  const [isScrolling, setIsScrolling] = useState(false); // 是否需要滚动
-  const [isPaused, setIsPaused] = useState(false); // 是否暂停滚动
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [translateX, setTranslateX] = useState(0);
 
   const directionRef = useRef(1);
   const delayUntilRef = useRef(0);
 
   const ref = useRef<HTMLDivElement>(null);
-  const isHovering = useHoverDirty(ref as React.RefObject<Element>); // 是否鼠标悬停
+  const isHovering = useHoverDirty(ref as React.RefObject<Element>);
 
   useAnimationFrame((time) => {
     if (!isScrolling || isPaused) return;
 
-    // 若处于延迟期，不滚动
     if (delayUntilRef.current && time < delayUntilRef.current) return;
 
     if (!ref.current) return;
@@ -42,8 +41,8 @@ export const Marquee = ({
       const maxTranslateX = ref.current!.scrollWidth - ref.current!.clientWidth;
 
       if (newTranslateX <= -maxTranslateX - speed || newTranslateX >= speed) {
-        directionRef.current = -directionRef.current; // 反转方向
-        delayUntilRef.current = time + intervalDelay; // 设置延迟截止时间
+        directionRef.current = -directionRef.current;
+        delayUntilRef.current = time + intervalDelay;
         return prev; // 暂停这一帧，等下次再移动
       }
 

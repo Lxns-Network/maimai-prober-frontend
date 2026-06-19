@@ -365,7 +365,6 @@ function ChartContent() {
     };
   }, [isFullscreen, setIsFullscreen]);
 
-  // 全屏状态变化时调用浏览器API
   useEffect(() => {
     const element = fullscreenElementRef.current;
     if (!element) return;

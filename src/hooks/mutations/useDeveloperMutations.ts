@@ -68,7 +68,6 @@ export const useDeleteOAuthApp = (options?: UseMutationOptions<unknown, Error, s
   });
 };
 
-// Admin
 export const useRevokeDeveloper = (options?: UseMutationOptions<unknown, Error, object>) => {
   return useMutation({
     mutationFn: (data: object) => apiMutationFn(() => revokeDeveloper(data)),

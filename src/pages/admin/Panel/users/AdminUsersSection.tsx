@@ -230,7 +230,6 @@ const AdminUsersContent = () => {
               <Text fz="sm">没有记录</Text>
             </Flex>
           }
-          // 数据
           columns={[
             {
               accessor: "id",
@@ -286,15 +285,12 @@ const AdminUsersContent = () => {
           records={displayUsers}
           totalRecords={sortedUsers.length}
           noRecordsText="没有记录"
-          // 筛选
           sortStatus={sortStatus}
           onSortStatusChange={setSortStatus}
-          // 弹窗
           onRowClick={({ record }) => {
             setActiveUser(record);
             editUserModal.open();
           }}
-          // 分页
           recordsPerPage={pageSize}
           paginationText={({ from, to, totalRecords }) => {
             return `${from}-${to} 名用户，共 ${totalRecords} 名`;
@@ -304,7 +300,6 @@ const AdminUsersContent = () => {
           recordsPerPageOptions={PAGE_SIZES}
           recordsPerPageLabel="每页显示"
           onRecordsPerPageChange={setPageSize}
-          // 选择
           selectedRecords={selectedUsers}
           onSelectedRecordsChange={setSelectedUsers}
           allRecordsSelectionCheckboxProps={{
@@ -318,7 +313,6 @@ const AdminUsersContent = () => {
               }
             },
           }}
-          // 其它
           fetching={fetching}
         />
       </Card>

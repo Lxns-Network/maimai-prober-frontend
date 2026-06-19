@@ -143,7 +143,6 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
           return { dark: "rgb(36,36,36)", light: "white" };
         }
       }}
-      // 数据
       idAccessor={({ id, type, level_index }) => `${id}:${type}:${level_index}`}
       columns={
         game === "maimai"
@@ -363,7 +362,6 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
       records={displayScores}
       totalRecords={scores.length}
       noRecordsText="没有记录"
-      // 分页
       recordsPerPage={pageSize}
       paginationText={({ from, to, totalRecords }) => {
         return `${from}-${to} 条成绩，共 ${totalRecords} 条`;

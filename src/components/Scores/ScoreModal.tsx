@@ -103,10 +103,8 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     threshold: 0.95,
   });
 
-  // ScoreHistory
   const [minRank, setMinRank] = useState<string>("A");
 
-  // ChartComment
   const [commentCount, setCommentCount] = useState<number>(0);
 
   const { songDetail } = useSongDetail(game, score?.id ?? null);

@@ -97,7 +97,6 @@ export function useFilteredScores(
       }
     }
 
-    // 如果没有任何筛选条件，直接返回
     if (isDefault) {
       return filteredData;
     }
@@ -107,23 +106,19 @@ export function useFilteredScores(
       if (songList instanceof MaimaiSongList) {
         score = score as MaimaiScoreProps;
         if (type.length > 0 && !type.includes(score.type) && score.type !== "utage") {
-          // 过滤谱面类型
           return false;
         }
         if (fullCombo.length > 0) {
-          // 过滤 Full Combo
           const matchNoFc = fullCombo.includes("nofc") && !score.fc;
           const matchFc = fullCombo.filter((v) => v !== "nofc").includes(score.fc);
           if (!matchNoFc && !matchFc) return false;
         }
         if (fullSync.length > 0) {
-          // 过滤 Full Sync
           const matchNoFs = fullSync.includes("nofs") && !score.fs;
           const matchFs = fullSync.filter((v) => v !== "nofs").includes(score.fs);
           if (!matchNoFs && !matchFs) return false;
         }
         if (deluxeStar.length > 0 && !deluxeStar.includes(score.dx_star)) {
-          // 过滤 DX 星级
           return false;
         }
         // 宴谱的 level_index 基本都是 0，需要提前过滤
@@ -133,19 +128,17 @@ export function useFilteredScores(
       } else {
         score = score as ChunithmScoreProps;
         if (fullCombo.length > 0) {
-          // 过滤 Full Combo
           const matchNoFc = fullCombo.includes("nofullcombo") && !score.full_combo;
           const matchFc = fullCombo.filter((v) => v !== "nofullcombo").includes(score.full_combo);
           if (!matchNoFc && !matchFc) return false;
         }
         if (fullSync.length > 0) {
-          // 过滤 Full Chain
           const matchNoChain = fullSync.includes("nofullchain") && !score.full_chain;
           const matchChain = fullSync.filter((v) => v !== "nofullchain").includes(score.full_chain);
           if (!matchNoChain && !matchChain) return false;
         }
       }
-      return difficulty.includes(score.level_index.toString()) || difficulty.length === 0; // 过滤难度
+      return difficulty.includes(score.level_index.toString()) || difficulty.length === 0;
     });
 
     // 过滤乐曲分类、版本和定数
@@ -168,7 +161,7 @@ export function useFilteredScores(
           genre.some(
             (selected) =>
               songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre,
-          ) || genre.length === 0; // 过滤乐曲分类
+          ) || genre.length === 0;
         matchVersion =
           version.some(
             (selected) =>
@@ -177,7 +170,7 @@ export function useFilteredScores(
                 (songList.versions[
                   songList.versions.findIndex((value) => value.version === selected) + 1
                 ]?.version || selected + 1000),
-          ) || version.length === 0; // 过滤版本
+          ) || version.length === 0;
         matchRating =
           (difficulty.level_value >= endRating[0] && difficulty.level_value <= endRating[1]) ||
           (endRating.every((v, i) => v === scoreRatingRanges[game][i]) && score.type === "utage"); // 过滤定数
@@ -192,7 +185,7 @@ export function useFilteredScores(
           genre.some(
             (selected) =>
               songList.genres.find((genre) => genre.genre === selected)?.genre === song?.genre,
-          ) || genre.length === 0; // 过滤乐曲分类
+          ) || genre.length === 0;
         matchVersion =
           version.some(
             (selected) =>
@@ -201,7 +194,7 @@ export function useFilteredScores(
                 (songList.versions[
                   songList.versions.findIndex((value) => value.version === selected) + 1
                 ]?.version || selected + 500),
-          ) || version.length === 0; // 过滤版本
+          ) || version.length === 0;
         matchRating =
           (difficulty.level_value >= endRating[0] && difficulty.level_value <= endRating[1]) ||
           (endRating.every((v, i) => v === scoreRatingRanges[game][i]) && score.level_index === 5); // 过滤定数
