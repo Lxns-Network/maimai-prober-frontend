@@ -57,16 +57,15 @@
 .chunks {
   display: flex;
   flex-wrap: wrap;
-  /* row-gap 0：换行时上下贴紧；column-gap 8px：保留分割线两侧的间距 */
   row-gap: 0;
-  column-gap: 8px;
+  column-gap: 0;
   min-width: 0;
   flex: 1;
 }
 
 .chunk {
   position: relative;
-  padding: 0 4px;
+  padding: 0;
   border-radius: 3px;
   cursor: pointer;
   word-break: break-all;
@@ -76,16 +75,15 @@
     box-shadow 120ms ease;
 }
 
-/* 分割线放在每个 chunk 的右侧 gap 中间（最后一个除外），不依赖 border，只占中间 ~50% 高度 */
+.chunkEmpty {
+  min-width: 8px;
+}
+
+/* 用逗号分割每个 chunk（最后一个除外） */
 .chunk:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  right: -4px;
-  top: 25%;
-  bottom: 25%;
-  width: 1px;
-  background-color: var(--mantine-color-default-border);
+  content: ",";
   pointer-events: none;
+  color: var(--mantine-color-dimmed);
 }
 
 /* 用 inset box-shadow 作为 hover 反馈：不依赖背景色，所以叠在 row hover 或

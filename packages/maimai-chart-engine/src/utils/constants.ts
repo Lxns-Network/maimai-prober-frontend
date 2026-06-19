@@ -49,6 +49,9 @@ export const SLIDE_ARROW_SPAN_RATIO = 11.52 / 300;
 /** 滑条星星头大小比例（半径乘以该值），越大星星越大 */
 export const SLIDE_STAR_SIZE_RATIO = 1.6 / 10.42;
 
+/** 滑条星星头等待滑动时的初始大小比例 */
+export const SLIDE_STAR_WAITING_MIN_SCALE = 0.5;
+
 /** 滑条箭头间距比例 */
 export const SLIDE_ARROW_SPACING_RATIO = 26.896180742334582 / 300;
 

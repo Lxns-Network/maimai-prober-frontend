@@ -15,6 +15,7 @@ import {
   SLIDE_ARROW_SPACING_RATIO,
   SLIDE_WIFI_LINE_WIDTH_RATIO,
   SLIDE_STAR_SIZE_RATIO,
+  SLIDE_STAR_WAITING_MIN_SCALE,
   SLIDE_CURVE_OFFSET_RATIO,
   COLORS,
   APPROACH_START_SCALE,
@@ -776,6 +777,7 @@ export class SlideRenderer extends BaseRenderer {
 
     let starPos: Point2D;
     let starAlpha = 1;
+    let starScale = 1;
     let rotation = 0;
     const isSliding = currentTimeMs >= slideStart;
 
@@ -784,14 +786,18 @@ export class SlideRenderer extends BaseRenderer {
 
       starPos = this.noteRenderer.getPositionOnRing(segments[0].startPos);
       const elapsed = currentTimeMs - note.timingMs;
-      starAlpha = Math.min(1, elapsed / delayMs);
+      const waitingProgress = Math.min(1, elapsed / delayMs);
+      starAlpha = waitingProgress;
+      starScale =
+        SLIDE_STAR_WAITING_MIN_SCALE + (1 - SLIDE_STAR_WAITING_MIN_SCALE) * waitingProgress;
 
       if (this.context.config.slideRotation) {
-        rotation = this.calculateStarRotation(note, note.timingMs);
+        rotation = this.getPathTangentAngle(0, segments) + Math.PI / 2;
       }
     } else {
       starPos = this.getPointAlongPath(progress, segments);
       starAlpha = 1;
+      starScale = 1;
 
       if (this.context.config.slideRotation) {
         rotation = this.getPathTangentAngle(progress, segments) + Math.PI / 2;
@@ -802,7 +808,7 @@ export class SlideRenderer extends BaseRenderer {
 
     this.withContext(() => {
       this.context.ctx.globalAlpha = starAlpha;
-      const size = this.context.radius * SLIDE_STAR_SIZE_RATIO;
+      const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
 
       let color: string;
       const isBreak =
@@ -851,13 +857,17 @@ export class SlideRenderer extends BaseRenderer {
 
         let starPos: Point2D;
         let starAlpha = 1;
+        let starScale = 1;
 
         if (currentTimeMs < slideStart) {
           if (note.headlessMode === "pop") continue;
 
           starPos = start;
           const elapsed = currentTimeMs - note.timingMs;
-          starAlpha = Math.min(1, elapsed / delayMs);
+          const waitingProgress = Math.min(1, elapsed / delayMs);
+          starAlpha = waitingProgress;
+          starScale =
+            SLIDE_STAR_WAITING_MIN_SCALE + (1 - SLIDE_STAR_WAITING_MIN_SCALE) * waitingProgress;
         } else {
           starPos = {
             x: start.x + (end.x - start.x) * progress,
@@ -867,7 +877,7 @@ export class SlideRenderer extends BaseRenderer {
 
         if (starPos) {
           this.context.ctx.globalAlpha = starAlpha;
-          const size = this.context.radius * SLIDE_STAR_SIZE_RATIO;
+          const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
           const isBreak =
             note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
 
@@ -1129,7 +1139,7 @@ export class SlideRenderer extends BaseRenderer {
     });
   }
 
-  private calculateStarRotation(note: SlideNote, currentTimeMs: number): number {
+  calculateStarRotation(note: SlideNote, currentTimeMs: number): number {
     const durationMs = note.allDurationMs ? note.allDurationMs[0] : note.durationMs;
     const segments = note.allSlideSegments ? note.allSlideSegments[0] : note.slideSegments;
 

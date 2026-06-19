@@ -49,7 +49,11 @@ import {
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
 import {
+  parseMa2Chart,
   parseSimaiChart,
+  getAvailableDifficulties,
+  type AvailableDifficulties,
+  type ChartFileType,
   type ChartDifficulty,
   DIFFICULTY_NAMES,
   DIFFICULTY_COLORS,
@@ -698,7 +702,6 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     playbackSpeed,
     rawSimaiText,
     selectedDifficulty,
-    availableDifficulties,
     chartData,
     setPlaybackSpeed,
     setChartData,
@@ -707,22 +710,23 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     setMusicUrl,
   } = useGameStore(useShallow((state) => state));
 
-  // 手动编辑当前 simai 文本并重新加载
+  // 手动编辑当前谱面文本并重新加载
   const [debugSimai, setDebugSimai] = useState(rawSimaiText);
+  const [debugChartFileType, setDebugChartFileType] = useState<ChartFileType>("simai");
   const debugSimaiTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const importedMusicUrlRef = useRef<string | null>(null);
-  const difficultyAnchors = useMemo(() => getDifficultyAnchors(debugSimai), [debugSimai]);
-  const difficultyAnchorOptions = useMemo(
-    () =>
-      difficultyAnchors.map((anchor) => ({
-        value: String(anchor.index),
-        label: `${getDebugDifficultyLabel(anchor.difficulty)} #${anchor.difficulty}`,
-      })),
-    [difficultyAnchors],
+  const difficultyAnchors = useMemo(
+    () => (debugChartFileType === "simai" ? getDifficultyAnchors(debugSimai) : []),
+    [debugChartFileType, debugSimai],
   );
+  const difficultyAnchorOptions = difficultyAnchors.map((anchor) => ({
+    value: String(anchor.index),
+    label: `${getDebugDifficultyLabel(anchor.difficulty)} #${anchor.difficulty}`,
+  }));
   const [selectedDifficultyAnchor, setSelectedDifficultyAnchor] = useState<string | null>(null);
   useEffect(() => {
     setDebugSimai(rawSimaiText);
+    setDebugChartFileType("simai");
   }, [rawSimaiText]);
 
   useEffect(() => {
@@ -762,12 +766,31 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
 
   const applyDebugSimai = useCallback(() => {
     try {
-      const chart = parseSimaiChart(debugSimai, selectedDifficulty ?? undefined);
-      setRawSimaiText(debugSimai);
+      const nextDifficulty = selectedDifficulty ?? 4;
+      const available: AvailableDifficulties =
+        debugChartFileType === "simai"
+          ? getAvailableDifficulties(debugSimai)
+          : { [nextDifficulty]: true };
+      const availableList = Object.keys(available)
+        .map(Number)
+        .sort((a, b) => b - a) as ChartDifficulty[];
+      const difficultyToUse =
+        selectedDifficulty && available[selectedDifficulty]
+          ? selectedDifficulty
+          : (availableList[0] ?? nextDifficulty);
+      const chart =
+        debugChartFileType === "simai"
+          ? parseSimaiChart(debugSimai, difficultyToUse)
+          : parseMa2Chart(debugSimai, difficultyToUse);
+
+      if (debugChartFileType === "simai") {
+        setRawSimaiText(debugSimai);
+      }
+      setSelectedDifficulty(difficultyToUse);
       setChartData(chart);
       notifications.show({
         title: "谱面已重载",
-        message: "当前 Simai 文本已重新解析",
+        message: "当前谱面文本已重新解析",
         color: "green",
       });
     } catch (error) {
@@ -777,7 +800,40 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
         color: "red",
       });
     }
-  }, [debugSimai, selectedDifficulty, setRawSimaiText, setChartData]);
+  }, [
+    debugChartFileType,
+    debugSimai,
+    selectedDifficulty,
+    setChartData,
+    setRawSimaiText,
+    setSelectedDifficulty,
+  ]);
+
+  const handleChartImport = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.currentTarget.files?.[0];
+      event.currentTarget.value = "";
+
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        setDebugSimai(text);
+        notifications.show({
+          title: "谱面已导入",
+          message: `${file.name} 已导入到 ${debugChartFileType === "ma2" ? "MA2" : "Simai"} 编辑区`,
+          color: "green",
+        });
+      } catch (error) {
+        notifications.show({
+          title: "谱面导入失败",
+          message: getErrorMessage(error),
+          color: "red",
+        });
+      }
+    },
+    [debugChartFileType],
+  );
 
   const handleMusicImport = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -860,18 +916,24 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
 
   const handleDifficultyChange = useCallback(
     (difficulty: ChartDifficulty) => {
-      if (!rawSimaiText.trim()) return;
+      const chartText = debugChartFileType === "simai" ? rawSimaiText : debugSimai;
+      if (!chartText.trim()) return;
 
       setSelectedDifficulty(difficulty);
-      const chart = parseSimaiChart(rawSimaiText, difficulty);
+      const chart =
+        debugChartFileType === "simai"
+          ? parseSimaiChart(chartText, difficulty)
+          : parseMa2Chart(chartText, difficulty);
       setChartData(chart);
 
       const url = new URL(window.location.href);
       url.searchParams.set("difficulty", String(difficulty - 2));
       window.history.replaceState({}, "", url.toString());
     },
-    [rawSimaiText, setSelectedDifficulty, setChartData],
+    [debugChartFileType, debugSimai, rawSimaiText, setSelectedDifficulty, setChartData],
   );
+
+  const availableDifficulties = chartData?.availableDifficulties;
 
   return (
     <Stack gap="md">
@@ -879,8 +941,17 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
         <Card className={classes.card} radius="lg" withBorder>
           <Stack gap="xs">
             <Text size="sm" fw={500}>
-              Simai 调试
+              谱面调试
             </Text>
+            <SegmentedControl
+              size="xs"
+              value={debugChartFileType}
+              onChange={(value) => setDebugChartFileType(value as ChartFileType)}
+              data={[
+                { value: "simai", label: "Simai" },
+                { value: "ma2", label: "MA2" },
+              ]}
+            />
             {difficultyAnchors.length > 0 && (
               <Select
                 size="xs"
@@ -915,6 +986,20 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 component="label"
                 leftSection={<IconUpload size={14} />}
               >
+                导入谱面
+                <input
+                  type="file"
+                  accept=".txt,.ma2,text/plain"
+                  hidden
+                  onChange={handleChartImport}
+                />
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                component="label"
+                leftSection={<IconUpload size={14} />}
+              >
                 导入音乐
                 <input
                   type="file"
@@ -928,7 +1013,9 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
         </Card>
       )}
 
-      <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />
+      {debugChartFileType === "simai" && (
+        <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />
+      )}
 
       <Card className={classes.card} radius="lg" withBorder>
         <Stack gap="md">
@@ -1009,7 +1096,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
         </Stack>
       </Card>
 
-      {Object.keys(availableDifficulties).length > 0 && (
+      {availableDifficulties && Object.keys(availableDifficulties).length > 0 && (
         <Group gap="xs" grow>
           {([1, 2, 3, 4, 5, 6] as ChartDifficulty[]).map((diff) => {
             const isAvailable = availableDifficulties[diff];

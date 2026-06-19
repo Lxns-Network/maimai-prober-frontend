@@ -46,9 +46,9 @@ function parseSimaiStatements(
     let buf = "";
     let bufBeat = beat;
 
-    const flush = () => {
+    const flush = (includeEmpty = false) => {
       const text = buf.trim();
-      if (text) chunks.push({ text, beat: bufBeat });
+      if (text || includeEmpty) chunks.push({ text, beat: bufBeat });
       buf = "";
       bufBeat = beat;
     };
@@ -57,7 +57,7 @@ function parseSimaiStatements(
     while (i < content.length) {
       const c = content[i];
       if (c === ",") {
-        flush();
+        flush(true);
         beat += 4 / divisor;
         bufBeat = beat;
         i++;
@@ -86,7 +86,7 @@ function parseSimaiStatements(
         i++;
       }
     }
-    flush();
+    flush(content.trimEnd().endsWith(","));
     if (chunks.length > 0) out.push({ beat: lineStartBeat, chunks });
   };
 
@@ -148,10 +148,17 @@ const StatementRow = memo(function StatementRow({
       <span className={classes.chunks}>
         {statement.chunks.map((c, ci) => {
           const isActiveChunk = isActive && ci === activeChunkIdx;
+          const chunkClass = [
+            classes.chunk,
+            c.text === "" && classes.chunkEmpty,
+            isActiveChunk && classes.chunkActive,
+          ]
+            .filter(Boolean)
+            .join(" ");
           return (
             <span
               key={ci}
-              className={`${classes.chunk}${isActiveChunk ? ` ${classes.chunkActive}` : ""}`}
+              className={chunkClass}
               onClick={(e) => {
                 e.stopPropagation();
                 seekTo(c.beat);
@@ -309,7 +316,14 @@ export function SimaiStatementList({
             viewportRef={containerRef}
             onWheel={pauseAutoScroll}
             onTouchMove={pauseAutoScroll}
-            styles={{ viewport: { fontFamily: "monospace", fontSize: 12, lineHeight: 1.55 } }}
+            styles={{
+              viewport: {
+                fontFamily: "monospace",
+                fontSize: 12,
+                lineHeight: 1.55,
+                paddingRight: 12,
+              },
+            }}
           >
             {statements.map((s, i) => {
               const isActive = i === active.line;
