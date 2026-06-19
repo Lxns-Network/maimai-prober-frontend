@@ -9,20 +9,6 @@ import "@mantine/code-highlight/styles.css";
 import "mantine-datatable/styles.css";
 import "../index.css";
 
-window.addEventListener("vite:preloadError", () => {
-  window.location.reload();
-});
-
-window.addEventListener("unhandledrejection", (event) => {
-  if (
-    event.reason instanceof TypeError &&
-    event.reason.message.includes("Failed to fetch dynamically imported module")
-  ) {
-    event.preventDefault();
-    window.location.reload();
-  }
-});
-
 import * as Sentry from "@sentry/react";
 import { getSentryUser } from "../utils/session.ts";
 
