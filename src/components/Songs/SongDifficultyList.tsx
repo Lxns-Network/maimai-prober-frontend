@@ -7,7 +7,7 @@ import {
 } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongDifficulty } from "./chunithm/SongDifficulty.tsx";
 import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Chip, Group, Stack } from "@mantine/core";
 import { AnimatedStack } from "@/components/AnimatedGrid.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -107,45 +107,33 @@ const maimaiDifficultyTypeData = [
 
 export const SongDifficultyList = ({ song, scores, setScores, style }: SongDifficultiesProps) => {
   const [game] = useGame();
-  const [difficulties, setDifficulties] = useState<
-    (MaimaiDifficultyProps | ChunithmDifficultyProps)[]
-  >([]);
   const [difficultyType, setDifficultyType] = useState<"standard" | "dx" | "utage">();
 
   const { openModal: openScoreModal } = useScoreStore();
 
-  useEffect(() => {
+  const { difficulties, effectiveType } = useMemo<{
+    difficulties: (MaimaiDifficultyProps | ChunithmDifficultyProps)[];
+    effectiveType: "standard" | "dx" | "utage" | undefined;
+  }>(() => {
     if (!song || !song.difficulties) {
-      setDifficulties([]);
-      return;
+      return { difficulties: [], effectiveType: undefined };
     }
-
     if ("standard" in song.difficulties) {
-      Object.keys(song.difficulties).forEach((type) => {
-        const s = song as MaimaiSongProps;
-        const d = s.difficulties[type as keyof MaimaiDifficultiesProps];
-        if (d && d.length > 0) {
-          setDifficultyType(type as "standard" | "dx" | "utage");
-          return;
-        }
-      });
-    } else {
-      setDifficulties((song.difficulties as ChunithmDifficultyProps[]).slice().reverse());
+      const maimaiDiffs = song.difficulties as MaimaiDifficultiesProps;
+      const types = ["standard", "dx", "utage"] as const;
+      const type =
+        difficultyType && (maimaiDiffs[difficultyType]?.length ?? 0) > 0
+          ? difficultyType
+          : types.find((t) => (maimaiDiffs[t]?.length ?? 0) > 0);
+      return {
+        difficulties: type ? maimaiDiffs[type].slice().reverse() : [],
+        effectiveType: type,
+      };
     }
-  }, [song, game]);
-
-  useEffect(() => {
-    if (!song || !song.difficulties) return;
-
-    if ("standard" in song.difficulties) {
-      if (difficultyType && difficultyType in song.difficulties) {
-        setDifficulties(
-          (song.difficulties as MaimaiDifficultiesProps)[difficultyType || "standard"]
-            .slice()
-            .reverse(),
-        );
-      }
-    }
+    return {
+      difficulties: (song.difficulties as ChunithmDifficultyProps[]).slice().reverse(),
+      effectiveType: undefined,
+    };
   }, [song, difficultyType]);
 
   const handleOpenScoreModal = (score: MaimaiScoreProps | ChunithmScoreProps) => {
@@ -174,7 +162,7 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
       {game === "maimai" && song && song.difficulties && (
         <Chip.Group
           multiple={false}
-          value={difficultyType}
+          value={effectiveType}
           onChange={(value) => setDifficultyType(value as "standard" | "dx" | "utage")}
         >
           <Group justify="center">
