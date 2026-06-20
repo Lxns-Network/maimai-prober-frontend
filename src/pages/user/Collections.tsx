@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useState } from "react";
 import { getCollectionById, getPlayerCollectionById } from "@/utils/api/player.ts";
-import { Text, Space, Checkbox, Flex, Transition, Group, Select } from "@mantine/core";
+import { Text, Space, Checkbox, Flex, Group, Select } from "@mantine/core";
 import { usePrevious, useToggle } from "@mantine/hooks";
 import { RequiredSong } from "@/components/Collections/RequiredSong";
 import { CollectionCombobox } from "@/components/Collections/CollectionCombobox.tsx";
@@ -14,6 +14,8 @@ import useGame from "@/hooks/useGame.ts";
 import { Game } from "@/types/game";
 import { CollectionCard } from "@/components/Collections/CollectionCard.tsx";
 import { usePageContext } from "vike-react/usePageContext";
+import { AnimatePresence, motion } from "motion/react";
+import { match } from "ts-pattern";
 
 const collectionTypeData: Record<Game, { label: string; value: string }[]> = {
   maimai: [
@@ -282,71 +284,53 @@ const CollectionsContent = () => {
         checked={onlyRequired}
         onChange={() => toggleOnlyRequired()}
       />
-      <Transition
-        mounted={Boolean(collectionId !== null && collection)}
-        transition="pop"
-        enterDelay={0}
-      >
-        {(styles) => (
-          <CollectionCard
-            collection={collection}
-            collectionType={displayCollectionType}
-            style={styles}
-          />
-        )}
-      </Transition>
-      <Space h="md" />
-      <LoginAlert content="你需要登录查分器账号才能查看你的收藏品获取进度。" mb="md" radius="md" />
-      <Transition
-        mounted={Boolean(collectionId !== null && collection && collection.required)}
-        transition="pop"
-        enterDelay={0}
-      >
-        {(styles) => (
-          <RequiredSong
-            collection={collection}
-            records={records}
-            loading={isCollectionLoading}
-            style={styles}
-          />
-        )}
-      </Transition>
-      <Transition mounted={collectionId === null} transition="pop" enterDelay={300}>
-        {(styles) => (
-          <Flex
-            gap="xs"
-            align="center"
-            direction="column"
-            c="dimmed"
-            mt="xl"
-            mb="xl"
-            style={styles}
-          >
-            <IconPlaylist size={64} stroke={1.5} />
-            <Text fz="sm">请选择一个收藏品来查看要求曲目</Text>
-          </Flex>
-        )}
-      </Transition>
-      <Transition
-        mounted={Boolean(collectionId !== null && collection && !collection.required)}
-        transition="pop"
-        enterDelay={300}
-      >
-        {(styles) => (
-          <Flex
-            gap="xs"
-            align="center"
-            direction="column"
-            c="dimmed"
-            mt="xl"
-            mb="xl"
-            style={styles}
-          >
-            <IconPlaylistOff size={64} stroke={1.5} />
-            <Text fz="sm">该收藏品没有要求曲目</Text>
-          </Flex>
-        )}
-      </Transition>
+      <AnimatePresence mode="wait" initial={false}>
+        {match(Boolean(collectionId !== null && collection))
+          .with(true, () => (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CollectionCard collection={collection} collectionType={displayCollectionType} />
+              <Space h="md" />
+              <LoginAlert
+                content="你需要登录查分器账号才能查看你的收藏品获取进度。"
+                mb="md"
+                radius="md"
+              />
+              {collection?.required ? (
+                <RequiredSong
+                  collection={collection}
+                  records={records}
+                  loading={isCollectionLoading}
+                />
+              ) : (
+                <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
+                  <IconPlaylistOff size={64} stroke={1.5} />
+                  <Text fz="sm">该收藏品没有要求曲目</Text>
+                </Flex>
+              )}
+            </motion.div>
+          ))
+          .with(false, () => (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
+                <IconPlaylist size={64} stroke={1.5} />
+                <Text fz="sm">请选择一个收藏品来查看要求曲目</Text>
+              </Flex>
+            </motion.div>
+          ))
+          .exhaustive()}
+      </AnimatePresence>
     </div>
   );
 };

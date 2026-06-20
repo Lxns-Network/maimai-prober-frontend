@@ -1,7 +1,8 @@
-import { Alert, Button, Group, Text, Transition } from "@mantine/core";
+import { Alert, Button, Group, Text } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons-react";
 import React, { useEffect, useState } from "react";
 import { navigate } from "vike/client/router";
+import { AnimatePresence, motion } from "motion/react";
 
 interface LoginAlertProps extends React.ComponentPropsWithoutRef<typeof Alert> {
   content: string;
@@ -19,35 +20,41 @@ export const LoginAlert = ({ content, ...props }: LoginAlertProps) => {
   }, [isLoggedOut]);
 
   return (
-    <Transition mounted={opened} transition="pop" duration={250}>
-      {(styles) => (
-        <Alert
-          variant="light"
-          icon={<IconAlertCircle />}
-          title="登录提示"
-          withCloseButton
-          onClose={() => setOpened(false)}
-          style={styles}
-          {...props}
+    <AnimatePresence>
+      {opened && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
-          <Text size="sm" mb="md">
-            {content}
-          </Text>
-          <Group>
-            <Button
-              variant="filled"
-              onClick={() =>
-                navigate("/login", { pageContext: { redirect: window.location.pathname } })
-              }
-            >
-              登录
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/register")}>
-              注册
-            </Button>
-          </Group>
-        </Alert>
+          <Alert
+            variant="light"
+            icon={<IconAlertCircle />}
+            title="登录提示"
+            withCloseButton
+            onClose={() => setOpened(false)}
+            {...props}
+          >
+            <Text size="sm" mb="md">
+              {content}
+            </Text>
+            <Group>
+              <Button
+                variant="filled"
+                onClick={() =>
+                  navigate("/login", { pageContext: { redirect: window.location.pathname } })
+                }
+              >
+                登录
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/register")}>
+                注册
+              </Button>
+            </Group>
+          </Alert>
+        </motion.div>
       )}
-    </Transition>
+    </AnimatePresence>
   );
 };

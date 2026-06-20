@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Card,
   Text,
@@ -21,6 +21,7 @@ import classes from "./AdminDevelopersSection.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
 import { AnimatedStack } from "@/components/AnimatedGrid.tsx";
+import { motion } from "motion/react";
 import { UserProps } from "@/types/user";
 
 interface DeveloperProps {
@@ -213,33 +214,36 @@ const AdminDevelopersContent = () => {
 
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
+  const totalPages = Math.ceil(developers.length / PAGE_SIZE);
+  const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const scrollArea = document.querySelector(
-      "#root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
-    );
-
-    if (scrollArea) {
-      scrollArea.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    }
-
     setDisplayDevelopers(developers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
   }, [page, developers]);
 
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <div>
+    <div ref={topRef} style={{ scrollMarginTop: 16 }}>
       <EditUserModal user={activeUser as UserProps} opened={opened} onClose={() => close()} />
       <Stack align="center">
-        <Pagination
-          hideWithOnePage
-          total={Math.ceil(developers.length / PAGE_SIZE)}
-          value={page}
-          onChange={setPage}
-          size={small ? "sm" : "md"}
-        />
+        {totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Pagination
+              total={totalPages}
+              value={page}
+              onChange={handlePageChange}
+              size={small ? "sm" : "md"}
+            />
+          </motion.div>
+        )}
         {fetching && (
           <Group justify="center">
             <Loader />
@@ -258,13 +262,20 @@ const AdminDevelopersContent = () => {
             />
           )}
         />
-        <Pagination
-          hideWithOnePage
-          total={Math.ceil(developers.length / PAGE_SIZE)}
-          value={page}
-          onChange={setPage}
-          size={small ? "sm" : "md"}
-        />
+        {totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Pagination
+              total={totalPages}
+              value={page}
+              onChange={handlePageChange}
+              size={small ? "sm" : "md"}
+            />
+          </motion.div>
+        )}
       </Stack>
     </div>
   );

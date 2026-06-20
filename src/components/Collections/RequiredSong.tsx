@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   ActionIcon,
@@ -27,6 +27,7 @@ import { PhotoView } from "react-photo-view";
 import { Marquee } from "../Marquee.tsx";
 import { ASSET_URL } from "@/main";
 import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
+import { motion } from "motion/react";
 import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
 import { Link } from "@/components/Link";
 import useFixedGame from "@/hooks/useFixedGame.ts";
@@ -103,6 +104,7 @@ export const RequiredSong = ({
 
   const pageSize = 20;
   const [page, setPage] = useState(1);
+  const topRef = useRef<HTMLDivElement>(null);
   const [filteredRecords, setFilteredRecords] = useState<CollectionRequiredSongProps[]>([]);
   const [displayRecords, setDisplayRecords] = useState<CollectionRequiredSongProps[]>([]);
 
@@ -174,8 +176,22 @@ export const RequiredSong = ({
     { total: 0, completed: 0 },
   );
 
+  const totalPages = Math.ceil(filteredRecords.length / pageSize);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <Card radius="md" p="md" withBorder className={classes.card} style={style}>
+    <Card
+      ref={topRef}
+      radius="md"
+      p="md"
+      withBorder
+      className={classes.card}
+      style={{ ...style, scrollMarginTop: 16 }}
+    >
       <Flex>
         <div style={{ flex: 1 }}>
           <Text fz="lg" fw={700}>
@@ -379,16 +395,23 @@ export const RequiredSong = ({
           </Group>
         )}
       />
-      <Center>
-        <Pagination
-          hideWithOnePage
-          size="sm"
-          mt="md"
-          total={Math.ceil(filteredRecords.length / pageSize)}
-          value={page}
-          onChange={(page) => setPage(page)}
-        />
-      </Center>
+      {totalPages > 1 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Center>
+            <Pagination
+              size="sm"
+              mt="md"
+              total={totalPages}
+              value={page}
+              onChange={handlePageChange}
+            />
+          </Center>
+        </motion.div>
+      )}
     </Card>
   );
 };

@@ -1,9 +1,4 @@
-import {
-  BackgroundImage,
-  Card,
-  SimpleGridProps,
-  useComputedColorScheme,
-} from "@mantine/core";
+import { BackgroundImage, Card, SimpleGridProps, useComputedColorScheme } from "@mantine/core";
 import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
 import { MaimaiScoreContent } from "./maimai/Score.tsx";
 import { ChunithmScoreContent } from "./chunithm/Score.tsx";

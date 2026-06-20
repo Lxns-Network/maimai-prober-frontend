@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Card,
@@ -45,6 +45,12 @@ const AliasVoteContent = () => {
 
   const [page, setPage] = useState(1);
   const small = useMediaQuery("(max-width: 30rem)");
+  const topRef = useRef<HTMLDivElement>(null);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const { aliases, pageCount, pageSize, isLoading, setData, invalidate } = useAliases(
     game,
@@ -103,7 +109,7 @@ const AliasVoteContent = () => {
   };
 
   return (
-    <div>
+    <div ref={topRef} style={{ scrollMarginTop: 16 }}>
       <Card withBorder radius="md" className={classes.card} p={0}>
         <Group m="md" justify="space-between">
           <div>
@@ -164,7 +170,7 @@ const AliasVoteContent = () => {
                 <Pagination
                   total={pageCount}
                   value={page}
-                  onChange={setPage}
+                  onChange={handlePageChange}
                   size={small ? "sm" : "md"}
                   disabled={isLoading}
                 />
@@ -172,7 +178,7 @@ const AliasVoteContent = () => {
                 <Pagination
                   total={pageCount}
                   value={page}
-                  onChange={setPage}
+                  onChange={handlePageChange}
                   size={small ? "sm" : "md"}
                   disabled={isLoading}
                 />

@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { Text, Flex, Anchor, Space, Transition } from "@mantine/core";
+import { Text, Flex, Anchor, Space } from "@mantine/core";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { usePrevious } from "@mantine/hooks";
@@ -17,6 +17,8 @@ import useGame from "@/hooks/useGame.ts";
 import { getSongCollections, SongCollectionItemProps } from "@/utils/api/song/song.tsx";
 import { usePageContext } from "vike-react/usePageContext";
 import { useSongBests } from "@/hooks/queries/useSongBests.ts";
+import { AnimatePresence, motion } from "motion/react";
+import { match } from "ts-pattern";
 
 interface State {
   songId: number | null;
@@ -150,46 +152,45 @@ const SongsContent = () => {
         </Anchor>
         来搜索曲目。
       </Text>
-      <Transition
-        mounted={Boolean(songId && song)}
-        transition="pop"
-        timingFunction="ease"
-        enterDelay={250}
-      >
-        {(styles) => <SongCard song={song} style={styles} />}
-      </Transition>
-      <Space h="md" />
-      <LoginAlert content="你需要登录查分器账号才能查看你的最佳成绩。" mb="md" radius="md" />
-      <Transition mounted={!(songId && song)} transition="pop" enterDelay={300}>
-        {(styles) => (
-          <Flex
-            gap="xs"
-            align="center"
-            direction="column"
-            c="dimmed"
-            mt="xl"
-            mb="xl"
-            style={styles}
-          >
-            <IconListDetails size={64} stroke={1.5} />
-            <Text fz="sm">请选择一首曲目来查看曲目详情</Text>
-          </Flex>
-        )}
-      </Transition>
-      <Transition mounted={Boolean(songId && song)} transition="pop" enterDelay={300}>
-        {(styles) => (
-          <SongDifficultyList song={song} scores={scores} setScores={setScores} style={styles} />
-        )}
-      </Transition>
-      <Transition
-        mounted={Boolean(songId && song && songCollections && songCollections.length > 0)}
-        transition="pop"
-        enterDelay={350}
-      >
-        {(styles) => (
-          <SongCollections collections={songCollections} style={{ ...styles, marginTop: "1rem" }} />
-        )}
-      </Transition>
+      <AnimatePresence mode="wait" initial={false}>
+        {match(Boolean(songId && song))
+          .with(true, () => (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <SongCard song={song} />
+              <Space h="md" />
+              <LoginAlert
+                content="你需要登录查分器账号才能查看你的最佳成绩。"
+                mb="md"
+                radius="md"
+              />
+              <SongDifficultyList song={song} scores={scores} setScores={setScores} />
+              {songCollections && songCollections.length > 0 && (
+                <SongCollections collections={songCollections} style={{ marginTop: "1rem" }} />
+              )}
+            </motion.div>
+          ))
+          .with(false, () => (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
+                <IconListDetails size={64} stroke={1.5} />
+                <Text fz="sm">请选择一首曲目来查看曲目详情</Text>
+              </Flex>
+            </motion.div>
+          ))
+          .exhaustive()}
+      </AnimatePresence>
     </div>
   );
 };

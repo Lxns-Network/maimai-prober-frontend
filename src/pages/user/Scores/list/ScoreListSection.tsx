@@ -392,8 +392,7 @@ export const ScoreListSection = () => {
               right: 0,
               zIndex: 1,
               opacity: sortedScores.length > 0 || activeFilterCount > 0 ? 1 : 0,
-              pointerEvents:
-                sortedScores.length > 0 || activeFilterCount > 0 ? undefined : "none",
+              pointerEvents: sortedScores.length > 0 || activeFilterCount > 0 ? undefined : "none",
               transition: "opacity 0.2s ease",
             }}
           >
