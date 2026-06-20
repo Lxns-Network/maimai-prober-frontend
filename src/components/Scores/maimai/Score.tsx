@@ -5,7 +5,6 @@ import {
   getTransparentColor,
 } from "@/utils/color.ts";
 import { getDifficulty, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { useEffect, useState } from "react";
 import { MaimaiScoreProps } from "@/types/score";
 
 interface ScoreContentProps {
@@ -14,20 +13,13 @@ interface ScoreContentProps {
 }
 
 export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
-  const [isBuddy, setIsBuddy] = useState(false);
-  const [level, setLevel] = useState(score.level);
-
   const deluxeRating = score.type !== "utage" ? `${parseInt(String(score.dx_rating))}` : "-";
   const levelIndex = score.type !== "utage" ? score.level_index : 5;
 
-  useEffect(() => {
-    if (!song) return;
-    const difficulty = getDifficulty(song, score.type, score.level_index);
-    if (!difficulty) return;
-    setIsBuddy(difficulty.is_buddy);
-    if (score.type === "utage") return;
-    setLevel(difficulty.level_value.toFixed(1));
-  }, [song]);
+  const difficulty = song ? getDifficulty(song, score.type, score.level_index) : undefined;
+  const isBuddy = difficulty?.is_buddy ?? false;
+  const level =
+    difficulty && score.type !== "utage" ? difficulty.level_value.toFixed(1) : score.level;
 
   return (
     <>

@@ -4,12 +4,7 @@ import {
   getScoreSecondaryColor,
   getTransparentColor,
 } from "@/utils/color.ts";
-import {
-  getDifficulty,
-  ChunithmSongProps,
-  ChunithmDifficultyProps,
-} from "@/utils/api/song/chunithm.ts";
-import { useEffect, useState } from "react";
+import { getDifficulty, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { ChunithmScoreProps } from "@/types/score";
 
 interface ScoreContentProps {
@@ -18,23 +13,15 @@ interface ScoreContentProps {
 }
 
 export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
-  const [difficulty, setDifficulty] = useState<ChunithmDifficultyProps | null>(null);
-  const [level, setLevel] = useState(score.level);
-
   const rating = score.id < 8000 ? `${Math.floor(score.rating * 100) / 100}` : "-";
   const levelIndex = score.id < 8000 ? score.level_index : 5;
 
-  useEffect(() => {
-    if (!song) return;
-    const difficulty = getDifficulty(song, score.level_index);
-    if (!difficulty) return;
-    setDifficulty(difficulty);
-    if (score.id >= 8000) {
-      setLevel(difficulty.kanji);
-    } else {
-      setLevel(difficulty.level_value.toFixed(1));
-    }
-  }, [song]);
+  const difficulty = song ? getDifficulty(song, score.level_index) : undefined;
+  const level = difficulty
+    ? score.id >= 8000
+      ? difficulty.kanji
+      : difficulty.level_value.toFixed(1)
+    : score.level;
 
   return (
     <>

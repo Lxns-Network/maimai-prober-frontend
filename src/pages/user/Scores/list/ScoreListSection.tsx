@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
@@ -34,6 +34,8 @@ import {
   Text,
 } from "@mantine/core";
 import classes from "./ScoreListSection.module.css";
+import { AnimatePresence, motion } from "motion/react";
+import { match } from "ts-pattern";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
@@ -105,6 +107,18 @@ export const ScoreListSection = () => {
   const small = useMediaQuery("(max-width: 30rem)");
 
   const topRef = useRef<HTMLDivElement>(null);
+  const countRowRef = useRef<HTMLDivElement>(null);
+  const [countRowHeight, setCountRowHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = countRowRef.current;
+    if (!el) return;
+    const update = () => setCountRowHeight(el.offsetHeight);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     setSongId(0);
@@ -194,8 +208,7 @@ export const ScoreListSection = () => {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    // 立即滚动:平滑滚动会与 auto-animate 的 FLIP 同时进行,把滚动距离混入卡片位移导致偏移
-    topRef.current?.scrollIntoView({ behavior: "instant", block: "start" });
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleCreateScore = () => {
@@ -369,9 +382,22 @@ export const ScoreListSection = () => {
         {createButton}
       </Flex>
       <Flex gap="md" align="flex-start">
-        <Box style={{ flex: 1, minWidth: 0 }}>
-          {sortedScores.length > 0 && (
-            <Group justify="space-between" wrap="nowrap" mb="sm">
+        <Box style={{ flex: 1, minWidth: 0, position: "relative" }}>
+          <Box
+            ref={countRowRef}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 1,
+              opacity: sortedScores.length > 0 || activeFilterCount > 0 ? 1 : 0,
+              pointerEvents:
+                sortedScores.length > 0 || activeFilterCount > 0 ? undefined : "none",
+              transition: "opacity 0.2s ease",
+            }}
+          >
+            <Group justify="space-between" wrap="nowrap">
               <Text fz="sm" c="dimmed">
                 共 <NumberFormatter value={sortedScores.length} thousandSeparator /> 条成绩
               </Text>
@@ -387,41 +413,74 @@ export const ScoreListSection = () => {
                 </Button>
               )}
             </Group>
-          )}
-          {isLoading && totalPages === 0 && (
-            <Group justify="center" mt="md" mb="md">
-              <Loader />
-            </Group>
-          )}
-          {!isLoading && totalPages === 0 && (
-            <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
-              <IconDatabaseOff size={64} stroke={1.5} />
-              <Text fz="sm">没有获取或筛选到任何成绩</Text>
-              {activeFilterCount > 0 && (
-                <Button mt="xs" variant="light" size="xs" onClick={() => resetFilters()}>
-                  重置筛选条件
-                </Button>
-              )}
-            </Flex>
-          )}
-          <ScoreList
-            scores={displayScores}
-            cols={{ base: 1, "400px": 2 }}
-            onScoreChange={(score) => {
-              score && invalidate();
-            }}
-          />
-          {totalPages > 1 && (
-            <Group justify="center" mt="md">
-              <Pagination
-                total={totalPages}
-                value={page}
-                onChange={handlePageChange}
-                size={small ? "sm" : "md"}
-                disabled={isLoading}
-              />
-            </Group>
-          )}
+          </Box>
+          <AnimatePresence mode="wait" initial={false}>
+            {match({ hasResults: totalPages > 0, isLoading })
+              .with({ hasResults: true }, () => (
+                <motion.div
+                  key="list"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    paddingTop: `calc(${countRowHeight || 28}px + var(--mantine-spacing-sm))`,
+                  }}
+                >
+                  <ScoreList
+                    scores={displayScores}
+                    cols={{ base: 1, "400px": 2 }}
+                    onScoreChange={(score) => {
+                      score && invalidate();
+                    }}
+                  />
+                  {totalPages > 1 && (
+                    <Group justify="center" mt="md">
+                      <Pagination
+                        total={totalPages}
+                        value={page}
+                        onChange={handlePageChange}
+                        size={small ? "sm" : "md"}
+                        disabled={isLoading}
+                      />
+                    </Group>
+                  )}
+                </motion.div>
+              ))
+              .with({ hasResults: false, isLoading: true }, () => (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Group justify="center" mt="md" mb="md">
+                    <Loader />
+                  </Group>
+                </motion.div>
+              ))
+              .with({ hasResults: false, isLoading: false }, () => (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
+                    <IconDatabaseOff size={64} stroke={1.5} />
+                    <Text fz="sm">没有获取或筛选到任何成绩</Text>
+                    {activeFilterCount > 0 && (
+                      <Button mt="xs" variant="light" size="xs" onClick={() => resetFilters()}>
+                        重置筛选条件
+                      </Button>
+                    )}
+                  </Flex>
+                </motion.div>
+              ))
+              .exhaustive()}
+          </AnimatePresence>
         </Box>
         <Card
           withBorder

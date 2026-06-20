@@ -1,12 +1,10 @@
 import {
   BackgroundImage,
-  Box,
   Card,
-  SimpleGrid,
   SimpleGridProps,
   useComputedColorScheme,
 } from "@mantine/core";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
 import { MaimaiScoreContent } from "./maimai/Score.tsx";
 import { ChunithmScoreContent } from "./chunithm/Score.tsx";
 import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
@@ -80,9 +78,11 @@ interface ScoreListProps {
   cols?: SimpleGridProps["cols"];
 }
 
+const keyOf = (score: MaimaiScoreProps | ChunithmScoreProps) =>
+  `${score.id}:${"type" in score && score.type}:${score.level_index}`;
+
 export const ScoreList = ({ scores, onScoreChange, cols }: ScoreListProps) => {
   const [game] = useGame();
-  const [ref] = useAutoAnimate();
 
   const { openModal: openScoreModal } = useScoreStore();
 
@@ -97,21 +97,11 @@ export const ScoreList = ({ scores, onScoreChange, cols }: ScoreListProps) => {
   };
 
   return (
-    <Box w="100%">
-      <SimpleGrid
-        type="container"
-        cols={cols ?? { base: 1, "400px": 2, "700px": 3 }}
-        spacing="xs"
-        ref={ref}
-      >
-        {scores.map((score) => (
-          <Score
-            key={`${score.id}:${"type" in score && score.type}:${score.level_index}`}
-            score={score}
-            onClick={() => handleOpenScoreModal(score)}
-          />
-        ))}
-      </SimpleGrid>
-    </Box>
+    <AnimatedGrid
+      items={scores}
+      getKey={keyOf}
+      cols={cols ?? { base: 1, "400px": 2, "700px": 3 }}
+      renderItem={(score) => <Score score={score} onClick={() => handleOpenScoreModal(score)} />}
+    />
   );
 };

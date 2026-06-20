@@ -1,9 +1,9 @@
-import { Box, SimpleGrid } from "@mantine/core";
+import { Box } from "@mantine/core";
 import { Alias } from "./Alias.tsx";
 import { useSetState } from "@mantine/hooks";
 import { AliasModal, calculateNewAliasWeight } from "./AliasModal.tsx";
 import { useEffect, useState } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
 import { AliasProps } from "@/types/alias";
 
 interface AliasListProps {
@@ -12,8 +12,9 @@ interface AliasListProps {
   onMutate: () => void;
 }
 
+const aliasKey = (alias: AliasProps) => `${alias.song.id}:${alias.alias_id}`;
+
 export const AliasList = ({ aliases, onVote, onMutate }: AliasListProps) => {
-  const [parent] = useAutoAnimate();
   const [opened, setOpened] = useState(false);
   const [alias, setAlias] = useSetState<AliasProps>({} as AliasProps);
   const [displayAliases, setDisplayAliases] = useState<AliasProps[]>([]);
@@ -41,10 +42,12 @@ export const AliasList = ({ aliases, onVote, onMutate }: AliasListProps) => {
         opened={opened}
         onClose={() => setOpened(false)}
       />
-      <SimpleGrid type="container" cols={{ base: 1, "400px": 2 }} spacing="xs" ref={parent}>
-        {displayAliases.map((alias) => (
+      <AnimatedGrid
+        items={displayAliases}
+        getKey={aliasKey}
+        cols={{ base: 1, "400px": 2 }}
+        renderItem={(alias) => (
           <Alias
-            key={`${alias.song.id}:${alias.alias_id}`}
             alias={alias}
             onClick={() => {
               if (!alias.uploader)
@@ -62,8 +65,8 @@ export const AliasList = ({ aliases, onVote, onMutate }: AliasListProps) => {
             }}
             onMutate={onMutate}
           />
-        ))}
-      </SimpleGrid>
+        )}
+      />
     </Box>
   );
 };

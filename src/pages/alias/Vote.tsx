@@ -12,6 +12,8 @@ import {
 } from "@mantine/core";
 import { useMediaQuery, useToggle } from "@mantine/hooks";
 import { AliasList } from "@/components/Alias/AliasList.tsx";
+import { AnimatePresence, motion } from "motion/react";
+import { match } from "ts-pattern";
 import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
 import classes from "../Page.module.css";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
@@ -148,35 +150,64 @@ const AliasVoteContent = () => {
         mt="xs"
       />
       <Space h="md" />
-      {isLoading && pageCount === 0 ? (
-        <Group justify="center" mt="md" mb="md">
-          <Loader />
-        </Group>
-      ) : (
-        pageCount === 0 && (
-          <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
-            <IconDatabaseOff size={64} stroke={1.5} />
-            <Text fz="sm">暂时没有可投票的曲目别名</Text>
-          </Flex>
-        )
-      )}
-      <Group justify="center">
-        <Pagination
-          total={pageCount}
-          value={page}
-          onChange={setPage}
-          size={small ? "sm" : "md"}
-          disabled={isLoading}
-        />
-        <AliasList aliases={aliases} onVote={invalidateVotes} onMutate={invalidate} />
-        <Pagination
-          total={pageCount}
-          value={page}
-          onChange={setPage}
-          size={small ? "sm" : "md"}
-          disabled={isLoading}
-        />
-      </Group>
+      <AnimatePresence mode="wait" initial={false}>
+        {match({ hasAliases: pageCount > 0, isLoading })
+          .with({ hasAliases: true }, () => (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Group justify="center">
+                <Pagination
+                  total={pageCount}
+                  value={page}
+                  onChange={setPage}
+                  size={small ? "sm" : "md"}
+                  disabled={isLoading}
+                />
+                <AliasList aliases={aliases} onVote={invalidateVotes} onMutate={invalidate} />
+                <Pagination
+                  total={pageCount}
+                  value={page}
+                  onChange={setPage}
+                  size={small ? "sm" : "md"}
+                  disabled={isLoading}
+                />
+              </Group>
+            </motion.div>
+          ))
+          .with({ hasAliases: false, isLoading: true }, () => (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Group justify="center" mt="md" mb="md">
+                <Loader />
+              </Group>
+            </motion.div>
+          ))
+          .with({ hasAliases: false, isLoading: false }, () => (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
+                <IconDatabaseOff size={64} stroke={1.5} />
+                <Text fz="sm">暂时没有可投票的曲目别名</Text>
+              </Flex>
+            </motion.div>
+          ))
+          .exhaustive()}
+      </AnimatePresence>
     </div>
   );
 };
