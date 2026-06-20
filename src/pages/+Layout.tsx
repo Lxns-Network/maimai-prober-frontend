@@ -132,7 +132,8 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       logout();
 
       if (pageContext.urlPathname !== "/login") {
-        navigate("/login", {
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        navigate(`/login?redirect=${redirect}`, {
           overwriteLastHistoryEntry: true,
         });
       }

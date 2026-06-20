@@ -48,7 +48,8 @@ export const PasskeyLogin = () => {
       localStorage.setItem("token", authData.data.token);
       Sentry.setUser(getSentryUser());
 
-      const target = await resolvePostLoginTarget(pageContext.redirect);
+      const redirect = pageContext.urlParsed.search.redirect || pageContext.redirect;
+      const target = await resolvePostLoginTarget(redirect);
       navigate(target, { pageContext: { redirect: undefined } });
     } catch (error) {
       if ((error as Error).name === "NotAllowedError") {
