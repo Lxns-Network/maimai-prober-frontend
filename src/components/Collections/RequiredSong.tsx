@@ -17,7 +17,6 @@ import {
   rem,
   RingProgress,
   SegmentedControl,
-  SimpleGrid,
   Space,
   Text,
   ThemeIcon,
@@ -27,7 +26,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../Marquee.tsx";
 import { ASSET_URL } from "@/main";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
 import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
 import { Link } from "@/components/Link";
 import useFixedGame from "@/hooks/useFixedGame.ts";
@@ -97,7 +96,6 @@ export const RequiredSong = ({
 }) => {
   const { height, ref } = useElementSize();
 
-  const [animationRef] = useAutoAnimate();
   const [game] = useFixedGame();
   const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
   const [difficulty, setDifficulty] = useState<number>(0);
@@ -319,9 +317,13 @@ export const RequiredSong = ({
           <Loader />
         </Center>
       )}
-      <SimpleGrid cols={2} ref={animationRef}>
-        {displayRecords.map((record) => (
-          <Group key={record.id} wrap="nowrap" gap="xs">
+      <AnimatedGrid
+        items={displayRecords}
+        getKey={(record) => String(record.id)}
+        cols={2}
+        spacing="md"
+        renderItem={(record) => (
+          <Group wrap="nowrap" gap="xs">
             <Box pos="relative" h={40}>
               <LoadingOverlay
                 overlayProps={{ radius: "sm", backgroundOpacity: 0.9 }}
@@ -375,8 +377,8 @@ export const RequiredSong = ({
               )}
             </div>
           </Group>
-        ))}
-      </SimpleGrid>
+        )}
+      />
       <Center>
         <Pagination
           hideWithOnePage

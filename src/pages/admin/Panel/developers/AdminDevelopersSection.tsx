@@ -20,7 +20,7 @@ import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-re
 import classes from "./AdminDevelopersSection.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { AnimatedStack } from "@/components/AnimatedGrid.tsx";
 import { UserProps } from "@/types/user";
 
 interface DeveloperProps {
@@ -180,7 +180,6 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
 };
 
 const AdminDevelopersContent = () => {
-  const [parent] = useAutoAnimate();
   const [displayDevelopers, setDisplayDevelopers] = useState<DeveloperProps[]>([]);
   const [developers, setDevelopers] = useState<DeveloperProps[]>([]);
   const [fetching, setFetching] = useState(true);
@@ -246,18 +245,19 @@ const AdminDevelopersContent = () => {
             <Loader />
           </Group>
         )}
-        <Stack w="100%" ref={parent}>
-          {displayDevelopers.map((developer) => (
+        <AnimatedStack
+          items={displayDevelopers}
+          getKey={(developer) => String(developer.id)}
+          renderItem={(developer) => (
             <DeveloperCard
-              key={developer.id}
               developer={developer}
               userOnClick={() => {
                 setActiveUser(developer.user);
                 open();
               }}
             />
-          ))}
-        </Stack>
+          )}
+        />
         <Pagination
           hideWithOnePage
           total={Math.ceil(developers.length / PAGE_SIZE)}

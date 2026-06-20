@@ -9,7 +9,7 @@ import { ChunithmSongDifficulty } from "./chunithm/SongDifficulty.tsx";
 import { MaimaiSongDifficulty } from "./maimai/SongDifficulty.tsx";
 import React, { useEffect, useState } from "react";
 import { Chip, Group, Stack } from "@mantine/core";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { AnimatedStack } from "@/components/AnimatedGrid.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
@@ -111,7 +111,6 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
     (MaimaiDifficultyProps | ChunithmDifficultyProps)[]
   >([]);
   const [difficultyType, setDifficultyType] = useState<"standard" | "dx" | "utage">();
-  const [ref] = useAutoAnimate();
 
   const { openModal: openScoreModal } = useScoreStore();
 
@@ -171,7 +170,7 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
   };
 
   return (
-    <Stack ref={ref} style={style}>
+    <Stack style={style}>
       {game === "maimai" && song && song.difficulties && (
         <Chip.Group
           multiple={false}
@@ -192,34 +191,27 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
           </Group>
         </Chip.Group>
       )}
-      {difficulties.map((difficulty) => {
-        if (!song) return null;
-        if (game === "maimai" && "type" in difficulty) {
-          return (
-            <SongDifficulty
-              key={`${song.id}:${difficulty.type}:${difficulty.difficulty}`}
-              song={song}
-              difficulty={difficulty}
-              score={scores.find(
-                (record) =>
-                  (record as MaimaiScoreProps).type === difficulty.type &&
-                  record.level_index === difficulty.difficulty,
-              )}
-              onClick={handleOpenScoreModal}
-            />
-          );
-        } else if (game === "chunithm") {
-          return (
-            <SongDifficulty
-              key={`${song.id}:${difficulty.difficulty}`}
-              song={song}
-              difficulty={difficulty}
-              score={scores.find((record) => record.level_index === difficulty.difficulty)}
-              onClick={handleOpenScoreModal}
-            />
-          );
+      <AnimatedStack
+        items={song ? difficulties : []}
+        getKey={(difficulty) =>
+          game === "maimai" && "type" in difficulty
+            ? `${song!.id}:${difficulty.type}:${difficulty.difficulty}`
+            : `${song!.id}:${difficulty.difficulty}`
         }
-      })}
+        renderItem={(difficulty) => (
+          <SongDifficulty
+            song={song!}
+            difficulty={difficulty}
+            score={scores.find((record) =>
+              game === "maimai" && "type" in difficulty
+                ? (record as MaimaiScoreProps).type === difficulty.type &&
+                  record.level_index === difficulty.difficulty
+                : record.level_index === difficulty.difficulty,
+            )}
+            onClick={handleOpenScoreModal}
+          />
+        )}
+      />
     </Stack>
   );
 };
