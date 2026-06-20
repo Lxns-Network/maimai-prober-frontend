@@ -114,7 +114,14 @@ export const listToPermission = (list: UserPermission[]) => {
 
 export const resolvePostLoginTarget = async (redirect?: string | null): Promise<string> => {
   const EXCLUDED = ["/login", "/register"];
-  if (redirect && !EXCLUDED.includes(redirect)) {
+  const redirectPathname = redirect?.split(/[?#]/)[0];
+  if (
+    redirect &&
+    redirect.startsWith("/") &&
+    !redirect.startsWith("//") &&
+    redirectPathname &&
+    !EXCLUDED.includes(redirectPathname)
+  ) {
     return redirect;
   }
 

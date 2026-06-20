@@ -114,7 +114,8 @@ export default function Login() {
             localStorage.setItem("token", data.token);
             Sentry.setUser(getSentryUser());
 
-            const target = await resolvePostLoginTarget(pageContext.redirect);
+            const redirect = pageContext.urlParsed.search.redirect || pageContext.redirect;
+            const target = await resolvePostLoginTarget(redirect);
             window.location.href = target;
           },
           onError: (error) => {

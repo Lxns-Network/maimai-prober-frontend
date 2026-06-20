@@ -139,3 +139,6 @@ docs/
 
 # Mac System Files
 .DS_Store
+
+# Codex
+.codex
