@@ -194,7 +194,8 @@ export const ScoreListSection = () => {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // 立即滚动:平滑滚动会与 auto-animate 的 FLIP 同时进行,把滚动距离混入卡片位移导致偏移
+    topRef.current?.scrollIntoView({ behavior: "instant", block: "start" });
   };
 
   const handleCreateScore = () => {
@@ -352,7 +353,7 @@ export const ScoreListSection = () => {
   );
 
   return (
-    <div ref={topRef}>
+    <div ref={topRef} className={classes.scrollAnchor}>
       <Flex gap="xs" align="center" wrap="nowrap" mb="sm">
         <SongCombobox
           value={songId}
@@ -367,26 +368,26 @@ export const ScoreListSection = () => {
         {filterTrigger}
         {createButton}
       </Flex>
-      {sortedScores.length > 0 && (
-        <Group justify="space-between" wrap="nowrap" mb="sm">
-          <Text fz="sm" c="dimmed">
-            共 <NumberFormatter value={sortedScores.length} thousandSeparator /> 条成绩
-          </Text>
-          {activeFilterCount > 0 && (
-            <Button
-              variant="subtle"
-              color="gray"
-              size="compact-xs"
-              leftSection={<IconX size={14} />}
-              onClick={() => resetFilters()}
-            >
-              清除筛选
-            </Button>
-          )}
-        </Group>
-      )}
       <Flex gap="md" align="flex-start">
         <Box style={{ flex: 1, minWidth: 0 }}>
+          {sortedScores.length > 0 && (
+            <Group justify="space-between" wrap="nowrap" mb="sm">
+              <Text fz="sm" c="dimmed">
+                共 <NumberFormatter value={sortedScores.length} thousandSeparator /> 条成绩
+              </Text>
+              {activeFilterCount > 0 && (
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  size="compact-xs"
+                  leftSection={<IconX size={14} />}
+                  onClick={() => resetFilters()}
+                >
+                  清除筛选
+                </Button>
+              )}
+            </Group>
+          )}
           {isLoading && totalPages === 0 && (
             <Group justify="center" mt="md" mb="md">
               <Loader />

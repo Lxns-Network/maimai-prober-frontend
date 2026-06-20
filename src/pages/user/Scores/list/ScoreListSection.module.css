@@ -30,3 +30,7 @@
   border-radius: 2px;
   background-color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
 }
+
+.scrollAnchor {
+  scroll-margin-top: 16px;
+}
