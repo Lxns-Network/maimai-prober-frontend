@@ -49,7 +49,7 @@ export interface CollectionRequiredSongProps {
 
 interface CollectionRequiredProps {
   completed: boolean;
-  difficulties: number[];
+  difficulties?: number[];
   // maimai
   fc: string;
   fs: string;

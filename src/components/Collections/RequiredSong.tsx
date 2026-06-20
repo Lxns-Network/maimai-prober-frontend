@@ -58,7 +58,7 @@ const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps 
     let completed = 0;
     (collection.required || []).forEach((required) => {
       (required.songs || []).forEach((song) => {
-        total += required.difficulties.length;
+        total += (required.difficulties || []).length;
         completed += (song.completed_difficulties || []).length;
       });
     });
@@ -111,7 +111,7 @@ export const RequiredSong = ({
   useEffect(() => {
     setPage(1);
     if (collection && collection.required) {
-      setDifficulties(collection.required.map((required) => required.difficulties).flat());
+      setDifficulties(collection.required.map((required) => required.difficulties || []).flat());
     }
   }, [collection]);
 
@@ -126,7 +126,7 @@ export const RequiredSong = ({
         return (
           collection.required &&
           collection.required.every((required) => {
-            if (required.difficulties.includes(difficulty || 0)) {
+            if ((required.difficulties || []).includes(difficulty || 0)) {
               return (required.songs || []).some((song) => {
                 return song.title === record.title && song.type === record.type;
               });
@@ -160,7 +160,7 @@ export const RequiredSong = ({
   const difficultyProgress = (collection.required || []).reduce(
     (acc, req) => {
       if (difficulty === undefined) return acc;
-      if (!(req.difficulties || []).includes(difficulty) && req.difficulties.length != 0)
+      if (!(req.difficulties || []).includes(difficulty) && (req.difficulties || []).length != 0)
         return acc;
 
       const songsTotal = (req.songs || []).length;
