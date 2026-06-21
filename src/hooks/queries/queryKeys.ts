@@ -42,6 +42,13 @@ export const queryKeys = {
     list: (game: Game, params: URLSearchParams) =>
       [`user/${game}/alias/list?${params.toString()}`] as const,
     votes: (game: Game) => [`user/${game}/alias/votes`] as const,
+    exists: (game: Game, songId: number, alias: string) =>
+      [
+        `user/${game}/alias/exists?${new URLSearchParams({
+          song_id: String(songId),
+          alias,
+        }).toString()}`,
+      ] as const,
   },
   scores: {
     ranking: (game: Game, params: URLSearchParams) =>

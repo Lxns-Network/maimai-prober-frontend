@@ -6,6 +6,7 @@ import {
   Flex,
   Group,
   List,
+  Loader,
   Mark,
   Modal,
   Paper,
@@ -18,11 +19,13 @@ import {
   Alert,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
+import { useDebouncedValue } from "@mantine/hooks";
 import { mdiAlertCircle, mdiCancel } from "@mdi/js";
 import { Icon } from "@/components/MdiIcon";
 import { TransformedValues, useForm } from "@mantine/form";
 import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
 import { useCreateAlias } from "@/hooks/mutations/useAliasMutations.ts";
+import { useAliasExists } from "@/hooks/queries/useAliasExists.ts";
 import { APIError } from "@/utils/errors.ts";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
@@ -86,6 +89,23 @@ export const CreateAliasModal = ({
   });
 
   const createAliasMutation = useCreateAlias();
+
+  const aliasTrimmed = form.values.alias.trim();
+  const [debouncedAlias] = useDebouncedValue(aliasTrimmed, 300);
+
+  const songTitleLower = form.values.song_id
+    ? songList?.find(form.values.song_id)?.title.toLowerCase()
+    : undefined;
+  const isAliasFormatValid = (value: string) =>
+    value.length >= 1 && value.length <= 32 && value.toLowerCase() !== songTitleLower;
+
+  const { exists, checking } = useAliasExists(
+    game,
+    form.values.song_id,
+    debouncedAlias,
+    isAliasFormatValid(debouncedAlias),
+  );
+  const debouncePending = isAliasFormatValid(aliasTrimmed) && aliasTrimmed !== debouncedAlias;
 
   const createAliasHandler = (values: TransformedValues<typeof form>) => {
     setUploading(true);
@@ -206,6 +226,10 @@ export const CreateAliasModal = ({
                   placeholder="请输入曲目别名"
                   withAsterisk
                   {...form.getInputProps("alias")}
+                  rightSection={checking ? <Loader size="xs" /> : undefined}
+                  error={
+                    form.errors.alias || (exists ? "别名已存在，请输入其它曲目别名" : undefined)
+                  }
                 />
               </div>
             </Flex>
@@ -271,7 +295,11 @@ export const CreateAliasModal = ({
               <Button variant="default" onClick={() => onClose()}>
                 取消
               </Button>
-              <Button type="submit" loading={uploading}>
+              <Button
+                type="submit"
+                loading={uploading}
+                disabled={checking || exists || debouncePending}
+              >
                 提交
               </Button>
             </Group>
