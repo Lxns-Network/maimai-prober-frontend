@@ -8,13 +8,12 @@ import { AliasProps } from "@/types/alias";
 
 interface AliasListProps {
   aliases: AliasProps[];
-  onVote: () => void;
   onMutate: () => void;
 }
 
 const aliasKey = (alias: AliasProps) => `${alias.song.id}:${alias.alias_id}`;
 
-export const AliasList = ({ aliases, onVote, onMutate }: AliasListProps) => {
+export const AliasList = ({ aliases, onMutate }: AliasListProps) => {
   const [opened, setOpened] = useState(false);
   const [alias, setAlias] = useSetState<AliasProps>({} as AliasProps);
   const [displayAliases, setDisplayAliases] = useState<AliasProps[]>([]);
@@ -60,7 +59,6 @@ export const AliasList = ({ aliases, onVote, onMutate }: AliasListProps) => {
             onVote={(vote) => {
               const previousAlias = alias;
               setAlias(calculateNewAliasWeight(alias, vote));
-              onVote();
               return () => setAlias(previousAlias);
             }}
             onMutate={onMutate}

@@ -79,7 +79,7 @@ export const Alias = ({ alias, onClick, onVote, onMutate }: AliasCardProps) => {
   };
 
   useEffect(() => {
-    if (alias.vote) setWeight(alias.vote.weight);
+    setWeight(alias.vote?.weight ?? 0);
 
     if (alias.weight.total === 0) {
       setProgress(0);

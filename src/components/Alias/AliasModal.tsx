@@ -84,7 +84,7 @@ export function calculateNewAliasWeight(
 
   return {
     ...alias,
-    weight: { up, down, total },
+    weight: { up: Math.max(0, up), down: Math.max(0, down), total: Math.max(0, total) },
     vote: {
       ...alias.vote,
       weight: newWeight,
@@ -112,7 +112,7 @@ const AliasModalBody = ({
   }, []);
 
   useEffect(() => {
-    if (alias.vote) setWeight(alias.vote.weight);
+    setWeight(alias.vote?.weight ?? 0);
 
     if (alias.weight.total === 0) {
       setProgress(0);

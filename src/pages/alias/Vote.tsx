@@ -1,26 +1,36 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActionIcon,
+  Badge,
+  Box,
   Button,
-  Card,
   Checkbox,
   Flex,
   Group,
+  Indicator,
   Loader,
+  Menu,
   Pagination,
   Space,
   Text,
 } from "@mantine/core";
-import { useMediaQuery, useToggle } from "@mantine/hooks";
+import { useMediaQuery } from "@mantine/hooks";
 import { AliasList } from "@/components/Alias/AliasList.tsx";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
-import { IconArrowDown, IconArrowUp, IconDatabaseOff, IconPlus } from "@tabler/icons-react";
-import classes from "../Page.module.css";
+import {
+  IconArrowsSort,
+  IconDatabaseOff,
+  IconFilter,
+  IconPlus,
+  IconRestore,
+  IconSortAscending,
+  IconSortDescending,
+} from "@tabler/icons-react";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { useAliases } from "@/hooks/queries/useAliases.ts";
 import { useAliasVotes } from "@/hooks/queries/useAliasVotes.ts";
-import { AliasListProps } from "@/types/alias";
 import useGame from "@/hooks/useGame.ts";
 import useAliasStore from "@/hooks/useAliasStore.ts";
 
@@ -34,7 +44,8 @@ const sortKeys: { name: string; key: SortKey }[] = [
 
 const AliasVoteContent = () => {
   const [game] = useGame();
-  const [onlyNotApproved, toggleOnlyNotApproved] = useToggle();
+  // true = 仅显示未被批准（待投票）的别名，是本页默认状态
+  const [onlyNotApproved, setOnlyNotApproved] = useState(true);
 
   const { openModal: openCreateAliasModal } = useAliasStore();
 
@@ -52,15 +63,29 @@ const AliasVoteContent = () => {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const { aliases, pageCount, pageSize, isLoading, setData, invalidate } = useAliases(
+  const { aliases, pageCount, isLoading, invalidate } = useAliases(
     game,
     page,
-    onlyNotApproved,
+    !onlyNotApproved,
     sortBy,
     reverseSortDirection ? "asc" : "desc",
     songId,
   );
-  const { votes, invalidate: invalidateVotes } = useAliasVotes(game);
+  const { votes } = useAliasVotes(game);
+
+  // 渲染期把用户投票并入别名列表(单一一致快照)。不再用 effect 写回 query 缓存:
+  // 缓存原地变更 + 结构共享会让更新不可见,且 vote 与 weight 来自两个端点容易错位。
+  const aliasesWithVotes = useMemo(
+    () =>
+      aliases.map((alias) => ({
+        ...alias,
+        vote: votes.find((vote) => vote.alias_id === alias.alias_id),
+      })),
+    [aliases, votes],
+  );
+
+  // 投票走乐观更新(calculateNewAliasWeight 与服务端同步 ±1),刷新交给窗口聚焦/翻页等自然时机。
+  // 不在投票后立即 invalidate:列表与投票两个端点刷新有先后,合并时会出现 2→3→2→3 的闪烁。
 
   const sort = (key: SortKey, autoChangeReverse = true) => {
     let reversed = reverseSortDirection;
@@ -77,27 +102,6 @@ const AliasVoteContent = () => {
     setPage(1);
   }, [game]);
 
-  useEffect(() => {
-    aliases.forEach((alias, i) => {
-      const vote = votes.find((vote) => vote.alias_id === alias.alias_id);
-      if (vote) alias.vote = vote;
-      aliases[i] = alias;
-    });
-
-    setData({
-      aliases: aliases,
-      page_count: pageCount,
-      page_size: pageSize,
-    } as AliasListProps);
-  }, [aliases, setData, pageCount, pageSize, votes]);
-
-  const renderSortIndicator = (key: SortKey) => {
-    if (sortBy === key) {
-      return <>{reverseSortDirection ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}</>;
-    }
-    return null;
-  };
-
   const handleCreateAlias = () => {
     openCreateAliasModal({
       game: game,
@@ -108,53 +112,136 @@ const AliasVoteContent = () => {
     });
   };
 
+  const currentSortKey = sortKeys.find((item) => item.key === sortBy);
+
+  const renderSortDirectionIcon = (size: number) =>
+    reverseSortDirection ? <IconSortAscending size={size} /> : <IconSortDescending size={size} />;
+
+  const sortMenu = (
+    <Menu shadow="md" position="bottom-end" width={200} closeOnItemClick={false}>
+      <Menu.Target>
+        {small ? (
+          <Indicator size={8} disabled={!sortBy} withBorder>
+            <ActionIcon variant="default" size="input-sm" aria-label="排序方式">
+              <IconArrowsSort size={20} />
+            </ActionIcon>
+          </Indicator>
+        ) : (
+          <Button
+            variant="default"
+            leftSection={sortBy ? renderSortDirectionIcon(20) : <IconArrowsSort size={20} />}
+          >
+            {currentSortKey ? currentSortKey.name : "排序"}
+          </Button>
+        )}
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Label>排序方式</Menu.Label>
+        {sortKeys.map((item) => (
+          <Menu.Item
+            key={item.key}
+            fw={sortBy === item.key ? 500 : undefined}
+            rightSection={sortBy === item.key ? renderSortDirectionIcon(16) : null}
+            onClick={() => sort(item.key)}
+          >
+            {item.name}
+          </Menu.Item>
+        ))}
+        <Menu.Divider />
+        <Menu.Item
+          leftSection={<IconRestore size={16} />}
+          disabled={!sortBy}
+          onClick={() => {
+            setSortBy(undefined);
+            setReverseSortDirection(false);
+            setPage(1);
+          }}
+        >
+          恢复默认排序
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
+  );
+
+  const activeFilterCount = onlyNotApproved ? 0 : 1;
+
+  const filterMenu = (
+    <Menu shadow="md" position="bottom-end" width={260} closeOnItemClick={false}>
+      <Menu.Target>
+        {small ? (
+          <Indicator
+            label={activeFilterCount}
+            size={16}
+            disabled={activeFilterCount === 0}
+            withBorder
+          >
+            <ActionIcon variant="default" size="input-sm" aria-label="筛选">
+              <IconFilter size={20} />
+            </ActionIcon>
+          </Indicator>
+        ) : (
+          <Button
+            variant="default"
+            leftSection={<IconFilter size={20} />}
+            rightSection={
+              activeFilterCount > 0 ? (
+                <Badge size="sm" circle>
+                  {activeFilterCount}
+                </Badge>
+              ) : null
+            }
+          >
+            筛选
+          </Button>
+        )}
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Label>筛选</Menu.Label>
+        <Box px="sm" py="xs">
+          <Checkbox
+            label="仅显示未被批准的曲目别名"
+            checked={onlyNotApproved}
+            onChange={(event) => {
+              setOnlyNotApproved(event.currentTarget.checked);
+              setPage(1);
+            }}
+          />
+        </Box>
+      </Menu.Dropdown>
+    </Menu>
+  );
+
+  const createButton = small ? (
+    <ActionIcon
+      size="input-sm"
+      variant="filled"
+      aria-label="创建曲目别名"
+      onClick={handleCreateAlias}
+    >
+      <IconPlus size={20} />
+    </ActionIcon>
+  ) : (
+    <Button leftSection={<IconPlus size={20} />} onClick={handleCreateAlias}>
+      创建曲目别名
+    </Button>
+  );
+
   return (
     <div ref={topRef} style={{ scrollMarginTop: 16 }}>
-      <Card withBorder radius="md" className={classes.card} p={0}>
-        <Group m="md" justify="space-between">
-          <div>
-            <Text fz="lg" fw={700}>
-              排序方式
-            </Text>
-            <Text fz="xs" c="dimmed" mt={3}>
-              选择曲目别名的排序方式
-            </Text>
-          </div>
-        </Group>
-        <Flex gap="md" m="md" mt={0} wrap="wrap">
-          {sortKeys.map((item) => (
-            <Button
-              key={item.key}
-              onClick={() => sort(item.key)}
-              size="xs"
-              variant="light"
-              radius="xl"
-              rightSection={renderSortIndicator(item.key)}
-              style={{ display: "flex" }}
-            >
-              {item.name}
-            </Button>
-          ))}
-        </Flex>
-      </Card>
-      <Space h="md" />
-      <Flex align="center" justify="space-between" gap="xs">
+      <Flex gap="xs" align="center" wrap="nowrap">
         <SongCombobox
           value={songId}
-          onOptionSubmit={(value) => setSongId(value)}
-          style={{ flex: 1 }}
-          radius="md"
+          onOptionSubmit={(value) => {
+            setSongId(value);
+            setPage(1);
+          }}
+          placeholder="搜索曲名、别名或曲目 ID"
+          style={{ flex: 1, minWidth: 0 }}
         />
-        <Button radius="md" leftSection={<IconPlus size={20} />} onClick={handleCreateAlias}>
-          创建曲目别名
-        </Button>
+        {sortMenu}
+        {filterMenu}
+        {createButton}
       </Flex>
-      <Checkbox
-        label="仅显示未被批准的曲目别名"
-        defaultChecked={true}
-        onChange={() => toggleOnlyNotApproved()}
-        mt="xs"
-      />
       <Space h="md" />
       <AnimatePresence mode="wait" initial={false}>
         {match({ hasAliases: pageCount > 0, isLoading })
@@ -174,7 +261,7 @@ const AliasVoteContent = () => {
                   size={small ? "sm" : "md"}
                   disabled={isLoading}
                 />
-                <AliasList aliases={aliases} onVote={invalidateVotes} onMutate={invalidate} />
+                <AliasList aliases={aliasesWithVotes} onMutate={invalidate} />
                 <Pagination
                   total={pageCount}
                   value={page}

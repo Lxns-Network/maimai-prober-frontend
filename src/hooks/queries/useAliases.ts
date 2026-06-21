@@ -38,7 +38,6 @@ export const useAliases = (
     pageSize: data?.page_size ?? 0,
     isLoading,
     error,
-    setData: (newData: AliasListProps) => queryClient.setQueryData<AliasListProps>(key, newData),
     invalidate: () => queryClient.invalidateQueries({ queryKey: key }),
   };
 };
