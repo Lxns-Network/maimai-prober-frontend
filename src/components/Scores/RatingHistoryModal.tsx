@@ -20,6 +20,7 @@ import {
 import { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { getSong } from "@/utils/api/song/song.tsx";
 import useGame from "@/hooks/useGame.ts";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface RatingHistoryModalProps {
   song?: MaimaiSongProps | ChunithmSongProps | null;
@@ -39,6 +40,8 @@ export const RatingHistoryModal = ({
   opened,
   onClose,
 }: RatingHistoryModalProps) => {
+  useBackDismiss(opened, onClose);
+
   const [game] = useGame();
   const [ratings, setRatings] = useState<number[]>([]);
 

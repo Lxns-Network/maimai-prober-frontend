@@ -26,6 +26,7 @@ import { TransformedValues, useForm } from "@mantine/form";
 import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
 import { useCreateAlias } from "@/hooks/mutations/useAliasMutations.ts";
 import { useAliasExists } from "@/hooks/queries/useAliasExists.ts";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { APIError } from "@/utils/errors.ts";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { SongCombobox } from "../SongCombobox.tsx";
@@ -55,6 +56,8 @@ export const CreateAliasModal = ({
   opened,
   onClose,
 }: CreateAliasModalProps) => {
+  useBackDismiss(opened, () => onClose());
+
   const [uploading, setUploading] = useState(false);
   const [readonly, setReadonly] = useState(false);
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();

@@ -18,6 +18,7 @@ import { IconChevronRight } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { API_URL } from "@/utils/api/api.ts";
 import { recalculateScores, cancelRecalculateScores } from "@/utils/api/admin.ts";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { openConfirmModal } from "@/utils/modal.tsx";
 import { Game } from "@/types/game";
 import classes from "@/pages/Page.module.css";
@@ -79,6 +80,7 @@ export const RecalculateSection = () => {
   });
   const [resubKey, setResubKey] = useState(0);
   const [modalOpened, modalHandlers] = useDisclosure(false);
+  useBackDismiss(modalOpened, modalHandlers.close);
 
   useEffect(() => {
     const controllers: AbortController[] = [];

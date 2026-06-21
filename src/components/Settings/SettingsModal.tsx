@@ -1,5 +1,6 @@
 import { Modal } from "@mantine/core";
 import { SettingProps, SettingList, SettingValue } from "./SettingList.tsx";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface SettingsModalProps {
   title: string;
@@ -18,6 +19,8 @@ export const SettingsModal = ({
   onClose,
   onChange,
 }: SettingsModalProps) => {
+  useBackDismiss(opened, onClose);
+
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
       <Modal.Overlay />

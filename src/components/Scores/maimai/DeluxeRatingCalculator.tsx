@@ -1,6 +1,7 @@
 import { Chip, Group, Modal, NumberInput, ScrollArea, Stack, Table, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
 import classes from "./DeluxeRatingCalculator.module.css";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface DeluxeRatingCalculatorProps {
   defaultAchievements?: number;
@@ -68,6 +69,8 @@ export const DeluxeRatingCalculator = ({
   opened,
   onClose,
 }: DeluxeRatingCalculatorProps) => {
+  useBackDismiss(opened, onClose);
+
   const [achievements, setAchievements] = useState(defaultAchievements);
   const [deluxeRating, setDeluxeRating] = useState(defaultDeluxeRating);
   const [levelValue, setLevelValue] = useState(defaultLevelValue);

@@ -3,9 +3,12 @@ import { ChunithmCreateScoreModalContent } from "../Scores/chunithm/CreateScoreM
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { Modal } from "@mantine/core";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 export function CreateScoreModalProvider() {
   const { opened, game, score, closeModal } = useCreateScoreStore();
+
+  useBackDismiss(opened, closeModal);
 
   return (
     <Modal.Root

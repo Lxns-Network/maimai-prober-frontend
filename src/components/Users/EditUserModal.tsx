@@ -7,6 +7,7 @@ import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { Button, Group, Modal, MultiSelect, Space, TextInput } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
 import { UserProps } from "@/types/user";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface FormValues {
   name: string;
@@ -24,6 +25,8 @@ export const EditUserModal = ({
   opened: boolean;
   onClose(): void;
 }) => {
+  useBackDismiss(opened, onClose);
+
   const { mutate: mutateUpdateUser } = useUpdateUser();
   const { mutate: mutateDeleteUser } = useDeleteUser();
 

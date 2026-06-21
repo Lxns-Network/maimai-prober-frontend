@@ -13,6 +13,7 @@ import {
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useVoteAlias } from "@/hooks/mutations/useAliasMutations.ts";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import {
   IconCheck,
   IconNorthStar,
@@ -281,6 +282,8 @@ const AliasModalBody = ({
 };
 
 export const AliasModal = ({ alias, setAlias, opened, onClose }: AliasModalProps) => {
+  useBackDismiss(opened, onClose);
+
   return (
     <Modal.Root opened={opened} onClose={() => onClose()} centered>
       <Modal.Overlay />

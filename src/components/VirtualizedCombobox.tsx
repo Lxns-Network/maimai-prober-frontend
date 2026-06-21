@@ -1,4 +1,4 @@
-import { CSSProperties, ReactNode, useEffect, useId, useRef, useState } from "react";
+import { CSSProperties, ReactNode, useEffect, useId, useState } from "react";
 import {
   ActionIcon,
   Box,
@@ -15,6 +15,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { IconArrowLeft, IconSearch } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 const HERO_TRANSITION = { type: "spring", stiffness: 400, damping: 36 } as const;
 
@@ -56,9 +57,6 @@ export function VirtualizedCombobox<T>({
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(-1);
   const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
   const [viewportHeight, setViewportHeight] = useState<number>();
-  // True when the most recent close came from a browser/device back navigation,
-  // so the cleanup below does not pop the history entry a second time.
-  const closedByBackRef = useRef(false);
 
   const virtualizer = useVirtualizer({
     count: options.length,
@@ -111,25 +109,7 @@ export function VirtualizedCombobox<T>({
     }
   }, [isMobile]);
 
-  // On mobile, a device/browser "back" should dismiss the full-screen overlay
-  // instead of navigating away. Push a history entry while open and close on
-  // popstate; if closed via the UI instead, pop our entry to keep history tidy.
-  useEffect(() => {
-    if (!isMobile || !opened) return;
-    closedByBackRef.current = false;
-    window.history.pushState({ virtualizedComboboxModal: true }, "");
-    const handlePopState = () => {
-      closedByBackRef.current = true;
-      setOpened(false);
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      if (!closedByBackRef.current && window.history.state?.virtualizedComboboxModal) {
-        window.history.back();
-      }
-    };
-  }, [isMobile, opened]);
+  useBackDismiss(isMobile && opened, () => setOpened(false));
 
   const showClear = search.length !== 0 && !disabled && !loading;
 

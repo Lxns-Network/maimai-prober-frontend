@@ -7,6 +7,7 @@ import {
   getTotalNotes,
 } from "@/components/Scores/maimai/ScoreModal.tsx";
 import classes from "./DeluxeRatingCalculator.module.css";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface DeluxeScoreDetailProps {
   deluxeScore: number;
@@ -28,6 +29,8 @@ export const DeluxeScoreDetail = ({
   opened,
   onClose,
 }: DeluxeScoreDetailProps) => {
+  useBackDismiss(opened, onClose);
+
   const [rows, setRows] = useState<RowProps[]>([]);
   const [mode, setMode] = useState("+");
 

@@ -44,6 +44,7 @@ import useGame from "@/hooks/useGame.ts";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { useScoreFilters } from "@/hooks/useScoreFilters.ts";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import {
   countActiveFilters,
   scoreRatingRanges,
@@ -87,6 +88,7 @@ export const ScoreListSection = () => {
 
   const [page, setPage] = useState(1);
   const [filterOpened, { open: openFilter, close: closeFilter }] = useDisclosure(false);
+  useBackDismiss(filterOpened, closeFilter);
 
   const ratingRange = scoreRatingRanges[game];
   const { filters, setFilter, resetFilters, isDefault } = useScoreFilters({

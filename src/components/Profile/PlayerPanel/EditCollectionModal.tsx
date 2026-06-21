@@ -22,6 +22,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { usePlayerCollections } from "@/hooks/queries/usePlayerCollections.ts";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { useEffect, useState } from "react";
 import classes from "./EditCollectionModal.module.css";
 import LazyLoad from "@/components/LazyLoad";
@@ -291,6 +292,8 @@ export const EditCollectionModal = ({
   onCancel,
   onSubmit,
 }: EditCollectionModalProps) => {
+  useBackDismiss(opened, onCancel);
+
   const metadata = collectionMetadata[game][type as keyof (typeof collectionMetadata)[Game]];
   const title = metadata?.title || "收藏品";
 

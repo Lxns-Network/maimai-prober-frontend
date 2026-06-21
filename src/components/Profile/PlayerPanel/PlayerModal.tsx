@@ -32,6 +32,7 @@ import { Collection, EditCollectionModal } from "./EditCollectionModal.tsx";
 import { Marquee } from "@/components/Marquee.tsx";
 import { useMediaQuery } from "@mantine/hooks";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface EditButtonProps {
   title: string;
@@ -120,6 +121,7 @@ const versionData = {
 };
 
 export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
+  useBackDismiss(opened, () => onClose());
   const { invalidate, setData: setPlayerData } = usePlayer(game);
   const { mutate: updatePlayer } = useUpdatePlayerData();
   const [version, setVersion] = useState<number>(0);

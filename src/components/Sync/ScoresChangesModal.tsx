@@ -20,6 +20,7 @@ import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { Marquee } from "../Marquee.tsx";
 import { Game } from "@/types/game";
 import useSongListStore from "@/hooks/useSongListStore.ts";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { useShallow } from "zustand/react/shallow";
 
 interface ScoresChangesModalProps {
@@ -376,6 +377,8 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
 };
 
 export const ScoresChangesModal = ({ game, scores, opened, onClose }: ScoresChangesModalProps) => {
+  useBackDismiss(opened, onClose);
+
   return (
     <Modal.Root opened={opened} onClose={onClose} centered size="xl">
       <Modal.Overlay />

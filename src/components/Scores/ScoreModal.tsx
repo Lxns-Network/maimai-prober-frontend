@@ -41,6 +41,7 @@ import { ScoreRanking } from "./ScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { ChartComment } from "./ChartComment.tsx";
 import { rankData, ScoreHistory } from "./ScoreHistory.tsx";
+import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface ScoreModalProps {
   game: Game;
@@ -87,6 +88,7 @@ type DifficultyState =
   | { game: "chunithm"; difficulty: ChunithmDifficultyProps | null };
 
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
+  useBackDismiss(opened, () => onClose());
   const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [songState, setSongState] = useState<SongState | null>(null);
   const [difficultyState, setDifficultyState] = useState<DifficultyState | null>(null);

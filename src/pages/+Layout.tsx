@@ -8,6 +8,7 @@ import {
   IconZoomOut,
 } from "@tabler/icons-react";
 import { ModalsProvider } from "@mantine/modals";
+import { ManagedModalsBackGuard } from "@/components/ModalProvider/ManagedModalsBackGuard.tsx";
 import { notifications, Notifications } from "@mantine/notifications";
 import { logout } from "@/utils/session";
 import * as Sentry from "@sentry/react";
@@ -173,6 +174,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       <MantineProvider theme={theme} defaultColorScheme="auto">
         <ErrorBoundary FallbackComponent={Fallback}>
           <ModalsProvider labels={{ confirm: "确定", cancel: "取消" }}>
+            <ManagedModalsBackGuard />
             <PhotoProvider
               speed={() => 200}
               maskOpacity={0.6}
