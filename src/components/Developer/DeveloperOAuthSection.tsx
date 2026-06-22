@@ -1,69 +1,169 @@
 import {
   ActionIcon,
+  Avatar,
   Badge,
   Box,
   Button,
   Card,
+  Collapse,
   CopyButton,
   Divider,
   Grid,
   Group,
+  Loader,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from "@mantine/core";
-import { IconCheck, IconCopy, IconEdit, IconTrash } from "@tabler/icons-react";
-import { useOAuthApps } from "@/hooks/queries/useOAuthApps.ts";
-import { useDeleteOAuthApp } from "@/hooks/mutations/useDeveloperMutations.ts";
-import { useDisclosure, useViewportSize } from "@mantine/hooks";
+import {
+  IconCalendar,
+  IconCheck,
+  IconChevronDown,
+  IconChevronUp,
+  IconCopy,
+  IconEdit,
+  IconLink,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
+import { useOAuthApps } from "@/hooks/queries/useOAuthApps.ts";
+import { useDeleteOAuthApp } from "@/hooks/mutations/useDeveloperMutations.ts";
+import { useDisclosure } from "@mantine/hooks";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
-import classes from "@/pages/Page.module.css";
 import { CreateOAuthClientModal } from "@/components/Developer/CreateOAuthClientModal.tsx";
-import { DataTable } from "mantine-datatable";
+import pageClasses from "@/pages/Page.module.css";
+import classes from "./DeveloperOAuthSection.module.css";
 
-const TextInputWithCopyButton = ({ label, value }: { label: string; value: string }) => {
+const MAX_APPS = 5;
+
+const TextInputWithCopyButton = ({ label, value }: { label: string; value: string }) => (
+  <TextInput
+    label={label}
+    value={value}
+    variant="filled"
+    readOnly
+    rightSection={
+      <CopyButton value={value} timeout={2000}>
+        {({ copied, copy }) => (
+          <Tooltip label={copied ? "已复制" : "复制"} withArrow position="left">
+            <ActionIcon variant="subtle" color={copied ? "teal" : "gray"} onClick={copy}>
+              {copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
+            </ActionIcon>
+          </Tooltip>
+        )}
+      </CopyButton>
+    }
+  />
+);
+
+const OAuthAppCard = ({
+  app,
+  authLink,
+  onEdit,
+  onDelete,
+}: {
+  app: OAuthAppProps;
+  authLink: string;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <TextInput
-      label={label}
-      value={value}
-      rightSection={
-        <CopyButton value={value} timeout={2000}>
-          {({ copied, copy }) => (
-            <Tooltip label={copied ? "已复制" : "复制"} withArrow position="right">
-              <ActionIcon variant="subtle" color={copied ? "teal" : "gray"} onClick={copy}>
-                {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </CopyButton>
-      }
-      readOnly
-    />
+    <Card className={classes.appCard} withBorder radius="md" p={0}>
+      <Group align="center" gap="md" wrap="nowrap" m="xs">
+        <Avatar src={app.logo_url} radius="sm">
+          {app.name.charAt(0).toUpperCase()}
+        </Avatar>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Text fw={500} size="md" truncate>
+            {app.name}
+          </Text>
+          <Group gap="md" mt={2} wrap="nowrap">
+            <Group gap={4} wrap="nowrap" style={{ minWidth: 0 }}>
+              <IconLink size={12} style={{ color: "var(--mantine-color-dimmed)", flexShrink: 0 }} />
+              <Text size="xs" c="dimmed" truncate>
+                {app.redirect_uri}
+              </Text>
+            </Group>
+            {app.create_time && (
+              <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+                <IconCalendar size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
+                <Text size="xs" c="dimmed">
+                  创建于 {new Date(app.create_time).toLocaleDateString()}
+                </Text>
+              </Group>
+            )}
+          </Group>
+        </div>
+
+        <Group gap={2} wrap="nowrap">
+          <Tooltip label="编辑" position="top" withArrow>
+            <ActionIcon variant="subtle" color="gray" size="lg" onClick={onEdit}>
+              <IconEdit size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="删除" position="top" withArrow>
+            <ActionIcon variant="subtle" color="red" size="lg" onClick={onDelete}>
+              <IconTrash size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      </Group>
+
+      <Divider />
+
+      <Box m="xs">
+        <Group justify="space-between" align="center">
+          <Text size="sm" fw={500}>
+            应用凭据
+          </Text>
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setExpanded((v) => !v)}>
+            {expanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
+          </ActionIcon>
+        </Group>
+        <Collapse expanded={expanded}>
+          <Grid mt="xs">
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <TextInputWithCopyButton label="应用 ID" value={app.client_id || ""} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <TextInputWithCopyButton label="应用密钥" value={app.client_secret || ""} />
+            </Grid.Col>
+            <Grid.Col span={12}>
+              <TextInputWithCopyButton label="OAuth 授权链接" value={authLink} />
+            </Grid.Col>
+          </Grid>
+        </Collapse>
+      </Box>
+    </Card>
   );
 };
 
 export const DeveloperOAuthSection = () => {
   const { apps, isLoading, invalidate } = useOAuthApps();
   const deleteOAuthAppMutation = useDeleteOAuthApp();
-  const { width } = useViewportSize();
 
   const [opened, modal] = useDisclosure(false);
   const [selectedApp, setSelectedApp] = useState<OAuthAppProps | null>(null);
 
   const generateOAuthAppLink = (app: OAuthAppProps) => {
-    const baseUrl = `${window.location.origin}/oauth/authorize`;
-
     const params = new URLSearchParams({
       response_type: "code",
       client_id: app.client_id || "",
       redirect_uri: app.redirect_uri,
       scope: Array.isArray(app.scope) ? app.scope.join(" ") : app.scope,
     });
+    return `${window.location.origin}/oauth/authorize?${params.toString()}`;
+  };
 
-    return `${baseUrl}?${params.toString()}`;
+  const openCreate = () => {
+    setSelectedApp(null);
+    modal.open();
   };
 
   const deleteAppHandler = async (clientId: string) => {
@@ -79,18 +179,14 @@ export const DeveloperOAuthSection = () => {
     if (!opened) invalidate();
   }, [opened]);
 
+  const atLimit = apps.length >= MAX_APPS;
+
   return (
-    <Card
-      className={classes.card}
-      withBorder
-      radius="md"
-      w={width > 700 ? `100%` : width - 32}
-      p={0}
-    >
+    <Card withBorder radius="md" className={pageClasses.card}>
       <CreateOAuthClientModal app={selectedApp} opened={opened} onClose={modal.close} />
-      <Card.Section className={classes.section} m={0}>
-        <Group justify="space-between" wrap="nowrap" gap="xl" align="center">
-          <div>
+      <Stack gap="md">
+        <Group justify="space-between" wrap="nowrap" align="center" gap="md">
+          <Box>
             <Group gap="sm">
               <Text fz="lg" fw={700}>
                 OAuth 应用
@@ -98,129 +194,48 @@ export const DeveloperOAuthSection = () => {
               <Badge variant="light">测试版</Badge>
             </Group>
             <Text fz="xs" c="dimmed" mt={3}>
-              使用 OAuth 应用来获取用户授权访问其 maimai DX 查分器数据
+              使用 OAuth 应用获取用户授权访问其 maimai DX 查分器数据
             </Text>
-          </div>
+          </Box>
+          <Button
+            leftSection={<IconPlus size={18} />}
+            onClick={openCreate}
+            disabled={atLimit}
+            style={{ flexShrink: 0 }}
+          >
+            创建应用
+          </Button>
         </Group>
-      </Card.Section>
-      <DataTable
-        highlightOnHover
-        striped
-        verticalSpacing="xs"
-        mih={apps.length === 0 ? 150 : 0}
-        noHeader={apps.length === 0}
-        emptyState={
-          apps.length === 0 && (
-            <Stack align="center" gap="xs">
-              <Text c="dimmed" size="sm">
-                你还没有创建任何 OAuth 应用
-              </Text>
-              <Button
-                style={{ pointerEvents: "all" }}
-                onClick={() => {
-                  setSelectedApp(null);
+
+        {isLoading ? (
+          <Group justify="center" m="md">
+            <Loader />
+          </Group>
+        ) : apps.length > 0 ? (
+          <Stack gap="md">
+            {apps.map((app) => (
+              <OAuthAppCard
+                key={app.client_id || app.name}
+                app={app}
+                authLink={generateOAuthAppLink(app)}
+                onEdit={() => {
+                  setSelectedApp(app);
                   modal.open();
                 }}
-              >
-                创建 OAuth 应用
-              </Button>
-            </Stack>
-          )
-        }
-        columns={[
-          {
-            accessor: "name",
-            title: <Box ml={6}>应用名称</Box>,
-            width: 100,
-            ellipsis: true,
-            render: ({ name }) => <Box ml={6}>{name}</Box>,
-          },
-          {
-            accessor: "redirect_uri",
-            title: "回调 URI",
-            width: 200,
-            ellipsis: true,
-          },
-          {
-            accessor: "create_time",
-            title: "创建时间",
-            width: 150,
-            render: ({ create_time }) => new Date(create_time || "").toLocaleString(),
-          },
-          {
-            accessor: "actions",
-            title: <Box mr={6}>操作</Box>,
-            width: 100,
-            textAlign: "right",
-            render: (app) => (
-              <Group gap={4} justify="right" wrap="nowrap">
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setSelectedApp(app);
-                    modal.open();
-                  }}
-                >
-                  <IconEdit size={16} />
-                </ActionIcon>
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  color="red"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openConfirmModal("删除应用", "你确定要删除此应用吗？", () =>
-                      deleteAppHandler(app.client_id || ""),
-                    );
-                  }}
-                >
-                  <IconTrash size={16} />
-                </ActionIcon>
-              </Group>
-            ),
-          },
-        ]}
-        records={apps}
-        idAccessor="client_id"
-        rowExpansion={{
-          content: ({ record }) => (
-            <Box p="md">
-              <Grid>
-                <Grid.Col span={6}>
-                  <TextInputWithCopyButton label="应用 ID" value={record.client_id || ""} />
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <TextInputWithCopyButton label="应用密钥" value={record.client_secret || ""} />
-                </Grid.Col>
-                <Grid.Col span={12}>
-                  <TextInputWithCopyButton
-                    label="OAuth 授权链接"
-                    value={generateOAuthAppLink(record)}
-                  />
-                </Grid.Col>
-              </Grid>
-            </Box>
-          ),
-        }}
-        fetching={isLoading}
-      />
-      {apps.length !== 0 && apps.length < 5 && (
-        <Box>
-          <Divider />
-          <Stack align="center" gap="xs" p="md">
-            <Button
-              onClick={() => {
-                setSelectedApp(null);
-                modal.open();
-              }}
-            >
-              创建 OAuth 应用
-            </Button>
+                onDelete={() =>
+                  openConfirmModal("删除应用", "你确定要删除此应用吗？", () =>
+                    deleteAppHandler(app.client_id || ""),
+                  )
+                }
+              />
+            ))}
           </Stack>
-        </Box>
-      )}
+        ) : (
+          <Text size="sm" c="dimmed" ta="center" py="xl">
+            你还没有创建任何 OAuth 应用
+          </Text>
+        )}
+      </Stack>
     </Card>
   );
 };

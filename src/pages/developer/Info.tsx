@@ -26,6 +26,7 @@ import { Page } from "@/components/Page/Page.tsx";
 import { DeveloperOAuthSection } from "@/components/Developer/DeveloperOAuthSection.tsx";
 import { EditDeveloperModal } from "@/components/Developer/EditDeveloperModal.tsx";
 import { useDeveloper } from "@/hooks/queries/useDeveloper.ts";
+import { DeveloperUsageSection } from "@/components/Developer/DeveloperUsageSection.tsx";
 import { useResetDeveloperApiKey } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { useEffect } from "react";
 import { navigate } from "vike/client/router";
@@ -46,14 +47,6 @@ const DeveloperInfoContent = () => {
       onError: (err) => console.error(err),
     });
   };
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (!developer || !developer.api_key) {
-      navigate("/developer/apply", { overwriteLastHistoryEntry: true });
-    }
-  }, [isLoading, developer]);
 
   if (error) {
     return (
@@ -225,13 +218,26 @@ const DeveloperInfoContent = () => {
 };
 
 export default function DeveloperInfo() {
+  const { developer, isLoading } = useDeveloper();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!developer || !developer.api_key) {
+      navigate("/developer/apply", { overwriteLastHistoryEntry: true });
+    }
+  }, [isLoading, developer]);
+
   return (
     <Page
       meta={{
         title: "开发者面板",
         description: "查看你的 maimai DX 查分器开发者信息",
       }}
-      children={<DeveloperInfoContent />}
+      tabs={[
+        { id: "info", name: "基本信息", children: <DeveloperInfoContent /> },
+        { id: "usage", name: "API 用量", children: <DeveloperUsageSection /> },
+      ]}
     />
   );
 }

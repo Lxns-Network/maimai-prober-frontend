@@ -31,6 +31,7 @@ export const queryKeys = {
   },
   developer: {
     apply: () => ["user/developer/apply"] as const,
+    usage: () => ["user/developer/usage"] as const,
     oauthApps: () => ["user/developer/oauth/apps"] as const,
   },
   oauth: {

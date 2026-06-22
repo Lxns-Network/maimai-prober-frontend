@@ -7,6 +7,19 @@ export interface DeveloperProps {
   api_key: string;
 }
 
+export interface DeveloperUsage {
+  window_days: number;
+  overview: {
+    total: number;
+    daily_avg: number;
+    peak_day?: string;
+    peak_count: number;
+    last_active?: string;
+  };
+  daily: { day: string; count: number }[];
+  endpoints: { method: string; endpoint: string; count: number }[];
+}
+
 export interface OAuthAppProps {
   client_id?: string;
   client_secret?: string;
