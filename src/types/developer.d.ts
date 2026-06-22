@@ -21,9 +21,10 @@ export interface OAuthAppProps {
 
   user_authorized?: boolean;
   user_authorize_time?: string;
+  is_dynamic?: boolean;
   developer?: {
     id: number;
     name: string;
     url: string;
-  };
+  } | null;
 }

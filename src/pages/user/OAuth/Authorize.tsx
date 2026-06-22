@@ -4,6 +4,7 @@ import {
   Text,
   Button,
   Card,
+  Checkbox,
   List,
   ThemeIcon,
   Group,
@@ -17,7 +18,13 @@ import {
   CopyButton,
   Stack,
 } from "@mantine/core";
-import { IconCheck, IconCopy, IconExclamationCircle, IconLink } from "@tabler/icons-react";
+import {
+  IconAlertTriangle,
+  IconCheck,
+  IconCopy,
+  IconExclamationCircle,
+  IconLink,
+} from "@tabler/icons-react";
 import { openRetryModal } from "@/utils/modal.tsx";
 import classes from "./Authorize.module.css";
 import { useOAuthApp } from "@/hooks/queries/useOAuthApp.ts";
@@ -49,10 +56,12 @@ export default function Authorize() {
   const confirmOAuthAuthorize = useConfirmOAuthAuthorize();
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [code, setCode] = useState("");
+  const requestedScopes = (params.get("scope") || "").split(" ").filter(Boolean);
+  const [selectedScopes, setSelectedScopes] = useState<string[]>(requestedScopes);
 
   useEffect(() => {
     if (!app) return;
-    if (app.user_authorized && !isOOBRedirectUri(app.redirect_uri)) {
+    if (!app.is_dynamic && app.user_authorized && !isOOBRedirectUri(app.redirect_uri)) {
       setCode("authorized");
       setTimeout(() => {
         handleAuthorize();
@@ -64,13 +73,15 @@ export default function Authorize() {
     if (!app) return;
     setIsAuthorizing(true);
     try {
+      const resource = params.get("resource");
       const data = await confirmOAuthAuthorize.mutateAsync({
         client_id: params.get("client_id") || "",
         redirect_uri: params.get("redirect_uri") || "",
-        scope: params.get("scope") || "",
+        scope: app.is_dynamic ? selectedScopes.join(" ") : params.get("scope") || "",
         code_challenge: params.get("code_challenge") || "",
         code_challenge_method: params.get("code_challenge_method") || "",
         state: params.get("state") || "",
+        ...(resource ? { resource } : {}),
       });
       if (isOOBRedirectUri(app.redirect_uri)) {
         setCode(data.code);
@@ -139,48 +150,83 @@ export default function Authorize() {
       <Title order={2} size="h2" fw={700} ta="center">
         授权 {app.name}
       </Title>
-      {app.developer && (
-        <Text c="dimmed" size="sm" ta="center" mt="sm">
-          由{" "}
-          <Anchor
-            className={classes.externalLink}
-            href={app.developer.url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {app.developer.name}
-          </Anchor>{" "}
-          开发的应用
-        </Text>
+      {app.is_dynamic ? (
+        <Alert
+          variant="light"
+          color="yellow"
+          radius="md"
+          icon={<IconAlertTriangle />}
+          title="未验证应用"
+          mt="lg"
+        >
+          <Text size="sm">该应用未经审核，请确认你信任它后再继续授权。</Text>
+        </Alert>
+      ) : (
+        app.developer && (
+          <Text c="dimmed" size="sm" ta="center" mt="sm">
+            由{" "}
+            <Anchor
+              className={classes.externalLink}
+              href={app.developer.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {app.developer.name}
+            </Anchor>{" "}
+            开发的应用
+          </Text>
+        )
       )}
       <Card className={classes.card} withBorder shadow="md" p={0} mt={30} radius="md">
         <Box p="lg">
-          <Text fz="sm">该应用将会获得以下权限：</Text>
-          <List
-            spacing="xs"
-            size="sm"
-            mt="md"
-            icon={
-              <ThemeIcon size={20} radius="xl">
-                <IconCheck size={14} />
-              </ThemeIcon>
-            }
-          >
-            {(params.get("scope") || "").split(" ").map((scope) => {
-              const s = scope as keyof typeof scopeData;
+          <Text fz="sm">
+            {app.is_dynamic ? "请选择要授予该应用的权限：" : "该应用将会获得以下权限："}
+          </Text>
+          {app.is_dynamic ? (
+            <Checkbox.Group value={selectedScopes} onChange={setSelectedScopes}>
+              <Stack gap="sm" mt="md">
+                {requestedScopes.map((scope) => {
+                  const s = scope as keyof typeof scopeData;
+                  const meta = scopeData[s];
 
-              if (!scopeData[s]) return <List.Item key={scope}>{scope}</List.Item>;
+                  return (
+                    <Checkbox
+                      key={scope}
+                      value={scope}
+                      label={meta ? meta.title : scope}
+                      description={meta?.description}
+                    />
+                  );
+                })}
+              </Stack>
+            </Checkbox.Group>
+          ) : (
+            <List
+              spacing="xs"
+              size="sm"
+              mt="md"
+              icon={
+                <ThemeIcon size={20} radius="xl">
+                  <IconCheck size={14} />
+                </ThemeIcon>
+              }
+            >
+              {(params.get("scope") || "").split(" ").map((scope) => {
+                const s = scope as keyof typeof scopeData;
 
-              return (
-                <List.Item key={scope}>
-                  <Text fz="sm">{scopeData[s].title}</Text>
-                  <Text fz="xs" c="gray">
-                    {scopeData[s].description}
-                  </Text>
-                </List.Item>
-              );
-            })}
-          </List>
+                if (!scopeData[s]) return <List.Item key={scope}>{scope}</List.Item>;
+
+                return (
+                  <List.Item key={scope}>
+                    <Text fz="sm">{scopeData[s].title}</Text>
+                    <Text fz="xs" c="gray">
+                      {scopeData[s].description}
+                    </Text>
+                  </List.Item>
+                );
+              })}
+            </List>
+          )}
         </Box>
         <Divider />
         {code !== "" ? (
@@ -239,7 +285,11 @@ export default function Authorize() {
               <Button variant="light" color="gray" onClick={handleDeny}>
                 取消
               </Button>
-              <Button onClick={handleAuthorize} loading={isAuthorizing}>
+              <Button
+                onClick={handleAuthorize}
+                loading={isAuthorizing}
+                disabled={app.is_dynamic && selectedScopes.length === 0}
+              >
                 授权应用
               </Button>
             </Group>
