@@ -58,6 +58,10 @@ export default function Authorize() {
   const [code, setCode] = useState("");
   const requestedScopes = (params.get("scope") || "").split(" ").filter(Boolean);
   const [selectedScopes, setSelectedScopes] = useState<string[]>(requestedScopes);
+  // only ever offer/grant scopes the client is actually registered for — clients may over-request
+  // (e.g. an MCP client reading the AS metadata picks up read_user_token, which is not an MCP scope)
+  const registeredScopes = (app?.scope ?? "").split(" ").filter(Boolean);
+  const allowedScopes = requestedScopes.filter((s) => registeredScopes.includes(s));
 
   useEffect(() => {
     if (!app) return;
@@ -77,7 +81,9 @@ export default function Authorize() {
       const data = await confirmOAuthAuthorize.mutateAsync({
         client_id: params.get("client_id") || "",
         redirect_uri: params.get("redirect_uri") || "",
-        scope: app.is_dynamic ? selectedScopes.join(" ") : params.get("scope") || "",
+        scope: app.is_dynamic
+          ? selectedScopes.filter((s) => allowedScopes.includes(s)).join(" ")
+          : allowedScopes.join(" "),
         code_challenge: params.get("code_challenge") || "",
         code_challenge_method: params.get("code_challenge_method") || "",
         state: params.get("state") || "",
@@ -185,7 +191,7 @@ export default function Authorize() {
           {app.is_dynamic ? (
             <Checkbox.Group value={selectedScopes} onChange={setSelectedScopes}>
               <Stack gap="sm" mt="md">
-                {requestedScopes.map((scope) => {
+                {allowedScopes.map((scope) => {
                   const s = scope as keyof typeof scopeData;
                   const meta = scopeData[s];
 
@@ -211,7 +217,7 @@ export default function Authorize() {
                 </ThemeIcon>
               }
             >
-              {(params.get("scope") || "").split(" ").map((scope) => {
+              {allowedScopes.map((scope) => {
                 const s = scope as keyof typeof scopeData;
 
                 if (!scopeData[s]) return <List.Item key={scope}>{scope}</List.Item>;
