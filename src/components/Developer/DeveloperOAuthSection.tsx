@@ -122,7 +122,12 @@ const OAuthAppCard = ({
           <Text size="sm" fw={500}>
             应用凭据
           </Text>
-          <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setExpanded((v) => !v)}>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            onClick={() => setExpanded((v) => !v)}
+          >
             {expanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
           </ActionIcon>
         </Group>

@@ -23,7 +23,7 @@
 ```bash
 curl -H "Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=" \
      https://maimai.lxns.net/api/v0/maimai/player/[好友码]
-````
+```
 
 #### 个人 API 调用示例
 
@@ -40,28 +40,28 @@ curl -H "X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=" \
 
 ```json
 {
-    "success": true,
-    "code": 200,
-    "data": {
-        "name": "理论值",
-        "rating": 16412,
-        "friend_code": 888888888888888,
-        "course_rank": 23,
-        "class_rank": 25,
-        "star": 0,
-        "trophy": {
-            "id": -1,
-            "name": "理论值",
-            "genre": "",
-            "color": "Rainbow"
-        },
-        "icon": {
-            "id": 1,
-            "name": "",
-            "genre": ""
-        },
-        "upload_time": "2025-08-17T13:54:36Z"
-    }
+  "success": true,
+  "code": 200,
+  "data": {
+    "name": "理论值",
+    "rating": 16412,
+    "friend_code": 888888888888888,
+    "course_rank": 23,
+    "class_rank": 25,
+    "star": 0,
+    "trophy": {
+      "id": -1,
+      "name": "理论值",
+      "genre": "",
+      "color": "Rainbow"
+    },
+    "icon": {
+      "id": 1,
+      "name": "",
+      "genre": ""
+    },
+    "upload_time": "2025-08-17T13:54:36Z"
+  }
 }
 ```
 
@@ -75,12 +75,12 @@ https://maimai.lxns.net/api/v0/
 
 我们提供了三种 API 鉴权方式，分别适用于不同的使用场景：
 
-| 功能       | 开发者 API | 个人 API  | OAuth API |
-|----------|-|---------|-----------|
-| 访问所有玩家数据 | ✔️ | ❌       | ❌         |
-| 访问授权玩家数据 | ✔️ | ✔️      | ✔️        |
-| 访问查分器前端接口 | ❌ | ✔️（仅玩家） | ✔️（仅授权接口） |
-| 访问授权用户数据 | ❌ | ❌       | ✔️        |
+| 功能               | 开发者 API | 个人 API     | OAuth API        |
+| ------------------ | ---------- | ------------ | ---------------- |
+| 访问所有玩家数据   | ✔️         | ❌           | ❌               |
+| 访问授权玩家数据   | ✔️         | ✔️           | ✔️               |
+| 访问查分器前端接口 | ❌         | ✔️（仅玩家） | ✔️（仅授权接口） |
+| 访问授权用户数据   | ❌         | ❌           | ✔️               |
 
 ::: info 提示
 我们特别推荐需要访问玩家所有成绩的开发者使用 **OAuth API**，开发者 API 没有权限访问玩家的所有完整成绩。
@@ -122,12 +122,12 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 
 上述 API 的结果将会以 JSON 格式响应：
 
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `success` | `bool` | 请求是否成功处理 |
-| `code` | `int` | HTTP 状态码，通常为 `200` |
-| `message` | `string` | 值可空，请求失败理由 |
-| `data` | `dict` 或 `list` | 值可空，请求结果 |
+| 字段名    | 类型             | 说明                      |
+| --------- | ---------------- | ------------------------- |
+| `success` | `bool`           | 请求是否成功处理          |
+| `code`    | `int`            | HTTP 状态码，通常为 `200` |
+| `message` | `string`         | 值可空，请求失败理由      |
+| `data`    | `dict` 或 `list` | 值可空，请求结果          |
 
 ## 错误码说明
 
@@ -135,22 +135,22 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 
 ### 常见错误码
 
-| 错误码 | 含义 | 说明 |
-|-|-|-|
-| 400 | Bad Request | 请求参数错误或缺失 |
-| 401 | Unauthorized | 鉴权失败，可能是密钥错误或过期 |
-| 403 | Forbidden | 权限不足，可能是访问了未授权的资源 |
-| 404 | Not Found | 请求的资源不存在 |
-| 429 | Too Many Requests | 请求过于频繁，触发了速率限制 |
-| 500 | Internal Server Error | 服务器内部错误，请稍后重试 |
+| 错误码 | 含义                  | 说明                               |
+| ------ | --------------------- | ---------------------------------- |
+| 400    | Bad Request           | 请求参数错误或缺失                 |
+| 401    | Unauthorized          | 鉴权失败，可能是密钥错误或过期     |
+| 403    | Forbidden             | 权限不足，可能是访问了未授权的资源 |
+| 404    | Not Found             | 请求的资源不存在                   |
+| 429    | Too Many Requests     | 请求过于频繁，触发了速率限制       |
+| 500    | Internal Server Error | 服务器内部错误，请稍后重试         |
 
 ### 错误响应示例
 
 ```json
 {
-    "success": false,
-    "code": 400,
-    "message": "invalid friend code"
+  "success": false,
+  "code": 400,
+  "message": "invalid friend code"
 }
 ```
 

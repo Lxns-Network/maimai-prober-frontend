@@ -5,6 +5,7 @@
 该文档的所有请求均需要在请求头加入 **OAuth 生成的访问密钥**，请参考 [OAuth 接入指南](/docs/oauth-guide)获取详细信息。
 
 请求头示例：
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
@@ -17,12 +18,12 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 结果将会以 JSON 格式响应：
 
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `success` | `bool` | 请求是否成功处理 |
-| `code` | `int` | HTTP 状态码，通常为 `200` |
-| `message` | `string` | 值可空，请求失败理由 |
-| `data` | `dict` 或 `list` | 值可空，请求结果 |
+| 字段名    | 类型             | 说明                      |
+| --------- | ---------------- | ------------------------- |
+| `success` | `bool`           | 请求是否成功处理          |
+| `code`    | `int`            | HTTP 状态码，通常为 `200` |
+| `message` | `string`         | 值可空，请求失败理由      |
+| `data`    | `dict` 或 `list` | 值可空，请求结果          |
 
 ### GET `/api/v0/user/profile`
 

@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 function getMarkdownFiles(dir: string, baseDir: string = dir): string[] {
   const files: string[] = [];
@@ -11,13 +11,11 @@ function getMarkdownFiles(dir: string, baseDir: string = dir): string[] {
 
     if (stat.isDirectory()) {
       files.push(...getMarkdownFiles(fullPath, baseDir));
-    } else if (item.endsWith('.md')) {
+    } else if (item.endsWith(".md")) {
       const relativePath = path.relative(baseDir, fullPath);
-      const urlPath = relativePath
-        .replace(/\\/g, '/')
-        .replace(/\.md$/, '');
-      
-      files.push(urlPath === 'index' ? '/docs' : `/docs/${urlPath}`);
+      const urlPath = relativePath.replace(/\\/g, "/").replace(/\.md$/, "");
+
+      files.push(urlPath === "index" ? "/docs" : `/docs/${urlPath}`);
     }
   }
 
@@ -25,12 +23,12 @@ function getMarkdownFiles(dir: string, baseDir: string = dir): string[] {
 }
 
 export function onBeforePrerenderStart() {
-  const docsDir = path.join(process.cwd(), 'public', 'docs');
+  const docsDir = path.join(process.cwd(), "public", "docs");
   const paths = getMarkdownFiles(docsDir);
-  
+
   const sortedPaths = paths.sort((a, b) => {
-    if (a === '/docs') return -1;
-    if (b === '/docs') return 1;
+    if (a === "/docs") return -1;
+    if (b === "/docs") return 1;
     return a.localeCompare(b);
   });
 
