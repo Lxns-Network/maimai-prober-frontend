@@ -86,6 +86,10 @@ POST /api/v0/oauth/token
 | `refresh_token` | string | 刷新令牌，用于获取新的访问令牌 |
 | `scope` | string | 授权范围，表示应用可以访问的权限 |
 
+::: danger 破坏性变更
+访问令牌响应的字段现已位于响应**顶层**（符合 OAuth 2.0 标准）。为兼容旧版集成，`data` 包装（即 `data.access_token`）暂时保留，但**已废弃，并将在未来版本中移除**。请尽快改为从响应顶层直接读取 `access_token` 等字段。
+:::
+
 ::: info 提示
 访问令牌为 JWT 格式，你可以解码以获取更多信息。
 :::
@@ -105,6 +109,31 @@ POST /api/v0/oauth/token
     "scope": "read_player write_player"
 }
 ```
+
+#### 错误响应
+
+如果请求参数无效、授权码过期或其他错误，服务器将返回一个错误响应，包含 `error` 和 `error_description` 字段。例如：
+
+```json
+{
+    "error": "invalid_grant",
+    "error_description": "authorization code expired"
+}
+```
+
+`error` 取值如下：
+
+| `error` | 说明 |
+|-|-|
+| `invalid_request` | 缺少必需参数、参数无效或请求格式错误 |
+| `invalid_client` | 客户端不存在，或客户端认证（`client_secret`）失败 |
+| `invalid_grant` | 授权码或刷新令牌无效、已过期，或与客户端、回调地址不匹配 |
+| `unsupported_grant_type` | 不支持的 `grant_type` |
+| `server_error` | 服务器内部错误 |
+
+::: warning 注意
+错误响应为标准扁平格式，**不包含** `success`、`code`、`data` 字段；该格式同时适用于刷新令牌等所有令牌接口请求。
+:::
 
 ### 5. 使用访问令牌访问 API
 
@@ -234,7 +263,7 @@ def callback():
         "client_secret": CLIENT_SECRET,
         "redirect_uri": REDIRECT_URI
     })
-    token = resp.json()["data"]["access_token"]
+    token = resp.json()["access_token"]
 
     # 调用 API
     player = requests.get(PLAYER_API_URL, headers={
@@ -351,7 +380,7 @@ def callback():
         "code_verifier": request.args.get("state")
     })
     token_data = resp.json()
-    access_token = token_data["data"]["access_token"]
+    access_token = token_data["access_token"]
 
     # 调用 API
     player = requests.get(PLAYER_API_URL, headers={

@@ -21,6 +21,7 @@
 - [同步游戏数据](/docs/sync)
 - [账号设置](/docs/settings)
 - [使用 LxBot 查询成绩](/docs/lxbot)
+- [使用 MCP 服务器](/docs/mcp)
 - [常见问题](/docs/faq)
 
 ## 开发者文档
