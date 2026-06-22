@@ -135,7 +135,7 @@ dist
 
 # Claude Code
 .claude/
-docs/
+/docs/
 
 # Mac System Files
 .DS_Store
