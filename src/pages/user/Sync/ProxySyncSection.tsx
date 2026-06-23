@@ -31,6 +31,7 @@ import {
 } from "@tabler/icons-react";
 import { navigate } from "vike/client/router";
 import { openAlertModal } from "@/utils/modal";
+import { notifications } from "@mantine/notifications";
 import { checkProxy } from "@/utils/checkProxy.ts";
 import { getUserCrawlToken } from "@/utils/api/user.ts";
 import { API_URL } from "@/utils/api/api.ts";
@@ -207,7 +208,11 @@ export const ProxySyncSection = () => {
               setStep(2);
             } else if (status.status === "completed") {
               setStep(3);
-              openAlertModal("同步游戏数据成功", "你的游戏数据已成功同步到 maimai DX 查分器。");
+              notifications.show({
+                title: "同步游戏数据成功",
+                message: "你的游戏数据已成功同步到 maimai DX 查分器。",
+                color: "green",
+              });
             } else if (status.status === "failed") {
               setStep(3);
               openAlertModal(

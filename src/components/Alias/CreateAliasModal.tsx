@@ -29,6 +29,7 @@ import { useAliasExists } from "@/hooks/queries/useAliasExists.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { APIError } from "@/utils/errors.ts";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { SongCombobox } from "../SongCombobox.tsx";
 import { PhotoView } from "react-photo-view";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
@@ -117,7 +118,11 @@ export const CreateAliasModal = ({
       { game, data: values },
       {
         onSuccess: () => {
-          openAlertModal("别名创建成功", "快去邀请你的小伙伴投票吧。");
+          notifications.show({
+            title: "别名创建成功",
+            message: "快去邀请你的小伙伴投票吧。",
+            color: "green",
+          });
           form.resetField("alias");
           onClose(values);
         },

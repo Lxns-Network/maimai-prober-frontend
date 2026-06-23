@@ -33,6 +33,7 @@ import { useViewportSize } from "@mantine/hooks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createWorker, updateWorker, deleteWorker } from "@/utils/api/admin.ts";
 import { openConfirmModal, openRetryModal, openFormModal, openAlertModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import classes from "@/pages/Page.module.css";
 import workerClasses from "./WorkersSection.module.css";
 
@@ -292,7 +293,11 @@ export const WorkersSection = () => {
               throw new Error(data.message || "删除失败");
             }
           }
-          openAlertModal("删除成功", `所选的 ${selectedWorkers.length} 个工作节点已被删除。`);
+          notifications.show({
+            title: "删除成功",
+            message: `所选的 ${selectedWorkers.length} 个工作节点已被删除。`,
+            color: "green",
+          });
           setSelectedWorkers([]);
           invalidate();
         } catch (error) {

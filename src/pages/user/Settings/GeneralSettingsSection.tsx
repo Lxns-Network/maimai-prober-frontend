@@ -2,7 +2,8 @@ import { Text, Card, LoadingOverlay, Mark } from "@mantine/core";
 import { SettingList, SettingValue } from "@/components/Settings/SettingList.tsx";
 import { Link } from "@/components/Link";
 import classes from "../../Page.module.css";
-import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { useUserConfig } from "@/hooks/queries/useUserConfig.ts";
 import useGame from "@/hooks/useGame.ts";
 import { Anchor } from "@mantine/core";
@@ -254,10 +255,11 @@ export const GeneralSettingsSection = () => {
   const unbindPlayerHandler = () => {
     unbindPlayerMutate(game, {
       onSuccess: () => {
-        openAlertModal(
-          "解绑成功",
-          `你的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」账号已经被解绑。`,
-        );
+        notifications.show({
+          title: "解绑成功",
+          message: `你的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」账号已经被解绑。`,
+          color: "green",
+        });
       },
       onError: (error) => {
         openRetryModal("解绑失败", `${error}`, unbindPlayerHandler);
@@ -268,10 +270,11 @@ export const GeneralSettingsSection = () => {
   const deletePlayerScoresHandler = () => {
     deleteScoresMutate(game, {
       onSuccess: () => {
-        openAlertModal(
-          "删除成功",
-          `你的查分器账号里所有的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」谱面成绩已经被删除。`,
-        );
+        notifications.show({
+          title: "删除成功",
+          message: `你的查分器账号里所有的「${game === "chunithm" ? "中二节奏" : "舞萌 DX"}」谱面成绩已经被删除。`,
+          color: "green",
+        });
       },
       onError: (error) => {
         openRetryModal("删除失败", `${error}`, deletePlayerScoresHandler);

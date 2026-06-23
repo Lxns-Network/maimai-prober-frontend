@@ -5,7 +5,8 @@ import { useDisclosure, useViewportSize } from "@mantine/hooks";
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
 import { IconDatabaseOff, IconSearch, IconSend, IconTrash } from "@tabler/icons-react";
 import classes from "@/pages/Page.module.css";
-import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
 import { SendBatchEmailModal } from "@/components/Users/SendBatchEmailModal.tsx";
 import { permissionToList, UserPermission } from "@/utils/session.ts";
@@ -120,7 +121,11 @@ const AdminUsersContent = () => {
       if (!data.success) {
         throw new Error(data.message);
       }
-      openAlertModal("删除成功", `所选的 ${selectedUsers.length} 名用户已经被删除。`);
+      notifications.show({
+        title: "删除成功",
+        message: `所选的 ${selectedUsers.length} 名用户已经被删除。`,
+        color: "green",
+      });
       selectedUsers.forEach((user) => {
         const index = users.findIndex((u) => u.id === user.id);
         users.splice(index, 1);

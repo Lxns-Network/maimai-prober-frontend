@@ -6,7 +6,8 @@ import { TransformedValues, useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "@/utils/validator";
 import { useUpdateUserProfile } from "@/hooks/mutations/useUserMutations.ts";
 import classes from "./Profile.module.css";
-import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { useUser } from "@/hooks/queries/useUser.ts";
 
 interface FormValues {
@@ -48,7 +49,11 @@ export const UserSection = () => {
   const updateUserProfileHandler = (values: TransformedValues<typeof form>) => {
     mutateUpdateProfile(values, {
       onSuccess: () => {
-        openAlertModal("保存成功", "你的账号详情保存成功。");
+        notifications.show({
+          title: "保存成功",
+          message: "你的账号详情保存成功。",
+          color: "green",
+        });
         setData((prev) =>
           prev
             ? {
