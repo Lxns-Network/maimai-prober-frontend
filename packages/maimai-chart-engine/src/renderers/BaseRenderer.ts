@@ -1,11 +1,4 @@
-import {
-  Point2D,
-  RendererConfig,
-  BpmEvent,
-  SlidePathType,
-  TouchPosition,
-  ButtonPosition,
-} from "../types";
+import { Point2D, RendererConfig, SlidePathType, TouchPosition, ButtonPosition } from "../types";
 import {
   BASE_ANGLE,
   BUTTON_ANGLE_OFFSET,
@@ -193,47 +186,8 @@ export abstract class BaseRenderer {
     ctx.stroke();
   }
 
-  protected beatsToMs(beats: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-    if (!bpmEvents || bpmEvents.length === 0) {
-      return (60000 * beats) / defaultBpm;
-    }
-
-    let totalMs = 0;
-    let lastBeat = 0;
-    // 在第一个 BPM 事件之前使用 defaultBpm
-    let currentBpm = defaultBpm;
-
-    for (const event of bpmEvents) {
-      if (event.timing >= beats) break;
-      totalMs += (60000 * (event.timing - lastBeat)) / currentBpm;
-      lastBeat = event.timing;
-      currentBpm = event.bpm;
-    }
-
-    totalMs += (60000 * (beats - lastBeat)) / currentBpm;
-    return totalMs;
-  }
-
   protected durationToMs(duration: number, bpm: number): number {
     return (60000 * duration) / bpm;
-  }
-
-  protected getBpmAtTiming(
-    timing: number,
-    bpmEvents: BpmEvent[] | null,
-    defaultBpm: number,
-  ): number {
-    if (!bpmEvents || bpmEvents.length === 0) {
-      return defaultBpm;
-    }
-
-    // 在第一个 BPM 事件之前使用 defaultBpm
-    let currentBpm = defaultBpm;
-    for (const event of bpmEvents) {
-      if (event.timing > timing) break;
-      currentBpm = event.bpm;
-    }
-    return currentBpm;
   }
 
   protected getDdrColor(timing: number): string | null {

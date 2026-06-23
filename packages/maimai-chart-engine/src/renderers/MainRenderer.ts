@@ -3,9 +3,9 @@ import { NoteRenderer } from "./NoteRenderer";
 import { SlideRenderer } from "./SlideRenderer";
 import { HoldRenderer } from "./HoldRenderer";
 import { TouchRenderer } from "./TouchRenderer";
+import { TimingTimeline } from "../core/timing/TimingTimeline";
 import {
   Note,
-  BpmEvent,
   Chart,
   RendererConfig,
   SlideNote,
@@ -48,16 +48,54 @@ type LayeredNote =
   | { kind: "hold"; note: HoldStartNote }
   | { kind: "slideStart"; note: SlideNote };
 
+type ApproachIndicatorNote =
+  | { kind: "hold"; note: HoldStartNote }
+  | { kind: "slide"; note: SlideNote };
+
+interface ApproachIndicatorGroup {
+  notes: ApproachIndicatorNote[];
+}
+
+interface VisibleApproachIndicator {
+  note: HoldStartNote | SlideNote;
+  position: { x: number; y: number };
+}
+
 interface PreparedRenderNotes {
   slides: SlideNote[];
   touches: (TouchNote | TouchHoldStartNote)[];
+  fireworkTouches: (TouchNote | TouchHoldStartNote)[];
   holds: HoldStartNote[];
-  taps: TapNote[];
+  holdEndMap: Map<string, HoldEndNote>;
+  noteMeta: WeakMap<Note, RenderNoteMeta>;
+  approachGroups: ApproachIndicatorGroup[];
   layeredHeads: LayeredNote[];
   hitEffectNotes: Note[];
   noteCompletionTimes: number[];
   breakCompletionTimes: number[];
   breakNoExCompletionTimes: number[];
+}
+
+interface RenderNoteMeta {
+  simultaneousNoteCount: number;
+  simultaneousSlideCount: number;
+  simultaneousNonTouchCount: number;
+  simultaneousTouchCount: number;
+  noExBreakIndex?: number;
+}
+
+const EMPTY_RENDER_NOTE_META: RenderNoteMeta = {
+  simultaneousNoteCount: 0,
+  simultaneousSlideCount: 0,
+  simultaneousNonTouchCount: 0,
+  simultaneousTouchCount: 0,
+};
+
+interface RenderFrameTiming {
+  currentBeat: number;
+  currentTimeMs: number;
+  currentBpm: number;
+  divisor: number;
 }
 
 export class MainRenderer {
@@ -91,7 +129,6 @@ export class MainRenderer {
     showHitEffect: true,
   };
 
-  private bpm: number = 120;
   private fps: number = 0;
   private prevBpm: number = 120;
   private bpmChangeTime: number = 0;
@@ -117,6 +154,8 @@ export class MainRenderer {
   private backgroundVideoCache: HTMLCanvasElement | null = null;
   private backgroundVideoCacheReady = false;
   private backgroundVideoSrc = "";
+  private timingTimelineChart: Chart | null = null;
+  private timingTimeline: TimingTimeline | null = null;
 
   // simulCounts / breakIdx 是静态元数据，只依赖 chart 本身。
   // 用 notes 数组引用做缓存键——chart 切换时引用变化自然 invalidate。
@@ -124,22 +163,22 @@ export class MainRenderer {
   private preparedRenderNotes: PreparedRenderNotes = {
     slides: [],
     touches: [],
+    fireworkTouches: [],
     holds: [],
-    taps: [],
+    holdEndMap: new Map(),
+    noteMeta: new WeakMap(),
+    approachGroups: [],
     layeredHeads: [],
     hitEffectNotes: [],
     noteCompletionTimes: [],
     breakCompletionTimes: [],
     breakNoExCompletionTimes: [],
   };
+  private visibleTouchCountByPos = new Map<string, number>();
+  private visibleApproachIndicators: VisibleApproachIndicator[] = [];
 
-  constructor(
-    canvas: HTMLCanvasElement,
-    initialBpm: number = 120,
-    config: MainRendererConfig = {},
-  ) {
+  constructor(canvas: HTMLCanvasElement, config: MainRendererConfig = {}) {
     this.canvas = canvas;
-    this.bpm = initialBpm;
     this.sensorImagePath = config.sensorImagePath ?? "/assets/maimai/chart/sensor.webp";
 
     // alpha: false 让浏览器知道 canvas 不透明（CSS 已经把 background 设成 #000），
@@ -239,22 +278,24 @@ export class MainRenderer {
   }
 
   renderFrame(chart: Chart, currentBeats: number, beatsPerMeasure: number): void {
+    const prepared = this.getPreparedRenderNotes(chart.notes);
+    const timingTimeline = this.getTimingTimeline(chart);
+    const timing: RenderFrameTiming = {
+      currentBeat: currentBeats,
+      currentTimeMs: timingTimeline.msFromBeat(currentBeats),
+      currentBpm: timingTimeline.bpmAtBeat(currentBeats),
+      divisor: timingTimeline.divisorAtBeat(currentBeats),
+    };
     const measure = Math.floor(currentBeats / beatsPerMeasure);
     const beatInMeasure = currentBeats - measure * beatsPerMeasure;
     const beat = Math.floor(beatInMeasure) + 1;
     const fraction = beatInMeasure - Math.floor(beatInMeasure);
 
-    let divisor = 4;
-    for (const event of chart.divisorEvents ?? []) {
-      if (event.timing <= currentBeats) divisor = event.divisor;
-      else break;
-    }
-
-    this.setBeatDisplayInfo(measure, beat, fraction, divisor);
+    this.setBeatDisplayInfo(measure, beat, fraction, timing.divisor);
     this.clear();
     this.renderJudgmentLine();
-    this.renderFireworks(chart.notes, currentBeats, chart.bpmEvents);
-    this.renderNotes(chart.notes, currentBeats, chart.bpmEvents);
+    this.renderFireworks(prepared.fireworkTouches, timing);
+    this.renderNotes(prepared, timing);
   }
 
   setHiSpeed(hiSpeed: number): void {
@@ -274,10 +315,6 @@ export class MainRenderer {
       this.config.playbackSpeed = playbackSpeed;
       this.updateRenderersContext();
     }
-  }
-
-  setBpm(bpm: number): void {
-    this.bpm = bpm;
   }
 
   setFps(fps: number): void {
@@ -319,36 +356,6 @@ export class MainRenderer {
 
   setJudgmentLineDesign(design: "simple" | "noLine" | "blind" | "sensor"): void {
     this.config.judgmentLineDesign = design;
-    this.updateRenderersContext();
-  }
-
-  setShowBpm(enabled: boolean): void {
-    this.config.showBpm = enabled;
-  }
-
-  setShowNoteTotal(enabled: boolean): void {
-    this.config.showNoteTotal = enabled;
-  }
-
-  setShowBreakCount(enabled: boolean): void {
-    this.config.showBreakCount = enabled;
-  }
-
-  setShowBreakIndex(enabled: boolean): void {
-    this.config.showBreakIndex = enabled;
-  }
-
-  setRainbowBpm(enabled: boolean): void {
-    this.config.rainbowBpm = enabled;
-  }
-
-  setDdrColorMode(enabled: boolean): void {
-    this.config.ddrColorMode = enabled;
-    this.updateRenderersContext();
-  }
-
-  setDdrColorExtended(enabled: boolean): void {
-    this.config.ddrColorExtended = enabled;
     this.updateRenderersContext();
   }
 
@@ -467,75 +474,93 @@ export class MainRenderer {
   }
 
   /** 火花特效：判定线之上、note 之下渲染，canvas 内切圆裁切。 */
-  renderFireworks(notes: Note[], currentBeat: number, bpmEvents: BpmEvent[] | null): void {
+  private renderFireworks(
+    touches: readonly (TouchNote | TouchHoldStartNote)[],
+    timing: RenderFrameTiming,
+  ): void {
     if (!this.config.showFireworks) return;
-    const currentTimeMs = this.beatsToMs(currentBeat, bpmEvents);
-    const touches: (TouchNote | TouchHoldStartNote)[] = [];
-    for (const note of notes) {
-      if (isTouchNote(note) || isTouchHoldStartNote(note)) touches.push(note);
-    }
     if (touches.length === 0) return;
 
     this.ctx.save();
     this.ctx.beginPath();
     this.ctx.arc(this.centerX, this.centerY, this.logicalSize / 2, 0, Math.PI * 2);
     this.ctx.clip();
-    this.touchRenderer.renderTouchFireworks(touches, currentTimeMs);
+    this.touchRenderer.renderTouchFireworks(touches, timing.currentTimeMs);
     this.ctx.restore();
   }
 
-  renderNotes(notes: Note[], currentBeat: number, bpmEvents: BpmEvent[] | null): void {
-    const currentTimeMs = this.beatsToMs(currentBeat, bpmEvents);
-
-    // 静态元数据：只在 chart 切换时算一次（省 ~0.4 ms CPU/帧 + ~100 KB GC 压力）
-    if (this.preparedNotesRef !== notes) {
-      this.calculateSimultaneousCounts(notes);
-      this.assignBreakIndices(notes);
-      this.preparedRenderNotes = this.prepareRenderNotes(notes);
-      this.preparedNotesRef = notes;
-    }
-
+  private renderNotes(prepared: PreparedRenderNotes, timing: RenderFrameTiming): void {
     if (this.config.showBpm) {
-      this.renderBpmDisplay(currentBeat, bpmEvents);
+      this.renderBpmDisplay(timing.currentBpm);
     }
 
     if (this.config.showNoteTotal || this.config.showBreakCount) {
-      this.renderNoteCounts(this.preparedRenderNotes, currentTimeMs);
+      this.renderNoteCounts(prepared, timing.currentTimeMs);
     }
 
     this.ctx.save();
 
-    const { slides, touches, holds, hitEffectNotes, layeredHeads } = this.preparedRenderNotes;
+    const { slides, touches, approachGroups, hitEffectNotes, layeredHeads, holdEndMap, noteMeta } =
+      prepared;
 
     for (const slide of slides) {
-      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, "tracks");
+      this.slideRenderer.renderSlide(
+        slide,
+        timing.currentBeat,
+        timing.currentTimeMs,
+        "tracks",
+        this.getNoteMeta(noteMeta, slide).simultaneousSlideCount >= 2,
+      );
     }
 
     for (const slide of slides) {
-      this.slideRenderer.renderSlide(slide, currentBeat, currentTimeMs, "stars");
+      this.slideRenderer.renderSlide(
+        slide,
+        timing.currentBeat,
+        timing.currentTimeMs,
+        "stars",
+        this.getNoteMeta(noteMeta, slide).simultaneousSlideCount >= 2,
+      );
     }
 
-    this.renderApproachIndicators(notes, holds, slides, currentBeat, currentTimeMs);
+    this.renderApproachIndicators(approachGroups, noteMeta, timing);
 
     // tap / hold / slide 星星头同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
-    this.renderLayeredHeads(layeredHeads, notes, currentBeat, currentTimeMs);
+    this.renderLayeredHeads(layeredHeads, holdEndMap, noteMeta, timing);
 
     // touch 最上层，覆盖普通 note。
-    this.renderTouchBorders(touches, currentTimeMs);
+    this.renderTouchBorders(touches, noteMeta, timing.currentTimeMs);
 
     for (const touch of touches) {
-      this.touchRenderer.renderTouch(touch, currentBeat, currentTimeMs);
+      this.touchRenderer.renderTouch(
+        touch,
+        timing.currentBeat,
+        timing.currentTimeMs,
+        this.getNoteMeta(noteMeta, touch).simultaneousNoteCount >= 2,
+      );
     }
 
     // 击打特效画在最上层，盖住所有 note。
     if (this.config.showHitEffect) {
-      this.renderTapHitEffect(hitEffectNotes, currentTimeMs);
+      this.renderTapHitEffect(hitEffectNotes, timing.currentTimeMs);
     }
 
     this.ctx.restore();
   }
 
-  private calculateSimultaneousCounts(notes: Note[]): void {
+  private getPreparedRenderNotes(notes: Note[]): PreparedRenderNotes {
+    if (this.preparedNotesRef !== notes) {
+      this.preparedRenderNotes = this.prepareRenderNotes(notes);
+      this.preparedNotesRef = notes;
+    }
+
+    return this.preparedRenderNotes;
+  }
+
+  private calculateSimultaneousCounts(
+    notes: Note[],
+    noteMeta: WeakMap<Note, RenderNoteMeta>,
+  ): void {
     const byTiming = new Map<string, Note[]>();
 
     for (const note of notes) {
@@ -571,18 +596,19 @@ export class MainRenderer {
 
       for (const note of group) {
         const isSimultaneous = tapCount >= 2 || (breakCount >= 1 && tapCount >= 1);
-        note.simultaneousNoteCount = isSimultaneous ? Math.max(2, tapCount) : tapCount;
-        note.simultaneousSlideCount = slideCount;
-        note.simultaneousNonTouchCount = nonTouchCount;
+        const meta = this.getOrCreateNoteMeta(noteMeta, note);
+        meta.simultaneousNoteCount = isSimultaneous ? Math.max(2, tapCount) : tapCount;
+        meta.simultaneousSlideCount = slideCount;
+        meta.simultaneousNonTouchCount = nonTouchCount;
 
         if (isTouchNote(note) || isTouchHoldStartNote(note)) {
-          note.simultaneousTouchCount = touchByPos.get(note.position as string) || 1;
+          meta.simultaneousTouchCount = touchByPos.get(note.position as string) || 1;
         }
       }
     }
   }
 
-  private assignBreakIndices(notes: Note[]): void {
+  private assignBreakIndices(notes: Note[], noteMeta: WeakMap<Note, RenderNoteMeta>): void {
     const breakNotes = notes
       .filter(
         (n) =>
@@ -595,15 +621,36 @@ export class MainRenderer {
 
     let index = 1;
     for (const note of breakNotes) {
-      note.noExBreakIndex = index++;
+      this.getOrCreateNoteMeta(noteMeta, note).noExBreakIndex = index++;
     }
+  }
+
+  private getNoteMeta(noteMeta: WeakMap<Note, RenderNoteMeta>, note: Note): RenderNoteMeta {
+    return noteMeta.get(note) ?? EMPTY_RENDER_NOTE_META;
+  }
+
+  private getOrCreateNoteMeta(noteMeta: WeakMap<Note, RenderNoteMeta>, note: Note): RenderNoteMeta {
+    let meta = noteMeta.get(note);
+    if (!meta) {
+      meta = {
+        simultaneousNoteCount: 0,
+        simultaneousSlideCount: 0,
+        simultaneousNonTouchCount: 0,
+        simultaneousTouchCount: 0,
+      };
+      noteMeta.set(note, meta);
+    }
+    return meta;
   }
 
   private prepareRenderNotes(notes: Note[]): PreparedRenderNotes {
     const slides: SlideNote[] = [];
     const touches: (TouchNote | TouchHoldStartNote)[] = [];
+    const fireworkTouches: (TouchNote | TouchHoldStartNote)[] = [];
     const holds: HoldStartNote[] = [];
     const taps: TapNote[] = [];
+    const holdEndMap = new Map<string, HoldEndNote>();
+    const noteMeta = new WeakMap<Note, RenderNoteMeta>();
     const hitEffectNotes: Note[] = [];
     const noteCompletionTimes: number[] = [];
     const breakCompletionTimes: number[] = [];
@@ -623,6 +670,9 @@ export class MainRenderer {
       }
     }
 
+    this.calculateSimultaneousCounts(notes, noteMeta);
+    this.assignBreakIndices(notes, noteMeta);
+
     for (const note of notes) {
       if (
         isTapNote(note) ||
@@ -632,6 +682,14 @@ export class MainRenderer {
         note.type === "touch-hold-end"
       ) {
         noteCompletionTimes.push(note.timingMs);
+      }
+
+      if (isHoldEndNote(note)) {
+        holdEndMap.set(this.getHoldEndKey(note.position, note.holdStartTiming), note);
+      }
+
+      if ((isTouchNote(note) || isTouchHoldStartNote(note)) && note.hasFirework) {
+        fireworkTouches.push(note);
       }
 
       if (isSlideNote(note)) {
@@ -693,12 +751,16 @@ export class MainRenderer {
         .map((note) => ({ kind: "slideStart" as const, note })),
     ];
     layeredHeads.sort((a, b) => b.note.timingMs - a.note.timingMs);
+    const approachGroups = this.prepareApproachGroups(holds, slides);
 
     return {
       slides,
       touches,
+      fireworkTouches,
       holds,
-      taps,
+      holdEndMap,
+      noteMeta,
+      approachGroups,
       layeredHeads,
       hitEffectNotes,
       noteCompletionTimes,
@@ -707,72 +769,95 @@ export class MainRenderer {
     };
   }
 
-  private renderApproachIndicators(
-    _allNotes: Note[],
-    holds: HoldStartNote[],
-    slides: SlideNote[],
-    currentBeat: number,
-    currentTimeMs: number,
-  ): void {
-    const byTiming = new Map<
-      string,
-      { note: Note; position: { x: number; y: number }; type: string }[]
-    >();
-
+  private prepareApproachGroups(
+    holds: readonly HoldStartNote[],
+    slides: readonly SlideNote[],
+  ): ApproachIndicatorGroup[] {
+    const byTiming = new Map<string, ApproachIndicatorNote[]>();
     for (const hold of holds) {
-      const pos = this.noteRenderer.calculateNotePosition(hold, currentBeat, currentTimeMs);
-      if (!pos.visible) continue;
-
-      const timeDiff = hold.timing - currentBeat;
-      if (timeDiff > 0) {
-        const isSimultaneous = (hold.simultaneousNoteCount ?? 0) >= 2;
-        const color = hold.isBreakHold
-          ? COLORS.BREAK_ORANGE
-          : isSimultaneous
-            ? COLORS.SIMULTANEOUS_GOLD
-            : COLORS.TAP_PINK;
-        this.noteRenderer.renderApproachArc(hold.position, pos.x, pos.y, color);
-
-        const key = hold.timingMs.toFixed(3);
-        if (!byTiming.has(key)) byTiming.set(key, []);
-        byTiming.get(key)!.push({ note: hold, position: pos, type: "hold" });
-      }
+      const key = hold.timingMs.toFixed(3);
+      const group = byTiming.get(key);
+      if (group) group.push({ kind: "hold", note: hold });
+      else byTiming.set(key, [{ kind: "hold", note: hold }]);
     }
 
     for (const slide of slides) {
       if (slide.isHeadless) continue;
-
-      const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
-      if (!pos.visible) continue;
-
-      const timeDiff = slide.timing - currentBeat;
-      if (timeDiff > 0) {
-        const isSimultaneous = (slide.simultaneousNoteCount ?? 0) >= 2;
-        const color = slide.isStartBreak
-          ? COLORS.BREAK_ORANGE
-          : isSimultaneous
-            ? COLORS.SIMULTANEOUS_GOLD
-            : COLORS.SLIDE_CYAN;
-        this.noteRenderer.renderApproachArc(slide.position, pos.x, pos.y, color);
-
-        const key = slide.timingMs.toFixed(3);
-        if (!byTiming.has(key)) byTiming.set(key, []);
-        byTiming.get(key)!.push({ note: slide, position: pos, type: "slide" });
-      }
+      const key = slide.timingMs.toFixed(3);
+      const group = byTiming.get(key);
+      if (group) group.push({ kind: "slide", note: slide });
+      else byTiming.set(key, [{ kind: "slide", note: slide }]);
     }
 
-    for (const [, group] of byTiming) {
-      if (group.length >= 2) {
+    const groups: ApproachIndicatorGroup[] = [];
+    for (const notes of byTiming.values()) {
+      groups.push({ notes });
+    }
+    return groups;
+  }
+
+  private renderApproachIndicators(
+    groups: readonly ApproachIndicatorGroup[],
+    noteMeta: WeakMap<Note, RenderNoteMeta>,
+    timing: RenderFrameTiming,
+  ): void {
+    const visible = this.visibleApproachIndicators;
+
+    for (const group of groups) {
+      visible.length = 0;
+
+      for (const item of group.notes) {
+        let note: HoldStartNote | SlideNote;
+        let pos: { x: number; y: number; visible: boolean };
+        let color: string;
+
+        if (item.kind === "hold") {
+          note = item.note;
+          pos = this.noteRenderer.calculateNotePosition(
+            note,
+            timing.currentBeat,
+            timing.currentTimeMs,
+          );
+          const isSimultaneous = this.getNoteMeta(noteMeta, note).simultaneousNoteCount >= 2;
+          color = note.isBreakHold
+            ? COLORS.BREAK_ORANGE
+            : isSimultaneous
+              ? COLORS.SIMULTANEOUS_GOLD
+              : COLORS.TAP_PINK;
+        } else {
+          note = item.note;
+          pos = this.slideRenderer.calculateSlideStartPosition(
+            note,
+            timing.currentBeat,
+            timing.currentTimeMs,
+          );
+          const isSimultaneous = this.getNoteMeta(noteMeta, note).simultaneousNoteCount >= 2;
+          color = note.isStartBreak
+            ? COLORS.BREAK_ORANGE
+            : isSimultaneous
+              ? COLORS.SIMULTANEOUS_GOLD
+              : COLORS.SLIDE_CYAN;
+        }
+        if (!pos.visible) continue;
+
+        const timeDiff = note.timing - timing.currentBeat;
+        if (timeDiff <= 0) continue;
+
+        this.noteRenderer.renderApproachArc(note.position, pos.x, pos.y, color);
+        visible.push({ note, position: pos });
+      }
+
+      if (visible.length >= 2) {
         const distance = Math.sqrt(
-          Math.pow(group[0].position.x - this.centerX, 2) +
-            Math.pow(group[0].position.y - this.centerY, 2),
+          Math.pow(visible[0].position.x - this.centerX, 2) +
+            Math.pow(visible[0].position.y - this.centerY, 2),
         );
 
-        for (let i = 0; i < group.length; i++) {
-          for (let j = i + 1; j < group.length; j++) {
+        for (let i = 0; i < visible.length; i++) {
+          for (let j = i + 1; j < visible.length; j++) {
             this.noteRenderer.renderSimultaneousConnector(
-              group[i].note.position as ButtonPosition,
-              group[j].note.position as ButtonPosition,
+              visible[i].note.position as ButtonPosition,
+              visible[j].note.position as ButtonPosition,
               distance,
               COLORS.SIMULTANEOUS_GOLD,
             );
@@ -784,21 +869,27 @@ export class MainRenderer {
 
   private renderSingleHold(
     hold: HoldStartNote,
-    allNotes: Note[],
-    currentBeat: number,
-    currentTimeMs: number,
+    holdEndMap: ReadonlyMap<string, HoldEndNote>,
+    noteMeta: WeakMap<Note, RenderNoteMeta>,
+    timing: RenderFrameTiming,
   ): void {
-    const startPos = this.noteRenderer.calculateNotePosition(hold, currentBeat, currentTimeMs);
+    const startPos = this.noteRenderer.calculateNotePosition(
+      hold,
+      timing.currentBeat,
+      timing.currentTimeMs,
+    );
     if (!startPos.visible) return;
 
-    const holdEnd = allNotes.find(
-      (n) => isHoldEndNote(n) && n.position === hold.position && n.holdStartTiming === hold.timing,
-    ) as HoldEndNote | undefined;
-
+    const holdEnd = holdEndMap.get(this.getHoldEndKey(hold.position, hold.timing));
     if (!holdEnd) return;
 
-    const endPos = this.noteRenderer.calculateNotePosition(holdEnd, currentBeat, currentTimeMs);
-    const isSimultaneous = (hold.simultaneousNoteCount ?? 0) >= 2;
+    const endPos = this.noteRenderer.calculateNotePosition(
+      holdEnd,
+      timing.currentBeat,
+      timing.currentTimeMs,
+    );
+    const meta = this.getNoteMeta(noteMeta, hold);
+    const isSimultaneous = meta.simultaneousNoteCount >= 2;
 
     const ddrColor = this.config.ddrColorMode ? this.getDdrColor(hold.timing) : null;
     const color = getGradientColors(ddrColor, hold.isBreakHold ?? false, isSimultaneous);
@@ -811,7 +902,7 @@ export class MainRenderer {
       hold.isEx,
       hold,
       holdEnd,
-      currentTimeMs,
+      timing.currentTimeMs,
       hold.isBreakHold ?? false,
       isSimultaneous,
       this.exScale,
@@ -820,7 +911,7 @@ export class MainRenderer {
     if (
       this.config.showBreakIndex &&
       hold.isBreakHold &&
-      hold.noExBreakIndex &&
+      meta.noExBreakIndex &&
       !hold.isEx &&
       startPos.visible
     ) {
@@ -828,18 +919,20 @@ export class MainRenderer {
         startPos.x,
         startPos.y,
         startPos.scale,
-        hold.noExBreakIndex,
+        meta.noExBreakIndex,
       );
     }
   }
 
   private renderTouchBorders(
     touches: (TouchNote | TouchHoldStartNote)[],
+    noteMeta: WeakMap<Note, RenderNoteMeta>,
     currentTimeMs: number,
   ): void {
     const approachTime = BASE_APPROACH_TIME_MS / this.config.hiSpeed;
 
-    const visibleByPos = new Map<string, number>();
+    const visibleByPos = this.visibleTouchCountByPos;
+    visibleByPos.clear();
     for (const touch of touches) {
       if (touch.type === "touch-hold-start") continue;
       const timeDiff = touch.timingMs - currentTimeMs;
@@ -850,25 +943,27 @@ export class MainRenderer {
     }
 
     for (const touch of touches) {
-      touch.visibleTouchCount = visibleByPos.get(touch.position) || 0;
-    }
-
-    for (const touch of touches) {
       const pos = this.touchRenderer.getTouchPosition(touch.position);
-      const isSimultaneous = (touch.simultaneousNoteCount ?? 0) >= 2;
-      this.touchRenderer.renderTouchBorder(touch, pos, isSimultaneous);
+      const isSimultaneous = this.getNoteMeta(noteMeta, touch).simultaneousNoteCount >= 2;
+      this.touchRenderer.renderTouchBorder(
+        pos,
+        isSimultaneous,
+        visibleByPos.get(touch.position) || 0,
+      );
     }
   }
 
   private renderSingleSlideStart(
     slide: SlideNote,
+    noteMeta: WeakMap<Note, RenderNoteMeta>,
     currentBeat: number,
     currentTimeMs: number,
   ): void {
     const pos = this.slideRenderer.calculateSlideStartPosition(slide, currentBeat, currentTimeMs);
     if (!pos.visible) return;
 
-    const isSimultaneous = (slide.simultaneousNoteCount ?? 0) >= 2;
+    const meta = this.getNoteMeta(noteMeta, slide);
+    const isSimultaneous = meta.simultaneousNoteCount >= 2;
     // 接近圈由 renderApproachIndicators 统一画（在底层），这里只画星星头。
     const color = this.getStarHeadColor(slide.timing, slide.isStartBreak ?? false, isSimultaneous);
 
@@ -902,8 +997,8 @@ export class MainRenderer {
       );
     }
 
-    if (this.config.showBreakIndex && slide.isStartBreak && slide.noExBreakIndex && !slide.isEx) {
-      this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, slide.noExBreakIndex);
+    if (this.config.showBreakIndex && slide.isStartBreak && meta.noExBreakIndex && !slide.isEx) {
+      this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, meta.noExBreakIndex);
     }
   }
 
@@ -1052,23 +1147,30 @@ export class MainRenderer {
   // 按 prepareRenderNotes 预排好的时间分层顺序（早到的 note 在上层）渲染 tap/hold/slideStart 星星头。
   private renderLayeredHeads(
     layered: LayeredNote[],
-    allNotes: Note[],
-    currentBeat: number,
-    currentTimeMs: number,
+    holdEndMap: ReadonlyMap<string, HoldEndNote>,
+    noteMeta: WeakMap<Note, RenderNoteMeta>,
+    timing: RenderFrameTiming,
   ): void {
     for (const item of layered) {
-      if (item.kind === "tap") this.renderSingleTap(item.note, currentBeat, currentTimeMs);
-      else if (item.kind === "hold")
-        this.renderSingleHold(item.note, allNotes, currentBeat, currentTimeMs);
-      else this.renderSingleSlideStart(item.note, currentBeat, currentTimeMs);
+      if (item.kind === "tap")
+        this.renderSingleTap(item.note, noteMeta, timing.currentBeat, timing.currentTimeMs);
+      else if (item.kind === "hold") this.renderSingleHold(item.note, holdEndMap, noteMeta, timing);
+      else
+        this.renderSingleSlideStart(item.note, noteMeta, timing.currentBeat, timing.currentTimeMs);
     }
   }
 
-  private renderSingleTap(tap: TapNote, currentBeat: number, currentTimeMs: number): void {
+  private renderSingleTap(
+    tap: TapNote,
+    noteMeta: WeakMap<Note, RenderNoteMeta>,
+    currentBeat: number,
+    currentTimeMs: number,
+  ): void {
     const pos = this.noteRenderer.calculateNotePosition(tap, currentBeat, currentTimeMs);
     if (!pos.visible) return;
 
-    const isSimultaneous = (tap.simultaneousNoteCount ?? 0) >= 2;
+    const meta = this.getNoteMeta(noteMeta, tap);
+    const isSimultaneous = meta.simultaneousNoteCount >= 2;
     const timeDiff = tap.timing - currentBeat;
 
     if (timeDiff > 0) {
@@ -1096,8 +1198,8 @@ export class MainRenderer {
       );
     }
 
-    if (this.config.showBreakIndex && tap.type === "break" && tap.noExBreakIndex && !tap.isEx) {
-      this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, tap.noExBreakIndex);
+    if (this.config.showBreakIndex && tap.type === "break" && meta.noExBreakIndex && !tap.isEx) {
+      this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, meta.noExBreakIndex);
     }
   }
 
@@ -1172,8 +1274,7 @@ export class MainRenderer {
     }
   }
 
-  private renderBpmDisplay(currentBeat: number, bpmEvents: BpmEvent[] | null): void {
-    const currentBpm = this.getBpmAtTiming(currentBeat, bpmEvents);
+  private renderBpmDisplay(currentBpm: number): void {
     const lastBpm = this.prevBpm;
 
     if (!this.isPlaying) {
@@ -1348,37 +1449,16 @@ export class MainRenderer {
     return lo;
   }
 
-  private beatsToMs(beats: number, bpmEvents: BpmEvent[] | null): number {
-    if (!bpmEvents || bpmEvents.length === 0) {
-      return (60000 * beats) / this.bpm;
-    }
-
-    let totalMs = 0;
-    let lastBeat = 0;
-    let currentBpm = bpmEvents[0].bpm;
-
-    for (const event of bpmEvents) {
-      if (event.timing >= beats) break;
-      totalMs += (60000 * (event.timing - lastBeat)) / currentBpm;
-      lastBeat = event.timing;
-      currentBpm = event.bpm;
-    }
-
-    totalMs += (60000 * (beats - lastBeat)) / currentBpm;
-    return totalMs;
+  private getHoldEndKey(position: ButtonPosition, holdStartTiming: number): string {
+    return `${position}:${holdStartTiming}`;
   }
 
-  private getBpmAtTiming(timing: number, bpmEvents: BpmEvent[] | null): number {
-    if (!bpmEvents || bpmEvents.length === 0) {
-      return this.bpm;
+  private getTimingTimeline(chart: Chart): TimingTimeline {
+    if (this.timingTimelineChart !== chart) {
+      this.timingTimeline = TimingTimeline.fromChart(chart);
+      this.timingTimelineChart = chart;
     }
-
-    let currentBpm = bpmEvents[0].bpm;
-    for (const event of bpmEvents) {
-      if (event.timing > timing) break;
-      currentBpm = event.bpm;
-    }
-    return currentBpm;
+    return this.timingTimeline!;
   }
 
   private getDdrColor(timing: number): string | null {

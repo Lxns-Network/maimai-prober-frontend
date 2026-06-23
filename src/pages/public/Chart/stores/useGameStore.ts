@@ -9,10 +9,6 @@ import { beatsToMs } from "../utils/timeConversion";
 
 export const playbackTimeRef = { current: 0 };
 
-// 当音频已实际在播时，由 useMusicPlayer 每帧用 AudioContext 时钟反推的 chart-ms 位置。
-// 渲染循环优先消费此值，让音频作为主时钟；为 null 时回落到 rAF 外推。
-export const audioMasterTimeMsRef: { current: number | null } = { current: null };
-
 interface TimelineState {
   totalMeasures: number;
   beatsPerMeasure: number;
@@ -35,8 +31,6 @@ interface GameState {
   musicError: string | null;
   /** 等待音乐加载完成后自动开始播放 */
   pendingPlay: boolean;
-  playbackStartTime: number;
-  playbackStartPositionMs: number;
   /** 跳转计数器：用户每次 seek（拖动/跳转）时自增，消费者比对该值以重新定位音频与动画 */
   seekVersion: number;
   isFullscreen: boolean;
@@ -60,7 +54,6 @@ interface GameActions {
   setPlaybackSpeed: (speed: number) => void;
   setMusicUrl: (url: string) => void;
   setMusicState: (loaded: boolean, loading: boolean, error: string | null) => void;
-  setPendingPlay: (pending: boolean) => void;
   getCurrentTimeInBeats: () => number;
   getCurrentTimeInMs: () => number;
   getTotalDurationMs: () => number;
@@ -92,8 +85,6 @@ const initialState: GameState = {
   musicLoading: false,
   musicError: null,
   pendingPlay: false,
-  playbackStartTime: 0,
-  playbackStartPositionMs: 0,
   seekVersion: 0,
   isFullscreen: false,
 };
@@ -148,8 +139,6 @@ export const useGameStore = create<GameStore>()(
         playbackTimeRef.current = 0;
         set({
           isPlaying: true,
-          playbackStartTime: performance.now(),
-          playbackStartPositionMs: 0,
           timeline: {
             ...timeline,
             currentMeasure: 0,
@@ -161,18 +150,7 @@ export const useGameStore = create<GameStore>()(
         return;
       }
 
-      const currentBeats = state.getCurrentTimeInBeats();
-      const currentMs = beatsToMs(
-        currentBeats,
-        state.chartData?.bpmEvents ?? null,
-        state.chartData?.bpm ?? 120,
-      );
-
-      set({
-        isPlaying: true,
-        playbackStartTime: performance.now(),
-        playbackStartPositionMs: currentMs,
-      });
+      set({ isPlaying: true });
     },
 
     pause: () => {
@@ -321,8 +299,6 @@ export const useGameStore = create<GameStore>()(
         chartData: chart,
         isPlaying: false,
         pendingPlay: false,
-        playbackStartTime: 0,
-        playbackStartPositionMs: 0,
         timeline: {
           ...state.timeline,
           totalMeasures: chart?.measures ?? 1,
@@ -340,21 +316,7 @@ export const useGameStore = create<GameStore>()(
       set({ availableDifficulties: difficulties }),
 
     setPlaybackSpeed: (speed: number) => {
-      const state = get();
       set({ playbackSpeed: Math.max(0.1, Math.min(1.0, speed)) });
-
-      if (state.isPlaying) {
-        const currentBeats = playbackTimeRef.current;
-        const currentMs = beatsToMs(
-          currentBeats,
-          state.chartData?.bpmEvents ?? null,
-          state.chartData?.bpm ?? 120,
-        );
-        set({
-          playbackStartTime: performance.now(),
-          playbackStartPositionMs: currentMs,
-        });
-      }
     },
 
     setMusicUrl: (url: string) => {
@@ -381,7 +343,6 @@ export const useGameStore = create<GameStore>()(
         setTimeout(() => get().play(), 0);
       }
     },
-    setPendingPlay: (pending: boolean) => set({ pendingPlay: pending }),
 
     getCurrentTimeInBeats: () => {
       const { isPlaying, timeline } = get();

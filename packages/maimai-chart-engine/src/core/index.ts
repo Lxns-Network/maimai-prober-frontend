@@ -5,4 +5,11 @@ export {
   type ChartFileType,
   default as ChartParser,
 } from "./parser/ChartParser";
-export { AudioManager, type AudioManagerConfig } from "./audio/AudioManager";
+export {
+  AudioManager,
+  prepareAudioEvents,
+  type AudioManagerConfig,
+  type PreparedAudioEvent,
+} from "./audio/AudioManager";
+export { getAudioContextOutputTime } from "./audio/audioClock";
+export { TimingTimeline } from "./timing/TimingTimeline";

@@ -65,6 +65,7 @@ import { SimaiStatementList } from "../SimaiStatementList";
 import { exportChartGif } from "../../utils/exportChartGif";
 import { useExportRange } from "../../hooks/useExportRange";
 import { getChartIdForFilename, downloadBlob } from "../../utils/fileDownload";
+import { buildVideoUrl } from "../../utils/videoUrl";
 import { formatDuration } from "../../utils/format";
 import { clamp } from "../../utils/math";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
@@ -318,11 +319,10 @@ export function PlaybackControls({
       const settings = useGameSettingsStore.getState();
       let video: { url: string; leadInMs: number; musicOffset: number } | undefined;
       if (settings.showVideo) {
-        const numId = Number(getChartIdForFilename());
-        if (Number.isFinite(numId)) {
-          const base = settings.videoServer.replace(/\/+$/, "");
+        const url = buildVideoUrl(settings.videoServer);
+        if (url) {
           video = {
-            url: `${base}/${numId % 10000}.mp4`,
+            url,
             leadInMs: (60000 * 4) / chartData.bpm,
             musicOffset: settings.musicOffset,
           };
