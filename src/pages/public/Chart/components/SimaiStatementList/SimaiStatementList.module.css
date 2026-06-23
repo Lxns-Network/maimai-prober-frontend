@@ -47,7 +47,7 @@
 }
 
 .rowMarker.rowActive {
-  background-color: light-dark(rgba(134, 142, 150, 0.12), rgba(173, 181, 189, 0.12));
+  background-color: light-dark(rgb(134 142 150 / 0.12), rgb(173 181 189 / 0.12));
   border-left-color: var(--mantine-color-gray-5);
 }
 
