@@ -107,6 +107,11 @@ export function AdminNotificationsSection() {
                 <Badge variant="light" color="gray">
                   {audienceLabel[b.audience_type]}
                 </Badge>
+                {b.persistent && (
+                  <Badge variant="light" color="blue">
+                    常驻
+                  </Badge>
+                )}
               </Group>
               <Text c="dimmed" size="xs" mt={4}>
                 发布于 {dayjs(b.create_time).format("YYYY-MM-DD HH:mm")}

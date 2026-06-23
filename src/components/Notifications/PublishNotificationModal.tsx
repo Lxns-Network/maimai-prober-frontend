@@ -10,6 +10,7 @@ import {
   ScrollArea,
   Select,
   Stack,
+  Switch,
   Text,
   TextInput,
 } from "@mantine/core";
@@ -57,6 +58,7 @@ interface FormValues {
   type: string;
   expire: string | null;
   audience: PublishNotificationPayload["audience"];
+  persistent: boolean;
 }
 
 export function PublishNotificationModal({
@@ -82,6 +84,7 @@ export function PublishNotificationModal({
       type: "general",
       expire: null,
       audience: { type: "all" },
+      persistent: false,
     },
     validate: { title: (v) => (v.trim() === "" ? "标题不能为空" : null) },
   });
@@ -129,6 +132,7 @@ export function PublishNotificationModal({
             : editing.audience_type === "users"
               ? { type: "users", user_ids: [] }
               : { type: "all" },
+        persistent: editing.persistent,
       });
       editor?.commands.setContent(editing.content || "");
     } else {
@@ -158,6 +162,7 @@ export function PublishNotificationModal({
       type: values.type,
       level: values.level,
       audience: values.audience,
+      persistent: values.persistent,
       expire_time: values.expire ? dayjs(values.expire).toISOString() : undefined,
     };
 
@@ -283,6 +288,14 @@ export function PublishNotificationModal({
               );
             })}
         </Group>
+        {!lockedUserIds && editing?.audience_type !== "users" && (
+          <Switch
+            label="常驻通知"
+            description="发布后才注册的新用户也能看到，适合欢迎、规则等 onboarding 公告。"
+            mb="xs"
+            {...form.getInputProps("persistent", { type: "checkbox" })}
+          />
+        )}
         <DatesProvider settings={{ locale: "zh-cn", firstDayOfWeek: 0, weekendDays: [0, 6] }}>
           <DateTimePicker
             label="过期时间（可选）"

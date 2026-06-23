@@ -39,6 +39,8 @@ export interface PublishNotificationPayload {
   level: NotificationLevel;
   expire_time?: string;
   audience: { type: "all" | "permission" | "users"; permission?: number; user_ids?: number[] };
+  // 常驻：绕过新用户基线，对发布后才注册的用户也可见（onboarding 公告）
+  persistent?: boolean;
 }
 
 export interface AdminBroadcast {
@@ -49,6 +51,7 @@ export interface AdminBroadcast {
   content: string;
   audience_type: "all" | "permission" | "users";
   audience_permission?: number;
+  persistent: boolean;
   create_time: string;
   update_time?: string;
   expire_time?: string;
