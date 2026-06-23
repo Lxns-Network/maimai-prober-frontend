@@ -46,6 +46,15 @@ The root `src/pages/+config.ts` sets `ssr: false` and `lang: zh-Hans` globally.
 
 **Workspace package.** `@lxns-network/maimai-chart-engine` ([packages/maimai-chart-engine](packages/maimai-chart-engine)) is the maimai chart (simai) rendering engine; it exports renderers/core/types/constants and is referenced via a yarn workspace (`workspace:*`).
 
+**Chart preview playback architecture.** The public maimai chart preview is centered on `src/pages/public/Chart/`. Keep these ownership boundaries intact:
+
+- `ChartCanvas.tsx` owns the canvas DOM, renderer lifecycle, resize/DPR handling, and the visible render loops. It should stay thin; move browser side effects such as background-video source loading, frame capture, wake lock, and renderer setting subscriptions into focused hooks under `components/ChartCanvas/hooks/`.
+- `usePreviewAudio.ts` is the only owner of preview music playback, the audible output clock, seek handoff, and answer-sound scheduling. Do not add parallel music clocks or store-level playback anchors. `timeline.preciseTime` is a paused/store snapshot; during playback, `playbackTimeRef.current` is the live playhead.
+- `AudioManager` in the chart engine only loads, prepares, and schedules answer sounds. It must not own music playback or React lifecycle state.
+- `TimingTimeline` in the chart engine is the canonical beat/ms conversion primitive. UI helpers in `src/pages/public/Chart/utils/timeConversion.ts` wrap it for app code; renderer hot paths should reuse a timeline instead of open-coding BPM scans.
+- Background video sync is best-effort visual media sync and should follow the chart/audio playhead. It should not become the source of truth for preview timing.
+- Seek while playing is a scheduled handoff: stop old music, compute the target once, schedule the new `AudioBufferSourceNode` at a short future `AudioContext.currentTime`, hold the visual playhead at that target, then switch back to the audio output clock once the new source is audible. Avoid compatibility shims such as old `playbackStartTime`/`playbackStartPositionMs` store fields.
+
 **Misc.** Path alias `@/` → `src/` (configured in both vite and tsconfig). Sentry handles error monitoring and uploads sourcemaps at build time. The build writes a timestamped `dist/client/version.json`; `useVersionChecker` uses it to prompt users to reload onto a new deploy.
 
 ## Code comments
