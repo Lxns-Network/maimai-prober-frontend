@@ -5,7 +5,8 @@ export type NotificationLevel = "normal" | "important" | "urgent";
 
 export type NotificationAction =
   | { type: "link"; url: string }
-  | { type: "song"; game: Game; song_id: number };
+  | { type: "song"; game: Game; song_id: number }
+  | { type: "score"; game: Game; song_id: number; song_type?: string; difficulty: number };
 
 export interface NotificationProps {
   id: number;

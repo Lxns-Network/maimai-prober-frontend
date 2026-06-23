@@ -3,6 +3,7 @@ import {
   IconCalendarEvent,
   IconCode,
   IconGavel,
+  IconHeart,
   IconRocket,
   IconTool,
 } from "@tabler/icons-react";
@@ -16,6 +17,7 @@ const TYPE_ICONS: Record<string, typeof IconBell> = {
   // 个人通知类型
   developer_approved: IconCode,
   alias_approved: IconGavel,
+  comment_liked: IconHeart,
 };
 
 export function getNotificationTypeIcon(type: string) {

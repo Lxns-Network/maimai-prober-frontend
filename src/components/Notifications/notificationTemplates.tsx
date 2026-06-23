@@ -53,6 +53,26 @@ const templates: Record<string, NotificationTemplate> = {
         ? { type: "song", game: data.game as Game, song_id: Number(data.song_id) }
         : undefined,
   }),
+  comment_liked: (data) => ({
+    title: "你的评论被点赞了",
+    body: (
+      <p>
+        <strong>{String(data.liker ?? "")}</strong> 点赞了你的评论。
+      </p>
+    ),
+    action:
+      data.song_id != null && data.difficulty != null
+        ? {
+            type: "score",
+            game: data.game as Game,
+            song_id: Number(data.song_id),
+            song_type: data.song_type as string | undefined,
+            difficulty: Number(data.difficulty),
+          }
+        : data.song_id != null
+          ? { type: "song", game: data.game as Game, song_id: Number(data.song_id) }
+          : undefined,
+  }),
 };
 
 function renderContent(content: string): ReactNode {
