@@ -21,10 +21,17 @@ const LEAD_IN_BEATS = 4;
 interface SimaiChunk {
   text: string;
   beat: number;
+  isEmpty?: boolean;
 }
 interface SimaiStatement {
   beat: number;
   chunks: SimaiChunk[];
+  markerText?: string;
+}
+
+function formatMarkerNumber(value: string): string {
+  const numberValue = parseFloat(value);
+  return Number.isInteger(numberValue) ? String(numberValue) : value;
 }
 
 function parseSimaiStatements(
@@ -41,16 +48,30 @@ function parseSimaiStatements(
 
   const processLine = (content: string) => {
     if (!content.trim()) return;
-    const chunks: SimaiChunk[] = [];
-    const lineStartBeat = beat;
+    let chunks: SimaiChunk[] = [];
+    let lineStartBeat = beat;
     let buf = "";
     let bufBeat = beat;
 
     const flush = (includeEmpty = false) => {
       const text = buf.trim();
-      if (text || includeEmpty) chunks.push({ text, beat: bufBeat });
+      if (text || includeEmpty) chunks.push({ text, beat: bufBeat, isEmpty: !text });
       buf = "";
       bufBeat = beat;
+    };
+
+    const pushChunks = () => {
+      if (chunks.length === 0) return;
+      out.push({ beat: lineStartBeat, chunks });
+      chunks = [];
+      lineStartBeat = beat;
+    };
+
+    const pushMarker = (markerText: string) => {
+      flush();
+      pushChunks();
+      out.push({ beat, chunks: [], markerText });
+      lineStartBeat = beat;
     };
 
     let i = 0;
@@ -64,8 +85,12 @@ function parseSimaiStatements(
       } else if (c === "(") {
         const m = content.substring(i).match(/^\((\d+(?:\.\d+)?)\)(\{(\d+(?:\.\d+)?)\})?/);
         if (m) {
-          if (m[3]) divisor = parseFloat(m[3]);
-          buf += m[0];
+          const markerParts = [`BPM ${formatMarkerNumber(m[1])}`];
+          if (m[3]) {
+            divisor = parseFloat(m[3]);
+            markerParts.push(`1/${formatMarkerNumber(m[3])}`);
+          }
+          pushMarker(markerParts.join(" | "));
           i += m[0].length;
         } else {
           buf += c;
@@ -75,7 +100,7 @@ function parseSimaiStatements(
         const m = content.substring(i).match(/^\{(\d+(?:\.\d+)?)\}/);
         if (m) {
           divisor = parseFloat(m[1]);
-          buf += m[0];
+          pushMarker(`1/${formatMarkerNumber(m[1])}`);
           i += m[0].length;
         } else {
           buf += c;
@@ -87,7 +112,7 @@ function parseSimaiStatements(
       }
     }
     flush(content.trimEnd().endsWith(","));
-    if (chunks.length > 0) out.push({ beat: lineStartBeat, chunks });
+    pushChunks();
   };
 
   for (const line of lines) {
@@ -118,24 +143,21 @@ interface StatementRowProps {
   index: number;
   isActive: boolean;
   activeChunkIdx: number;
-  isMarkerOnly: boolean;
+  isMarkerRow: boolean;
   seekTo: (beat: number) => void;
   registerRef: (index: number, el: HTMLDivElement | null) => void;
 }
-
-// chunk 只包含 BPM/divisor 标记（`(120)` / `{8}` / `(120){8}`）而没有 note 时，视为 marker-only。
-const MARKER_ONLY_RE = /^[({][^a-zA-Z0-9/]*[\d.]+[)}](\{[\d.]+\})?$/;
 
 const StatementRow = memo(function StatementRow({
   statement,
   index,
   isActive,
   activeChunkIdx,
-  isMarkerOnly,
+  isMarkerRow,
   seekTo,
   registerRef,
 }: StatementRowProps) {
-  const rowClass = [classes.row, isActive && classes.rowActive, isMarkerOnly && classes.rowMarker]
+  const rowClass = [classes.row, isActive && classes.rowActive, isMarkerRow && classes.rowMarker]
     .filter(Boolean)
     .join(" ");
   return (
@@ -145,30 +167,34 @@ const StatementRow = memo(function StatementRow({
       onClick={() => seekTo(statement.beat)}
     >
       <span className={classes.beat}>{statement.beat.toFixed(2)}</span>
-      <span className={classes.chunks}>
-        {statement.chunks.map((c, ci) => {
-          const isActiveChunk = isActive && ci === activeChunkIdx;
-          const chunkClass = [
-            classes.chunk,
-            c.text === "" && classes.chunkEmpty,
-            isActiveChunk && classes.chunkActive,
-          ]
-            .filter(Boolean)
-            .join(" ");
-          return (
-            <span
-              key={ci}
-              className={chunkClass}
-              onClick={(e) => {
-                e.stopPropagation();
-                seekTo(c.beat);
-              }}
-            >
-              {c.text}
-            </span>
-          );
-        })}
-      </span>
+      {statement.markerText ? (
+        <span className={classes.markerText}>{statement.markerText}</span>
+      ) : (
+        <span className={classes.chunks}>
+          {statement.chunks.map((c, ci) => {
+            const isActiveChunk = isActive && ci === activeChunkIdx;
+            const chunkClass = [
+              classes.chunk,
+              c.isEmpty && classes.chunkEmpty,
+              isActiveChunk && classes.chunkActive,
+            ]
+              .filter(Boolean)
+              .join(" ");
+            return (
+              <span
+                key={ci}
+                className={chunkClass}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  seekTo(c.beat);
+                }}
+              >
+                {c.text}
+              </span>
+            );
+          })}
+        </span>
+      )}
     </div>
   );
 });
@@ -187,18 +213,17 @@ export function SimaiStatementList({
   const chunkLocations = useMemo(
     () =>
       statements.flatMap((statement, line) =>
-        statement.chunks.map((chunk, chunkIndex) => ({
-          beat: chunk.beat,
-          line,
-          chunk: chunkIndex,
-        })),
+        statement.markerText
+          ? [{ beat: statement.beat, line, chunk: -1 }]
+          : statement.chunks.map((chunk, chunkIndex) => ({
+              beat: chunk.beat,
+              line,
+              chunk: chunkIndex,
+            })),
       ),
     [statements],
   );
-  const markerFlags = useMemo(
-    () => statements.map((s) => s.chunks.every((c) => MARKER_ONLY_RE.test(c.text.trim()))),
-    [statements],
-  );
+  const markerFlags = useMemo(() => statements.map((s) => Boolean(s.markerText)), [statements]);
   const setPreciseTime = useGameStore((s) => s.setPreciseTime);
 
   const seekTo = useCallback(
@@ -334,7 +359,7 @@ export function SimaiStatementList({
                   index={i}
                   isActive={isActive}
                   activeChunkIdx={isActive ? active.chunk : -1}
-                  isMarkerOnly={markerFlags[i]}
+                  isMarkerRow={markerFlags[i]}
                   seekTo={seekTo}
                   registerRef={registerRef}
                 />
