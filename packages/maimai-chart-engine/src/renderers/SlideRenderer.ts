@@ -26,8 +26,16 @@ import { SLIDE_BARS } from "../utils/slideBars";
 
 export type SlideRenderMode = "tracks" | "stars";
 
+interface SlidePathMetrics {
+  radius: number;
+  mirrorMode: string;
+  segmentRanges: { start: number; end: number }[];
+  segmentOffsets: number[];
+}
+
 export class SlideRenderer extends BaseRenderer {
   private noteRenderer: NoteRenderer;
+  private pathMetricsCache = new WeakMap<SlideSegment[], SlidePathMetrics>();
 
   constructor(context: RenderContext, noteRenderer: NoteRenderer) {
     super(context);
@@ -153,6 +161,7 @@ export class SlideRenderer extends BaseRenderer {
     currentBeat: number,
     currentTimeMs: number,
     mode: SlideRenderMode = "tracks",
+    hasSimultaneousSlide: boolean,
   ): void {
     if (note.isSplitSlide && note.allSlideSegments) {
       const paths = note.allSlideSegments;
@@ -160,17 +169,41 @@ export class SlideRenderer extends BaseRenderer {
       for (let i = 0; i < paths.length; i++) {
         const segs = paths[i];
         if (segs && segs.length > 0 && segs[0].type === "w") {
-          this.renderSlidePath(note, currentBeat, currentTimeMs, segs, i, mode);
+          this.renderSlidePath(
+            note,
+            currentBeat,
+            currentTimeMs,
+            segs,
+            i,
+            mode,
+            hasSimultaneousSlide,
+          );
         }
       }
       for (let i = 0; i < paths.length; i++) {
         const segs = paths[i];
         if (segs && segs.length > 0 && segs[0].type !== "w") {
-          this.renderSlidePath(note, currentBeat, currentTimeMs, segs, i, mode);
+          this.renderSlidePath(
+            note,
+            currentBeat,
+            currentTimeMs,
+            segs,
+            i,
+            mode,
+            hasSimultaneousSlide,
+          );
         }
       }
     } else if (note.slideSegments && note.slideSegments.length > 0) {
-      this.renderSlidePath(note, currentBeat, currentTimeMs, note.slideSegments, 0, mode);
+      this.renderSlidePath(
+        note,
+        currentBeat,
+        currentTimeMs,
+        note.slideSegments,
+        0,
+        mode,
+        hasSimultaneousSlide,
+      );
     }
   }
 
@@ -181,6 +214,7 @@ export class SlideRenderer extends BaseRenderer {
     segments: SlideSegment[],
     pathIndex: number = 0,
     mode: SlideRenderMode = "tracks",
+    hasSimultaneousSlide: boolean,
   ): void {
     const approachHalf = this.getApproachTimeMs() / 2;
     const visibilityStart = note.timingMs - approachHalf;
@@ -210,37 +244,18 @@ export class SlideRenderer extends BaseRenderer {
         progress = Math.min(1, elapsed / durationMs);
       }
 
-      const isSimultaneous =
-        (note.simultaneousSlideCount ?? 0) >= 2 || (note.isSplitSlide ?? false);
+      const isSimultaneous = hasSimultaneousSlide || (note.isSplitSlide ?? false);
 
       if (mode === "tracks") {
         const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
-
-        const segmentLengths = segments.map((seg) => this.getSegmentLength(seg));
-        const totalLength = segmentLengths.reduce((a, b) => a + b, 0);
-        const segmentRanges: { start: number; end: number }[] = [];
-        let cumulative = 0;
-        for (const len of segmentLengths) {
-          const start = cumulative / totalLength;
-          cumulative += len;
-          const end = cumulative / totalLength;
-          segmentRanges.push({ start, end });
-        }
-
-        // segmentOffset = 各段在整条路径中的累计弧长偏移（正序累计），喂给 renderSegmentPath
-        // 让箭头按全局弧长相位对齐（chunky snap 在内部查 areaStep，外层只传原始 progress）。
-        const segmentOffsets: number[] = [];
-        let acc = 0;
-        for (let i = 0; i < segments.length; i++) {
-          segmentOffsets.push(acc);
-          acc += segmentLengths[i];
-        }
+        const metrics = this.getSlidePathMetrics(segments);
+        if (!metrics) return;
 
         // 反序绘制：先拼接的段（i 小）后画 = 在上层。拼接拐点处前段（含补的 junction 箭头）
         // 盖住后段起点，符合"先拼接的星星在上层"。
         for (let i = segments.length - 1; i >= 0; i--) {
           const segment = segments[i];
-          const range = segmentRanges[i];
+          const range = metrics.segmentRanges[i];
 
           let segmentProgress = 0;
           if (progress > range.start) {
@@ -254,7 +269,7 @@ export class SlideRenderer extends BaseRenderer {
             segmentProgress,
             isSimultaneous,
             this.context.config.normalColorBreakSlide,
-            segmentOffsets[i],
+            metrics.segmentOffsets[i],
             i < segments.length - 1, // 非末段：末端是拼接拐点，需补 junction 箭头
           );
         }
@@ -264,6 +279,43 @@ export class SlideRenderer extends BaseRenderer {
         }
       }
     });
+  }
+
+  private getSlidePathMetrics(segments: SlideSegment[]): SlidePathMetrics | null {
+    const radius = this.context.radius;
+    const mirrorMode = this.context.config.mirrorMode;
+    const cached = this.pathMetricsCache.get(segments);
+    if (cached && cached.radius === radius && cached.mirrorMode === mirrorMode) {
+      return cached;
+    }
+
+    const segmentLengths = new Array<number>(segments.length);
+    let totalLength = 0;
+    for (let i = 0; i < segments.length; i++) {
+      const length = this.getSegmentLength(segments[i]);
+      segmentLengths[i] = length;
+      totalLength += length;
+    }
+    if (totalLength <= 0) return null;
+
+    const segmentRanges = new Array<{ start: number; end: number }>(segments.length);
+    const segmentOffsets = new Array<number>(segments.length);
+    let cumulative = 0;
+    for (let i = 0; i < segments.length; i++) {
+      const start = cumulative / totalLength;
+      segmentOffsets[i] = cumulative;
+      cumulative += segmentLengths[i];
+      segmentRanges[i] = { start, end: cumulative / totalLength };
+    }
+
+    const metrics = {
+      radius,
+      mirrorMode,
+      segmentRanges,
+      segmentOffsets,
+    };
+    this.pathMetricsCache.set(segments, metrics);
+    return metrics;
   }
 
   private renderSlideSegment(

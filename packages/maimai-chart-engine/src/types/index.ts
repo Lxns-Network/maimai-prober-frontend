@@ -164,16 +164,6 @@ export interface BaseNote {
   bpm: number;
   /** 此 Note 是否有延迟标记（simai 中的反引号） */
   hasDelayMarker?: boolean;
-  /** 同时出现的 Note 数量 */
-  simultaneousNoteCount?: number;
-  /** 同时出现的滑条数量 */
-  simultaneousSlideCount?: number;
-  /** 同时出现的非触摸 Note 数量 */
-  simultaneousNonTouchCount?: number;
-  /** 同时出现的触摸 Note 数量 */
-  simultaneousTouchCount?: number;
-  /** 绝赞索引（不包含绝赞 Note） */
-  noExBreakIndex?: number;
 }
 
 export interface TapNote extends BaseNote {
@@ -255,8 +245,6 @@ export interface TouchNote extends BaseNote {
   position: TouchPosition;
   /** 是否有烟花效果 */
   hasFirework?: boolean;
-  /** 此位置可见的触摸数量 */
-  visibleTouchCount?: number;
 }
 
 export interface TouchHoldStartNote extends BaseNote {
@@ -270,8 +258,6 @@ export interface TouchHoldStartNote extends BaseNote {
   hasFirework?: boolean;
   /** 是否为 Hold 开始 */
   isHoldStart: true;
-  /** 此位置可见的触摸数量 */
-  visibleTouchCount?: number;
 }
 
 export interface TouchHoldEndNote extends BaseNote {

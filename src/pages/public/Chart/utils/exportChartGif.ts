@@ -103,9 +103,8 @@ export async function exportChartGif({
   const bgVideo = videoOption ? await loadExportVideo(videoOption.url) : null;
 
   const canvas = document.createElement("canvas");
-  const renderer = new MainRenderer(canvas, chart.bpm);
+  const renderer = new MainRenderer(canvas);
   renderer.resizeToSize(size);
-  renderer.setBpm(chart.bpm);
   renderer.setHiSpeed(settings.hiSpeed);
   renderer.setAlwaysKeepHiSpeed(settings.alwaysKeepHiSpeed);
   renderer.setPlaybackSpeed(1);

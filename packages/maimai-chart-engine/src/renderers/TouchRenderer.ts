@@ -100,6 +100,7 @@ export class TouchRenderer extends BaseRenderer {
     note: TouchNote | TouchHoldStartNote,
     _currentBeat: number,
     currentTimeMs: number,
+    isSimultaneous: boolean,
   ): void {
     const isHold = note.type === "touch-hold-start";
     const timeDiff = note.timingMs - currentTimeMs;
@@ -139,7 +140,6 @@ export class TouchRenderer extends BaseRenderer {
     }
 
     const position = this.getTouchPosition(note.position);
-    const isSimultaneous = (note.simultaneousNoteCount ?? 0) >= 2;
     const isHoldActive = isHold && timeDiff < 0;
     const ctx = this.context.ctx;
 
@@ -592,12 +592,8 @@ export class TouchRenderer extends BaseRenderer {
   }
 
   /** 同位置多 touch 时围一圈带 gap 的圆角框。 */
-  renderTouchBorder(
-    note: TouchNote | TouchHoldStartNote,
-    position: Point2D,
-    isSimultaneous: boolean,
-  ): void {
-    if (!note.visibleTouchCount || note.visibleTouchCount < 2) {
+  renderTouchBorder(position: Point2D, isSimultaneous: boolean, visibleTouchCount: number): void {
+    if (visibleTouchCount < 2) {
       return;
     }
 
@@ -606,7 +602,7 @@ export class TouchRenderer extends BaseRenderer {
     const color = isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.TOUCH_CYAN;
 
     // 绘制更大的边框用于 3+ 触摸
-    if (note.visibleTouchCount >= 3) {
+    if (visibleTouchCount >= 3) {
       const largerSize = boxSize * 1.2;
       this.drawTouchBorderBox(position.x, position.y, largerSize, cornerRadius, color, 3);
     }

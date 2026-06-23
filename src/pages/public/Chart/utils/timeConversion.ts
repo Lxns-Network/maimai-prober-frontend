@@ -1,50 +1,54 @@
-import type { BpmEvent } from "@lxns-network/maimai-chart-engine";
+import { TimingTimeline, type BpmEvent } from "@lxns-network/maimai-chart-engine";
 
-export function beatsToMs(beats: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-  if (!bpmEvents || bpmEvents.length === 0) {
-    return (60000 * beats) / defaultBpm;
+let cachedBpmEvents: readonly BpmEvent[] | null = null;
+let cachedDefaultBpm = Number.NaN;
+let cachedTimeline: TimingTimeline | null = null;
+
+function getTimingTimeline(
+  bpmEvents: readonly BpmEvent[] | null,
+  defaultBpm: number,
+): TimingTimeline {
+  if (cachedTimeline && cachedBpmEvents === bpmEvents && cachedDefaultBpm === defaultBpm) {
+    return cachedTimeline;
   }
 
-  let totalMs = 0;
-  let lastBeat = 0;
-  let currentBpm = defaultBpm;
-
-  for (const event of bpmEvents) {
-    if (event.timing >= beats) break;
-    totalMs += (60000 * (event.timing - lastBeat)) / currentBpm;
-    lastBeat = event.timing;
-    currentBpm = event.bpm;
-  }
-
-  totalMs += (60000 * (beats - lastBeat)) / currentBpm;
-  return totalMs;
+  cachedBpmEvents = bpmEvents;
+  cachedDefaultBpm = defaultBpm;
+  cachedTimeline = new TimingTimeline(defaultBpm, bpmEvents);
+  return cachedTimeline;
 }
 
-export function msToBeats(ms: number, bpmEvents: BpmEvent[] | null, defaultBpm: number): number {
-  if (!bpmEvents || bpmEvents.length === 0) {
-    return (ms * defaultBpm) / 60000;
-  }
+const LEAD_IN_BEATS = 4;
 
-  let remainingMs = ms;
-  let totalBeats = 0;
-  let lastBeat = 0;
-  let currentBpm = defaultBpm;
+/** Lead-in duration in ms: 4 beats at the given BPM. */
+export function getLeadInMs(bpm: number): number {
+  return (60000 * LEAD_IN_BEATS) / bpm;
+}
 
-  for (const event of bpmEvents) {
-    const segmentBeats = event.timing - lastBeat;
-    const segmentMs = (60000 * segmentBeats) / currentBpm;
+export function beatsToMs(
+  beats: number,
+  bpmEvents: readonly BpmEvent[] | null,
+  defaultBpm: number,
+): number {
+  return getTimingTimeline(bpmEvents, defaultBpm).msFromBeat(beats);
+}
 
-    if (remainingMs <= segmentMs) {
-      totalBeats += (remainingMs * currentBpm) / 60000;
-      return totalBeats;
-    }
+export function msToBeats(
+  ms: number,
+  bpmEvents: readonly BpmEvent[] | null,
+  defaultBpm: number,
+): number {
+  return getTimingTimeline(bpmEvents, defaultBpm).beatFromMs(ms);
+}
 
-    remainingMs -= segmentMs;
-    totalBeats += segmentBeats;
-    lastBeat = event.timing;
-    currentBpm = event.bpm;
-  }
-
-  totalBeats += (remainingMs * currentBpm) / 60000;
-  return totalBeats;
+/** Music time in seconds from precise time (beats), accounting for lead-in and music offset. */
+export function calculateMusicTime(
+  preciseTime: number,
+  bpmEvents: readonly BpmEvent[] | null,
+  bpm: number,
+  musicOffset: number,
+): number {
+  const chartTimeMs = beatsToMs(preciseTime, bpmEvents, bpm);
+  const leadInMs = getLeadInMs(bpm);
+  return (chartTimeMs - leadInMs - musicOffset) / 1000;
 }
