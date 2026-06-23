@@ -1,8 +1,27 @@
 import {
-  ActionIcon, Alert, Anchor, Box, Center, Container, CopyButton, Flex, Group, Image, Loader, RenderTreeNodePayload,
-  ScrollArea, Space, Text, Title, Tooltip, Tree, TreeNodeData, Typography, useTree
+  ActionIcon,
+  Alert,
+  Anchor,
+  Box,
+  Center,
+  Container,
+  CopyButton,
+  Flex,
+  Group,
+  Image,
+  Loader,
+  RenderTreeNodePayload,
+  ScrollArea,
+  Space,
+  Text,
+  Title,
+  Tooltip,
+  Tree,
+  TreeNodeData,
+  Typography,
+  useTree,
 } from "@mantine/core";
-import classes from "./Docs.module.css"
+import classes from "./Docs.module.css";
 import React, { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { remark } from "remark";
@@ -16,24 +35,34 @@ import remarkSlug from "remark-slug";
 import remarkFlexibleContainers from "remark-flexible-containers";
 import { useListState } from "@mantine/hooks";
 import {
-  IconAlertCircle, IconArrowLeft, IconCheck, IconChevronDown, IconCopy, IconInfoCircle, IconListSearch
+  IconAlertCircle,
+  IconArrowLeft,
+  IconCheck,
+  IconChevronDown,
+  IconCopy,
+  IconInfoCircle,
+  IconListSearch,
 } from "@tabler/icons-react";
-import LazyLoad from '@/components/LazyLoad';
+import LazyLoad from "@/components/LazyLoad";
 import { PhotoView } from "react-photo-view";
-import { CodeHighlight, CodeHighlightAdapterProvider, createShikiAdapter } from "@mantine/code-highlight";
+import {
+  CodeHighlight,
+  CodeHighlightAdapterProvider,
+  createShikiAdapter,
+} from "@mantine/code-highlight";
 import clsx from "clsx";
-import { useData } from 'vike-react/useData';
+import { useData } from "vike-react/useData";
 
 async function loadShiki() {
-  const { createHighlighterCore } = await import('@shikijs/core');
-  const { createJavaScriptRegexEngine } = await import('@shikijs/engine-javascript');
+  const { createHighlighterCore } = await import("@shikijs/core");
+  const { createJavaScriptRegexEngine } = await import("@shikijs/engine-javascript");
   return await createHighlighterCore({
     langs: [
-      import('@shikijs/langs/python'),
-      import('@shikijs/langs/json'),
-      import('@shikijs/langs/bash'),
+      import("@shikijs/langs/python"),
+      import("@shikijs/langs/json"),
+      import("@shikijs/langs/bash"),
     ],
-    engine: createJavaScriptRegexEngine()
+    engine: createJavaScriptRegexEngine(),
   });
 }
 
@@ -42,22 +71,24 @@ const shikiAdapter = createShikiAdapter(loadShiki);
 const scrollTo = (id: string) => {
   if (!id) return;
 
-  if (typeof window !== 'undefined' && window.location.hash !== `#${encodeURIComponent(id)}`) {
+  if (typeof window !== "undefined" && window.location.hash !== `#${encodeURIComponent(id)}`) {
     window.history.pushState(null, "", `${window.location.pathname}#${encodeURIComponent(id)}`);
   }
 
   const target = document.getElementById(id);
-  const scrollArea = document.querySelector("#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport");
+  const scrollArea = document.querySelector(
+    "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
+  );
 
   if (target && scrollArea) {
     const offsetTop = target.offsetTop - parseInt(window.getComputedStyle(target).marginTop, 10);
 
     scrollArea.scrollTo({
       top: offsetTop,
-      behavior: "smooth"
+      behavior: "smooth",
     });
   }
-}
+};
 
 const getActiveElement = (rects: DOMRect[]) => {
   if (rects.length === 0) {
@@ -75,11 +106,11 @@ const getActiveElement = (rects: DOMRect[]) => {
         position: item.y,
       };
     },
-    { index: 0, position: rects[0].y }
+    { index: 0, position: rects[0].y },
   );
 
   return closest.index;
-}
+};
 
 function findParentValue(node: TreeNodeData, targetValue: string): string | null {
   if (!node.children) return null;
@@ -100,7 +131,14 @@ function findParentValue(node: TreeNodeData, targetValue: string): string | null
   return null;
 }
 
-const Leaf = ({ level, node, expanded, hasChildren, elementProps, tree }: RenderTreeNodePayload) => {
+const Leaf = ({
+  level,
+  node,
+  expanded,
+  hasChildren,
+  elementProps,
+  tree,
+}: RenderTreeNodePayload) => {
   useEffect(() => {
     if (level === 1) tree.expand(node.value);
   }, [level]);
@@ -121,13 +159,16 @@ const Leaf = ({ level, node, expanded, hasChildren, elementProps, tree }: Render
         {hasChildren && (
           <IconChevronDown
             size={14}
-            style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+            style={{
+              transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s",
+            }}
           />
         )}
       </Group>
     </div>
   );
-}
+};
 
 interface HeadingData {
   depth: number;
@@ -151,7 +192,7 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
       const node: TreeNodeData = {
         label: heading.value,
         value: heading.data.id,
-        children: []
+        children: [],
       };
 
       if (heading.depth === 1) {
@@ -185,10 +226,12 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
    */
   const [active, setActive] = useState<number>(-1);
   const handleScroll = () => {
-    const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)") as NodeListOf<HTMLElement>);
+    const nodes = Array.from(
+      document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)") as NodeListOf<HTMLElement>,
+    );
     if (nodes.length === 0) return;
     setActive(getActiveElement(nodes.map((node) => node.getBoundingClientRect())));
-  }
+  };
 
   useEffect(() => {
     if (active === -1) return;
@@ -226,15 +269,15 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
 
   useEffect(() => {
     const scrollArea = document.querySelector(
-      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport"
-    )
+      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
+    );
 
     if (!scrollArea) return;
 
-    scrollArea.addEventListener('scroll', handleScroll);
+    scrollArea.addEventListener("scroll", handleScroll);
 
     return () => {
-      scrollArea.removeEventListener('scroll', handleScroll);
+      scrollArea.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -244,11 +287,16 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
         <IconListSearch size={18} stroke={1.5} />
         <Text mb={0}>目录</Text>
       </Group>
-      <Tree data={data} tree={tree} levelOffset="md" renderNode={(payload) => <Leaf {...payload} />} />
+      <Tree
+        data={data}
+        tree={tree}
+        levelOffset="md"
+        renderNode={(payload) => <Leaf {...payload} />}
+      />
       <Space h="2rem" />
     </ScrollArea>
   );
-}
+};
 
 const Content = ({ markdown }: { markdown: string }) => {
   return (
@@ -257,12 +305,15 @@ const Content = ({ markdown }: { markdown: string }) => {
       rehypePlugins={[
         rehypeSlug,
         rehypeRaw,
-        [rehypeAutolinkHeadings, {
-          behavior: 'wrap',
-          properties: {
-            className: classes.sectionHeading,
+        [
+          rehypeAutolinkHeadings,
+          {
+            behavior: "wrap",
+            properties: {
+              className: classes.sectionHeading,
+            },
           },
-        }]
+        ],
       ]}
       components={{
         p({ children }) {
@@ -271,42 +322,77 @@ const Content = ({ markdown }: { markdown: string }) => {
         a({ children, href, ...props }) {
           if (href && href.startsWith("http")) {
             return (
-              <a className={clsx(classes.link, {
-                [classes.externalLink]: typeof children === "string"
-              })} href={href} target="_blank" rel="noreferrer" {...props}>
+              <a
+                className={clsx(classes.link, {
+                  [classes.externalLink]: typeof children === "string",
+                })}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                {...props}
+              >
                 {children}
               </a>
             );
           }
           return (
-            <a className={classes.link} href={href} onClick={(event) => {
-              if (href && href.startsWith("#")) {
-                event.preventDefault();
-                scrollTo(decodeURIComponent(href.slice(1)));
-                return;
-              }
-            }} {...props}>
+            <a
+              className={classes.link}
+              href={href}
+              onClick={(event) => {
+                if (href && href.startsWith("#")) {
+                  event.preventDefault();
+                  scrollTo(decodeURIComponent(href.slice(1)));
+                  return;
+                }
+              }}
+              {...props}
+            >
               {children}
             </a>
           );
         },
         h1({ children, ...props }) {
-          return <Title className={classes.heading1} {...props}>{children}</Title>;
+          return (
+            <Title className={classes.heading1} {...props}>
+              {children}
+            </Title>
+          );
         },
         h2({ children, ...props }) {
-          return <Title order={2} className={classes.heading2} {...props}>{children}</Title>;
+          return (
+            <Title order={2} className={classes.heading2} {...props}>
+              {children}
+            </Title>
+          );
         },
         h3({ children, ...props }) {
-          return <Title order={3} className={classes.heading3} {...props}>{children}</Title>;
+          return (
+            <Title order={3} className={classes.heading3} {...props}>
+              {children}
+            </Title>
+          );
         },
         h4({ children, ...props }) {
-          return <Title order={4} className={classes.heading4} {...props}>{children}</Title>;
+          return (
+            <Title order={4} className={classes.heading4} {...props}>
+              {children}
+            </Title>
+          );
         },
         h5({ children, ...props }) {
-          return <Title order={5} className={classes.heading5} {...props}>{children}</Title>;
+          return (
+            <Title order={5} className={classes.heading5} {...props}>
+              {children}
+            </Title>
+          );
         },
         h6({ children, ...props }) {
-          return <Title order={6} className={classes.heading6} {...props}>{children}</Title>;
+          return (
+            <Title order={6} className={classes.heading6} {...props}>
+              {children}
+            </Title>
+          );
         },
         img({ src, alt }) {
           return (
@@ -343,78 +429,110 @@ const Content = ({ markdown }: { markdown: string }) => {
 
             const childrenArray = React.Children.toArray(children);
             const titleChild = childrenArray.find(
-              child => React.isValidElement(child) && (child.props as Record<string, unknown>).className?.toString().includes('remark-container-title')
+              (child) =>
+                React.isValidElement(child) &&
+                (child.props as Record<string, unknown>).className
+                  ?.toString()
+                  .includes("remark-container-title"),
             ) as React.ReactElement;
 
-            return <Alert
-              className={classes.alert}
-              radius="md"
-              mt="md"
-              variant="light"
-              color={color}
-              title={titleChild ? (titleChild.props as Record<string, unknown>).children as React.ReactNode : undefined}
-              icon={icon}
-              styles={{
-                body: {
-                  width: "0",
+            return (
+              <Alert
+                className={classes.alert}
+                radius="md"
+                mt="md"
+                variant="light"
+                color={color}
+                title={
+                  titleChild
+                    ? ((titleChild.props as Record<string, unknown>).children as React.ReactNode)
+                    : undefined
                 }
-              }}
-            >
-              {childrenArray.filter(
-                (child) => !React.isValidElement(child) || !(child.props as Record<string, unknown>).className?.toString().includes('remark-container-title')
-              )}
-            </Alert>
+                icon={icon}
+                styles={{
+                  body: {
+                    width: "0",
+                  },
+                }}
+              >
+                {childrenArray.filter(
+                  (child) =>
+                    !React.isValidElement(child) ||
+                    !(child.props as Record<string, unknown>).className
+                      ?.toString()
+                      .includes("remark-container-title"),
+                )}
+              </Alert>
+            );
           }
-          return <div className={className} {...props}>{children}</div>;
+          return (
+            <div className={className} {...props}>
+              {children}
+            </div>
+          );
         },
         th({ children, ...props }) {
-          return <th className={classes.tableCell} {...props}>{children}</th>;
+          return (
+            <th className={classes.tableCell} {...props}>
+              {children}
+            </th>
+          );
         },
         td({ children, ...props }) {
-          return <td className={classes.tableCell} {...props}>{children}</td>;
+          return (
+            <td className={classes.tableCell} {...props}>
+              {children}
+            </td>
+          );
         },
         pre({ children }) {
-          const codeElement = children as React.ReactElement<{ children: string; className?: string }>;
-          return <div className={classes.codeBlock}>
-            <CopyButton value={codeElement.props.children} timeout={2000}>
-              {({ copied, copy }) => (
-                <Tooltip label={copied ? '已复制' : '复制代码块'} withArrow>
-                  <ActionIcon className={classes.codeBlockCopyButton} color={copied ? 'teal' : 'gray'} variant="subtle" onClick={copy}>
-                    {copied ? (
-                      <IconCheck width={16} />
-                    ) : (
-                      <IconCopy width={16} />
-                    )}
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </CopyButton>
-            <CodeHighlight
-              code={codeElement.props.children}
-              language={codeElement.props.className?.replace("language-", "") || "text"}
-              withCopyButton={false}
-              styles={{
-                pre: {
-                  overflow: "unset",
-                  width: "0",
-                },
-              }}
-              radius="md"
-            />
-          </div>
+          const codeElement = children as React.ReactElement<{
+            children: string;
+            className?: string;
+          }>;
+          return (
+            <div className={classes.codeBlock}>
+              <CopyButton value={codeElement.props.children} timeout={2000}>
+                {({ copied, copy }) => (
+                  <Tooltip label={copied ? "已复制" : "复制代码块"} withArrow>
+                    <ActionIcon
+                      className={classes.codeBlockCopyButton}
+                      color={copied ? "teal" : "gray"}
+                      variant="subtle"
+                      onClick={copy}
+                    >
+                      {copied ? <IconCheck width={16} /> : <IconCopy width={16} />}
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </CopyButton>
+              <CodeHighlight
+                code={codeElement.props.children}
+                language={codeElement.props.className?.replace("language-", "") || "text"}
+                withCopyButton={false}
+                styles={{
+                  pre: {
+                    overflow: "unset",
+                    width: "0",
+                  },
+                }}
+                radius="md"
+              />
+            </div>
+          );
         },
         code({ children }) {
-          return <span className={classes.code}>{children}</span>
+          return <span className={classes.code}>{children}</span>;
         },
         blockquote({ children }) {
-          return <Text className={classes.blockQuote}>{children}</Text>
-        }
+          return <Text className={classes.blockQuote}>{children}</Text>;
+        },
       }}
     >
       {markdown}
     </Markdown>
-  )
-}
+  );
+};
 
 export default function Page() {
   const data = useData<{ markdown: string; slug: string }>();
@@ -434,7 +552,7 @@ export default function Page() {
     handlers.setState(file.data.headings as HeadingData[]);
 
     // 处理 URL hash 滚动
-    if (typeof window !== 'undefined' && window.location.hash) {
+    if (typeof window !== "undefined" && window.location.hash) {
       setTimeout(() => {
         scrollTo(decodeURIComponent(window.location.hash.slice(1)));
       }, 100);
@@ -452,7 +570,7 @@ export default function Page() {
   return (
     <Flex>
       <Container mr={0} className={classes.content}>
-        {slug && slug !== 'index' && (
+        {slug && slug !== "index" && (
           <Anchor href="/docs">
             <Center inline mt="xs">
               <IconArrowLeft size={18} />
@@ -472,5 +590,5 @@ export default function Page() {
         <TableOfContents headings={headings} />
       </Container>
     </Flex>
-  )
+  );
 }

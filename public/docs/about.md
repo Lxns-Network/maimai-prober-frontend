@@ -12,7 +12,7 @@ QQ 群：[https://qm.qq.com/q/9GGlKX3Qty](https://qm.qq.com/q/9GGlKX3Qty)
 
 GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 
-哔哩哔哩：[@软糖酱_Official](https://space.bilibili.com/1432317833)
+哔哩哔哩：[@软糖酱\_Official](https://space.bilibili.com/1432317833)
 
 ## 开放源代码
 

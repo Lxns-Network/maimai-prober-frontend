@@ -78,13 +78,13 @@ POST /api/v0/oauth/token
 
 #### 响应体
 
-| 字段名 | 类型 | 说明 |
-|-|-|-|
-| `access_token` | string | 访问令牌，用于访问用户数据 |
-| `token_type` | string | 令牌类型，通常为 `Bearer` |
-| `expires_in` | integer | 访问令牌的有效期，单位为秒 |
-| `refresh_token` | string | 刷新令牌，用于获取新的访问令牌 |
-| `scope` | string | 授权范围，表示应用可以访问的权限 |
+| 字段名          | 类型    | 说明                             |
+| --------------- | ------- | -------------------------------- |
+| `access_token`  | string  | 访问令牌，用于访问用户数据       |
+| `token_type`    | string  | 令牌类型，通常为 `Bearer`        |
+| `expires_in`    | integer | 访问令牌的有效期，单位为秒       |
+| `refresh_token` | string  | 刷新令牌，用于获取新的访问令牌   |
+| `scope`         | string  | 授权范围，表示应用可以访问的权限 |
 
 ::: danger 破坏性变更
 访问令牌响应的字段现已位于响应**顶层**（符合 OAuth 2.0 标准）。为兼容旧版集成，`data` 包装（即 `data.access_token`）暂时保留，但**已废弃，并将在未来版本中移除**。请尽快改为从响应顶层直接读取 `access_token` 等字段。
@@ -102,11 +102,11 @@ POST /api/v0/oauth/token
 
 ```json
 {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "token_type": "Bearer",
-    "expires_in": 900,
-    "refresh_token": "SjiF1mnYY0qa1PEJhjeyDQPGPcBjWOKu",
-    "scope": "read_player write_player"
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 900,
+  "refresh_token": "SjiF1mnYY0qa1PEJhjeyDQPGPcBjWOKu",
+  "scope": "read_player write_player"
 }
 ```
 
@@ -116,20 +116,20 @@ POST /api/v0/oauth/token
 
 ```json
 {
-    "error": "invalid_grant",
-    "error_description": "authorization code expired"
+  "error": "invalid_grant",
+  "error_description": "authorization code expired"
 }
 ```
 
 `error` 取值如下：
 
-| `error` | 说明 |
-|-|-|
-| `invalid_request` | 缺少必需参数、参数无效或请求格式错误 |
-| `invalid_client` | 客户端不存在，或客户端认证（`client_secret`）失败 |
-| `invalid_grant` | 授权码或刷新令牌无效、已过期，或与客户端、回调地址不匹配 |
-| `unsupported_grant_type` | 不支持的 `grant_type` |
-| `server_error` | 服务器内部错误 |
+| `error`                  | 说明                                                     |
+| ------------------------ | -------------------------------------------------------- |
+| `invalid_request`        | 缺少必需参数、参数无效或请求格式错误                     |
+| `invalid_client`         | 客户端不存在，或客户端认证（`client_secret`）失败        |
+| `invalid_grant`          | 授权码或刷新令牌无效、已过期，或与客户端、回调地址不匹配 |
+| `unsupported_grant_type` | 不支持的 `grant_type`                                    |
+| `server_error`           | 服务器内部错误                                           |
 
 ::: warning 注意
 错误响应为标准扁平格式，**不包含** `success`、`code`、`data` 字段；该格式同时适用于刷新令牌等所有令牌接口请求。
@@ -161,21 +161,21 @@ POST /api/v0/oauth/token
 
 #### 请求参数
 
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `client_id` | string | 应用 ID |
-| `client_secret` | string | 应用密钥，PKCE 不需要此参数 |
-| `grant_type` | string | 授权类型，固定为 `refresh_token` |
-| `refresh_token` | string | 从上一步获取的刷新令牌 |
+| 参数名          | 类型   | 说明                             |
+| --------------- | ------ | -------------------------------- |
+| `client_id`     | string | 应用 ID                          |
+| `client_secret` | string | 应用密钥，PKCE 不需要此参数      |
+| `grant_type`    | string | 授权类型，固定为 `refresh_token` |
+| `refresh_token` | string | 从上一步获取的刷新令牌           |
 
 #### 请求示例
 
 ```json
 {
-    "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
-    "client_secret": "fUluk5OJQ6OF8PGqGxs3TJ2zdZpwgDTs",
-    "grant_type": "refresh_token",
-    "refresh_token": "SjiF1mnYY0qa1PEJhjeyDQPGPcBjWOKu"
+  "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
+  "client_secret": "fUluk5OJQ6OF8PGqGxs3TJ2zdZpwgDTs",
+  "grant_type": "refresh_token",
+  "refresh_token": "SjiF1mnYY0qa1PEJhjeyDQPGPcBjWOKu"
 }
 ```
 
@@ -195,23 +195,23 @@ POST /api/v0/oauth/token
 
 #### 请求参数
 
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `client_id` | string | 应用 ID |
-| `client_secret` | string | 应用密钥 |
-| `grant_type` | string | 授权类型，固定为 `authorization_code` |
-| `code` | string | 从回调地址获取的授权码 |
-| `redirect_uri` | string | 回调地址，必须与创建应用时一致 |
+| 参数名          | 类型   | 说明                                  |
+| --------------- | ------ | ------------------------------------- |
+| `client_id`     | string | 应用 ID                               |
+| `client_secret` | string | 应用密钥                              |
+| `grant_type`    | string | 授权类型，固定为 `authorization_code` |
+| `code`          | string | 从回调地址获取的授权码                |
+| `redirect_uri`  | string | 回调地址，必须与创建应用时一致        |
 
 #### 请求示例
 
 ```json
 {
-    "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
-    "client_secret": "fUluk5OJQ6OF8PGqGxs3TJ2zdZpwgDTs",
-    "grant_type": "authorization_code",
-    "code": "Oze6RZ0nPKy4JSmpI2aYxEIUmhl0l5fU",
-    "redirect_uri": "http://localhost:5000/callback"
+  "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
+  "client_secret": "fUluk5OJQ6OF8PGqGxs3TJ2zdZpwgDTs",
+  "grant_type": "authorization_code",
+  "code": "Oze6RZ0nPKy4JSmpI2aYxEIUmhl0l5fU",
+  "redirect_uri": "http://localhost:5000/callback"
 }
 ```
 
@@ -290,23 +290,23 @@ PKCE 通过在授权请求中添加一个随机生成的 `code_verifier` 和 `co
 
 #### 请求参数
 
-| 参数名 | 类型 | 说明 |
-|-|-|-|
-| `client_id` | string | 应用 ID |
-| `grant_type` | string | 授权类型，固定为 `authorization_code` |
-| `code` | string | 从回调地址获取的授权码 |
-| `redirect_uri` | string | 回调地址，必须与创建应用时一致 |
-| `code_verifier` | string | PKCE 验证码 |
+| 参数名          | 类型   | 说明                                  |
+| --------------- | ------ | ------------------------------------- |
+| `client_id`     | string | 应用 ID                               |
+| `grant_type`    | string | 授权类型，固定为 `authorization_code` |
+| `code`          | string | 从回调地址获取的授权码                |
+| `redirect_uri`  | string | 回调地址，必须与创建应用时一致        |
+| `code_verifier` | string | PKCE 验证码                           |
 
 #### 请求示例
 
 ```json
 {
-    "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
-    "grant_type": "authorization_code",
-    "code": "Oze6RZ0nPKy4JSmpI2aYxEIUmhl0l5fU",
-    "redirect_uri": "http://localhost:5000/callback",
-    "code_verifier": "randomly_generated_code_verifier"
+  "client_id": "e07f2ae3-795b-4368-b55f-5f27b0b3eae0",
+  "grant_type": "authorization_code",
+  "code": "Oze6RZ0nPKy4JSmpI2aYxEIUmhl0l5fU",
+  "redirect_uri": "http://localhost:5000/callback",
+  "code_verifier": "randomly_generated_code_verifier"
 }
 ```
 

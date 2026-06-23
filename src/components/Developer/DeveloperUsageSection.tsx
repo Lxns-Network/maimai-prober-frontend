@@ -21,10 +21,12 @@ import { useDeveloperUsage } from "@/hooks/queries/useDeveloperUsage.ts";
 import classes from "@/pages/Page.module.css";
 
 const methodColor = (method: string) =>
-  (({ GET: "blue", POST: "teal", PUT: "yellow", PATCH: "orange", DELETE: "red" }) as Record<
-    string,
-    string
-  >)[method] ?? "gray";
+  (
+    ({ GET: "blue", POST: "teal", PUT: "yellow", PATCH: "orange", DELETE: "red" }) as Record<
+      string,
+      string
+    >
+  )[method] ?? "gray";
 
 const StatCard = ({
   icon,

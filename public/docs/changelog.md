@@ -240,9 +240,9 @@
 
 ```json
 {
-    "success": false,
-    "code": 400,
-    "message": "invalid score (id: 1553, type: dx, level_index: 3): achievements out of range"
+  "success": false,
+  "code": 400,
+  "message": "invalid score (id: 1553, type: dx, level_index: 3): achievements out of range"
 }
 ```
 
@@ -400,7 +400,7 @@
   - 舞萌 DX 2022（Ver.CN1.20）：`22000`
   - 舞萌 DX 2021（Ver.CN1.11）：`21000`
   - 舞萌 DX（Ver.CN1.01）：`20000`
-  > 感谢**土豆喵**提供旧版本游戏数据
+    > 感谢**土豆喵**提供旧版本游戏数据
 - 修复了姓名框查询中 SYNC 成绩被当作 FDX+ 成绩计算的问题
 
 ## 2024/8/22
