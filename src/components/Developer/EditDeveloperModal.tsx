@@ -1,6 +1,7 @@
 import { useForm } from "@mantine/form";
 import { useUpdateDeveloperInfo } from "@/hooks/mutations/useDeveloperMutations.ts";
-import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { Button, Group, Modal, TextInput } from "@mantine/core";
 import { DeveloperProps } from "@/types/developer";
 import { validateText, validateUrl } from "@/utils/validator.ts";
@@ -65,7 +66,7 @@ export const EditDeveloperModal = ({
 
     updateDeveloperInfoMutation.mutate(transformedValues, {
       onSuccess: () => {
-        openAlertModal("修改成功", "开发者信息已更新。");
+        notifications.show({ title: "修改成功", message: "开发者信息已更新。", color: "green" });
         onSuccess();
         close();
       },

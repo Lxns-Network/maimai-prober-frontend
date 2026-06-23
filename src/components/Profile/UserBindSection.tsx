@@ -4,7 +4,8 @@ import { Icon } from "@/components/MdiIcon";
 import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./Profile.module.css";
-import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
+import { openRetryModal } from "../../utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { useUser } from "@/hooks/queries/useUser.ts";
 import { useUpdateUserBind } from "@/hooks/mutations/useUserMutations.ts";
 
@@ -34,7 +35,11 @@ export const UserBindSection = () => {
   const updateUserBindHandler = (values: TransformedValues<typeof form>) => {
     updateBind(values, {
       onSuccess: () => {
-        openAlertModal("绑定成功", "第三方开发者将可以通过绑定信息获取你的游戏数据。");
+        notifications.show({
+          title: "绑定成功",
+          message: "第三方开发者将可以通过绑定信息获取你的游戏数据。",
+          color: "green",
+        });
         setData((prev) =>
           prev ? { ...prev, bind: { ...(prev.bind || {}), qq: values.qq as number } } : prev,
         );

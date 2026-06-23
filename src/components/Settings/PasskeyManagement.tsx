@@ -23,6 +23,7 @@ import {
   getPasskeyRegisterChallenge,
 } from "@/utils/api/user";
 import { openAlertModal, openConfirmModal, openRetryModal, openFormModal } from "@/utils/modal";
+import { notifications } from "@mantine/notifications";
 import type { PasskeyProps, PasskeyRegisterData } from "@/types/user";
 import classes from "./Settings.module.css";
 import { startRegistration } from "@simplewebauthn/browser";
@@ -98,7 +99,11 @@ export const PasskeyManagement = () => {
         return;
       }
 
-      openAlertModal("注册成功", "通行密钥已成功添加到你的账号。");
+      notifications.show({
+        title: "注册成功",
+        message: "通行密钥已成功添加到你的账号。",
+        color: "green",
+      });
       await loadPasskeys();
     } catch (error) {
       if ((error as Error).name === "NotAllowedError") {

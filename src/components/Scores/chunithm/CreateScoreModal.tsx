@@ -15,8 +15,9 @@ import { useEffect, useState } from "react";
 import { TransformedValues, useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
 import { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
+import { notifications } from "@mantine/notifications";
 import { useCreatePlayerScores } from "@/hooks/mutations/usePlayerMutations.ts";
 import { SongCombobox } from "../../SongCombobox.tsx";
 import "dayjs/locale/zh-cn";
@@ -97,7 +98,11 @@ export const ChunithmCreateScoreModalContent = ({
       { game: "chunithm", scores: [values] },
       {
         onSuccess: () => {
-          openAlertModal("成绩创建成功", "你的成绩已经成功创建。");
+          notifications.show({
+            title: "成绩创建成功",
+            message: "你的成绩已经成功创建。",
+            color: "green",
+          });
           form.setValues({
             id: null,
             difficulty: null,

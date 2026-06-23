@@ -1,7 +1,8 @@
 import { useForm } from "@mantine/form";
 import { validatePassword } from "@/utils/validator.ts";
 import { useEditUserPassword } from "@/hooks/mutations/useUserMutations.ts";
-import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { Button, Group, Modal, PasswordInput } from "@mantine/core";
 
 interface FormValues {
@@ -38,7 +39,11 @@ export const EditPasswordModal = ({ opened, close }: { opened: boolean; close():
   const editUserPasswordHandler = (values: FormValues) => {
     mutateEditPassword(values, {
       onSuccess: () => {
-        openAlertModal("修改成功", "下次登录时请使用新密码。");
+        notifications.show({
+          title: "修改成功",
+          message: "下次登录时请使用新密码。",
+          color: "green",
+        });
       },
       onError: (err) => {
         openRetryModal("修改失败", `${err}`, () => editUserPasswordHandler(values));

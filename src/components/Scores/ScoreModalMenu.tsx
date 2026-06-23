@@ -1,9 +1,10 @@
-import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
+import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import {
   useDeletePlayerScore,
   useDeletePlayerScoreHistory,
 } from "@/hooks/mutations/usePlayerMutations.ts";
 import { ActionIcon, Menu } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import classes from "./ScoreModalMenu.module.css";
 import {
   IconClearAll,
@@ -48,7 +49,11 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
       { game, params },
       {
         onSuccess: () => {
-          openAlertModal("成绩删除成功", "你的成绩已经成功删除。");
+          notifications.show({
+            title: "成绩删除成功",
+            message: "你的成绩已经成功删除。",
+            color: "green",
+          });
           onClose && onClose(score);
         },
         onError: (err) => {
@@ -63,7 +68,11 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
       { game, params },
       {
         onSuccess: () => {
-          openAlertModal("成绩删除成功", "你的所有历史成绩已经成功删除。");
+          notifications.show({
+            title: "成绩删除成功",
+            message: "你的所有历史成绩已经成功删除。",
+            color: "green",
+          });
           onClose && onClose(score);
         },
         onError: (err) => {

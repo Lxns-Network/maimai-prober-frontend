@@ -18,7 +18,8 @@ import { Link } from "@/components/Link";
 import { useForm } from "@mantine/form";
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 import classes from "../Form.module.css";
-import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { useForgotPassword } from "@/hooks/mutations/useAuthMutations.ts";
 
 interface FormValues {
@@ -49,7 +50,11 @@ export default function ForgotPassword() {
         { values, captchaToken },
         {
           onSuccess: () => {
-            openAlertModal("发送成功", "请前往你的邮箱查看重置邮件。");
+            notifications.show({
+              title: "发送成功",
+              message: "请前往你的邮箱查看重置邮件。",
+              color: "green",
+            });
           },
           onError: (error) => {
             openRetryModal("发送失败", `${error}`, () => forgotPasswordHandler(values));

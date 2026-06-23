@@ -14,7 +14,8 @@ import { Icon } from "@/components/MdiIcon";
 import { mdiCodeTags, mdiLink } from "@mdi/js";
 import { useForm } from "@mantine/form";
 import classes from "../Form.module.css";
-import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
+import { openRetryModal } from "@/utils/modal.tsx";
+import { notifications } from "@mantine/notifications";
 import { validateText, validateUrl } from "@/utils/validator.ts";
 import { useDeveloper } from "@/hooks/queries/useDeveloper.ts";
 import { useSendDeveloperApply } from "@/hooks/mutations/useDeveloperMutations.ts";
@@ -58,7 +59,11 @@ export default function DeveloperApply() {
     sendApply(values, {
       onSuccess: () => {
         setApplied(true);
-        openAlertModal("提交成功", "申请成功，我们将尽快审核您的申请。");
+        notifications.show({
+          title: "提交成功",
+          message: "申请成功，我们将尽快审核您的申请。",
+          color: "green",
+        });
       },
       onError: (error) => {
         openRetryModal("提交失败", `${error}`, () => handleSubmit(values));
