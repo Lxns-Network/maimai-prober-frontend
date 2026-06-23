@@ -28,15 +28,14 @@ export function useBackgroundVideoSource({
       }
     };
 
-    if (showVideo) {
-      const url = buildVideoUrl(videoServer);
-      if (url) {
-        video.src = url;
-        video.load();
-        video.addEventListener("loadeddata", refresh);
-        video.addEventListener("seeked", refresh);
-      }
+    const url = showVideo ? buildVideoUrl(videoServer) : null;
+    if (url) {
+      video.src = url;
+      video.load();
+      video.addEventListener("loadeddata", refresh);
+      video.addEventListener("seeked", refresh);
     } else {
+      // showVideo 关闭，或开启但当前谱面无有效视频 URL：都清除 source，避免上一谱面背景视频残留。
       video.removeAttribute("src");
       video.load();
     }
