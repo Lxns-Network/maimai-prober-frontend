@@ -1,22 +1,44 @@
 import { useEffect, useState } from "react";
-import { Group, TextInput, Button, Text, keys, Flex, Card, Badge } from "@mantine/core";
+import { Group, TextInput, Button, Text, keys, Flex, Card, Badge, Popover } from "@mantine/core";
 import { deleteUsers, getUsers } from "@/utils/api/user.ts";
 import { useDisclosure, useViewportSize } from "@mantine/hooks";
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
-import { IconDatabaseOff, IconSearch, IconSend, IconTrash } from "@tabler/icons-react";
+import {
+  IconBell,
+  IconDatabaseOff,
+  IconFilter,
+  IconSearch,
+  IconSend,
+  IconTrash,
+} from "@tabler/icons-react";
 import classes from "@/pages/Page.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
 import { SendBatchEmailModal } from "@/components/Users/SendBatchEmailModal.tsx";
-import { permissionToList, UserPermission } from "@/utils/session.ts";
+import { PublishNotificationModal } from "@/components/Notifications/PublishNotificationModal.tsx";
+import { FilterChips } from "@/components/FilterChips.tsx";
+import { listToPermission, permissionToList, UserPermission } from "@/utils/session.ts";
 import { UserProps } from "@/types/user";
+
+const PERMISSION_OPTIONS = [
+  { label: "普通用户", value: UserPermission.User.toString() },
+  { label: "开发者", value: UserPermission.Developer.toString() },
+  { label: "管理员", value: UserPermission.Administrator.toString() },
+];
 
 function filterData(data: UserProps[], search: string) {
   const query = search.toLowerCase().trim();
   return data.filter((item) =>
     keys(item).some((key) => String(item[key]).toLowerCase().includes(query)),
   );
+}
+
+// 按权限筛选：选中任一权限位即匹配（空选择 = 不筛选）。
+function filterByPermission(data: UserProps[], permissions: string[]) {
+  if (permissions.length === 0) return data;
+  const mask = listToPermission(permissions.map(Number));
+  return data.filter((item) => (item.permission & mask) !== 0);
 }
 
 function sortData(
@@ -52,6 +74,8 @@ const AdminUsersContent = () => {
   const [fetching, setFetching] = useState<boolean>(true);
 
   const [search, setSearch] = useState("");
+  const [permissionFilter, setPermissionFilter] = useState<string[]>([]);
+  const [filterOpened, setFilterOpened] = useState(false);
 
   const [editUserModalOpened, editUserModal] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
@@ -68,6 +92,7 @@ const AdminUsersContent = () => {
   });
 
   const [sendBatchEmailModalOpened, sendBatchEmailModal] = useDisclosure(false);
+  const [publishModalOpened, publishModal] = useDisclosure(false);
   const [selectedUsers, setSelectedUsers] = useState<UserProps[]>([]);
 
   useEffect(() => {
@@ -88,13 +113,13 @@ const AdminUsersContent = () => {
 
   useEffect(() => {
     setSortedUsers(
-      sortData(users, {
+      sortData(filterByPermission(users, permissionFilter), {
         sortBy: sortStatus.columnAccessor as keyof UserProps,
         reversed: sortStatus.direction === "desc",
         search,
       }),
     );
-  }, [users, search, sortStatus]);
+  }, [users, search, sortStatus, permissionFilter]);
 
   const getUserHandler = async () => {
     try {
@@ -174,14 +199,63 @@ const AdminUsersContent = () => {
           sendBatchEmailModal.close();
         }}
       />
-      <TextInput
-        placeholder="搜索用户"
-        radius="md"
-        mb="md"
-        leftSection={<IconSearch size={18} />}
-        value={search}
-        onChange={(event) => setSearch(event.currentTarget.value)}
+      <PublishNotificationModal
+        opened={publishModalOpened}
+        onClose={() => publishModal.close()}
+        lockedUserIds={selectedUsers.map((user) => user.id)}
       />
+      <Group mb="md" gap="xs" wrap="nowrap" align="flex-end">
+        <TextInput
+          style={{ flex: 1 }}
+          placeholder="搜索用户"
+          radius="md"
+          leftSection={<IconSearch size={18} />}
+          value={search}
+          onChange={(event) => setSearch(event.currentTarget.value)}
+        />
+        <Popover
+          opened={filterOpened}
+          onChange={setFilterOpened}
+          position="bottom-end"
+          withArrow
+          shadow="md"
+          width={240}
+        >
+          <Popover.Target>
+            <Button
+              variant="default"
+              leftSection={<IconFilter size={18} />}
+              rightSection={
+                permissionFilter.length > 0 ? (
+                  <Badge size="sm" circle>
+                    {permissionFilter.length}
+                  </Badge>
+                ) : null
+              }
+              onClick={() => setFilterOpened((o) => !o)}
+            >
+              筛选
+            </Button>
+          </Popover.Target>
+          <Popover.Dropdown>
+            <FilterChips
+              title="权限"
+              value={permissionFilter}
+              onChange={setPermissionFilter}
+              options={PERMISSION_OPTIONS}
+            />
+            <Button
+              variant="subtle"
+              size="xs"
+              mt="md"
+              disabled={permissionFilter.length === 0}
+              onClick={() => setPermissionFilter([])}
+            >
+              重置
+            </Button>
+          </Popover.Dropdown>
+        </Popover>
+      </Group>
       <Card
         className={classes.card}
         withBorder
@@ -195,7 +269,17 @@ const AdminUsersContent = () => {
           </Text>
           <Group>
             <Button
-              variant="filled"
+              variant="default"
+              leftSection={<IconBell size={20} />}
+              disabled={selectedUsers.length === 0}
+              onClick={() => {
+                publishModal.open();
+              }}
+            >
+              发送通知
+            </Button>
+            <Button
+              variant="default"
               leftSection={<IconSend size={20} />}
               disabled={selectedUsers.length === 0}
               onClick={() => {

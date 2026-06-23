@@ -89,7 +89,6 @@ type DifficultyState =
 
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
   useBackDismiss(opened, () => onClose());
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [songState, setSongState] = useState<SongState | null>(null);
   const [difficultyState, setDifficultyState] = useState<DifficultyState | null>(null);
   const combobox = useCombobox({
@@ -97,6 +96,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   });
 
   const getSongList = useSongListStore((state) => state.getSongList);
+  const songList = getSongList(game);
   const small = useMediaQuery("(max-width: 30rem)");
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,7 +113,6 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
   useEffect(() => {
     setSongState(null);
-    setSongList(getSongList(game));
   }, [game]);
 
   useEffect(() => {

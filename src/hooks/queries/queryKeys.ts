@@ -65,4 +65,12 @@ export const queryKeys = {
     list: (game: Game, params: URLSearchParams) =>
       [`user/${game}/comment/list?${params.toString()}`] as const,
   },
+  notifications: {
+    list: (params: URLSearchParams) => [`user/notifications?${params.toString()}`] as const,
+    unreadCount: () => ["user/notifications/unread-count"] as const,
+    urgent: () => ["user/notifications/urgent"] as const,
+    admin: {
+      list: () => ["user/admin/notifications"] as const,
+    },
+  },
 } as const;

@@ -7,6 +7,7 @@ import { useScroll, useWindowSize } from "react-use";
 import { CreateScoreModalProvider } from "../ModalProvider/CreateScoreModalProvider.tsx";
 import { ScoreModalProvider } from "../ModalProvider/ScoreModalProvider.tsx";
 import { CreateAliasModalProvider } from "../ModalProvider/CreateAliasModalProvider.tsx";
+import { UrgentNotificationModal } from "@/components/Notifications/UrgentNotificationModal.tsx";
 
 export const NAVBAR_BREAKPOINT = 992;
 
@@ -113,6 +114,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
       <ScoreModalProvider />
       <CreateScoreModalProvider />
       <CreateAliasModalProvider />
+      <UrgentNotificationModal />
     </div>
   );
 }
