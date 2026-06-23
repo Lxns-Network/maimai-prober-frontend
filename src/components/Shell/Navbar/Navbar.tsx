@@ -5,6 +5,7 @@ import { checkPermission, UserPermission } from "@/utils/session.ts";
 import { useLogoutUser } from "@/hooks/mutations/useUserMutations.ts";
 import {
   IconAward,
+  IconBell,
   IconChartBar,
   IconCloudUpload,
   IconCode,
@@ -20,6 +21,7 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 import classes from "./Navbar.module.css";
+import { useUnreadCount } from "@/hooks/queries/useUnreadCount.ts";
 
 interface NavbarProps {
   style?: React.CSSProperties;
@@ -30,11 +32,18 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const [active, setActive] = useState("");
   const isLoggedOut = typeof window !== "undefined" ? !localStorage.getItem("token") : true;
   const { mutate: mutateLogout } = useLogoutUser();
+  const unreadCount = useUnreadCount();
 
   const navbarData = useMemo(
     () => [
       { label: "首页", icon: <IconHome stroke={1.5} />, to: "/", enabled: true },
       { label: "同步游戏数据", icon: <IconCloudUpload stroke={1.5} />, to: "/sync", enabled: true },
+      {
+        label: "通知",
+        icon: <IconBell stroke={1.5} />,
+        to: "/notifications",
+        enabled: !isLoggedOut,
+      },
       {
         label: "账号详情",
         icon: <IconUserCircle stroke={1.5} />,
@@ -128,7 +137,12 @@ export default function Navbar({ style, onClose }: NavbarProps) {
               item.enabled && (
                 <Container key={item.label}>
                   {item.divider && <Divider className={classes.divider} mt={10} mb={10} />}
-                  <NavbarButton {...item} active={active} onClose={onClose} />
+                  <NavbarButton
+                    {...item}
+                    count={item.label === "通知" ? unreadCount : undefined}
+                    active={active}
+                    onClose={onClose}
+                  />
                 </Container>
               ),
           )}
