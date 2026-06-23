@@ -34,13 +34,12 @@ const templates: Record<string, NotificationTemplate> = {
           ，了解如何对接查分器。
         </p>
         <p>
-          如有问题或建议可加入开发者交流群参与讨论。如你计划使用游戏内 API 接入，请加入开发者交流群，并联系管理员。
+          如有问题或建议可加入开发者交流群参与讨论。如你计划使用游戏内 API
+          接入，请加入开发者交流群，并联系管理员。
         </p>
         <p>
           开发者交流群请前往
-          <a href="https://maimai.lxns.net/developer">
-            开发者面板
-          </a>
+          <a href="https://maimai.lxns.net/developer">开发者面板</a>
           加入。
         </p>
       </>

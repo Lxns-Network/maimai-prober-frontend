@@ -122,10 +122,13 @@ export function PublishNotificationModal({
         level: editing.level,
         type: editing.type,
         expire: editing.expire_time ?? null,
+        // 受众发布后不可变（后端 PUT 忽略 audience）；这里按原类型回填，避免 users 类型被回填成 all。
         audience:
           editing.audience_type === "permission"
             ? { type: "permission", permission: editing.audience_permission }
-            : { type: "all" },
+            : editing.audience_type === "users"
+              ? { type: "users", user_ids: [] }
+              : { type: "all" },
       });
       editor?.commands.setContent(editing.content || "");
     } else {
@@ -139,11 +142,11 @@ export function PublishNotificationModal({
   }, [opened, editing, editor, lockedUserIds]);
 
   const submit = (values: FormValues) => {
-    const content = editor?.getHTML() ?? "";
-    if (!content || content === "<p></p>") {
+    if (!editor || editor.isEmpty) {
       openAlertModal("正文不能为空", "请填写通知正文。");
       return;
     }
+    const content = editor.getHTML();
     if (!editing && values.audience.type === "permission" && !values.audience.permission) {
       openAlertModal("请选择权限", "指定权限受众需要至少选择一个权限。");
       return;
@@ -158,11 +161,12 @@ export function PublishNotificationModal({
       expire_time: values.expire ? dayjs(values.expire).toISOString() : undefined,
     };
 
+    // 仅成功后关闭 Modal；失败时保留弹窗与已填内容，由 onError 的重试入口处理。
     const onError = (err: unknown) => openRetryModal("提交失败", `${err}`, () => submit(values));
     if (editing) {
-      update({ id: editing.id, payload }, { onError, onSettled: onClose });
+      update({ id: editing.id, payload }, { onError, onSuccess: onClose });
     } else {
-      publish(payload, { onError, onSettled: onClose });
+      publish(payload, { onError, onSuccess: onClose });
     }
   };
 
@@ -177,12 +181,7 @@ export function PublishNotificationModal({
       centered
     >
       <form onSubmit={form.onSubmit(submit)}>
-        <TextInput
-          label="标题"
-          placeholder="请输入标题"
-          mb="xs"
-          {...form.getInputProps("title")}
-        />
+        <TextInput label="标题" placeholder="请输入标题" mb="xs" {...form.getInputProps("title")} />
         <Input.Wrapper label="级别" mb="xs">
           <Chip.Group {...form.getInputProps("level")}>
             <Group gap="xs">
@@ -245,11 +244,17 @@ export function PublishNotificationModal({
                     onChange={(v) =>
                       form.setFieldValue(
                         "audience",
-                        v === "permission" ? { type: "permission", permission: 0 } : { type: "all" },
+                        v === "permission"
+                          ? { type: "permission", permission: 0 }
+                          : { type: "all" },
                       )
                     }
                     comboboxProps={{
-                      transitionProps: { transition: "fade", duration: 100, timingFunction: "ease" },
+                      transitionProps: {
+                        transition: "fade",
+                        duration: 100,
+                        timingFunction: "ease",
+                      },
                     }}
                   />
                   {audience.type === "permission" && (
@@ -266,7 +271,11 @@ export function PublishNotificationModal({
                         })
                       }
                       comboboxProps={{
-                        transitionProps: { transition: "fade", duration: 100, timingFunction: "ease" },
+                        transitionProps: {
+                          transition: "fade",
+                          duration: 100,
+                          timingFunction: "ease",
+                        },
                       }}
                     />
                   )}

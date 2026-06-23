@@ -133,11 +133,7 @@ export function AdminNotificationsSection() {
                   </ActionIcon>
                 </Tooltip>
                 <Tooltip label="删除" position="top" withArrow>
-                  <ActionIcon
-                    variant="subtle"
-                    color="red"
-                    onClick={() => handleDelete(b)}
-                  >
+                  <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(b)}>
                     <IconTrash size={18} />
                   </ActionIcon>
                 </Tooltip>
@@ -149,7 +145,12 @@ export function AdminNotificationsSection() {
 
       {totalPages > 1 && (
         <Group justify="center">
-          <Pagination total={totalPages} value={page} onChange={setPage} size={small ? "sm" : "md"} />
+          <Pagination
+            total={totalPages}
+            value={page}
+            onChange={setPage}
+            size={small ? "sm" : "md"}
+          />
         </Group>
       )}
     </Stack>

@@ -1,15 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Group,
-  TextInput,
-  Button,
-  Text,
-  keys,
-  Flex,
-  Card,
-  Badge,
-  Popover,
-} from "@mantine/core";
+import { Group, TextInput, Button, Text, keys, Flex, Card, Badge, Popover } from "@mantine/core";
 import { deleteUsers, getUsers } from "@/utils/api/user.ts";
 import { useDisclosure, useViewportSize } from "@mantine/hooks";
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
