@@ -2,17 +2,19 @@ import { useEffect } from "react";
 import { useForm } from "@mantine/form";
 import {
   Button,
+  Checkbox,
   Chip,
   Group,
+  HoverCard,
   Input,
   Modal,
   MultiSelect,
   ScrollArea,
   Select,
   Stack,
-  Switch,
   Text,
   TextInput,
+  ThemeIcon,
 } from "@mantine/core";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
 import { useFileDialog } from "@mantine/hooks";
@@ -23,7 +25,7 @@ import { Link, RichTextEditor } from "@mantine/tiptap";
 import { Image } from "@tiptap/extension-image";
 import { Highlight } from "@tiptap/extension-highlight";
 import { TextAlign } from "@tiptap/extension-text-align";
-import { IconPhoto } from "@tabler/icons-react";
+import { IconHelp, IconPhoto } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import "dayjs/locale/zh-cn";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
@@ -289,12 +291,24 @@ export function PublishNotificationModal({
             })}
         </Group>
         {!lockedUserIds && editing?.audience_type !== "users" && (
-          <Switch
-            label="常驻通知"
-            description="发布后才注册的新用户也能看到，适合欢迎、规则等 onboarding 公告。"
-            mb="xs"
-            {...form.getInputProps("persistent", { type: "checkbox" })}
-          />
+          <Group gap="xs" align="center" mb="xs">
+            <Checkbox
+              label="常驻通知"
+              {...form.getInputProps("persistent", { type: "checkbox" })}
+            />
+            <HoverCard width={280} shadow="md" withArrow>
+              <HoverCard.Target>
+                <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: "pointer" }}>
+                  <IconHelp />
+                </ThemeIcon>
+              </HoverCard.Target>
+              <HoverCard.Dropdown>
+                <Text size="sm">
+                  勾选后，发布之后才注册的新用户也能看到此通知；不勾选则只有发布时已注册的用户可见。
+                </Text>
+              </HoverCard.Dropdown>
+            </HoverCard>
+          </Group>
         )}
         <DatesProvider settings={{ locale: "zh-cn", firstDayOfWeek: 0, weekendDays: [0, 6] }}>
           <DateTimePicker
