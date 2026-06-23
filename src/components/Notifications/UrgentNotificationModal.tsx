@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Group, Modal } from "@mantine/core";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
-import { useNotifications } from "@/hooks/queries/useNotifications.ts";
+import { useUrgentNotifications } from "@/hooks/queries/useUrgentNotifications.ts";
 import { useMarkNotificationRead } from "@/hooks/mutations/useNotificationMutations.ts";
 import { getNotificationDisplay } from "@/components/Notifications/notificationTemplates.tsx";
 import { NotificationProps } from "@/types/notification";
@@ -19,7 +19,7 @@ function loadSeen(): string[] {
 }
 
 export function UrgentNotificationModal() {
-  const { data } = useNotifications({ filter: "unread", page: 1, pageSize: 20 });
+  const urgent = useUrgentNotifications();
   const { mutate: markRead } = useMarkNotificationRead();
   const [current, setCurrent] = useState<NotificationProps | null>(null);
   const [opened, setOpened] = useState(false);
@@ -27,14 +27,12 @@ export function UrgentNotificationModal() {
   useEffect(() => {
     if (opened) return;
     const seen = loadSeen();
-    const next = (data?.notifications ?? []).find(
-      (n) => n.level === "urgent" && !n.read && !seen.includes(keyOf(n)),
-    );
+    const next = urgent.find((n) => !seen.includes(keyOf(n)));
     if (next) {
       setCurrent(next);
       setOpened(true);
     }
-  }, [data, opened]);
+  }, [urgent, opened]);
 
   const dismiss = (read: boolean) => {
     if (current) {
