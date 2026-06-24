@@ -3,8 +3,8 @@ import { Group, Pagination, PaginationProps, Text } from "@mantine/core";
 import { useIsomorphicEffect, useViewportSize } from "@mantine/hooks";
 
 // 统一分页：尺寸按「是否放得下」实测决定，md 放不下降 sm、sm 仍放不下塌缩为居中的「‹ 当前/总数 ›」。
-// 离流隐藏副本量 md/sm 的自然宽度与容器比较；容器须 overflow:hidden + minWidth:0 才能缩到可用宽度。
-// 这样尺寸只在真正放不下时才变化（由实测触发，而非固定断点），避免断点处的尺寸跳变。
+// 用组合式（Pagination.Root + wrap="nowrap" 的 Group）渲染，强制单行——一体化 <Pagination> 内部那个
+// Group 默认会折行；离流隐藏副本量同一组合的自然宽度与容器比较，尺寸只在真正放不下时变化（无断点跳变）。
 const HIDDEN_STYLE: CSSProperties = {
   position: "absolute",
   top: 0,
@@ -42,7 +42,17 @@ export function ResponsivePagination({
 
   if (hideWithOnePage && total <= 1) return null;
 
-  const props = (size: "md" | "sm") => ({ total, value, onChange, disabled, ...rest, size });
+  const rootProps = (size: "md" | "sm") => ({ total, value, onChange, disabled, ...rest, size });
+
+  const renderFull = (size: "md" | "sm") => (
+    <Pagination.Root {...rootProps(size)}>
+      <Group gap={8} wrap="nowrap">
+        <Pagination.Previous />
+        <Pagination.Items />
+        <Pagination.Next />
+      </Group>
+    </Pagination.Root>
+  );
 
   return (
     <div
@@ -50,15 +60,15 @@ export function ResponsivePagination({
       style={{ position: "relative", width: "100%", minWidth: 0, overflow: "hidden" }}
     >
       <div ref={mdRef} style={HIDDEN_STYLE}>
-        <Pagination {...props("md")} />
+        {renderFull("md")}
       </div>
       <div ref={smRef} style={HIDDEN_STYLE}>
-        <Pagination {...props("sm")} />
+        {renderFull("sm")}
       </div>
       <Group justify="center" mt={mt} mb={mb}>
         {mode === "text" ? (
-          <Pagination.Root {...props("sm")}>
-            <Group gap="xs">
+          <Pagination.Root {...rootProps("sm")}>
+            <Group gap="xs" wrap="nowrap">
               <Pagination.Previous />
               <Text size="sm" c="dimmed">
                 {value ?? 1} / {total}
@@ -67,7 +77,7 @@ export function ResponsivePagination({
             </Group>
           </Pagination.Root>
         ) : (
-          <Pagination {...props(mode)} />
+          renderFull(mode)
         )}
       </Group>
     </div>
