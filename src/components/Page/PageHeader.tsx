@@ -6,7 +6,9 @@ export const PageHeader = ({ meta }: PageProps) => {
   return (
     <div className={classes.wrapper}>
       <Box className={classes.header}>
-        <Title className={classes.title}>{meta.title}</Title>
+        <Title className={classes.title} textWrap="balance">
+          {meta.title}
+        </Title>
         <Text className={classes.description}>{meta.description}</Text>
       </Box>
     </div>

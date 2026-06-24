@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Text, InputBaseProps, ElementProps, Group, Badge } from "@mantine/core";
+import { Highlight, InputBaseProps, ElementProps, Group, Badge } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.ts";
-import { toHiragana } from "wanakana";
+import { toHiragana, toKatakana } from "wanakana";
 import useSongListStore from "../hooks/useSongListStore.ts";
 import useAliasListStore from "../hooks/useAliasListStore.ts";
 import useGame from "@/hooks/useGame.ts";
@@ -135,16 +135,26 @@ export const SongCombobox = ({
     setInternalSearch(song?.title || "");
   }, [searchValue, songList, value]);
 
+  // 搜索支持罗马音（转假名匹配），Highlight 只能字面匹配，故同时按 原文/平假名/片假名 高亮，
+  // 让罗马音匹配到的假名标题也能高亮（汉字标题与罗马音无子串对应，无法高亮，属固有限制）。
+  const highlightTerms = useMemo(
+    () =>
+      debouncedSearch
+        ? [debouncedSearch, toHiragana(debouncedSearch), toKatakana(debouncedSearch)]
+        : [],
+    [debouncedSearch],
+  );
+
   const renderOption = useCallback(
     (song: SongProps) => (
       <Group justify="space-between" wrap="nowrap">
         <div style={{ minWidth: 0, flex: 1 }}>
-          <Text fz="sm" fw={500} truncate>
+          <Highlight fz="sm" fw={500} truncate highlight={highlightTerms}>
             {song.title}
-          </Text>
-          <Text fz="xs" opacity={0.6} truncate>
+          </Highlight>
+          <Highlight fz="xs" c="dimmed" truncate highlight={highlightTerms}>
             {song.artist}
-          </Text>
+          </Highlight>
         </div>
         {songList instanceof MaimaiSongList && song.id >= 100000 && (
           <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
@@ -158,7 +168,7 @@ export const SongCombobox = ({
         )}
       </Group>
     ),
-    [songList],
+    [songList, highlightTerms],
   );
 
   return (

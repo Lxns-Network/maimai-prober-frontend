@@ -1,13 +1,38 @@
-import { Box, Flex, Group, Loader, Space, Text, Title } from "@mantine/core";
+import { Box, Group, Loader, Space, Stack, Text, Title } from "@mantine/core";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { useBests } from "@/hooks/queries/useBests.ts";
 import { IconDatabaseOff } from "@tabler/icons-react";
-import { RatingSegments } from "@/components/Scores/RatingSegments.tsx";
+import { RatingConstantAnalysis } from "@/components/Scores/RatingConstantAnalysis.tsx";
 import useGame from "@/hooks/useGame.ts";
+import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+
+function BestsGroup({
+  title,
+  subtitle,
+  scores,
+}: {
+  title: string;
+  subtitle: string;
+  scores: (MaimaiScoreProps | ChunithmScoreProps)[];
+}) {
+  return (
+    <Box>
+      <Title order={3}>{title}</Title>
+      <Text fz="sm" c="dimmed" mb="md">
+        {subtitle}
+      </Text>
+      {scores.length > 0 ? (
+        <ScoreList scores={scores} />
+      ) : (
+        <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title="暂无成绩" />
+      )}
+    </Box>
+  );
+}
 
 export const ScoreBestsSection = () => {
   const [game] = useGame();
-
   const { bests, isLoading } = useBests(game);
 
   if (isLoading) {
@@ -20,62 +45,38 @@ export const ScoreBestsSection = () => {
 
   if (!bests) {
     return (
-      <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl">
-        <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">没有获取到任何最佳成绩</Text>
-      </Flex>
+      <EmptyState
+        icon={<IconDatabaseOff size={64} stroke={1.5} />}
+        title="没有获取到任何最佳成绩"
+      />
     );
   }
 
   return (
     <>
-      <RatingSegments bests={bests} />
+      <RatingConstantAnalysis bests={bests} />
       <Space h="md" />
-      {"dx" in bests && (
-        <Box mb="md">
-          <Title order={3}>Best 15</Title>
-          <Text fz="sm" c="dimmed" mb="md">
-            现版本最佳曲目
-          </Text>
-          <ScoreList scores={bests.dx} />
-        </Box>
-      )}
-      {"standard" in bests && (
-        <Box>
-          <Title order={3}>Best 35</Title>
-          <Text fz="sm" c="dimmed" mb="md">
-            旧版本最佳曲目
-          </Text>
-          <ScoreList scores={bests.standard} />
-        </Box>
-      )}
-      {"bests" in bests && (
-        <Box mb="md">
-          <Title order={3}>Best 30</Title>
-          <Text fz="sm" c="dimmed" mb="md">
-            评分对象曲（最高）
-          </Text>
-          <ScoreList scores={bests.bests} />
-        </Box>
-      )}
-      {"selections" in bests && (
-        <Box mb="md">
-          <Title order={3}>Selection 10</Title>
-          <Text fz="sm" c="dimmed" mb="md">
-            候选评分对象曲（最高）
-          </Text>
-          <ScoreList scores={bests.selections} />
-        </Box>
-      )}
-      {"new_bests" in bests && (
-        <Box>
-          <Title order={3}>New 20</Title>
-          <Text fz="sm" c="dimmed" mb="md">
-            评分对象曲（新曲）
-          </Text>
-          <ScoreList scores={bests.new_bests} />
-        </Box>
-      )}
+      <Stack gap="lg">
+        {"dx" in bests && (
+          <BestsGroup title="Best 15" subtitle="现版本最佳曲目" scores={bests.dx} />
+        )}
+        {"standard" in bests && (
+          <BestsGroup title="Best 35" subtitle="旧版本最佳曲目" scores={bests.standard} />
+        )}
+        {"bests" in bests && (
+          <BestsGroup title="Best 30" subtitle="评分对象曲（最高）" scores={bests.bests} />
+        )}
+        {"selections" in bests && (
+          <BestsGroup
+            title="Selection 10"
+            subtitle="候选评分对象曲（最高）"
+            scores={bests.selections}
+          />
+        )}
+        {"new_bests" in bests && (
+          <BestsGroup title="New 20" subtitle="评分对象曲（新曲）" scores={bests.new_bests} />
+        )}
+      </Stack>
     </>
   );
 };

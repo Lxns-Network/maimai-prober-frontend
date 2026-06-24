@@ -13,7 +13,7 @@ import {
   Button,
   TextInput,
   Stack,
-  Flex,
+  DataList,
   Alert,
 } from "@mantine/core";
 import { Icon } from "@/components/MdiIcon";
@@ -102,36 +102,34 @@ const DeveloperInfoContent = () => {
           </Group>
         )}
         {developer && (
-          <Stack gap="xs">
-            <Flex align="center" columnGap="md" wrap="wrap">
-              <Text fz="xs" c="dimmed" w={60}>
-                开发者名称
-              </Text>
-              <Text fz="sm">{developer.name}</Text>
-            </Flex>
-            <Flex align="center" columnGap="md" wrap="wrap">
-              <Text fz="xs" c="dimmed" w={60}>
-                开发者地址
-              </Text>
-              <Text fz="sm">
+          <DataList size="xs">
+            <DataList.Item>
+              <DataList.ItemLabel>开发者名称</DataList.ItemLabel>
+              <DataList.ItemValue>
+                <Text fz="sm">{developer.name}</Text>
+              </DataList.ItemValue>
+            </DataList.Item>
+            <DataList.Item>
+              <DataList.ItemLabel>开发者地址</DataList.ItemLabel>
+              <DataList.ItemValue>
                 <Anchor href={developer.url} target="_blank" fz="sm">
                   {developer.url.replace(/(^\w+:|^)\/\//, "")}
                 </Anchor>
-              </Text>
-            </Flex>
-            <Flex align="center" columnGap="md" wrap="wrap">
-              <Text fz="xs" c="dimmed" w={60}>
-                申请时间
-              </Text>
-              <Text fz="sm">{new Date(developer.apply_time).toLocaleString()}</Text>
-            </Flex>
-            <Flex align="center" columnGap="md" wrap="wrap">
-              <Text fz="xs" c="dimmed" w={60}>
-                申请理由
-              </Text>
-              <Text fz="sm">{developer.reason}</Text>
-            </Flex>
-          </Stack>
+              </DataList.ItemValue>
+            </DataList.Item>
+            <DataList.Item>
+              <DataList.ItemLabel>申请时间</DataList.ItemLabel>
+              <DataList.ItemValue>
+                <Text fz="sm">{new Date(developer.apply_time).toLocaleString()}</Text>
+              </DataList.ItemValue>
+            </DataList.Item>
+            <DataList.Item>
+              <DataList.ItemLabel>申请理由</DataList.ItemLabel>
+              <DataList.ItemValue>
+                <Text fz="sm">{developer.reason}</Text>
+              </DataList.ItemValue>
+            </DataList.Item>
+          </DataList>
         )}
       </Card>
 

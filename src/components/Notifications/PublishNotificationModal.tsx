@@ -20,7 +20,6 @@ import { DatesProvider, DateTimePicker } from "@mantine/dates";
 import { useFileDialog } from "@mantine/hooks";
 import { useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
-import { Underline } from "@tiptap/extension-underline";
 import { Link, RichTextEditor } from "@mantine/tiptap";
 import { Image } from "@tiptap/extension-image";
 import { Highlight } from "@tiptap/extension-highlight";
@@ -72,7 +71,6 @@ export function PublishNotificationModal({
   opened: boolean;
   onClose: () => void;
   editing?: AdminBroadcast;
-  // 由用户列表「发送通知」传入：受众锁定为这些用户，Modal 内不再选择受众。
   lockedUserIds?: number[];
 }) {
   useBackDismiss(opened, onClose);
@@ -93,14 +91,15 @@ export function PublishNotificationModal({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Underline,
+      StarterKit.configure({ link: false }),
       Link,
       Image.configure({ HTMLAttributes: { style: "max-width: 100%;" } }),
       Highlight,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
     content: "",
+    immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
   });
 
   const { mutate: uploadImage } = useUploadNotificationImage();
@@ -118,7 +117,6 @@ export function PublishNotificationModal({
     },
   });
 
-  // 编辑模式：回填表单 + 编辑器
   useEffect(() => {
     if (!opened) return;
     if (editing) {
@@ -127,7 +125,6 @@ export function PublishNotificationModal({
         level: editing.level,
         type: editing.type,
         expire: editing.expire_time ?? null,
-        // 受众发布后不可变（后端 PUT 忽略 audience）；这里按原类型回填，避免 users 类型被回填成 all。
         audience:
           editing.audience_type === "permission"
             ? { type: "permission", permission: editing.audience_permission }
@@ -144,7 +141,6 @@ export function PublishNotificationModal({
       }
       editor?.commands.clearContent();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened, editing, editor, lockedUserIds]);
 
   const submit = (values: FormValues) => {
@@ -168,7 +164,6 @@ export function PublishNotificationModal({
       expire_time: values.expire ? dayjs(values.expire).toISOString() : undefined,
     };
 
-    // 仅成功后关闭 Modal；失败时保留弹窗与已填内容，由 onError 的重试入口处理。
     const onError = (err: unknown) => openRetryModal("提交失败", `${err}`, () => submit(values));
     if (editing) {
       update({ id: editing.id, payload }, { onError, onSuccess: onClose });
