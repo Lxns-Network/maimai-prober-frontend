@@ -11,6 +11,7 @@ import { VirtualizedCombobox } from "./VirtualizedCombobox.tsx";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<"input", keyof InputBaseProps> {
   value?: number;
+  searchValue?: string;
   onSearchChange?: (search: string) => void;
   onSongsChange?: (songs: (MaimaiSongProps | ChunithmSongProps)[]) => void;
   onOptionSubmit?: (value: number) => void;
@@ -87,46 +88,53 @@ const ITEM_HEIGHT = 52;
 
 export const SongCombobox = ({
   value,
+  searchValue,
   onSearchChange,
   onSongsChange,
   onOptionSubmit,
   ...others
 }: SongComboboxProps) => {
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useGame();
-  const [search, setSearch] = useState("");
+  const [internalSearch, setInternalSearch] = useState("");
+  const search = searchValue ?? internalSearch;
   const [debouncedSearch] = useDebouncedValue(search, 200);
-  const [searchIndex, setSearchIndex] = useState<SongSearchIndex[]>([]);
+
+  const getSongList = useSongListStore((state) => state.getSongList);
+  const getAliasList = useAliasListStore((state) => state.getAliasList);
+
+  const songList = getSongList(game);
+  const aliases = getAliasList(game).aliases;
+  const songs = songList?.songs;
+  const searchIndex = useMemo(
+    () => (songs ? buildSearchIndex(songs, aliases) : []),
+    [aliases, songs],
+  );
   const filteredSongs = useMemo(
     () => searchSongs(searchIndex, debouncedSearch),
     [searchIndex, debouncedSearch],
   );
 
-  const getSongList = useSongListStore((state) => state.getSongList);
-  const getAliasList = useAliasListStore((state) => state.getAliasList);
-
-  const latestSongList = getSongList(game);
-  const latestAliases = getAliasList(game).aliases;
-
-  useEffect(() => {
-    setSongList(latestSongList);
-    setSearchIndex(latestSongList ? buildSearchIndex(latestSongList.songs, latestAliases) : []);
-  }, [latestSongList?.songs, latestAliases]);
-
-  useEffect(() => {
-    onSearchChange && onSearchChange(search);
-  }, [search]);
+  const setSearch = useCallback(
+    (value: string) => {
+      if (searchValue === undefined) {
+        setInternalSearch(value);
+      }
+      onSearchChange && onSearchChange(value);
+    },
+    [onSearchChange, searchValue],
+  );
 
   useEffect(() => {
     if (!songList) return;
     onSongsChange && onSongsChange(search.length === 0 ? songList.songs : filteredSongs);
-  }, [filteredSongs]);
+  }, [filteredSongs, onSongsChange, search.length, songList]);
 
   useEffect(() => {
+    if (searchValue !== undefined) return;
     if (!songList) return;
     const song = songList.songs.find((song) => song.id === value);
-    setSearch(song?.title || "");
-  }, [songList?.songs, value]);
+    setInternalSearch(song?.title || "");
+  }, [searchValue, songList, value]);
 
   // 搜索支持罗马音（转假名匹配），Highlight 只能字面匹配，故同时按 原文/平假名/片假名 高亮，
   // 让罗马音匹配到的假名标题也能高亮（汉字标题与罗马音无子串对应，无法高亮，属固有限制）。
