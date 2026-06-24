@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/EmptyState.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { useBests } from "@/hooks/queries/useBests.ts";
 import { IconDatabaseOff } from "@tabler/icons-react";
-import { RatingSegments } from "@/components/Scores/RatingSegments.tsx";
+import { RatingConstantAnalysis } from "@/components/Scores/RatingConstantAnalysis.tsx";
 import useGame from "@/hooks/useGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
@@ -22,7 +22,11 @@ function BestsGroup({
       <Text fz="sm" c="dimmed" mb="md">
         {subtitle}
       </Text>
-      <ScoreList scores={scores} />
+      {scores.length > 0 ? (
+        <ScoreList scores={scores} />
+      ) : (
+        <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title="暂无成绩" />
+      )}
     </Box>
   );
 }
@@ -50,7 +54,7 @@ export const ScoreBestsSection = () => {
 
   return (
     <>
-      <RatingSegments bests={bests} />
+      <RatingConstantAnalysis bests={bests} />
       <Space h="md" />
       <Stack gap="lg">
         {"dx" in bests && (
