@@ -20,7 +20,6 @@ import { DatesProvider, DateTimePicker } from "@mantine/dates";
 import { useFileDialog } from "@mantine/hooks";
 import { useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
-import { Underline } from "@tiptap/extension-underline";
 import { Link, RichTextEditor } from "@mantine/tiptap";
 import { Image } from "@tiptap/extension-image";
 import { Highlight } from "@tiptap/extension-highlight";
@@ -92,15 +91,17 @@ export function PublishNotificationModal({
   });
 
   const editor = useEditor({
+    // TipTap 3 的 StarterKit 内置 underline 与 link；link 关掉改用 Mantine 的 Link。
     extensions: [
-      StarterKit,
-      Underline,
+      StarterKit.configure({ link: false }),
       Link,
       Image.configure({ HTMLAttributes: { style: "max-width: 100%;" } }),
       Highlight,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
     content: "",
+    immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
   });
 
   const { mutate: uploadImage } = useUploadNotificationImage();

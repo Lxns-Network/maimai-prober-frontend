@@ -5,7 +5,6 @@ import { useSendBatchEmail } from "@/hooks/mutations/useUserMutations.ts";
 import { UserProps } from "@/types/user";
 import { useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
-import { Underline } from "@tiptap/extension-underline";
 import { Link, RichTextEditor } from "@mantine/tiptap";
 import { Image } from "@tiptap/extension-image";
 import { Highlight } from "@tiptap/extension-highlight";
@@ -43,6 +42,7 @@ export const SendBatchEmailModal = ({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        link: false,
         paragraph: {
           HTMLAttributes: {
             style: "font-size: 16px; line-height: 1.6;",
@@ -65,7 +65,6 @@ export const SendBatchEmailModal = ({
           },
         },
       }),
-      Underline,
       Link.configure({
         HTMLAttributes: {
           style: "color: #007BFF;",
@@ -87,6 +86,8 @@ export const SendBatchEmailModal = ({
     onUpdate: ({ editor }) => {
       form.setValues({ content: editor.getHTML() });
     },
+    immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
   });
 
   const sendBatchEmailHandler = (values: FormValues) => {
