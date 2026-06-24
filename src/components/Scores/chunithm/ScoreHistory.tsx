@@ -1,4 +1,5 @@
-import { Card, Flex, Text, NumberFormatter } from "@mantine/core";
+import { Card, Text, NumberFormatter } from "@mantine/core";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import {
   Area,
@@ -95,10 +96,10 @@ export const ChunithmScoreHistory = ({
 
   if (!scores || scores.length < 2) {
     return (
-      <Flex gap="xs" align="center" direction="column" c="dimmed">
-        <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">游玩记录不足，无法生成图表</Text>
-      </Flex>
+      <EmptyState
+        icon={<IconDatabaseOff size={64} stroke={1.5} />}
+        title="游玩记录不足，无法生成图表"
+      />
     );
   }
 

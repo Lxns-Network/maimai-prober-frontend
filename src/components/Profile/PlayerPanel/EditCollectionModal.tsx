@@ -21,6 +21,7 @@ import {
   ThemeIcon,
   Tooltip,
 } from "@mantine/core";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { usePlayerCollections } from "@/hooks/queries/usePlayerCollections.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { useEffect, useState } from "react";
@@ -231,10 +232,10 @@ const EditCollectionModalContent = ({
             onChange={(value) => setCollectionId(parseInt(value))}
           >
             {cards.length === 0 ? (
-              <Flex gap="xs" align="center" justify="center" direction="column" c="dimmed">
-                <IconDatabaseOff size={64} stroke={1.5} />
-                <Text fz="sm">没有搜索到{metadata.title}，请输入其它关键词</Text>
-              </Flex>
+              <EmptyState
+                icon={<IconDatabaseOff size={64} stroke={1.5} />}
+                title={`没有搜索到${metadata.title}，请输入其它关键词`}
+              />
             ) : (
               <Stack gap="xs">
                 <SimpleGrid cols={isAvatar ? 2 : 1}>{cards}</SimpleGrid>

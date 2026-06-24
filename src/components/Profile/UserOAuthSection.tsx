@@ -24,6 +24,7 @@ import {
   IconTool,
 } from "@tabler/icons-react";
 import { useState } from "react";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { OAuthAppProps } from "@/types/developer";
 import { scopeData } from "@/data/scopeData.tsx";
 import { useUserOAuthApps } from "@/hooks/queries/useUserOAuthApps.ts";
@@ -239,9 +240,7 @@ export const UserOAuthSection = () => {
             ))}
           </Stack>
         ) : (
-          <Text size="sm" c="dimmed" ta="center" py="xl">
-            暂无已授权的 OAuth 应用
-          </Text>
+          <EmptyState title="暂无已授权的 OAuth 应用" />
         )}
       </Stack>
     </Card>

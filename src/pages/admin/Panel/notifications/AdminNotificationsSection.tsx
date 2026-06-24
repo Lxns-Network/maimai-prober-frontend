@@ -4,15 +4,15 @@ import {
   ActionIcon,
   Badge,
   Button,
+  Flex,
   Group,
   Loader,
-  Pagination,
   Stack,
   Text,
   Tooltip,
   Typography,
 } from "@mantine/core";
-import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import { useDisclosure } from "@mantine/hooks";
 import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -20,8 +20,10 @@ import rehypeRaw from "rehype-raw";
 import dayjs from "dayjs";
 import { useAdminNotifications } from "@/hooks/queries/useAdminNotifications.ts";
 import { useDeleteNotification } from "@/hooks/mutations/useAdminNotificationMutations.ts";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { PublishNotificationModal } from "@/components/Notifications/PublishNotificationModal.tsx";
 import { NotificationTypeIcon } from "@/components/Notifications/NotificationTypeIcon.tsx";
+import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { AdminBroadcast } from "@/types/notification";
 
@@ -41,7 +43,6 @@ export function AdminNotificationsSection() {
   const [opened, { open, close }] = useDisclosure(false);
   const [editing, setEditing] = useState<AdminBroadcast | undefined>(undefined);
   const [page, setPage] = useState(1);
-  const small = useMediaQuery("(max-width: 30rem)");
 
   const totalPages = Math.ceil(broadcasts.length / PAGE_SIZE);
   const pageItems = broadcasts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -86,17 +87,13 @@ export function AdminNotificationsSection() {
         </Group>
       )}
 
-      {!isLoading && broadcasts.length === 0 && (
-        <Text c="dimmed" ta="center" py="xl">
-          暂无通知
-        </Text>
-      )}
+      {!isLoading && broadcasts.length === 0 && <EmptyState title="暂无通知" />}
 
       <Accordion variant="contained">
         {pageItems.map((b) => (
           <Accordion.Item key={b.id} value={String(b.id)}>
             <Accordion.Control icon={<NotificationTypeIcon type={b.type} level={b.level} />}>
-              <Group gap="xs">
+              <Flex rowGap={4} columnGap="xs" align="center" wrap="wrap">
                 <Text
                   fw={600}
                   c={isExpired(b) ? "dimmed" : undefined}
@@ -104,15 +101,17 @@ export function AdminNotificationsSection() {
                 >
                   {b.title}
                 </Text>
-                <Badge variant="light" color="gray">
-                  {audienceLabel[b.audience_type]}
-                </Badge>
-                {b.persistent && (
-                  <Badge variant="light" color="blue">
-                    常驻
+                <Group gap="xs">
+                  <Badge variant="light" color="gray">
+                    {audienceLabel[b.audience_type]}
                   </Badge>
-                )}
-              </Group>
+                  {b.persistent && (
+                    <Badge variant="light" color="blue">
+                      常驻
+                    </Badge>
+                  )}
+                </Group>
+              </Flex>
               <Text c="dimmed" size="xs" mt={4}>
                 发布于 {dayjs(b.create_time).format("YYYY-MM-DD HH:mm")}
                 {b.expire_time && ` · 过期于 ${dayjs(b.expire_time).format("YYYY-MM-DD HH:mm")}`}
@@ -150,12 +149,7 @@ export function AdminNotificationsSection() {
 
       {totalPages > 1 && (
         <Group justify="center">
-          <Pagination
-            total={totalPages}
-            value={page}
-            onChange={setPage}
-            size={small ? "sm" : "md"}
-          />
+          <ResponsivePagination total={totalPages} value={page} onChange={setPage} />
         </Group>
       )}
     </Stack>

@@ -10,11 +10,10 @@ import {
   Badge,
   Button,
   Flex,
-  Pagination,
   Stack,
 } from "@mantine/core";
 import { getDevelopers, revokeDeveloper } from "@/utils/api/developer.ts";
-import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import { useDisclosure } from "@mantine/hooks";
 import { permissionToList, UserPermission } from "@/utils/session.ts";
 import { IconArrowBackUp, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import classes from "./AdminDevelopersSection.module.css";
@@ -23,6 +22,7 @@ import { EditUserModal } from "@/components/Users/EditUserModal.tsx";
 import { AnimatedStack } from "@/components/AnimatedGrid.tsx";
 import { motion } from "motion/react";
 import { UserProps } from "@/types/user";
+import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 
 interface DeveloperProps {
   id: number;
@@ -188,8 +188,6 @@ const AdminDevelopersContent = () => {
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
-  const small = useMediaQuery("(max-width: 30rem)");
-
   const getDevelopersHandler = async () => {
     try {
       const res = await getDevelopers();
@@ -236,12 +234,7 @@ const AdminDevelopersContent = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
           >
-            <Pagination
-              total={totalPages}
-              value={page}
-              onChange={handlePageChange}
-              size={small ? "sm" : "md"}
-            />
+            <ResponsivePagination total={totalPages} value={page} onChange={handlePageChange} />
           </motion.div>
         )}
         {fetching && (
@@ -268,12 +261,7 @@ const AdminDevelopersContent = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
           >
-            <Pagination
-              total={totalPages}
-              value={page}
-              onChange={handlePageChange}
-              size={small ? "sm" : "md"}
-            />
+            <ResponsivePagination total={totalPages} value={page} onChange={handlePageChange} />
           </motion.div>
         )}
       </Stack>

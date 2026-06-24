@@ -2,6 +2,7 @@ import { Chip, Group, Modal, NumberInput, ScrollArea, Stack, Table, Text } from 
 import { useEffect, useState } from "react";
 import classes from "./DeluxeRatingCalculator.module.css";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
+import { calculateMaimaiRating, maimaiCoefficientDict } from "@/utils/rating.ts";
 
 interface DeluxeRatingCalculatorProps {
   defaultAchievements?: number;
@@ -9,51 +10,6 @@ interface DeluxeRatingCalculatorProps {
   defaultLevelValue?: number;
   opened: boolean;
   onClose: () => void;
-}
-
-type CoefficientDict = { [key: number]: number };
-
-const coefficientDict: CoefficientDict = {
-  10.0: 0.0,
-  20.0: 1.6,
-  30.0: 3.2,
-  40.0: 4.8,
-  50.0: 6.4,
-  60.0: 8.0,
-  70.0: 9.6,
-  75.0: 11.2,
-  79.9999: 12.0,
-  80.0: 12.8,
-  90.0: 13.6,
-  94.0: 15.2,
-  96.9999: 16.8,
-  97.0: 17.6,
-  98.0: 20.0,
-  98.9999: 20.3,
-  99.0: 20.6,
-  99.5: 20.8,
-  99.9999: 21.1,
-  100.0: 21.4,
-  100.4999: 21.6,
-  100.5: 22.2,
-};
-
-function calculateRating(chartConstant: number, achievementRate: number): number {
-  let levelCoefficient = 22.4;
-
-  for (const rate of Object.keys(coefficientDict)
-    .map(Number)
-    .sort((a, b) => a - b)) {
-    if (achievementRate < rate) {
-      levelCoefficient = coefficientDict[rate];
-      break;
-    }
-  }
-
-  achievementRate = Math.min(achievementRate, 100.5);
-  const achievementRateCoefficient = achievementRate / 100;
-
-  return achievementRateCoefficient * levelCoefficient * chartConstant;
 }
 
 interface RowProps {
@@ -80,11 +36,11 @@ export const DeluxeRatingCalculator = ({
   useEffect(() => {
     const newRows = [];
     if (method === "level_value") {
-      for (const achievements of Object.keys(coefficientDict).map(Number)) {
+      for (const achievements of Object.keys(maimaiCoefficientDict).map(Number)) {
         newRows.push({
           levelValue: levelValue || 0,
           achievements: achievements,
-          deluxeRating: calculateRating(levelValue || 0, achievements),
+          deluxeRating: calculateMaimaiRating(levelValue || 0, achievements),
         });
       }
       newRows.sort((a, b) => b.deluxeRating - a.deluxeRating);
@@ -93,19 +49,19 @@ export const DeluxeRatingCalculator = ({
         newRows.push({
           levelValue: i / 10,
           achievements: achievements || 0,
-          deluxeRating: calculateRating(i / 10, achievements || 0),
+          deluxeRating: calculateMaimaiRating(i / 10, achievements || 0),
         });
       }
       newRows.sort((a, b) => b.deluxeRating - a.deluxeRating);
     } else if (method === "dx_rating") {
       for (let i = 10; i <= 150; i++) {
-        if (calculateRating(i / 10, 101) < (deluxeRating || 0)) continue;
+        if (calculateMaimaiRating(i / 10, 101) < (deluxeRating || 0)) continue;
         let l = 0,
           r = 1010000,
           ans = r;
         while (r >= l) {
           const mid = Math.floor((r + l) / 2);
-          if (calculateRating(i / 10, mid / 10000) >= (deluxeRating || 0)) {
+          if (calculateMaimaiRating(i / 10, mid / 10000) >= (deluxeRating || 0)) {
             ans = mid;
             r = mid - 1;
           } else {
@@ -119,7 +75,7 @@ export const DeluxeRatingCalculator = ({
           newRows.push({
             levelValue: i / 10,
             achievements: ans / 10000,
-            deluxeRating: calculateRating(i / 10, ans / 10000),
+            deluxeRating: calculateMaimaiRating(i / 10, ans / 10000),
           });
         }
       }

@@ -10,9 +10,7 @@ import {
   Indicator,
   Loader,
   Menu,
-  Pagination,
   Space,
-  Text,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { AliasList } from "@/components/Alias/AliasList.tsx";
@@ -27,8 +25,10 @@ import {
   IconSortAscending,
   IconSortDescending,
 } from "@tabler/icons-react";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { Page } from "@/components/Page/Page.tsx";
+import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 import { useAliases } from "@/hooks/queries/useAliases.ts";
 import { useAliasVotes } from "@/hooks/queries/useAliasVotes.ts";
 import useGame from "@/hooks/useGame.ts";
@@ -254,19 +254,17 @@ const AliasVoteContent = () => {
               transition={{ duration: 0.2 }}
             >
               <Group justify="center">
-                <Pagination
+                <ResponsivePagination
                   total={pageCount}
                   value={page}
                   onChange={handlePageChange}
-                  size={small ? "sm" : "md"}
                   disabled={isLoading}
                 />
                 <AliasList aliases={aliasesWithVotes} onMutate={invalidate} />
-                <Pagination
+                <ResponsivePagination
                   total={pageCount}
                   value={page}
                   onChange={handlePageChange}
-                  size={small ? "sm" : "md"}
                   disabled={isLoading}
                 />
               </Group>
@@ -293,10 +291,10 @@ const AliasVoteContent = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl" mb="xl">
-                <IconDatabaseOff size={64} stroke={1.5} />
-                <Text fz="sm">暂时没有可投票的曲目别名</Text>
-              </Flex>
+              <EmptyState
+                icon={<IconDatabaseOff size={64} stroke={1.5} />}
+                title="暂时没有可投票的曲目别名"
+              />
             </motion.div>
           ))
           .exhaustive()}
