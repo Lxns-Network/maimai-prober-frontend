@@ -1,19 +1,11 @@
 import { useState } from "react";
-import {
-  Accordion,
-  Button,
-  EmptyState,
-  Group,
-  Loader,
-  SegmentedControl,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { Accordion, Button, Group, Loader, SegmentedControl, Stack, Text } from "@mantine/core";
 import { IconChecks } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/zh-cn";
 import { Page } from "@/components/Page/Page.tsx";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 import { NotificationTypeIcon } from "@/components/Notifications/NotificationTypeIcon.tsx";
 import { getNotificationDisplay } from "@/components/Notifications/notificationTemplates.tsx";

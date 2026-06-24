@@ -5,7 +5,6 @@ import {
   Text,
   Group,
   Button,
-  EmptyState,
   Stack,
   ActionIcon,
   Grid,
@@ -31,6 +30,7 @@ import {
 } from "@tabler/icons-react";
 import { useViewportSize } from "@mantine/hooks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { createWorker, updateWorker, deleteWorker } from "@/utils/api/admin.ts";
 import { openConfirmModal, openRetryModal, openFormModal, openAlertModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
@@ -363,7 +363,9 @@ export const WorkersSection = () => {
           striped
           verticalSpacing="xs"
           mih={displayWorkers.length === 0 ? 150 : 0}
-          emptyState={<EmptyState icon={<IconDatabaseOff stroke={1.5} />} title="暂无工作节点" />}
+          emptyState={
+            <EmptyState icon={<IconDatabaseOff size={48} stroke={1.5} />} title="暂无工作节点" />
+          }
           columns={[
             {
               accessor: "id",

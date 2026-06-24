@@ -4,7 +4,6 @@ import {
   Badge,
   Center,
   Divider,
-  EmptyState,
   Group,
   Loader,
   NumberFormatter,
@@ -14,6 +13,7 @@ import {
   Text,
 } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { useScoreRanking } from "@/hooks/queries/useScoreRanking.ts";
 
@@ -31,8 +31,7 @@ export const ScoreRanking = ({
   if (isLoggedOut || !player) {
     return (
       <EmptyState
-        size="lg"
-        icon={<IconDatabaseOff stroke={1.5} />}
+        icon={<IconDatabaseOff size={64} stroke={1.5} />}
         title={isLoggedOut ? "请登录后查看排行" : "请同步游戏数据后查看排行"}
       />
     );
@@ -47,7 +46,7 @@ export const ScoreRanking = ({
   }
 
   if (!rankingScores || rankingScores.length === 0) {
-    return <EmptyState size="lg" icon={<IconDatabaseOff stroke={1.5} />} title="暂无排行数据" />;
+    return <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title="暂无排行数据" />;
   }
 
   return (

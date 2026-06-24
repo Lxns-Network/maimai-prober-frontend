@@ -5,7 +5,6 @@ import {
   Button,
   Center,
   Divider,
-  EmptyState,
   Flex,
   Group,
   Image,
@@ -31,6 +30,7 @@ import {
   IconPhotoOff,
   IconTrash,
 } from "@tabler/icons-react";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import classes from "./ChartComment.module.css";
 import { useForm } from "@mantine/form";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";

@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Center,
-  EmptyState,
   Flex,
   Group,
   HoverCard,
@@ -22,6 +21,7 @@ import {
   ThemeIcon,
   Tooltip,
 } from "@mantine/core";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { usePlayerCollections } from "@/hooks/queries/usePlayerCollections.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { useEffect, useState } from "react";
@@ -233,8 +233,7 @@ const EditCollectionModalContent = ({
           >
             {cards.length === 0 ? (
               <EmptyState
-                size="lg"
-                icon={<IconDatabaseOff stroke={1.5} />}
+                icon={<IconDatabaseOff size={64} stroke={1.5} />}
                 title={`没有搜索到${metadata.title}，请输入其它关键词`}
               />
             ) : (

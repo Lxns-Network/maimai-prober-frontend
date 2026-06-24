@@ -4,7 +4,6 @@ import {
   ActionIcon,
   Badge,
   Button,
-  EmptyState,
   Group,
   Loader,
   Stack,
@@ -20,6 +19,7 @@ import rehypeRaw from "rehype-raw";
 import dayjs from "dayjs";
 import { useAdminNotifications } from "@/hooks/queries/useAdminNotifications.ts";
 import { useDeleteNotification } from "@/hooks/mutations/useAdminNotificationMutations.ts";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { PublishNotificationModal } from "@/components/Notifications/PublishNotificationModal.tsx";
 import { NotificationTypeIcon } from "@/components/Notifications/NotificationTypeIcon.tsx";
 import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";

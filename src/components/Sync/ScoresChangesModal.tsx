@@ -1,6 +1,5 @@
 import {
   Badge,
-  EmptyState,
   Flex,
   Group,
   HoverCard,
@@ -18,6 +17,7 @@ import { DataTable } from "mantine-datatable";
 import { IconArrowRight, IconDatabaseOff, IconHelp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { Marquee } from "../Marquee.tsx";
 import { Game } from "@/types/game";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -130,7 +130,7 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
       horizontalSpacing="md"
       mih={scores.length === 0 ? 150 : 0}
       miw={700}
-      emptyState={<EmptyState icon={<IconDatabaseOff stroke={1.5} />} title="没有记录" />}
+      emptyState={<EmptyState icon={<IconDatabaseOff size={48} stroke={1.5} />} title="没有记录" />}
       rowBackgroundColor={(score, i) => {
         if (!containsOld(score)) {
           return { dark: "rgb(37,64,46)", light: "rgb(233,252,239)" };

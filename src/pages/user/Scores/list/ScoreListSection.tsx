@@ -20,7 +20,6 @@ import {
   Button,
   Card,
   Drawer,
-  EmptyState,
   Flex,
   Group,
   Indicator,
@@ -34,6 +33,7 @@ import {
 import classes from "./ScoreListSection.module.css";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
@@ -433,8 +433,7 @@ export const ScoreListSection = () => {
                   transition={{ duration: 0.2 }}
                 >
                   <EmptyState
-                    size="lg"
-                    icon={<IconDatabaseOff stroke={1.5} />}
+                    icon={<IconDatabaseOff size={64} stroke={1.5} />}
                     title="没有获取或筛选到任何成绩"
                   >
                     {activeFilterCount > 0 && (

@@ -2,8 +2,9 @@ import { MaimaiScoreHistory } from "./maimai/ScoreHistory.tsx";
 import { ChunithmScoreHistory } from "./chunithm/ScoreHistory.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { Game } from "@/types/game";
-import { Center, EmptyState, Loader } from "@mantine/core";
+import { Center, Loader } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { useScoreHistory } from "@/hooks/queries/useScoreHistory.ts";
 
 export const rankData = {
@@ -45,7 +46,7 @@ export const ScoreHistory = ({
 
   if (isLoggedOut) {
     return (
-      <EmptyState size="lg" icon={<IconDatabaseOff stroke={1.5} />} title="请登录后查看历史记录" />
+      <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title="请登录后查看历史记录" />
     );
   }
 

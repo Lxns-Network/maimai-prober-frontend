@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Checkbox,
-  EmptyState,
   Flex,
   Group,
   Indicator,
@@ -26,6 +25,7 @@ import {
   IconSortAscending,
   IconSortDescending,
 } from "@tabler/icons-react";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { Page } from "@/components/Page/Page.tsx";
 import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
@@ -292,8 +292,7 @@ const AliasVoteContent = () => {
               transition={{ duration: 0.2 }}
             >
               <EmptyState
-                size="lg"
-                icon={<IconDatabaseOff stroke={1.5} />}
+                icon={<IconDatabaseOff size={64} stroke={1.5} />}
                 title="暂时没有可投票的曲目别名"
               />
             </motion.div>

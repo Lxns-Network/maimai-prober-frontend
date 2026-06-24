@@ -11,7 +11,6 @@ import {
   Collapse,
   ThemeIcon,
   Divider,
-  EmptyState,
   Loader,
 } from "@mantine/core";
 import {
@@ -25,6 +24,7 @@ import {
   IconTool,
 } from "@tabler/icons-react";
 import { useState } from "react";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { OAuthAppProps } from "@/types/developer";
 import { scopeData } from "@/data/scopeData.tsx";
 import { useUserOAuthApps } from "@/hooks/queries/useUserOAuthApps.ts";

@@ -1,4 +1,5 @@
-import { Box, EmptyState, Group, Loader, Space, Text, Title } from "@mantine/core";
+import { Box, Group, Loader, Space, Text, Title } from "@mantine/core";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { useBests } from "@/hooks/queries/useBests.ts";
 import { IconDatabaseOff } from "@tabler/icons-react";
@@ -21,8 +22,7 @@ export const ScoreBestsSection = () => {
   if (!bests) {
     return (
       <EmptyState
-        size="lg"
-        icon={<IconDatabaseOff stroke={1.5} />}
+        icon={<IconDatabaseOff size={64} stroke={1.5} />}
         title="没有获取到任何最佳成绩"
       />
     );

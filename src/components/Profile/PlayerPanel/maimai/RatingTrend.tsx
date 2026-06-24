@@ -1,4 +1,5 @@
-import { Card, EmptyState, Group, Text } from "@mantine/core";
+import { Card, Group, Text } from "@mantine/core";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import {
   Area,
@@ -80,8 +81,7 @@ export const MaimaiRatingTrend = ({ trend }: { trend: MaimaiRatingTrendProps[] |
   if (!trend || trend.length < 2) {
     return (
       <EmptyState
-        size="lg"
-        icon={<IconDatabaseOff stroke={1.5} />}
+        icon={<IconDatabaseOff size={64} stroke={1.5} />}
         title="历史记录不足，无法生成图表"
       />
     );

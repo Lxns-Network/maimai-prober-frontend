@@ -3,7 +3,6 @@ import {
   Box,
   Card,
   Divider,
-  EmptyState,
   Group,
   Loader,
   Progress,
@@ -17,6 +16,7 @@ import { IconActivity, IconChartBar, IconClock, IconDatabaseOff } from "@tabler/
 import { ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DataTable } from "mantine-datatable";
+import { EmptyState } from "@/components/EmptyState.tsx";
 import { useDeveloperUsage } from "@/hooks/queries/useDeveloperUsage.ts";
 import classes from "@/pages/Page.module.css";
 
@@ -72,8 +72,7 @@ export const DeveloperUsageSection = () => {
   if (!usage || usage.overview.total === 0) {
     return (
       <EmptyState
-        size="lg"
-        icon={<IconDatabaseOff stroke={1.5} />}
+        icon={<IconDatabaseOff size={64} stroke={1.5} />}
         title="最近 30 天内没有接口调用记录"
       />
     );
