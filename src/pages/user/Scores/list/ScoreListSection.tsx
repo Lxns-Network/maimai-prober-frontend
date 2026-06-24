@@ -52,7 +52,6 @@ import {
   useFilteredScores,
 } from "@/hooks/useFilteredScores.ts";
 import type { Game } from "@/types/game";
-import { usePageContext } from "vike-react/usePageContext";
 
 const sortKeys = {
   maimai: [
@@ -215,9 +214,9 @@ function writeScoreListUrlState(state: ScoreListUrlState, ratingRange: [number, 
 export const ScoreListSection = () => {
   const [game] = useGame();
   const ratingRange = scoreRatingRanges[game];
-  const pageContext = usePageContext();
-  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
-  const [initialUrlState] = useState(() => readScoreListUrlState(game, ratingRange, searchParams));
+  const [initialUrlState] = useState(() =>
+    readScoreListUrlState(game, ratingRange, new URLSearchParams(window.location.search)),
+  );
 
   const { player } = usePlayer(game);
   const { scores, isLoading, invalidate } = useScores(game);

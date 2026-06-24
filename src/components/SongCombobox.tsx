@@ -104,9 +104,10 @@ export const SongCombobox = ({
 
   const songList = getSongList(game);
   const aliases = getAliasList(game).aliases;
+  const songs = songList?.songs;
   const searchIndex = useMemo(
-    () => (songList ? buildSearchIndex(songList.songs, aliases) : []),
-    [aliases, songList],
+    () => (songs ? buildSearchIndex(songs, aliases) : []),
+    [aliases, songs],
   );
   const filteredSongs = useMemo(
     () => searchSongs(searchIndex, debouncedSearch),
