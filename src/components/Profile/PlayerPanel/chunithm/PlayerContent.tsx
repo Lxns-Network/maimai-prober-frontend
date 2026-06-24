@@ -10,7 +10,6 @@ import {
   Center,
   NumberFormatter,
   Box,
-  RollingNumber,
 } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { getRatingGradient } from "@/utils/color.ts";
@@ -81,7 +80,7 @@ export const ChunithmPlayerContent = ({
               flex: "none",
             }}
           >
-            Rating: <RollingNumber value={player.rating} display="inline-flex" />
+            Rating: {player.rating}
           </Badge>
         </Flex>
 

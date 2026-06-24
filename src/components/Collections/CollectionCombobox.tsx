@@ -51,7 +51,7 @@ export const CollectionCombobox = ({
           {collection.name}
         </Highlight>
         {collection.description !== "-" && (
-          <Highlight fz="xs" opacity={0.6} truncate highlight={search}>
+          <Highlight fz="xs" c="dimmed" truncate highlight={search}>
             {collection.description ?? ""}
           </Highlight>
         )}

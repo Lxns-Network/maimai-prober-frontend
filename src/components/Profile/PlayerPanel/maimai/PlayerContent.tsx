@@ -7,7 +7,6 @@ import {
   Flex,
   Group,
   Image,
-  RollingNumber,
   Text,
   useComputedColorScheme,
 } from "@mantine/core";
@@ -61,7 +60,7 @@ export const MaimaiPlayerContent = ({ player, onCollectionEdit, editable }: Play
               flex: "none",
             }}
           >
-            DX 评分: <RollingNumber value={player.rating} display="inline-flex" />
+            DX 评分: {player.rating}
           </Badge>
         </Flex>
 

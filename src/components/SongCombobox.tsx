@@ -3,7 +3,7 @@ import { Highlight, InputBaseProps, ElementProps, Group, Badge } from "@mantine/
 import { useDebouncedValue } from "@mantine/hooks";
 import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.ts";
-import { toHiragana } from "wanakana";
+import { toHiragana, toKatakana } from "wanakana";
 import useSongListStore from "../hooks/useSongListStore.ts";
 import useAliasListStore from "../hooks/useAliasListStore.ts";
 import useGame from "@/hooks/useGame.ts";
@@ -128,14 +128,24 @@ export const SongCombobox = ({
     setSearch(song?.title || "");
   }, [songList?.songs, value]);
 
+  // 搜索支持罗马音（转假名匹配），Highlight 只能字面匹配，故同时按 原文/平假名/片假名 高亮，
+  // 让罗马音匹配到的假名标题也能高亮（汉字标题与罗马音无子串对应，无法高亮，属固有限制）。
+  const highlightTerms = useMemo(
+    () =>
+      debouncedSearch
+        ? [debouncedSearch, toHiragana(debouncedSearch), toKatakana(debouncedSearch)]
+        : [],
+    [debouncedSearch],
+  );
+
   const renderOption = useCallback(
     (song: SongProps) => (
       <Group justify="space-between" wrap="nowrap">
         <div style={{ minWidth: 0, flex: 1 }}>
-          <Highlight fz="sm" fw={500} truncate highlight={debouncedSearch}>
+          <Highlight fz="sm" fw={500} truncate highlight={highlightTerms}>
             {song.title}
           </Highlight>
-          <Highlight fz="xs" opacity={0.6} truncate highlight={debouncedSearch}>
+          <Highlight fz="xs" c="dimmed" truncate highlight={highlightTerms}>
             {song.artist}
           </Highlight>
         </div>
@@ -151,7 +161,7 @@ export const SongCombobox = ({
         )}
       </Group>
     ),
-    [songList, debouncedSearch],
+    [songList, highlightTerms],
   );
 
   return (
