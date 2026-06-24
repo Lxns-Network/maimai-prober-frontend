@@ -11,6 +11,7 @@ import { VirtualizedCombobox } from "./VirtualizedCombobox.tsx";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<"input", keyof InputBaseProps> {
   value?: number;
+  searchValue?: string;
   onSearchChange?: (search: string) => void;
   onSongsChange?: (songs: (MaimaiSongProps | ChunithmSongProps)[]) => void;
   onOptionSubmit?: (value: number) => void;
@@ -87,46 +88,52 @@ const ITEM_HEIGHT = 52;
 
 export const SongCombobox = ({
   value,
+  searchValue,
   onSearchChange,
   onSongsChange,
   onOptionSubmit,
   ...others
 }: SongComboboxProps) => {
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
   const [game] = useGame();
-  const [search, setSearch] = useState("");
+  const [internalSearch, setInternalSearch] = useState("");
+  const search = searchValue ?? internalSearch;
   const [debouncedSearch] = useDebouncedValue(search, 200);
-  const [searchIndex, setSearchIndex] = useState<SongSearchIndex[]>([]);
+
+  const getSongList = useSongListStore((state) => state.getSongList);
+  const getAliasList = useAliasListStore((state) => state.getAliasList);
+
+  const songList = getSongList(game);
+  const aliases = getAliasList(game).aliases;
+  const searchIndex = useMemo(
+    () => (songList ? buildSearchIndex(songList.songs, aliases) : []),
+    [aliases, songList],
+  );
   const filteredSongs = useMemo(
     () => searchSongs(searchIndex, debouncedSearch),
     [searchIndex, debouncedSearch],
   );
 
-  const getSongList = useSongListStore((state) => state.getSongList);
-  const getAliasList = useAliasListStore((state) => state.getAliasList);
-
-  const latestSongList = getSongList(game);
-  const latestAliases = getAliasList(game).aliases;
-
-  useEffect(() => {
-    setSongList(latestSongList);
-    setSearchIndex(latestSongList ? buildSearchIndex(latestSongList.songs, latestAliases) : []);
-  }, [latestSongList?.songs, latestAliases]);
-
-  useEffect(() => {
-    onSearchChange && onSearchChange(search);
-  }, [search]);
+  const setSearch = useCallback(
+    (value: string) => {
+      if (searchValue === undefined) {
+        setInternalSearch(value);
+      }
+      onSearchChange && onSearchChange(value);
+    },
+    [onSearchChange, searchValue],
+  );
 
   useEffect(() => {
     if (!songList) return;
     onSongsChange && onSongsChange(search.length === 0 ? songList.songs : filteredSongs);
-  }, [filteredSongs]);
+  }, [filteredSongs, onSongsChange, search.length, songList]);
 
   useEffect(() => {
+    if (searchValue !== undefined) return;
     if (!songList) return;
     const song = songList.songs.find((song) => song.id === value);
-    setSearch(song?.title || "");
-  }, [songList?.songs, value]);
+    setInternalSearch(song?.title || "");
+  }, [searchValue, songList, value]);
 
   const renderOption = useCallback(
     (song: SongProps) => (

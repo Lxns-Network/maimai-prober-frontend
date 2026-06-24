@@ -17,8 +17,11 @@ export const PageTabs = (props: PageProps) => {
       keepMounted={false}
       radius="md"
       onChange={(tab) => {
-        window.history.replaceState(null, "", `${window.location.pathname}?tab=${tab!}`);
-        setActiveTab(tab!);
+        if (!tab) return;
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", tab);
+        window.history.replaceState(window.history.state, "", url.toString());
+        setActiveTab(tab);
       }}
     >
       <div className={classes.tabsWrapper}>

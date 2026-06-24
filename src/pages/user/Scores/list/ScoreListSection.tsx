@@ -43,13 +43,15 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
-import { useScoreFilters } from "@/hooks/useScoreFilters.ts";
+import { ScoreFilters, useScoreFilters } from "@/hooks/useScoreFilters.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import {
   countActiveFilters,
   scoreRatingRanges,
   useFilteredScores,
 } from "@/hooks/useFilteredScores.ts";
+import type { Game } from "@/types/game";
+import { usePageContext } from "vike-react/usePageContext";
 
 const sortKeys = {
   maimai: [
@@ -75,26 +77,174 @@ const PAGE_SIZE = 20;
 // 桌面端筛选面板从该断点起常驻侧栏，以下则使用抽屉
 const FILTER_PANEL_BREAKPOINT = "lg";
 
+type ScoreListUrlState = {
+  page: number;
+  search: string;
+  sortBy: string | null;
+  reverseSortDirection: boolean;
+  filters: Partial<ScoreFilters>;
+};
+
+const scoreListSearchParams = [
+  "page",
+  "search",
+  "sort",
+  "order",
+  "difficulty",
+  "type",
+  "genre",
+  "version",
+  "rating",
+  "full_combo",
+  "full_sync",
+  "deluxe_star",
+  "unplayed",
+  "upload_from",
+  "upload_to",
+];
+
+function parseListParam(value: string | null) {
+  return value ? value.split(",").filter(Boolean) : [];
+}
+
+function parseNumberListParam(value: string | null) {
+  return parseListParam(value)
+    .map(Number)
+    .filter((item) => Number.isFinite(item));
+}
+
+function parseRatingParam(value: string | null, ratingRange: [number, number]) {
+  const [min, max] = parseNumberListParam(value);
+  if (min === undefined || max === undefined || min > max) return ratingRange;
+  const bounded = [Math.max(ratingRange[0], min), Math.min(ratingRange[1], max)] as [
+    number,
+    number,
+  ];
+  return bounded[0] <= bounded[1] ? bounded : ratingRange;
+}
+
+function readScoreListUrlState(
+  game: Game,
+  ratingRange: [number, number],
+  params: URLSearchParams,
+): ScoreListUrlState {
+  const page = Number(params.get("page"));
+  const sort = params.get("sort");
+  const sortBy = sortKeys[game].some((item) => item.key === sort) ? sort : null;
+  const rating = parseRatingParam(params.get("rating"), ratingRange);
+  const isMaimai = game === "maimai";
+
+  return {
+    page: Number.isInteger(page) && page > 0 ? page : 1,
+    search: params.get("search") ?? "",
+    sortBy,
+    reverseSortDirection: sortBy ? params.get("order") === "asc" : false,
+    filters: {
+      difficulty: parseListParam(params.get("difficulty")),
+      type: isMaimai ? parseListParam(params.get("type")) : [],
+      genre: parseListParam(params.get("genre")),
+      version: parseNumberListParam(params.get("version")),
+      rating,
+      endRating: rating,
+      fullCombo: parseListParam(params.get("full_combo")),
+      fullSync: parseListParam(params.get("full_sync")),
+      deluxeStar: isMaimai ? parseNumberListParam(params.get("deluxe_star")) : [],
+      showUnplayed: params.get("unplayed") === "1",
+      uploadTime: [params.get("upload_from"), params.get("upload_to")],
+    },
+  };
+}
+
+function writeListParam(params: URLSearchParams, key: string, values: string[] | number[]) {
+  if (values.length > 0) {
+    params.set(key, values.join(","));
+  }
+}
+
+function writeScoreListUrlState(state: ScoreListUrlState, ratingRange: [number, number]) {
+  const url = new URL(window.location.href);
+  scoreListSearchParams.forEach((param) => url.searchParams.delete(param));
+
+  if (state.page > 1) {
+    url.searchParams.set("page", String(state.page));
+  }
+
+  const search = state.search.trim();
+  if (search) {
+    url.searchParams.set("search", search);
+  }
+
+  if (state.sortBy) {
+    url.searchParams.set("sort", state.sortBy);
+    url.searchParams.set("order", state.reverseSortDirection ? "asc" : "desc");
+  }
+
+  const { filters } = state;
+  writeListParam(url.searchParams, "difficulty", filters.difficulty ?? []);
+  writeListParam(url.searchParams, "type", filters.type ?? []);
+  writeListParam(url.searchParams, "genre", filters.genre ?? []);
+  writeListParam(url.searchParams, "version", filters.version ?? []);
+  writeListParam(url.searchParams, "full_combo", filters.fullCombo ?? []);
+  writeListParam(url.searchParams, "full_sync", filters.fullSync ?? []);
+  writeListParam(url.searchParams, "deluxe_star", filters.deluxeStar ?? []);
+
+  const rating = filters.endRating ?? ratingRange;
+  if (rating[0] !== ratingRange[0] || rating[1] !== ratingRange[1]) {
+    url.searchParams.set("rating", rating.join(","));
+  }
+
+  if (filters.showUnplayed) {
+    url.searchParams.set("unplayed", "1");
+  }
+
+  if (filters.uploadTime?.[0]) {
+    url.searchParams.set("upload_from", filters.uploadTime[0]);
+  }
+  if (filters.uploadTime?.[1]) {
+    url.searchParams.set("upload_to", filters.uploadTime[1]);
+  }
+
+  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextUrl !== currentUrl) {
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }
+}
+
 export const ScoreListSection = () => {
   const [game] = useGame();
+  const ratingRange = scoreRatingRanges[game];
+  const pageContext = usePageContext();
+  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
+  const [initialUrlState] = useState(() => readScoreListUrlState(game, ratingRange, searchParams));
 
   const { player } = usePlayer(game);
   const { scores, isLoading, invalidate } = useScores(game);
-  const [filteredSongs, setFilteredSongs] = useState<(MaimaiSongProps | ChunithmSongProps)[]>([]);
-  const [songId, setSongId] = useState<number>(0);
+  const [filteredSongs, setFilteredSongs] = useState<
+    (MaimaiSongProps | ChunithmSongProps)[] | null
+  >(null);
+  const [search, setSearch] = useState(initialUrlState.search);
 
-  const [sortBy, setSortBy] = useState<string | null>(null);
-  const [reverseSortDirection, setReverseSortDirection] = useState(false);
+  const [sortBy, setSortBy] = useState<string | null>(initialUrlState.sortBy);
+  const [reverseSortDirection, setReverseSortDirection] = useState(
+    initialUrlState.reverseSortDirection,
+  );
 
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialUrlState.page);
   const [filterOpened, { open: openFilter, close: closeFilter }] = useDisclosure(false);
   useBackDismiss(filterOpened, closeFilter);
 
-  const ratingRange = scoreRatingRanges[game];
-  const { filters, setFilter, resetFilters, isDefault } = useScoreFilters({
-    rating: ratingRange,
-    endRating: ratingRange,
-  });
+  const defaultFilters = useMemo(
+    () => ({
+      rating: ratingRange,
+      endRating: ratingRange,
+    }),
+    [ratingRange],
+  );
+  const { filters, setFilter, resetFilters, isDefault } = useScoreFilters(
+    defaultFilters,
+    initialUrlState.filters,
+  );
   const filteredScores = useFilteredScores(scores, filters, isDefault);
   const activeFilterCount = useMemo(
     () => countActiveFilters(filters, ratingRange),
@@ -107,17 +257,29 @@ export const ScoreListSection = () => {
   const small = useMediaQuery("(max-width: 30rem)");
 
   const topRef = useRef<HTMLDivElement>(null);
+  const previousGameRef = useRef(game);
 
   useEffect(() => {
-    setSongId(0);
+    if (previousGameRef.current === game) return;
+    previousGameRef.current = game;
+
+    setSearch("");
+    setFilteredSongs(null);
     setSortBy(null);
     setReverseSortDirection(false);
-    resetFilters();
-  }, [game]);
-
-  useEffect(() => {
     setPage(1);
-  }, [filteredScores]);
+    resetFilters();
+    writeScoreListUrlState(
+      {
+        page: 1,
+        search: "",
+        sortBy: null,
+        reverseSortDirection: false,
+        filters: defaultFilters,
+      },
+      ratingRange,
+    );
+  }, [defaultFilters, game, ratingRange, resetFilters]);
 
   const searchedScores = useMemo(() => {
     if (!filteredScores || isLoading) return [];
@@ -181,8 +343,41 @@ export const ScoreListSection = () => {
   }, [searchedScores, reverseSortDirection, sortBy, songList]);
 
   const totalPages = Math.ceil(sortedScores.length / PAGE_SIZE);
+  // Clamp during render rather than in an effect: when the list shrinks below the
+  // current page, React re-renders synchronously without an extra commit cycle.
+  if (totalPages > 0 && page > totalPages) {
+    setPage(totalPages);
+  }
   const displayScores = sortedScores.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const currentSortKey = sortKeys[game].find((item) => item.key === sortBy);
+
+  useEffect(() => {
+    writeScoreListUrlState(
+      {
+        page,
+        search,
+        sortBy,
+        reverseSortDirection,
+        filters,
+      },
+      ratingRange,
+    );
+  }, [filters, page, ratingRange, reverseSortDirection, search, sortBy]);
+
+  const setScoreFilter = <K extends keyof ScoreFilters>(key: K, value: ScoreFilters[K]) => {
+    setFilter(key, value);
+    setPage(1);
+  };
+
+  const resetScoreFilters = () => {
+    resetFilters();
+    setPage(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
@@ -357,11 +552,9 @@ export const ScoreListSection = () => {
     <div ref={topRef} className={classes.scrollAnchor}>
       <Flex gap="xs" align="center" wrap="nowrap" mb="sm">
         <SongCombobox
-          value={songId}
-          onSongsChange={(filteredSongs) => {
-            setFilteredSongs(filteredSongs);
-            setPage(1);
-          }}
+          searchValue={search}
+          onSearchChange={handleSearchChange}
+          onSongsChange={setFilteredSongs}
           placeholder="搜索曲名、别名或曲目 ID"
           style={{ flex: 1, minWidth: 0 }}
         />
@@ -437,7 +630,7 @@ export const ScoreListSection = () => {
                     <IconDatabaseOff size={64} stroke={1.5} />
                     <Text fz="sm">没有获取或筛选到任何成绩</Text>
                     {activeFilterCount > 0 && (
-                      <Button mt="xs" variant="light" size="xs" onClick={() => resetFilters()}>
+                      <Button mt="xs" variant="light" size="xs" onClick={resetScoreFilters}>
                         重置筛选条件
                       </Button>
                     )}
@@ -457,7 +650,11 @@ export const ScoreListSection = () => {
           <Group justify="space-between" mb="md">
             {filterPanelTitle}
           </Group>
-          <AdvancedFilter filters={filters} setFilter={setFilter} resetFilters={resetFilters} />
+          <AdvancedFilter
+            filters={filters}
+            setFilter={setScoreFilter}
+            resetFilters={resetScoreFilters}
+          />
         </Card>
       </Flex>
       <Space h="md" />
@@ -501,7 +698,11 @@ export const ScoreListSection = () => {
           )
         }
       >
-        <AdvancedFilter filters={filters} setFilter={setFilter} resetFilters={resetFilters} />
+        <AdvancedFilter
+          filters={filters}
+          setFilter={setScoreFilter}
+          resetFilters={resetScoreFilters}
+        />
       </Drawer>
     </div>
   );
