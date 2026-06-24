@@ -1,4 +1,11 @@
-import { DataList, Divider, ScrollArea, UnstyledButton, UnstyledButtonProps } from "@mantine/core";
+import {
+  Text,
+  DataList,
+  Divider,
+  ScrollArea,
+  UnstyledButton,
+  UnstyledButtonProps,
+} from "@mantine/core";
 import { useState } from "react";
 import { useViewportSize } from "@mantine/hooks";
 import classes from "./PlayerPanel.module.css";
@@ -78,15 +85,17 @@ export const PlayerPanel = ({ player }: { player?: MaimaiPlayerProps | ChunithmP
       </ScrollArea>
       <Divider />
       <div className={classes.section}>
-        <DataList labelWidth={84}>
+        <DataList size="xs">
           <DataList.Item>
             <DataList.ItemLabel>好友码</DataList.ItemLabel>
-            <DataList.ItemValue>{player.friend_code}</DataList.ItemValue>
+            <DataList.ItemValue>
+              <Text fz="sm">{player.friend_code}</Text>
+            </DataList.ItemValue>
           </DataList.Item>
           <DataList.Item>
             <DataList.ItemLabel>上次同步时间</DataList.ItemLabel>
             <DataList.ItemValue>
-              {new Date(Date.parse(player.upload_time)).toLocaleString()}
+              <Text fz="sm">{new Date(Date.parse(player.upload_time)).toLocaleString()}</Text>
             </DataList.ItemValue>
           </DataList.Item>
         </DataList>

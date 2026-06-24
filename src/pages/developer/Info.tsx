@@ -102,10 +102,12 @@ const DeveloperInfoContent = () => {
           </Group>
         )}
         {developer && (
-          <DataList labelWidth={60}>
+          <DataList size="xs">
             <DataList.Item>
               <DataList.ItemLabel>开发者名称</DataList.ItemLabel>
-              <DataList.ItemValue>{developer.name}</DataList.ItemValue>
+              <DataList.ItemValue>
+                <Text fz="sm">{developer.name}</Text>
+              </DataList.ItemValue>
             </DataList.Item>
             <DataList.Item>
               <DataList.ItemLabel>开发者地址</DataList.ItemLabel>
@@ -118,12 +120,14 @@ const DeveloperInfoContent = () => {
             <DataList.Item>
               <DataList.ItemLabel>申请时间</DataList.ItemLabel>
               <DataList.ItemValue>
-                {new Date(developer.apply_time).toLocaleString()}
+                <Text fz="sm">{new Date(developer.apply_time).toLocaleString()}</Text>
               </DataList.ItemValue>
             </DataList.Item>
             <DataList.Item>
               <DataList.ItemLabel>申请理由</DataList.ItemLabel>
-              <DataList.ItemValue>{developer.reason}</DataList.ItemValue>
+              <DataList.ItemValue>
+                <Text fz="sm">{developer.reason}</Text>
+              </DataList.ItemValue>
             </DataList.Item>
           </DataList>
         )}
