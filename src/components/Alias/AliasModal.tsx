@@ -191,7 +191,7 @@ const AliasModalBody = ({
             <Text fz="xs" c="dimmed">
               曲目别名
             </Text>
-            <Text fz="xl" fw={700}>
+            <Text fz="xl" fw={700} textWrap="balance">
               {alias.alias}
             </Text>
           </div>

@@ -4,7 +4,7 @@ import {
   Badge,
   Center,
   Divider,
-  Flex,
+  EmptyState,
   Group,
   Loader,
   NumberFormatter,
@@ -30,10 +30,11 @@ export const ScoreRanking = ({
 
   if (isLoggedOut || !player) {
     return (
-      <Flex gap="xs" align="center" direction="column" c="dimmed">
-        <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">{isLoggedOut ? "请登录后查看排行" : "请同步游戏数据后查看排行"}</Text>
-      </Flex>
+      <EmptyState
+        size="lg"
+        icon={<IconDatabaseOff stroke={1.5} />}
+        title={isLoggedOut ? "请登录后查看排行" : "请同步游戏数据后查看排行"}
+      />
     );
   }
 
@@ -46,12 +47,7 @@ export const ScoreRanking = ({
   }
 
   if (!rankingScores || rankingScores.length === 0) {
-    return (
-      <Flex gap="xs" align="center" direction="column" c="dimmed">
-        <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">暂无排行数据</Text>
-      </Flex>
-    );
+    return <EmptyState size="lg" icon={<IconDatabaseOff stroke={1.5} />} title="暂无排行数据" />;
   }
 
   return (

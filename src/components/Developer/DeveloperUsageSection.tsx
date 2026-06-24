@@ -3,7 +3,7 @@ import {
   Box,
   Card,
   Divider,
-  Flex,
+  EmptyState,
   Group,
   Loader,
   Progress,
@@ -71,10 +71,11 @@ export const DeveloperUsageSection = () => {
 
   if (!usage || usage.overview.total === 0) {
     return (
-      <Flex direction="column" align="center" gap="xs" py="xl" c="dimmed">
-        <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">最近 30 天内没有接口调用记录</Text>
-      </Flex>
+      <EmptyState
+        size="lg"
+        icon={<IconDatabaseOff stroke={1.5} />}
+        title="最近 30 天内没有接口调用记录"
+      />
     );
   }
 

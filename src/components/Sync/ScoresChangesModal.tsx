@@ -1,5 +1,6 @@
 import {
   Badge,
+  EmptyState,
   Flex,
   Group,
   HoverCard,
@@ -129,12 +130,7 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
       horizontalSpacing="md"
       mih={scores.length === 0 ? 150 : 0}
       miw={700}
-      emptyState={
-        <Flex gap="xs" align="center" direction="column" c="dimmed">
-          <IconDatabaseOff size={48} stroke={1.5} />
-          <Text fz="sm">没有记录</Text>
-        </Flex>
-      }
+      emptyState={<EmptyState icon={<IconDatabaseOff stroke={1.5} />} title="没有记录" />}
       rowBackgroundColor={(score, i) => {
         if (!containsOld(score)) {
           return { dark: "rgb(37,64,46)", light: "rgb(233,252,239)" };

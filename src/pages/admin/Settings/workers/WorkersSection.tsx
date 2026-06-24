@@ -5,7 +5,7 @@ import {
   Text,
   Group,
   Button,
-  Flex,
+  EmptyState,
   Stack,
   ActionIcon,
   Grid,
@@ -363,12 +363,7 @@ export const WorkersSection = () => {
           striped
           verticalSpacing="xs"
           mih={displayWorkers.length === 0 ? 150 : 0}
-          emptyState={
-            <Flex gap="xs" align="center" direction="column" c="dimmed">
-              <IconDatabaseOff size={48} stroke={1.5} />
-              <Text fz="sm">暂无工作节点</Text>
-            </Flex>
-          }
+          emptyState={<EmptyState icon={<IconDatabaseOff stroke={1.5} />} title="暂无工作节点" />}
           columns={[
             {
               accessor: "id",

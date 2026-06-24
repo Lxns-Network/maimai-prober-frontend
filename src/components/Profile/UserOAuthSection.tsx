@@ -11,6 +11,7 @@ import {
   Collapse,
   ThemeIcon,
   Divider,
+  EmptyState,
   Loader,
 } from "@mantine/core";
 import {
@@ -239,9 +240,7 @@ export const UserOAuthSection = () => {
             ))}
           </Stack>
         ) : (
-          <Text size="sm" c="dimmed" ta="center" py="xl">
-            暂无已授权的 OAuth 应用
-          </Text>
+          <EmptyState title="暂无已授权的 OAuth 应用" />
         )}
       </Stack>
     </Card>

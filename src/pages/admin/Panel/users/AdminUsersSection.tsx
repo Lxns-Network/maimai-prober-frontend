@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { Group, TextInput, Button, Text, keys, Flex, Card, Badge, Popover } from "@mantine/core";
+import {
+  Group,
+  TextInput,
+  Button,
+  Text,
+  keys,
+  EmptyState,
+  Card,
+  Badge,
+  Popover,
+} from "@mantine/core";
 import { deleteUsers, getUsers } from "@/utils/api/user.ts";
 import { useDisclosure, useViewportSize } from "@mantine/hooks";
 import { DataTable, DataTableSortStatus } from "mantine-datatable";
@@ -313,12 +323,7 @@ const AdminUsersContent = () => {
           striped
           verticalSpacing="xs"
           mih={displayUsers.length === 0 ? 150 : 0}
-          emptyState={
-            <Flex gap="xs" align="center" direction="column" c="dimmed">
-              <IconDatabaseOff size={48} stroke={1.5} />
-              <Text fz="sm">没有记录</Text>
-            </Flex>
-          }
+          emptyState={<EmptyState icon={<IconDatabaseOff stroke={1.5} />} title="没有记录" />}
           columns={[
             {
               accessor: "id",

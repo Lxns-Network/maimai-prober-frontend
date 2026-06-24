@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Text, InputBaseProps, ElementProps, Group, Badge } from "@mantine/core";
+import { Highlight, InputBaseProps, ElementProps, Group, Badge } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.ts";
@@ -132,12 +132,12 @@ export const SongCombobox = ({
     (song: SongProps) => (
       <Group justify="space-between" wrap="nowrap">
         <div style={{ minWidth: 0, flex: 1 }}>
-          <Text fz="sm" fw={500} truncate>
+          <Highlight fz="sm" fw={500} truncate highlight={debouncedSearch}>
             {song.title}
-          </Text>
-          <Text fz="xs" opacity={0.6} truncate>
+          </Highlight>
+          <Highlight fz="xs" opacity={0.6} truncate highlight={debouncedSearch}>
             {song.artist}
-          </Text>
+          </Highlight>
         </div>
         {songList instanceof MaimaiSongList && song.id >= 100000 && (
           <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
@@ -151,7 +151,7 @@ export const SongCombobox = ({
         )}
       </Group>
     ),
-    [songList],
+    [songList, debouncedSearch],
   );
 
   return (

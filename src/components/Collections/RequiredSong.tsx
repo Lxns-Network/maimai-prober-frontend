@@ -13,7 +13,6 @@ import {
   Image,
   Loader,
   LoadingOverlay,
-  Pagination,
   rem,
   RingProgress,
   SegmentedControl,
@@ -32,6 +31,7 @@ import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
 import { Link } from "@/components/Link";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { Game } from "@/types/game";
+import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 
 const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps }) => {
   if (!collection || !collection.required) {
@@ -402,8 +402,7 @@ export const RequiredSong = ({
           transition={{ duration: 0.3 }}
         >
           <Center>
-            <Pagination
-              size="sm"
+            <ResponsivePagination
               mt="md"
               total={totalPages}
               value={page}

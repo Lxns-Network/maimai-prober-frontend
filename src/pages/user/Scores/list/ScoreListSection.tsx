@@ -20,12 +20,12 @@ import {
   Button,
   Card,
   Drawer,
+  EmptyState,
   Flex,
   Group,
   Indicator,
   Loader,
   Menu,
-  Pagination,
   ScrollArea,
   Space,
   Stack,
@@ -45,6 +45,7 @@ import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { useScoreFilters } from "@/hooks/useScoreFilters.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
+import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 import {
   countActiveFilters,
   scoreRatingRanges,
@@ -383,11 +384,10 @@ export const ScoreListSection = () => {
                 >
                   {totalPages > 1 && (
                     <Group justify="center" mb="md">
-                      <Pagination
+                      <ResponsivePagination
                         total={totalPages}
                         value={page}
                         onChange={handlePageChange}
-                        size={small ? "sm" : "md"}
                         disabled={isLoading}
                       />
                     </Group>
@@ -401,11 +401,10 @@ export const ScoreListSection = () => {
                   />
                   {totalPages > 1 && (
                     <Group justify="center" mt="md">
-                      <Pagination
+                      <ResponsivePagination
                         total={totalPages}
                         value={page}
                         onChange={handlePageChange}
-                        size={small ? "sm" : "md"}
                         disabled={isLoading}
                       />
                     </Group>
@@ -433,15 +432,17 @@ export const ScoreListSection = () => {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Flex gap="xs" align="center" direction="column" c="dimmed" p="xl">
-                    <IconDatabaseOff size={64} stroke={1.5} />
-                    <Text fz="sm">没有获取或筛选到任何成绩</Text>
+                  <EmptyState
+                    size="lg"
+                    icon={<IconDatabaseOff stroke={1.5} />}
+                    title="没有获取或筛选到任何成绩"
+                  >
                     {activeFilterCount > 0 && (
                       <Button mt="xs" variant="light" size="xs" onClick={() => resetFilters()}>
                         重置筛选条件
                       </Button>
                     )}
-                  </Flex>
+                  </EmptyState>
                 </motion.div>
               ))
               .exhaustive()}

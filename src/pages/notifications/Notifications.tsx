@@ -2,19 +2,19 @@ import { useState } from "react";
 import {
   Accordion,
   Button,
+  EmptyState,
   Group,
   Loader,
-  Pagination,
   SegmentedControl,
   Stack,
   Text,
 } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
 import { IconChecks } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/zh-cn";
 import { Page } from "@/components/Page/Page.tsx";
+import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 import { NotificationTypeIcon } from "@/components/Notifications/NotificationTypeIcon.tsx";
 import { getNotificationDisplay } from "@/components/Notifications/notificationTemplates.tsx";
 import { useNotifications } from "@/hooks/queries/useNotifications.ts";
@@ -32,7 +32,6 @@ function NotificationFeed() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [page, setPage] = useState(1);
   const [openedItems, setOpenedItems] = useState<string[]>([]);
-  const small = useMediaQuery("(max-width: 30rem)");
   const { data, isLoading } = useNotifications({ filter, page, pageSize: PAGE_SIZE });
   const { mutate: markRead } = useMarkNotificationRead();
   const { mutate: markAll } = useMarkAllNotificationsRead();
@@ -88,11 +87,7 @@ function NotificationFeed() {
         </Group>
       )}
 
-      {!isLoading && (data?.notifications.length ?? 0) === 0 && (
-        <Text c="dimmed" ta="center" py="xl">
-          暂无通知
-        </Text>
-      )}
+      {!isLoading && (data?.notifications.length ?? 0) === 0 && <EmptyState title="暂无通知" />}
 
       <Accordion variant="contained" multiple value={openedItems} onChange={handleOpenChange}>
         {data?.notifications.map((n) => {
@@ -130,12 +125,7 @@ function NotificationFeed() {
 
       {totalPages > 1 && (
         <Group justify="center">
-          <Pagination
-            total={totalPages}
-            value={page}
-            onChange={handlePageChange}
-            size={small ? "sm" : "md"}
-          />
+          <ResponsivePagination total={totalPages} value={page} onChange={handlePageChange} />
         </Group>
       )}
     </Stack>

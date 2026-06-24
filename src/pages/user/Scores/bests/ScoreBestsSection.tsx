@@ -1,4 +1,4 @@
-import { Box, Flex, Group, Loader, Space, Text, Title } from "@mantine/core";
+import { Box, EmptyState, Group, Loader, Space, Text, Title } from "@mantine/core";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { useBests } from "@/hooks/queries/useBests.ts";
 import { IconDatabaseOff } from "@tabler/icons-react";
@@ -20,10 +20,11 @@ export const ScoreBestsSection = () => {
 
   if (!bests) {
     return (
-      <Flex gap="xs" align="center" direction="column" c="dimmed" mt="xl">
-        <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">没有获取到任何最佳成绩</Text>
-      </Flex>
+      <EmptyState
+        size="lg"
+        icon={<IconDatabaseOff stroke={1.5} />}
+        title="没有获取到任何最佳成绩"
+      />
     );
   }
 

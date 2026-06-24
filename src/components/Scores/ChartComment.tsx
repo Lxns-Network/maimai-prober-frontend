@@ -5,13 +5,13 @@ import {
   Button,
   Center,
   Divider,
+  EmptyState,
   Flex,
   Group,
   Image,
   Loader,
   Menu,
   NumberFormatter,
-  Pagination,
   Paper,
   Rating,
   Stack,
@@ -45,6 +45,7 @@ import {
   useLikeComment,
   useUnlikeComment,
 } from "@/hooks/mutations/useCommentMutations.ts";
+import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 
 interface FormValues {
   comment: string;
@@ -430,12 +431,10 @@ export const ChartComment = ({
             <Loader />
           </Center>
         ) : comments.length === 0 ? (
-          <Stack gap="xs" align="center">
-            <Image src="/empty.webp" w={240} />
-            <Text c="dimmed" fz="sm">
-              {isLoggedOut ? "请登录后查看玩家评论" : "还没有人发表看法呢~"}
-            </Text>
-          </Stack>
+          <EmptyState
+            icon={<Image src="/empty.webp" w={240} />}
+            title={isLoggedOut ? "请登录后查看玩家评论" : "还没有人发表看法呢~"}
+          />
         ) : (
           <Paper w="100%" p="md" radius="sm" withBorder>
             <Stack>
@@ -470,11 +469,10 @@ export const ChartComment = ({
             </Stack>
           </Paper>
         )}
-        <Pagination
+        <ResponsivePagination
           total={Math.ceil(comments.length / PAGE_SIZE)}
           value={page}
           onChange={setPage}
-          size="sm"
           hideWithOnePage
         />
       </Group>

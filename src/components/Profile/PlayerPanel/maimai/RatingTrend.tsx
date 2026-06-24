@@ -1,4 +1,4 @@
-import { Card, Flex, Group, Text } from "@mantine/core";
+import { Card, EmptyState, Group, Text } from "@mantine/core";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import {
   Area,
@@ -79,10 +79,11 @@ const RatingTrendChart = ({ trend }: { trend: MaimaiRatingTrendProps[] }) => {
 export const MaimaiRatingTrend = ({ trend }: { trend: MaimaiRatingTrendProps[] | null }) => {
   if (!trend || trend.length < 2) {
     return (
-      <Flex gap="xs" align="center" direction="column" c="dimmed">
-        <IconDatabaseOff size={64} stroke={1.5} />
-        <Text fz="sm">历史记录不足，无法生成图表</Text>
-      </Flex>
+      <EmptyState
+        size="lg"
+        icon={<IconDatabaseOff stroke={1.5} />}
+        title="历史记录不足，无法生成图表"
+      />
     );
   }
   return (

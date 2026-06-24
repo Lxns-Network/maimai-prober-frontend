@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Text, InputBaseProps, ElementProps } from "@mantine/core";
+import { Highlight, InputBaseProps, ElementProps } from "@mantine/core";
 import { CollectionProps } from "@/types/player";
 import { VirtualizedCombobox } from "@/components/VirtualizedCombobox.tsx";
 
@@ -47,17 +47,17 @@ export const CollectionCombobox = ({
   const renderOption = useCallback(
     (collection: CollectionProps) => (
       <>
-        <Text fz="sm" fw={500} truncate>
+        <Highlight fz="sm" fw={500} truncate highlight={search}>
           {collection.name}
-        </Text>
+        </Highlight>
         {collection.description !== "-" && (
-          <Text fz="xs" opacity={0.6} truncate>
-            {collection.description}
-          </Text>
+          <Highlight fz="xs" opacity={0.6} truncate highlight={search}>
+            {collection.description ?? ""}
+          </Highlight>
         )}
       </>
     ),
-    [],
+    [search],
   );
 
   return (

@@ -97,7 +97,14 @@ export const SongRankingSection = ({ data }: { data: YearInReviewProps }) => {
               </Text>
             ) : (
               <>
-                <Text fz="xl" fw={500} lh="xs" className={classes.cardTitle} mt="md">
+                <Text
+                  fz="xl"
+                  fw={500}
+                  lh="xs"
+                  className={classes.cardTitle}
+                  mt="md"
+                  textWrap="balance"
+                >
                   {song ? song.title : "未知曲目"}
                 </Text>
                 <Text c="dimmed" mt={4}>
@@ -145,7 +152,9 @@ export const SongRankingSection = ({ data }: { data: YearInReviewProps }) => {
                         </Text>
                       ) : (
                         <>
-                          <Text fz="xl">{song ? song.title : "未知曲目"}</Text>
+                          <Text fz="xl" textWrap="balance">
+                            {song ? song.title : "未知曲目"}
+                          </Text>
                           <Text c="dimmed">{song ? song.artist : "未知艺术家"}</Text>
                         </>
                       )}
