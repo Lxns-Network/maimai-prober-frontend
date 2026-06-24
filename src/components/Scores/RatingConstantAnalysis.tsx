@@ -1,5 +1,6 @@
 import { Accordion, Badge, Center, Group, Image, Paper, Stack, Text } from "@mantine/core";
 import { DataTable, DataTableColumn } from "mantine-datatable";
+import classes from "./RatingConstantAnalysis.module.css";
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
 import { requiredChunithmConstant, requiredMaimaiConstant } from "@/utils/rating.ts";
 import { getDeluxeRatingGradient, getRatingGradient } from "@/utils/color.ts";
@@ -186,8 +187,12 @@ export function RatingConstantAnalysis({
         </Badge>
       </Stack>
       <Accordion multiple styles={{ content: { padding: 0 } }}>
-        {segments.map((segment) => (
-          <Accordion.Item key={segment.title} value={segment.title}>
+        {segments.map((segment, index) => (
+          <Accordion.Item
+            key={segment.title}
+            value={segment.title}
+            className={index === segments.length - 1 ? classes.lastItem : undefined}
+          >
             <Accordion.Control>
               <Group justify="space-between" wrap="nowrap" pr="md">
                 <Text fw={700}>{segment.title}</Text>

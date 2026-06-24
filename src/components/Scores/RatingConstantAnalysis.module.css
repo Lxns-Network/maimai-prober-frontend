@@ -1,0 +1,8 @@
+/* 最后一段：去掉 accordion 项与表格末行的下边框，避免与外层 Paper 的边框叠加。 */
+.lastItem {
+  border-bottom: none;
+}
+
+.lastItem table tbody tr:last-of-type td {
+  border-bottom: none;
+}
