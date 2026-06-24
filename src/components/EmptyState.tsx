@@ -13,7 +13,11 @@ export function EmptyState({ icon, title, description, children }: EmptyStatePro
   return (
     <Flex gap="xs" align="center" direction="column" c="dimmed" py="xl">
       {icon}
-      {title != null && <Text fz="sm">{title}</Text>}
+      {title != null && (
+        <Text fz="sm" ta="center">
+          {title}
+        </Text>
+      )}
       {description != null && (
         <Text fz="xs" ta="center">
           {description}
