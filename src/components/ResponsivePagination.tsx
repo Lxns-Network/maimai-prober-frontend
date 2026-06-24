@@ -1,12 +1,20 @@
-import { useRef, useState } from "react";
+import { CSSProperties, useRef, useState } from "react";
 import { Group, Pagination, PaginationProps, Text } from "@mantine/core";
-import { useIsomorphicEffect, useMediaQuery, useViewportSize } from "@mantine/hooks";
+import { useIsomorphicEffect, useViewportSize } from "@mantine/hooks";
 
-// 统一分页：窄屏按钮缩到 sm；整行页码在容器里放不下时塌缩为「‹ 当前/总数 ›」，且始终居中。
-// 以 useViewportSize 作为重测触发器（窗口任意方向缩放都必定更新），再实时读容器宽度与离流的
-// 完整页码自然宽度比较。容器须 overflow:hidden + minWidth:0，才能在内容更宽时仍缩到可用宽度。
+// 统一分页：尺寸按「是否放得下」实测决定，md 放不下降 sm、sm 仍放不下塌缩为居中的「‹ 当前/总数 ›」。
+// 离流隐藏副本量 md/sm 的自然宽度与容器比较；容器须 overflow:hidden + minWidth:0 才能缩到可用宽度。
+// 这样尺寸只在真正放不下时才变化（由实测触发，而非固定断点），避免断点处的尺寸跳变。
+const HIDDEN_STYLE: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  width: "max-content",
+  visibility: "hidden",
+  pointerEvents: "none",
+};
+
 export function ResponsivePagination({
-  size,
   total,
   value,
   onChange,
@@ -16,48 +24,40 @@ export function ResponsivePagination({
   mb,
   ...rest
 }: PaginationProps) {
-  const small = useMediaQuery("(max-width: 30rem)");
-  const effectiveSize = size ?? (small ? "sm" : "md");
-
   const { width: viewportWidth } = useViewportSize();
   const wrapRef = useRef<HTMLDivElement>(null);
-  const fullRef = useRef<HTMLDivElement>(null);
-  const [compact, setCompact] = useState(false);
+  const mdRef = useRef<HTMLDivElement>(null);
+  const smRef = useRef<HTMLDivElement>(null);
+  const [mode, setMode] = useState<"md" | "sm" | "text">("md");
 
   useIsomorphicEffect(() => {
     const wrap = wrapRef.current;
-    const full = fullRef.current;
-    if (!wrap || !full) return;
-    const available = wrap.getBoundingClientRect().width;
-    if (available) setCompact(full.offsetWidth > Math.ceil(available));
-  }, [viewportWidth, total, value, effectiveSize]);
+    if (!wrap || !mdRef.current || !smRef.current) return;
+    const available = Math.ceil(wrap.getBoundingClientRect().width);
+    if (!available) return;
+    if (mdRef.current.offsetWidth <= available) setMode("md");
+    else if (smRef.current.offsetWidth <= available) setMode("sm");
+    else setMode("text");
+  }, [viewportWidth, total, value]);
 
   if (hideWithOnePage && total <= 1) return null;
 
-  const shared = { total, value, onChange, disabled, size: effectiveSize, ...rest };
+  const props = (size: "md" | "sm") => ({ total, value, onChange, disabled, ...rest, size });
 
   return (
     <div
       ref={wrapRef}
       style={{ position: "relative", width: "100%", minWidth: 0, overflow: "hidden" }}
     >
-      <div
-        ref={fullRef}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          // max-content：取页码真实自然宽度，避免被 overflow:hidden 的 wrap 宽度 clamp（否则永不塌缩）
-          width: "max-content",
-          visibility: "hidden",
-          pointerEvents: "none",
-        }}
-      >
-        <Pagination {...shared} />
+      <div ref={mdRef} style={HIDDEN_STYLE}>
+        <Pagination {...props("md")} />
+      </div>
+      <div ref={smRef} style={HIDDEN_STYLE}>
+        <Pagination {...props("sm")} />
       </div>
       <Group justify="center" mt={mt} mb={mb}>
-        {compact ? (
-          <Pagination.Root {...shared}>
+        {mode === "text" ? (
+          <Pagination.Root {...props("sm")}>
             <Group gap="xs">
               <Pagination.Previous />
               <Text size="sm" c="dimmed">
@@ -67,7 +67,7 @@ export function ResponsivePagination({
             </Group>
           </Pagination.Root>
         ) : (
-          <Pagination {...shared} />
+          <Pagination {...props(mode)} />
         )}
       </Group>
     </div>
