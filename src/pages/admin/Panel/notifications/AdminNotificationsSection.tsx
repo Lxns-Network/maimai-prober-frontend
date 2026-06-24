@@ -4,6 +4,7 @@ import {
   ActionIcon,
   Badge,
   Button,
+  Flex,
   Group,
   Loader,
   Stack,
@@ -92,7 +93,7 @@ export function AdminNotificationsSection() {
         {pageItems.map((b) => (
           <Accordion.Item key={b.id} value={String(b.id)}>
             <Accordion.Control icon={<NotificationTypeIcon type={b.type} level={b.level} />}>
-              <Group gap="xs">
+              <Flex rowGap={4} columnGap="xs" align="center" wrap="wrap">
                 <Text
                   fw={600}
                   c={isExpired(b) ? "dimmed" : undefined}
@@ -100,15 +101,17 @@ export function AdminNotificationsSection() {
                 >
                   {b.title}
                 </Text>
-                <Badge variant="light" color="gray">
-                  {audienceLabel[b.audience_type]}
-                </Badge>
-                {b.persistent && (
-                  <Badge variant="light" color="blue">
-                    常驻
+                <Group gap="xs">
+                  <Badge variant="light" color="gray">
+                    {audienceLabel[b.audience_type]}
                   </Badge>
-                )}
-              </Group>
+                  {b.persistent && (
+                    <Badge variant="light" color="blue">
+                      常驻
+                    </Badge>
+                  )}
+                </Group>
+              </Flex>
               <Text c="dimmed" size="xs" mt={4}>
                 发布于 {dayjs(b.create_time).format("YYYY-MM-DD HH:mm")}
                 {b.expire_time && ` · 过期于 ${dayjs(b.expire_time).format("YYYY-MM-DD HH:mm")}`}
