@@ -88,7 +88,7 @@ type DifficultyState =
   | { game: "chunithm"; difficulty: ChunithmDifficultyProps | null };
 
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
-  useBackDismiss(opened, () => onClose());
+  const { navigateFromOverlay } = useBackDismiss(opened, () => onClose());
   const [songState, setSongState] = useState<SongState | null>(null);
   const [difficultyState, setDifficultyState] = useState<DifficultyState | null>(null);
   const combobox = useCombobox({
@@ -238,6 +238,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 score={score}
                 difficulty={difficultyState?.difficulty ?? undefined}
                 onClose={onClose}
+                navigateFromOverlay={navigateFromOverlay}
               />
             )}
             <Modal.CloseButton />

@@ -19,6 +19,7 @@ import classes from "../Form.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { navigate } from "vike/client/router";
 import { useRegister } from "@/hooks/mutations/useAuthMutations.ts";
+import { navigateFromCurrentOverlay } from "@/utils/overlayNavigation.ts";
 
 interface FormValues {
   name: string;
@@ -59,7 +60,7 @@ export default function Register() {
         {
           onSuccess: () => {
             openConfirmModal("注册成功", "请登录你的查分器账号，根据指引绑定你的游戏账号。", () =>
-              navigate("/login"),
+              navigateFromCurrentOverlay("/login"),
             );
           },
           onError: (error) => {

@@ -34,7 +34,6 @@ import { mdiWebOff } from "@mdi/js";
 import { useThrottledValue } from "@mantine/hooks";
 import { Marquee } from "@/components/Marquee.tsx";
 import { Game } from "@/types/game";
-import { navigate } from "vike/client/router";
 
 const collectionMetadata = {
   maimai: {
@@ -293,7 +292,7 @@ export const EditCollectionModal = ({
   onCancel,
   onSubmit,
 }: EditCollectionModalProps) => {
-  useBackDismiss(opened, onCancel);
+  const { navigateFromOverlay } = useBackDismiss(opened, onCancel);
 
   const metadata = collectionMetadata[game][type as keyof (typeof collectionMetadata)[Game]];
   const title = metadata?.title || "收藏品";
@@ -315,7 +314,9 @@ export const EditCollectionModal = ({
                 <HoverCard.Dropdown>
                   <Text size="sm" mb="xs">
                     这里仅会显示同步后<Mark>拥有的{title}</Mark>。如果没有显示，请检查
-                    <Anchor onClick={() => navigate("/user/settings")}>{title}爬取设置</Anchor>
+                    <Anchor onClick={() => navigateFromOverlay("/user/settings")}>
+                      {title}爬取设置
+                    </Anchor>
                     是否打开。
                   </Text>
                   <Text size="sm">

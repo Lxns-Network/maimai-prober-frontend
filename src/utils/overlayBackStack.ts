@@ -1,6 +1,7 @@
 type OverlayEntry = { id: number; close: () => void };
 
 const stack: OverlayEntry[] = [];
+const historyRestoreSuppressed = new Set<number>();
 let pendingProgrammaticPops = 0;
 let listenerInstalled = false;
 let nextId = 1;
@@ -14,6 +15,7 @@ function handlePopState() {
     return;
   }
   const top = stack.pop();
+  if (top) historyRestoreSuppressed.delete(top.id);
   top?.close();
 }
 
@@ -57,8 +59,24 @@ export function pushOverlay(close: () => void): number {
 
 export function popOverlay(id: number): void {
   const index = stack.findIndex((entry) => entry.id === id);
+  const shouldRestoreHistory = !historyRestoreSuppressed.delete(id);
   if (index === -1) return;
   stack.splice(index, 1);
+  if (!shouldRestoreHistory) return;
   netDepthDelta -= 1;
   scheduleSettle();
+}
+
+/**
+ * 标记本次关闭由路由跳转接管，清理 overlay 时不要再触发 `history.back()`。
+ */
+export function suppressOverlayHistoryRestore(id: number): void {
+  if (stack.some((entry) => entry.id === id)) {
+    historyRestoreSuppressed.add(id);
+  }
+}
+
+export function suppressTopOverlayHistoryRestore(): void {
+  const top = stack[stack.length - 1];
+  if (top) suppressOverlayHistoryRestore(top.id);
 }

@@ -18,23 +18,26 @@ import { useEffect, useState } from "react";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
-import useScoreStore from "@/hooks/useScoreStore.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/hooks/queries/queryKeys.ts";
 import { MaimaiDifficultyProps } from "@/utils/api/song/maimai";
 import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm";
-import { navigate } from "vike/client/router";
 
 interface ScoreModalActionMenuProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
   difficulty?: MaimaiDifficultyProps | ChunithmDifficultyProps;
   onClose?: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
+  navigateFromOverlay: (url: string) => void;
 }
 
-export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionMenuProps) => {
+export const ScoreModalMenu = ({
+  score,
+  difficulty,
+  onClose,
+  navigateFromOverlay,
+}: ScoreModalActionMenuProps) => {
   const { openModal: openCreateScoreModal } = useCreateScoreStore();
-  const { closeModal: closeScoreModal } = useScoreStore();
   const [params, setParams] = useState(new URLSearchParams());
   const [game] = useFixedGame();
   const queryClient = useQueryClient();
@@ -87,7 +90,7 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
       chart_id: String(chartId),
       difficulty: String(difficulty),
     });
-    navigate(`/chart?${params.toString()}`);
+    navigateFromOverlay(`/chart?${params.toString()}`);
   };
 
   useEffect(() => {
@@ -126,7 +129,6 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
                   <Menu.Item
                     onClick={() => {
                       handleChartPreview(score.id, 0);
-                      closeScoreModal();
                     }}
                   >
                     1P 谱面
@@ -134,7 +136,6 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
                   <Menu.Item
                     onClick={() => {
                       handleChartPreview(score.id, 1);
-                      closeScoreModal();
                     }}
                   >
                     2P 谱面
@@ -147,7 +148,6 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
                 onClick={() => {
                   const typeOffset = score.type === "dx" ? 1 : 0;
                   handleChartPreview(typeOffset * 10000 + score.id, score.level_index);
-                  closeScoreModal();
                 }}
               >
                 谱面预览
@@ -178,8 +178,7 @@ export const ScoreModalMenu = ({ score, difficulty, onClose }: ScoreModalActionM
           <Menu.Item
             leftSection={<IconMusic size={20} stroke={1.5} />}
             onClick={() => {
-              navigate(`/songs?game=${game}&song_id=${score.id}`);
-              closeScoreModal();
+              navigateFromOverlay(`/songs?game=${game}&song_id=${score.id}`);
             }}
           >
             查看曲目详情
