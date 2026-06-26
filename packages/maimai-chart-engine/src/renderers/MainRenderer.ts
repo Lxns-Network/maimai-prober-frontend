@@ -127,6 +127,7 @@ export class MainRenderer {
     ddrColorExtended: false,
     showFireworks: true,
     showHitEffect: true,
+    videoBrightness: "dark",
   };
 
   private fps: number = 0;
@@ -367,6 +368,10 @@ export class MainRenderer {
     this.config.showHitEffect = enabled;
   }
 
+  setVideoBrightness(brightness: "dark" | "normal" | "bright"): void {
+    this.config.videoBrightness = brightness;
+  }
+
   setFullscreenMaxPixels(maxPixels: number): void {
     this.fullscreenMaxPixels = maxPixels;
   }
@@ -422,8 +427,16 @@ export class MainRenderer {
         const dw = video.videoWidth * scale;
         const dh = video.videoHeight * scale;
         this.ctx.drawImage(source, (s - dw) / 2, (s - dh) / 2, dw, dh);
-        this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-        this.ctx.fillRect(0, 0, s, s);
+        const dimAlpha =
+          this.config.videoBrightness === "dark"
+            ? 0.6
+            : this.config.videoBrightness === "normal"
+              ? 0.3
+              : 0;
+        if (dimAlpha > 0) {
+          this.ctx.fillStyle = `rgba(0, 0, 0, ${dimAlpha})`;
+          this.ctx.fillRect(0, 0, s, s);
+        }
         this.ctx.restore();
         return;
       }

@@ -908,6 +908,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     setShowVideo,
     videoServer,
     setVideoServer,
+    videoBrightness,
+    setVideoBrightness,
   } = useGameSettingsStore(useShallow((state) => state));
 
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);
@@ -1444,6 +1446,20 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 }
               }}
             />
+
+            <Stack gap={4}>
+              <Text size="sm">背景亮度</Text>
+              <SegmentedControl
+                size="xs"
+                value={videoBrightness}
+                onChange={(value) => setVideoBrightness(value as "dark" | "normal" | "bright")}
+                data={[
+                  { label: "暗", value: "dark" },
+                  { label: "正常", value: "normal" },
+                  { label: "亮", value: "bright" },
+                ]}
+              />
+            </Stack>
           </Stack>
         </Collapse>
       </Card>

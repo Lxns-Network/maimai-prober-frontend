@@ -416,6 +416,8 @@ export interface RendererConfig {
   showFireworks: boolean;
   /** 是否显示判定点打击特效（tap / hold 尾 / 星星头 / 绝赞） */
   showHitEffect: boolean;
+  /** 背景视频亮度：dark 最暗，normal 适中，bright 全亮 */
+  videoBrightness: "dark" | "normal" | "bright";
 }
 
 export interface AudioConfig {

@@ -30,6 +30,7 @@ export interface GameSettingsState {
   fullscreenQuality: FullscreenQuality;
   showVideo: boolean;
   videoServer: string;
+  videoBrightness: "dark" | "normal" | "bright";
 }
 
 export interface GameSettingsActions {
@@ -52,6 +53,7 @@ export interface GameSettingsActions {
   setFullscreenQuality: (quality: FullscreenQuality) => void;
   setShowVideo: (enabled: boolean) => void;
   setVideoServer: (server: string) => void;
+  setVideoBrightness: (brightness: "dark" | "normal" | "bright") => void;
 }
 
 export type GameSettingsStore = GameSettingsState & GameSettingsActions;
@@ -78,6 +80,7 @@ const initialState: GameSettingsState = {
   fullscreenQuality: "balanced",
   showVideo: false,
   videoServer: "https://maimai-video.lxns.net/",
+  videoBrightness: "dark",
 };
 
 export const useGameSettingsStore = create<GameSettingsStore>()(
@@ -103,6 +106,8 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       setFullscreenQuality: (quality: FullscreenQuality) => set({ fullscreenQuality: quality }),
       setShowVideo: (enabled: boolean) => set({ showVideo: enabled }),
       setVideoServer: (server: string) => set({ videoServer: server }),
+      setVideoBrightness: (brightness: "dark" | "normal" | "bright") =>
+        set({ videoBrightness: brightness }),
     }),
     {
       name: "maimai_chart_preview_settings",
@@ -131,6 +136,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
         fullscreenQuality: state.fullscreenQuality,
         showVideo: state.showVideo,
         videoServer: state.videoServer,
+        videoBrightness: state.videoBrightness,
       }),
     },
   ),

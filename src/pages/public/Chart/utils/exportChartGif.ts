@@ -24,6 +24,7 @@ type ExportChartGifOptions = {
     | "normalColorBreakSlide"
     | "showFireworks"
     | "showHitEffect"
+    | "videoBrightness"
   >;
   size?: number;
   fps?: number;
@@ -116,6 +117,7 @@ export async function exportChartGif({
   renderer.setNormalColorBreakSlide(settings.normalColorBreakSlide);
   renderer.setShowFireworks(settings.showFireworks);
   renderer.setShowHitEffect(settings.showHitEffect);
+  renderer.setVideoBrightness(settings.videoBrightness);
 
   const ctx = canvas.getContext("2d");
   if (!ctx) {
