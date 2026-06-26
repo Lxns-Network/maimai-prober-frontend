@@ -38,13 +38,16 @@ export const NOTE_STROKE_WIDTH_RATIO = 2 / 300;
 export const JUDGMENT_LINE_WIDTH_RATIO = 3 / 300;
 
 /** 滑条箭头线宽 */
-export const SLIDE_ARROW_WIDTH_RATIO = 16 / 300;
+export const SLIDE_ARROW_WIDTH_RATIO = 16.6 / 300;
 
 /** 滑条箭头 V 形高度比例，越大 V 越张开 */
-export const SLIDE_ARROW_HEIGHT_RATIO = 45.6 / 300;
+export const SLIDE_ARROW_HEIGHT_RATIO = 44.6 / 300;
 
 /** 滑条箭头 V 形半展宽比例，越大前端顶点越突 */
-export const SLIDE_ARROW_SPAN_RATIO = 11.52 / 300;
+export const SLIDE_ARROW_SPAN_RATIO = 12.2 / 300;
+
+/** 滑条箭头沿走向前移偏移，使首颗箭头不贴起始判定点 */
+export const SLIDE_ARROW_PADDING_RATIO = 9.5 / 300;
 
 /** 滑条星星头大小比例（半径乘以该值），越大星星越大 */
 export const SLIDE_STAR_SIZE_RATIO = 1.6 / 10.42;
@@ -52,14 +55,8 @@ export const SLIDE_STAR_SIZE_RATIO = 1.6 / 10.42;
 /** 滑条星星头等待滑动时的初始大小比例 */
 export const SLIDE_STAR_WAITING_MIN_SCALE = 0.5;
 
-/** 滑条箭头间距比例 */
-export const SLIDE_ARROW_SPACING_RATIO = 26.896180742334582 / 300;
-
 /** Wifi chevron 线宽比例 */
 export const SLIDE_WIFI_LINE_WIDTH_RATIO = 19.2 / 300;
-
-/** 滑条 S/Z 曲线偏移比例 */
-export const SLIDE_CURVE_OFFSET_RATIO = 0.4;
 
 /** 长条 Note 宽度比例 */
 export const HOLD_WIDTH_RATIO = 1.5;
