@@ -12,11 +12,10 @@ import {
   SLIDE_ARROW_WIDTH_RATIO,
   SLIDE_ARROW_HEIGHT_RATIO,
   SLIDE_ARROW_SPAN_RATIO,
-  SLIDE_ARROW_SPACING_RATIO,
+  SLIDE_ARROW_PADDING_RATIO,
   SLIDE_WIFI_LINE_WIDTH_RATIO,
   SLIDE_STAR_SIZE_RATIO,
   SLIDE_STAR_WAITING_MIN_SCALE,
-  SLIDE_CURVE_OFFSET_RATIO,
   COLORS,
   APPROACH_START_SCALE,
   NOTE_VISIBILITY_AFTER_MS,
@@ -30,7 +29,6 @@ interface SlidePathMetrics {
   radius: number;
   mirrorMode: string;
   segmentRanges: { start: number; end: number }[];
-  segmentOffsets: number[];
 }
 
 export class SlideRenderer extends BaseRenderer {
@@ -43,11 +41,11 @@ export class SlideRenderer extends BaseRenderer {
   }
 
   /**
-   * 把 prefab bar 列表（unit-disc）变换到当前 canvas 坐标。返回的 polyline 同时
+   * 把 模板 bar 列表（unit-disc）变换到当前 canvas 坐标。返回的 polyline 同时
    * 喂给箭头渲染和 getPointOnSegment（星头），保证两者跟同一条曲线。
    */
   private getBarChain(segment: SlideSegment): { x: number; y: number; angle: number }[] | null {
-    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos);
+    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos, segment.midPos);
     if (!shape) return null;
     const bars = SLIDE_BARS[shape.shape];
     if (!bars) return null;
@@ -74,14 +72,12 @@ export class SlideRenderer extends BaseRenderer {
     const sx = mode === "horizontal" || mode === "rotate180" ? -1 : 1;
     const sy = mode === "vertical" || mode === "rotate180" ? -1 : 1;
 
-    // Circle prefab 原意是 π/32 等距 grid（8 bar/button-step）+ 半径 ~0.993，源数据
-    // 有 float 漂移。snap 到精确 grid + 固定半径，让 π/4 倍数的旋转后 overlap 对齐。
+    // 圆弧 bar snap 到 π/32 等距 grid + 单位半径，让 π/4 倍数旋转后重合段对齐。
     const isCircle = shape.shape.startsWith("circle");
-    const CIRCLE_BAR_R = 0.993;
+    const CIRCLE_BAR_R = 1.0;
     const GRID_PER_PI = 32;
 
-    // Line prefab 源数据有 ~1px 横向漂移使直线箭头左右锯齿；把 bar 投影到首尾连线去掉漂移
-    // （保留沿线间距）。line4 本就共线，投影是 no-op。
+    // 直线：bar 投影到首尾连线去掉源数据横向漂移（保留沿线间距）。
     const isLine = shape.shape.startsWith("line");
     const lfx = shape.mirror ? -bars[0].x : bars[0].x;
     const lfy = bars[0].y;
@@ -98,13 +94,11 @@ export class SlideRenderer extends BaseRenderer {
         bx = Math.cos(snapped) * CIRCLE_BAR_R;
         by = Math.sin(snapped) * CIRCLE_BAR_R;
       } else if (isLine) {
-        // 投影到首尾连线（去横向漂移）
         const t = ((bx - lfx) * lineDx + (by - lfy) * lineDy) / lineLen2;
         bx = lfx + t * lineDx;
         by = lfy + t * lineDy;
       }
-      // bar 烘焙旋转：prefab mirror（x→-x ⇒ π-θ）后旋 startRotation，再跟随 user mirror。
-      // 仅 v/s/z 用它（每腿恒定、尖角处突变）；其余形状走切线，见 getVisibleBarsForSegment。
+      // bar 烘焙旋转：模板 mirror（x→-x ⇒ π-θ）后旋 startRotation，再跟随 user mirror。
       const baked = (shape.mirror ? Math.PI - bar.r : bar.r) + startRotation;
       return {
         x: cx + sx * r * (bx * cosR - by * sinR),
@@ -112,10 +106,47 @@ export class SlideRenderer extends BaseRenderer {
         angle: Math.atan2(sy * Math.sin(baked), sx * Math.cos(baked)),
       };
     });
+
+    const isCup =
+      segment.type === "p" ||
+      segment.type === "q" ||
+      segment.type === "pp" ||
+      segment.type === "qq";
+    const isCircleShape = shape.shape.startsWith("circle"); // ^ / < / >
+    // cup/circle 的箭头角按链坐标重算（角平分平滑）；其余形状用上面的 baked r。
+    if ((isCup || isCircleShape) && chain.length >= 2) {
+      this.applyGameArrowAngles(chain);
+    }
+
     segment.cachedChain = chain;
     segment.cachedChainRadius = r;
     segment.cachedChainMirror = mode;
     return chain;
+  }
+
+  private angleDelta(a: number, b: number): number {
+    let d = (b - a) % (Math.PI * 2);
+    if (d > Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return d;
+  }
+
+  private lerpAngle(a: number, b: number, t: number): number {
+    return a + this.angleDelta(a, b) * t;
+  }
+
+  private applyGameArrowAngles(chain: { x: number; y: number; angle: number }[]): void {
+    const n = chain.length;
+    const seg = new Array<number>(n);
+    for (let i = 0; i < n - 1; i++) {
+      seg[i] = Math.atan2(chain[i + 1].y - chain[i].y, chain[i + 1].x - chain[i].x);
+    }
+    seg[n - 1] = seg[n - 2];
+    chain[0].angle = seg[0];
+    for (let l = 1; l < n - 1; l++) {
+      chain[l].angle = this.lerpAngle(chain[l - 1].angle, seg[l], 0.5);
+    }
+    chain[n - 1].angle = seg[n - 1];
   }
 
   calculateSlideStartPosition(
@@ -269,7 +300,6 @@ export class SlideRenderer extends BaseRenderer {
             segmentProgress,
             isSimultaneous,
             this.context.config.normalColorBreakSlide,
-            metrics.segmentOffsets[i],
             i < segments.length - 1, // 非末段：末端是拼接拐点，需补 junction 箭头
           );
         }
@@ -299,11 +329,9 @@ export class SlideRenderer extends BaseRenderer {
     if (totalLength <= 0) return null;
 
     const segmentRanges = new Array<{ start: number; end: number }>(segments.length);
-    const segmentOffsets = new Array<number>(segments.length);
     let cumulative = 0;
     for (let i = 0; i < segments.length; i++) {
       const start = cumulative / totalLength;
-      segmentOffsets[i] = cumulative;
       cumulative += segmentLengths[i];
       segmentRanges[i] = { start, end: cumulative / totalLength };
     }
@@ -312,7 +340,6 @@ export class SlideRenderer extends BaseRenderer {
       radius,
       mirrorMode,
       segmentRanges,
-      segmentOffsets,
     };
     this.pathMetricsCache.set(segments, metrics);
     return metrics;
@@ -324,11 +351,8 @@ export class SlideRenderer extends BaseRenderer {
     progress: number = 0,
     isSimultaneous: boolean = false,
     normalBreakColor: boolean = false,
-    segmentOffset: number = 0,
     isJunctionEnd: boolean = false,
   ): boolean {
-    const mirroredType = this.mirrorPathType(segment.type);
-
     this.withContext(() => {
       const ctx = this.context.ctx;
       ctx.lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
@@ -349,19 +373,11 @@ export class SlideRenderer extends BaseRenderer {
         return;
       }
 
-      // 其他形状：prefab bar 位置 + drawSlideArrowsBatch（均匀箭头）。
+      // 其他形状：模板 bar 位置 + drawSlideArrowsBatch（均匀箭头）。无 chain（非法/退化段）不画箭头。
       const bars = this.getVisibleBarsForSegment(segment, progress, isJunctionEnd);
-      if (bars !== null) {
-        if (bars.length > 0) this.drawSlideArrowsBatch(bars);
-        return;
+      if (bars && bars.length > 0) {
+        this.drawSlideArrowsBatch(bars);
       }
-
-      if (
-        (mirroredType === "^" || mirroredType === "v") &&
-        Math.abs(this.mirrorPosition(segment.endPos) - this.mirrorPosition(segment.startPos)) === 4
-      )
-        return false;
-      this.renderSegmentPath(segment, progress, segmentOffset);
     });
 
     return true;
@@ -370,9 +386,9 @@ export class SlideRenderer extends BaseRenderer {
   /**
    * Wifi 渲染：每个 bar 是对称 chevron，corner 朝 endPos、两臂朝 startPos 方向张开。
    *
-   * - 11 个 corner 落在 pivot(startPos)→endPos 的 button 直线上，等距插值（prefab
+   * - 11 个 corner 落在 pivot(startPos)→endPos 的 button 直线上，等距插值（模板
    *   原始位置跟 button 直线有 ~0.7% 横向偏差，所以投影到直线再插值）。
-   * - `CHAIN_SCALE` 控制 chain 沿 fan 方向总长（>1 把 prefab 末端推向 endPos rim）。
+   * - `CHAIN_SCALE` 控制 chain 沿 fan 方向总长（>1 把 模板 末端推向 endPos rim）。
    * - 每个 chevron 两臂等长，bend 135°（每臂与 -x_fan 轴成 ±67.5°）。
    * - armLen = `cos(67.5°) · d_from_pivot`：精确反解能让 arm tip 正好落到从 startPos
    *   出发的 ±22.5° fan blade ray 上，所有 chevron 的 tip 在左右各自共线。
@@ -439,7 +455,7 @@ export class SlideRenderer extends BaseRenderer {
     if (segment.type === "w") return null;
     const chain = this.getBarChain(segment);
     if (!chain) return null;
-    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos)!;
+    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos, segment.midPos)!;
 
     // chunky 隐藏：areaStep[i] = 累积隐藏数量，floor 对齐分段时序。
     const steps = SLIDE_AREA_STEP_MAP[shape.shape];
@@ -448,13 +464,7 @@ export class SlideRenderer extends BaseRenderer {
         ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
         : 0;
 
-    // 箭头朝向默认用相邻 bar 的 ±1 切线（沿走向、紧贴曲线）。例外 v/s/z：穿心 V / S 在中心是
-    // 尖角，±1 跨过尖角会把两腿切线平均掉，改用每腿恒定的烘焙 r（chain[i].angle）；自回 v
-    // （1v1 起点==终点）烘焙 r 是常量会让回程箭头指反，故排除。pq 等 loop 烘焙 r 垂直走向，不用。
-    const useBakedAngle =
-      (segment.type === "v" && segment.startPos !== segment.endPos) ||
-      segment.type === "s" ||
-      segment.type === "z";
+    const usePrecomputedAngle = segment.type !== "-";
     const result: { x: number; y: number; angle: number }[] = [];
     const last = chain.length - 1;
 
@@ -469,14 +479,14 @@ export class SlideRenderer extends BaseRenderer {
       // 越界守卫：外推点越过 button ring（到圆心距离 > radius）就不补——末端已贴近 button 的
       // 形状（如 line4）外推会跑到拐点外。radius 镜像不变，对任意 mirror mode 都成立。
       if (this.distanceToCenter(jx, jy) <= this.context.radius) {
-        const angle = useBakedAngle ? a.angle : Math.atan2(a.y - b.y, a.x - b.x);
+        const angle = usePrecomputedAngle ? a.angle : Math.atan2(a.y - b.y, a.x - b.x);
         result.push({ x: jx, y: jy, angle });
       }
     }
 
     for (let i = last; i >= hiddenCount; i--) {
       let angle: number;
-      if (useBakedAngle) {
+      if (usePrecomputedAngle) {
         angle = chain[i].angle;
       } else {
         const lo = Math.max(0, i - 1);
@@ -486,38 +496,6 @@ export class SlideRenderer extends BaseRenderer {
       result.push({ x: chain[i].x, y: chain[i].y, angle });
     }
     return result;
-  }
-
-  private renderSegmentPath(
-    segment: SlideSegment,
-    progress: number,
-    segmentOffset: number = 0,
-  ): void {
-    const lut = this.getSegmentLut(segment);
-    const totalLength = lut[lut.length - 1].s;
-    if (totalLength <= 0) return;
-
-    const spacing = this.scaleByRadius(SLIDE_ARROW_SPACING_RATIO);
-
-    // 相位对齐：段在全局路径中的偏移模掉间距，让重合段的箭头位置一致
-    const phase = ((segmentOffset % spacing) + spacing) % spacing;
-
-    // 箭头数量需考虑 phase 偏移：phase + (N-0.5)*spacing ≤ totalLength
-    const arrowCount = Math.floor((totalLength - phase) / spacing + 0.5);
-    if (arrowCount <= 0) return;
-
-    const minS = progress * totalLength;
-    const arrows: { x: number; y: number; angle: number }[] = [];
-
-    for (let i = arrowCount - 1; i >= 0; i--) {
-      const s = phase + (i + 0.5) * spacing;
-      if (s > totalLength) continue;
-      if (s < minS) continue;
-      arrows.push(this.sampleArcLut(lut, s));
-    }
-
-    if (arrows.length === 0) return;
-    this.drawSlideArrowsBatch(arrows);
   }
 
   /**
@@ -633,6 +611,7 @@ export class SlideRenderer extends BaseRenderer {
     const arrowHeight = this.scaleByRadius(SLIDE_ARROW_HEIGHT_RATIO);
     const arrowWidth = this.scaleByRadius(SLIDE_ARROW_SPAN_RATIO);
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
+    const pad = this.scaleByRadius(SLIDE_ARROW_PADDING_RATIO);
     const outlineWidth = this.getNoteStrokeWidth();
     const mainStroke = ctx.strokeStyle;
     const isBreak =
@@ -651,13 +630,16 @@ export class SlideRenderer extends BaseRenderer {
     for (const arrow of arrows) {
       const cos = Math.cos(arrow.angle);
       const sin = Math.sin(arrow.angle);
+      // 沿走向前移 pad，使首颗不贴起始判定点
+      const ax = arrow.x + cos * pad;
+      const ay = arrow.y + sin * pad;
 
-      const x1 = arrow.x + cos * (-arrowWidth / 2) - sin * (-arrowHeight / 2);
-      const y1 = arrow.y + sin * (-arrowWidth / 2) + cos * (-arrowHeight / 2);
-      const x2 = arrow.x + cos * (arrowWidth / 2);
-      const y2 = arrow.y + sin * (arrowWidth / 2);
-      const x3 = arrow.x + cos * (-arrowWidth / 2) - sin * (arrowHeight / 2);
-      const y3 = arrow.y + sin * (-arrowWidth / 2) + cos * (arrowHeight / 2);
+      const x1 = ax + cos * (-arrowWidth / 2) - sin * (-arrowHeight / 2);
+      const y1 = ay + sin * (-arrowWidth / 2) + cos * (-arrowHeight / 2);
+      const x2 = ax + cos * (arrowWidth / 2);
+      const y2 = ay + sin * (arrowWidth / 2);
+      const x3 = ax + cos * (-arrowWidth / 2) - sin * (arrowHeight / 2);
+      const y3 = ay + sin * (-arrowWidth / 2) + cos * (arrowHeight / 2);
 
       const bp = this.getBisectorPoint(x1, y1, x2, y2, x3, y3, lineWidth);
       if (!bp) continue;
@@ -1202,11 +1184,10 @@ export class SlideRenderer extends BaseRenderer {
       totalLengthPixels += this.getSegmentLength(seg);
     }
 
-    // 归一化到标准 300 半径下的像素长度（与 spacing 常量同尺度）
-    const normalizedLength = totalLengthPixels * (300 / this.context.radius);
+    // 归一到按钮环半径 480 的标度。
+    const gameRingRadius = 480;
+    const normalizedLength = totalLengthPixels * (gameRingRadius / this.context.radius);
 
-    // 原始公式 (度/帧 @ 60FPS): NormalizedLength / π / TotalDurationMs × 15
-    // ÷ (1000/60) 转成度/ms。最大值上限 18 度/帧 = 1.08 度/ms。
     const rotationSpeedDegPerMs = (normalizedLength / Math.PI / durationMs) * 15 * 0.06;
     const MAX_ROTATION_DEG_PER_MS = 1.08;
     const cappedRotationDegPerMs = Math.min(rotationSpeedDegPerMs, MAX_ROTATION_DEG_PER_MS);
@@ -1229,20 +1210,13 @@ export class SlideRenderer extends BaseRenderer {
     ) {
       return segment.cachedLength;
     }
-    // 用 LUT 算长度，cachedLength 由 getSegmentLut 一并写入。
-    // 单一来源避免 50 采样长度估计与 64 采样 LUT 长度漂移。
+    // 长度取自 LUT（cachedLength 由 getSegmentLut 一并写入，单一来源避免漂移）。
     const lut = this.getSegmentLut(segment);
     return lut[lut.length - 1].s;
   }
 
   getPointOnSegment(segment: SlideSegment, t: number): Point2D {
-    const mirroredType = this.mirrorPathType(segment.type);
-    const mirroredStartPos = this.mirrorPosition(segment.startPos);
-    const mirroredEndPos = this.mirrorPosition(segment.endPos);
-
-    // star 头部沿 [startPos button, ...bars, endPos button] 这条 polyline 走：
-    // prefab bar 0/last 距 button rim 还有一小段距离，多段链转折时若直接用 chain
-    // 会在按钮处瞬移。箭头（chevron）渲染仍用纯 bars chain，bar 末端不到 rim 是预期。
+    // 星头路径补上首尾 button（bar 端点不到 rim，否则多段拼接在按钮处瞬移）；箭头仍用纯 bars。
     const chain = this.getBarChain(segment);
     if (chain && chain.length >= 2) {
       const start = this.noteRenderer.getPositionOnRing(segment.startPos);
@@ -1263,455 +1237,11 @@ export class SlideRenderer extends BaseRenderer {
     const start = this.noteRenderer.getPositionOnRing(segment.startPos);
     const end = this.noteRenderer.getPositionOnRing(segment.endPos);
 
-    switch (mirroredType) {
-      case "-":
-        return {
-          x: start.x + (end.x - start.x) * t,
-          y: start.y + (end.y - start.y) * t,
-        };
-
-      case ">":
-      case "<":
-      case "^": {
-        const startAngle = this.getButtonAngle(segment.startPos);
-        const endAngle = this.getButtonAngle(segment.endPos);
-        let angleDiff = endAngle - startAngle;
-
-        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-
-        if (mirroredType === ">") {
-          const isLeft = [1, 2, 7, 8].includes(segment.startPos);
-          if (isLeft ? angleDiff <= 0 : angleDiff >= 0) {
-            angleDiff += (isLeft ? 1 : -1) * 2 * Math.PI;
-          }
-        } else if (mirroredType === "<") {
-          const isLeft = [1, 2, 7, 8].includes(segment.startPos);
-          if (isLeft ? angleDiff >= 0 : angleDiff <= 0) {
-            angleDiff += (isLeft ? -1 : 1) * 2 * Math.PI;
-          }
-        }
-
-        const angle = startAngle + angleDiff * t;
-        return {
-          x: this.context.centerX + Math.cos(angle) * this.context.radius,
-          y: this.context.centerY + Math.sin(angle) * this.context.radius,
-        };
-      }
-
-      case "v":
-        if (Math.abs(mirroredEndPos - mirroredStartPos) === 4) {
-          return {
-            x: start.x + (end.x - start.x) * t,
-            y: start.y + (end.y - start.y) * t,
-          };
-        }
-        if (t < 0.5) {
-          const subT = t * 2;
-          return {
-            x: start.x + (this.context.centerX - start.x) * subT,
-            y: start.y + (this.context.centerY - start.y) * subT,
-          };
-        } else {
-          const subT = (t - 0.5) * 2;
-          return {
-            x: this.context.centerX + (end.x - this.context.centerX) * subT,
-            y: this.context.centerY + (end.y - this.context.centerY) * subT,
-          };
-        }
-
-      case "s": {
-        // S 曲线: start → ctrl1 → ctrl2 → end
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        const ux = dx / len;
-        const uy = dy / len;
-        const perpX = -uy;
-        const perpY = ux;
-        const offset = SLIDE_CURVE_OFFSET_RATIO * this.context.radius;
-
-        const ctrl1X = start.x + ux * len * 0.49 + perpX * offset;
-        const ctrl1Y = start.y + uy * len * 0.49 + perpY * offset;
-        const ctrl2X = start.x + ux * len * 0.51 - perpX * offset;
-        const ctrl2Y = start.y + uy * len * 0.51 - perpY * offset;
-
-        const len1 = Math.sqrt((ctrl1X - start.x) ** 2 + (ctrl1Y - start.y) ** 2);
-        const len2 = Math.sqrt((ctrl2X - ctrl1X) ** 2 + (ctrl2Y - ctrl1Y) ** 2);
-        const len3 = Math.sqrt((end.x - ctrl2X) ** 2 + (end.y - ctrl2Y) ** 2);
-        const total = len1 + len2 + len3;
-        const r1 = len1 / total;
-        const r2 = len2 / total;
-
-        if (t < r1) {
-          const subT = t / r1;
-          return { x: start.x + (ctrl1X - start.x) * subT, y: start.y + (ctrl1Y - start.y) * subT };
-        } else if (t < r1 + r2) {
-          const subT = (t - r1) / r2;
-          return { x: ctrl1X + (ctrl2X - ctrl1X) * subT, y: ctrl1Y + (ctrl2Y - ctrl1Y) * subT };
-        } else {
-          const subT = (t - r1 - r2) / (1 - r1 - r2);
-          return { x: ctrl2X + (end.x - ctrl2X) * subT, y: ctrl2Y + (end.y - ctrl2Y) * subT };
-        }
-      }
-
-      case "z": {
-        // Z 曲线: S 的反向
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        const ux = dx / len;
-        const uy = dy / len;
-        const perpX = -uy;
-        const perpY = ux;
-        const offset = SLIDE_CURVE_OFFSET_RATIO * this.context.radius;
-
-        // Z 路线: start → ctrl1 (右侧) → ctrl2 (左侧) → end
-        const ctrl1X = start.x + ux * len * 0.49 + perpX * offset;
-        const ctrl1Y = start.y + uy * len * 0.49 + perpY * offset;
-        const ctrl2X = start.x + ux * len * 0.51 - perpX * offset;
-        const ctrl2Y = start.y + uy * len * 0.51 - perpY * offset;
-
-        const len1 = Math.sqrt((ctrl2X - start.x) ** 2 + (ctrl2Y - start.y) ** 2);
-        const len2 = Math.sqrt((ctrl1X - ctrl2X) ** 2 + (ctrl1Y - ctrl2Y) ** 2);
-        const len3 = Math.sqrt((end.x - ctrl1X) ** 2 + (end.y - ctrl1Y) ** 2);
-        const total = len1 + len2 + len3;
-        const r1 = len1 / total;
-        const r2 = len2 / total;
-
-        if (t < r1) {
-          const subT = t / r1;
-          return { x: start.x + (ctrl2X - start.x) * subT, y: start.y + (ctrl2Y - start.y) * subT };
-        } else if (t < r1 + r2) {
-          const subT = (t - r1) / r2;
-          return { x: ctrl2X + (ctrl1X - ctrl2X) * subT, y: ctrl2Y + (ctrl1Y - ctrl2Y) * subT };
-        } else {
-          const subT = (t - r1 - r2) / (1 - r1 - r2);
-          return { x: ctrl1X + (end.x - ctrl1X) * subT, y: ctrl1Y + (end.y - ctrl1Y) * subT };
-        }
-      }
-
-      case "q":
-      case "qq": {
-        // 逆时针曲线
-        if (mirroredType === "qq") {
-          // 双曲线: entry → arc around offset circle → exit
-          const interPos = (((mirroredStartPos - 1 + 4) % 8) + 1) as ButtonPosition;
-          const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
-
-          // 入口点在 40% 处靠近中间
-          const entryX = start.x + 0.4 * (interPoint.x - start.x);
-          const entryY = start.y + 0.4 * (interPoint.y - start.y);
-
-          // 方向向量
-          const dirX = interPoint.x - start.x;
-          const dirY = interPoint.y - start.y;
-          const dirLen = Math.sqrt(dirX * dirX + dirY * dirY);
-          const unitX = dirX / dirLen;
-          const unitY = dirY / dirLen;
-
-          // 圆心 (q 的垂直偏移: -unitY, +unitX)
-          const circleRadius = 0.45 * this.context.radius;
-          const circleX = entryX + -unitY * circleRadius;
-          const circleY = entryY + unitX * circleRadius;
-
-          // 圆上的起始角度
-          const startAngle = Math.atan2(entryY - circleY, entryX - circleX);
-
-          // 根据镜像后的位置差计算扫掠角度
-          const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
-          let sweepAngle: number;
-          switch (posDiff) {
-            case 0:
-              sweepAngle = 1.25 * Math.PI;
-              break;
-            case 1:
-              sweepAngle = 1.5 * Math.PI;
-              break;
-            case 2:
-              sweepAngle = 1.625 * Math.PI;
-              break;
-            case 3:
-              sweepAngle = 1.875 * Math.PI;
-              break;
-            case 4:
-            default:
-              sweepAngle = 2 * Math.PI;
-              break;
-            case 5:
-              sweepAngle = 2.25 * Math.PI;
-              break;
-            case 6:
-              sweepAngle = 0.75 * Math.PI;
-              break;
-            case 7:
-              sweepAngle = 1.125 * Math.PI;
-              break;
-          }
-
-          const endAngle = startAngle + sweepAngle;
-          const arcLen = Math.abs(sweepAngle) * circleRadius;
-          const exitX = circleX + Math.cos(endAngle) * circleRadius;
-          const exitY = circleY + Math.sin(endAngle) * circleRadius;
-
-          const len1 = Math.sqrt((entryX - start.x) ** 2 + (entryY - start.y) ** 2);
-          const len3 = Math.sqrt((end.x - exitX) ** 2 + (end.y - exitY) ** 2);
-          const total = len1 + arcLen + len3;
-          const r1 = len1 / total;
-          const r2 = arcLen / total;
-
-          if (t < r1) {
-            const subT = t / r1;
-            return {
-              x: start.x + (entryX - start.x) * subT,
-              y: start.y + (entryY - start.y) * subT,
-            };
-          } else if (t < r1 + r2) {
-            const angle = startAngle + ((t - r1) / r2) * sweepAngle;
-            return {
-              x: circleX + Math.cos(angle) * circleRadius,
-              y: circleY + Math.sin(angle) * circleRadius,
-            };
-          } else {
-            const subT = (t - r1 - r2) / (1 - r1 - r2);
-            return { x: exitX + (end.x - exitX) * subT, y: exitY + (end.y - exitY) * subT };
-          }
-        } else {
-          // 单曲线: 围绕中心弧
-          const interPos = (((mirroredStartPos + 3 - 1) % 8) + 1) as ButtonPosition;
-          const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
-
-          // 起点和中间点之间的中点
-          const midX = (start.x + interPoint.x) / 2;
-          const midY = (start.y + interPoint.y) / 2;
-
-          const circleRadius = Math.sqrt(
-            (midX - this.context.centerX) ** 2 + (midY - this.context.centerY) ** 2,
-          );
-          const startAngle = Math.atan2(midY - this.context.centerY, midX - this.context.centerX);
-
-          // 根据镜像后的位置差计算扫掠角度
-          const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
-          let sweepAngle: number;
-          switch (posDiff) {
-            case 0:
-              sweepAngle = 1.25 * Math.PI;
-              break;
-            case 1:
-              sweepAngle = 1.5 * Math.PI;
-              break;
-            case 2:
-              sweepAngle = 1.75 * Math.PI;
-              break;
-            case 3:
-            default:
-              sweepAngle = 2 * Math.PI;
-              break;
-            case 4:
-              sweepAngle = 0.25 * Math.PI;
-              break;
-            case 5:
-              sweepAngle = 0.5 * Math.PI;
-              break;
-            case 6:
-              sweepAngle = 0.75 * Math.PI;
-              break;
-            case 7:
-              sweepAngle = Math.PI;
-              break;
-          }
-
-          const endAngle = startAngle + sweepAngle;
-          const arcLen = Math.abs(sweepAngle) * circleRadius;
-          const exitX = this.context.centerX + Math.cos(endAngle) * circleRadius;
-          const exitY = this.context.centerY + Math.sin(endAngle) * circleRadius;
-
-          const len1 = Math.sqrt((midX - start.x) ** 2 + (midY - start.y) ** 2);
-          const len3 = Math.sqrt((end.x - exitX) ** 2 + (end.y - exitY) ** 2);
-          const total = len1 + arcLen + len3;
-          const r1 = len1 / total;
-          const r2 = arcLen / total;
-
-          if (t < r1) {
-            const subT = t / r1;
-            return { x: start.x + (midX - start.x) * subT, y: start.y + (midY - start.y) * subT };
-          } else if (t < r1 + r2) {
-            const angle = startAngle + ((t - r1) / r2) * sweepAngle;
-            return {
-              x: this.context.centerX + Math.cos(angle) * circleRadius,
-              y: this.context.centerY + Math.sin(angle) * circleRadius,
-            };
-          } else {
-            const subT = (t - r1 - r2) / (1 - r1 - r2);
-            return { x: exitX + (end.x - exitX) * subT, y: exitY + (end.y - exitY) * subT };
-          }
-        }
-      }
-
-      case "p":
-      case "pp": {
-        // 顺时针曲线
-        if (mirroredType === "pp") {
-          // 双曲线: 入口 → 围绕偏移圆弧 → 退出
-          const interPos = (((mirroredStartPos - 1 + 4) % 8) + 1) as ButtonPosition;
-          const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
-
-          // 入口点在 40% 处靠近中间
-          const entryX = start.x + 0.4 * (interPoint.x - start.x);
-          const entryY = start.y + 0.4 * (interPoint.y - start.y);
-
-          // 方向向量
-          const dirX = interPoint.x - start.x;
-          const dirY = interPoint.y - start.y;
-          const dirLen = Math.sqrt(dirX * dirX + dirY * dirY);
-          const unitX = dirX / dirLen;
-          const unitY = dirY / dirLen;
-
-          // 圆心 (p 的垂直偏移: +unitY, -unitX)
-          const circleRadius = 0.45 * this.context.radius;
-          const circleX = entryX + unitY * circleRadius;
-          const circleY = entryY + -unitX * circleRadius;
-
-          // 圆上的起始角度
-          const startAngle = Math.atan2(entryY - circleY, entryX - circleX);
-
-          // 根据镜像后的位置差计算扫掠角度 (顺时针为负)
-          const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
-          let sweepAngle: number;
-          switch (posDiff) {
-            case 0:
-              sweepAngle = -1.25 * Math.PI;
-              break;
-            case 1:
-              sweepAngle = -1.125 * Math.PI;
-              break;
-            case 2:
-              sweepAngle = -0.75 * Math.PI;
-              break;
-            case 3:
-              sweepAngle = -2.25 * Math.PI;
-              break;
-            case 4:
-            default:
-              sweepAngle = -2 * Math.PI;
-              break;
-            case 5:
-              sweepAngle = -1.875 * Math.PI;
-              break;
-            case 6:
-              sweepAngle = -1.625 * Math.PI;
-              break;
-            case 7:
-              sweepAngle = -1.5 * Math.PI;
-              break;
-          }
-
-          const endAngle = startAngle + sweepAngle;
-          const arcLen = Math.abs(sweepAngle) * circleRadius;
-          const exitX = circleX + Math.cos(endAngle) * circleRadius;
-          const exitY = circleY + Math.sin(endAngle) * circleRadius;
-
-          const len1 = Math.sqrt((entryX - start.x) ** 2 + (entryY - start.y) ** 2);
-          const len3 = Math.sqrt((end.x - exitX) ** 2 + (end.y - exitY) ** 2);
-          const total = len1 + arcLen + len3;
-          const r1 = len1 / total;
-          const r2 = arcLen / total;
-
-          if (t < r1) {
-            const subT = t / r1;
-            return {
-              x: start.x + (entryX - start.x) * subT,
-              y: start.y + (entryY - start.y) * subT,
-            };
-          } else if (t < r1 + r2) {
-            const angle = startAngle + ((t - r1) / r2) * sweepAngle;
-            return {
-              x: circleX + Math.cos(angle) * circleRadius,
-              y: circleY + Math.sin(angle) * circleRadius,
-            };
-          } else {
-            const subT = (t - r1 - r2) / (1 - r1 - r2);
-            return { x: exitX + (end.x - exitX) * subT, y: exitY + (end.y - exitY) * subT };
-          }
-        } else {
-          // 单曲线: 围绕中心弧
-          const interPos = (((mirroredStartPos + 5 - 1) % 8) + 1) as ButtonPosition;
-          const interPoint = this.noteRenderer.getPositionOnRing(this.mirrorPosition(interPos)); // 传入原始位置
-
-          // 起点和中间点之间的中点
-          const midX = (start.x + interPoint.x) / 2;
-          const midY = (start.y + interPoint.y) / 2;
-
-          const circleRadius = Math.sqrt(
-            (midX - this.context.centerX) ** 2 + (midY - this.context.centerY) ** 2,
-          );
-          const startAngle = Math.atan2(midY - this.context.centerY, midX - this.context.centerX);
-
-          // 根据镜像后的位置差计算扫掠角度 (顺时针为负)
-          const posDiff = (mirroredEndPos - mirroredStartPos + 8) % 8;
-          let sweepAngle: number;
-          switch (posDiff) {
-            case 0:
-              sweepAngle = -1.25 * Math.PI;
-              break;
-            case 1:
-              sweepAngle = -Math.PI;
-              break;
-            case 2:
-              sweepAngle = -0.75 * Math.PI;
-              break;
-            case 3:
-              sweepAngle = -0.5 * Math.PI;
-              break;
-            case 4:
-              sweepAngle = -0.25 * Math.PI;
-              break;
-            case 5:
-            default:
-              sweepAngle = -2 * Math.PI;
-              break;
-            case 6:
-              sweepAngle = -1.75 * Math.PI;
-              break;
-            case 7:
-              sweepAngle = -1.5 * Math.PI;
-              break;
-          }
-
-          const endAngle = startAngle + sweepAngle;
-          const arcLen = Math.abs(sweepAngle) * circleRadius;
-          const exitX = this.context.centerX + Math.cos(endAngle) * circleRadius;
-          const exitY = this.context.centerY + Math.sin(endAngle) * circleRadius;
-
-          const len1 = Math.sqrt((midX - start.x) ** 2 + (midY - start.y) ** 2);
-          const len3 = Math.sqrt((end.x - exitX) ** 2 + (end.y - exitY) ** 2);
-          const total = len1 + arcLen + len3;
-          const r1 = len1 / total;
-          const r2 = arcLen / total;
-
-          if (t < r1) {
-            const subT = t / r1;
-            return { x: start.x + (midX - start.x) * subT, y: start.y + (midY - start.y) * subT };
-          } else if (t < r1 + r2) {
-            const angle = startAngle + ((t - r1) / r2) * sweepAngle;
-            return {
-              x: this.context.centerX + Math.cos(angle) * circleRadius,
-              y: this.context.centerY + Math.sin(angle) * circleRadius,
-            };
-          } else {
-            const subT = (t - r1 - r2) / (1 - r1 - r2);
-            return { x: exitX + (end.x - exitX) * subT, y: exitY + (end.y - exitY) * subT };
-          }
-        }
-      }
-
-      default:
-        // 对于未知类型，使用线性插值作为备用
-        return {
-          x: start.x + (end.x - start.x) * t,
-          y: start.y + (end.y - start.y) * t,
-        };
-    }
+    // 无 chain 段只可能是退化/非法输入（相邻直线、对位 v、非对位 thunder）——取起终直线兜底
+    return {
+      x: start.x + (end.x - start.x) * t,
+      y: start.y + (end.y - start.y) * t,
+    };
   }
 
   /**
@@ -1748,14 +1278,40 @@ export class SlideRenderer extends BaseRenderer {
   private getPathTangentAngle(progress: number, segments: SlideSegment[]): number {
     if (!segments || segments.length === 0) return 0;
 
-    // 用星头前后一小段的弦方向作朝向，对路径折线低通平滑，消除逐 cell 的方向/角速度跳变。
-    const win = 0.03;
-    const back = this.getPointAlongPath(Math.max(0, progress - win), segments);
-    const fwd = this.getPointAlongPath(Math.min(1, progress + win), segments);
-    const dx = fwd.x - back.x;
-    const dy = fwd.y - back.y;
-    if (dx === 0 && dy === 0) return 0;
-    return Math.atan2(dy, dx);
+    // 星头朝向：沿 [起按钮, …bars, 终按钮] 折线按弧长 LerpAngle 相邻锚点箭头角（与位置同参数化）。
+    let total = 0;
+    const zs: number[] = [];
+    const angles: number[] = [];
+    for (const seg of segments) {
+      const chain = this.getBarChain(seg);
+      if (!chain || chain.length === 0) continue;
+      const start = this.noteRenderer.getPositionOnRing(seg.startPos);
+      const end = this.noteRenderer.getPositionOnRing(seg.endPos);
+      const last = chain.length - 1;
+      const poly: { x: number; y: number; angle: number }[] = [
+        { x: start.x, y: start.y, angle: chain[0].angle },
+        ...chain,
+        { x: end.x, y: end.y, angle: chain[last].angle },
+      ];
+      let prev: { x: number; y: number } | null = null;
+      for (const p of poly) {
+        if (prev) total += Math.hypot(p.x - prev.x, p.y - prev.y);
+        zs.push(total);
+        angles.push(p.angle);
+        prev = p;
+      }
+    }
+    if (angles.length === 0) return 0;
+    if (angles.length === 1) return angles[0];
+
+    const target = Math.max(0, Math.min(1, progress)) * total;
+    for (let i = 0; i < zs.length - 1; i++) {
+      if (zs[i] <= target && target <= zs[i + 1]) {
+        const span = zs[i + 1] - zs[i];
+        return this.lerpAngle(angles[i], angles[i + 1], span > 0 ? (target - zs[i]) / span : 0);
+      }
+    }
+    return angles[angles.length - 1];
   }
 }
 
