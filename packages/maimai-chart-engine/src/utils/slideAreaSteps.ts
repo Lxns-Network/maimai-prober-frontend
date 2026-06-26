@@ -49,6 +49,7 @@ export function detectSlideShape(
   slideType: SlidePathType,
   startPos: ButtonPosition,
   endPos: ButtonPosition,
+  midPos?: ButtonPosition,
 ): SlideShape | null {
   const rel = relativeEnd(startPos, endPos);
 
@@ -105,6 +106,20 @@ export function detectSlideShape(
     case "z":
       if (rel !== 5) return null;
       return { shape: "s", mirror: true };
+
+    case "V": {
+      if (midPos === undefined) return null;
+      const leftCorner = (((startPos + 5) % 8) + 1) as ButtonPosition; // start-2
+      const rightCorner = (((startPos + 1) % 8) + 1) as ButtonPosition; // start+2
+      if (midPos === leftCorner && rel >= 2 && rel <= 5) {
+        return { shape: `L${rel}`, mirror: false };
+      }
+      const mirrorRel = ((8 - (rel - 1)) % 8) + 1; // 镜像侧相对距
+      if (midPos === rightCorner && mirrorRel >= 2 && mirrorRel <= 5) {
+        return { shape: `L${mirrorRel}`, mirror: true };
+      }
+      return null;
+    }
 
     case "w":
       return { shape: "wifi", mirror: false };

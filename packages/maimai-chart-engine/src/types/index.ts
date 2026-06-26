@@ -133,6 +133,8 @@ export interface SlideSegment {
   startPos: ButtonPosition;
   /** 结束按钮位置（1-8） */
   endPos: ButtonPosition;
+  /** V（大写折返）滑条的拐点按钮（仅 type==="V" 时存在），detectSlideShape 用它判 L/R 侧 */
+  midPos?: ButtonPosition;
   /** 缓存长度（懒计算） */
   cachedLength?: number;
   /** 缓存弧长 LUT（懒计算，star 头部按弧长定位） */
