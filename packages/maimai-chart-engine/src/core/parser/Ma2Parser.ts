@@ -95,7 +95,7 @@ function createSlideNote(params: {
   measure: number;
   positionInMeasure: number;
   bpm: number;
-  isStartBreak: boolean;
+  isBreak: boolean;
   isEx: boolean;
   isHeadless?: boolean;
 }): SlideNote {
@@ -110,7 +110,7 @@ function createSlideNote(params: {
     bpm: params.bpm,
     isHeadless: params.isHeadless,
     headlessMode: params.isHeadless ? "fade" : undefined,
-    isStartBreak: params.isStartBreak,
+    isBreak: params.isBreak,
     isEx: params.isEx,
     duration: 0,
     durationMs: 0,
@@ -253,11 +253,12 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
           position: pos,
           timing,
           timingMs: 0,
-          type: isBreak ? "break" : "tap",
+          type: "tap",
           measure: bar,
           positionInMeasure,
           scale: 1,
           bpm: initialBpm,
+          isBreak,
           isEx,
         };
         notes.push(tapNote);
@@ -281,7 +282,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
           duration,
           isHoldStart: true,
           isEx,
-          isBreakHold: isBreak,
+          isBreak,
         };
         notes.push(holdStart);
 
@@ -302,7 +303,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
           holdStartTiming: timing,
           isHoldEnd: true,
           isEx,
-          isBreakHold: isBreak,
+          isBreak,
         };
         notes.push(holdEnd);
       }
@@ -316,7 +317,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
           measure: bar,
           positionInMeasure,
           bpm: initialBpm,
-          isStartBreak: isBreak,
+          isBreak,
           isEx,
         });
         notes.push(slideNote);
@@ -432,10 +433,10 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
             if (parentSlide.allCustomLengths) {
               parentSlide.allCustomLengths.push(null);
             }
-            if (parentSlide.allSlideBreaks) {
-              parentSlide.allSlideBreaks.push(isBreak);
+            if (parentSlide.pathBreaks) {
+              parentSlide.pathBreaks.push(isBreak);
             } else {
-              parentSlide.allSlideBreaks = [isBreak];
+              parentSlide.pathBreaks = [isBreak];
             }
             parentSlide.isSplitSlide = (parentSlide.allSlideSegments?.length ?? 1) > 1;
           } else {
@@ -446,7 +447,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
               measure: bar,
               positionInMeasure,
               bpm: initialBpm,
-              isStartBreak: false,
+              isBreak: false,
               isEx,
               isHeadless: true,
             });
@@ -457,7 +458,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
             headlessSlide.delayMs = delay;
             headlessSlide.allDelayMs = [delay];
             headlessSlide.allCustomLengths = [null];
-            headlessSlide.allSlideBreaks = [isBreak];
+            headlessSlide.pathBreaks = [isBreak];
             notes.push(headlessSlide);
             slideNotesList.push(headlessSlide);
           }

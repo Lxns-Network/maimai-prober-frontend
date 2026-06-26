@@ -1,4 +1,4 @@
-import type { Note } from "@lxns-network/maimai-chart-engine";
+import { isBreakNote, isHoldEndNote, type Note } from "@lxns-network/maimai-chart-engine";
 import { match, P } from "ts-pattern";
 
 export type NoteCountKey = "tap" | "hold" | "slide" | "touch" | "break";
@@ -11,9 +11,10 @@ export type NoteCountData = Record<NoteCountKey, number> & {
 export const DEFAULT_BUCKET_DURATION_MS = 500;
 
 function classifyNote(note: Note): NoteCountKey | null {
+  if (isBreakNote(note) && !isHoldEndNote(note)) return "break";
+
   return match(note.type)
     .returnType<NoteCountKey | null>()
-    .with("break", () => "break")
     .with(P.union("tap", "simultaneous"), () => "tap")
     .with(P.union("hold-start", "hold-start-simultaneous"), () => "hold")
     .with("slide", () => "slide")

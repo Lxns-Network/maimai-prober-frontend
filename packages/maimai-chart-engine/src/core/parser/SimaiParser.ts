@@ -547,7 +547,7 @@ function parseNoteString(
     const position = parseInt(holdMatch[1]) as ButtonPosition;
     const holdDuration = parseHoldDuration(holdMatch[2], holdMatch[3], holdMatch[4], bpm);
     const lowerNoteStr = noteStr.toLowerCase();
-    const isBreakHold = lowerNoteStr.includes("b");
+    const isBreak = lowerNoteStr.includes("b");
     const isEx = lowerNoteStr.includes("x");
 
     if (position >= 1 && position <= 8) {
@@ -566,7 +566,7 @@ function parseNoteString(
         duration: holdDuration,
         isHoldStart: true,
         isEx,
-        isBreakHold,
+        isBreak,
         hasDelayMarker,
       };
       notes.push(holdStart);
@@ -589,7 +589,7 @@ function parseNoteString(
         holdStartTiming: timing,
         isHoldEnd: true,
         isEx,
-        isBreakHold,
+        isBreak,
       };
       notes.push(holdEnd);
 
@@ -616,7 +616,7 @@ function parseNoteString(
         () => "?" as const,
       )
       .otherwise(() => null);
-    const isStartBreak = startModifiers.includes("b");
+    const isBreak = startModifiers.includes("b");
     const isHeadless = headlessMarker !== null;
     const isEx = noteStr.toLowerCase().includes("x");
 
@@ -627,12 +627,12 @@ function parseNoteString(
     const allDurationMs: number[] = [];
     const allDelayMs: number[] = [];
     const allCustomLengths: (number | null)[] = [];
-    const allSlideBreaks: boolean[] = [];
+    const pathBreaks: boolean[] = [];
 
     for (const part of slideParts) {
       // 检查此路径是否有滑条中断
       const hasBreak = /[-><^vpqszVw]\d*b/i.test(part) || /\]b/i.test(part);
-      allSlideBreaks.push(hasBreak);
+      pathBreaks.push(hasBreak);
 
       // 检查此路径是否有多个段和节拍
       // 复杂路径有模式：-4[8:5]>3[384:47]-6[8:7]...
@@ -725,8 +725,8 @@ function parseNoteString(
           .with("?", () => "fade" as const)
           .with(null, () => undefined)
           .exhaustive(),
-        isStartBreak,
-        allSlideBreaks,
+        isBreak,
+        pathBreaks,
         isEx,
         duration: allDurations[0],
         durationMs: allDurationMs[0],
@@ -878,11 +878,12 @@ function parseNoteString(
         position: position as ButtonPosition,
         timing,
         timingMs: timingMs + delayOffset,
-        type: isBreak ? "break" : isSimultaneous ? "simultaneous" : "tap",
+        type: isSimultaneous ? "simultaneous" : "tap",
         measure,
         positionInMeasure,
         scale: 1,
         bpm,
+        isBreak,
         isStar,
         isSpinningStar,
         isEx,

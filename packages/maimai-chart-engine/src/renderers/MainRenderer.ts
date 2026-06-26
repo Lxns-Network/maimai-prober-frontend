@@ -22,6 +22,7 @@ import {
   isTouchNote,
   isTouchHoldStartNote,
   isButtonNote,
+  isBreakNote,
 } from "../types";
 import {
   BASE_APPROACH_TIME_MS,
@@ -559,16 +560,11 @@ export class MainRenderer {
     }
 
     for (const [, group] of byTiming) {
-      const tapCount = group.filter((n) => !isTapNote(n) || n.type !== "break").length;
-      const breakCount = group.filter(
-        (n) =>
-          n.type === "break" ||
-          (isSlideNote(n) && n.isStartBreak) ||
-          (isHoldStartNote(n) && n.isBreakHold),
-      ).length;
+      const tapCount = group.filter((n) => !isBreakNote(n)).length;
+      const breakCount = group.filter((n) => isBreakNote(n)).length;
       const slideCount = group.filter((n) => isSlideNote(n)).length;
       const nonTouchCount = group.filter(
-        (n) => !isTouchNote(n) && !isTouchHoldStartNote(n) && n.type !== "break",
+        (n) => !isTouchNote(n) && !isTouchHoldStartNote(n) && !isBreakNote(n),
       ).length;
 
       const touchByPos = new Map<string, number>();
@@ -595,13 +591,8 @@ export class MainRenderer {
 
   private assignBreakIndices(notes: Note[], noteMeta: WeakMap<Note, RenderNoteMeta>): void {
     const breakNotes = notes
-      .filter(
-        (n) =>
-          (n.type === "break" ||
-            (isSlideNote(n) && n.isStartBreak) ||
-            (isHoldStartNote(n) && n.isBreakHold)) &&
-          !(n as TapNote).isEx,
-      )
+      .filter((n) => isBreakNote(n) && !(n as TapNote).isEx)
+      .filter((n) => isBreakNote(n) && !isHoldEndNote(n) && !(n as TapNote).isEx)
       .sort((a, b) => a.timingMs - b.timingMs);
 
     let index = 1;
@@ -752,7 +743,7 @@ export class MainRenderer {
             timing.currentTimeMs,
           );
           const isSimultaneous = this.getNoteMeta(noteMeta, note).simultaneousNoteCount >= 2;
-          color = note.isBreakHold
+          color = isBreakNote(note)
             ? COLORS.BREAK_ORANGE
             : isSimultaneous
               ? COLORS.SIMULTANEOUS_GOLD
@@ -765,7 +756,7 @@ export class MainRenderer {
             timing.currentTimeMs,
           );
           const isSimultaneous = this.getNoteMeta(noteMeta, note).simultaneousNoteCount >= 2;
-          color = note.isStartBreak
+          color = isBreakNote(note)
             ? COLORS.BREAK_ORANGE
             : isSimultaneous
               ? COLORS.SIMULTANEOUS_GOLD
@@ -825,7 +816,8 @@ export class MainRenderer {
     const isSimultaneous = meta.simultaneousNoteCount >= 2;
 
     const ddrColor = this.config.ddrColorMode ? this.getDdrColor(hold.timing) : null;
-    const color = getGradientColors(ddrColor, hold.isBreakHold ?? false, isSimultaneous);
+    const isBreak = isBreakNote(hold);
+    const color = getGradientColors(ddrColor, isBreak, isSimultaneous);
 
     this.holdRenderer.renderHold(
       startPos,
@@ -836,14 +828,14 @@ export class MainRenderer {
       hold,
       holdEnd,
       timing.currentTimeMs,
-      hold.isBreakHold ?? false,
+      isBreak,
       isSimultaneous,
       this.exScale,
     );
 
     if (
       this.config.showBreakIndex &&
-      hold.isBreakHold &&
+      isBreak &&
       meta.noExBreakIndex &&
       !hold.isEx &&
       startPos.visible
@@ -898,7 +890,8 @@ export class MainRenderer {
     const meta = this.getNoteMeta(noteMeta, slide);
     const isSimultaneous = meta.simultaneousNoteCount >= 2;
     // 接近圈由 renderApproachIndicators 统一画（在底层），这里只画星星头。
-    const color = this.getStarHeadColor(slide.timing, slide.isStartBreak ?? false, isSimultaneous);
+    const isBreak = isBreakNote(slide);
+    const color = this.getStarHeadColor(slide.timing, isBreak, isSimultaneous);
 
     const rotation = this.config.slideRotation
       ? this.slideRenderer.calculateStarRotation(slide, currentTimeMs)
@@ -911,7 +904,7 @@ export class MainRenderer {
           pos.x,
           pos.y,
           noteSize,
-          slide.isStartBreak ?? false,
+          isBreak,
           isSimultaneous,
           this.exScale,
         );
@@ -925,12 +918,12 @@ export class MainRenderer {
         color,
         rotation,
         slide.isEx ?? false,
-        slide.isStartBreak ?? false,
+        isBreak,
         isSimultaneous,
       );
     }
 
-    if (this.config.showBreakIndex && slide.isStartBreak && meta.noExBreakIndex && !slide.isEx) {
+    if (this.config.showBreakIndex && isBreak && meta.noExBreakIndex && !slide.isEx) {
       this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, meta.noExBreakIndex);
     }
   }
@@ -1123,7 +1116,7 @@ export class MainRenderer {
         pos.y,
         pos.scale,
         tap.position,
-        tap.type === "break",
+        isBreakNote(tap),
         isSimultaneous,
         tap.isEx ?? false,
         tap.timing,
@@ -1131,13 +1124,13 @@ export class MainRenderer {
       );
     }
 
-    if (this.config.showBreakIndex && tap.type === "break" && meta.noExBreakIndex && !tap.isEx) {
+    if (this.config.showBreakIndex && isBreakNote(tap) && meta.noExBreakIndex && !tap.isEx) {
       this.noteRenderer.renderBreakIndex(pos.x, pos.y, pos.scale, meta.noExBreakIndex);
     }
   }
 
   private getTapApproachColor(tap: TapNote, isSimultaneous: boolean): string {
-    if (tap.type === "break") return COLORS.BREAK_ORANGE;
+    if (isBreakNote(tap)) return COLORS.BREAK_ORANGE;
     if (isSimultaneous) return COLORS.SIMULTANEOUS_GOLD;
     if (tap.isStar) return COLORS.SLIDE_CYAN;
     return COLORS.TAP_PINK;
@@ -1157,10 +1150,10 @@ export class MainRenderer {
       x,
       y,
       scale,
-      this.getStarHeadColor(tap.timing, tap.type === "break", isSimultaneous),
+      this.getStarHeadColor(tap.timing, isBreakNote(tap), isSimultaneous),
       rotation,
       tap.isEx ?? false,
-      tap.type === "break",
+      isBreakNote(tap),
       isSimultaneous,
     );
   }
@@ -1202,7 +1195,7 @@ export class MainRenderer {
         note.position as ButtonPosition,
         COLORS.HIT_EFFECT_GOLD,
         pos.progress,
-        note.type === "break" || (isTapNote(note) && note.isStar) ? "star" : "hexagon",
+        isBreakNote(note) || (isTapNote(note) && note.isStar) ? "star" : "hexagon",
       );
     }
   }
@@ -1263,57 +1256,26 @@ export class MainRenderer {
       }
     }
 
-    const drawHudMetric = ({
-      label,
-      value,
-      x,
-      y,
-      align,
-    }: {
-      label: string;
-      value: string;
-      x: number;
-      y: number;
-      align: "left" | "right";
-    }) => {
-      const gap = Math.round((4 * this.radius) / 300);
-      const font = `bold ${fontSize}px monospace`;
+    // BPM 标签与数值分体绘制，共享同一段彩虹渐变
+    this.ctx.font = `bold ${fontSize}px monospace`;
+    const labelWidth = this.ctx.measureText(bpmLabel).width;
+    const valueWidth = this.ctx.measureText(bpmValue).width;
+    const groupWidth = labelWidth + lineGap + valueWidth;
 
-      this.ctx.font = font;
-      const labelWidth = this.ctx.measureText(label).width;
-      const valueWidth = this.ctx.measureText(value).width;
-      const groupWidth = labelWidth + gap + valueWidth;
-      const startX = align === "right" ? x - groupWidth : x;
-
-      this.ctx.fillStyle = getHudFillStyle(startX, groupWidth);
-      this.ctx.textAlign = "left";
-      this.ctx.fillText(label, startX, y);
-      this.ctx.fillText(value, startX + labelWidth + gap, y);
-    };
-
-    const getHudFillStyle = (x: number, width: number): string | CanvasGradient => {
-      if (!this.config.rainbowBpm || !this.isRoundBpm(currentBpm)) {
-        return bpmColor;
-      }
-
+    if (this.config.rainbowBpm && this.isRoundBpm(currentBpm)) {
       const hue = ((Date.now() / 1000) * RAINBOW_SPEED_DEG_PER_SEC) % 360;
-      const gradient = this.ctx.createLinearGradient(x, 0, x + width, 0);
-
+      const gradient = this.ctx.createLinearGradient(padding, 0, padding + groupWidth, 0);
       for (let i = 0; i <= 6; i++) {
         const h = (hue + i * 51) % 360;
         gradient.addColorStop(i / 6, `hsl(${h}, 100%, 60%)`);
       }
-
-      return gradient;
-    };
-
-    drawHudMetric({
-      label: bpmLabel,
-      value: bpmValue,
-      x: padding,
-      y: padding,
-      align: "left",
-    });
+      this.ctx.fillStyle = gradient;
+    } else {
+      this.ctx.fillStyle = bpmColor;
+    }
+    this.ctx.textAlign = "left";
+    this.ctx.fillText(bpmLabel, padding, padding);
+    this.ctx.fillText(bpmValue, padding + labelWidth + lineGap, padding);
 
     // 位置信息：当前拍数 + 分音
     this.ctx.font = `bold ${smallFontSize}px sans-serif`;

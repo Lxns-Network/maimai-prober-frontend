@@ -6,6 +6,7 @@ import {
   ButtonPosition,
   NoteRenderPosition,
   SlideArcLutPoint,
+  isSlidePathBreak,
 } from "../types";
 import { NoteRenderer } from "./NoteRenderer";
 import {
@@ -247,7 +248,7 @@ export class SlideRenderer extends BaseRenderer {
       const isSimultaneous = hasSimultaneousSlide || (note.isSplitSlide ?? false);
 
       if (mode === "tracks") {
-        const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
+        const isBreak = isSlidePathBreak(note, pathIndex);
         const metrics = this.getSlidePathMetrics(segments);
         if (!metrics) return;
 
@@ -864,7 +865,7 @@ export class SlideRenderer extends BaseRenderer {
 
       let color: string;
       const isBreak =
-        note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
+        isSlidePathBreak(note, pathIndex) && !this.context.config.normalColorBreakSlide;
 
       if (isBreak) {
         color = COLORS.BREAK_ORANGE;
@@ -931,7 +932,7 @@ export class SlideRenderer extends BaseRenderer {
           this.context.ctx.globalAlpha = starAlpha;
           const size = this.context.radius * SLIDE_STAR_SIZE_RATIO * starScale;
           const isBreak =
-            note.allSlideBreaks?.[pathIndex] && !this.context.config.normalColorBreakSlide;
+            isSlidePathBreak(note, pathIndex) && !this.context.config.normalColorBreakSlide;
 
           let color: string;
           if (isBreak) {

@@ -8,6 +8,8 @@ import {
   isTapNote,
   isTouchNote,
   isTouchHoldStartNote,
+  isBreakNote,
+  isSlidePathBreak,
   type Chart,
   type MaimaiAchievementNoteCounts,
   type Note,
@@ -80,10 +82,10 @@ function buildChartStats(chart: Chart): ChartStats {
       noteCompletionTimes.push(note.timingMs);
     }
 
-    if (isTapNote(note) && note.type !== "break") {
+    if (isTapNote(note) && !isBreakNote(note)) {
       tapTimes.push(note.timingMs);
     }
-    if (isHoldStartNote(note)) {
+    if (isHoldStartNote(note) && !isBreakNote(note)) {
       holdTimes.push(note.timingMs);
     }
     if (isTouchNote(note) || isTouchHoldStartNote(note)) {
@@ -94,22 +96,19 @@ function buildChartStats(chart: Chart): ChartStats {
       const pathCount = note.allSlideSegments?.length ?? 1;
       for (let i = 0; i < pathCount; i++) {
         noteCompletionTimes.push(getSlidePathEndMs(note, i));
-        slideTimes.push(getSlidePathEndMs(note, i));
+        if (!isBreakNote(note) && !isSlidePathBreak(note, i)) {
+          slideTimes.push(getSlidePathEndMs(note, i));
+        }
       }
     }
 
-    const isBreak =
-      note.type === "break" ||
-      (isSlideNote(note) && note.isStartBreak) ||
-      (isHoldStartNote(note) && note.isBreakHold);
-
-    if (isBreak) {
+    if (isBreakNote(note) && !isHoldEndNote(note)) {
       breakCompletionTimes.push(note.timingMs);
     }
 
-    if (isSlideNote(note) && note.allSlideBreaks) {
-      for (let i = 0; i < note.allSlideBreaks.length; i++) {
-        if (note.allSlideBreaks[i]) {
+    if (isSlideNote(note) && note.pathBreaks) {
+      for (let i = 0; i < note.pathBreaks.length; i++) {
+        if (isSlidePathBreak(note, i)) {
           breakCompletionTimes.push(getSlidePathEndMs(note, i));
         }
       }
