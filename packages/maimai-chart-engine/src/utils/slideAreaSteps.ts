@@ -42,8 +42,9 @@ export interface SlideShape {
 }
 
 /**
- * simai 字符 + 起止按钮 → 形状模板名 + 是否镜像。
- * 返回 null 表示 slide 不合法（如 `1-2` 太近、`1v5` 穿心、`1^1` 同点）。
+ * simai 字符 + 起止按钮 → 形状模板名 + 是否镜像；V 折返还需传入 midPos 拐点。
+ * 返回 null 表示 slide 不合法（如 `1-2` 太近、`1v5` 穿心、`1^1` 同点，
+ * 或 V 缺 midPos / midPos 不在 start±2 / 长度越界）。
  */
 export function detectSlideShape(
   slideType: SlidePathType,
