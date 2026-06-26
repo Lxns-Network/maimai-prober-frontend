@@ -82,3 +82,19 @@
   opacity: 1;
   pointer-events: auto;
 }
+
+.fullscreenInfoPanel {
+  position: fixed;
+  top: 50%;
+  right: max(24px, calc((100vw - 100vmin - 496px) / 4));
+  transform: translateY(-50%);
+  z-index: 200;
+  max-width: calc(100vw - 48px);
+  pointer-events: none;
+}
+
+@media (max-width: 720px), (max-height: 520px) {
+  .fullscreenInfoPanel {
+    right: 18px;
+  }
+}

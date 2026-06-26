@@ -11,7 +11,6 @@ export type ChartExportRange = {
 type ExportChartGifOptions = {
   chart: Chart;
   range: ChartExportRange;
-  beatsPerMeasure: number;
   settings: Pick<
     GameSettingsState,
     | "hiSpeed"
@@ -89,7 +88,6 @@ function seekExportVideo(video: HTMLVideoElement, time: number): Promise<void> {
 export async function exportChartGif({
   chart,
   range,
-  beatsPerMeasure,
   settings,
   size = DEFAULT_EXPORT_SIZE,
   fps = DEFAULT_EXPORT_FPS,
@@ -149,7 +147,7 @@ export async function exportChartGif({
       }
     }
 
-    renderer.renderFrame(chart, currentBeats, beatsPerMeasure);
+    renderer.renderFrame(chart, currentBeats);
 
     const imageData = ctx.getImageData(0, 0, size, size);
     const palette = quantize(imageData.data, 256);

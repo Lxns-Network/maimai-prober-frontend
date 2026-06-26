@@ -62,6 +62,7 @@ import { NoteCountGraph } from "../NoteCountGraph";
 import { ChartDensityTimeline } from "../ChartDensityTimeline/ChartDensityTimeline";
 import { ExportRangeOverlay } from "../ExportRangeOverlay/ExportRangeOverlay";
 import { SimaiStatementList } from "../SimaiStatementList";
+import { ChartInfoPanel } from "../ChartInfoPanel";
 import { exportChartGif } from "../../utils/exportChartGif";
 import { useExportRange } from "../../hooks/useExportRange";
 import { getChartIdForFilename, downloadBlob } from "../../utils/fileDownload";
@@ -331,7 +332,6 @@ export function PlaybackControls({
       const blob = await exportChartGif({
         chart: chartData,
         range: exportRange,
-        beatsPerMeasure: timeline.beatsPerMeasure,
         settings,
         onProgress: setExportProgress,
         video,
@@ -1014,6 +1014,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
           </Stack>
         </Card>
       )}
+
+      <ChartInfoPanel />
 
       {debugChartFileType === "simai" && (
         <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />

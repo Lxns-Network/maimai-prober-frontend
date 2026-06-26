@@ -13,51 +13,16 @@ import {
 } from "@mantine/core";
 import { useState } from "react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
+import {
+  MAIMAI_ACHIEVEMENT_BASIC as basic,
+  MAIMAI_ACHIEVEMENT_BREAK_BONUS as break_bonus,
+  calculateMaimaiAchievementBaseTotal,
+  type MaimaiAchievementNoteType,
+} from "@lxns-network/maimai-chart-engine";
 import { useShallow } from "zustand/react/shallow";
 import { useWindowSize } from "react-use";
 
-type NotesType = "tap" | "hold" | "slide" | "touch" | "break";
-
-// 基础权重
-const basic = {
-  perfect: {
-    tap: 1,
-    hold: 2,
-    slide: 3,
-    touch: 1,
-    break: 5,
-  },
-  great: {
-    tap: 0.8,
-    hold: 1.6,
-    slide: 2.4,
-    touch: 0.8,
-    break: [4, 3, 2.5],
-  },
-  good: {
-    tap: 0.5,
-    hold: 1,
-    slide: 1.5,
-    touch: 0.5,
-    break: 2,
-  },
-  miss: {
-    tap: 0,
-    hold: 0,
-    slide: 0,
-    touch: 0,
-    break: 0,
-  },
-};
-
-// 绝赞权重
-const break_bonus = {
-  critical_perfect: 1,
-  perfect: [0.75, 0.5],
-  great: 0.4,
-  good: 0.3,
-  miss: 0,
-};
+type NotesType = MaimaiAchievementNoteType;
 
 const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
   const { width } = useWindowSize();
@@ -70,7 +35,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
       </Center>
     );
 
-  const total = notes.tap + notes.touch + 2 * notes.hold + 3 * notes.slide + 5 * notes.break;
+  const total = calculateMaimaiAchievementBaseTotal(notes);
 
   const rows = keys(notes).map((key) => {
     key = key as NotesType | "total";

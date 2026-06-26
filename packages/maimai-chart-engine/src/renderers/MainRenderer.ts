@@ -71,9 +71,6 @@ interface PreparedRenderNotes {
   approachGroups: ApproachIndicatorGroup[];
   layeredHeads: LayeredNote[];
   hitEffectNotes: Note[];
-  noteCompletionTimes: number[];
-  breakCompletionTimes: number[];
-  breakNoExCompletionTimes: number[];
 }
 
 interface RenderNoteMeta {
@@ -119,8 +116,6 @@ export class MainRenderer {
     slideRotation: false,
     judgmentLineDesign: "simple",
     showBpm: true,
-    showNoteTotal: true,
-    showBreakCount: true,
     showBreakIndex: false,
     rainbowBpm: false,
     ddrColorMode: false,
@@ -135,13 +130,6 @@ export class MainRenderer {
   private bpmChangeTime: number = 0;
   private bpmChangeType: "up" | "down" | null = null;
   private isPlaying: boolean = false;
-
-  private beatDisplayInfo: {
-    measure: number;
-    beat: number;
-    fraction: number;
-    divisor: number;
-  } | null = null;
 
   private noteRenderer!: NoteRenderer;
   private slideRenderer!: SlideRenderer;
@@ -171,9 +159,6 @@ export class MainRenderer {
     approachGroups: [],
     layeredHeads: [],
     hitEffectNotes: [],
-    noteCompletionTimes: [],
-    breakCompletionTimes: [],
-    breakNoExCompletionTimes: [],
   };
   private visibleTouchCountByPos = new Map<string, number>();
   private visibleApproachIndicators: VisibleApproachIndicator[] = [];
@@ -278,7 +263,7 @@ export class MainRenderer {
     }
   }
 
-  renderFrame(chart: Chart, currentBeats: number, beatsPerMeasure: number): void {
+  renderFrame(chart: Chart, currentBeats: number): void {
     const prepared = this.getPreparedRenderNotes(chart.notes);
     const timingTimeline = this.getTimingTimeline(chart);
     const timing: RenderFrameTiming = {
@@ -287,12 +272,7 @@ export class MainRenderer {
       currentBpm: timingTimeline.bpmAtBeat(currentBeats),
       divisor: timingTimeline.divisorAtBeat(currentBeats),
     };
-    const measure = Math.floor(currentBeats / beatsPerMeasure);
-    const beatInMeasure = currentBeats - measure * beatsPerMeasure;
-    const beat = Math.floor(beatInMeasure) + 1;
-    const fraction = beatInMeasure - Math.floor(beatInMeasure);
 
-    this.setBeatDisplayInfo(measure, beat, fraction, timing.divisor);
     this.clear();
     this.renderJudgmentLine();
     this.renderFireworks(prepared.fireworkTouches, timing);
@@ -324,10 +304,6 @@ export class MainRenderer {
 
   setIsPlaying(isPlaying: boolean): void {
     this.isPlaying = isPlaying;
-  }
-
-  setBeatDisplayInfo(measure: number, beat: number, fraction: number, divisor: number): void {
-    this.beatDisplayInfo = { measure, beat, fraction, divisor };
   }
 
   setHighlightExNotes(enabled: boolean): void {
@@ -504,11 +480,7 @@ export class MainRenderer {
 
   private renderNotes(prepared: PreparedRenderNotes, timing: RenderFrameTiming): void {
     if (this.config.showBpm) {
-      this.renderBpmDisplay(timing.currentBpm);
-    }
-
-    if (this.config.showNoteTotal || this.config.showBreakCount) {
-      this.renderNoteCounts(prepared, timing.currentTimeMs);
+      this.renderBpmDisplay(timing.currentBpm, timing.currentBeat, timing.divisor);
     }
 
     this.ctx.save();
@@ -665,9 +637,6 @@ export class MainRenderer {
     const holdEndMap = new Map<string, HoldEndNote>();
     const noteMeta = new WeakMap<Note, RenderNoteMeta>();
     const hitEffectNotes: Note[] = [];
-    const noteCompletionTimes: number[] = [];
-    const breakCompletionTimes: number[] = [];
-    const breakNoExCompletionTimes: number[] = [];
 
     for (let i = notes.length - 1; i >= 0; i--) {
       const note = notes[i];
@@ -687,55 +656,12 @@ export class MainRenderer {
     this.assignBreakIndices(notes, noteMeta);
 
     for (const note of notes) {
-      if (
-        isTapNote(note) ||
-        isHoldEndNote(note) ||
-        (isSlideNote(note) && !note.isHeadless) ||
-        isTouchNote(note) ||
-        note.type === "touch-hold-end"
-      ) {
-        noteCompletionTimes.push(note.timingMs);
-      }
-
       if (isHoldEndNote(note)) {
         holdEndMap.set(this.getHoldEndKey(note.position, note.holdStartTiming), note);
       }
 
       if ((isTouchNote(note) || isTouchHoldStartNote(note)) && note.hasFirework) {
         fireworkTouches.push(note);
-      }
-
-      if (isSlideNote(note)) {
-        const pathCount = note.allSlideSegments?.length ?? 1;
-
-        for (let i = 0; i < pathCount; i++) {
-          const pathDelayMs = note.allDelayMs?.[i] ?? note.delayMs ?? 0;
-          const pathDurationMs = note.allDurationMs?.[i] ?? note.durationMs ?? 0;
-          noteCompletionTimes.push(note.timingMs + pathDelayMs + pathDurationMs);
-        }
-      }
-
-      const isBreak =
-        note.type === "break" ||
-        (isSlideNote(note) && note.isStartBreak) ||
-        (isHoldStartNote(note) && note.isBreakHold);
-
-      if (isBreak) {
-        breakCompletionTimes.push(note.timingMs);
-
-        if (!(note as TapNote).isEx) {
-          breakNoExCompletionTimes.push(note.timingMs);
-        }
-      }
-
-      if (isSlideNote(note) && note.allSlideBreaks) {
-        for (let i = 0; i < note.allSlideBreaks.length; i++) {
-          if (note.allSlideBreaks[i]) {
-            const pathDelayMs = note.allDelayMs?.[i] ?? note.delayMs ?? 0;
-            const pathDurationMs = note.allDurationMs?.[i] ?? note.durationMs ?? 0;
-            breakCompletionTimes.push(note.timingMs + pathDelayMs + pathDurationMs);
-          }
-        }
       }
 
       if (
@@ -750,9 +676,6 @@ export class MainRenderer {
     }
 
     hitEffectNotes.sort((a, b) => a.timingMs - b.timingMs);
-    noteCompletionTimes.sort((a, b) => a - b);
-    breakCompletionTimes.sort((a, b) => a - b);
-    breakNoExCompletionTimes.sort((a, b) => a - b);
 
     // tap / hold / slide 星星头同层按 timingMs 降序（早到的后画/在上层，与 maimai noteSortOrder 一致）。
     // 在此预算一次（本函数被 notes 引用 memoize），渲染热路径直接迭代，省每帧的合并+排序+分配。
@@ -776,9 +699,6 @@ export class MainRenderer {
       approachGroups,
       layeredHeads,
       hitEffectNotes,
-      noteCompletionTimes,
-      breakCompletionTimes,
-      breakNoExCompletionTimes,
     };
   }
 
@@ -1287,7 +1207,7 @@ export class MainRenderer {
     }
   }
 
-  private renderBpmDisplay(currentBpm: number): void {
+  private renderBpmDisplay(currentBpm: number, currentBeat: number, divisor: number): void {
     const lastBpm = this.prevBpm;
 
     if (!this.isPlaying) {
@@ -1313,8 +1233,8 @@ export class MainRenderer {
     this.ctx.shadowOffsetX = (2 * this.radius) / 300;
     this.ctx.shadowOffsetY = (2 * this.radius) / 300;
 
-    this.ctx.font = `bold ${fontSize}px sans-serif`;
-    const bpmText = `BPM: ${Math.floor(currentBpm)}`;
+    const bpmLabel = "BPM:";
+    const bpmValue = String(Math.floor(currentBpm));
 
     let bpmColor: string | CanvasGradient = COLORS.WHITE;
     const timeSinceChange = Date.now() - this.bpmChangeTime;
@@ -1343,43 +1263,74 @@ export class MainRenderer {
       }
     }
 
-    if (this.config.rainbowBpm && this.isRoundBpm(currentBpm)) {
-      const bpmMetrics = this.ctx.measureText(bpmText);
+    const drawHudMetric = ({
+      label,
+      value,
+      x,
+      y,
+      align,
+    }: {
+      label: string;
+      value: string;
+      x: number;
+      y: number;
+      align: "left" | "right";
+    }) => {
+      const gap = Math.round((4 * this.radius) / 300);
+      const font = `bold ${fontSize}px monospace`;
+
+      this.ctx.font = font;
+      const labelWidth = this.ctx.measureText(label).width;
+      const valueWidth = this.ctx.measureText(value).width;
+      const groupWidth = labelWidth + gap + valueWidth;
+      const startX = align === "right" ? x - groupWidth : x;
+
+      this.ctx.fillStyle = getHudFillStyle(startX, groupWidth);
+      this.ctx.textAlign = "left";
+      this.ctx.fillText(label, startX, y);
+      this.ctx.fillText(value, startX + labelWidth + gap, y);
+    };
+
+    const getHudFillStyle = (x: number, width: number): string | CanvasGradient => {
+      if (!this.config.rainbowBpm || !this.isRoundBpm(currentBpm)) {
+        return bpmColor;
+      }
+
       const hue = ((Date.now() / 1000) * RAINBOW_SPEED_DEG_PER_SEC) % 360;
-      const gradient = this.ctx.createLinearGradient(padding, 0, padding + bpmMetrics.width, 0);
+      const gradient = this.ctx.createLinearGradient(x, 0, x + width, 0);
 
       for (let i = 0; i <= 6; i++) {
         const h = (hue + i * 51) % 360;
         gradient.addColorStop(i / 6, `hsl(${h}, 100%, 60%)`);
       }
-      this.ctx.fillStyle = gradient;
-    } else {
-      this.ctx.fillStyle = bpmColor;
-    }
 
-    this.ctx.fillText(bpmText, padding, padding);
+      return gradient;
+    };
 
-    let currentY = padding + fontSize + lineGap;
+    drawHudMetric({
+      label: bpmLabel,
+      value: bpmValue,
+      x: padding,
+      y: padding,
+      align: "left",
+    });
 
-    if (this.beatDisplayInfo) {
-      const { measure, beat, fraction, divisor } = this.beatDisplayInfo;
-
-      this.ctx.font = `bold ${smallFontSize}px sans-serif`;
-      this.ctx.fillStyle = "#94a3b8"; // slate-400
-
-      const fractionStr = Math.floor(fraction * 100)
-        .toString()
-        .padStart(2, "0");
-      const beatText = `${measure}:${beat}.${fractionStr} [1/${divisor}]`;
-      this.ctx.fillText(beatText, padding, currentY);
-      currentY += smallFontSize + lineGap * 2;
-    }
+    // 位置信息：当前拍数 + 分音
+    this.ctx.font = `bold ${smallFontSize}px sans-serif`;
+    this.ctx.fillStyle = "#94a3b8";
+    this.ctx.textAlign = "left";
+    this.ctx.fillText(
+      `${currentBeat.toFixed(2)} [1/${divisor}]`,
+      padding,
+      padding + fontSize + lineGap,
+    );
 
     if (this.fps > 0) {
       this.ctx.font = `bold ${smallFontSize}px sans-serif`;
       const fpsColor = this.fps >= 55 ? "#22c55e" : this.fps >= 30 ? "#eab308" : "#ef4444";
       this.ctx.fillStyle = fpsColor;
-      this.ctx.fillText(`FPS: ${this.fps}`, padding, currentY);
+      this.ctx.textAlign = "right";
+      this.ctx.fillText(`FPS: ${this.fps}`, this.logicalSize - padding, padding);
     }
 
     this.ctx.restore();
@@ -1388,78 +1339,6 @@ export class MainRenderer {
   private isRoundBpm(bpm: number): boolean {
     const rounded = Math.floor(bpm);
     return rounded > 0 && 3600 % rounded === 0;
-  }
-
-  private renderNoteCounts(prepared: PreparedRenderNotes, currentTimeMs: number): void {
-    const totalNotes = prepared.noteCompletionTimes.length;
-    const completedNotes = this.countCompleted(prepared.noteCompletionTimes, currentTimeMs);
-    const totalBreaks = prepared.breakCompletionTimes.length;
-    const completedBreaks = this.countCompleted(prepared.breakCompletionTimes, currentTimeMs);
-    const totalBreaksNoEx = prepared.breakNoExCompletionTimes.length;
-    const completedBreaksNoEx = this.countCompleted(
-      prepared.breakNoExCompletionTimes,
-      currentTimeMs,
-    );
-
-    const fontSize = Math.round((22 * this.radius) / 300);
-    const smallFontSize = Math.round((18 * this.radius) / 300);
-    const padding = Math.round((20 * this.radius) / 300);
-    const lineGap = Math.round((4 * this.radius) / 300);
-
-    this.ctx.save();
-    this.ctx.font = `bold ${fontSize}px sans-serif`;
-    // 纯偏移阴影代替 shadowBlur
-    this.ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
-    this.ctx.shadowOffsetX = (2 * this.radius) / 300;
-    this.ctx.shadowOffsetY = (2 * this.radius) / 300;
-
-    if (this.config.showNoteTotal) {
-      this.ctx.textAlign = "right";
-      this.ctx.textBaseline = "top";
-      this.ctx.fillStyle = COLORS.WHITE;
-      this.ctx.fillText(
-        `连击: ${completedNotes} / ${totalNotes}`,
-        this.logicalSize - padding,
-        padding,
-      );
-    }
-
-    if (this.config.showBreakCount) {
-      this.ctx.textAlign = "left";
-      this.ctx.textBaseline = "bottom";
-      this.ctx.font = `bold ${fontSize}px sans-serif`;
-      this.ctx.fillStyle = COLORS.BREAK_ORANGE;
-      this.ctx.fillText(
-        `BREAK: ${completedBreaks} / ${totalBreaks}`,
-        padding,
-        this.logicalSize - padding,
-      );
-
-      this.ctx.textAlign = "right";
-      this.ctx.font = `bold ${fontSize}px sans-serif`;
-      this.ctx.fillStyle = "#FFA500";
-      const bottomY = this.logicalSize - padding;
-      this.ctx.fillText(
-        `BREAK: ${completedBreaksNoEx} / ${totalBreaksNoEx}`,
-        this.logicalSize - padding,
-        bottomY,
-      );
-      this.ctx.font = `bold ${smallFontSize}px sans-serif`;
-      this.ctx.fillText("无保护", this.logicalSize - padding, bottomY - fontSize - lineGap);
-    }
-
-    this.ctx.restore();
-  }
-
-  private countCompleted(sortedTimes: number[], currentTimeMs: number): number {
-    let lo = 0;
-    let hi = sortedTimes.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (sortedTimes[mid] <= currentTimeMs) lo = mid + 1;
-      else hi = mid;
-    }
-    return lo;
   }
 
   private getHoldEndKey(position: ButtonPosition, holdStartTiming: number): string {

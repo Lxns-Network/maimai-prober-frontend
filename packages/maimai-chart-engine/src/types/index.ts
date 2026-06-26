@@ -400,10 +400,6 @@ export interface RendererConfig {
   judgmentLineDesign: JudgmentLineDesign;
   /** 是否显示当前 BPM */
   showBpm: boolean;
-  /** 是否显示 Note 总数 */
-  showNoteTotal: boolean;
-  /** 是否显示绝赞总数 */
-  showBreakCount: boolean;
   /** 是否显示当前绝赞位置 */
   showBreakIndex: boolean;
   /** 是否使用彩虹色显示当前 BPM */
