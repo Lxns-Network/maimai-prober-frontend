@@ -350,6 +350,7 @@ export function ChartInfoPanel({ fullscreen = false }: { fullscreen?: boolean })
     break: chartStats.breakCompletionTimes.length,
   };
   const achievement = calculateMaimaiAchievementProgress(completedCounts, totalCounts);
+  const dxScore = completedNotes * 3;
   const currentDensity = getBucketDensityPerSecond(
     getBucketAtMs(densityBuckets, currentMs),
     DEFAULT_BUCKET_DURATION_MS,
@@ -367,11 +368,16 @@ export function ChartInfoPanel({ fullscreen = false }: { fullscreen?: boolean })
         </div>
 
         <div className={classes.hudSection}>
+          <div className={`${classes.hudTitle} ${classes.hudTitleDxScore}`}>DX SCORE</div>
+          <div className={classes.hudDxValue}>{dxScore.toLocaleString()}</div>
+        </div>
+
+        <div className={classes.hudSection}>
           <div className={`${classes.hudTitle} ${classes.hudTitleCombo}`}>COMBO</div>
           <div className={classes.hudComboValue}>{completedNotes}</div>
         </div>
 
-        <div className={classes.hudSection}>
+        <div className={`${classes.hudSection} ${classes.hudSectionNoteCount}`}>
           <div className={`${classes.hudTitle} ${classes.hudTitleNoteCount}`}>NOTE COUNT</div>
           <div className={classes.hudNoteRows}>
             <FullscreenNoteRow label="TAP" completed={completedTaps} total={totalCounts.tap} />

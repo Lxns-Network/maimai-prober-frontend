@@ -84,6 +84,8 @@
 .hud {
   width: 248px;
   max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
   color: #f8fbff;
   font-family: var(--mantine-font-family);
   text-shadow:
@@ -109,6 +111,20 @@
 
 .hudTitleCombo {
   color: #ff4141;
+}
+
+.hudTitleDxScore {
+  color: #c084fc;
+}
+
+.hudDxValue {
+  margin-top: 6px;
+  color: #f8fbff;
+  font-family: var(--mantine-font-family);
+  font-size: 38px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  line-height: 0.95;
 }
 
 .hudTitleNoteCount {
@@ -211,6 +227,10 @@
     font-size: 13px;
   }
 
+  .hudDxValue {
+    font-size: 30px;
+  }
+
   .hudComboValue {
     font-size: 34px;
   }
@@ -231,5 +251,60 @@
 
   .hudNoteValue {
     font-size: 13px;
+  }
+}
+
+/* 竖屏：成绩+combo 左列，note count 右列 */
+@media (orientation: portrait) {
+  .hud {
+    width: 100%;
+    max-width: none;
+    display: grid;
+    grid-template-columns: max-content max-content;
+    column-gap: 32px;
+    justify-content: center;
+  }
+
+  .hudSection + .hudSection {
+    margin-top: 0;
+  }
+
+  .hudSection:not(.hudSectionNoteCount) + .hudSection:not(.hudSectionNoteCount) {
+    margin-top: 12px;
+  }
+
+  .hudSectionNoteCount {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+
+  .hudAchievementValue {
+    font-size: 26px;
+  }
+
+  .hudPercent {
+    font-size: 12px;
+  }
+
+  .hudDxValue {
+    font-size: 26px;
+  }
+
+  .hudComboValue {
+    font-size: 26px;
+  }
+
+  .hudNoteRows {
+    display: grid;
+    gap: 4px;
+  }
+
+  .hudNoteRow {
+    grid-template-columns: max-content max-content;
+    column-gap: 5px;
+  }
+
+  .hudNoteLabel {
+    font-size: 10px;
   }
 }
