@@ -58,6 +58,11 @@ export const SLIDE_STAR_WAITING_MIN_SCALE = 0.5;
 /** Wifi chevron 线宽比例 */
 export const SLIDE_WIFI_LINE_WIDTH_RATIO = 19.2 / 300;
 
+/** Wifi 11 颗 chevron 归一化位置分布，0→dFirst、1→dLast */
+export const SLIDE_WIFI_CORNER_FRACS = [
+  0, 0.094, 0.178, 0.266, 0.355, 0.462, 0.57, 0.674, 0.779, 0.884, 1,
+];
+
 /** 长条 Note 宽度比例 */
 export const HOLD_WIDTH_RATIO = 1.5;
 

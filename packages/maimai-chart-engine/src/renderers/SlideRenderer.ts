@@ -14,6 +14,7 @@ import {
   SLIDE_ARROW_SPAN_RATIO,
   SLIDE_ARROW_PADDING_RATIO,
   SLIDE_WIFI_LINE_WIDTH_RATIO,
+  SLIDE_WIFI_CORNER_FRACS,
   SLIDE_STAR_SIZE_RATIO,
   SLIDE_STAR_WAITING_MIN_SCALE,
   COLORS,
@@ -384,23 +385,14 @@ export class SlideRenderer extends BaseRenderer {
   }
 
   /**
-   * Wifi 渲染：每个 bar 是对称 chevron，corner 朝 endPos、两臂朝 startPos 方向张开。
-   *
-   * - 11 个 corner 落在 pivot(startPos)→endPos 的 button 直线上，等距插值（模板
-   *   原始位置跟 button 直线有 ~0.7% 横向偏差，所以投影到直线再插值）。
-   * - `CHAIN_SCALE` 控制 chain 沿 fan 方向总长（>1 把 模板 末端推向 endPos rim）。
-   * - 每个 chevron 两臂等长，bend 135°（每臂与 -x_fan 轴成 ±67.5°）。
-   * - armLen = `cos(67.5°) · d_from_pivot`：精确反解能让 arm tip 正好落到从 startPos
-   *   出发的 ±22.5° fan blade ray 上，所有 chevron 的 tip 在左右各自共线。
-   * - chunky：floor + `steps[i] + 1`（inclusive 隐藏），progress = 0 时全部可见。
+   * Wifi 渲染：N 个对称 chevron，corner 朝 endPos、两臂朝 startPos 方向张开。
    */
   private renderWifiBars(segment: SlideSegment, progress: number): void {
-    const chain = this.getBarChain(segment);
-    if (!chain || chain.length < 2) return;
-
     const steps = SLIDE_AREA_STEP_MAP["wifi"];
+    const N = steps[steps.length - 1]; // 箭头总数 = 11
+
     let hiddenCount = 0;
-    if (progress > 0 && steps && steps.length >= 2) {
+    if (progress > 0 && steps.length >= 2) {
       const i = Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)));
       hiddenCount = steps[i] + 1;
     }
@@ -408,19 +400,18 @@ export class SlideRenderer extends BaseRenderer {
     const pivot = this.noteRenderer.getPositionOnRing(segment.startPos);
     const endPivot = this.noteRenderer.getPositionOnRing(segment.endPos);
     const axisLen = Math.hypot(endPivot.x - pivot.x, endPivot.y - pivot.y);
+    if (axisLen === 0) return;
     const axisUx = (endPivot.x - pivot.x) / axisLen;
     const axisUy = (endPivot.y - pivot.y) / axisLen;
     const fanAngle = Math.atan2(axisUy, axisUx);
 
-    const CHAIN_SCALE = 1.15;
-    const N = chain.length;
-    const dFirst = Math.hypot(chain[0].x - pivot.x, chain[0].y - pivot.y) * CHAIN_SCALE;
-    const dLast = Math.hypot(chain[N - 1].x - pivot.x, chain[N - 1].y - pivot.y) * CHAIN_SCALE;
+    const ARM_HALF_ANGLE = (67.4 * Math.PI) / 180;
+    const cosA = Math.cos(ARM_HALF_ANGLE);
+    const sinA = Math.sin(ARM_HALF_ANGLE);
 
-    const ARM_HALF_ANGLE = ((135 / 2) * Math.PI) / 180; // 67.5°
-    const cosA = Math.cos(ARM_HALF_ANGLE); // ≈ 0.383
-    const sinA = Math.sin(ARM_HALF_ANGLE); // ≈ 0.924
-    const START_ARM_EXTRA = this.context.radius * 0.08;
+    const dFirst = 0.075 * axisLen;
+    const dLast = 0.975 * axisLen;
+    const startExtra = this.scaleByRadius(0.075);
 
     const chevrons: {
       x: number;
@@ -429,11 +420,13 @@ export class SlideRenderer extends BaseRenderer {
       arm1Dy: number;
       arm2Dx: number;
       arm2Dy: number;
+      width: number;
     }[] = [];
     for (let i = N - 1; i >= hiddenCount; i--) {
-      const d = dFirst + (dLast - dFirst) * (i / (N - 1));
-      const startRatio = 1 - i / (N - 1);
-      const armLen = cosA * d + START_ARM_EXTRA * startRatio;
+      const t = i / (N - 1);
+      const d = dFirst + (dLast - dFirst) * SLIDE_WIFI_CORNER_FRACS[i];
+      const armLen = cosA * d + startExtra * (1 - t);
+      const width = this.scaleByRadius(SLIDE_WIFI_LINE_WIDTH_RATIO * (0.7 + 0.3 * t));
       chevrons.push({
         x: pivot.x + axisUx * d,
         y: pivot.y + axisUy * d,
@@ -441,6 +434,7 @@ export class SlideRenderer extends BaseRenderer {
         arm1Dy: +armLen * sinA,
         arm2Dx: -armLen * cosA,
         arm2Dy: -armLen * sinA,
+        width,
       });
     }
     if (chevrons.length === 0) return;
@@ -700,12 +694,12 @@ export class SlideRenderer extends BaseRenderer {
       arm1Dy: number;
       arm2Dx: number;
       arm2Dy: number;
+      width: number;
     }[],
     fanAngle: number,
   ): void {
     if (chevrons.length === 0) return;
     const ctx = this.context.ctx;
-    const lineWidth = this.scaleByRadius(SLIDE_WIFI_LINE_WIDTH_RATIO);
     const shadowOffset = this.scaleByRadius(5 / 300);
     const mainStroke = ctx.strokeStyle;
     const cos = Math.cos(fanAngle);
@@ -765,7 +759,7 @@ export class SlideRenderer extends BaseRenderer {
     ctx.save();
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
-    ctx.globalAlpha = ctx.globalAlpha * 0.6;
+    ctx.globalAlpha = ctx.globalAlpha * 0.5;
 
     // 整片扇形拼成一个 Path2D，投影（整体偏移）和本体各填充一次。
     const fanPath = new Path2D();
@@ -774,7 +768,7 @@ export class SlideRenderer extends BaseRenderer {
       const a1y = c.y + sin * c.arm1Dx + cos * c.arm1Dy;
       const a2x = c.x + cos * c.arm2Dx - sin * c.arm2Dy;
       const a2y = c.y + sin * c.arm2Dx + cos * c.arm2Dy;
-      const shape = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, lineWidth);
+      const shape = buildChevronPath(c.x, c.y, a1x, a1y, a2x, a2y, c.width);
       if (shape) fanPath.addPath(shape);
     }
 
