@@ -102,10 +102,10 @@
 }
 
 @media (orientation: landscape) {
-  /* canvas と HUD を flex 兄弟として横並びにし、ひとまとめで視口中央へ配置。
-     position: fixed を解除して in-flow にすることで、両者が自然に隣接する。 */
+  /* 将 canvas 和 HUD 作为 flex 兄弟级元素横向排列，并作为一个整体在视口中央对齐。
+     解除 position: fixed，使其处于正常文档流中，从而自然相邻。 */
   .fullscreen {
-    gap: 12px;
+    gap: 24px;
   }
 
   .fullscreenInfoPanel {
