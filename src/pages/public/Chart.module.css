@@ -102,15 +102,16 @@
 }
 
 @media (orientation: landscape) {
-  .fullscreenInfoPanel {
-    right: max(24px, calc((100vw - 100vmin - 496px) / 4));
-    transform: translateY(-50%);
+  /* canvas と HUD を flex 兄弟として横並びにし、ひとまとめで視口中央へ配置。
+     position: fixed を解除して in-flow にすることで、両者が自然に隣接する。 */
+  .fullscreen {
+    gap: 12px;
   }
-}
 
-@media (orientation: landscape) and (max-width: 720px),
-  (orientation: landscape) and (max-height: 520px) {
   .fullscreenInfoPanel {
-    right: 18px;
+    position: static;
+    top: auto;
+    max-width: none;
+    transform: none;
   }
 }

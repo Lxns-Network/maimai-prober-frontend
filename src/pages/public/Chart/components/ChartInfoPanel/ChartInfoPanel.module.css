@@ -254,7 +254,59 @@
   }
 }
 
+/* 横屏 iPad（4:3 附近的屏幕）：横向余量较窄，缩小 HUD 确保不与 canvas 重叠。
+   min-height: 600px 排除手机（手机横屏高度 ≤ 520px 已由上方断点处理）；
+   max-aspect-ratio: 3/2 捕获 4:3 ≈ 1.33 和 iPad Pro 11" ≈ 1.43 等 iPad 屏幕。 */
+@media (orientation: landscape) and (min-height: 600px) and (max-aspect-ratio: 3 / 2) {
+  .hud {
+    width: 190px;
+  }
+
+  .hudSection + .hudSection {
+    margin-top: 12px;
+  }
+
+  .hudTitle {
+    font-size: 12px;
+  }
+
+  .hudAchievementValue {
+    font-size: 30px;
+  }
+
+  .hudPercent {
+    font-size: 13px;
+  }
+
+  .hudDxValue {
+    font-size: 30px;
+  }
+
+  .hudComboValue {
+    font-size: 34px;
+  }
+
+  .hudNoteRows {
+    gap: 6px;
+    margin-top: 9px;
+  }
+
+  .hudNoteRow {
+    grid-template-columns: 50px max-content;
+    column-gap: 7px;
+  }
+
+  .hudNoteLabel {
+    font-size: 10px;
+  }
+
+  .hudNoteValue {
+    font-size: 13px;
+  }
+}
+
 /* 竖屏：成绩+combo 左列，note count 右列 */
+
 @media (orientation: portrait) {
   .hud {
     width: 100%;
