@@ -71,6 +71,7 @@ import { formatDuration } from "../../utils/format";
 import { clamp } from "../../utils/math";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import { openConfirmModal } from "@/utils/modal";
+import { isIOSWebkit } from "@/utils/device";
 import classes from "./Controls.module.css";
 
 function getErrorMessage(error: unknown): string {
@@ -1015,7 +1016,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
         </Card>
       )}
 
-      <ChartInfoPanel />
+      {!isIOSWebkit() ? <ChartInfoPanel /> : null}
 
       {debugChartFileType === "simai" && (
         <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />

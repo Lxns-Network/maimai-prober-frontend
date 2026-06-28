@@ -126,14 +126,14 @@ function buildChartStats(chart: Chart): ChartStats {
 }
 
 function countCompleted(sortedTimes: readonly number[], currentTimeMs: number): number {
-  let lo = 0;
-  let hi = sortedTimes.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (sortedTimes[mid] <= currentTimeMs) lo = mid + 1;
-    else hi = mid;
+  let left = 0;
+  let right = sortedTimes.length;
+  while (left < right) {
+    const middle = (left + right) >> 1;
+    if (sortedTimes[middle] <= currentTimeMs) left = middle + 1;
+    else right = middle;
   }
-  return lo;
+  return left;
 }
 
 function formatNumber(value: number, digits: number = 2): string {

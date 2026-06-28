@@ -123,7 +123,7 @@ export class MainRenderer {
     ddrColorExtended: false,
     showFireworks: true,
     showHitEffect: true,
-    videoBrightness: "dark",
+    videoBrightness: "normal",
   };
 
   private fps: number = 0;

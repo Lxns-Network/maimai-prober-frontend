@@ -80,7 +80,7 @@ const initialState: GameSettingsState = {
   fullscreenQuality: "balanced",
   showVideo: false,
   videoServer: "https://maimai-video.lxns.net/",
-  videoBrightness: "dark",
+  videoBrightness: "normal",
 };
 
 export const useGameSettingsStore = create<GameSettingsStore>()(
