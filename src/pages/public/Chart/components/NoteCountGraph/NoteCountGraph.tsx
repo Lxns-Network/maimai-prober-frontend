@@ -267,6 +267,17 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     };
   }, [seekToPosition, setPreciseTime]);
 
+  // 小节按时间定位，变速谱才能跟 playhead 对齐。
+  const measurePercents = useMemo(() => {
+    if (!chartData || totalDurationMs <= 0 || maxMeasure <= 0) return [];
+    const arr: number[] = [];
+    for (let m = 0; m <= maxMeasure; m++) {
+      const timeMs = beatsToMs(m * beatsPerMeasure, chartData.bpmEvents, chartData.bpm);
+      arr.push((timeMs / totalDurationMs) * 100);
+    }
+    return arr;
+  }, [chartData, totalDurationMs, maxMeasure, beatsPerMeasure]);
+
   const measureMarkers = useMemo(() => {
     if (maxMeasure <= 0) return [];
 
@@ -280,11 +291,11 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     for (let m = 0; m <= maxMeasure; m += step) {
       markers.push({
         measure: m,
-        percent: (m / maxMeasure) * 100,
+        percent: measurePercents[m] ?? 0,
       });
     }
     return markers;
-  }, [maxMeasure]);
+  }, [maxMeasure, measurePercents]);
 
   if (!chartData || totalDurationMs <= 0) {
     return null;
@@ -326,7 +337,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
 
         <div className={classes.measureMarkerLines}>
           {Array.from({ length: maxMeasure + 1 }).map((_, m) => {
-            const percent = maxMeasure > 0 ? (m / maxMeasure) * 100 : 0;
+            const percent = measurePercents[m] ?? 0;
             const isMajor = m % 10 === 0;
             const isMedium = m % 5 === 0;
             return (

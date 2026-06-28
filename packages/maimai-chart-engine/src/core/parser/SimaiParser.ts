@@ -655,7 +655,7 @@ function parseNoteString(
 
         // 解析节拍：[a##b] 秒
         const secondsMatch = part.match(/\[([\d.]+)##([\d.]+)\]/);
-        // [#X] 单 #：整条 slide 持续 X 秒（与 MajdataView 行为一致）
+        // [#X] 单 #：整条 slide 持续 X 秒
         const secondsOnlyMatch = part.match(/\[#([\d.]+)\]/);
         if (secondsMatch) {
           customDelay = parseFloat(secondsMatch[1]);
@@ -950,22 +950,31 @@ function parseSlideSegmentsWithTiming(
       if (numStr.length >= 2) {
         const midPos = parseInt(numStr[0]) as ButtonPosition;
         const endPos = parseInt(numStr.substring(1)) as ButtonPosition;
+        const start = currentPos;
 
-        // V-滑条是两个直线段 - 平分持续时间
-        segments.push({
-          type: "-",
-          startPos: currentPos as ButtonPosition,
-          endPos: midPos,
-        });
-        segments.push({
-          type: "-",
-          startPos: midPos,
-          endPos: endPos,
-        });
+        const leftCorner = ((start + 5) % 8) + 1; // start-2
+        const rightCorner = ((start + 1) % 8) + 1; // start+2
+        const d = (((endPos - start) % 8) + 8) % 8;
+        const isStdV =
+          (midPos === leftCorner && d >= 1 && d <= 4) ||
+          (midPos === rightCorner && (8 - d) % 8 >= 1 && (8 - d) % 8 <= 4);
 
-        // V-滑条段的默认持续时间
-        segmentDurations.push(0.5, 0.5);
-        segmentDurationMs.push((60000 * 0.5) / defaultBpm, (60000 * 0.5) / defaultBpm);
+        if (isStdV) {
+          segments.push({
+            type: "V",
+            startPos: start as ButtonPosition,
+            endPos,
+            midPos,
+          });
+          segmentDurations.push(1);
+          segmentDurationMs.push(60000 / defaultBpm);
+        } else {
+          // 非标准 V-滑条，拆分为两段
+          segments.push({ type: "-", startPos: start as ButtonPosition, endPos: midPos });
+          segments.push({ type: "-", startPos: midPos, endPos });
+          segmentDurations.push(0.5, 0.5);
+          segmentDurationMs.push((60000 * 0.5) / defaultBpm, (60000 * 0.5) / defaultBpm);
+        }
 
         currentPos = endPos;
       }
@@ -993,7 +1002,7 @@ function parseSlideSegmentsWithTiming(
 
           // 检查秒数标记：a##b
           const secondsMatch = timingStr.match(/^([\d.]+)##([\d.]+)$/);
-          // [#X] 单 #：整条 slide 持续 X 秒（与 MajdataView 行为一致）
+          // [#X] 单 #：整条 slide 持续 X 秒
           const secondsOnlyMatch = timingStr.match(/^#([\d.]+)$/);
           if (secondsMatch) {
             // 延迟##持续时间（秒）

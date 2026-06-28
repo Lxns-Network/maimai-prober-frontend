@@ -42,13 +42,15 @@ export interface SlideShape {
 }
 
 /**
- * simai 字符 + 起止按钮 → 形状模板名 + 是否镜像。
- * 返回 null 表示 slide 不合法（如 `1-2` 太近、`1v5` 穿心、`1^1` 同点）。
+ * simai 字符 + 起止按钮 → 形状模板名 + 是否镜像；V 折返还需传入 midPos 拐点。
+ * 返回 null 表示 slide 不合法（如 `1-2` 太近、`1v5` 穿心、`1^1` 同点，
+ * 或 V 缺 midPos / midPos 不在 start±2 / 长度越界）。
  */
 export function detectSlideShape(
   slideType: SlidePathType,
   startPos: ButtonPosition,
   endPos: ButtonPosition,
+  midPos?: ButtonPosition,
 ): SlideShape | null {
   const rel = relativeEnd(startPos, endPos);
 
@@ -105,6 +107,20 @@ export function detectSlideShape(
     case "z":
       if (rel !== 5) return null;
       return { shape: "s", mirror: true };
+
+    case "V": {
+      if (midPos === undefined) return null;
+      const leftCorner = (((startPos + 5) % 8) + 1) as ButtonPosition; // start-2
+      const rightCorner = (((startPos + 1) % 8) + 1) as ButtonPosition; // start+2
+      if (midPos === leftCorner && rel >= 2 && rel <= 5) {
+        return { shape: `L${rel}`, mirror: false };
+      }
+      const mirrorRel = ((8 - (rel - 1)) % 8) + 1; // 镜像侧相对距
+      if (midPos === rightCorner && mirrorRel >= 2 && mirrorRel <= 5) {
+        return { shape: `L${mirrorRel}`, mirror: true };
+      }
+      return null;
+    }
 
     case "w":
       return { shape: "wifi", mirror: false };

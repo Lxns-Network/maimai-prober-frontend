@@ -1,4 +1,4 @@
-import { Point2D, RendererConfig, SlidePathType, TouchPosition, ButtonPosition } from "../types";
+import { Point2D, RendererConfig, TouchPosition, ButtonPosition } from "../types";
 import {
   BASE_ANGLE,
   BUTTON_ANGLE_OFFSET,
@@ -77,28 +77,6 @@ export abstract class BaseRenderer {
         return rotate180[position] as ButtonPosition;
       default:
         return position;
-    }
-  }
-
-  protected mirrorPathType(pathType: SlidePathType): SlidePathType {
-    const mode = this.context.config.mirrorMode;
-    if (mode === "none" || mode === "rotate180") return pathType;
-
-    switch (pathType) {
-      case ">":
-        return "<";
-      case "<":
-        return ">";
-      case "p":
-        return "q";
-      case "q":
-        return "p";
-      case "pp":
-        return "qq";
-      case "qq":
-        return "pp";
-      default:
-        return pathType;
     }
   }
 

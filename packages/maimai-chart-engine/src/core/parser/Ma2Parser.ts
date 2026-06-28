@@ -60,20 +60,11 @@ function createSlideSegments(
       return [{ type: isUpperHalf(startPos) ? ">" : "<", startPos, endPos }];
     case "SCL":
       return [{ type: isUpperHalf(startPos) ? "<" : ">", startPos, endPos }];
-    case "SLL": {
-      const midPos = offsetButtonPosition(startPos, -2);
-      return [
-        { type: "-", startPos, endPos: midPos },
-        { type: "-", startPos: midPos, endPos },
-      ];
-    }
-    case "SLR": {
-      const midPos = offsetButtonPosition(startPos, 2);
-      return [
-        { type: "-", startPos, endPos: midPos },
-        { type: "-", startPos: midPos, endPos },
-      ];
-    }
+    // grand-V：单段 V，拐点 start∓2，走 L 形模板
+    case "SLL":
+      return [{ type: "V", startPos, endPos, midPos: offsetButtonPosition(startPos, -2) }];
+    case "SLR":
+      return [{ type: "V", startPos, endPos, midPos: offsetButtonPosition(startPos, 2) }];
     default:
       return null;
   }
