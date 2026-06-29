@@ -591,7 +591,6 @@ export class MainRenderer {
 
   private assignBreakIndices(notes: Note[], noteMeta: WeakMap<Note, RenderNoteMeta>): void {
     const breakNotes = notes
-      .filter((n) => isBreakNote(n) && !(n as TapNote).isEx)
       .filter((n) => isBreakNote(n) && !isHoldEndNote(n) && !(n as TapNote).isEx)
       .sort((a, b) => a.timingMs - b.timingMs);
 
