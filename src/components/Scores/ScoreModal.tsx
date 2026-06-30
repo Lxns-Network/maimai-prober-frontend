@@ -40,6 +40,7 @@ import { Game } from "@/types/game";
 import { ScoreRanking } from "./ScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { ChartComment } from "./ChartComment.tsx";
+import { useScoreComments } from "@/hooks/queries/useScoreComments.ts";
 import { rankData, ScoreHistory } from "./ScoreHistory.tsx";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
@@ -107,7 +108,19 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
   const [minRank, setMinRank] = useState<string>("A");
 
-  const [commentCount, setCommentCount] = useState<number>(0);
+  // 评论数取自模态层查询，与折叠面板的展开状态解耦（Accordion 折叠时面板不挂载，无法回传数量）。
+  const isLoggedOut = !localStorage.getItem("token");
+  const { comments } = useScoreComments({
+    game,
+    params: !isLoggedOut
+      ? {
+          song_id: score ? `${score.id}` : "",
+          level_index: score ? `${score.level_index}` : "",
+          ...(score && "type" in score ? { song_type: score.type } : {}),
+        }
+      : undefined,
+  });
+  const commentCount = comments.length;
 
   const { songDetail } = useSongDetail(game, score?.id ?? null);
 
@@ -335,7 +348,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <ChartComment game={game} score={score} setCommentCount={setCommentCount} />
+                <ChartComment game={game} score={score} />
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="ranking">
