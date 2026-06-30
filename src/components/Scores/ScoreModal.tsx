@@ -41,6 +41,7 @@ import { ScoreRanking } from "./ScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { ChartComment } from "./ChartComment.tsx";
 import { useScoreComments } from "@/hooks/queries/useScoreComments.ts";
+import { isTokenUndefined } from "@/utils/session.ts";
 import { rankData, ScoreHistory } from "./ScoreHistory.tsx";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
@@ -108,8 +109,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
   const [minRank, setMinRank] = useState<string>("A");
 
-  // 评论数取自模态层查询，与折叠面板的展开状态解耦（Accordion 折叠时面板不挂载，无法回传数量）。
-  const isLoggedOut = !localStorage.getItem("token");
+  const isLoggedOut = isTokenUndefined();
   const { comments } = useScoreComments({
     game,
     params: !isLoggedOut
