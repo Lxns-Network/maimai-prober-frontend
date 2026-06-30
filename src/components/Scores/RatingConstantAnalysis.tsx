@@ -22,9 +22,14 @@ function truncate2(value: number): number {
   return Math.floor(value * 100) / 100;
 }
 
-function average(values: number[]): number {
+function truncate2Average(values: number[]): number {
   if (values.length === 0) return 0;
   return truncate2(values.reduce((acc, v) => acc + truncate2(v), 0) / values.length);
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((acc, v) => acc + truncate2(v), 0) / values.length;
 }
 
 function isMaimaiBests(bests: MaimaiBestsProps | ChunithmBestsProps): bests is MaimaiBestsProps {
@@ -75,7 +80,7 @@ export function RatingConstantAnalysis({
     });
     return {
       title,
-      avg: fmtRating(average(ratings)),
+      avg: fmtRating(truncate2Average(ratings)),
       total: maimai ? String(Math.round(totalRaw)) : truncate2(totalRaw).toFixed(2),
       rows: [buildRow("最高", max), buildRow("最低", min)],
     };
@@ -137,7 +142,7 @@ export function RatingConstantAnalysis({
     const b30avg = average((bests.bests ?? []).map((s) => s.rating));
     const n20avg = average((bests.new_bests ?? []).map((s) => s.rating));
     total = truncate2(
-      (b30avg * (bests.bests?.length ?? 0) + n20avg * (bests.new_bests?.length ?? 0)) / 50,
+      (b30avg * (30 / 50)) + (n20avg * (20 / 50))
     );
   }
 
