@@ -1,4 +1,12 @@
-import { CSSProperties, ReactNode, useEffect, useId, useState } from "react";
+import {
+  CSSProperties,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useState,
+} from "react";
 import {
   ActionIcon,
   Box,
@@ -88,6 +96,22 @@ export function VirtualizedCombobox<T>({
     },
     onSelectedOptionSubmit: submitByIndex,
   });
+
+  const openDropdown = useCallback(() => {
+    if (disabled || loading) return;
+    combobox.openDropdown();
+    combobox.updateSelectedOptionIndex();
+  }, [combobox, disabled, loading]);
+
+  useLayoutEffect(() => {
+    if (!opened || !scrollParent) return;
+    virtualizer.measure();
+  }, [opened, options.length, scrollParent, virtualizer]);
+
+  useEffect(() => {
+    if (!opened) return;
+    combobox.updateSelectedOptionIndex();
+  }, [combobox, opened, options.length, search]);
 
   useEffect(() => {
     if (!isMobile || !opened || !window.visualViewport) return;
@@ -306,11 +330,11 @@ export function VirtualizedCombobox<T>({
           disabled={disabled}
           loading={loading}
           onChange={(event) => {
-            combobox.openDropdown();
+            openDropdown();
             onSearchChange(event.currentTarget.value);
           }}
-          onClick={() => combobox.openDropdown()}
-          onFocus={() => combobox.openDropdown()}
+          onClick={openDropdown}
+          onFocus={openDropdown}
           onBlur={() => combobox.closeDropdown()}
         />
       </Combobox.Target>
