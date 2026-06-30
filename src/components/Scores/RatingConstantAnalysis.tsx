@@ -168,8 +168,8 @@ export function RatingConstantAnalysis({
     }
     const b30avg = average((bests.bests ?? []).map((s) => s.rating));
     const n20avg = average((bests.new_bests ?? []).map((s) => s.rating));
-    const b30count = +(bests.bests?.length ?? 0);
-    const n20count = +(bests.new_bests?.length ?? 0);
+    const b30count = +(bests.bests?.length ?? 30);
+    const n20count = +(bests.new_bests?.length ?? 20);
     const bestsCount = b30count + n20count;
     total = truncate2(
       b30avg * (b30count / bestsCount) + n20avg * (n20count / bestsCount),
