@@ -2,6 +2,10 @@
 
 ---
 
+## 2026/6/29
+
+- 玩家 Best 50 接口新增官方候选曲目（Selection 10）字段（[#57](https://github.com/Lxns-Network/maimai-prober-frontend/issues/57)）
+
 ## 2026/6/27
 
 - 舞萌 DX 谱面预览：
