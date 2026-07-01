@@ -166,10 +166,12 @@ export interface BaseNote {
   bpm: number;
   /** 此 Note 是否有延迟标记（simai 中的反引号） */
   hasDelayMarker?: boolean;
+  /** 是否为绝赞 Note */
+  isBreak?: boolean;
 }
 
 export interface TapNote extends BaseNote {
-  type: "tap" | "break" | "simultaneous";
+  type: "tap" | "simultaneous";
   position: ButtonPosition;
   /** 是否为星形 TAP（simai `$`） */
   isStar?: boolean;
@@ -186,10 +188,8 @@ export interface HoldStartNote extends BaseNote {
   duration: number;
   /** 是否为 Hold 开始 */
   isHoldStart: true;
-  /** 是否为绝赞 Note */
+  /** 是否有保护套 */
   isEx?: boolean;
-  /** 是否为绝赞 Hold */
-  isBreakHold?: boolean;
 }
 
 export interface HoldEndNote extends BaseNote {
@@ -201,8 +201,6 @@ export interface HoldEndNote extends BaseNote {
   isHoldEnd: true;
   /** 是否有保护套 */
   isEx?: boolean;
-  /** 是否为绝赞 Hold */
-  isBreakHold?: boolean;
 }
 
 export interface SlideNote extends BaseNote {
@@ -212,10 +210,8 @@ export interface SlideNote extends BaseNote {
   isHeadless?: boolean;
   /** 无头滑条 tracing star 显示方式：simai `?` 为 fade，`!` 为 pop */
   headlessMode?: "fade" | "pop";
-  /** 滑条起始 Note 是否为绝赞 */
-  isStartBreak?: boolean;
   /** 每个滑条路径是否为绝赞 */
-  allSlideBreaks?: boolean[];
+  pathBreaks?: boolean[];
   /** 是否有保护套 */
   isEx?: boolean;
   /** 持续时间（拍） */
@@ -402,10 +398,6 @@ export interface RendererConfig {
   judgmentLineDesign: JudgmentLineDesign;
   /** 是否显示当前 BPM */
   showBpm: boolean;
-  /** 是否显示 Note 总数 */
-  showNoteTotal: boolean;
-  /** 是否显示绝赞总数 */
-  showBreakCount: boolean;
   /** 是否显示当前绝赞位置 */
   showBreakIndex: boolean;
   /** 是否使用彩虹色显示当前 BPM */
@@ -418,6 +410,8 @@ export interface RendererConfig {
   showFireworks: boolean;
   /** 是否显示判定点打击特效（tap / hold 尾 / 星星头 / 绝赞） */
   showHitEffect: boolean;
+  /** 背景视频亮度：dark 最暗，normal 适中，bright 全亮 */
+  videoBrightness: "dark" | "normal" | "bright";
 }
 
 export interface AudioConfig {
@@ -434,7 +428,7 @@ export interface AudioConfig {
 }
 
 export function isTapNote(note: Note): note is TapNote {
-  return note.type === "tap" || note.type === "break" || note.type === "simultaneous";
+  return note.type === "tap" || note.type === "simultaneous";
 }
 
 export function isHoldStartNote(note: Note): note is HoldStartNote {
@@ -447,6 +441,14 @@ export function isHoldEndNote(note: Note): note is HoldEndNote {
 
 export function isSlideNote(note: Note): note is SlideNote {
   return note.type === "slide";
+}
+
+export function isBreakNote(note: Note): boolean {
+  return note.isBreak === true;
+}
+
+export function isSlidePathBreak(note: SlideNote, pathIndex: number): boolean {
+  return note.pathBreaks?.[pathIndex] === true;
 }
 
 export function isTouchNote(note: Note): note is TouchNote {
