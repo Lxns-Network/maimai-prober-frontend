@@ -1,20 +1,8 @@
-import {
-  Accordion,
-  Badge,
-  Center,
-  Group,
-  Image,
-  Paper,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { Accordion, Badge, Center, Group, Image, Paper, Stack, Text } from "@mantine/core";
 import { DataTable, DataTableColumn } from "mantine-datatable";
 import classes from "./RatingConstantAnalysis.module.css";
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
-import {
-  requiredChunithmConstant,
-  requiredMaimaiConstant,
-} from "@/utils/rating.ts";
+import { requiredChunithmConstant, requiredMaimaiConstant } from "@/utils/rating.ts";
 import { getDeluxeRatingGradient, getRatingGradient } from "@/utils/color.ts";
 
 interface AnalysisRow {
@@ -36,9 +24,7 @@ function truncate2(value: number): number {
 
 function truncate2Average(values: number[]): number {
   if (values.length === 0) return 0;
-  return truncate2(
-    values.reduce((acc, v) => acc + truncate2(v), 0) / values.length,
-  );
+  return truncate2(values.reduce((acc, v) => acc + truncate2(v), 0) / values.length);
 }
 
 function average(values: number[]): number {
@@ -46,9 +32,7 @@ function average(values: number[]): number {
   return values.reduce((acc, v) => acc + truncate2(v), 0) / values.length;
 }
 
-function isMaimaiBests(
-  bests: MaimaiBestsProps | ChunithmBestsProps,
-): bests is MaimaiBestsProps {
+function isMaimaiBests(bests: MaimaiBestsProps | ChunithmBestsProps): bests is MaimaiBestsProps {
   return "standard_total" in bests && "dx_total" in bests;
 }
 
@@ -75,22 +59,15 @@ export function RatingConstantAnalysis({
   const maimai = isMaimaiBests(bests);
   const ranks = maimai ? MAIMAI_RANKS : CHUNITHM_RANKS;
   const maxConstant = maimai ? 15 : 16;
-  const fmtRating = (r: number) =>
-    maimai ? String(Math.round(r)) : truncate2(r).toFixed(2);
+  const fmtRating = (r: number) => (maimai ? String(Math.round(r)) : truncate2(r).toFixed(2));
   const requiredFor = (rating: number, index: number) =>
     maimai
       ? requiredMaimaiConstant(rating, MAIMAI_RANKS[index].achievement)
       : requiredChunithmConstant(rating, CHUNITHM_RANKS[index].offset);
   const rankImage = (id: string) =>
-    maimai
-      ? `/assets/maimai/music_rank/${id}.webp`
-      : `/assets/chunithm/music_rank/${id}_s.webp`;
+    maimai ? `/assets/maimai/music_rank/${id}.webp` : `/assets/chunithm/music_rank/${id}_s.webp`;
 
-  const buildSegment = (
-    title: string,
-    ratings: number[],
-    totalRaw: number,
-  ): AnalysisSegment => {
+  const buildSegment = (title: string, ratings: number[], totalRaw: number): AnalysisSegment => {
     const max = ratings.length > 0 ? ratings[0] : 0;
     const min = ratings.length > 0 ? ratings[ratings.length - 1] : 0;
     const buildRow = (label: string, rating: number): AnalysisRow => ({
@@ -98,17 +75,13 @@ export function RatingConstantAnalysis({
       rating: fmtRating(rating),
       values: ranks.map((_, index) => {
         const required = requiredFor(rating, index);
-        return rating > 0 && required <= maxConstant
-          ? required.toFixed(1)
-          : "-";
+        return rating > 0 && required <= maxConstant ? required.toFixed(1) : "-";
       }),
     });
     return {
       title,
       avg: fmtRating(truncate2Average(ratings)),
-      total: maimai
-        ? String(Math.round(totalRaw))
-        : truncate2(totalRaw).toFixed(2),
+      total: maimai ? String(Math.round(totalRaw)) : truncate2(totalRaw).toFixed(2),
       rows: [buildRow("最高", max), buildRow("最低", min)],
     };
   };
@@ -171,9 +144,7 @@ export function RatingConstantAnalysis({
     const b30count = +(bests.bests?.length ?? 30);
     const n20count = +(bests.new_bests?.length ?? 20);
     const bestsCount = b30count + n20count;
-    total = truncate2(
-      b30avg * (b30count / bestsCount) + n20avg * (n20count / bestsCount),
-    );
+    total = truncate2(b30avg * (b30count / bestsCount) + n20avg * (n20count / bestsCount));
   }
 
   const columns: DataTableColumn<AnalysisRow>[] = [
@@ -188,21 +159,21 @@ export function RatingConstantAnalysis({
       ),
     },
     { accessor: "rating", title: "RATING", textAlign: "center" },
-    ...ranks.map((rank, index): DataTableColumn<AnalysisRow> => ({
-      accessor: `v${index}`,
-      title: (
-        <Center>
-          <Image src={rankImage(rank.id)} h={20} w="auto" alt={rank.id} />
-        </Center>
-      ),
-      textAlign: "center",
-      render: (row) => row.values[index],
-    })),
+    ...ranks.map(
+      (rank, index): DataTableColumn<AnalysisRow> => ({
+        accessor: `v${index}`,
+        title: (
+          <Center>
+            <Image src={rankImage(rank.id)} h={20} w="auto" alt={rank.id} />
+          </Center>
+        ),
+        textAlign: "center",
+        render: (row) => row.values[index],
+      }),
+    ),
   ];
 
-  const gradient = maimai
-    ? getDeluxeRatingGradient(total)
-    : getRatingGradient(total);
+  const gradient = maimai ? getDeluxeRatingGradient(total) : getRatingGradient(total);
 
   return (
     <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
@@ -226,9 +197,7 @@ export function RatingConstantAnalysis({
           <Accordion.Item
             key={segment.title}
             value={segment.title}
-            className={
-              index === segments.length - 1 ? classes.lastItem : undefined
-            }
+            className={index === segments.length - 1 ? classes.lastItem : undefined}
           >
             <Accordion.Control>
               <Group justify="space-between" wrap="nowrap" pr="md">
