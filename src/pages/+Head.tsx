@@ -1,5 +1,5 @@
 import { ColorSchemeScript } from "@mantine/core";
-import { UMAMI_SCRIPT_URL, UMAMI_WEBSITE_ID } from "../main.ts";
+import { UMAMI_SCRIPT_URL, UMAMI_WEBSITE_ID } from "@/main";
 
 const chunkRecoveryScript = `
 (function () {
