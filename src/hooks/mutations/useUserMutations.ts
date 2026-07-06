@@ -56,9 +56,11 @@ export const useLogoutUser = (options?: UseMutationOptions<unknown, Error, void>
   });
 };
 
-export const useEditUserPassword = (options?: UseMutationOptions<unknown, Error, object>) => {
+export const useEditUserPassword = (
+  options?: UseMutationOptions<{ token: string }, Error, object>,
+) => {
   return useMutation({
-    mutationFn: (data: object) => apiMutationFn(() => editUserPassword(data)),
+    mutationFn: (data: object) => apiMutationFn<{ token: string }>(() => editUserPassword(data)),
     ...options,
   });
 };
