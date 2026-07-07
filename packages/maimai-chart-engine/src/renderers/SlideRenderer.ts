@@ -7,7 +7,7 @@ import {
   NoteRenderPosition,
   SlideArcLutPoint,
 } from "../types";
-import { NoteRenderer } from "./NoteRenderer";
+import { NoteRenderer, INVISIBLE_NOTE_POSITION } from "./NoteRenderer";
 import {
   SLIDE_ARROW_WIDTH_RATIO,
   SLIDE_ARROW_HEIGHT_RATIO,
@@ -160,7 +160,7 @@ export class SlideRenderer extends BaseRenderer {
     const approachTime = this.getApproachTimeMs();
 
     if (timeDiff > approachTime || timeDiff < -NOTE_VISIBILITY_AFTER_MS) {
-      return { x: 0, y: 0, scale: 0, visible: false };
+      return INVISIBLE_NOTE_POSITION;
     }
 
     const halfApproach = approachTime / 2;
