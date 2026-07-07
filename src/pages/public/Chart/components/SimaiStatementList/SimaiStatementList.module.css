@@ -65,12 +65,29 @@
 }
 
 .chunks {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   row-gap: 0;
   column-gap: 4px;
   min-width: 0;
   flex: 1;
+}
+
+.chunkHighlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  border-radius: 3px;
+  background-color: light-dark(rgba(250, 176, 5, 0.55), rgba(255, 215, 0, 0.55));
+  pointer-events: none;
+  will-change: transform, width;
+  transition:
+    transform 90ms ease-out,
+    width 90ms ease-out,
+    height 90ms ease-out,
+    opacity 120ms ease;
 }
 
 .markerText {
@@ -83,6 +100,7 @@
 
 .chunk {
   position: relative;
+  z-index: 1;
   padding: 0;
   border-radius: 3px;
   cursor: pointer;
@@ -90,7 +108,8 @@
   overflow-wrap: anywhere;
   transition:
     background-color 120ms ease,
-    box-shadow 120ms ease;
+    box-shadow 120ms ease,
+    color 90ms ease-out;
 }
 
 .chunkEmpty {
@@ -111,7 +130,6 @@
 }
 
 .chunkActive {
-  background-color: light-dark(rgba(250, 176, 5, 0.55), rgba(255, 215, 0, 0.55));
   color: #000;
 }
 
