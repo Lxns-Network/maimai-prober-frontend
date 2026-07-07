@@ -32,7 +32,9 @@ import {
   COLORS,
   RAINBOW_SPEED_DEG_PER_SEC,
   NOTE_HIT_EFFECT_DURATION_MS,
+  NOTE_VISIBILITY_AFTER_MS,
 } from "../utils/constants";
+import { fireworkTriggerMs } from "./TouchRenderer";
 
 const MAX_DPR = 2;
 const FULLSCREEN_MIN_DPR = 1;
@@ -53,7 +55,82 @@ type ApproachIndicatorNote =
   | { kind: "slide"; note: SlideNote };
 
 interface ApproachIndicatorGroup {
+  timingMs: number;
   notes: ApproachIndicatorNote[];
+}
+
+interface TimeWindowIndex {
+  timingMs: number[];
+  prefixMaxEndMs: number[];
+}
+
+const EMPTY_TIME_WINDOW_INDEX: TimeWindowIndex = { timingMs: [], prefixMaxEndMs: [] };
+
+function buildTimeWindowIndex<T>(
+  items: readonly T[],
+  getTimingMs: (item: T) => number,
+  getEndMs: (item: T) => number,
+): TimeWindowIndex {
+  const n = items.length;
+  const timingMs = new Array<number>(n);
+  const prefixMaxEndMs = new Array<number>(n);
+  let maxEnd = -Infinity;
+  for (let i = 0; i < n; i++) {
+    timingMs[i] = getTimingMs(items[i]);
+    const end = getEndMs(items[i]);
+    if (end > maxEnd) maxEnd = end;
+    prefixMaxEndMs[i] = maxEnd;
+  }
+  return { timingMs, prefixMaxEndMs };
+}
+
+/** 返回可能可见的切片 [lo, hi)。 */
+function windowRange(index: TimeWindowIndex, nowMs: number, lookAheadMs: number): [number, number] {
+  const { timingMs, prefixMaxEndMs } = index;
+  const limit = nowMs + lookAheadMs;
+  let lo = 0;
+  let hi = timingMs.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (timingMs[mid] <= limit) lo = mid + 1;
+    else hi = mid;
+  }
+  const end = lo;
+  lo = 0;
+  hi = end;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (prefixMaxEndMs[mid] < nowMs) lo = mid + 1;
+    else hi = mid;
+  }
+  return [lo, end];
+}
+
+/** 滑条可见结束时间：所有路径中最晚的 timingMs + delay + duration。 */
+function slideVisibleEndMs(note: SlideNote): number {
+  const pathCount = note.allSlideSegments?.length ?? 1;
+  let end = note.timingMs;
+  for (let i = 0; i < pathCount; i++) {
+    const delayMs = note.allDelayMs?.[i] ?? note.delayMs ?? 60000 / note.bpm;
+    const durationMs = note.allDurationMs?.[i] ?? note.durationMs ?? 0;
+    const pathEnd = note.timingMs + delayMs + durationMs;
+    if (pathEnd > end) end = pathEnd;
+  }
+  return end;
+}
+
+/** hold 起点整个按住期间可见；tap / slide 星星头命中后仅 NOTE_VISIBILITY_AFTER_MS。 */
+function layeredHeadEndMs(item: LayeredNote): number {
+  if (item.kind === "hold") {
+    return item.note.timingMs + (60000 * item.note.duration) / item.note.bpm;
+  }
+  return item.note.timingMs + NOTE_VISIBILITY_AFTER_MS;
+}
+
+/** touch 命中后可见 50ms（renderTouch 同款窗口）；touch-hold 额外持续 durationMs。 */
+function touchVisibleEndMs(note: TouchNote | TouchHoldStartNote): number {
+  const holdMs = note.type === "touch-hold-start" ? note.durationMs : 0;
+  return note.timingMs + holdMs + 50;
 }
 
 interface VisibleApproachIndicator {
@@ -74,6 +151,10 @@ interface PreparedRenderNotes {
   noteCompletionTimes: number[];
   breakCompletionTimes: number[];
   breakNoExCompletionTimes: number[];
+  slideIndex: TimeWindowIndex;
+  touchIndex: TimeWindowIndex;
+  layeredIndex: TimeWindowIndex;
+  approachIndex: TimeWindowIndex;
 }
 
 interface RenderNoteMeta {
@@ -173,6 +254,10 @@ export class MainRenderer {
     noteCompletionTimes: [],
     breakCompletionTimes: [],
     breakNoExCompletionTimes: [],
+    slideIndex: EMPTY_TIME_WINDOW_INDEX,
+    touchIndex: EMPTY_TIME_WINDOW_INDEX,
+    layeredIndex: EMPTY_TIME_WINDOW_INDEX,
+    approachIndex: EMPTY_TIME_WINDOW_INDEX,
   };
   private visibleTouchCountByPos = new Map<string, number>();
   private visibleApproachIndicators: VisibleApproachIndicator[] = [];
@@ -503,40 +588,47 @@ export class MainRenderer {
     const { slides, touches, approachGroups, hitEffectNotes, layeredHeads, holdEndMap, noteMeta } =
       prepared;
 
-    for (const slide of slides) {
+    const nowMs = timing.currentTimeMs;
+    const lookAheadMs = BASE_APPROACH_TIME_MS / this.config.hiSpeed;
+
+    const [slideLo, slideHi] = windowRange(prepared.slideIndex, nowMs, lookAheadMs);
+    for (let i = slideHi - 1; i >= slideLo; i--) {
       this.slideRenderer.renderSlide(
-        slide,
+        slides[i],
         timing.currentBeat,
         timing.currentTimeMs,
         "tracks",
-        this.getNoteMeta(noteMeta, slide).simultaneousSlideCount >= 2,
+        this.getNoteMeta(noteMeta, slides[i]).simultaneousSlideCount >= 2,
       );
     }
 
-    for (const slide of slides) {
+    for (let i = slideHi - 1; i >= slideLo; i--) {
       this.slideRenderer.renderSlide(
-        slide,
+        slides[i],
         timing.currentBeat,
         timing.currentTimeMs,
         "stars",
-        this.getNoteMeta(noteMeta, slide).simultaneousSlideCount >= 2,
+        this.getNoteMeta(noteMeta, slides[i]).simultaneousSlideCount >= 2,
       );
     }
 
-    this.renderApproachIndicators(approachGroups, noteMeta, timing);
+    const [groupLo, groupHi] = windowRange(prepared.approachIndex, nowMs, lookAheadMs);
+    this.renderApproachIndicators(approachGroups, groupLo, groupHi, noteMeta, timing);
 
     // tap / hold / slide 星星头同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
-    this.renderLayeredHeads(layeredHeads, holdEndMap, noteMeta, timing);
+    const [headLo, headHi] = windowRange(prepared.layeredIndex, nowMs, lookAheadMs);
+    this.renderLayeredHeads(layeredHeads, headLo, headHi, holdEndMap, noteMeta, timing);
 
     // touch 最上层，覆盖普通 note。
-    this.renderTouchBorders(touches, noteMeta, timing.currentTimeMs);
+    const [touchLo, touchHi] = windowRange(prepared.touchIndex, nowMs, lookAheadMs);
+    this.renderTouchBorders(touches, touchLo, touchHi, noteMeta, timing.currentTimeMs);
 
-    for (const touch of touches) {
+    for (let i = touchHi - 1; i >= touchLo; i--) {
       this.touchRenderer.renderTouch(
-        touch,
+        touches[i],
         timing.currentBeat,
         timing.currentTimeMs,
-        this.getNoteMeta(noteMeta, touch).simultaneousNoteCount >= 2,
+        this.getNoteMeta(noteMeta, touches[i]).simultaneousNoteCount >= 2,
       );
     }
 
@@ -753,6 +845,16 @@ export class MainRenderer {
     layeredHeads.sort((a, b) => b.note.timingMs - a.note.timingMs);
     const approachGroups = this.prepareApproachGroups(holds, slides);
 
+    slides.sort((a, b) => b.timingMs - a.timingMs);
+    slides.reverse();
+    touches.sort((a, b) => b.timingMs - a.timingMs);
+    touches.reverse();
+    layeredHeads.reverse();
+    approachGroups.sort((a, b) => a.timingMs - b.timingMs);
+    fireworkTouches.sort((a, b) => fireworkTriggerMs(a) - fireworkTriggerMs(b));
+
+    const timingOf = (note: Note) => note.timingMs;
+
     return {
       slides,
       touches,
@@ -766,6 +868,18 @@ export class MainRenderer {
       noteCompletionTimes,
       breakCompletionTimes,
       breakNoExCompletionTimes,
+      slideIndex: buildTimeWindowIndex(slides, timingOf, slideVisibleEndMs),
+      touchIndex: buildTimeWindowIndex(touches, timingOf, touchVisibleEndMs),
+      layeredIndex: buildTimeWindowIndex(
+        layeredHeads,
+        (item) => item.note.timingMs,
+        layeredHeadEndMs,
+      ),
+      approachIndex: buildTimeWindowIndex(
+        approachGroups,
+        (group) => group.timingMs,
+        (group) => group.timingMs,
+      ),
     };
   }
 
@@ -791,19 +905,22 @@ export class MainRenderer {
 
     const groups: ApproachIndicatorGroup[] = [];
     for (const notes of byTiming.values()) {
-      groups.push({ notes });
+      groups.push({ timingMs: notes[0].note.timingMs, notes });
     }
     return groups;
   }
 
   private renderApproachIndicators(
     groups: readonly ApproachIndicatorGroup[],
+    groupLo: number,
+    groupHi: number,
     noteMeta: WeakMap<Note, RenderNoteMeta>,
     timing: RenderFrameTiming,
   ): void {
     const visible = this.visibleApproachIndicators;
 
-    for (const group of groups) {
+    for (let g = groupLo; g < groupHi; g++) {
+      const group = groups[g];
       visible.length = 0;
 
       for (const item of group.notes) {
@@ -926,6 +1043,8 @@ export class MainRenderer {
 
   private renderTouchBorders(
     touches: (TouchNote | TouchHoldStartNote)[],
+    touchLo: number,
+    touchHi: number,
     noteMeta: WeakMap<Note, RenderNoteMeta>,
     currentTimeMs: number,
   ): void {
@@ -933,7 +1052,8 @@ export class MainRenderer {
 
     const visibleByPos = this.visibleTouchCountByPos;
     visibleByPos.clear();
-    for (const touch of touches) {
+    for (let i = touchLo; i < touchHi; i++) {
+      const touch = touches[i];
       if (touch.type === "touch-hold-start") continue;
       const timeDiff = touch.timingMs - currentTimeMs;
       if (timeDiff <= approachTime && timeDiff >= -50) {
@@ -942,7 +1062,8 @@ export class MainRenderer {
       }
     }
 
-    for (const touch of touches) {
+    for (let i = touchHi - 1; i >= touchLo; i--) {
+      const touch = touches[i];
       const pos = this.touchRenderer.getTouchPosition(touch.position);
       const isSimultaneous = this.getNoteMeta(noteMeta, touch).simultaneousNoteCount >= 2;
       this.touchRenderer.renderTouchBorder(
@@ -1147,11 +1268,14 @@ export class MainRenderer {
   // 按 prepareRenderNotes 预排好的时间分层顺序（早到的 note 在上层）渲染 tap/hold/slideStart 星星头。
   private renderLayeredHeads(
     layered: LayeredNote[],
+    headLo: number,
+    headHi: number,
     holdEndMap: ReadonlyMap<string, HoldEndNote>,
     noteMeta: WeakMap<Note, RenderNoteMeta>,
     timing: RenderFrameTiming,
   ): void {
-    for (const item of layered) {
+    for (let i = headHi - 1; i >= headLo; i--) {
+      const item = layered[i];
       if (item.kind === "tap")
         this.renderSingleTap(item.note, noteMeta, timing.currentBeat, timing.currentTimeMs);
       else if (item.kind === "hold") this.renderSingleHold(item.note, holdEndMap, noteMeta, timing);

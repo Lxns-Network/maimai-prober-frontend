@@ -1,12 +1,17 @@
 import { useCallback, useMemo, useRef, useEffect } from "react";
+import { useElementSize } from "@mantine/hooks";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import classes from "./NoteCountGraph.module.css";
 import clsx from "clsx";
 import { match, P } from "ts-pattern";
 import { ChartDensityTimeline } from "../ChartDensityTimeline/ChartDensityTimeline";
+import { pickTimeMarkerInterval } from "../ChartDensityTimeline/timeMarkers";
 
-const TIME_MARKER_INTERVAL_MS = 30000;
+const TICK_STEPS = [1, 5, 10, 50, 100];
+const MIN_TICK_SPACING_PX = 2;
+const LABEL_STEPS = [5, 10, 20, 50, 100, 200, 500];
+const MIN_LABEL_SPACING_PX = 20;
 
 function getLabelTransform(percent: number): string {
   if (percent === 0) return "translateX(0)";
@@ -69,6 +74,7 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
       return;
     }
 
+    let lastBadgeMeasure = -1;
     const updatePlayhead = () => {
       const currentBeats = playbackTimeRef.current;
       const currentMs = beatsToMs(currentBeats, chartData.bpmEvents, chartData.bpm);
@@ -81,7 +87,8 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
       if (playheadLabelRef.current) {
         playheadLabelRef.current.style.transform = `translateX(calc(${percent}cqw - 50%))`;
         const badge = playheadLabelRef.current.firstElementChild;
-        if (badge) {
+        if (badge && measure !== lastBadgeMeasure) {
+          lastBadgeMeasure = measure;
           badge.textContent = String(measure);
         }
       }
@@ -278,14 +285,25 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     return arr;
   }, [chartData, totalDurationMs, maxMeasure, beatsPerMeasure]);
 
+  const { ref: rulerRef, width: rulerWidth } = useElementSize();
+
+  const tickStep = useMemo(() => {
+    for (const step of TICK_STEPS) {
+      if (maxMeasure > 0 && (rulerWidth * step) / maxMeasure >= MIN_TICK_SPACING_PX) return step;
+    }
+    return TICK_STEPS[TICK_STEPS.length - 1];
+  }, [maxMeasure, rulerWidth]);
+
   const measureMarkers = useMemo(() => {
     if (maxMeasure <= 0) return [];
 
-    let step = 10;
-    if (maxMeasure > 200) step = 20;
-    else if (maxMeasure > 100) step = 10;
-    else if (maxMeasure > 50) step = 5;
-    else step = 5;
+    let step = LABEL_STEPS[LABEL_STEPS.length - 1];
+    for (const candidate of LABEL_STEPS) {
+      if ((rulerWidth * candidate) / maxMeasure >= MIN_LABEL_SPACING_PX) {
+        step = candidate;
+        break;
+      }
+    }
 
     const markers: { measure: number; percent: number }[] = [];
     for (let m = 0; m <= maxMeasure; m += step) {
@@ -295,7 +313,9 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
       });
     }
     return markers;
-  }, [maxMeasure, measurePercents]);
+  }, [maxMeasure, measurePercents, rulerWidth]);
+
+  const timeMarkerIntervalMs = pickTimeMarkerInterval(totalDurationMs, rulerWidth);
 
   if (!chartData || totalDurationMs <= 0) {
     return null;
@@ -314,14 +334,14 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
         className={classes.graphArea}
       />
 
-      <div className={classes.measureRuler}>
+      <div ref={rulerRef} className={classes.measureRuler}>
         <div className={classes.measureTimeMarkerLines}>
           {(() => {
             if (totalDurationMs <= 0) return null;
             return Array.from({
-              length: Math.ceil(totalDurationMs / TIME_MARKER_INTERVAL_MS) + 1,
+              length: Math.ceil(totalDurationMs / timeMarkerIntervalMs) + 1,
             }).map((_, i) => {
-              const timeMs = i * TIME_MARKER_INTERVAL_MS;
+              const timeMs = i * timeMarkerIntervalMs;
               const percent = (timeMs / totalDurationMs) * 100;
               if (percent > 100 || percent === 0) return null;
               return (
@@ -337,6 +357,9 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
 
         <div className={classes.measureMarkerLines}>
           {Array.from({ length: maxMeasure + 1 }).map((_, m) => {
+            if (m % tickStep !== 0) {
+              return null;
+            }
             const percent = measurePercents[m] ?? 0;
             const isMajor = m % 10 === 0;
             const isMedium = m % 5 === 0;
@@ -352,7 +375,11 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
                       : classes.measureTickSmall,
                 )}
                 style={{
-                  left: `${percent}%`,
+                  // 1px 线钉到整数像素,避免小数位置抗锯齿导致虚实不一
+                  left:
+                    rulerWidth > 0
+                      ? `${Math.round((percent / 100) * rulerWidth)}px`
+                      : `${percent}%`,
                   height: match([isMajor, isMedium] as const)
                     .with([true, P._], () => "6px")
                     .with([false, true], () => "4px")

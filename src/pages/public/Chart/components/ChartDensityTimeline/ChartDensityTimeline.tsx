@@ -1,7 +1,9 @@
 import { useMemo, type CSSProperties } from "react";
+import { useElementSize } from "@mantine/hooks";
 import type { Note } from "@lxns-network/maimai-chart-engine";
 import clsx from "clsx";
 import { match, P } from "ts-pattern";
+import { pickTimeMarkerInterval } from "./timeMarkers";
 import classes from "./ChartDensityTimeline.module.css";
 
 type NoteCountKey = "tap" | "hold" | "slide" | "touch" | "break";
@@ -27,7 +29,9 @@ type ChartDensityTimelineProps = {
 
 const DEFAULT_BUCKET_DURATION_MS = 500;
 const DEFAULT_BAR_MAX_HEIGHT = 32;
-const TIME_MARKER_INTERVAL_MS = 30000;
+const MIN_BAR_WIDTH_PX = 2;
+const FALLBACK_MAX_BUCKETS = 600;
+const WIDTH_QUANTIZE_PX = 64;
 
 const NOTE_COLORS: Record<NoteCountKey, string> = {
   tap: "#FFD700",
@@ -115,15 +119,14 @@ function getMaxCount(buckets: NoteCountData[]): number {
   return max || 1;
 }
 
-function getTimeMarkers(windowStartMs: number, durationMs: number) {
+function getTimeMarkers(windowStartMs: number, durationMs: number, intervalMs: number) {
   if (durationMs <= 0) return [];
 
   const windowEndMs = windowStartMs + durationMs;
-  const firstMarkerMs =
-    Math.ceil(windowStartMs / TIME_MARKER_INTERVAL_MS) * TIME_MARKER_INTERVAL_MS;
+  const firstMarkerMs = Math.ceil(windowStartMs / intervalMs) * intervalMs;
   const markers: { timeMs: number; percent: number }[] = [];
 
-  for (let timeMs = firstMarkerMs; timeMs <= windowEndMs; timeMs += TIME_MARKER_INTERVAL_MS) {
+  for (let timeMs = firstMarkerMs; timeMs <= windowEndMs; timeMs += intervalMs) {
     const percent = ((timeMs - windowStartMs) / durationMs) * 100;
     if (percent < 0 || percent > 100) continue;
     markers.push({ timeMs, percent });
@@ -145,9 +148,18 @@ export function ChartDensityTimeline({
   className,
   style,
 }: ChartDensityTimelineProps) {
+  const { ref: rootRef, width: rootWidth } = useElementSize();
+  // 宽度量化,避免拖拽窗口时每像素都重算分桶。
+  const quantizedWidth = Math.ceil(rootWidth / WIDTH_QUANTIZE_PX) * WIDTH_QUANTIZE_PX;
+  const maxBuckets =
+    quantizedWidth > 0
+      ? Math.max(1, Math.floor(quantizedWidth / MIN_BAR_WIDTH_PX))
+      : FALLBACK_MAX_BUCKETS;
+  const effectiveBucketDurationMs = Math.max(bucketDurationMs, durationMs / maxBuckets);
+
   const buckets = useMemo(
-    () => calculateNoteCounts(notes, windowStartMs, durationMs, bucketDurationMs),
-    [notes, windowStartMs, durationMs, bucketDurationMs],
+    () => calculateNoteCounts(notes, windowStartMs, durationMs, effectiveBucketDurationMs),
+    [notes, windowStartMs, durationMs, effectiveBucketDurationMs],
   );
   const hasScaleOverride = scaleWindowStartMs !== undefined || scaleDurationMs !== undefined;
   const effectiveScaleWindowStartMs = scaleWindowStartMs ?? windowStartMs;
@@ -160,7 +172,7 @@ export function ChartDensityTimeline({
             notes,
             effectiveScaleWindowStartMs,
             effectiveScaleDurationMs,
-            bucketDurationMs,
+            effectiveBucketDurationMs,
           )
         : null,
     [
@@ -168,19 +180,19 @@ export function ChartDensityTimeline({
       notes,
       effectiveScaleWindowStartMs,
       effectiveScaleDurationMs,
-      bucketDurationMs,
+      effectiveBucketDurationMs,
     ],
   );
   const maxCount = useMemo(() => getMaxCount(scaleBuckets ?? buckets), [scaleBuckets, buckets]);
   const timeMarkers = useMemo(
-    () => getTimeMarkers(windowStartMs, durationMs),
-    [windowStartMs, durationMs],
+    () => getTimeMarkers(windowStartMs, durationMs, pickTimeMarkerInterval(durationMs, rootWidth)),
+    [windowStartMs, durationMs, rootWidth],
   );
 
   if (durationMs <= 0 || buckets.length === 0) return null;
 
   return (
-    <div className={clsx(classes.timeline, className)} style={style}>
+    <div ref={rootRef} className={clsx(classes.timeline, className)} style={style}>
       {showTimeMarkers && (
         <div className={classes.timeMarkerLines}>
           {timeMarkers.map(({ timeMs, percent }) => {
@@ -222,7 +234,7 @@ export function ChartDensityTimeline({
 
           const windowEndMs = windowStartMs + durationMs;
           const visibleStartMs = Math.max(bucket.startMs, windowStartMs);
-          const visibleEndMs = Math.min(bucket.startMs + bucketDurationMs, windowEndMs);
+          const visibleEndMs = Math.min(bucket.startMs + effectiveBucketDurationMs, windowEndMs);
           if (visibleEndMs <= visibleStartMs) {
             return null;
           }

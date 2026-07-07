@@ -11,6 +11,13 @@ import {
   NOTE_LIGHTEN_RATIO,
 } from "../utils/constants";
 
+export const INVISIBLE_NOTE_POSITION: NoteRenderPosition = Object.freeze({
+  x: 0,
+  y: 0,
+  scale: 0,
+  visible: false,
+});
+
 export class NoteRenderer extends BaseRenderer {
   constructor(context: RenderContext) {
     super(context);
@@ -55,7 +62,7 @@ export class NoteRenderer extends BaseRenderer {
       holdWindow = this.durationToMs(note.duration, note.bpm);
     }
     if (timeDiff > approachTime || timeDiff < -holdWindow) {
-      return { x: 0, y: 0, scale: 0, visible: false };
+      return INVISIBLE_NOTE_POSITION;
     }
 
     // approach 上半段：在中心位置淡入；下半段：朝判定线推进；命中后：hold 钉在

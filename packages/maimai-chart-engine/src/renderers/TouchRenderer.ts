@@ -15,6 +15,12 @@ import {
 } from "../utils/constants";
 
 const FIREWORK_DURATION_MS = 1333;
+
+// 烟花触发时刻
+export function fireworkTriggerMs(note: TouchNote | TouchHoldStartNote): number {
+  return note.type === "touch-hold-start" ? note.timingMs + note.durationMs : note.timingMs;
+}
+
 // 15 片 pastel wedge，颜色循环。
 const FIREWORK_PETAL_COLORS = [
   "#FFB3BA",
@@ -412,25 +418,22 @@ export class TouchRenderer extends BaseRenderer {
 
   /**
    * 触摸火花（`f` 标记）：单例，只渲染最近一次 hit 且在 1333ms 内的 touch。
-   * Touch hold 在 hold 结束时触发（timingMs + durationMs）。
+   * touches 须已按 hasFirework 过滤、并按 fireworkTriggerMs 升序，二分取最后一个已触发的烟花。
    */
   renderTouchFireworks(
     touches: ReadonlyArray<TouchNote | TouchHoldStartNote>,
     currentTimeMs: number,
   ): void {
-    let latestTriggerMs = -Infinity;
-    let latestNote: TouchNote | TouchHoldStartNote | null = null;
-    for (const t of touches) {
-      if (!t.hasFirework) continue;
-      const triggerMs = t.type === "touch-hold-start" ? t.timingMs + t.durationMs : t.timingMs;
-      if (triggerMs > currentTimeMs) continue;
-      if (currentTimeMs - triggerMs >= FIREWORK_DURATION_MS) continue;
-      if (triggerMs > latestTriggerMs) {
-        latestTriggerMs = triggerMs;
-        latestNote = t;
-      }
+    let lo = 0;
+    let hi = touches.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (fireworkTriggerMs(touches[mid]) <= currentTimeMs) lo = mid + 1;
+      else hi = mid;
     }
+    const latestNote = lo > 0 ? touches[lo - 1] : null;
     if (!latestNote) return;
+    if (currentTimeMs - fireworkTriggerMs(latestNote) >= FIREWORK_DURATION_MS) return;
     const position = this.getTouchPosition(latestNote.position);
 
     // 渲染到离屏 canvas 再 drawImage，让 destination-out 只擦 firework 自身。
@@ -438,7 +441,7 @@ export class TouchRenderer extends BaseRenderer {
     const { canvas: offCanvas, ctx: offCtx, logicalSize } = this.acquireFireworkOffscreen();
     this.context.ctx = offCtx;
     try {
-      this.drawFirework(position.x, position.y, currentTimeMs - latestTriggerMs);
+      this.drawFirework(position.x, position.y, currentTimeMs - fireworkTriggerMs(latestNote));
     } finally {
       this.context.ctx = mainCtx;
     }
