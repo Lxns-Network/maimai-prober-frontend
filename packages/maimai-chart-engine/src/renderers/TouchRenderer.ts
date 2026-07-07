@@ -418,7 +418,7 @@ export class TouchRenderer extends BaseRenderer {
 
   /**
    * 触摸火花（`f` 标记）：单例，只渲染最近一次 hit 且在 1333ms 内的 touch。
-   * touches 须按 fireworkTriggerMs 升序，二分取最后一个已触发的烟花。
+   * touches 须已按 hasFirework 过滤、并按 fireworkTriggerMs 升序，二分取最后一个已触发的烟花。
    */
   renderTouchFireworks(
     touches: ReadonlyArray<TouchNote | TouchHoldStartNote>,

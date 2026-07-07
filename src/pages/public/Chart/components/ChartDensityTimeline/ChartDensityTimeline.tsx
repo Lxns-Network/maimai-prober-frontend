@@ -3,6 +3,7 @@ import { useElementSize } from "@mantine/hooks";
 import type { Note } from "@lxns-network/maimai-chart-engine";
 import clsx from "clsx";
 import { match, P } from "ts-pattern";
+import { pickTimeMarkerInterval } from "./timeMarkers";
 import classes from "./ChartDensityTimeline.module.css";
 
 type NoteCountKey = "tap" | "hold" | "slide" | "touch" | "break";
@@ -28,8 +29,6 @@ type ChartDensityTimelineProps = {
 
 const DEFAULT_BUCKET_DURATION_MS = 500;
 const DEFAULT_BAR_MAX_HEIGHT = 32;
-const TIME_MARKER_INTERVALS_MS = [30000, 60000, 120000, 300000, 600000];
-const MIN_TIME_LABEL_SPACING_PX = 36;
 const MIN_BAR_WIDTH_PX = 2;
 const FALLBACK_MAX_BUCKETS = 600;
 const WIDTH_QUANTIZE_PX = 64;
@@ -118,17 +117,6 @@ function getMaxCount(buckets: NoteCountData[]): number {
     max = Math.max(max, bucket.total);
   }
   return max || 1;
-}
-
-// 取第一个标签间距不重叠的时间刻度间隔。
-export function pickTimeMarkerInterval(durationMs: number, widthPx: number): number {
-  for (const interval of TIME_MARKER_INTERVALS_MS) {
-    const count = durationMs / interval;
-    if (count <= 1 || (widthPx > 0 && widthPx / count >= MIN_TIME_LABEL_SPACING_PX)) {
-      return interval;
-    }
-  }
-  return TIME_MARKER_INTERVALS_MS[TIME_MARKER_INTERVALS_MS.length - 1];
 }
 
 function getTimeMarkers(windowStartMs: number, durationMs: number, intervalMs: number) {

@@ -5,10 +5,8 @@ import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import classes from "./NoteCountGraph.module.css";
 import clsx from "clsx";
 import { match, P } from "ts-pattern";
-import {
-  ChartDensityTimeline,
-  pickTimeMarkerInterval,
-} from "../ChartDensityTimeline/ChartDensityTimeline";
+import { ChartDensityTimeline } from "../ChartDensityTimeline/ChartDensityTimeline";
+import { pickTimeMarkerInterval } from "../ChartDensityTimeline/timeMarkers";
 
 const TICK_STEPS = [1, 5, 10, 50, 100];
 const MIN_TICK_SPACING_PX = 2;

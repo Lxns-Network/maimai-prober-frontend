@@ -178,7 +178,7 @@ const StatementRow = memo(function StatementRow({
     highlight.style.width = `${target.offsetWidth}px`;
     highlight.style.height = `${target.offsetHeight}px`;
     if (snap) {
-      void highlight.offsetWidth;
+      highlight.getBoundingClientRect();
       highlight.style.transition = "";
     }
   }, [isActive, activeChunkIdx]);
@@ -262,6 +262,12 @@ export function SimaiStatementList({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [expanded, setExpanded] = useState(false);
+
+  // 切换谱面/难度后回到未解析状态,收起时不为新谱面的解析买单。
+  useEffect(() => {
+    setEverExpanded(false);
+    setExpanded(false);
+  }, [simaiText, difficulty]);
 
   const rowVirtualizer = useVirtualizer({
     count: statements.length,
