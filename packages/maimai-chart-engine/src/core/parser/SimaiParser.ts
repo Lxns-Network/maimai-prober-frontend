@@ -165,10 +165,6 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
       metadata.availableDifficulties[currentInote as ChartDifficulty] = true;
     }
 
-    if (Number.isNaN(metadata.bpm)) {
-      throw new Error("Simai 文件缺少 bpm 元数据声明");
-    }
-
     // 确定要解析的难度
     let selectedDifficulty = difficulty;
     const availableDiffs = Object.keys(metadata.inotes)
@@ -205,12 +201,22 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
     const designerKey = `des_${selectedDifficulty}` as keyof ChartDesigners;
     const selectedDesigner = metadata.designers[designerKey] || metadata.designer;
 
+    // &bpm 元数据缺失时回退到谱面第一个内联 BPM 声明。
+    if (Number.isNaN(metadata.bpm)) {
+      const inlineBpm = chartBody.match(/\((\d+(?:\.\d+)?)\)/);
+      if (inlineBpm) metadata.bpm = parseFloat(inlineBpm[1]);
+    }
+
     // 解析谱面内容中的 Note
     const parseResult = parseNotes(chartBody, metadata.bpm);
     const notes = parseResult.notes;
     const bpmEvents = parseResult.bpmEvents;
     const divisorEvents = parseResult.divisorEvents;
     metadata.bpm = parseResult.firstBpm;
+
+    if (Number.isNaN(metadata.bpm)) {
+      throw new Error("Simai 文件缺少 BPM 声明（无 &bpm 元数据，谱面中也没有内联 BPM）");
+    }
 
     // 根据 Note 节拍计算总小节数
     let maxMeasure = 0;
@@ -300,6 +306,7 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
       notes,
       bpmEvents,
       divisorEvents,
+      firstMs: metadata.firstSec !== undefined ? metadata.firstSec * 1000 : undefined,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -348,6 +355,13 @@ function parseMetadataLine(line: string, metadata: ChartMetadata): void {
       }
       break;
     }
+    case "first": {
+      const firstVal = parseFloat(value);
+      if (!isNaN(firstVal)) {
+        metadata.firstSec = firstVal;
+      }
+      break;
+    }
   }
 }
 
@@ -361,6 +375,7 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   let divisor = 4; // 拍子数
   let currentBeat = 0; // 当前节拍
   let currentMs = 0; // 当前时间（毫秒）
+  let currentHiSpeed = 1; // 视觉流速倍率，<HS*x> 起持续生效
 
   let pos = 0;
 
@@ -375,57 +390,48 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
     skipWhitespace();
     if (pos >= chartBody.length) break;
 
-    const rest = chartBody.slice(pos);
-
-    // 检查 BPM 变化并带有拍子数：(bpm){divisor}
-    const bpmDivisorMatch = rest.match(/^\((\d+(?:\.\d+)?)\)\{(\d+(?:\.\d+)?)\}/);
-    if (bpmDivisorMatch) {
-      currentBpm = parseFloat(bpmDivisorMatch[1]);
-      if (firstBpm === null) firstBpm = currentBpm;
-      bpmEvents.push({ timing: currentBeat, bpm: currentBpm });
-      const newDivisor = parseFloat(bpmDivisorMatch[2]);
-      if (newDivisor !== divisor) {
-        divisor = newDivisor;
-        divisorEvents.push({ timing: currentBeat, divisor });
-      }
-      pos += bpmDivisorMatch[0].length;
-      continue;
-    }
-
-    // 检查 BPM 变化：(bpm)
-    const bpmMatch = rest.match(/^\((\d+(?:\.\d+)?)\)/);
-    if (bpmMatch) {
-      currentBpm = parseFloat(bpmMatch[1]);
-      if (firstBpm === null) firstBpm = currentBpm;
-      bpmEvents.push({ timing: currentBeat, bpm: currentBpm });
-      pos += bpmMatch[0].length;
-      continue;
-    }
-
-    // 检查拍子数变化：{divisor}
-    const divisorMatch = rest.match(/^\{(\d+(?:\.\d+)?)\}/);
-    if (divisorMatch) {
-      const newDivisor = parseFloat(divisorMatch[1]);
-      if (newDivisor !== divisor) {
-        divisor = newDivisor;
-        divisorEvents.push({ timing: currentBeat, divisor });
-      }
-      pos += divisorMatch[0].length;
-      continue;
-    }
-
-    // 收集内容直到下一个逗号
+    // 收集整个槽位内容直到逗号。(bpm) / {divisor} / <HS*x> 是状态标记，
+    // 就地消费且不切分槽位——只有逗号才推进时间，与 simai 语义一致。
     let noteContent = "";
     const startPos = pos;
 
     while (pos < chartBody.length && chartBody[pos] !== ",") {
       const char = chartBody[pos];
-      // 如果遇到节拍变化标记，停止
-      if (char === "(" || char === "{") break;
       // 跳过空白字符（空格、换行、制表符、回车符）
       if (isWhitespace(char)) {
         pos++;
         continue;
+      }
+      if (char === "(") {
+        const bpmMatch = chartBody.slice(pos).match(/^\((\d+(?:\.\d+)?)\)/);
+        if (bpmMatch) {
+          currentBpm = parseFloat(bpmMatch[1]);
+          if (firstBpm === null) firstBpm = currentBpm;
+          bpmEvents.push({ timing: currentBeat, bpm: currentBpm });
+          pos += bpmMatch[0].length;
+          continue;
+        }
+      }
+      if (char === "{") {
+        const divisorMatch = chartBody.slice(pos).match(/^\{(\d+(?:\.\d+)?)\}/);
+        if (divisorMatch) {
+          const newDivisor = parseFloat(divisorMatch[1]);
+          if (newDivisor !== divisor) {
+            divisor = newDivisor;
+            divisorEvents.push({ timing: currentBeat, divisor });
+          }
+          pos += divisorMatch[0].length;
+          continue;
+        }
+      }
+      // Hi-Speed 标记 <HS*x>：就地消费，不进入 note 内容
+      if (char === "<") {
+        const hsMatch = chartBody.slice(pos).match(/^<HS\*([-+]?\d*\.?\d+)>/i);
+        if (hsMatch) {
+          currentHiSpeed = parseFloat(hsMatch[1]);
+          pos += hsMatch[0].length;
+          continue;
+        }
       }
       noteContent += char;
       pos++;
@@ -493,6 +499,9 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
           hasDelayMarker,
         );
 
+        if (currentHiSpeed !== 1) {
+          for (const note of parsedNotes) note.hiSpeed = currentHiSpeed;
+        }
         notes.push(...parsedNotes);
       }
     }
