@@ -18,7 +18,15 @@ export const INVISIBLE_NOTE_POSITION: NoteRenderPosition = Object.freeze({
   visible: false,
 });
 
+// sprite 相对基准尺寸的边距倍率（覆盖 EX 环 ×1.43 + 描边）与超采样倍率。
+const TAP_SPRITE_HALF_RATIO = 1.7;
+const TAP_SPRITE_SUPERSAMPLE = 2;
+
 export class NoteRenderer extends BaseRenderer {
+  // 按 (方位,配色,EX) 预渲染的 tap sprite，radius/mirror 变化时整体失效。
+  private tapSpriteCache = new Map<string, HTMLCanvasElement>();
+  private tapSpriteBasis = "";
+
   constructor(context: RenderContext) {
     super(context);
   }
@@ -54,7 +62,7 @@ export class NoteRenderer extends BaseRenderer {
     const position = note.position as ButtonPosition;
     const angle = this.getButtonAngle(position);
     const timeDiff = note.timingMs - currentTimeMs;
-    const approachTime = this.getApproachTimeMs();
+    const approachTime = this.getNoteApproachTimeMs(note);
 
     // Hold 起点在 hold duration 内一直可见；普通 note 只有 NOTE_VISIBILITY_AFTER_MS。
     let holdWindow = NOTE_VISIBILITY_AFTER_MS;
@@ -65,24 +73,26 @@ export class NoteRenderer extends BaseRenderer {
       return INVISIBLE_NOTE_POSITION;
     }
 
-    // approach 上半段：在中心位置淡入；下半段：朝判定线推进；命中后：hold 钉在
-    // 判定线，普通 note 继续向外淡出。
+    // approach 上半段：在起点位置淡入；下半段：朝判定线推进；命中后：hold 钉在
+    // 判定线，普通 note 沿原方向继续淡出。dir=-1（负流速）时路径关于判定圈镜像，
+    // 起点在圈外 1.75R，向内收敛到判定线。
+    const dir = this.getNoteApproachDir(note);
     const halfApproach = approachTime / 2;
     let distance: number;
     let scale: number;
     if (timeDiff > halfApproach) {
-      distance = APPROACH_START_SCALE * this.context.radius;
+      distance = this.context.radius * (1 + dir * (APPROACH_START_SCALE - 1));
       scale = 1 - (timeDiff - halfApproach) / halfApproach;
     } else if (timeDiff >= 0) {
       const progress = 1 - timeDiff / halfApproach;
-      distance = this.context.radius * (APPROACH_START_SCALE + 0.75 * progress);
+      distance = this.context.radius * (1 + dir * (APPROACH_START_SCALE - 1 + 0.75 * progress));
       scale = 1;
     } else if ("isHoldStart" in note && note.isHoldStart) {
       distance = this.context.radius;
       scale = 1;
     } else {
       const fadeProgress = 1 + -timeDiff / halfApproach;
-      distance = this.context.radius * (APPROACH_START_SCALE + 0.75 * fadeProgress);
+      distance = this.context.radius * (1 + dir * (APPROACH_START_SCALE - 1 + 0.75 * fadeProgress));
       scale = 1;
     }
 
@@ -240,6 +250,55 @@ export class NoteRenderer extends BaseRenderer {
     ctx.restore();
   }
 
+  /** 所有接近弧共享圆心，按 (颜色, 拖影档) 合并 path，一档一次 stroke，总次数与 note 数无关。 */
+  renderApproachArcsBatch(
+    arcs: { position: ButtonPosition; distance: number; color: string }[],
+  ): void {
+    if (arcs.length === 0) return;
+    const ctx = this.context.ctx;
+    const cx = this.context.centerX;
+    const cy = this.context.centerY;
+    const trailStep = Math.PI / 8 / 4;
+    const lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
+
+    const byColor = new Map<string, { position: ButtonPosition; distance: number }[]>();
+    for (const arc of arcs) {
+      const group = byColor.get(arc.color);
+      if (group) group.push(arc);
+      else byColor.set(arc.color, [arc]);
+    }
+
+    ctx.save();
+    ctx.lineWidth = lineWidth;
+    for (const [color, group] of byColor) {
+      ctx.strokeStyle = color;
+      for (let i = 4; i >= 0; i--) {
+        ctx.globalAlpha = i === 0 ? 0.4 : 0.4 * (1 - i / 5);
+        ctx.beginPath();
+        for (const arc of group) {
+          const angle = this.getButtonAngle(arc.position);
+          const d = arc.distance;
+          if (i === 0) {
+            ctx.moveTo(
+              cx + Math.cos(angle - Math.PI / 8) * d,
+              cy + Math.sin(angle - Math.PI / 8) * d,
+            );
+            ctx.arc(cx, cy, d, angle - Math.PI / 8, angle + Math.PI / 8, false);
+          } else {
+            const leftStart = angle - Math.PI / 8 - i * trailStep;
+            ctx.moveTo(cx + Math.cos(leftStart) * d, cy + Math.sin(leftStart) * d);
+            ctx.arc(cx, cy, d, leftStart, angle - Math.PI / 8 - (i - 1) * trailStep, false);
+            const rightStart = angle + Math.PI / 8 + (i - 1) * trailStep;
+            ctx.moveTo(cx + Math.cos(rightStart) * d, cy + Math.sin(rightStart) * d);
+            ctx.arc(cx, cy, d, rightStart, angle + Math.PI / 8 + i * trailStep, false);
+          }
+        }
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
   renderSimultaneousConnector(
     startPos: ButtonPosition,
     endPos: ButtonPosition,
@@ -369,6 +428,76 @@ export class NoteRenderer extends BaseRenderer {
   }
 
   renderTapNote(
+    x: number,
+    y: number,
+    noteScale: number,
+    position: ButtonPosition,
+    isBreak: boolean,
+    isSimultaneous: boolean,
+    isEx: boolean,
+    timing: number,
+    highlightExScale: number = 1,
+  ): void {
+    // DDR 配色随 timing 变化，无法 sprite 化，走矢量路径。
+    if (this.context.config.ddrColorMode) {
+      this.drawTapNoteVector(
+        x,
+        y,
+        noteScale,
+        position,
+        isBreak,
+        isSimultaneous,
+        isEx,
+        timing,
+        highlightExScale,
+      );
+      return;
+    }
+    const sprite = this.getTapSprite(position, isBreak, isSimultaneous, isEx, highlightExScale);
+    const size = (sprite.width / TAP_SPRITE_SUPERSAMPLE) * noteScale;
+    this.context.ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+  }
+
+  private getTapSprite(
+    position: ButtonPosition,
+    isBreak: boolean,
+    isSimultaneous: boolean,
+    isEx: boolean,
+    highlightExScale: number,
+  ): HTMLCanvasElement {
+    const basis = `${this.context.radius}|${this.context.config.mirrorMode}`;
+    if (basis !== this.tapSpriteBasis) {
+      this.tapSpriteCache.clear();
+      this.tapSpriteBasis = basis;
+    }
+    const key = `${position}|${+isBreak}|${+isSimultaneous}|${+isEx}|${highlightExScale}`;
+    let sprite = this.tapSpriteCache.get(key);
+    if (sprite) return sprite;
+
+    const half = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * TAP_SPRITE_HALF_RATIO;
+    sprite = document.createElement("canvas");
+    sprite.width = sprite.height = Math.max(2, Math.ceil(half * 2 * TAP_SPRITE_SUPERSAMPLE));
+    const offscreenCtx = sprite.getContext("2d")!;
+    offscreenCtx.setTransform(
+      TAP_SPRITE_SUPERSAMPLE,
+      0,
+      0,
+      TAP_SPRITE_SUPERSAMPLE,
+      sprite.width / 2,
+      sprite.height / 2,
+    );
+    const mainCtx = this.context.ctx;
+    this.context.ctx = offscreenCtx;
+    try {
+      this.drawTapNoteVector(0, 0, 1, position, isBreak, isSimultaneous, isEx, 0, highlightExScale);
+    } finally {
+      this.context.ctx = mainCtx;
+    }
+    this.tapSpriteCache.set(key, sprite);
+    return sprite;
+  }
+
+  private drawTapNoteVector(
     x: number,
     y: number,
     noteScale: number,

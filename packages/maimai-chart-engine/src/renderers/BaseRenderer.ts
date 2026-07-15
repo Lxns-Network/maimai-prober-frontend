@@ -145,6 +145,16 @@ export abstract class BaseRenderer {
     return this.context.baseApproachTimeMs / this.context.hiSpeed;
   }
 
+  /** note 自带流速倍率（simai `<HS*x>`）叠加在全局流速上；负流速时长取幅值，方向另取。 */
+  protected getNoteApproachTimeMs(note: { hiSpeed?: number }): number {
+    return this.getApproachTimeMs() / (Math.abs(note.hiSpeed ?? 1) || 1);
+  }
+
+  /** 径向进场方向：+1 常规由内向外，-1（负流速）由判定圈外向内。 */
+  protected getNoteApproachDir(note: { hiSpeed?: number }): 1 | -1 {
+    return (note.hiSpeed ?? 1) < 0 ? -1 : 1;
+  }
+
   protected distanceToCenter(x: number, y: number): number {
     return Math.sqrt(Math.pow(x - this.context.centerX, 2) + Math.pow(y - this.context.centerY, 2));
   }
