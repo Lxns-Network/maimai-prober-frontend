@@ -66,7 +66,8 @@ export function resolveSameOriginRedirect(redirect: string | null | undefined, o
     const code = character.charCodeAt(0);
     return code <= 31 || code === 127;
   });
-  if (/\\|%5c/i.test(redirect) || hasControlCharacter) return null;
+  const hasBackslash = redirect.includes("\\") || redirect.toLowerCase().includes("%5c");
+  if (hasBackslash || hasControlCharacter) return null;
 
   try {
     const target = new URL(redirect, origin);

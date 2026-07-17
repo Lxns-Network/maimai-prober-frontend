@@ -138,6 +138,9 @@ const createRequestHeaders = (headers?: Record<string, string>, token?: string |
   return requestHeaders;
 };
 
+const fetchApiRequest = ({ endpoint, init }: { endpoint: string; init: RequestInit }) =>
+  fetch(`${API_URL}/${endpoint}`, init);
+
 async function retryAfterUnauthorized(
   request: (token: string | null) => Promise<Response>,
   requestToken: string,
@@ -171,11 +174,14 @@ export async function fetchAPI(
   const requestBody =
     body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body);
   const request = (token: string | null) =>
-    fetch(`${API_URL}/${endpoint}`, {
-      method,
-      credentials: "include",
-      headers: createRequestHeaders(headers, token),
-      body: requestBody,
+    fetchApiRequest({
+      endpoint,
+      init: {
+        method,
+        credentials: "include",
+        headers: createRequestHeaders(headers, token),
+        body: requestBody,
+      },
     });
 
   if (auth === "none") return request(null);
@@ -204,11 +210,14 @@ export async function uploadFile(endpoint: string, file: File): Promise<Response
     const headers = new Headers();
     if (token) headers.set("Authorization", `Bearer ${token}`);
 
-    return fetch(`${API_URL}/${endpoint}`, {
-      method: "POST",
-      credentials: "include",
-      headers,
-      body: formData,
+    return fetchApiRequest({
+      endpoint,
+      init: {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: formData,
+      },
     });
   };
 
