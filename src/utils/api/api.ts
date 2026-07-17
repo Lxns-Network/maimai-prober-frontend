@@ -143,10 +143,10 @@ const API_ENDPOINT_ROOTS = new Set(["user", "maimai", "chunithm", "site"]);
 /** Rejects endpoints outside the API namespaces used by this client before issuing a request. */
 const fetchApiRequest = ({ endpoint, init }: { endpoint: string; init: RequestInit }) => {
   const root = endpoint.split("/", 1)[0];
-  if (!API_ENDPOINT_ROOTS.has(root)) {
-    return Promise.reject(new TypeError("不支持的 API 端点"));
+  if (API_ENDPOINT_ROOTS.has(root)) {
+    return fetch(`${API_URL}/${endpoint}`, init);
   }
-  return fetch(`${API_URL}/${endpoint}`, init);
+  return Promise.reject(new TypeError("不支持的 API 端点"));
 };
 
 async function retryAfterUnauthorized(
