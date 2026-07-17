@@ -140,6 +140,8 @@ export const RatingGrowthSection = ({ data }: { data: YearInReviewProps }) => {
                     <Image
                       key={`earliest-${index}`}
                       src={`${ASSET_URL}/${data.game}/jacket/${song.id}.png!webp`}
+                      alt={`年初 Top ${index + 1}：${song.song_name} 曲绘`}
+                      loading="lazy"
                       radius="sm"
                     />
                   ))}
@@ -163,6 +165,8 @@ export const RatingGrowthSection = ({ data }: { data: YearInReviewProps }) => {
                     <Image
                       key={`latest-${index}`}
                       src={`${ASSET_URL}/${data.game}/jacket/${song.id}.png!webp`}
+                      alt={`年末 Top ${index + 1}：${song.song_name} 曲绘`}
+                      loading="lazy"
                       radius="sm"
                     />
                   ))}

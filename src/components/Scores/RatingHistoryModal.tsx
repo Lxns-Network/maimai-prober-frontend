@@ -113,7 +113,12 @@ export const RatingHistoryModal = ({
                   {ratings[index] ? (
                     <>
                       <AspectRatio ratio={ratio}>
-                        <Image w={100} src={`/assets/${game}/version/${version}.webp`} />
+                        <Image
+                          w={100}
+                          src={`/assets/${game}/version/${version}.webp`}
+                          alt={`${version} 版本图标`}
+                          loading="lazy"
+                        />
                       </AspectRatio>
                       <Divider />
                       <Group justify="center" gap={4}>
@@ -148,6 +153,8 @@ export const RatingHistoryModal = ({
                           w={100}
                           style={{ opacity: 0.3 }}
                           src={`/assets/${game}/version/${version}.webp`}
+                          alt={`${version} 版本图标，无定数记录`}
+                          loading="lazy"
                         />
                       </AspectRatio>
                       <Divider />

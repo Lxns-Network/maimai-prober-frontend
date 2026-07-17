@@ -86,8 +86,9 @@ export const UserSection = () => {
         </div>
         <Switch
           size="lg"
-          value={visible ? "visible" : "hidden"}
-          onClick={visibleHandler.toggle}
+          aria-label={visible ? "隐藏账号详情" : "显示账号详情"}
+          checked={visible}
+          onChange={() => visibleHandler.toggle()}
           onLabel={<Icon path={mdiEye} size={0.8} />}
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />

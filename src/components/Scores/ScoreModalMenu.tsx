@@ -108,7 +108,7 @@ export const ScoreModalMenu = ({
   return (
     <Menu shadow="md" width={200} position="bottom-end">
       <Menu.Target>
-        <ActionIcon className={classes.actionIcon} variant="subtle">
+        <ActionIcon aria-label="更多成绩操作" className={classes.actionIcon} variant="subtle">
           <IconDots size={18} stroke={1.5} />
         </ActionIcon>
       </Menu.Target>

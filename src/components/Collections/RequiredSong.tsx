@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
-  ActionIcon,
   Anchor,
   Badge,
   Box,
@@ -44,9 +43,9 @@ const RequiredSongRingProgress = ({ collection }: { collection: CollectionProps 
         sections={[{ value: 100, color: "teal" }]}
         label={
           <Center>
-            <ActionIcon color="teal" variant="light" radius="xl" size={44}>
+            <ThemeIcon color="teal" variant="light" radius="xl" size={44} aria-hidden="true">
               <IconCheck size={22} />
-            </ActionIcon>
+            </ThemeIcon>
           </Center>
         }
       />
@@ -232,6 +231,8 @@ export const RequiredSong = ({
                         w={rem(30)}
                         ml={-3}
                         src={`/assets/maimai/music_icon/${collection.required[0].fc}.webp`}
+                        alt={`FC 要求：${collection.required[0].fc}`}
+                        loading="lazy"
                       />
                     </div>
                   )}
@@ -244,6 +245,8 @@ export const RequiredSong = ({
                         w={rem(30)}
                         ml={-3}
                         src={`/assets/maimai/music_icon/${collection.required[0].fs}.webp`}
+                        alt={`FS 要求：${collection.required[0].fs}`}
+                        loading="lazy"
                       />
                     </div>
                   )}
@@ -256,6 +259,8 @@ export const RequiredSong = ({
                         w={rem(64)}
                         ml={-8}
                         src={`/assets/maimai/music_rank/${collection.required[0].rate}.webp`}
+                        alt={`达成率等级要求：${collection.required[0].rate}`}
+                        loading="lazy"
                       />
                     </div>
                   )}
@@ -268,6 +273,8 @@ export const RequiredSong = ({
                         w={rem(94)}
                         mt={2}
                         src={`/assets/chunithm/music_icon/${collection.required[0].full_combo}.webp`}
+                        alt={`FULL COMBO 要求：${collection.required[0].full_combo}`}
+                        loading="lazy"
                       />
                     </div>
                   )}
@@ -280,6 +287,8 @@ export const RequiredSong = ({
                         w={rem(94)}
                         mt={2}
                         src={`/assets/chunithm/music_icon/${collection.required[0].full_chain}.webp`}
+                        alt={`FULL CHAIN 要求：${collection.required[0].full_chain}`}
+                        loading="lazy"
                       />
                     </div>
                   )}
@@ -292,6 +301,8 @@ export const RequiredSong = ({
                         w={rem(94)}
                         mt={2}
                         src={`/assets/chunithm/music_rank/${collection.required[0].rank}.webp`}
+                        alt={`分数等级要求：${collection.required[0].rank}`}
+                        loading="lazy"
                       />
                     </div>
                   )}
@@ -362,6 +373,8 @@ export const RequiredSong = ({
                   w={40}
                   radius="sm"
                   src={`${ASSET_URL}/${game}/jacket/${record.id}.png!webp`}
+                  alt={`${record.title} 曲绘`}
+                  loading="lazy"
                 />
               </PhotoView>
             </Box>

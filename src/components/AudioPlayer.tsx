@@ -98,6 +98,7 @@ export const AudioPlayer = ({
       <Group gap="xs">
         <Text size="sm">{parseTime(state.time)}</Text>
         <Slider
+          aria-label="播放进度"
           label={null}
           size="sm"
           thumbSize={16}
@@ -112,12 +113,20 @@ export const AudioPlayer = ({
       <Group mt="xs" justify="space-between" wrap="nowrap">
         <Group w="100%" maw="100px">
           <Tooltip label={isRepeat ? "关闭循环播放" : "循环播放"} position="bottom">
-            <ActionIcon variant="transparent" c="gray" size="sm" onClick={() => toggleIsRepeat()}>
+            <ActionIcon
+              aria-label={isRepeat ? "关闭循环播放" : "循环播放"}
+              aria-pressed={isRepeat}
+              variant="transparent"
+              c="gray"
+              size="sm"
+              onClick={() => toggleIsRepeat()}
+            >
               {isRepeat ? <IconRepeat /> : <IconRepeatOff />}
             </ActionIcon>
           </Tooltip>
           <Tooltip label="下载" position="bottom">
             <ActionIcon
+              aria-label="下载音频"
               variant="transparent"
               c="gray"
               size="sm"
@@ -130,6 +139,7 @@ export const AudioPlayer = ({
         <Group gap="xs" wrap="nowrap">
           <Tooltip label="后退 5 秒" position="bottom">
             <ActionIcon
+              aria-label="后退 5 秒"
               variant="transparent"
               c="gray"
               onClick={() => controls.seek(state.time - 5)}
@@ -138,6 +148,8 @@ export const AudioPlayer = ({
             </ActionIcon>
           </Tooltip>
           <ActionIcon
+            aria-label={isPlaying ? "暂停" : "播放"}
+            aria-pressed={isPlaying}
             radius="50%"
             size="lg"
             onClick={() => {
@@ -153,6 +165,7 @@ export const AudioPlayer = ({
           </ActionIcon>
           <Tooltip label="前进 5 秒" position="bottom">
             <ActionIcon
+              aria-label="前进 5 秒"
               variant="transparent"
               c="gray"
               onClick={() => controls.seek(state.time + 5)}
@@ -164,6 +177,8 @@ export const AudioPlayer = ({
         <Group gap="xs" w="100%" maw="100px">
           <Tooltip label={state.muted ? "取消静音" : "静音"} position="bottom">
             <ActionIcon
+              aria-label={state.muted ? "取消静音" : "静音"}
+              aria-pressed={state.muted}
               variant="transparent"
               c="gray"
               size="sm"
@@ -173,6 +188,7 @@ export const AudioPlayer = ({
             </ActionIcon>
           </Tooltip>
           <Slider
+            aria-label="音量"
             size="xs"
             min={0}
             max={100}

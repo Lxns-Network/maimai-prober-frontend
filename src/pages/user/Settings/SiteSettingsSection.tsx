@@ -11,6 +11,7 @@ import { SettingList } from "@/components/Settings/SettingList.tsx";
 import { useThemeColor, themeColors, DEFAULT_THEME_COLOR } from "@/hooks/useThemeColor.ts";
 import { IconCheck } from "@tabler/icons-react";
 import classes from "../../Page.module.css";
+import { getReadableTextColor } from "@/utils/color.ts";
 
 const colorSchemeOptions = [
   { value: "auto", label: "跟随系统" },
@@ -51,14 +52,23 @@ export const SiteSettingsSection = () => {
                 <Group gap="xs">
                   {themeColors.map((color) => (
                     <ColorSwatch
+                      component="button"
+                      type="button"
                       key={color}
                       color={mantineTheme.colors[color][6]}
                       onClick={() => setThemeColor(color)}
                       size={28}
                       radius="md"
-                      style={{ cursor: "pointer" }}
+                      aria-label={`使用 ${color} 主题色`}
+                      aria-pressed={themeColor === color}
                     >
-                      {themeColor === color && <IconCheck size={14} color="white" />}
+                      {themeColor === color && (
+                        <IconCheck
+                          size={14}
+                          color={getReadableTextColor(mantineTheme.colors[color][6])}
+                          aria-hidden="true"
+                        />
+                      )}
                     </ColorSwatch>
                   ))}
                   {themeColor !== DEFAULT_THEME_COLOR && (

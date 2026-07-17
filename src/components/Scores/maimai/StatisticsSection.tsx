@@ -47,7 +47,13 @@ const RateStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
         }
         return (
           <Group key={r.id} mb="xs" wrap="nowrap">
-            <Image src={`/assets/maimai/music_rank/${r.id}.webp`} h={30} w="auto" />
+            <Image
+              src={`/assets/maimai/music_rank/${r.id}.webp`}
+              h={30}
+              w="auto"
+              alt={`${r.id.toUpperCase()} 及以上成绩数`}
+              loading="lazy"
+            />
             <Divider style={{ flex: 1 }} variant="dashed" />
             <Text fz={20} style={{ lineHeight: rem(20) }}>
               <NumberFormatter value={count} thousandSeparator />
@@ -69,7 +75,13 @@ const FullComboStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
     <Box w="100%">
       {fc.map((r, index) => (
         <Group key={r} mb="xs" h={30} wrap="nowrap">
-          <Image src={`/assets/maimai/music_icon/${r}.webp`} h={30} w="auto" />
+          <Image
+            src={`/assets/maimai/music_icon/${r}.webp`}
+            h={30}
+            w="auto"
+            alt={`${r.toUpperCase()} 及以上全连数`}
+            loading="lazy"
+          />
           <Divider style={{ flex: 1 }} variant="dashed" />
           <Text fz={20} style={{ lineHeight: rem(20) }}>
             <NumberFormatter
@@ -97,7 +109,13 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
     <Box w="100%">
       {fs.map((r, index) => (
         <Group key={r} mb="xs" h={30} wrap="nowrap">
-          <Image src={`/assets/maimai/music_icon/${r}.webp`} h={30} w="auto" />
+          <Image
+            src={`/assets/maimai/music_icon/${r}.webp`}
+            h={30}
+            w="auto"
+            alt={`${r.toUpperCase()} 及以上全同步数`}
+            loading="lazy"
+          />
           <Divider style={{ flex: 1 }} variant="dashed" />
           <Text fz={20} style={{ lineHeight: rem(20) }}>
             <NumberFormatter

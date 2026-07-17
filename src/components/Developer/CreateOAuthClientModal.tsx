@@ -172,6 +172,8 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
           <EditAvatarButton onClick={fileDialog.open}>
             <Avatar
               src={form.values.logo_url || undefined}
+              alt="应用图标预览"
+              imageProps={{ loading: "lazy" }}
               size={94}
               radius="md"
               styles={(theme) => ({

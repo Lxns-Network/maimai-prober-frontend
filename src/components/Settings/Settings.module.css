@@ -4,9 +4,11 @@
   &:not(:last-child) {
     padding-bottom: var(--mantine-spacing-sm);
   }
+
   &:not(:first-child) {
     padding-top: var(--mantine-spacing-sm);
   }
+
   & + & {
     border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   }

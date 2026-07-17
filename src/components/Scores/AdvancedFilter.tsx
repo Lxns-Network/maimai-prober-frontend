@@ -278,6 +278,7 @@ export const AdvancedFilter = ({ filters, setFilter, resetFilters }: AdvancedFil
           </Text>
           <Group gap="xs">
             <NumberInput
+              aria-label="最低谱面定数"
               variant="filled"
               w={75}
               size="xs"
@@ -300,6 +301,7 @@ export const AdvancedFilter = ({ filters, setFilter, resetFilters }: AdvancedFil
             />
             ~
             <NumberInput
+              aria-label="最高谱面定数"
               variant="filled"
               w={75}
               size="xs"
@@ -321,6 +323,7 @@ export const AdvancedFilter = ({ filters, setFilter, resetFilters }: AdvancedFil
               fixedDecimalScale
             />
             <Select
+              aria-label="谱面定数快捷范围"
               variant="filled"
               size="xs"
               style={{ flex: 1 }}
@@ -338,6 +341,9 @@ export const AdvancedFilter = ({ filters, setFilter, resetFilters }: AdvancedFil
             />
           </Group>
           <RangeSlider
+            thumbFromLabel="最低谱面定数"
+            thumbToLabel="最高谱面定数"
+            thumbValueText={(value) => value.toFixed(1)}
             mt="xs"
             mb={24}
             min={ratingRange[0]}
@@ -373,6 +379,8 @@ export const AdvancedFilter = ({ filters, setFilter, resetFilters }: AdvancedFil
                             src={`/assets/maimai/dx_score/${rate}.webp`}
                             h={16}
                             w="auto"
+                            alt=""
+                            loading="lazy"
                             mr={4}
                             style={{
                               display: "inline",

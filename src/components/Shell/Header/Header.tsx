@@ -12,7 +12,7 @@ interface HeaderProps {
   navbarOpened: boolean;
   onNavbarToggle(): void;
   gameTabsVisible: boolean;
-  headerRef: React.RefObject<HTMLDivElement | null>;
+  headerRef: React.RefObject<HTMLElement | null>;
 }
 
 const games = [
@@ -46,7 +46,7 @@ export default function Header({
   }
 
   return (
-    <div className={classes.header} ref={headerRef}>
+    <header className={classes.header} ref={headerRef}>
       <Stack gap={0}>
         <Group wrap="nowrap" mt={12} mb={12}>
           <Burger
@@ -54,12 +54,15 @@ export default function Header({
             opened={navbarOpened}
             onClick={onNavbarToggle}
             size="sm"
+            aria-label={navbarOpened ? "关闭主导航" : "打开主导航"}
+            aria-controls="main-navigation"
+            aria-expanded={navbarOpened}
           />
           <Group style={{ flex: 1 }} gap="sm">
             <Logo />
             <Menu width={180} withinPortal={false}>
               <Menu.Target>
-                <UnstyledButton className={classes.game}>
+                <UnstyledButton className={classes.game} aria-label="切换游戏">
                   <Text fz={14}>{games.find((item) => item.id === game)?.name}</Text>
                   <IconChevronDown className={classes.gameChevron} stroke={1.5} />
                 </UnstyledButton>
@@ -100,6 +103,6 @@ export default function Header({
           )}
         </Transition>
       </Stack>
-    </div>
+    </header>
   );
 }

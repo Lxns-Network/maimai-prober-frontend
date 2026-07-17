@@ -164,7 +164,13 @@ export function RatingConstantAnalysis({
         accessor: `v${index}`,
         title: (
           <Center>
-            <Image src={rankImage(rank.id)} h={20} w="auto" alt={rank.id} />
+            <Image
+              src={rankImage(rank.id)}
+              h={20}
+              w="auto"
+              alt={`${rank.id} 评级`}
+              loading="lazy"
+            />
           </Center>
         ),
         textAlign: "center",

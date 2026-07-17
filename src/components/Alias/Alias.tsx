@@ -135,7 +135,12 @@ export const Alias = ({ alias, onClick, onVote, onMutate }: AliasCardProps) => {
           </Button.Group>
           <Menu shadow="md" width={200} withinPortal>
             <Menu.Target>
-              <ActionIcon className={classes.voteButton} variant="default" color="default">
+              <ActionIcon
+                className={classes.voteButton}
+                variant="default"
+                color="default"
+                aria-label={`更多别名操作：${alias.alias}`}
+              >
                 <IconDotsVertical size={20} stroke={1.5} />
               </ActionIcon>
             </Menu.Target>

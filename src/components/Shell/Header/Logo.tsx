@@ -14,7 +14,7 @@ export default function Logo() {
       align="center"
       gap="xs"
     >
-      <Image alt="logo" src="/favicon.webp" w={32} h={32} />
+      <Image alt="" src="/favicon.webp" w={32} h={32} />
       <Text
         fw="bold"
         fz="lg"

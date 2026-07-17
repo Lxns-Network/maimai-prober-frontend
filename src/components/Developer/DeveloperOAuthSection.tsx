@@ -49,7 +49,12 @@ const TextInputWithCopyButton = ({ label, value }: { label: string; value: strin
       <CopyButton value={value} timeout={2000}>
         {({ copied, copy }) => (
           <Tooltip label={copied ? "已复制" : "复制"} withArrow position="left">
-            <ActionIcon variant="subtle" color={copied ? "teal" : "gray"} onClick={copy}>
+            <ActionIcon
+              variant="subtle"
+              color={copied ? "teal" : "gray"}
+              aria-label={copied ? `${label}已复制` : `复制${label}`}
+              onClick={copy}
+            >
               {copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
             </ActionIcon>
           </Tooltip>
@@ -75,7 +80,12 @@ const OAuthAppCard = ({
   return (
     <Card className={classes.appCard} withBorder radius="md" p={0}>
       <Group align="center" gap="md" wrap="nowrap" m="xs">
-        <Avatar src={app.logo_url} radius="sm">
+        <Avatar
+          src={app.logo_url}
+          alt={`${app.name} 的应用图标`}
+          imageProps={{ loading: "lazy" }}
+          radius="sm"
+        >
           {app.name.charAt(0).toUpperCase()}
         </Avatar>
 
@@ -103,12 +113,24 @@ const OAuthAppCard = ({
 
         <Group gap={2} wrap="nowrap">
           <Tooltip label="编辑" position="top" withArrow>
-            <ActionIcon variant="subtle" color="gray" size="lg" onClick={onEdit}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="lg"
+              aria-label={`编辑 OAuth 应用：${app.name}`}
+              onClick={onEdit}
+            >
               <IconEdit size={18} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label="删除" position="top" withArrow>
-            <ActionIcon variant="subtle" color="red" size="lg" onClick={onDelete}>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              size="lg"
+              aria-label={`删除 OAuth 应用：${app.name}`}
+              onClick={onDelete}
+            >
               <IconTrash size={18} />
             </ActionIcon>
           </Tooltip>
@@ -126,12 +148,15 @@ const OAuthAppCard = ({
             variant="subtle"
             color="gray"
             size="sm"
+            aria-label={expanded ? "收起应用凭据" : "展开应用凭据"}
+            aria-expanded={expanded}
+            aria-controls={`oauth-credentials-${app.client_id}`}
             onClick={() => setExpanded((v) => !v)}
           >
             {expanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
           </ActionIcon>
         </Group>
-        <Collapse expanded={expanded}>
+        <Collapse id={`oauth-credentials-${app.client_id}`} expanded={expanded}>
           <Grid mt="xs">
             <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInputWithCopyButton label="应用 ID" value={app.client_id || ""} />

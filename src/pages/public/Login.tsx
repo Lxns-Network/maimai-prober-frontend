@@ -30,8 +30,8 @@ import * as Sentry from "@sentry/react";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { PasskeyLogin } from "@/components/Settings/PasskeyLogin.tsx";
 import { usePageContext } from "vike-react/usePageContext";
-import { navigate } from "vike/client/router";
 import { useLogin } from "@/hooks/mutations/useAuthMutations.ts";
+import { Link } from "@/components/Link.tsx";
 
 interface FormValues {
   name?: string;
@@ -132,7 +132,7 @@ export default function Login() {
 
   return (
     <Container className={classes.root} size={420}>
-      <Title order={2} size="h2" fw={900} ta="center">
+      <Title order={1} size="h2" fw={900} ta="center">
         登录到 maimai DX 查分器
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt="sm">
@@ -179,8 +179,11 @@ export default function Login() {
         <form onSubmit={form.onSubmit(loginHandler)}>
           {method === "name" && (
             <TextInput
+              id="login-name"
               name="name"
               label="用户名"
+              autoComplete="username"
+              required
               variant="filled"
               placeholder="请输入你的用户名"
               leftSection={<IconUser size={20} stroke={1.5} />}
@@ -189,8 +192,11 @@ export default function Login() {
           )}
           {method === "email" && (
             <TextInput
+              id="login-email"
               name="email"
               label="邮箱"
+              autoComplete="email"
+              required
               variant="filled"
               placeholder="请输入你的邮箱"
               leftSection={<IconMail size={20} stroke={1.5} />}
@@ -202,7 +208,8 @@ export default function Login() {
               密码
             </Text>
             <Anchor
-              onClick={() => navigate("/forgot-password")}
+              component={Link}
+              to="/forgot-password"
               style={(theme) => ({
                 paddingTop: 2,
                 color: theme.colors[theme.primaryColor][computedColorScheme === "dark" ? 4 : 6],
@@ -214,14 +221,17 @@ export default function Login() {
             </Anchor>
           </Group>
           <PasswordInput
+            id="password"
             name="password"
+            autoComplete="current-password"
+            required
             variant="filled"
             placeholder="请输入你的密码"
             leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps("password")}
           />
           <Group justify="flex-end" mt="xl">
-            <Button size="sm" variant="default" color="gray" onClick={() => navigate("/register")}>
+            <Button component={Link} to="/register" size="sm" variant="default" color="gray">
               注册
             </Button>
             <Button size="sm" type="submit">

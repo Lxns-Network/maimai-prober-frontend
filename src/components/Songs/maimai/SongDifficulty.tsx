@@ -13,12 +13,15 @@ import {
   Text,
   Title,
   Tooltip,
-  useComputedColorScheme,
 } from "@mantine/core";
 import { IconPlayerPlay } from "@tabler/icons-react";
 import classes from "../SongDifficulty.module.css";
 import { MaimaiDifficultyProps, MaimaiVersionProps } from "@/utils/api/song/maimai.ts";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
+import {
+  getReadableTextColor,
+  getScoreCardBackgroundColor,
+  getScoreSecondaryColor,
+} from "@/utils/color.ts";
 import { MaimaiScoreProps } from "@/types/score";
 import { useState } from "react";
 import { navigate } from "vike/client/router";
@@ -39,7 +42,6 @@ export const MaimaiSongDifficulty = ({
   onClick,
 }: SongDifficultyProps) => {
   const [buddyMenuOpened, setBuddyMenuOpened] = useState(false);
-  const computedColorScheme = useComputedColorScheme("light");
 
   const handleChartPreview = (chartId: number, difficulty: number) => {
     const params = new URLSearchParams({
@@ -51,6 +53,11 @@ export const MaimaiSongDifficulty = ({
 
   const isUtage = difficulty.type === "utage";
   const colorIndex = isUtage ? 5 : difficulty.difficulty;
+  const backgroundColor = getScoreCardBackgroundColor("maimai", colorIndex);
+  const textColor = getReadableTextColor(backgroundColor);
+  const difficultyName = isUtage
+    ? "U·TA·GE"
+    : ["BASIC", "ADVANCED", "EXPERT", "MASTER", "Re:MASTER"][difficulty.difficulty];
 
   return (
     <>
@@ -83,7 +90,7 @@ export const MaimaiSongDifficulty = ({
       </Modal>
       <Card
         className={classes.scoreCard}
-        c="white"
+        c={textColor}
         mih={82.5}
         pt={5}
         p="0.5rem"
@@ -95,13 +102,19 @@ export const MaimaiSongDifficulty = ({
             ")",
             ", 0.95)",
           ),
-          backgroundColor: getScoreCardBackgroundColor("maimai", colorIndex).replace(
-            ")",
-            ", 0.95)",
-          ),
-          opacity: computedColorScheme === "dark" ? 0.8 : 1,
+          backgroundColor: backgroundColor.replace(")", ", 0.95)"),
         }}
+        role="button"
+        tabIndex={0}
+        aria-label={`打开 ${difficultyName} ${difficulty.level} 成绩详情`}
         onClick={onClick}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onClick();
+          }
+        }}
       >
         <Flex align="center" ml="0.5rem" mr="0.5rem" mb={5}>
           {isUtage ? (
@@ -113,7 +126,7 @@ export const MaimaiSongDifficulty = ({
             </Text>
           ) : (
             <Text fz="sm" fw={500} style={{ flex: 1 }}>
-              {["BASIC", "ADVANCED", "EXPERT", "MASTER", "Re:MASTER"][difficulty.difficulty]}
+              {difficultyName}
               <Title component="span" order={3} fw={500} ml="xs">
                 {difficulty.level_value.toFixed(1)}
               </Title>
@@ -123,9 +136,10 @@ export const MaimaiSongDifficulty = ({
             <Tooltip label="谱面预览">
               <ActionIcon
                 variant="subtle"
-                color="white"
+                color={textColor}
                 size="sm"
                 mr="xs"
+                aria-label={`预览 ${difficultyName} 谱面`}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (difficulty?.is_buddy) {
@@ -144,10 +158,14 @@ export const MaimaiSongDifficulty = ({
             <Image
               src={`/assets/maimai/music_icon/${(score && score.fc) || "blank"}.webp`}
               w={rem(30)}
+              alt={score?.fc ? `FC 状态：${score.fc}` : ""}
+              loading="lazy"
             />
             <Image
               src={`/assets/maimai/music_icon/${(score && score.fs) || "blank"}.webp`}
               w={rem(30)}
+              alt={score?.fs ? `FS 状态：${score.fs}` : ""}
+              loading="lazy"
             />
           </Flex>
           {difficulty.is_buddy && (
@@ -163,10 +181,16 @@ export const MaimaiSongDifficulty = ({
             p="1rem"
             pt="xs"
             pb="xs"
-            style={{ color: "var(--mantine-text-dark)", backgroundColor: "#424242" }}
+            c={getReadableTextColor("#424242")}
+            bg="#424242"
           >
             <Group>
-              <Image src={`/assets/maimai/music_rank/${score.rate}.webp`} w={rem(64)} />
+              <Image
+                src={`/assets/maimai/music_rank/${score.rate}.webp`}
+                w={rem(64)}
+                alt={`成绩评级：${score.rate}`}
+                loading="lazy"
+              />
               <Box>
                 <Text fz="xs" c="dimmed">
                   达成率

@@ -1,6 +1,7 @@
 import { Box, Card, Flex, Group, NumberFormatter, Rating, rem, Text } from "@mantine/core";
 import {
   getScoreCardBackgroundColor,
+  getReadableTextColor,
   getScoreSecondaryColor,
   getTransparentColor,
 } from "@/utils/color.ts";
@@ -22,6 +23,10 @@ export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
       ? difficulty.kanji
       : difficulty.level_value.toFixed(1)
     : score.level;
+  const headerColor = getScoreSecondaryColor("chunithm", levelIndex);
+  const bodyColor = getScoreCardBackgroundColor("chunithm", levelIndex);
+  const headerTextColor = getReadableTextColor(headerColor);
+  const bodyTextColor = getReadableTextColor(bodyColor);
 
   return (
     <>
@@ -31,13 +36,10 @@ export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
         pl="xs"
         pr="xs"
         style={{
-          backgroundColor: getTransparentColor(
-            getScoreSecondaryColor("chunithm", levelIndex),
-            0.95,
-          ),
+          backgroundColor: getTransparentColor(headerColor, 0.95),
         }}
       >
-        <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">
+        <Text size="sm" fw={500} truncate style={{ flex: 1 }} c={headerTextColor}>
           {score.song_name}
         </Text>
         {score.id >= 8000 && difficulty && (
@@ -52,28 +54,25 @@ export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
         pt={0}
         pb={0}
         style={{
-          backgroundColor: getTransparentColor(
-            getScoreCardBackgroundColor("chunithm", levelIndex),
-            0.7,
-          ),
+          backgroundColor: getTransparentColor(bodyColor, 0.7),
         }}
       >
         <Group h={54} justify="space-between" wrap="nowrap">
           {score.score != -1 ? (
             <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c={bodyTextColor} mb={4}>
                 <NumberFormatter value={score.score || 0} thousandSeparator />
               </Text>
-              <Text size="xs" c="white">
+              <Text size="xs" c={bodyTextColor}>
                 Rating: {rating}
               </Text>
             </div>
           ) : (
             <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c={bodyTextColor} mb={4}>
                 未游玩
               </Text>
-              <Text size="xs" c="white">
+              <Text size="xs" c={bodyTextColor}>
                 或未上传至查分器
               </Text>
             </div>
