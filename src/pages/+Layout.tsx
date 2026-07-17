@@ -23,7 +23,6 @@ import { Fallback } from "@/pages/public/Fallback.tsx";
 import { PhotoProvider } from "react-photo-view";
 import { useFullscreenDocument } from "@mantine/hooks";
 import { useShallow } from "zustand/react/shallow";
-import useTouchEvents from "beautiful-react-hooks/useTouchEvents";
 import Shell from "@/components/Shell/Shell.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import useAliasListStore from "@/hooks/useAliasListStore.ts";
@@ -86,24 +85,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   const viewport = useRef<HTMLDivElement>(null);
 
   useVersionChecker();
-
-  const ref = useRef<HTMLDivElement>(null);
-  const { onTouchStart, onTouchEnd } = useTouchEvents(ref as React.RefObject<HTMLDivElement>);
-  const [touchStartX, setTouchStartX] = useState(0);
-
-  onTouchStart((event: TouchEvent) => {
-    setTouchStartX(event.touches[0].clientX);
-  });
-
-  onTouchEnd((event: TouchEvent) => {
-    if (touchStartX / window.innerWidth > 0.1) return;
-
-    const touchEndX = event.changedTouches[0].clientX;
-
-    if (touchEndX - touchStartX > 100) {
-      setOpened(true);
-    }
-  });
 
   const toggleNavbarOpened = () => {
     if (window.innerWidth <= NAVBAR_BREAKPOINT) setOpened(!opened);
@@ -213,7 +194,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
                 viewportRef={viewport as React.RefObject<HTMLDivElement>}
               >
                 <div
-                  ref={ref}
                   style={{
                     minHeight: "calc(100vh - var(--header-height))",
                   }}
