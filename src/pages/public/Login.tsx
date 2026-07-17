@@ -25,6 +25,7 @@ import {
   isTokenExpired,
   isTokenUndefined,
   resolvePostLoginTarget,
+  setAuthToken,
 } from "@/utils/session.ts";
 import * as Sentry from "@sentry/react";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
@@ -111,7 +112,7 @@ export default function Login() {
         { values, captchaToken },
         {
           onSuccess: async (data) => {
-            localStorage.setItem("token", data.token);
+            await setAuthToken(data.token);
             Sentry.setUser(getSentryUser());
 
             const redirect = pageContext.urlParsed.search.redirect || pageContext.redirect;

@@ -99,7 +99,7 @@ export async function deletePasskey(id: number): Promise<Response> {
 }
 
 export async function authenticatePasskey(data: PasskeyAuthenticateData): Promise<Response> {
-  return fetchAPI("user/passkey/authenticate", { method: "POST", body: data });
+  return fetchAPI("user/passkey/authenticate", { method: "POST", body: data, auth: "none" });
 }
 
 export async function getPasskeyRegisterChallenge(): Promise<Response> {
@@ -107,5 +107,5 @@ export async function getPasskeyRegisterChallenge(): Promise<Response> {
 }
 
 export async function getPasskeyLoginChallenge(): Promise<Response> {
-  return fetchAPI("user/passkey/challenge", { method: "GET" });
+  return fetchAPI("user/passkey/challenge", { method: "GET", auth: "none" });
 }

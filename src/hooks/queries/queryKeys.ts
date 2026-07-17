@@ -3,7 +3,7 @@ import { Game } from "@/types/game";
 export const queryKeys = {
   user: {
     profile: () => ["user/profile"] as const,
-    refresh: () => ["user/refresh"] as const,
+    refresh: (identity: string | null) => ["user/refresh", identity] as const,
   },
   player: {
     root: (game: Game) => [`user/${game}/player`] as const,

@@ -6,6 +6,7 @@ import { useDisclosure } from "@mantine/hooks";
 import classes from "../../Page.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal";
 import { deleteSelfUser } from "@/utils/api/user";
+import { clearAuthSession } from "@/utils/session.ts";
 
 export const SecuritySettingsSection = () => {
   const [editPasswordModalOpened, editPasswordModal] = useDisclosure(false);
@@ -17,7 +18,7 @@ export const SecuritySettingsSection = () => {
       if (!data.success) {
         throw new Error(data.message);
       }
-      localStorage.removeItem("token");
+      await clearAuthSession();
       window.location.href = "/";
     } catch (error) {
       openRetryModal("删除失败", `${error}`, deleteSelfUserHandler);

@@ -1,19 +1,119 @@
-import { logoutUser } from "./api/user.ts";
+import {
+  decodeLoginSessionPayload,
+  getTokenSessionIdentity,
+  isTokenSessionExpired,
+  parseStoredGame,
+  resolveSameOriginRedirect,
+  type SupportedGame,
+} from "./sessionCore.ts";
 
 const isBrowser = () => typeof window !== "undefined";
+type AuthSessionChangeHandler = (phase: "cancel" | "remove") => void | Promise<void>;
+
+let authSessionChangeHandler: AuthSessionChangeHandler | null = null;
+const authSessionListeners = new Set<() => void>();
+let authSessionUpdate: Promise<unknown> = Promise.resolve();
+
+export const getAuthToken = () => (isBrowser() ? localStorage.getItem("token") : null);
+export const getAuthSessionIdentity = () => getTokenSessionIdentity(getAuthToken());
+
+export const subscribeAuthSession = (listener: () => void) => {
+  authSessionListeners.add(listener);
+  return () => authSessionListeners.delete(listener);
+};
+
+export const registerAuthSessionChangeHandler = (handler: AuthSessionChangeHandler) => {
+  authSessionChangeHandler = handler;
+};
+
+const notifyAuthSessionListeners = () => {
+  for (const listener of authSessionListeners) listener();
+};
+
+const enqueueAuthSessionUpdate = <T>(update: () => Promise<T>): Promise<T> => {
+  const pendingUpdate = authSessionUpdate.then(update, update);
+  authSessionUpdate = pendingUpdate.catch(() => undefined);
+  return pendingUpdate;
+};
+
+const handleAuthStorageChange = (event: StorageEvent) => {
+  if (event.key !== "token" && event.key !== null) return;
+
+  void enqueueAuthSessionUpdate(async () => {
+    const identityChanged =
+      event.key === null ||
+      getTokenSessionIdentity(event.oldValue) !== getTokenSessionIdentity(event.newValue);
+    if (identityChanged) await authSessionChangeHandler?.("cancel");
+    if (identityChanged) await authSessionChangeHandler?.("remove");
+    notifyAuthSessionListeners();
+  });
+};
+
+if (isBrowser()) window.addEventListener("storage", handleAuthStorageChange);
+
+/**
+ * Stores a bearer token and clears cached user data before notifying account-switch subscribers.
+ */
+const storeAuthToken = (token: string, expectedIdentity?: string) =>
+  enqueueAuthSessionUpdate(async () => {
+    if (!isBrowser()) return false;
+
+    const previousToken = localStorage.getItem("token");
+    if (
+      expectedIdentity !== undefined &&
+      getTokenSessionIdentity(previousToken) !== expectedIdentity
+    ) {
+      return false;
+    }
+
+    const identityChanged =
+      getTokenSessionIdentity(previousToken) !== getTokenSessionIdentity(token);
+
+    if (identityChanged) await authSessionChangeHandler?.("cancel");
+
+    localStorage.setItem("token", token);
+    if (identityChanged) await authSessionChangeHandler?.("remove");
+    notifyAuthSessionListeners();
+    return true;
+  });
+
+export const setAuthToken = (token: string) => storeAuthToken(token);
+
+/** Stores a refreshed token only if the browser is still signed in to the originating account. */
+export const setRefreshedAuthToken = (token: string, expectedIdentity: string) =>
+  storeAuthToken(token, expectedIdentity);
+
+/**
+ * Removes the local bearer token and clears all cached data scoped to the signed-in user.
+ */
+const removeAuthToken = (expectedIdentity?: string) =>
+  enqueueAuthSessionUpdate(async () => {
+    if (!isBrowser()) return false;
+
+    const currentToken = localStorage.getItem("token");
+    if (
+      expectedIdentity !== undefined &&
+      getTokenSessionIdentity(currentToken) !== expectedIdentity
+    ) {
+      return false;
+    }
+
+    const hadToken = currentToken !== null;
+    if (hadToken) await authSessionChangeHandler?.("cancel");
+    localStorage.removeItem("token");
+    if (hadToken) await authSessionChangeHandler?.("remove");
+    notifyAuthSessionListeners();
+    return true;
+  });
+
+export const clearAuthSession = () => removeAuthToken();
+
+/** Clears a failed session only if no account switch occurred while the request was in flight. */
+export const clearAuthSessionForIdentity = (expectedIdentity: string) =>
+  removeAuthToken(expectedIdentity);
 
 const getLoginSessionPayload = () => {
-  if (!isBrowser()) return null;
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(atob(token.split(".")[1]));
-  } catch (error) {
-    return null;
-  }
+  return decodeLoginSessionPayload(getAuthToken());
 };
 
 export const getLoginUserId = () => {
@@ -32,41 +132,23 @@ export const getSentryUser = () => {
 };
 
 export const isTokenExpired = () => {
-  if (!isBrowser()) return true;
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return true;
-  }
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const currentTime = Date.now();
-    const expirationTime = payload.exp * 1000;
-
-    if (isNaN(expirationTime)) {
-      return true;
-    }
-
-    return currentTime > expirationTime;
-  } catch (error) {
-    return true;
-  }
+  return isTokenSessionExpired(getAuthToken());
 };
 
 export const isTokenUndefined = () => {
-  if (!isBrowser()) return true;
-  const token = localStorage.getItem("token");
-  return !token;
+  return !getAuthToken();
 };
 
 export const isTokenValid = () => {
   return !isTokenExpired();
 };
 
+/**
+ * Clears the local session without making a server request. Interactive logout should call the
+ * logout endpoint first, then clear locally even if that request fails.
+ */
 export const logout = () => {
-  if (!isBrowser()) return;
-  localStorage.removeItem("token");
-  logoutUser();
+  void clearAuthSession();
 };
 
 export enum UserPermission {
@@ -76,18 +158,8 @@ export enum UserPermission {
 }
 
 export const checkPermission = (permission: UserPermission) => {
-  if (!isBrowser()) return false;
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return false;
-  }
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return (payload.permission & permission) !== 0;
-  } catch (error) {
-    return false;
-  }
+  const payload = getLoginSessionPayload();
+  return typeof payload?.permission === "number" && (payload.permission & permission) !== 0;
 };
 
 export const permissionToList = (permission: number) => {
@@ -113,21 +185,15 @@ export const listToPermission = (list: UserPermission[]) => {
 };
 
 export const resolvePostLoginTarget = async (redirect?: string | null): Promise<string> => {
-  const EXCLUDED = ["/login", "/register"];
-  const redirectPathname = redirect?.split(/[?#]/)[0];
-  if (
-    redirect &&
-    redirect.startsWith("/") &&
-    !redirect.startsWith("//") &&
-    redirectPathname &&
-    !EXCLUDED.includes(redirectPathname)
-  ) {
-    return redirect;
-  }
+  const safeRedirect = resolveSameOriginRedirect(
+    redirect,
+    isBrowser() ? window.location.origin : "http://localhost",
+  );
+  if (safeRedirect) return safeRedirect;
 
   try {
-    const game = (isBrowser() && localStorage.getItem("game")) || "maimai";
-    const token = isBrowser() ? localStorage.getItem("token") : null;
+    const game = readStoredGame();
+    const token = getAuthToken();
     const apiUrl = import.meta.env.VITE_API_URL;
     const res = await fetch(`${apiUrl}/user/${game}/player`, {
       method: "GET",
@@ -137,13 +203,15 @@ export const resolvePostLoginTarget = async (redirect?: string | null): Promise<
       },
       credentials: "include",
     });
-    const data = await res.json();
-    if (data.success && data.data) {
-      return "/";
-    }
-  } catch {
-    // 网络错误时不阻断登录流程，直接跳首页
-  }
+    if (res.status === 404) return "/user/sync";
+    if (!res.ok) return "/";
 
-  return "/user/sync";
+    const data = (await res.json()) as { success?: boolean; data?: unknown };
+    return data.success && data.data ? "/" : "/user/sync";
+  } catch {
+    return "/";
+  }
 };
+
+export const readStoredGame = (fallback: SupportedGame = "maimai") =>
+  parseStoredGame(isBrowser() ? localStorage.getItem("game") : null, fallback);
