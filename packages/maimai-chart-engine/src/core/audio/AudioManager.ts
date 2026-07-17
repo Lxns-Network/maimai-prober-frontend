@@ -372,8 +372,27 @@ export class AudioManager {
     return this.enabled;
   }
 
+  /** 开关变更后已烘焙 run 内容失效：停掉在途 run source 并清除其 handled 键，下次调度重烘重排。 */
+  private invalidateBakedRuns(): void {
+    for (const entry of this.scheduledSources) {
+      if (!entry.stopOnClear) continue;
+      try {
+        entry.source.stop();
+      } catch {
+        // 忽略已停止的 source
+      }
+      this.scheduledSources.delete(entry);
+    }
+    for (const key of this.handledEvents) {
+      if (key.startsWith("run:")) this.handledEvents.delete(key);
+    }
+  }
+
   setHoldEndSoundEnabled(enabled: boolean): void {
-    if (enabled !== this.holdEndSoundEnabled) this.toggleEpoch++;
+    if (enabled !== this.holdEndSoundEnabled) {
+      this.toggleEpoch++;
+      this.invalidateBakedRuns();
+    }
     this.holdEndSoundEnabled = enabled;
   }
 
@@ -382,7 +401,10 @@ export class AudioManager {
   }
 
   setTouchSoundEnabled(enabled: boolean): void {
-    if (enabled !== this.touchSoundEnabled) this.toggleEpoch++;
+    if (enabled !== this.touchSoundEnabled) {
+      this.toggleEpoch++;
+      this.invalidateBakedRuns();
+    }
     this.touchSoundEnabled = enabled;
   }
 

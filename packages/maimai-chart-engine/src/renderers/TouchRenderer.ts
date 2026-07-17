@@ -113,26 +113,31 @@ export class TouchRenderer extends BaseRenderer {
     this.fireworkSpriteBasis = basis;
     this.fireworkWedgeBitmap?.close();
     this.fireworkWedgeBitmap = null;
-    createImageBitmap(sprite).then((bitmap) => {
-      if (this.fireworkSpriteBasis !== basis || this.fireworkWedgeSprite !== sprite) {
-        bitmap.close();
-        return;
-      }
-      this.fireworkWedgeBitmap = bitmap;
-      // 位图纹理首次合成时才真正上传；在与真实渲染一致的圆形 clip 内以全尺寸+半尺寸各画一次消化掉。
-      const ctx = this.context.ctx;
-      const size = this.context.radius * FIREWORK_EXTENT_RATIO * 2;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(this.context.centerX, this.context.centerY, this.context.centerX, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.globalAlpha = 1 / 255;
-      ctx.translate(this.context.centerX, this.context.centerY);
-      ctx.rotate(0.1);
-      ctx.drawImage(bitmap, -size / 2, -size / 2, size, size);
-      ctx.drawImage(bitmap, -size / 4, -size / 4, size / 2, size / 2);
-      ctx.restore();
-    });
+    // 位图不可用或创建失败时保持 null，getWedgeImage 回退 canvas 精灵。
+    if (typeof createImageBitmap === "function") {
+      createImageBitmap(sprite)
+        .then((bitmap) => {
+          if (this.fireworkSpriteBasis !== basis || this.fireworkWedgeSprite !== sprite) {
+            bitmap.close();
+            return;
+          }
+          this.fireworkWedgeBitmap = bitmap;
+          // 位图纹理首次合成时才真正上传；在与真实渲染一致的圆形 clip 内以全尺寸+半尺寸各画一次消化掉。
+          const ctx = this.context.ctx;
+          const size = this.context.radius * FIREWORK_EXTENT_RATIO * 2;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(this.context.centerX, this.context.centerY, this.context.centerX, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.globalAlpha = 1 / 255;
+          ctx.translate(this.context.centerX, this.context.centerY);
+          ctx.rotate(0.1);
+          ctx.drawImage(bitmap, -size / 2, -size / 2, size, size);
+          ctx.drawImage(bitmap, -size / 4, -size / 4, size / 2, size / 2);
+          ctx.restore();
+        })
+        .catch(() => {});
+    }
     return sprite;
   }
 
