@@ -1,24 +1,34 @@
 import { create } from "zustand";
 import { AliasList } from "../utils/api/alias.ts";
-import { Game } from "@/types/game";
 
 interface AliasListState {
   maimai: AliasList;
   chunithm: AliasList;
-  getAliasList: (game: Game) => AliasList;
   fetchAliasList: () => Promise<void>;
 }
 
-const useAliasListStore = create<AliasListState>((set, get) => ({
+const useAliasListStore = create<AliasListState>((set) => ({
   maimai: new AliasList("maimai"),
   chunithm: new AliasList("chunithm"),
-  getAliasList: (game) => get()[game],
   fetchAliasList: async () => {
-    await Promise.all([get().maimai.fetch(), get().chunithm.fetch()]);
+    const nextMaimai = new AliasList("maimai");
+    const nextChunithm = new AliasList("chunithm");
+    const [maimaiResult, chunithmResult] = await Promise.allSettled([
+      nextMaimai.fetch(),
+      nextChunithm.fetch(),
+    ]);
 
-    set({
-      getAliasList: (game: Game) => get()[game],
-    });
+    set((state) => ({
+      maimai: maimaiResult.status === "fulfilled" ? nextMaimai : state.maimai,
+      chunithm: chunithmResult.status === "fulfilled" ? nextChunithm : state.chunithm,
+    }));
+
+    const failures = [maimaiResult, chunithmResult].filter(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
+    );
+    if (failures.length > 0) {
+      throw new Error(failures.map((result) => String(result.reason)).join("；"));
+    }
   },
 }));
 

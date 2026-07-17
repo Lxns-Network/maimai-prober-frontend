@@ -99,7 +99,7 @@ export const ProxySyncSection = () => {
     if (!isLoggedOut) {
       loadCrawlToken();
     }
-  }, []);
+  }, [isLoggedOut]);
 
   useEffect(() => {
     const getCrawlStatisticHandler = async () => {
@@ -153,6 +153,7 @@ export const ProxySyncSection = () => {
     if (!token) return;
 
     const abortController = new AbortController();
+    let reconnectTimer: number | undefined;
 
     let lastStatus: CrawlStatusProps["status"] | null = null;
     let waitingForNewTask = sseResetKey > 0;
@@ -224,13 +225,13 @@ export const ProxySyncSection = () => {
         }
 
         if (lastStatus && lastStatus !== "completed" && lastStatus !== "failed") {
-          setTimeout(connectSSE, 3000);
+          reconnectTimer = window.setTimeout(connectSSE, 3000);
         }
       } catch (error) {
         if ((error as DOMException).name === "AbortError") return;
         console.error("SSE connection error:", error);
         if (lastStatus && lastStatus !== "completed" && lastStatus !== "failed") {
-          setTimeout(connectSSE, 3000);
+          reconnectTimer = window.setTimeout(connectSSE, 3000);
         }
       }
     };
@@ -239,8 +240,9 @@ export const ProxySyncSection = () => {
 
     return () => {
       abortController.abort();
+      if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
     };
-  }, [isProxyAvailable, proxySkipped, game, sseResetKey]);
+  }, [game, isLoggedOut, isProxyAvailable, proxySkipped, sseResetKey]);
 
   const proxyReady = isProxyAvailable || proxySkipped;
 

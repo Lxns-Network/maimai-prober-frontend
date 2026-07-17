@@ -27,7 +27,7 @@ import {
   IconPlus,
   IconTrash,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
 import { useOAuthApps } from "@/hooks/queries/useOAuthApps.ts";
 import { useDeleteOAuthApp } from "@/hooks/mutations/useDeveloperMutations.ts";
@@ -36,6 +36,8 @@ import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { CreateOAuthClientModal } from "@/components/Developer/CreateOAuthClientModal.tsx";
 import pageClasses from "@/pages/Page.module.css";
 import classes from "./DeveloperOAuthSection.module.css";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/hooks/queries/queryKeys.ts";
 
 const MAX_APPS = 5;
 
@@ -150,11 +152,16 @@ const OAuthAppCard = ({
 };
 
 export const DeveloperOAuthSection = () => {
-  const { apps, isLoading, invalidate } = useOAuthApps();
+  const { apps, isLoading } = useOAuthApps();
+  const queryClient = useQueryClient();
   const deleteOAuthAppMutation = useDeleteOAuthApp();
 
   const [opened, modal] = useDisclosure(false);
   const [selectedApp, setSelectedApp] = useState<OAuthAppProps | null>(null);
+  const invalidateApps = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: queryKeys.developer.oauthApps() }),
+    [queryClient],
+  );
 
   const generateOAuthAppLink = (app: OAuthAppProps) => {
     const params = new URLSearchParams({
@@ -174,15 +181,15 @@ export const DeveloperOAuthSection = () => {
   const deleteAppHandler = async (clientId: string) => {
     try {
       await deleteOAuthAppMutation.mutateAsync(clientId);
-      await invalidate();
+      await invalidateApps();
     } catch (error) {
       openRetryModal("删除失败", `${error}`, () => deleteAppHandler(clientId));
     }
   };
 
   useEffect(() => {
-    if (!opened) invalidate();
-  }, [opened]);
+    if (!opened) void invalidateApps();
+  }, [invalidateApps, opened]);
 
   const atLimit = apps.length >= MAX_APPS;
 

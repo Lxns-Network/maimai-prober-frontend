@@ -22,6 +22,7 @@ import {
 } from "@tabler/icons-react";
 import classes from "./Navbar.module.css";
 import { useUnreadCount } from "@/hooks/queries/useUnreadCount.ts";
+import { usePageContext } from "vike-react/usePageContext";
 
 interface NavbarProps {
   style?: React.CSSProperties;
@@ -33,6 +34,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const isLoggedOut = typeof window !== "undefined" ? !localStorage.getItem("token") : true;
   const { mutate: mutateLogout } = useLogoutUser();
   const unreadCount = useUnreadCount();
+  const { urlPathname } = usePageContext();
 
   const navbarData = useMemo(
     () => [
@@ -114,11 +116,9 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   );
 
   useEffect(() => {
-    const currentPath = window.location.pathname;
-
     const activeNavItem = navbarData.find((item) => {
       const pattern = new RegExp(`^${item.to}(/|$)`);
-      return pattern.test(currentPath);
+      return pattern.test(urlPathname);
     });
 
     if (activeNavItem) {
@@ -126,7 +126,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     } else {
       setActive("");
     }
-  }, [window.location.pathname, navbarData]);
+  }, [navbarData, urlPathname]);
 
   return (
     <nav className={classes.navbar} style={style}>
