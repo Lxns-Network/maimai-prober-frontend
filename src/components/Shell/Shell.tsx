@@ -37,10 +37,6 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   }, [scrollState.y]);
 
   useEffect(() => {
-    setScrollDirection("up");
-  }, [navbarOpened]);
-
-  useEffect(() => {
     if (!scrollDirection) return;
 
     let frameRequest = 0;
