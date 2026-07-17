@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import process from "node:process";
 import { gzipSync } from "node:zlib";
 
 const clientRoot = resolve("dist/client");
