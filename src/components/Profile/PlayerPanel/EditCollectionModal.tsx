@@ -27,7 +27,6 @@ import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { useEffect, useState } from "react";
 import classes from "./EditCollectionModal.module.css";
 import LazyLoad from "@/components/LazyLoad";
-import { forceCheck } from "@/components/LazyLoad";
 import { IconDatabaseOff, IconHeartFilled, IconHelp, IconSearch } from "@tabler/icons-react";
 import { Icon } from "@/components/MdiIcon";
 import { mdiWebOff } from "@mdi/js";
@@ -107,7 +106,6 @@ const EditCollectionModalContent = ({
 
   const pageSize = 20;
   const [visibleCount, setVisibleCount] = useState(pageSize);
-  const [scrollPosition, onScrollPositionChange] = useState({ x: 0, y: 0 });
 
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + pageSize);
@@ -118,9 +116,9 @@ const EditCollectionModalContent = ({
   }, [throttledSearch]);
 
   useEffect(() => {
-    const lowerSearch = search.toLowerCase();
+    const lowerSearch = throttledSearch.toLowerCase();
     const filtered =
-      search.trim() === ""
+      throttledSearch.trim() === ""
         ? collections
         : collections.filter((collection) => collection.name.toLowerCase().includes(lowerSearch));
     const sorted = filtered.sort((a, b) => {
@@ -130,11 +128,7 @@ const EditCollectionModalContent = ({
     });
 
     setSearchedCollections(sorted.slice(0, visibleCount));
-  }, [throttledSearch, collections, visibleCount]);
-
-  useEffect(() => {
-    forceCheck();
-  }, [scrollPosition]);
+  }, [collections, defaultValue, throttledSearch, visibleCount]);
 
   if (isLoading) {
     return (
@@ -181,11 +175,15 @@ const EditCollectionModalContent = ({
                     src={`https://assets2.lxns.net/${game}/${metadata.path}/${collection.id}.png`}
                     h={54}
                     w={54}
+                    alt={`${collection.name} ${metadata.title}`}
+                    loading="lazy"
                   />
                 ) : (
                   <Image
                     src={`https://assets2.lxns.net/${game}/${metadata.path}/${collection.id}.png`}
                     w="100%"
+                    alt={`${collection.name} ${metadata.title}`}
+                    loading="lazy"
                   />
                 )}
               </LazyLoad>
@@ -222,10 +220,7 @@ const EditCollectionModalContent = ({
           </Text>
         </Alert>
       ) : (
-        <ScrollArea.Autosize
-          onScrollPositionChange={onScrollPositionChange}
-          style={{ flex: 1, minHeight: 0 }}
-        >
+        <ScrollArea.Autosize style={{ flex: 1, minHeight: 0 }}>
           <Radio.Group
             value={collectionId.toString()}
             onChange={(value) => setCollectionId(parseInt(value))}

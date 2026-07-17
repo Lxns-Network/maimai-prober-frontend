@@ -49,6 +49,7 @@ export class ChunithmSongList {
   songs: ChunithmSongProps[] = [];
   genres: ChunithmGenreProps[] = [];
   versions: ChunithmVersionProps[] = [];
+  private songsById = new Map<number, ChunithmSongProps>();
 
   async fetch(hash?: string): Promise<ChunithmSongList["songs"]> {
     const cachedHash = localStorage.getItem("chunithm_songs_hash");
@@ -82,14 +83,16 @@ export class ChunithmSongList {
     this.songs = data.songs;
     this.genres = data.genres;
     this.versions = data.versions;
+    this.songsById = new Map(this.songs.map((song) => [song.id, song]));
   }
 
   find(id: number) {
-    return this.songs.find((song: ChunithmSongProps) => song.id === id);
+    return this.songsById.get(id);
   }
 
   push(...songs: ChunithmSongProps[]) {
     this.songs.push(...songs);
+    songs.forEach((song) => this.songsById.set(song.id, song));
   }
 
   getDifficulty(song: ChunithmSongProps, level_index: number) {

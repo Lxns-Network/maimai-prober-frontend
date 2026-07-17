@@ -291,25 +291,40 @@ export const ScoreListSection = () => {
   const sortedScores = useMemo(() => {
     if (!searchedScores.length || !sortBy || !songList) return searchedScores;
 
+    const levelValueByScore = new Map<MaimaiScoreProps | ChunithmScoreProps, number | null>();
+    if (sortBy === "level_value") {
+      searchedScores.forEach((score) => {
+        const song = songList.find(score.id);
+        if (!song) {
+          levelValueByScore.set(score, null);
+          return;
+        }
+
+        if (songList instanceof MaimaiSongList && "type" in score) {
+          levelValueByScore.set(
+            score,
+            songList.getDifficulty(song as MaimaiSongProps, score.type, score.level_index)
+              ?.level_value ?? null,
+          );
+          return;
+        }
+
+        if (songList instanceof ChunithmSongList) {
+          levelValueByScore.set(
+            score,
+            songList.getDifficulty(song as ChunithmSongProps, score.level_index)?.level_value ??
+              null,
+          );
+        }
+      });
+    }
+
     const getCompareValue = (
       score: MaimaiScoreProps | ChunithmScoreProps,
       key: string,
     ): string | number | null => {
       if (key === "level_value") {
-        const song = songList.find(score.id);
-        if (!song) return null;
-        if (songList instanceof MaimaiSongList && "type" in score) {
-          const difficulty = songList.getDifficulty(
-            song as MaimaiSongProps,
-            score.type,
-            score.level_index,
-          );
-          return difficulty?.level_value ?? null;
-        } else if (songList instanceof ChunithmSongList) {
-          const difficulty = songList.getDifficulty(song as ChunithmSongProps, score.level_index);
-          return difficulty?.level_value ?? null;
-        }
-        return null;
+        return levelValueByScore.get(score) ?? null;
       }
       if (key in score) {
         return (score as unknown as Record<string, string | number>)[key];

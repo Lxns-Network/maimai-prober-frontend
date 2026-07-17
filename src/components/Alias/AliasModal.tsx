@@ -11,7 +11,6 @@ import {
   ThemeIcon,
   Tooltip,
 } from "@mantine/core";
-import { useEffect, useState } from "react";
 import { useVoteAlias } from "@/hooks/mutations/useAliasMutations.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import {
@@ -26,7 +25,6 @@ import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { APIError } from "@/utils/errors.ts";
 import { PhotoView } from "react-photo-view";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ASSET_URL } from "@/main";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -100,27 +98,12 @@ const AliasModalBody = ({
   alias: AliasProps;
   setAlias: (alias: AliasProps) => void;
 }) => {
-  const [progress, setProgress] = useState(0);
-  const [weight, setWeight] = useState(0);
-  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [game] = useFixedGame();
 
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
-
-  useEffect(() => {
-    setSong(songList.find(alias.song.id) || null);
-    setProgress((alias.weight.up / alias.weight.total) * 100);
-  }, []);
-
-  useEffect(() => {
-    setWeight(alias.vote?.weight ?? 0);
-
-    if (alias.weight.total === 0) {
-      setProgress(0);
-    } else {
-      setProgress((alias.weight.up / alias.weight.total) * 100);
-    }
-  }, [alias]);
+  const song = songList.find(alias.song.id) || null;
+  const weight = alias.vote?.weight ?? 0;
+  const progress = alias.weight.total === 0 ? 0 : (alias.weight.up / alias.weight.total) * 100;
 
   const voteAliasMutation = useVoteAlias();
 
