@@ -390,8 +390,7 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
     skipWhitespace();
     if (pos >= chartBody.length) break;
 
-    // 收集整个槽位内容直到逗号。(bpm) / {divisor} / <HS*x> 是状态标记，
-    // 就地消费且不切分槽位——只有逗号才推进时间，与 simai 语义一致。
+    // 收集整个槽位直到逗号；(bpm)/{divisor}/<HS*x> 状态标记就地消费，仅逗号推进时间。
     let noteContent = "";
     const startPos = pos;
 

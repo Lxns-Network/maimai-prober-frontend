@@ -204,8 +204,7 @@ export class TouchRenderer extends BaseRenderer {
     scratch.fillStyle = scratchGrad;
     scratch.fillRect(0, 0, 2, 2);
     scratch.globalCompositeOperation = "source-over";
-    // 主画布：在与真实渲染一致的圆形 clip 内逐一走真实绘制管线，
-    // 否则首个烟花帧才编译对应着色器变体会掉帧；亚像素缩放+低 alpha 视觉不可见。
+    // 主画布在与真实渲染一致的圆形 clip 内逐一走真实绘制管线，亚像素缩放+低 alpha 不可见。
     const ctx = this.context.ctx;
     ctx.save();
     ctx.beginPath();
@@ -315,10 +314,7 @@ export class TouchRenderer extends BaseRenderer {
     );
   }
 
-  /**
-   * 花瓣按 (层|变体|花瓣索引) 烘焙，绘制时按连续 petalDist 定位，动画不量化。
-   * 三层分离保持原图层顺序：sb=阴影+黑宽边（所有填充之下）、f=渐变填充、w=白描边（最上）。
-   */
+  /** 花瓣按 (层|变体|花瓣索引) 烘焙，连续定位绘制；sb=阴影+黑宽边、f=填充、w=白描边。 */
   private getTouchPetalSprite(
     layer: "sb" | "f" | "w",
     kind: "n" | "s" | "h",
@@ -825,10 +821,7 @@ export class TouchRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /**
-   * 触摸火花（`f` 标记）：单例，只渲染最近一次 hit 且在 1333ms 内的 touch。
-   * touches 须已按 hasFirework 过滤、并按 fireworkTriggerMs 升序，二分取最后一个已触发的烟花。
-   */
+  /** 烟花单例：touches 须已按 hasFirework 过滤并按 fireworkTriggerMs 升序，二分取最近已触发者。 */
   renderTouchFireworks(
     touches: ReadonlyArray<TouchNote | TouchHoldStartNote>,
     currentTimeMs: number,
@@ -861,8 +854,7 @@ export class TouchRenderer extends BaseRenderer {
     const half = this.context.radius * FIREWORK_EXTENT_RATIO;
 
     if (tSec <= FIREWORK_HOLE_START_SEC) {
-      // 成长期无掩膜。小 scale 矢量绘制成本 ∝ 面积且避免精灵极端缩小采样；
-      // 大 scale 切精灵，缩小率 ≤2:1，矢量成本恰在此后随面积飙升。
+      // 成长期无掩膜：小 scale 走矢量，达阈值切精灵。
       if (scale > 0 && scale < FIREWORK_SPRITE_MIN_SCALE) {
         this.drawWedgesVector(ctx, position.x, position.y, scale, rotation);
       } else if (scale > 0) {

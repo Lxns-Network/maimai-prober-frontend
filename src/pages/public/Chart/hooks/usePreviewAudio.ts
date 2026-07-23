@@ -17,8 +17,7 @@ const SEEK_THROTTLE_MS = 50;
 const SOURCE_FADE_TIME_S = 0.015;
 const SOURCE_START_LEAD_TIME_S = 0.05;
 const SCHEDULE_LOOKAHEAD_MS = 1500;
-// 距音频末尾多近视为"已播完"；须大于重启定位用的 0.01s clamp，
-// 否则源自然 ended 后 musicTime 落在缝隙里会从 duration-0.01 反复重启，把播放头钉住。
+// 距音频末尾多近视为"已播完"；须大于重启定位用的 0.01s clamp。
 const MUSIC_END_EPSILON_S = 0.05;
 
 interface AudioState {
@@ -750,8 +749,7 @@ export function usePreviewAudio(): PreviewAudioController {
           // 三态交接：seek/未播放 → 发起 playFromPosition 并等新源可听 → 可听后切回音频时钟跟随。
           // 切换瞬间视觉播放头用 pendingStartChartMs（目标位置）保持不动，避免在新源尚未发声时
           // 用旧时钟外推产生跳变；新源可听后改用 getCurrentTime 接管，回到音频输出时钟。
-          // musicEnded：源已自然播完，输出延迟使 musicTime 反推值滞后于 duration，
-          // 不能据此重启末尾残端（残端在变可听前就会 ended，启动等待态永远出不来）。
+          // 源已自然播完时不重启末尾残端（输出延迟使 musicTime 反推值滞后于 duration）。
           if (
             (state.pendingSeek || !state.isSourcePlaying) &&
             !state.isStartingPlayback &&

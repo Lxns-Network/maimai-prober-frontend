@@ -73,9 +73,7 @@ export class NoteRenderer extends BaseRenderer {
       return INVISIBLE_NOTE_POSITION;
     }
 
-    // approach 上半段：在起点位置淡入；下半段：朝判定线推进；命中后：hold 钉在
-    // 判定线，普通 note 沿原方向继续淡出。dir=-1（负流速）时路径关于判定圈镜像，
-    // 起点在圈外 1.75R，向内收敛到判定线。
+    // 上半段起点淡入、下半段推进判定线；dir=-1 时路径关于判定圈镜像（自圈外 1.75R 向内）。
     const dir = this.getNoteApproachDir(note);
     const halfApproach = approachTime / 2;
     let distance: number;

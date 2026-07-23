@@ -5,7 +5,7 @@ import { getAudioContextOutputTime } from "./audioClock";
 const SCHEDULE_LOOKAHEAD_MS = 1500;
 // 待播源上限，达到即停止本帧调度由后续帧续上，等效自适应收缩前瞻。
 const MAX_PENDING_SOURCES = 96;
-// 事件间隔小于该值视为超密段（压测谱面每秒数千事件，逐源实时调度会压垮音频与主线程）。
+// 事件间隔小于该值视为超密段。
 const DENSE_GAP_MS = 40;
 const MIN_TICK_TAIL_MS = 30;
 // 连续超密事件达到该数量时离线烘焙成单个 AudioBuffer，整段只挂一个 source。

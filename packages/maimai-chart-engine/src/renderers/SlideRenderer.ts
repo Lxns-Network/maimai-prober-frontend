@@ -558,8 +558,7 @@ export class SlideRenderer extends BaseRenderer {
       signature += `;${entry.index}:${entry.isSimultaneous ? 1 : 0}${this.trackStateKey(entry.note, currentTimeMs)}`;
     }
 
-    // 双缓冲分帧重建:staging 层每帧最多画 TRACKS_PER_BUILD_STEP 条,画完再换前台;
-    // 重建期间旧层继续显示,箭头消隐迟滞几帧,climax 段不再出现整层重绘的长帧。
+    // 双缓冲分帧重建：staging 层每帧最多画 TRACKS_PER_BUILD_STEP 条，画完与前台互换。
     const job = this.trackBuildJob;
     if (signature === this.trackLayerSignature) {
       this.trackBuildJob = null;
