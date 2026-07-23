@@ -14,9 +14,6 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
 import dayjs from "dayjs";
 import { useAdminNotifications } from "@/hooks/queries/useAdminNotifications.ts";
 import { useDeleteNotification } from "@/hooks/mutations/useAdminNotificationMutations.ts";
@@ -26,6 +23,7 @@ import { NotificationTypeIcon } from "@/components/Notifications/NotificationTyp
 import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { AdminBroadcast } from "@/types/notification";
+import { NotificationMarkdown } from "@/components/Notifications/NotificationMarkdown.tsx";
 
 const PAGE_SIZE = 10;
 
@@ -119,9 +117,7 @@ export function AdminNotificationsSection() {
             </Accordion.Control>
             <Accordion.Panel>
               <Typography>
-                <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                  {b.content}
-                </Markdown>
+                <NotificationMarkdown content={b.content} />
               </Typography>
               <Group justify="flex-end" mt="sm" gap="xs">
                 <Tooltip label="编辑" position="top" withArrow>

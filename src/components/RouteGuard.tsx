@@ -1,7 +1,8 @@
 import { navigate } from "vike/client/router";
-import { isTokenUndefined, isTokenExpired, checkPermission, UserPermission } from "@/utils/session";
+import { isTokenExpired, checkPermission, UserPermission } from "@/utils/session";
 import { useUserToken } from "@/hooks/queries/useUserToken.ts";
 import { useEffect, useState } from "react";
+import { isAuthenticationRefreshError } from "@/utils/api/api.ts";
 
 interface GuardProps {
   children: React.ReactNode;
@@ -9,34 +10,65 @@ interface GuardProps {
 }
 
 export function RouteGuard({ children, requireAdmin = false }: GuardProps) {
-  const { refetch } = useUserToken();
+  const { token, refetch } = useUserToken();
   const [isChecking, setIsChecking] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
+  const [verificationError, setVerificationError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    let cancelled = false;
+
+    const verifySession = async () => {
+      if (typeof window === "undefined") {
+        setIsChecking(false);
+        return;
+      }
+
+      setIsChecking(true);
+      setIsAllowed(false);
+      setVerificationError(null);
+
+      if (!token) {
+        const redirectPath = encodeURIComponent(
+          window.location.pathname + window.location.search + window.location.hash,
+        );
+        navigate(`/login?redirect=${redirectPath}`);
+        return;
+      }
+
+      if (isTokenExpired()) {
+        const result = await refetch();
+        if (cancelled) return;
+        if (result.error) {
+          if (isAuthenticationRefreshError(result.error)) {
+            const redirectPath = encodeURIComponent(
+              window.location.pathname + window.location.search + window.location.hash,
+            );
+            navigate(`/login?redirect=${redirectPath}`);
+          } else {
+            setVerificationError(result.error);
+            setIsChecking(false);
+          }
+          return;
+        }
+      }
+
+      if (requireAdmin && !checkPermission(UserPermission.Administrator)) {
+        navigate("/");
+        return;
+      }
+
+      setIsAllowed(true);
       setIsChecking(false);
-      return;
-    }
+    };
 
-    if (isTokenUndefined()) {
-      const redirectPath = encodeURIComponent(window.location.pathname + window.location.search);
-      navigate(`/login?redirect=${redirectPath}`);
-      return;
-    }
+    void verifySession();
+    return () => {
+      cancelled = true;
+    };
+  }, [refetch, requireAdmin, token]);
 
-    if (isTokenExpired()) {
-      refetch();
-    }
-
-    if (requireAdmin && !checkPermission(UserPermission.Administrator)) {
-      navigate("/");
-      return;
-    }
-
-    setIsAllowed(true);
-    setIsChecking(false);
-  }, [refetch, requireAdmin]);
+  if (verificationError) throw verificationError;
 
   if (isChecking) {
     return null;

@@ -47,6 +47,7 @@ import classes from "@/App.module.css";
 import useGame from "@/hooks/useGame.ts";
 import { useThemeColor } from "@/hooks/useThemeColor.ts";
 import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
+import { isAuthenticationRefreshError } from "@/utils/api/api.ts";
 
 // Tag iOS so index.css can force inputs to >=16px and avoid Safari's focus-zoom.
 if (typeof document !== "undefined") {
@@ -128,7 +129,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   const [game] = useGame();
 
   useEffect(() => {
-    if (userTokenError) {
+    if (userTokenError && isAuthenticationRefreshError(userTokenError)) {
       Sentry.setUser(null);
       logout();
 
@@ -141,7 +142,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
         });
       }
     }
-  }, [userTokenError]);
+  }, [pageContext.urlPathname, userTokenError]);
 
   useEffect(() => {
     if (viewport.current) {

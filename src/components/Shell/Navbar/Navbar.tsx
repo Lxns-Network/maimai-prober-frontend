@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Container, Divider, ScrollArea } from "@mantine/core";
 import { NavbarButton } from "./NavbarButton";
-import { checkPermission, UserPermission } from "@/utils/session.ts";
+import { checkPermission, clearAuthSession, UserPermission } from "@/utils/session.ts";
 import { useLogoutUser } from "@/hooks/mutations/useUserMutations.ts";
 import {
   IconAward,
@@ -160,12 +160,11 @@ export default function Navbar({ style, onClose }: NavbarProps) {
             <NavbarButton
               label="登出"
               icon={<IconLogout stroke={1.5} />}
-              to="/"
               onClose={onClose}
               onClick={() => {
                 mutateLogout(undefined, {
-                  onSuccess: () => {
-                    localStorage.removeItem("token");
+                  onSettled: async () => {
+                    await clearAuthSession();
                     window.location.href = "/";
                   },
                 });

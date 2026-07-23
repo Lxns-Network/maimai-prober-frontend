@@ -5,7 +5,7 @@ import { openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { Button, Group, Modal, PasswordInput } from "@mantine/core";
 import * as Sentry from "@sentry/react";
-import { getSentryUser } from "@/utils/session.ts";
+import { getSentryUser, setAuthToken } from "@/utils/session.ts";
 
 interface FormValues {
   current_password: string;
@@ -40,9 +40,9 @@ export const EditPasswordModal = ({ opened, close }: { opened: boolean; close():
 
   const editUserPasswordHandler = (values: FormValues) => {
     mutateEditPassword(values, {
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         if (data?.token) {
-          localStorage.setItem("token", data.token);
+          await setAuthToken(data.token);
           Sentry.setUser(getSentryUser());
         }
         notifications.show({

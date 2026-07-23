@@ -1,10 +1,8 @@
 import { ReactNode } from "react";
 import { Typography } from "@mantine/core";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
 import { Game } from "@/types/game";
 import { NotificationAction, NotificationProps } from "@/types/notification";
+import { NotificationMarkdown } from "./NotificationMarkdown.tsx";
 
 export interface NotificationDisplay {
   title: string;
@@ -76,11 +74,7 @@ const templates: Record<string, NotificationTemplate> = {
 };
 
 function renderContent(content: string): ReactNode {
-  return (
-    <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-      {content}
-    </Markdown>
-  );
+  return <NotificationMarkdown content={content} />;
 }
 
 export function getNotificationDisplay(n: NotificationProps): NotificationDisplay {

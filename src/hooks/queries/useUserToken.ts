@@ -1,37 +1,38 @@
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getSentryUser, isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
+import {
+  getAuthToken,
+  getSentryUser,
+  isTokenExpired,
+  subscribeAuthSession,
+} from "@/utils/session.ts";
 import * as Sentry from "@sentry/react";
 import { queryKeys } from "./queryKeys.ts";
+import { refreshAuthToken } from "@/utils/api/api.ts";
+import { getTokenSessionIdentity, isTokenSessionExpired } from "@/utils/sessionCore.ts";
 
 export const useUserToken = () => {
-  const shouldFetch = !isTokenUndefined();
+  const token = useSyncExternalStore(subscribeAuthSession, getAuthToken, () => null);
+  const identity = getTokenSessionIdentity(token);
+  const shouldRefresh = Boolean(token) && isTokenSessionExpired(token);
 
-  const { data, error, isLoading, refetch } = useQuery<{ token: string }>({
-    queryKey: queryKeys.user.refresh(),
-    enabled: shouldFetch,
+  const { error, isFetching, refetch } = useQuery({
+    queryKey: queryKeys.user.refresh(identity),
+    queryFn: async () => {
+      await refreshAuthToken();
+      return true;
+    },
+    enabled: shouldRefresh,
   });
 
   useEffect(() => {
-    if (data?.token) {
-      localStorage.setItem("token", data.token);
-      Sentry.setUser(getSentryUser());
-    }
-  }, [data?.token]);
-
-  if (!isTokenExpired()) {
-    return {
-      token: localStorage.getItem("token") || "",
-      isLoading: false,
-      error: null,
-      refetch: () => {},
-    };
-  }
+    if (token && !isTokenExpired()) Sentry.setUser(getSentryUser());
+  }, [token]);
 
   return {
-    token: data?.token || "",
-    isLoading,
-    error,
+    token: token || "",
+    isLoading: shouldRefresh && isFetching,
+    error: token && !shouldRefresh ? null : error,
     refetch,
   };
 };

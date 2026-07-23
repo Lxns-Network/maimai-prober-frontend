@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Title,
   Text,
@@ -51,60 +51,81 @@ function isAppSchemeRedirectUri(redirectUri: string | null): boolean {
 
 export default function Authorize() {
   const pageContext = usePageContext();
-  const params = new URLSearchParams(pageContext.urlParsed.search);
+  const searchOriginal = pageContext.urlParsed.searchOriginal ?? "";
+  const params = useMemo(() => new URLSearchParams(searchOriginal), [searchOriginal]);
   const { app, isLoading, error } = useOAuthApp(params);
-  const confirmOAuthAuthorize = useConfirmOAuthAuthorize();
+  const { mutateAsync: confirmOAuthAuthorize } = useConfirmOAuthAuthorize();
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [code, setCode] = useState("");
-  const requestedScopes = (params.get("scope") || "").split(" ").filter(Boolean);
+  const authorizingRef = useRef(false);
+  const autoAuthorizationStartedFor = useRef<string | null>(null);
+  const requestedScopes = useMemo(
+    () => (params.get("scope") || "").split(" ").filter(Boolean),
+    [params],
+  );
   const [selectedScopes, setSelectedScopes] = useState<string[]>(requestedScopes);
   // only ever offer/grant scopes the client is actually registered for — clients may over-request
   // (e.g. an MCP client reading the AS metadata picks up read_user_token, which is not an MCP scope)
-  const registeredScopes = (app?.scope ?? "").split(" ").filter(Boolean);
-  const allowedScopes = requestedScopes.filter((s) => registeredScopes.includes(s));
+  const registeredScopes = useMemo(
+    () => (app?.scope ?? "").split(" ").filter(Boolean),
+    [app?.scope],
+  );
+  const allowedScopes = useMemo(
+    () => requestedScopes.filter((scope) => registeredScopes.includes(scope)),
+    [registeredScopes, requestedScopes],
+  );
+
+  const handleAuthorize = useCallback(
+    async function authorize() {
+      if (!app || authorizingRef.current) return;
+      authorizingRef.current = true;
+      setIsAuthorizing(true);
+      try {
+        const resource = params.get("resource");
+        const data = await confirmOAuthAuthorize({
+          client_id: params.get("client_id") || "",
+          redirect_uri: params.get("redirect_uri") || "",
+          scope: app.is_dynamic
+            ? selectedScopes.filter((scope) => allowedScopes.includes(scope)).join(" ")
+            : allowedScopes.join(" "),
+          code_challenge: params.get("code_challenge") || "",
+          code_challenge_method: params.get("code_challenge_method") || "",
+          state: params.get("state") || "",
+          ...(resource ? { resource } : {}),
+        });
+        if (isOOBRedirectUri(app.redirect_uri)) {
+          setCode(data.code);
+        } else {
+          const redirect = new URL(app.redirect_uri);
+          redirect.searchParams.set("code", data.code);
+          if (data.state) {
+            redirect.searchParams.set("state", data.state);
+          }
+          window.location.href = redirect.toString();
+        }
+      } catch (error) {
+        openRetryModal("授权失败", `${error}`, authorize);
+      } finally {
+        authorizingRef.current = false;
+        setIsAuthorizing(false);
+      }
+    },
+    [allowedScopes, app, confirmOAuthAuthorize, params, selectedScopes],
+  );
 
   useEffect(() => {
-    if (!app) return;
-    if (!app.is_dynamic && app.user_authorized && !isOOBRedirectUri(app.redirect_uri)) {
-      setCode("authorized");
-      setTimeout(() => {
-        handleAuthorize();
-      }, 3000);
+    if (!app || app.is_dynamic || !app.user_authorized || isOOBRedirectUri(app.redirect_uri)) {
+      return;
     }
-  }, [app]);
 
-  const handleAuthorize = async () => {
-    if (!app) return;
-    setIsAuthorizing(true);
-    try {
-      const resource = params.get("resource");
-      const data = await confirmOAuthAuthorize.mutateAsync({
-        client_id: params.get("client_id") || "",
-        redirect_uri: params.get("redirect_uri") || "",
-        scope: app.is_dynamic
-          ? selectedScopes.filter((s) => allowedScopes.includes(s)).join(" ")
-          : allowedScopes.join(" "),
-        code_challenge: params.get("code_challenge") || "",
-        code_challenge_method: params.get("code_challenge_method") || "",
-        state: params.get("state") || "",
-        ...(resource ? { resource } : {}),
-      });
-      if (isOOBRedirectUri(app.redirect_uri)) {
-        setCode(data.code);
-      } else {
-        const redirect = new URL(app.redirect_uri);
-        redirect.searchParams.set("code", data.code);
-        if (data.state) {
-          redirect.searchParams.set("state", data.state);
-        }
-        window.location.href = redirect.toString();
-      }
-    } catch (error) {
-      openRetryModal("授权失败", `${error}`, handleAuthorize);
-    } finally {
-      setIsAuthorizing(false);
-    }
-  };
+    setCode("authorized");
+    const timeout = window.setTimeout(() => {
+      if (autoAuthorizationStartedFor.current === searchOriginal) return;
+      autoAuthorizationStartedFor.current = searchOriginal;
+      void handleAuthorize();
+    }, 3000);
+    return () => window.clearTimeout(timeout);
+  }, [app, handleAuthorize, searchOriginal]);
 
   const handleDeny = () => {
     if (!app) return;

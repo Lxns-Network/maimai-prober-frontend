@@ -7,7 +7,7 @@ import { startAuthentication } from "@simplewebauthn/browser";
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import * as Sentry from "@sentry/react";
-import { getSentryUser, resolvePostLoginTarget } from "@/utils/session";
+import { getSentryUser, resolvePostLoginTarget, setAuthToken } from "@/utils/session";
 
 export const PasskeyLogin = () => {
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ export const PasskeyLogin = () => {
         return;
       }
 
-      localStorage.setItem("token", authData.data.token);
+      await setAuthToken(authData.data.token);
       Sentry.setUser(getSentryUser());
 
       const redirect = pageContext.urlParsed.search.redirect || pageContext.redirect;
