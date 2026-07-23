@@ -63,6 +63,7 @@ import { NoteCountGraph } from "../NoteCountGraph";
 import { ChartDensityTimeline } from "../ChartDensityTimeline/ChartDensityTimeline";
 import { ExportRangeOverlay } from "../ExportRangeOverlay/ExportRangeOverlay";
 import { SimaiStatementList } from "../SimaiStatementList";
+import { ChartInfoPanel } from "../ChartInfoPanel";
 import { exportChartGif } from "../../utils/exportChartGif";
 import { useExportRange } from "../../hooks/useExportRange";
 import { getChartIdForFilename, downloadBlob } from "../../utils/fileDownload";
@@ -71,6 +72,7 @@ import { formatDuration } from "../../utils/format";
 import { clamp } from "../../utils/math";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import { openConfirmModal } from "@/utils/modal";
+import { isIOSWebkit } from "@/utils/device";
 import classes from "./Controls.module.css";
 
 function getErrorMessage(error: unknown): string {
@@ -360,7 +362,6 @@ export function PlaybackControls({
       const blob = await exportChartGif({
         chart: chartData,
         range: exportRange,
-        beatsPerMeasure: timeline.beatsPerMeasure,
         settings,
         onProgress: setExportProgress,
         video,
@@ -1016,6 +1017,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     setShowVideo,
     videoServer,
     setVideoServer,
+    videoBrightness,
+    setVideoBrightness,
   } = useGameSettingsStore(useShallow((state) => state));
 
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);
@@ -1120,6 +1123,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
           </Stack>
         </Card>
       )}
+
+      {!isIOSWebkit() ? <ChartInfoPanel /> : null}
 
       {debugChartFileType === "simai" && (
         <SimaiStatementList simaiText={rawSimaiText} difficulty={selectedDifficulty} />
@@ -1552,6 +1557,20 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 }
               }}
             />
+
+            <Stack gap={4}>
+              <Text size="sm">背景亮度</Text>
+              <SegmentedControl
+                size="xs"
+                value={videoBrightness}
+                onChange={(value) => setVideoBrightness(value as "dark" | "normal" | "bright")}
+                data={[
+                  { label: "暗", value: "dark" },
+                  { label: "正常", value: "normal" },
+                  { label: "亮", value: "bright" },
+                ]}
+              />
+            </Stack>
           </Stack>
         </Collapse>
       </Card>

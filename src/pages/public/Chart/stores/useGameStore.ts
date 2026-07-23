@@ -104,12 +104,12 @@ function getDivisorAt(chartData: Chart | null, time: number, forStepping: boolea
   let result = -1;
 
   while (left <= right) {
-    const mid = (left + right) >> 1;
-    if (events[mid].timing <= time) {
-      result = mid;
-      left = mid + 1;
+    const middle = (left + right) >> 1;
+    if (events[middle].timing <= time) {
+      result = middle;
+      left = middle + 1;
     } else {
-      right = mid - 1;
+      right = middle - 1;
     }
   }
 

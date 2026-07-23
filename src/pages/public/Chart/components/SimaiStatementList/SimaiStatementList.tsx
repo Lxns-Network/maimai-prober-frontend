@@ -286,14 +286,14 @@ export function SimaiStatementList({
     let lastChunk = -1;
     let lastBeat = -1;
     const findChunkLocationAt = (beat: number) => {
-      let lo = 0;
-      let hi = chunkLocations.length;
-      while (lo < hi) {
-        const mid = (lo + hi) >> 1;
-        if (chunkLocations[mid].beat <= beat) lo = mid + 1;
-        else hi = mid;
+      let left = 0;
+      let right = chunkLocations.length;
+      while (left < right) {
+        const middle = (left + right) >> 1;
+        if (chunkLocations[middle].beat <= beat) left = middle + 1;
+        else right = middle;
       }
-      const index = Math.max(0, lo - 1);
+      const index = Math.max(0, left - 1);
       return chunkLocations[index] ?? null;
     };
     const tick = () => {

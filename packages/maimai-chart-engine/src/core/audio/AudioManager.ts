@@ -72,7 +72,6 @@ export function prepareAudioEvents(notes: readonly Note[] | null): PreparedAudio
         event.hasBaseSound ||= !note.isHeadless;
         break;
       case "tap":
-      case "break":
       case "simultaneous":
       case "hold-start":
       case "hold-start-simultaneous":

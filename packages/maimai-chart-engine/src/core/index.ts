@@ -13,3 +13,4 @@ export {
 } from "./audio/AudioManager";
 export { getAudioContextOutputTime } from "./audio/audioClock";
 export { TimingTimeline } from "./timing/TimingTimeline";
+export * from "./scoring";
