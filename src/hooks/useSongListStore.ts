@@ -19,14 +19,25 @@ const useSongListStore = create<SongListState>((set, get) => ({
   chunithm: new ChunithmSongList(),
   getSongList: (game) => get()[game],
   fetchSongList: async (hashes) => {
-    await Promise.all([
-      get().maimai.fetch(hashes?.maimai.songs),
-      get().chunithm.fetch(hashes?.chunithm.songs),
+    const nextMaimai = new MaimaiSongList();
+    const nextChunithm = new ChunithmSongList();
+    const [maimaiResult, chunithmResult] = await Promise.allSettled([
+      nextMaimai.fetch(hashes?.maimai?.songs),
+      nextChunithm.fetch(hashes?.chunithm?.songs),
     ]);
 
     set((state) => ({
-      getSongList: (game: Game) => state[game],
+      maimai: maimaiResult.status === "fulfilled" ? nextMaimai : state.maimai,
+      chunithm: chunithmResult.status === "fulfilled" ? nextChunithm : state.chunithm,
+      getSongList: (game: Game) => get()[game],
     }));
+
+    const failures = [maimaiResult, chunithmResult].filter(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
+    );
+    if (failures.length > 0) {
+      throw new Error(failures.map((result) => String(result.reason)).join("；"));
+    }
   },
 }));
 

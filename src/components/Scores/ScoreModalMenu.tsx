@@ -14,13 +14,11 @@ import {
   IconPlus,
   IconTrash,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
-import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/hooks/queries/queryKeys.ts";
 import { MaimaiDifficultyProps } from "@/utils/api/song/maimai";
 import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm";
 
@@ -38,10 +36,7 @@ export const ScoreModalMenu = ({
   navigateFromOverlay,
 }: ScoreModalActionMenuProps) => {
   const { openModal: openCreateScoreModal } = useCreateScoreStore();
-  const [params, setParams] = useState(new URLSearchParams());
   const [game] = useFixedGame();
-  const queryClient = useQueryClient();
-
   const { player } = usePlayer(game);
 
   const deleteScoreMutation = useDeletePlayerScore();
@@ -57,7 +52,7 @@ export const ScoreModalMenu = ({
             message: "你的成绩已经成功删除。",
             color: "green",
           });
-          onClose && onClose(score);
+          onClose?.();
         },
         onError: (err) => {
           openRetryModal("成绩删除失败", `${err}`, deletePlayerScoreHandler);
@@ -76,7 +71,7 @@ export const ScoreModalMenu = ({
             message: "你的所有历史成绩已经成功删除。",
             color: "green",
           });
-          onClose && onClose(score);
+          onClose?.();
         },
         onError: (err) => {
           openRetryModal("成绩删除失败", `${err}`, deletePlayerScoresHandler);
@@ -93,16 +88,13 @@ export const ScoreModalMenu = ({
     navigateFromOverlay(`/chart?${params.toString()}`);
   };
 
-  useEffect(() => {
-    if (!score) return;
-
-    const params = new URLSearchParams({
+  const params = useMemo(() => {
+    const nextParams = new URLSearchParams({
       song_id: score.id.toString(),
       level_index: score.level_index.toString(),
     });
-    if ("type" in score) params.append("song_type", score.type);
-
-    setParams(params);
+    if ("type" in score) nextParams.append("song_type", score.type);
+    return nextParams;
   }, [score]);
 
   return (
@@ -163,12 +155,6 @@ export const ScoreModalMenu = ({
             openCreateScoreModal({
               game,
               score,
-              onClose: (values) => {
-                if (values) {
-                  queryClient.invalidateQueries({ queryKey: queryKeys.player.scores(game) });
-                  queryClient.invalidateQueries({ queryKey: queryKeys.player.bests(game) });
-                }
-              },
             });
           }}
         >

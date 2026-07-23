@@ -1,4 +1,4 @@
-import { useMutation, UseMutationOptions } from "@tanstack/react-query";
+import { useMutation, UseMutationOptions, useQueryClient } from "@tanstack/react-query";
 import { apiMutationFn } from "@/hooks/queries/mutationFn.ts";
 import {
   updatePlayerData,
@@ -10,6 +10,7 @@ import {
 } from "@/utils/api/player.ts";
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
 import { Game } from "@/types/game";
+import { invalidatePlayerQueries } from "@/hooks/queries/invalidatePlayerQueries.ts";
 
 export const useUpdatePlayerData = (
   options?: UseMutationOptions<
@@ -18,7 +19,11 @@ export const useUpdatePlayerData = (
     { game: Game; player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps> }
   >,
 ) => {
+  const queryClient = useQueryClient();
+  const { onSuccess, ...mutationOptions } = options ?? {};
+
   return useMutation({
+    ...mutationOptions,
     mutationFn: ({
       game,
       player,
@@ -26,50 +31,88 @@ export const useUpdatePlayerData = (
       game: Game;
       player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>;
     }) => apiMutationFn(() => updatePlayerData(game, player)),
-    ...options,
+    onSuccess: async (data, variables, onMutateResult, context) => {
+      void invalidatePlayerQueries(queryClient, variables.game);
+      await onSuccess?.(data, variables, onMutateResult, context);
+    },
   });
 };
 
 export const useUnbindPlayer = (options?: UseMutationOptions<unknown, Error, Game>) => {
+  const queryClient = useQueryClient();
+  const { onSuccess, ...mutationOptions } = options ?? {};
+
   return useMutation({
+    ...mutationOptions,
     mutationFn: (game: Game) => apiMutationFn(() => unbindPlayer(game)),
-    ...options,
+    onSuccess: async (data, game, onMutateResult, context) => {
+      void invalidatePlayerQueries(queryClient, game);
+      await onSuccess?.(data, game, onMutateResult, context);
+    },
   });
 };
 
 export const useDeletePlayerScores = (options?: UseMutationOptions<unknown, Error, Game>) => {
+  const queryClient = useQueryClient();
+  const { onSuccess, ...mutationOptions } = options ?? {};
+
   return useMutation({
+    ...mutationOptions,
     mutationFn: (game: Game) => apiMutationFn(() => deletePlayerScores(game)),
-    ...options,
+    onSuccess: async (data, game, onMutateResult, context) => {
+      void invalidatePlayerQueries(queryClient, game);
+      await onSuccess?.(data, game, onMutateResult, context);
+    },
   });
 };
 
 export const useCreatePlayerScores = (
   options?: UseMutationOptions<unknown, Error, { game: Game; scores: object[] }>,
 ) => {
+  const queryClient = useQueryClient();
+  const { onSuccess, ...mutationOptions } = options ?? {};
+
   return useMutation({
+    ...mutationOptions,
     mutationFn: ({ game, scores }: { game: Game; scores: object[] }) =>
       apiMutationFn(() => createPlayerScores(game, scores)),
-    ...options,
+    onSuccess: async (data, variables, onMutateResult, context) => {
+      void invalidatePlayerQueries(queryClient, variables.game);
+      await onSuccess?.(data, variables, onMutateResult, context);
+    },
   });
 };
 
 export const useDeletePlayerScore = (
   options?: UseMutationOptions<unknown, Error, { game: Game; params: URLSearchParams }>,
 ) => {
+  const queryClient = useQueryClient();
+  const { onSuccess, ...mutationOptions } = options ?? {};
+
   return useMutation({
+    ...mutationOptions,
     mutationFn: ({ game, params }: { game: Game; params: URLSearchParams }) =>
       apiMutationFn(() => deletePlayerScore(game, params)),
-    ...options,
+    onSuccess: async (data, variables, onMutateResult, context) => {
+      void invalidatePlayerQueries(queryClient, variables.game);
+      await onSuccess?.(data, variables, onMutateResult, context);
+    },
   });
 };
 
 export const useDeletePlayerScoreHistory = (
   options?: UseMutationOptions<unknown, Error, { game: Game; params: URLSearchParams }>,
 ) => {
+  const queryClient = useQueryClient();
+  const { onSuccess, ...mutationOptions } = options ?? {};
+
   return useMutation({
+    ...mutationOptions,
     mutationFn: ({ game, params }: { game: Game; params: URLSearchParams }) =>
       apiMutationFn(() => deletePlayerScoreHistory(game, params)),
-    ...options,
+    onSuccess: async (data, variables, onMutateResult, context) => {
+      void invalidatePlayerQueries(queryClient, variables.game);
+      await onSuccess?.(data, variables, onMutateResult, context);
+    },
   });
 };

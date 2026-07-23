@@ -1,5 +1,14 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { MantineProvider, rem, Loader, Group, createTheme, ActionIcon } from "@mantine/core";
+import {
+  MantineProvider,
+  rem,
+  Loader,
+  Group,
+  createTheme,
+  ActionIcon,
+  Button,
+  Text,
+} from "@mantine/core";
 import {
   IconMaximize,
   IconMinimize,
@@ -44,7 +53,6 @@ import "mantine-datatable/styles.css";
 import "react-photo-view/dist/react-photo-view.css";
 import "@/index.css";
 import classes from "@/App.module.css";
-import useGame from "@/hooks/useGame.ts";
 import { useThemeColor } from "@/hooks/useThemeColor.ts";
 import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 
@@ -65,9 +73,60 @@ const baseTheme = {
   },
 };
 
+/** Shows a persistent retry notification for a failed startup resource. */
+function showResourceRetry(id: string, title: string, error: unknown, retry: () => void) {
+  notifications.hide(id);
+  notifications.show({
+    id,
+    title,
+    color: "red",
+    autoClose: false,
+    message: (
+      <>
+        <Text size="sm">{error instanceof Error ? error.message : String(error)}</Text>
+        <Button
+          size="xs"
+          variant="light"
+          color="red"
+          mt="xs"
+          onClick={() => {
+            notifications.hide(id);
+            retry();
+          }}
+        >
+          重试
+        </Button>
+      </>
+    ),
+  });
+}
+
+/** Runs a startup resource load and leaves a persistent retry action after failures. */
+function loadResourceWithRetry(id: string, title: string, load: () => Promise<void>) {
+  const run = () => {
+    void load()
+      .then(() => notifications.hide(id))
+      .catch((error: unknown) => showResourceRetry(id, title, error, run));
+  };
+  run();
+}
+
+function setLocalStorageItemBestEffort(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    return;
+  }
+}
+
 function LayoutInner({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
-  const { config, isLoading: isSiteConfigLoading } = useSiteConfig();
+  const {
+    config,
+    isLoading: isSiteConfigLoading,
+    error: siteConfigError,
+    refetch: refetchSiteConfig,
+  } = useSiteConfig();
   const { error: userTokenError } = useUserToken();
   const { toggle, fullscreen } = useFullscreenDocument();
   const [themeColor] = useThemeColor();
@@ -121,11 +180,8 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const [getSongList, fetchSongList] = useSongListStore(
-    useShallow((state) => [state.getSongList, state.fetchSongList]),
-  );
+  const [fetchSongList] = useSongListStore(useShallow((state) => [state.fetchSongList]));
   const [fetchAliasList] = useAliasListStore(useShallow((state) => [state.fetchAliasList]));
-  const [game] = useGame();
 
   useEffect(() => {
     if (userTokenError) {
@@ -150,24 +206,32 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   }, [pageContext.urlPathname]);
 
   useEffect(() => {
+    if (!siteConfigError) {
+      notifications.hide("site-config-load-error");
+      return;
+    }
+    showResourceRetry("site-config-load-error", "获取站点配置失败", siteConfigError, () => {
+      void refetchSiteConfig();
+    });
+  }, [refetchSiteConfig, siteConfigError]);
+
+  useEffect(() => {
     if (isSiteConfigLoading || !config) return;
 
-    localStorage.setItem("maimai_version", (config.resource_version.maimai || 25500).toString());
-    localStorage.setItem(
+    setLocalStorageItemBestEffort(
+      "maimai_version",
+      (config.resource_version.maimai || 25500).toString(),
+    );
+    setLocalStorageItemBestEffort(
       "chunithm_version",
       (config.resource_version.chunithm || 23000).toString(),
     );
 
-    if (getSongList(game).songs.length === 0) {
-      Promise.all([fetchSongList(config.resource_hashes), fetchAliasList()]).catch((error) => {
-        notifications.show({
-          title: "获取曲目数据失败",
-          message: error.message,
-          color: "red",
-        });
-      });
-    }
-  }, [game, isSiteConfigLoading]);
+    loadResourceWithRetry("song-list-load-error", "获取曲目数据失败", () =>
+      fetchSongList(config.resource_hashes),
+    );
+    loadResourceWithRetry("alias-list-load-error", "获取别名数据失败", fetchAliasList);
+  }, [config, fetchAliasList, fetchSongList, isSiteConfigLoading]);
 
   return (
     <HelmetProvider>
