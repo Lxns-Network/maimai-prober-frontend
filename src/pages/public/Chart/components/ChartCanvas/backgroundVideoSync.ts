@@ -37,7 +37,7 @@ export function syncBackgroundVideoFrame({
   }
 
   const leadInMs = getLeadInMs(chart.bpm);
-  const target = (currentMs - leadInMs - musicOffset) / 1000;
+  const target = (currentMs - leadInMs - musicOffset + (chart.firstMs ?? 0)) / 1000;
   const duration = video.duration;
   const totalBeats = timeline.totalMeasures * timeline.beatsPerMeasure;
   const stoppedAtEnd = !playing && currentBeats >= totalBeats;

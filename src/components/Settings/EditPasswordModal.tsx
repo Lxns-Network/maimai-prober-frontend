@@ -4,6 +4,8 @@ import { useEditUserPassword } from "@/hooks/mutations/useUserMutations.ts";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { Button, Group, Modal, PasswordInput } from "@mantine/core";
+import * as Sentry from "@sentry/react";
+import { getSentryUser } from "@/utils/session.ts";
 
 interface FormValues {
   current_password: string;
@@ -38,10 +40,14 @@ export const EditPasswordModal = ({ opened, close }: { opened: boolean; close():
 
   const editUserPasswordHandler = (values: FormValues) => {
     mutateEditPassword(values, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        if (data?.token) {
+          localStorage.setItem("token", data.token);
+          Sentry.setUser(getSentryUser());
+        }
         notifications.show({
           title: "修改成功",
-          message: "下次登录时请使用新密码。",
+          message: "密码已更新。",
           color: "green",
         });
       },

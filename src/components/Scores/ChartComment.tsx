@@ -311,11 +311,9 @@ const CommentItem = ({
 export const ChartComment = ({
   game,
   score,
-  setCommentCount,
 }: {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
-  setCommentCount?: (count: number) => void;
 }) => {
   const isLoggedOut = !localStorage.getItem("token");
   const { comments, isLoading, setData, invalidate } = useScoreComments({
@@ -355,7 +353,6 @@ export const ChartComment = ({
   };
 
   useEffect(() => {
-    setCommentCount && setCommentCount(comments.length);
     if (comments.length !== 0) sortComments(sort);
   }, [sort, comments]);
 

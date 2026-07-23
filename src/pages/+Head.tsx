@@ -1,4 +1,5 @@
 import { ColorSchemeScript } from "@mantine/core";
+import { UMAMI_SCRIPT_URL, UMAMI_WEBSITE_ID } from "@/main";
 
 const chunkRecoveryScript = `
 (function () {
@@ -83,6 +84,9 @@ export default function Head() {
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: chunkRecoveryScript }} />
+      {UMAMI_SCRIPT_URL && UMAMI_WEBSITE_ID && (
+        <script defer src={UMAMI_SCRIPT_URL} data-website-id={UMAMI_WEBSITE_ID} />
+      )}
       <ColorSchemeScript defaultColorScheme="auto" />
       <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       <link rel="manifest" href="/manifest.webmanifest" />

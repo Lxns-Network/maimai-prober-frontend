@@ -42,6 +42,7 @@ import {
   IconMinimize,
   IconCamera,
   IconShare,
+  IconDownload,
   IconClipboard,
   IconUpload,
   IconLink,
@@ -138,6 +139,24 @@ type PlaybackControlsProps = {
   portalTarget?: HTMLElement | null;
 };
 
+type GifExportAction = "share" | "download";
+type FrameActionEvent =
+  | "maimai-chart-export-frame"
+  | "maimai-chart-download-frame"
+  | "maimai-chart-copy-frame";
+
+function canShareGifFile(): boolean {
+  if (typeof navigator === "undefined" || !navigator.share || !navigator.canShare) return false;
+
+  try {
+    return navigator.canShare({
+      files: [new File([""], "maimai-chart.gif", { type: "image/gif" })],
+    });
+  } catch {
+    return false;
+  }
+}
+
 export function PlaybackControls({
   onToggleFullscreen,
   isFullscreen,
@@ -205,8 +224,11 @@ export function PlaybackControls({
   const currentMs = chartData ? getCurrentTimeInMs() : 0;
   const [isExportingGif, setIsExportingGif] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [captureMenuOpened, setCaptureMenuOpened] = useState(false);
+  const [frameActionMenuOpened, setFrameActionMenuOpened] = useState(false);
   const exportOriginalBeatsRef = useRef<number | null>(null);
   const exportZoomPlayheadRef = useRef<HTMLDivElement>(null);
+  const canShareGif = useMemo(canShareGifFile, []);
 
   const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
     useShallow((state) => ({
@@ -222,12 +244,19 @@ export function PlaybackControls({
     }
   }, [setPreciseTime]);
 
-  const exportCurrentFrame = () => {
-    window.dispatchEvent(new Event("maimai-chart-export-frame"));
+  const closeCaptureMenus = () => {
+    setFrameActionMenuOpened(false);
+    setCaptureMenuOpened(false);
   };
 
-  const copyCurrentFrame = () => {
-    window.dispatchEvent(new Event("maimai-chart-copy-frame"));
+  const runFrameAction = (eventName: FrameActionEvent) => {
+    window.dispatchEvent(new Event(eventName));
+    closeCaptureMenus();
+  };
+
+  const handleCaptureMenuChange = (opened: boolean) => {
+    setCaptureMenuOpened(opened);
+    if (!opened) setFrameActionMenuOpened(false);
   };
 
   const startGifExportSelection = () => {
@@ -301,7 +330,7 @@ export function PlaybackControls({
     ],
   );
 
-  const confirmGifExport = async () => {
+  const confirmGifExport = async (action: GifExportAction) => {
     if (!chartData || !exportRange) return;
 
     const durationMs = exportRange.endMs - exportRange.startMs;
@@ -344,10 +373,23 @@ export function PlaybackControls({
 
       const chartId = getChartIdForFilename();
       const filename = `maimai-chart-${chartId}-${Math.round(exportRange.startMs)}ms-${formatDuration(durationMs, "s")}.gif`;
-      const file = new File([blob], filename, { type: "image/gif" });
 
-      const canShare = navigator.canShare?.({ files: [file] });
-      if (canShare) {
+      if (action === "share") {
+        let file: File;
+        try {
+          file = new File([blob], filename, { type: "image/gif" });
+          if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
+            throw new Error("Cannot share GIF file");
+          }
+        } catch {
+          notifications.show({
+            title: "无法分享",
+            message: "当前浏览器不支持分享 GIF 文件",
+            color: "red",
+          });
+          return;
+        }
+
         try {
           await navigator.share({ files: [file] });
           clearExportRange();
@@ -355,6 +397,12 @@ export function PlaybackControls({
           return;
         } catch (err) {
           if (err instanceof DOMException && err.name === "AbortError") return;
+          notifications.show({
+            title: "分享失败",
+            message: "系统分享不可用",
+            color: "red",
+          });
+          return;
         }
       }
 
@@ -548,9 +596,26 @@ export function PlaybackControls({
                   <Button size="xs" variant="light" color="gray" onClick={cancelGifExportSelection}>
                     取消
                   </Button>
-                  <Button size="xs" onClick={() => void confirmGifExport()}>
-                    确认导出
-                  </Button>
+                  <Menu shadow="md" width={160} position="top" portalProps={fullscreenPortalProps}>
+                    <Menu.Target>
+                      <Button size="xs">确认导出</Button>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item
+                        leftSection={<IconShare size={14} />}
+                        onClick={() => void confirmGifExport("share")}
+                        disabled={!canShareGif}
+                      >
+                        系统分享
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={<IconDownload size={14} />}
+                        onClick={() => void confirmGifExport("download")}
+                      >
+                        下载 GIF
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
                 </Group>
               </>
             )}
@@ -639,21 +704,64 @@ export function PlaybackControls({
             </ActionIcon>
           </Tooltip>
 
-          <Menu shadow="md" width={160} portalProps={fullscreenPortalProps}>
+          <Menu
+            shadow="md"
+            width={160}
+            opened={captureMenuOpened}
+            onChange={handleCaptureMenuChange}
+            portalProps={fullscreenPortalProps}
+          >
             <Menu.Target>
-              <Tooltip label="分享当前帧" portalProps={fullscreenPortalProps}>
-                <ActionIcon variant="subtle" color={isFullscreen ? "white" : "gray"} size="lg">
+              <Tooltip label="画面导出" portalProps={fullscreenPortalProps}>
+                <ActionIcon
+                  variant="subtle"
+                  color={isFullscreen ? "white" : "gray"}
+                  size="lg"
+                  aria-label="画面导出"
+                >
                   <IconCamera size={20} />
                 </ActionIcon>
               </Tooltip>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Item leftSection={<IconShare size={14} />} onClick={exportCurrentFrame}>
-                分享图片
-              </Menu.Item>
-              <Menu.Item leftSection={<IconClipboard size={14} />} onClick={copyCurrentFrame}>
-                复制到剪贴板
-              </Menu.Item>
+              <Menu
+                shadow="md"
+                width={160}
+                position="right-start"
+                opened={frameActionMenuOpened}
+                onChange={setFrameActionMenuOpened}
+                withinPortal={false}
+              >
+                <Menu.Target>
+                  <Menu.Item
+                    leftSection={<IconCamera size={14} />}
+                    rightSection={<IconChevronRight size={14} />}
+                    closeMenuOnClick={false}
+                  >
+                    导出当前帧
+                  </Menu.Item>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<IconShare size={14} />}
+                    onClick={() => runFrameAction("maimai-chart-export-frame")}
+                  >
+                    系统分享
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconDownload size={14} />}
+                    onClick={() => runFrameAction("maimai-chart-download-frame")}
+                  >
+                    下载图片
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconClipboard size={14} />}
+                    onClick={() => runFrameAction("maimai-chart-copy-frame")}
+                  >
+                    复制到剪贴板
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
               <Menu.Item
                 leftSection={<IconMovie size={14} />}
                 onClick={exportActive ? cancelGifExportSelection : startGifExportSelection}

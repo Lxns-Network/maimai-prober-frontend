@@ -1,4 +1,5 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ActionIcon,
   Card,
@@ -14,8 +15,6 @@ import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import type { ChartDifficulty } from "@lxns-network/maimai-chart-engine";
 import classes from "./SimaiStatementList.module.css";
 
-// 跟 ChartParser 给 chart.notes 加的 1 小节 lead-in 偏移保持一致，让 statement
-// beat 与 playbackTimeRef 处于同一坐标系。
 const LEAD_IN_BEATS = 4;
 
 interface SimaiChunk {
@@ -140,37 +139,61 @@ function parseSimaiStatements(
 
 interface StatementRowProps {
   statement: SimaiStatement;
-  index: number;
   isActive: boolean;
   activeChunkIdx: number;
   isMarkerRow: boolean;
   seekTo: (beat: number) => void;
-  registerRef: (index: number, el: HTMLDivElement | null) => void;
 }
 
 const StatementRow = memo(function StatementRow({
   statement,
-  index,
   isActive,
   activeChunkIdx,
   isMarkerRow,
   seekTo,
-  registerRef,
 }: StatementRowProps) {
+  const chunksRef = useRef<HTMLSpanElement>(null);
+  const highlightRef = useRef<HTMLSpanElement>(null);
+  const prevChunkRef = useRef(-1);
+
+  // 高亮胶囊滑动到活跃 chunk;行刚激活时直接落位,不做跨位置滑动。
+  useLayoutEffect(() => {
+    const wrap = chunksRef.current;
+    const highlight = highlightRef.current;
+    if (!wrap || !highlight) return;
+    const target =
+      isActive && activeChunkIdx >= 0
+        ? (wrap.children[activeChunkIdx + 1] as HTMLElement | undefined)
+        : undefined;
+    if (!target) {
+      highlight.style.opacity = "0";
+      prevChunkRef.current = -1;
+      return;
+    }
+    const snap = prevChunkRef.current === -1;
+    prevChunkRef.current = activeChunkIdx;
+    if (snap) highlight.style.transition = "none";
+    highlight.style.opacity = "1";
+    highlight.style.transform = `translate(${target.offsetLeft}px, ${target.offsetTop}px)`;
+    highlight.style.width = `${target.offsetWidth}px`;
+    highlight.style.height = `${target.offsetHeight}px`;
+    if (snap) {
+      highlight.getBoundingClientRect();
+      highlight.style.transition = "";
+    }
+  }, [isActive, activeChunkIdx]);
+
   const rowClass = [classes.row, isActive && classes.rowActive, isMarkerRow && classes.rowMarker]
     .filter(Boolean)
     .join(" ");
   return (
-    <div
-      ref={(el) => registerRef(index, el)}
-      className={rowClass}
-      onClick={() => seekTo(statement.beat)}
-    >
+    <div className={rowClass} onClick={() => seekTo(statement.beat)}>
       <span className={classes.beat}>{statement.beat.toFixed(2)}</span>
       {statement.markerText ? (
         <span className={classes.markerText}>{statement.markerText}</span>
       ) : (
-        <span className={classes.chunks}>
+        <span ref={chunksRef} className={classes.chunks}>
+          <span ref={highlightRef} className={classes.chunkHighlight} />
           {statement.chunks.map((c, ci) => {
             const isActiveChunk = isActive && ci === activeChunkIdx;
             const chunkClass = [
@@ -206,9 +229,10 @@ export function SimaiStatementList({
   simaiText: string;
   difficulty: ChartDifficulty | null;
 }) {
+  const [everExpanded, setEverExpanded] = useState(false);
   const statements = useMemo(
-    () => parseSimaiStatements(simaiText, difficulty),
-    [simaiText, difficulty],
+    () => (everExpanded ? parseSimaiStatements(simaiText, difficulty) : []),
+    [everExpanded, simaiText, difficulty],
   );
   const chunkLocations = useMemo(
     () =>
@@ -236,19 +260,24 @@ export function SimaiStatementList({
 
   const [active, setActive] = useState<{ line: number; chunk: number }>({ line: -1, chunk: -1 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const registerRef = useCallback((index: number, el: HTMLDivElement | null) => {
-    itemRefs.current[index] = el;
-  }, []);
 
-  // 折叠状态（默认收起）。收起时跳过 rAF 跟踪，相当于功能开关。
   const [expanded, setExpanded] = useState(false);
 
-  // 每帧用最后一个 statement.beat <= curBeat 定位"刚刚通过"的 statement。空白/标记行
-  // 自然命中。curBeat 在第一个 statement 之前则锁定到第一个 statement。
+  // 切换谱面/难度后回到未解析状态,收起时不为新谱面的解析买单。
+  useEffect(() => {
+    setEverExpanded(false);
+    setExpanded(false);
+  }, [simaiText, difficulty]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: statements.length,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => 19,
+    overscan: 12,
+  });
+
   useEffect(() => {
     if (!expanded) {
-      // 收起：清空 active，避免下次展开时残留旧高亮。
       setActive({ line: -1, chunk: -1 });
       return;
     }
@@ -291,32 +320,26 @@ export function SimaiStatementList({
     };
   }, [chunkLocations, expanded]);
 
-  // 用户用 wheel/touch 滚动后停止自动跟随，按下"居中"按钮恢复。
   const [autoScroll, setAutoScroll] = useState(true);
   const pauseAutoScroll = useCallback(() => setAutoScroll(false), []);
 
-  const centerActive = useCallback(() => {
-    const el = itemRefs.current[active.line];
-    const container = containerRef.current;
-    if (!el || !container) return;
-    const rowTop = el.offsetTop - container.offsetTop;
-    const target =
-      el.offsetHeight > container.clientHeight
-        ? rowTop
-        : rowTop - container.clientHeight / 2 + el.offsetHeight / 2;
-    container.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
-  }, [active.line]);
-
-  // 活跃行变化 / 重新启用 autoScroll 时居中。
   useEffect(() => {
-    if (autoScroll) centerActive();
-  }, [autoScroll, centerActive]);
+    if (autoScroll && expanded && active.line >= 0) {
+      rowVirtualizer.scrollToIndex(active.line, { align: "center" });
+    }
+  }, [autoScroll, expanded, active.line, rowVirtualizer]);
 
-  if (statements.length === 0) return null;
+  if (!simaiText.trim()) return null;
 
   return (
     <Card className={classes.card} radius="lg" withBorder>
-      <UnstyledButton onClick={() => setExpanded((v) => !v)} w="100%">
+      <UnstyledButton
+        onClick={() => {
+          setEverExpanded(true);
+          setExpanded((v) => !v);
+        }}
+        w="100%"
+      >
         <Group justify="space-between">
           <Group gap="xs">
             <IconListNumbers size={20} />
@@ -334,7 +357,7 @@ export function SimaiStatementList({
         </Group>
       </UnstyledButton>
 
-      <Collapse expanded={expanded}>
+      <Collapse expanded={expanded} keepMounted={false}>
         <div className={classes.viewportWrap}>
           <ScrollArea
             h={240}
@@ -350,21 +373,34 @@ export function SimaiStatementList({
               },
             }}
           >
-            {statements.map((s, i) => {
-              const isActive = i === active.line;
-              return (
-                <StatementRow
-                  key={i}
-                  statement={s}
-                  index={i}
-                  isActive={isActive}
-                  activeChunkIdx={isActive ? active.chunk : -1}
-                  isMarkerRow={markerFlags[i]}
-                  seekTo={seekTo}
-                  registerRef={registerRef}
-                />
-              );
-            })}
+            <div style={{ height: rowVirtualizer.getTotalSize(), position: "relative" }}>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const i = virtualRow.index;
+                const isActive = i === active.line;
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={i}
+                    ref={rowVirtualizer.measureElement}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <StatementRow
+                      statement={statements[i]}
+                      isActive={isActive}
+                      activeChunkIdx={isActive ? active.chunk : -1}
+                      isMarkerRow={markerFlags[i]}
+                      seekTo={seekTo}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </ScrollArea>
           {!autoScroll && (
             <Tooltip label="恢复自动滚动">

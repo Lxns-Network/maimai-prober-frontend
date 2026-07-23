@@ -40,6 +40,8 @@ import { Game } from "@/types/game";
 import { ScoreRanking } from "./ScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { ChartComment } from "./ChartComment.tsx";
+import { useScoreComments } from "@/hooks/queries/useScoreComments.ts";
+import { isTokenUndefined } from "@/utils/session.ts";
 import { rankData, ScoreHistory } from "./ScoreHistory.tsx";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
@@ -107,7 +109,18 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
   const [minRank, setMinRank] = useState<string>("A");
 
-  const [commentCount, setCommentCount] = useState<number>(0);
+  const isLoggedOut = isTokenUndefined();
+  const { comments } = useScoreComments({
+    game,
+    params: !isLoggedOut
+      ? {
+          song_id: score ? `${score.id}` : "",
+          level_index: score ? `${score.level_index}` : "",
+          ...(score && "type" in score ? { song_type: score.type } : {}),
+        }
+      : undefined,
+  });
+  const commentCount = comments.length;
 
   const { songDetail } = useSongDetail(game, score?.id ?? null);
 
@@ -335,7 +348,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <ChartComment game={game} score={score} setCommentCount={setCommentCount} />
+                <ChartComment game={game} score={score} />
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="ranking">

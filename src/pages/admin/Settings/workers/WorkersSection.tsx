@@ -100,7 +100,7 @@ const TokenDisplay = ({ token }: { token: string }) => {
   return (
     <Stack gap="sm">
       <Text size="sm" c="dimmed">
-        请妥善保存此 Token，它只会在创建时显示一次。
+        此 Token 用于工作节点连接时的身份验证，请妥善保存；后续也可在节点详情中查看。
       </Text>
       <Group gap="xs" wrap="nowrap">
         <Code block style={{ flex: 1, wordBreak: "break-all" }}>

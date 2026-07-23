@@ -17,6 +17,8 @@ const SEEK_THROTTLE_MS = 50;
 const SOURCE_FADE_TIME_S = 0.015;
 const SOURCE_START_LEAD_TIME_S = 0.05;
 const SCHEDULE_LOOKAHEAD_MS = 1500;
+// 距音频末尾多近视为"已播完"；须大于重启定位用的 0.01s clamp。
+const MUSIC_END_EPSILON_S = 0.05;
 
 interface AudioState {
   audioContext: AudioContext | null;
@@ -29,6 +31,8 @@ interface AudioState {
   playbackClock: PlaybackClock;
   /** 音乐源是否正在 AudioContext 上调度发声（已过 start 时刻、未 onended）。 */
   isSourcePlaying: boolean;
+  /** 音乐源自然播完（非 stopSource 停止）；置位后不再重启源，seek 或新源启动时清除。 */
+  musicEnded: boolean;
   /** rAF 外推锚点：上一帧的 timestamp 与对应的 chart-ms，用于无音频时钟时线性外推播放头。 */
   rafAnchorTimestamp: number;
   rafAnchorMs: number;
@@ -70,6 +74,7 @@ export function usePreviewAudio(): PreviewAudioController {
     answerManagerInitPromise: null,
     playbackClock: new PlaybackClock(),
     isSourcePlaying: false,
+    musicEnded: false,
     rafAnchorTimestamp: 0,
     rafAnchorMs: 0,
     frameAnchorInitialized: false,
@@ -339,7 +344,7 @@ export function usePreviewAudio(): PreviewAudioController {
     const settings = useGameSettingsStore.getState();
     const musicTimeSec = getCurrentTime();
     const leadInMs = getLeadInMs(chart.bpm);
-    return musicTimeSec * 1000 + leadInMs + settings.musicOffset;
+    return musicTimeSec * 1000 + leadInMs + settings.musicOffset - (chart.firstMs ?? 0);
   }, [getCurrentTime]);
 
   const playFromPosition = useCallback(
@@ -368,10 +373,12 @@ export function usePreviewAudio(): PreviewAudioController {
       sourceGainNode.connect(state.musicGainNode);
 
       sourceNode.onended = () => {
+        // stopSource 会先把 sourceNode 置 null 再 stop，走到这里说明是自然播完。
         if (state.sourceNode === sourceNode) {
           state.sourceNode = null;
           state.sourceGainNode = null;
           state.isSourcePlaying = false;
+          state.musicEnded = true;
         }
         try {
           sourceNode.disconnect();
@@ -389,6 +396,7 @@ export function usePreviewAudio(): PreviewAudioController {
       state.sourceGainNode = sourceGainNode;
       state.playbackClock.set(startTime, clampedPosition, playbackSpeed);
       state.isSourcePlaying = true;
+      state.musicEnded = false;
 
       sourceNode.start(startTime, clampedPosition);
       return true;
@@ -582,6 +590,7 @@ export function usePreviewAudio(): PreviewAudioController {
     state.pendingStartChartMs = null;
     state.startRequestId += 1;
     state.clockSource = "raf";
+    state.musicEnded = false;
 
     if (state.isSourcePlaying) {
       state.playbackClock.setOffset(getCurrentTime());
@@ -603,7 +612,13 @@ export function usePreviewAudio(): PreviewAudioController {
     const now = Date.now();
     if (now - lastSeekRef.current >= SEEK_THROTTLE_MS) {
       lastSeekRef.current = now;
-      const musicTime = calculateMusicTime(preciseTime, bpmEvents, bpm, musicOffset);
+      const musicTime = calculateMusicTime(
+        preciseTime,
+        bpmEvents,
+        bpm,
+        musicOffset,
+        chartData?.firstMs ?? 0,
+      );
       state.playbackClock.setOffset(musicTime < 0 ? 0 : clamp(musicTime, 0, duration - 0.01));
     }
   }, [
@@ -612,6 +627,7 @@ export function usePreviewAudio(): PreviewAudioController {
     bpmEvents,
     bpm,
     musicOffset,
+    chartData,
     getCurrentTime,
     stopSource,
     resetAnswerSounds,
@@ -689,6 +705,7 @@ export function usePreviewAudio(): PreviewAudioController {
         state.pendingStartChartMs = null;
         state.startRequestId += 1;
         state.clockSource = "raf";
+        state.musicEnded = false;
         resetAnswerSounds(seekMs, true);
       }
 
@@ -700,11 +717,13 @@ export function usePreviewAudio(): PreviewAudioController {
         : -Infinity;
 
       if (Number.isFinite(duration) && duration > 0 && isLoaded) {
+        const firstMs = chart.firstMs ?? 0;
         const musicTime = calculateMusicTime(
           playbackTimeRef.current,
           chart.bpmEvents,
           chart.bpm,
           settingsState.musicOffset,
+          firstMs,
         );
 
         if (musicTime < 0) {
@@ -715,17 +734,27 @@ export function usePreviewAudio(): PreviewAudioController {
           state.pendingSeek = false;
           state.isStartingPlayback = false;
           state.pendingStartChartMs = null;
-        } else if (musicTime >= duration && !state.pendingSeek) {
+        } else if (musicTime >= duration - MUSIC_END_EPSILON_S) {
+          // 音乐已到末尾（谱面可能比音频长）：停源并清掉启动状态，播放头交给 rAF 外推继续。
           if (state.isSourcePlaying) stopSource();
+          state.pendingSeek = false;
+          state.isStartingPlayback = false;
+          state.pendingStartChartMs = null;
+          state.startRequestId += 1;
         } else {
           const targetTime = clamp(musicTime, 0, duration - 0.01);
           const leadInMs = getLeadInMs(chart.bpm);
-          const targetChartMs = targetTime * 1000 + leadInMs + settingsState.musicOffset;
+          const targetChartMs = targetTime * 1000 + leadInMs + settingsState.musicOffset - firstMs;
 
           // 三态交接：seek/未播放 → 发起 playFromPosition 并等新源可听 → 可听后切回音频时钟跟随。
           // 切换瞬间视觉播放头用 pendingStartChartMs（目标位置）保持不动，避免在新源尚未发声时
           // 用旧时钟外推产生跳变；新源可听后改用 getCurrentTime 接管，回到音频输出时钟。
-          if ((state.pendingSeek || !state.isSourcePlaying) && !state.isStartingPlayback) {
+          // 源已自然播完时不重启末尾残端（输出延迟使 musicTime 反推值滞后于 duration）。
+          if (
+            (state.pendingSeek || !state.isSourcePlaying) &&
+            !state.isStartingPlayback &&
+            !state.musicEnded
+          ) {
             state.pendingSeek = false;
             state.isStartingPlayback = true;
             state.pendingStartChartMs = targetChartMs;
@@ -740,7 +769,11 @@ export function usePreviewAudio(): PreviewAudioController {
               }
             });
           } else if (state.isStartingPlayback) {
-            if (
+            if (state.musicEnded) {
+              // 新源在变可听前就自然播完了：放弃等待，交给 rAF 外推从锚点继续。
+              state.isStartingPlayback = false;
+              state.pendingStartChartMs = null;
+            } else if (
               state.isSourcePlaying &&
               state.audioContext &&
               state.playbackClock.isAudibleAt(precomputedOutputTime)
@@ -748,7 +781,7 @@ export function usePreviewAudio(): PreviewAudioController {
               state.isStartingPlayback = false;
               state.pendingStartChartMs = null;
               const musicTimeSec = getCurrentTime(precomputedOutputTime);
-              audioChartMs = musicTimeSec * 1000 + leadInMs + settingsState.musicOffset;
+              audioChartMs = musicTimeSec * 1000 + leadInMs + settingsState.musicOffset - firstMs;
             } else {
               audioChartMs = state.pendingStartChartMs ?? targetChartMs;
             }
@@ -759,7 +792,7 @@ export function usePreviewAudio(): PreviewAudioController {
             !state.isStartingPlayback
           ) {
             const musicTimeSec = getCurrentTime(precomputedOutputTime);
-            audioChartMs = musicTimeSec * 1000 + leadInMs + settingsState.musicOffset;
+            audioChartMs = musicTimeSec * 1000 + leadInMs + settingsState.musicOffset - firstMs;
           }
         }
       }

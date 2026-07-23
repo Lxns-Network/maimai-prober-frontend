@@ -8,9 +8,9 @@ import { notifyChart } from "../../../utils/chartNotification";
 
 export function useFrameCaptureEvents(canvasRef: RefObject<HTMLCanvasElement | null>): void {
   useEffect(() => {
-    const exportFrame = async () => {
+    const captureFrame = async () => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas) return null;
 
       const chart = useGameStore.getState().chartData;
       const currentMs = chart ? beatsToMs(playbackTimeRef.current, chart.bpmEvents, chart.bpm) : 0;
@@ -22,19 +22,40 @@ export function useFrameCaptureEvents(canvasRef: RefObject<HTMLCanvasElement | n
         blob = await canvasToBlob(canvas);
       } catch {
         notifyChart("导出失败", "无法获取当前帧", "red");
-        return;
+        return null;
       }
 
-      const file = new File([blob], filename, { type: "image/png" });
+      return { blob, filename };
+    };
+
+    const shareFrame = async () => {
+      const frame = await captureFrame();
+      if (!frame) return;
+
+      let file: File;
+      try {
+        file = new File([frame.blob], frame.filename, { type: "image/png" });
+        if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
+          throw new Error("Cannot share image file");
+        }
+      } catch {
+        notifyChart("无法分享", "当前浏览器不支持分享图片", "red");
+        return;
+      }
 
       try {
         await navigator.share({ files: [file] });
-        return;
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
+        notifyChart("分享失败", "系统分享不可用", "red");
       }
+    };
 
-      downloadBlob(blob, filename);
+    const downloadFrame = async () => {
+      const frame = await captureFrame();
+      if (!frame) return;
+
+      downloadBlob(frame.blob, frame.filename);
       notifyChart("已保存", "当前帧已下载为 PNG", "green");
     };
 
@@ -50,10 +71,12 @@ export function useFrameCaptureEvents(canvasRef: RefObject<HTMLCanvasElement | n
       }
     };
 
-    window.addEventListener("maimai-chart-export-frame", exportFrame);
+    window.addEventListener("maimai-chart-export-frame", shareFrame);
+    window.addEventListener("maimai-chart-download-frame", downloadFrame);
     window.addEventListener("maimai-chart-copy-frame", copyFrame);
     return () => {
-      window.removeEventListener("maimai-chart-export-frame", exportFrame);
+      window.removeEventListener("maimai-chart-export-frame", shareFrame);
+      window.removeEventListener("maimai-chart-download-frame", downloadFrame);
       window.removeEventListener("maimai-chart-copy-frame", copyFrame);
     };
   }, [canvasRef]);

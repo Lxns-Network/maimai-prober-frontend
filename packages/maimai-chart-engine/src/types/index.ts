@@ -168,6 +168,8 @@ export interface BaseNote {
   hasDelayMarker?: boolean;
   /** 是否为绝赞 Note */
   isBreak?: boolean;
+  /** 视觉流速倍率（simai `<HS*x>`），只缩放接近速度，不影响判定时刻 */
+  hiSpeed?: number;
 }
 
 export interface TapNote extends BaseNote {
@@ -344,6 +346,8 @@ export interface Chart {
   bpmEvents: BpmEvent[];
   /** 拍子变化事件 */
   divisorEvents: DivisorEvent[];
+  /** 谱面正文起点在音频中的偏移（`&first`，毫秒） */
+  firstMs?: number;
 }
 
 export interface ChartMetadata {
@@ -363,6 +367,8 @@ export interface ChartMetadata {
   availableDifficulties: AvailableDifficulties;
   /** 谱面内容 */
   inotes: Record<number, string>;
+  /** 谱面正文起点在音频中的偏移（`&first`，秒） */
+  firstSec?: number;
 }
 
 export interface NoteRenderPosition {

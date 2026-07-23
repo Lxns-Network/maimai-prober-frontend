@@ -3,6 +3,13 @@ import { ANSWER_SOUND_BASE_OFFSET_MS } from "../../utils/constants";
 import { getAudioContextOutputTime } from "./audioClock";
 
 const SCHEDULE_LOOKAHEAD_MS = 1500;
+// 待播源上限，达到即停止本帧调度由后续帧续上，等效自适应收缩前瞻。
+const MAX_PENDING_SOURCES = 96;
+// 事件间隔小于该值视为超密段。
+const DENSE_GAP_MS = 40;
+const MIN_TICK_TAIL_MS = 30;
+// 连续超密事件达到该数量时离线烘焙成单个 AudioBuffer，整段只挂一个 source。
+const MIN_RUN_EVENTS = 16;
 
 export interface AudioManagerConfig {
   audioContext: AudioContext;
@@ -14,8 +21,22 @@ export interface AudioManagerConfig {
 
 interface ScheduledSourceEntry {
   source: AudioBufferSourceNode;
-  gainNode: GainNode;
   startTime: number;
+  /** 任何 clear 都必须停止（烘焙段跨度长，残留会与重排后的段重叠） */
+  stopOnClear?: boolean;
+}
+
+interface DenseRun {
+  key: string;
+  startMs: number;
+  endMs: number;
+  buffer: AudioBuffer;
+}
+
+interface PreprocessedEvents {
+  epoch: number;
+  singles: PreparedAudioEvent[];
+  runs: DenseRun[];
 }
 
 export interface PreparedAudioEvent {
@@ -91,10 +112,15 @@ export class AudioManager {
 
   private handledEvents = new Set<string>();
   private scheduledSources = new Set<ScheduledSourceEntry>();
+  private preprocessedCache = new WeakMap<readonly PreparedAudioEvent[], PreprocessedEvents>();
+  /** touch/holdEnd 开关变化时自增，烘焙缓存随之失效 */
+  private toggleEpoch = 0;
 
   private lastScheduledTimeMs = -Infinity;
 
   private answerSoundPath: string;
+  /** 全部正解音共享的音量节点，音量调整即时生效且省一半音频图节点。 */
+  private answerGainNode: GainNode;
 
   constructor(config: AudioManagerConfig) {
     this.audioContext = config.audioContext;
@@ -102,6 +128,9 @@ export class AudioManager {
     this.answerSoundPath = config.answerSoundPath ?? "/assets/maimai/chart/answer.wav";
     this.volume = config.initialVolume ?? 0.5;
     this.timingOffsetMs = config.initialTimingOffset ?? ANSWER_SOUND_BASE_OFFSET_MS;
+    this.answerGainNode = this.audioContext.createGain();
+    this.answerGainNode.gain.value = this.volume;
+    this.answerGainNode.connect(this.outputNode);
   }
 
   async init(): Promise<void> {
@@ -125,25 +154,24 @@ export class AudioManager {
     this.handledEvents.clear();
   }
 
-  private playAnswerSoundAt(when: number): void {
+  private playAnswerSoundAt(when: number, stopAfterMs: number = 0): void {
     if (!this.enabled || !this.answerBuffer) return;
 
     try {
       const source = this.audioContext.createBufferSource();
-      const gainNode = this.audioContext.createGain();
       const entry: ScheduledSourceEntry = {
         source,
-        gainNode,
         startTime: when > 0 ? when : this.audioContext.currentTime,
       };
 
       source.buffer = this.answerBuffer;
-      gainNode.gain.value = this.volume;
 
-      source.connect(gainNode);
-      gainNode.connect(this.outputNode);
+      source.connect(this.answerGainNode);
       this.scheduledSources.add(entry);
       source.start(when);
+      if (stopAfterMs > 0) {
+        source.stop(entry.startTime + stopAfterMs / 1000);
+      }
 
       source.onended = () => {
         this.scheduledSources.delete(entry);
@@ -153,15 +181,84 @@ export class AudioManager {
         } catch {
           // 忽略已经断开的 source
         }
-
-        try {
-          gainNode.disconnect();
-        } catch {
-          // 忽略已经断开的 gain
-        }
       };
     } catch (error) {
       console.error("AudioManager: Playback error", error);
+    }
+  }
+
+  private getPreprocessed(events: readonly PreparedAudioEvent[]): PreprocessedEvents {
+    const cached = this.preprocessedCache.get(events);
+    if (cached && cached.epoch === this.toggleEpoch) return cached;
+
+    const singles: PreparedAudioEvent[] = [];
+    const runs: DenseRun[] = [];
+    let i = 0;
+    while (i < events.length) {
+      let j = i;
+      while (j + 1 < events.length && events[j + 1].timeMs - events[j].timeMs <= DENSE_GAP_MS) j++;
+      if (j - i + 1 >= MIN_RUN_EVENTS) {
+        runs.push(this.bakeRun(events, i, j));
+      } else {
+        for (let k = i; k <= j; k++) singles.push(events[k]);
+      }
+      i = j + 1;
+    }
+
+    const result: PreprocessedEvents = { epoch: this.toggleEpoch, singles, runs };
+    this.preprocessedCache.set(events, result);
+    return result;
+  }
+
+  private bakeRun(events: readonly PreparedAudioEvent[], from: number, to: number): DenseRun {
+    const tickBuffer = this.answerBuffer!;
+    const startMs = events[from].timeMs;
+    const endMs = events[to].timeMs;
+    const sampleRate = tickBuffer.sampleRate;
+    const length = Math.ceil(((endMs - startMs) / 1000) * sampleRate) + tickBuffer.length;
+    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+    const out = buffer.getChannelData(0);
+    const tick = tickBuffer.getChannelData(0);
+
+    for (let k = from; k <= to; k++) {
+      const event = events[k];
+      if (!this.shouldPlaySound(event)) continue;
+      const offset = Math.round(((event.timeMs - startMs) / 1000) * sampleRate);
+      const limit = Math.min(tick.length, length - offset);
+      for (let s = 0; s < limit; s++) out[offset + s] += tick[s];
+    }
+
+    return { key: `run:${startMs}:${to - from + 1}`, startMs, endMs, buffer };
+  }
+
+  private playRunAt(run: DenseRun, when: number, offsetSec: number, playbackRate: number): void {
+    if (!this.enabled) return;
+
+    try {
+      const source = this.audioContext.createBufferSource();
+      source.buffer = run.buffer;
+      source.playbackRate.value = playbackRate;
+      const entry: ScheduledSourceEntry = {
+        source,
+        startTime: when > 0 ? when : this.audioContext.currentTime,
+        stopOnClear: true,
+      };
+
+      source.connect(this.answerGainNode);
+      this.scheduledSources.add(entry);
+      source.start(when, offsetSec);
+
+      source.onended = () => {
+        this.scheduledSources.delete(entry);
+
+        try {
+          source.disconnect();
+        } catch {
+          // 忽略已经断开的 source
+        }
+      };
+    } catch (error) {
+      console.error("AudioManager: Run playback error", error);
     }
   }
 
@@ -191,9 +288,30 @@ export class AudioManager {
     const currentContextTime = this.audioContext.currentTime;
     const outputTime = precomputedOutputTime ?? getAudioContextOutputTime(this.audioContext);
 
-    const startIndex = this.lowerBoundEvents(events, adjustedLastTime);
-    for (let i = startIndex; i < events.length; i++) {
-      const event = events[i];
+    const { singles, runs } = this.getPreprocessed(events);
+
+    for (const run of runs) {
+      if (run.endMs + 500 <= adjustedCurrentTime || run.startMs > adjustedLookAheadTime) continue;
+      if (this.handledEvents.has(run.key)) continue;
+      this.handledEvents.add(run.key);
+
+      const startedMs = adjustedCurrentTime - run.startMs;
+      if (startedMs >= 0) {
+        this.playRunAt(run, 0, startedMs / 1000, normalizedPlaybackSpeed);
+      } else {
+        const when = Math.max(
+          currentContextTime,
+          outputTime + -startedMs / 1000 / normalizedPlaybackSpeed,
+        );
+        this.playRunAt(run, when, 0, normalizedPlaybackSpeed);
+      }
+    }
+
+    const startIndex = this.lowerBoundEvents(singles, adjustedLastTime);
+    for (let i = startIndex; i < singles.length; i++) {
+      if (this.scheduledSources.size >= MAX_PENDING_SOURCES) break;
+
+      const event = singles[i];
       const noteTime = event.timeMs;
       if (noteTime > adjustedLookAheadTime) break;
 
@@ -201,10 +319,14 @@ export class AudioManager {
 
       if (this.handledEvents.has(event.key)) continue;
 
+      const gapMs = i + 1 < singles.length ? singles[i + 1].timeMs - noteTime : Infinity;
+      const stopAfterMs =
+        gapMs < DENSE_GAP_MS ? Math.max(gapMs * 3, MIN_TICK_TAIL_MS) / normalizedPlaybackSpeed : 0;
+
       if (noteTime <= adjustedCurrentTime) {
         this.handledEvents.add(event.key);
         if (noteTime > adjustedLastTime) {
-          this.playAnswerSoundAt(0);
+          this.playAnswerSoundAt(0, stopAfterMs);
         }
         continue;
       }
@@ -215,7 +337,7 @@ export class AudioManager {
         currentContextTime,
         outputTime + delayMs / 1000 / normalizedPlaybackSpeed,
       );
-      this.playAnswerSoundAt(when);
+      this.playAnswerSoundAt(when, stopAfterMs);
     }
 
     this.lastScheduledTimeMs = currentTimeMs;
@@ -249,7 +371,27 @@ export class AudioManager {
     return this.enabled;
   }
 
+  /** 开关变更后已烘焙 run 内容失效：停掉在途 run source 并清除其 handled 键，下次调度重烘重排。 */
+  private invalidateBakedRuns(): void {
+    for (const entry of this.scheduledSources) {
+      if (!entry.stopOnClear) continue;
+      try {
+        entry.source.stop();
+      } catch {
+        // 忽略已停止的 source
+      }
+      this.scheduledSources.delete(entry);
+    }
+    for (const key of this.handledEvents) {
+      if (key.startsWith("run:")) this.handledEvents.delete(key);
+    }
+  }
+
   setHoldEndSoundEnabled(enabled: boolean): void {
+    if (enabled !== this.holdEndSoundEnabled) {
+      this.toggleEpoch++;
+      this.invalidateBakedRuns();
+    }
     this.holdEndSoundEnabled = enabled;
   }
 
@@ -258,6 +400,10 @@ export class AudioManager {
   }
 
   setTouchSoundEnabled(enabled: boolean): void {
+    if (enabled !== this.touchSoundEnabled) {
+      this.toggleEpoch++;
+      this.invalidateBakedRuns();
+    }
     this.touchSoundEnabled = enabled;
   }
 
@@ -267,6 +413,7 @@ export class AudioManager {
 
   setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
+    this.answerGainNode.gain.value = this.volume;
   }
 
   getVolume(): number {
@@ -299,7 +446,7 @@ export class AudioManager {
     const now = this.audioContext.currentTime;
 
     for (const entry of this.scheduledSources) {
-      if (!stopStartedSources && entry.startTime <= now) {
+      if (!stopStartedSources && !entry.stopOnClear && entry.startTime <= now) {
         continue;
       }
 
@@ -313,12 +460,6 @@ export class AudioManager {
         entry.source.disconnect();
       } catch {
         // 忽略已经断开的 source
-      }
-
-      try {
-        entry.gainNode.disconnect();
-      } catch {
-        // 忽略已经断开的 gain
       }
 
       this.scheduledSources.delete(entry);
