@@ -155,6 +155,8 @@ interface PreparedRenderNotes {
   touchIndex: TimeWindowIndex;
   layeredIndex: TimeWindowIndex;
   approachIndex: TimeWindowIndex;
+  /** 谱面内最小的 note 流速倍率幅值（|<HS*x>|，≤1），粗筛窗口按它放大提前量 */
+  minHiSpeed: number;
 }
 
 interface RenderNoteMeta {
@@ -258,9 +260,12 @@ export class MainRenderer {
     touchIndex: EMPTY_TIME_WINDOW_INDEX,
     layeredIndex: EMPTY_TIME_WINDOW_INDEX,
     approachIndex: EMPTY_TIME_WINDOW_INDEX,
+    minHiSpeed: 1,
   };
   private visibleTouchCountByPos = new Map<string, number>();
   private visibleApproachIndicators: VisibleApproachIndicator[] = [];
+  private pendingTapArcs: { position: ButtonPosition; distance: number; color: string }[] = [];
+  private pendingStableTracks: { note: SlideNote; index: number; isSimultaneous: boolean }[] = [];
 
   constructor(canvas: HTMLCanvasElement, config: MainRendererConfig = {}) {
     this.canvas = canvas;
@@ -566,6 +571,7 @@ export class MainRenderer {
     if (!this.config.showFireworks) return;
     if (touches.length === 0) return;
 
+    this.touchRenderer.warmFireworkResources();
     this.ctx.save();
     this.ctx.beginPath();
     this.ctx.arc(this.centerX, this.centerY, this.logicalSize / 2, 0, Math.PI * 2);
@@ -584,23 +590,29 @@ export class MainRenderer {
     }
 
     this.ctx.save();
+    // 与烟花同款内切圆裁剪：负流速 note 从圈外进场，超出部分裁掉。
+    this.ctx.beginPath();
+    this.ctx.arc(this.centerX, this.centerY, this.logicalSize / 2, 0, Math.PI * 2);
+    this.ctx.clip();
 
     const { slides, touches, approachGroups, hitEffectNotes, layeredHeads, holdEndMap, noteMeta } =
       prepared;
 
     const nowMs = timing.currentTimeMs;
-    const lookAheadMs = BASE_APPROACH_TIME_MS / this.config.hiSpeed;
+    // HS<1 的 note 接近时间更长,粗筛提前量按谱面最小倍率放大
+    const lookAheadMs = BASE_APPROACH_TIME_MS / this.config.hiSpeed / prepared.minHiSpeed;
 
     const [slideLo, slideHi] = windowRange(prepared.slideIndex, nowMs, lookAheadMs);
+    const layerTracks = this.pendingStableTracks;
+    layerTracks.length = 0;
     for (let i = slideHi - 1; i >= slideLo; i--) {
-      this.slideRenderer.renderSlide(
-        slides[i],
-        timing.currentBeat,
-        timing.currentTimeMs,
-        "tracks",
-        this.getNoteMeta(noteMeta, slides[i]).simultaneousSlideCount >= 2,
-      );
+      layerTracks.push({
+        note: slides[i],
+        index: i,
+        isSimultaneous: this.getNoteMeta(noteMeta, slides[i]).simultaneousSlideCount >= 2,
+      });
     }
+    this.slideRenderer.renderStableTracks(layerTracks, timing.currentBeat, timing.currentTimeMs);
 
     for (let i = slideHi - 1; i >= slideLo; i--) {
       this.slideRenderer.renderSlide(
@@ -617,6 +629,7 @@ export class MainRenderer {
 
     // tap / hold / slide 星星头同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
     const [headLo, headHi] = windowRange(prepared.layeredIndex, nowMs, lookAheadMs);
+    this.renderTapApproachArcs(layeredHeads, headLo, headHi, noteMeta, timing);
     this.renderLayeredHeads(layeredHeads, headLo, headHi, holdEndMap, noteMeta, timing);
 
     // touch 最上层，覆盖普通 note。
@@ -855,6 +868,13 @@ export class MainRenderer {
 
     const timingOf = (note: Note) => note.timingMs;
 
+    let minHiSpeed = 1;
+    for (const note of notes) {
+      if (note.hiSpeed === undefined) continue;
+      const hs = Math.abs(note.hiSpeed);
+      if (hs > 0 && hs < minHiSpeed) minHiSpeed = hs;
+    }
+
     return {
       slides,
       touches,
@@ -868,6 +888,7 @@ export class MainRenderer {
       noteCompletionTimes,
       breakCompletionTimes,
       breakNoExCompletionTimes,
+      minHiSpeed,
       slideIndex: buildTimeWindowIndex(slides, timingOf, slideVisibleEndMs),
       touchIndex: buildTimeWindowIndex(touches, timingOf, touchVisibleEndMs),
       layeredIndex: buildTimeWindowIndex(
@@ -1048,7 +1069,7 @@ export class MainRenderer {
     noteMeta: WeakMap<Note, RenderNoteMeta>,
     currentTimeMs: number,
   ): void {
-    const approachTime = BASE_APPROACH_TIME_MS / this.config.hiSpeed;
+    const baseApproachTime = BASE_APPROACH_TIME_MS / this.config.hiSpeed;
 
     const visibleByPos = this.visibleTouchCountByPos;
     visibleByPos.clear();
@@ -1056,6 +1077,7 @@ export class MainRenderer {
       const touch = touches[i];
       if (touch.type === "touch-hold-start") continue;
       const timeDiff = touch.timingMs - currentTimeMs;
+      const approachTime = baseApproachTime / (Math.abs(touch.hiSpeed ?? 1) || 1);
       if (timeDiff <= approachTime && timeDiff >= -50) {
         const pos = touch.position as string;
         visibleByPos.set(pos, (visibleByPos.get(pos) || 0) + 1);
@@ -1284,6 +1306,37 @@ export class MainRenderer {
     }
   }
 
+  // tap 接近弧共享圆心，整窗收集后按 (颜色,拖影档) 合批 stroke，次数与可见数无关。
+  private renderTapApproachArcs(
+    layered: LayeredNote[],
+    headLo: number,
+    headHi: number,
+    noteMeta: WeakMap<Note, RenderNoteMeta>,
+    timing: RenderFrameTiming,
+  ): void {
+    const arcs = this.pendingTapArcs;
+    arcs.length = 0;
+    for (let i = headHi - 1; i >= headLo; i--) {
+      const item = layered[i];
+      if (item.kind !== "tap") continue;
+      const tap = item.note;
+      if (tap.timingMs <= timing.currentTimeMs) continue;
+      const pos = this.noteRenderer.calculateNotePosition(
+        tap,
+        timing.currentBeat,
+        timing.currentTimeMs,
+      );
+      if (!pos.visible) continue;
+      const isSimultaneous = this.getNoteMeta(noteMeta, tap).simultaneousNoteCount >= 2;
+      arcs.push({
+        position: tap.position,
+        distance: Math.hypot(pos.x - this.centerX, pos.y - this.centerY),
+        color: this.getTapApproachColor(tap, isSimultaneous),
+      });
+    }
+    this.noteRenderer.renderApproachArcsBatch(arcs);
+  }
+
   private renderSingleTap(
     tap: TapNote,
     noteMeta: WeakMap<Note, RenderNoteMeta>,
@@ -1295,16 +1348,6 @@ export class MainRenderer {
 
     const meta = this.getNoteMeta(noteMeta, tap);
     const isSimultaneous = meta.simultaneousNoteCount >= 2;
-    const timeDiff = tap.timing - currentBeat;
-
-    if (timeDiff > 0) {
-      this.noteRenderer.renderApproachArc(
-        tap.position,
-        pos.x,
-        pos.y,
-        this.getTapApproachColor(tap, isSimultaneous),
-      );
-    }
 
     if (tap.isStar) {
       this.renderStarTapNote(tap, pos.x, pos.y, pos.scale, isSimultaneous, currentTimeMs);

@@ -32,9 +32,69 @@ interface SlidePathMetrics {
   segmentRanges: { start: number; end: number }[];
 }
 
+// 必须按"阴影→本体→描边"逐箭头分层绘制，后画箭头的本体盖住前一个的描边；只缓存几何。
+interface ArrowPaths {
+  main: Path2D;
+  /** 阴影偏移已烘进顶点 */
+  shadow: Path2D;
+  /** break 双色的左半覆盖 */
+  leftHalf: Path2D;
+}
+type ArrowPathSet = ArrowPaths[];
+
+// 每帧向 staging 层最多绘制的轨迹条数，控制单帧重建成本。
+const TRACKS_PER_BUILD_STEP = 12;
+
+interface TrackBuildJob {
+  signature: string;
+  entries: { note: SlideNote; index: number; isSimultaneous: boolean }[];
+  currentBeat: number;
+  currentTimeMs: number;
+  nextIndex: number;
+  staging: HTMLCanvasElement;
+}
+
 export class SlideRenderer extends BaseRenderer {
   private noteRenderer: NoteRenderer;
   private pathMetricsCache = new WeakMap<SlideSegment[], SlidePathMetrics>();
+  private uniquePathIndexesCache = new WeakMap<SlideNote, number[]>();
+  // 箭头几何只随 (hiddenCount, junction, radius, mirror) 变化，Path2D 按段缓存。
+  private arrowPathsCache = new WeakMap<
+    SlideSegment,
+    { basis: string; byKey: Map<string, ArrowPathSet> }
+  >();
+  // 稳定轨迹（alpha=1）离屏层：签名不变时每帧只 drawImage 复用。
+  private trackLayer: HTMLCanvasElement | null = null;
+  private trackLayerCtx: CanvasRenderingContext2D | null = null;
+  private trackLayerSignature = "";
+  private trackLayerBuiltAtMs = -Infinity;
+  private trackStaging: HTMLCanvasElement | null = null;
+  private trackStagingCtx: CanvasRenderingContext2D | null = null;
+  private trackBuildJob: TrackBuildJob | null = null;
+
+  // 同参重复路径只画一次，完全重叠时渲染结果与全量绘制一致。
+  private getRenderPathIndexes(note: SlideNote): number[] {
+    const cached = this.uniquePathIndexesCache.get(note);
+    if (cached) return cached;
+    const paths = note.allSlideSegments!;
+    const seen = new Set<string>();
+    const result: number[] = [];
+    for (let i = 0; i < paths.length; i++) {
+      const segs = paths[i];
+      if (!segs || segs.length === 0) continue;
+      const key = [
+        segs.map((s) => `${s.type}:${s.startPos}:${s.endPos}:${s.midPos ?? ""}`).join("+"),
+        note.allDelayMs?.[i] ?? "",
+        note.allDurationMs?.[i] ?? "",
+        note.allSlideBreaks?.[i] ? 1 : 0,
+      ].join("|");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push(i);
+    }
+    this.uniquePathIndexesCache.set(note, result);
+    return result;
+  }
 
   constructor(context: RenderContext, noteRenderer: NoteRenderer) {
     super(context);
@@ -157,26 +217,27 @@ export class SlideRenderer extends BaseRenderer {
   ): NoteRenderPosition {
     const angle = this.getButtonAngle(note.position);
     const timeDiff = note.timingMs - currentTimeMs;
-    const approachTime = this.getApproachTimeMs();
+    const approachTime = this.getNoteApproachTimeMs(note);
 
     if (timeDiff > approachTime || timeDiff < -NOTE_VISIBILITY_AFTER_MS) {
       return INVISIBLE_NOTE_POSITION;
     }
 
+    const dir = this.getNoteApproachDir(note);
     const halfApproach = approachTime / 2;
     let distance: number;
     let scale: number;
 
     if (timeDiff > halfApproach) {
-      distance = APPROACH_START_SCALE * this.context.radius;
+      distance = this.context.radius * (1 + dir * (APPROACH_START_SCALE - 1));
       scale = 1 - (timeDiff - halfApproach) / halfApproach;
     } else if (timeDiff >= 0) {
       const progress = 1 - timeDiff / halfApproach;
-      distance = this.context.radius * (APPROACH_START_SCALE + 0.75 * progress);
+      distance = this.context.radius * (1 + dir * (APPROACH_START_SCALE - 1 + 0.75 * progress));
       scale = 1;
     } else {
       const fadeProgress = 1 + -timeDiff / halfApproach;
-      distance = this.context.radius * (APPROACH_START_SCALE + 0.75 * fadeProgress);
+      distance = this.context.radius * (1 + dir * (APPROACH_START_SCALE - 1 + 0.75 * fadeProgress));
       scale = 1;
     }
 
@@ -197,10 +258,11 @@ export class SlideRenderer extends BaseRenderer {
   ): void {
     if (note.isSplitSlide && note.allSlideSegments) {
       const paths = note.allSlideSegments;
+      const pathIndexes = this.getRenderPathIndexes(note);
       // wifi 路径（扇形大）先画垫底，再画其它路径，避免盖住同条滑条其它分段的箭头和星星。
-      for (let i = 0; i < paths.length; i++) {
+      for (const i of pathIndexes) {
         const segs = paths[i];
-        if (segs && segs.length > 0 && segs[0].type === "w") {
+        if (segs[0].type === "w") {
           this.renderSlidePath(
             note,
             currentBeat,
@@ -212,9 +274,9 @@ export class SlideRenderer extends BaseRenderer {
           );
         }
       }
-      for (let i = 0; i < paths.length; i++) {
+      for (const i of pathIndexes) {
         const segs = paths[i];
-        if (segs && segs.length > 0 && segs[0].type !== "w") {
+        if (segs[0].type !== "w") {
           this.renderSlidePath(
             note,
             currentBeat,
@@ -248,7 +310,7 @@ export class SlideRenderer extends BaseRenderer {
     mode: SlideRenderMode = "tracks",
     hasSimultaneousSlide: boolean,
   ): void {
-    const approachHalf = this.getApproachTimeMs() / 2;
+    const approachHalf = this.getNoteApproachTimeMs(note) / 2;
     const visibilityStart = note.timingMs - approachHalf;
 
     const durationMs = note.allDurationMs ? note.allDurationMs[pathIndex] : note.durationMs;
@@ -374,11 +436,8 @@ export class SlideRenderer extends BaseRenderer {
         return;
       }
 
-      // 其他形状：模板 bar 位置 + drawSlideArrowsBatch（均匀箭头）。无 chain（非法/退化段）不画箭头。
-      const bars = this.getVisibleBarsForSegment(segment, progress, isJunctionEnd);
-      if (bars && bars.length > 0) {
-        this.drawSlideArrowsBatch(bars);
-      }
+      // 其他形状：模板 bar 位置 + 合并箭头路径（缓存）。无 chain（非法/退化段）不画箭头。
+      this.drawSegmentArrows(segment, progress, isJunctionEnd);
     });
 
     return true;
@@ -441,22 +500,221 @@ export class SlideRenderer extends BaseRenderer {
     this.drawWifiChevronsBatch(chevrons, fanAngle);
   }
 
+  // 与 renderSlidePath 相同的 progress→hiddenCount 推导，只取失效签名。
+  private trackStateKey(note: SlideNote, currentTimeMs: number): string {
+    const pathIndexes =
+      note.isSplitSlide && note.allSlideSegments ? this.getRenderPathIndexes(note) : [0];
+    let key = "";
+    // 淡入期 alpha 连续变化，25ms 分桶让层随渐入重建（重建频率由节流兜底）。
+    if (currentTimeMs < note.timingMs) {
+      key += `~${Math.floor((note.timingMs - currentTimeMs) / 25)}`;
+    }
+    for (const i of pathIndexes) {
+      const segments = note.allSlideSegments ? note.allSlideSegments[i] : note.slideSegments;
+      if (!segments || segments.length === 0) continue;
+      const durationMs = note.allDurationMs ? note.allDurationMs[i] : note.durationMs;
+      const delayMs = note.allDelayMs ? note.allDelayMs[i] : (note.delayMs ?? 60000 / note.bpm);
+      const slideStart = note.timingMs + delayMs;
+      if (currentTimeMs > slideStart + durationMs) {
+        key += "|x";
+        continue;
+      }
+      let progress = 0;
+      if (currentTimeMs >= slideStart) {
+        progress = Math.min(1, (currentTimeMs - slideStart) / durationMs);
+      }
+      key += `|${i}`;
+      const metrics = this.getSlidePathMetrics(segments);
+      if (!metrics) continue;
+      for (let s = 0; s < segments.length; s++) {
+        const range = metrics.segmentRanges[s];
+        let segmentProgress = 0;
+        if (progress > range.start) {
+          segmentProgress =
+            progress >= range.end ? 1 : (progress - range.start) / (range.end - range.start);
+        }
+        key += `,${this.getHiddenCount(segments[s], segmentProgress)}`;
+      }
+    }
+    return key;
+  }
+
+  /** 稳定轨迹整体走离屏层：签名不变时每帧只合成一次 drawImage。 */
+  renderStableTracks(
+    entries: { note: SlideNote; index: number; isSimultaneous: boolean }[],
+    currentBeat: number,
+    currentTimeMs: number,
+  ): void {
+    const mainCtx = this.context.ctx;
+    const canvas = this.context.canvas;
+    if (entries.length === 0) {
+      this.trackLayerSignature = "";
+      this.trackBuildJob = null;
+      return;
+    }
+
+    let signature = `${canvas.width}x${canvas.height}|${this.context.radius}|${this.context.config.mirrorMode}|${this.context.config.normalColorBreakSlide ? 1 : 0}`;
+    for (const entry of entries) {
+      signature += `;${entry.index}:${entry.isSimultaneous ? 1 : 0}${this.trackStateKey(entry.note, currentTimeMs)}`;
+    }
+
+    // 双缓冲分帧重建：staging 层每帧最多画 TRACKS_PER_BUILD_STEP 条，画完与前台互换。
+    const job = this.trackBuildJob;
+    if (signature === this.trackLayerSignature) {
+      this.trackBuildJob = null;
+    } else if (job && job.signature === signature) {
+      this.advanceTrackBuildJob(job);
+    } else if (Math.abs(currentTimeMs - this.trackLayerBuiltAtMs) >= 33 || !this.trackLayer) {
+      const staging = this.acquireTrackStaging(canvas, mainCtx);
+      this.trackBuildJob = {
+        signature,
+        entries: entries.slice(),
+        currentBeat,
+        currentTimeMs,
+        nextIndex: 0,
+        staging,
+      };
+      // 首帧没有可显示的前台层时同步完成，避免轨迹空白。
+      do {
+        this.advanceTrackBuildJob(this.trackBuildJob);
+      } while (this.trackBuildJob && !this.trackLayer);
+    }
+
+    if (!this.trackLayer) return;
+    mainCtx.save();
+    mainCtx.setTransform(1, 0, 0, 1, 0, 0);
+    mainCtx.drawImage(this.trackLayer, 0, 0);
+    mainCtx.restore();
+  }
+
+  private acquireTrackStaging(
+    canvas: HTMLCanvasElement,
+    mainCtx: CanvasRenderingContext2D,
+  ): HTMLCanvasElement {
+    if (
+      !this.trackStaging ||
+      this.trackStaging.width !== canvas.width ||
+      this.trackStaging.height !== canvas.height
+    ) {
+      this.trackStaging = document.createElement("canvas");
+      this.trackStaging.width = canvas.width;
+      this.trackStaging.height = canvas.height;
+      this.trackStagingCtx = this.trackStaging.getContext("2d");
+    }
+    const ctx = this.trackStagingCtx!;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, this.trackStaging.width, this.trackStaging.height);
+    ctx.setTransform(mainCtx.getTransform());
+    return this.trackStaging;
+  }
+
+  private advanceTrackBuildJob(job: TrackBuildJob): void {
+    const mainCtx = this.context.ctx;
+    this.context.ctx = this.trackStagingCtx!;
+    try {
+      const end = Math.min(job.entries.length, job.nextIndex + TRACKS_PER_BUILD_STEP);
+      for (; job.nextIndex < end; job.nextIndex++) {
+        const entry = job.entries[job.nextIndex];
+        this.renderSlide(
+          entry.note,
+          job.currentBeat,
+          job.currentTimeMs,
+          "tracks",
+          entry.isSimultaneous,
+        );
+      }
+    } finally {
+      this.context.ctx = mainCtx;
+    }
+
+    if (job.nextIndex >= job.entries.length) {
+      // 完成:staging 与前台互换
+      const front = this.trackLayer;
+      const frontCtx = this.trackLayerCtx;
+      this.trackLayer = job.staging;
+      this.trackLayerCtx = this.trackStagingCtx;
+      this.trackStaging = front;
+      this.trackStagingCtx = frontCtx;
+      this.trackLayerSignature = job.signature;
+      this.trackLayerBuiltAtMs = job.currentTimeMs;
+      this.trackBuildJob = null;
+    }
+  }
+
+  // chunky 隐藏：areaStep[i] = 累积隐藏数量，floor 对齐分段时序。
+  private getHiddenCount(segment: SlideSegment, progress: number): number {
+    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos, segment.midPos);
+    if (!shape) return 0;
+    const steps = SLIDE_AREA_STEP_MAP[shape.shape];
+    return steps && steps.length >= 2
+      ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
+      : 0;
+  }
+
+  private drawSegmentArrows(segment: SlideSegment, progress: number, isJunctionEnd: boolean): void {
+    const chain = this.getBarChain(segment);
+    if (!chain) return;
+
+    const basis = `${this.context.radius}|${this.context.config.mirrorMode}`;
+    let cache = this.arrowPathsCache.get(segment);
+    if (!cache || cache.basis !== basis) {
+      cache = { basis, byKey: new Map() };
+      this.arrowPathsCache.set(segment, cache);
+    }
+
+    const hiddenCount = this.getHiddenCount(segment, progress);
+    const key = `${hiddenCount}|${isJunctionEnd ? 1 : 0}`;
+    let paths = cache.byKey.get(key);
+    if (!paths) {
+      const bars = this.getVisibleBarsForSegment(segment, hiddenCount, isJunctionEnd);
+      if (!bars || bars.length === 0) return;
+      paths = this.buildArrowPaths(bars);
+      cache.byKey.set(key, paths);
+    }
+
+    const ctx = this.context.ctx;
+    const mainStroke = ctx.strokeStyle;
+    const isBreak =
+      typeof mainStroke === "string" &&
+      mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
+    const leftColor = isBreak ? COLORS.SLIDE_SIMULTANEOUS : mainStroke;
+    const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
+
+    ctx.save();
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+    ctx.lineWidth = this.getNoteStrokeWidth();
+
+    const baseAlpha = ctx.globalAlpha;
+    for (const arrow of paths) {
+      ctx.globalAlpha = baseAlpha * 0.4;
+      ctx.fillStyle = COLORS.BLACK;
+      ctx.fill(arrow.shadow);
+      ctx.globalAlpha = baseAlpha;
+
+      ctx.fillStyle = rightColor;
+      ctx.fill(arrow.main);
+
+      if (isBreak) {
+        ctx.fillStyle = leftColor;
+        ctx.fill(arrow.leftHalf);
+      }
+
+      ctx.strokeStyle = COLORS.BLACK;
+      ctx.stroke(arrow.main);
+    }
+
+    ctx.restore();
+  }
+
   private getVisibleBarsForSegment(
     segment: SlideSegment,
-    progress: number,
+    hiddenCount: number,
     isJunctionEnd: boolean = false,
   ): { x: number; y: number; angle: number }[] | null {
     if (segment.type === "w") return null;
     const chain = this.getBarChain(segment);
     if (!chain) return null;
-    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos, segment.midPos)!;
-
-    // chunky 隐藏：areaStep[i] = 累积隐藏数量，floor 对齐分段时序。
-    const steps = SLIDE_AREA_STEP_MAP[shape.shape];
-    const hiddenCount =
-      steps && steps.length >= 2
-        ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
-        : 0;
 
     const usePrecomputedAngle = segment.type !== "-";
     const result: { x: number; y: number; angle: number }[] = [];
@@ -599,27 +857,15 @@ export class SlideRenderer extends BaseRenderer {
     return { bx: x2 + bux * edgeLen, by: y2 + buy * edgeLen };
   }
 
-  private drawSlideArrowsBatch(arrows: { x: number; y: number; angle: number }[]): void {
-    if (arrows.length === 0) return;
-    const ctx = this.context.ctx;
+  private buildArrowPaths(arrows: { x: number; y: number; angle: number }[]): ArrowPathSet {
     const arrowHeight = this.scaleByRadius(SLIDE_ARROW_HEIGHT_RATIO);
     const arrowWidth = this.scaleByRadius(SLIDE_ARROW_SPAN_RATIO);
     const lineWidth = this.scaleByRadius(SLIDE_ARROW_WIDTH_RATIO);
     const pad = this.scaleByRadius(SLIDE_ARROW_PADDING_RATIO);
-    const outlineWidth = this.getNoteStrokeWidth();
-    const mainStroke = ctx.strokeStyle;
-    const isBreak =
-      typeof mainStroke === "string" &&
-      mainStroke.toLowerCase() === COLORS.BREAK_ORANGE.toLowerCase();
-    const leftColor = isBreak ? COLORS.SLIDE_SIMULTANEOUS : mainStroke;
-    const rightColor = isBreak ? COLORS.SLIDE_ARROW_RIGHT : mainStroke;
-
-    ctx.save();
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
-
-    // 阴影沿箭头反方向（轨迹后方）偏移；逐箭头先投影后本体，自交叉处后画的会压住先画的。
+    // 阴影沿箭头反方向（轨迹后方）偏移，逐箭头方向不同，直接烘进顶点。
     const shadowOffset = this.scaleByRadius(5 / 300);
+
+    const result: ArrowPathSet = [];
 
     for (const arrow of arrows) {
       const cos = Math.cos(arrow.angle);
@@ -643,43 +889,38 @@ export class SlideRenderer extends BaseRenderer {
       const bx1 = bx + x1 - x2;
       const by1 = by + y1 - y2;
 
-      const arrowPath = new Path2D();
-      arrowPath.moveTo(x2, y2);
-      arrowPath.lineTo(x3, y3);
-      arrowPath.lineTo(bx3, by3);
-      arrowPath.lineTo(bx, by);
-      arrowPath.lineTo(bx1, by1);
-      arrowPath.lineTo(x1, y1);
-      arrowPath.closePath();
+      const main = new Path2D();
+      main.moveTo(x2, y2);
+      main.lineTo(x3, y3);
+      main.lineTo(bx3, by3);
+      main.lineTo(bx, by);
+      main.lineTo(bx1, by1);
+      main.lineTo(x1, y1);
+      main.closePath();
 
-      ctx.save();
-      ctx.translate(-cos * shadowOffset, -sin * shadowOffset);
-      ctx.globalAlpha = ctx.globalAlpha * 0.4;
-      ctx.fillStyle = COLORS.BLACK;
-      ctx.fill(arrowPath);
-      ctx.restore();
-
-      ctx.fillStyle = rightColor;
-      ctx.fill(arrowPath);
+      const shadow = new Path2D();
+      const sx = -cos * shadowOffset;
+      const sy = -sin * shadowOffset;
+      shadow.moveTo(x2 + sx, y2 + sy);
+      shadow.lineTo(x3 + sx, y3 + sy);
+      shadow.lineTo(bx3 + sx, by3 + sy);
+      shadow.lineTo(bx + sx, by + sy);
+      shadow.lineTo(bx1 + sx, by1 + sy);
+      shadow.lineTo(x1 + sx, y1 + sy);
+      shadow.closePath();
 
       // break 时左半覆盖左色：两层不透明色叠加，抗锯齿接缝不可见
-      if (isBreak) {
-        const leftPath = new Path2D();
-        leftPath.moveTo(x2, y2);
-        leftPath.lineTo(bx, by);
-        leftPath.lineTo(bx3, by3);
-        leftPath.lineTo(x3, y3);
-        leftPath.closePath();
-        ctx.fillStyle = leftColor;
-        ctx.fill(leftPath);
-      }
+      const leftHalf = new Path2D();
+      leftHalf.moveTo(x2, y2);
+      leftHalf.lineTo(bx, by);
+      leftHalf.lineTo(bx3, by3);
+      leftHalf.lineTo(x3, y3);
+      leftHalf.closePath();
 
-      ctx.lineWidth = outlineWidth;
-      ctx.strokeStyle = COLORS.BLACK;
-      ctx.stroke(arrowPath);
+      result.push({ main, shadow, leftHalf });
     }
 
-    ctx.restore();
+    return result;
   }
 
   /**
@@ -1188,7 +1429,7 @@ export class SlideRenderer extends BaseRenderer {
     // 负号 = 顺时针
     const rotationSpeedRadPerMs = -cappedRotationDegPerMs * (Math.PI / 180);
 
-    const approachTime = this.getApproachTimeMs();
+    const approachTime = this.getNoteApproachTimeMs(note);
     const visibilityStart = note.timingMs - approachTime;
     if (currentTimeMs < visibilityStart) return 0;
 

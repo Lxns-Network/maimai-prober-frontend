@@ -41,7 +41,8 @@ export class HoldRenderer extends BaseRenderer {
       endY = endPosition.y;
     } else {
       // 终点不可见时退回到 approach 起始距离上，画一截"未展开"的 hold。
-      const approachDist = 0.25 * this.context.radius;
+      const dir = startNote ? this.getNoteApproachDir(startNote) : 1;
+      const approachDist = (1 + dir * -0.75) * this.context.radius;
       endX = this.context.centerX + Math.cos(angle) * approachDist;
       endY = this.context.centerY + Math.sin(angle) * approachDist;
     }
@@ -70,10 +71,10 @@ export class HoldRenderer extends BaseRenderer {
     // 终点宽度在 approach 后半段从 0 拉伸到 baseSize，营造"展开"动画。
     let endScale = 1;
     if (startNote && endNote && currentTimeMs) {
-      const approachHalf = this.getApproachTimeMs() / 2;
+      const approachHalf = this.getNoteApproachTimeMs(startNote) / 2;
       const timeDiff = startNote.timingMs - currentTimeMs;
       if (timeDiff > approachHalf) {
-        endScale = 1 - (timeDiff - approachHalf) / approachHalf;
+        endScale = Math.max(0, 1 - (timeDiff - approachHalf) / approachHalf);
       }
     }
     const endWidth = baseSize * endScale;
@@ -243,7 +244,7 @@ export class HoldRenderer extends BaseRenderer {
 
       // 终点 dot 只在终点进入 approach 后半段才显示（与终点展开节奏一致）。
       if (endPosition.visible && endNote && currentTimeMs) {
-        const approachHalf = this.getApproachTimeMs() / 2;
+        const approachHalf = this.getNoteApproachTimeMs(endNote) / 2;
         const endTimeDiff = endNote.timingMs - currentTimeMs;
         if (endTimeDiff <= approachHalf) {
           const endCenterSize = endWidth * 0.15;

@@ -41,14 +41,15 @@ export function msToBeats(
   return getTimingTimeline(bpmEvents, defaultBpm).beatFromMs(ms);
 }
 
-/** Music time in seconds from precise time (beats), accounting for lead-in and music offset. */
+/** Music time in seconds from precise time (beats), accounting for lead-in, music offset and `&first`. */
 export function calculateMusicTime(
   preciseTime: number,
   bpmEvents: readonly BpmEvent[] | null,
   bpm: number,
   musicOffset: number,
+  firstMs: number = 0,
 ): number {
   const chartTimeMs = beatsToMs(preciseTime, bpmEvents, bpm);
   const leadInMs = getLeadInMs(bpm);
-  return (chartTimeMs - leadInMs - musicOffset) / 1000;
+  return (chartTimeMs - leadInMs - musicOffset + firstMs) / 1000;
 }
