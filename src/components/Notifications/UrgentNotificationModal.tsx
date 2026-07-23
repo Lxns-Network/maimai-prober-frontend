@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
-import { Button, Group, Modal } from "@mantine/core";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { useUrgentNotifications } from "@/hooks/queries/useUrgentNotifications.ts";
 import { useMarkNotificationRead } from "@/hooks/mutations/useNotificationMutations.ts";
-import { getNotificationDisplay } from "@/components/Notifications/notificationTemplates.tsx";
 import { NotificationProps } from "@/types/notification";
+
+const UrgentNotificationModalContent = lazy(() =>
+  import("./UrgentNotificationModalContent.tsx").then(({ UrgentNotificationModalContent }) => ({
+    default: UrgentNotificationModalContent,
+  })),
+);
 
 const SEEN_KEY = "notification.urgentSeen";
 
@@ -47,18 +51,16 @@ export function UrgentNotificationModal() {
 
   useBackDismiss(opened, close);
 
-  const display = current ? getNotificationDisplay(current) : null;
+  if (!current) return null;
 
   return (
-    <Modal opened={opened} onClose={close} title={display?.title} centered>
-      {display && (
-        <>
-          {display.body}
-          <Group justify="flex-end" mt="lg">
-            <Button onClick={acknowledge}>我知道了</Button>
-          </Group>
-        </>
-      )}
-    </Modal>
+    <Suspense fallback={null}>
+      <UrgentNotificationModalContent
+        notification={current}
+        opened={opened}
+        onClose={close}
+        onAcknowledge={acknowledge}
+      />
+    </Suspense>
   );
 }

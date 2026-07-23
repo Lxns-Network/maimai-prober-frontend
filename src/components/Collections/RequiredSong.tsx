@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   ActionIcon,
@@ -98,62 +98,59 @@ export const RequiredSong = ({
   const { height, ref } = useElementSize();
 
   const [game] = useFixedGame();
-  const [difficulties, setDifficulties] = useState<number[]>([0, 1, 2, 3]);
   const [difficulty, setDifficulty] = useState<number>(0);
   const small = useMediaQuery(`(max-width: 450px)`);
 
   const pageSize = 20;
   const [page, setPage] = useState(1);
   const topRef = useRef<HTMLDivElement>(null);
-  const [filteredRecords, setFilteredRecords] = useState<CollectionRequiredSongProps[]>([]);
-  const [displayRecords, setDisplayRecords] = useState<CollectionRequiredSongProps[]>([]);
+  const difficulties = useMemo(
+    () => collection?.required?.flatMap((required) => required.difficulties) ?? [],
+    [collection],
+  );
+  const filteredRecords = useMemo(() => {
+    if (!collection?.required) return [];
+
+    return records.filter((record) =>
+      collection.required!.every((required) => {
+        if (!required.difficulties.includes(difficulty)) return true;
+        return (required.songs || []).some(
+          (song) => song.title === record.title && song.type === record.type,
+        );
+      }),
+    );
+  }, [collection, difficulty, records]);
+  const displayRecords = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredRecords.slice(start, start + pageSize);
+  }, [filteredRecords, page]);
 
   useEffect(() => {
     setPage(1);
-    if (collection && collection.required) {
-      setDifficulties(collection.required.map((required) => required.difficulties).flat());
-    }
   }, [collection]);
 
   useEffect(() => {
     if (difficulty === 4) {
       setPage(1);
     }
-    if (!collection || !collection.required) return;
-
-    setFilteredRecords(
-      records.filter((record) => {
-        return (
-          collection.required &&
-          collection.required.every((required) => {
-            if (required.difficulties.includes(difficulty || 0)) {
-              return (required.songs || []).some((song) => {
-                return song.title === record.title && song.type === record.type;
-              });
-            }
-            return true;
-          })
-        );
-      }),
-    );
   }, [difficulty]);
 
   useEffect(() => {
     if (difficulties.length === 0) return;
     // 防止动画导致 SegmentedControl 无法正常渲染
-    setTimeout(() => {
+    let selectionTimeout: ReturnType<typeof setTimeout> | undefined;
+    const resetTimeout = setTimeout(() => {
       setDifficulty(0);
-      setTimeout(() => {
+      selectionTimeout = setTimeout(() => {
         setDifficulty(difficulties[difficulties.length - 1]);
       }, 0);
     }, 250);
-  }, [difficulties]);
 
-  useEffect(() => {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    setDisplayRecords(filteredRecords.slice(start, end));
-  }, [page, filteredRecords]);
+    return () => {
+      clearTimeout(resetTimeout);
+      if (selectionTimeout) clearTimeout(selectionTimeout);
+    };
+  }, [difficulties]);
 
   if (!collection) return null;
 

@@ -26,14 +26,13 @@ import { TransformedValues, useForm } from "@mantine/form";
 import { IconAlertCircle, IconArrowsShuffle } from "@tabler/icons-react";
 import { useCreateAlias } from "@/hooks/mutations/useAliasMutations.ts";
 import { useAliasExists } from "@/hooks/queries/useAliasExists.ts";
-import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { APIError } from "@/utils/errors.ts";
 import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { SongCombobox } from "../SongCombobox.tsx";
 import { PhotoView } from "react-photo-view";
-import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
+import { MaimaiSongList } from "@/utils/api/song/maimai.ts";
+import { ChunithmSongList } from "@/utils/api/song/chunithm.ts";
 import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Game } from "@/types/game";
@@ -57,14 +56,8 @@ export const CreateAliasModal = ({
   opened,
   onClose,
 }: CreateAliasModalProps) => {
-  useBackDismiss(opened, () => onClose());
-
   const [uploading, setUploading] = useState(false);
-  const [readonly, setReadonly] = useState(false);
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-
-  const getSongList = useSongListStore((state) => state.getSongList);
+  const songList = useSongListStore((state) => state[game]) as MaimaiSongList | ChunithmSongList;
   const form = useForm<FormValues>({
     initialValues: {
       song_id: null,
@@ -91,6 +84,8 @@ export const CreateAliasModal = ({
       alias: values.alias.trim(),
     }),
   });
+  const setFormValues = form.setValues;
+  const resetForm = form.reset;
 
   const createAliasMutation = useCreateAlias();
 
@@ -110,6 +105,8 @@ export const CreateAliasModal = ({
     isAliasFormatValid(debouncedAlias),
   );
   const debouncePending = isAliasFormatValid(aliasTrimmed) && aliasTrimmed !== debouncedAlias;
+  const readonly = Boolean(defaultSongId);
+  const song = form.values.song_id ? songList.find(form.values.song_id) || null : null;
 
   const createAliasHandler = (values: TransformedValues<typeof form>) => {
     setUploading(true);
@@ -141,33 +138,18 @@ export const CreateAliasModal = ({
   };
 
   useEffect(() => {
-    setSongList(getSongList(game));
-  }, [game]);
-
-  useEffect(() => {
-    if (form.values.song_id) {
-      const song = songList?.find(form.values.song_id);
-      song && setSong(song);
-    } else {
-      setSong(null);
-    }
-  }, [form.values.song_id]);
-
-  useEffect(() => {
     if (defaultSongId) {
-      form.setValues({
+      setFormValues({
         song_id: defaultSongId,
       });
-      setReadonly(true);
     } else {
-      form.reset();
-      setReadonly(false);
+      resetForm();
     }
-  }, [defaultSongId]);
+  }, [defaultSongId, setFormValues, resetForm]);
 
   useEffect(() => {
-    form.reset();
-  }, [game]);
+    resetForm();
+  }, [game, resetForm]);
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>
@@ -188,10 +170,12 @@ export const CreateAliasModal = ({
                     size={94}
                     radius="md"
                     src={`${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(song.id)}.png!webp`}
+                    alt={`${song.title} 曲绘`}
+                    imageProps={{ loading: "lazy" }}
                   />
                 </PhotoView>
               ) : (
-                <Avatar size={94} radius="md" src={null}>
+                <Avatar size={94} radius="md" src={null} alt="">
                   <Text ta="center" fz="xs">
                     请选择曲目
                   </Text>
@@ -215,6 +199,7 @@ export const CreateAliasModal = ({
                     <ActionIcon
                       variant="default"
                       size={24}
+                      aria-label="随机选择一首曲目"
                       onClick={() => {
                         const song =
                           songList?.songs[Math.floor(Math.random() * songList?.songs.length)];

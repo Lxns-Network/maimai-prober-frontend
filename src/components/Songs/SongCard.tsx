@@ -1,6 +1,6 @@
 import { MaimaiGenreProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import {
   ActionIcon,
   Avatar,
@@ -13,6 +13,7 @@ import {
   Stack,
   Text,
   Title,
+  UnstyledButton,
 } from "@mantine/core";
 import { SongDisabledIndicator } from "../SongDisabledIndicator.tsx";
 import { PhotoView } from "react-photo-view";
@@ -25,10 +26,10 @@ import useFixedGame from "@/hooks/useFixedGame.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import useAliasListStore from "@/hooks/useAliasListStore.ts";
-import { ColorExtractor } from "react-color-extractor";
 import { notifications } from "@mantine/notifications";
 import { HTMLMediaProps } from "react-use/lib/factory/createHTMLMediaHook";
 import useAliasStore from "@/hooks/useAliasStore.ts";
+import { useImagePalette } from "@/hooks/useImagePalette.ts";
 
 export const SongCard = ({
   song,
@@ -40,13 +41,16 @@ export const SongCard = ({
   const [game] = useFixedGame();
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
   const { aliasList } = useAliasListStore(useShallow((state) => ({ aliasList: state[game] })));
-  const [scale, setScale] = useState<number>(0);
-  const [colors, setColors] = useState<string[]>([]);
+  const jacketRef = useRef<HTMLDivElement>(null);
   const isLoggedOut = !localStorage.getItem("token");
 
   const { openModal: openCreateAliasModal } = useAliasStore();
+  const jacketSrc = song
+    ? `${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png!webp`
+    : undefined;
+  const colors = useImagePalette(jacketSrc);
 
-  if (!song) return null;
+  if (!song || !jacketSrc) return null;
 
   const handleCreateAlias = () => {
     openCreateAliasModal({
@@ -57,16 +61,13 @@ export const SongCard = ({
 
   return (
     <Card mt="md" radius="md" p={0} withBorder className={classes.card} style={style}>
-      <ColorExtractor
-        src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png!webp`}
-        getColors={(colors: string[]) => setColors(colors)}
-      />
       <Card.Section m="md">
         <Group wrap="nowrap">
           <Box
+            ref={jacketRef}
             className={classes.jacket}
             style={{
-              "--scale": scale,
+              "--scale": 0,
               "--primary-color": colors && colors[0],
               "--secondary-color": colors && colors[1],
             }}
@@ -76,7 +77,9 @@ export const SongCard = ({
                 src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png`}
               >
                 <Avatar
-                  src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png!webp`}
+                  src={jacketSrc}
+                  alt={`${song.title} 曲绘`}
+                  imageProps={{ loading: "lazy" }}
                   size={94}
                   radius="md"
                 >
@@ -93,8 +96,8 @@ export const SongCard = ({
             </Group>
             <CopyButton value={song.title}>
               {({ copy }) => (
-                <Title
-                  size="1.25rem"
+                <UnstyledButton
+                  aria-label={`复制曲目名称：${song.title}`}
                   onClick={() => {
                     copy();
                     notifications.show({
@@ -103,14 +106,11 @@ export const SongCard = ({
                       autoClose: 2000,
                     });
                   }}
-                  style={{
-                    display: "contents",
-                    cursor: "pointer",
-                    wordBreak: "break-all",
-                  }}
                 >
-                  {song.title}
-                </Title>
+                  <Title component="span" size="1.25rem" style={{ wordBreak: "break-all" }}>
+                    {song.title}
+                  </Title>
+                </UnstyledButton>
               )}
             </CopyButton>
             <Text fz="sm" c="dimmed">
@@ -171,6 +171,7 @@ export const SongCard = ({
                   </Badge>
                 ))}
             <ActionIcon
+              aria-label={`为 ${song.title} 创建别名`}
               variant="default"
               radius="md"
               size={26}
@@ -190,9 +191,9 @@ export const SongCard = ({
       <AudioPlayer
         className={classes.audioPlayer}
         onFrequencyChange={(frequency) => {
-          let average = frequency[10] / 200;
+          let average = (frequency[10] ?? 0) / 200;
           average = average * average;
-          setScale(average);
+          jacketRef.current?.style.setProperty("--scale", average.toString());
         }}
         src={`https://assets2.lxns.net/${game}/music/${songList.getSongResourceId(song.id)}.mp3`}
         audioProps={{ preload: "none" } as HTMLMediaProps}

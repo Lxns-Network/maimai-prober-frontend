@@ -34,7 +34,7 @@ import { EmptyState } from "@/components/EmptyState.tsx";
 import classes from "./ChartComment.module.css";
 import { useForm } from "@mantine/form";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { useToggle } from "@mantine/hooks";
@@ -326,42 +326,37 @@ export const ChartComment = ({
         }
       : undefined,
   });
-  const [sortedComments, setSortedComments] = useState<Comment[]>([]);
   const [sort, toggleSort] = useToggle(SORT_OPTIONS.map((option) => option.value));
   const [page, setPage] = useState(1);
 
-  const sortComments = (sort: string) => {
-    const sorted = [...comments].sort((a, b) => {
-      const hasCommentA = !!a.comment;
-      const hasCommentB = !!b.comment;
-      if (hasCommentA !== hasCommentB) {
-        return hasCommentB ? 1 : -1;
-      }
+  const sortedComments = useMemo(
+    () =>
+      [...comments].sort((a, b) => {
+        const hasCommentA = !!a.comment;
+        const hasCommentB = !!b.comment;
+        if (hasCommentA !== hasCommentB) {
+          return hasCommentB ? 1 : -1;
+        }
 
-      if (sort === "hot") {
-        return (b.like_count ?? 0) - (a.like_count ?? 0);
-      } else if (sort === "new") {
-        return new Date(b.upload_time).getTime() - new Date(a.upload_time).getTime();
-      } else if (sort === "rating") {
-        return (b.rating ?? 0) - (a.rating ?? 0);
-      }
+        if (sort === "hot") {
+          return (b.like_count ?? 0) - (a.like_count ?? 0);
+        } else if (sort === "new") {
+          return new Date(b.upload_time).getTime() - new Date(a.upload_time).getTime();
+        } else if (sort === "rating") {
+          return (b.rating ?? 0) - (a.rating ?? 0);
+        }
 
-      return 0;
-    });
+        return 0;
+      }),
+    [comments, sort],
+  );
 
-    setSortedComments(sorted);
-  };
-
-  useEffect(() => {
-    if (comments.length !== 0) sortComments(sort);
-  }, [sort, comments]);
-
-  const getTotalRating = () => {
+  const totalRating = useMemo(() => {
     const filteredComments = comments.filter((comment) => comment.rating);
     if (filteredComments.length < 3) return 0;
     const totalRating = filteredComments.reduce((acc, comment) => acc + comment.rating!, 0);
     return totalRating / filteredComments.length;
-  };
+  }, [comments]);
 
   return (
     <Stack>
@@ -386,7 +381,7 @@ export const ChartComment = ({
         </Button>
         <Divider orientation="vertical" />
         <Stack gap={4}>
-          {getTotalRating() === 0 ? (
+          {totalRating === 0 ? (
             <Text size="lg" mr="xs" c="dimmed">
               数据不足
             </Text>
@@ -406,20 +401,15 @@ export const ChartComment = ({
                   color: "var(--mantine-color-yellow-filled)",
                 }}
               >
-                {RATING_TEXT[parseInt((getTotalRating() - 0.5).toString())]}
+                {RATING_TEXT[parseInt((totalRating - 0.5).toString())]}
               </Text>
               <span>
                 (
-                <NumberFormatter
-                  value={getTotalRating()}
-                  decimalScale={1}
-                  fixedDecimalScale={true}
-                />
-                )
+                <NumberFormatter value={totalRating} decimalScale={1} fixedDecimalScale={true} />)
               </span>
             </Text>
           )}
-          <Rating value={getTotalRating()} fractions={2} size="xs" readOnly />
+          <Rating value={totalRating} fractions={2} size="xs" readOnly />
         </Stack>
       </Group>
       <Group justify="center">
