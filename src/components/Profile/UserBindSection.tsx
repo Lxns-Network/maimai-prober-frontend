@@ -64,8 +64,9 @@ export const UserBindSection = () => {
         </div>
         <Switch
           size="lg"
-          value={visible ? "visible" : "hidden"}
-          onClick={visibleHandler.toggle}
+          aria-label={visible ? "隐藏第三方账号绑定详情" : "显示第三方账号绑定详情"}
+          checked={visible}
+          onChange={() => visibleHandler.toggle()}
           onLabel={<Icon path={mdiEye} size={0.8} />}
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />

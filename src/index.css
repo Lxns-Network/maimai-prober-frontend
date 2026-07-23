@@ -20,13 +20,9 @@
   }
 }
 
-button:focus,
-button:focus-visible {
-  outline: none;
-}
-
-img {
-  opacity: light-dark(1, 0.8);
+:where(button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
 }
 
 /* iOS only (`ios` class set in +Layout): force inputs to >=16px so Safari does
@@ -35,4 +31,27 @@ html.ios input,
 html.ios textarea,
 html.ios select {
   font-size: max(16px, var(--_input-fz, var(--input-fz, var(--mantine-font-size-md))));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (pointer: coarse) {
+  :where(.mantine-ActionIcon-root, .mantine-Burger-root, .mantine-ColorSwatch-root) {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

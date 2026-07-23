@@ -7,7 +7,7 @@
 }
 
 .tab {
-  height: 32px;
+  height: 44px;
   text-wrap: nowrap;
   border-radius: 4px 4px 0 0;
 
@@ -21,7 +21,7 @@
 }
 
 .indicator {
-  height: 33px !important;
+  height: 45px !important;
   pointer-events: none;
   border-bottom: 1px solid var(--mantine-primary-color-light-color);
 }

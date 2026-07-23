@@ -84,7 +84,12 @@ const TextInputWithCopyButton = ({ label, value }: { label: string; value: strin
         <CopyButton value={value} timeout={2000}>
           {({ copied, copy }) => (
             <Tooltip label={copied ? "已复制" : "复制"} withArrow position="right">
-              <ActionIcon variant="subtle" color={copied ? "teal" : "gray"} onClick={copy}>
+              <ActionIcon
+                variant="subtle"
+                color={copied ? "teal" : "gray"}
+                aria-label={copied ? `${label}已复制` : `复制${label}`}
+                onClick={copy}
+              >
                 {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
               </ActionIcon>
             </Tooltip>
@@ -109,7 +114,12 @@ const TokenDisplay = ({ token }: { token: string }) => {
         <CopyButton value={token} timeout={2000}>
           {({ copied, copy }) => (
             <Tooltip label={copied ? "已复制" : "复制"}>
-              <ActionIcon color={copied ? "teal" : "gray"} variant="subtle" onClick={copy}>
+              <ActionIcon
+                color={copied ? "teal" : "gray"}
+                variant="subtle"
+                aria-label={copied ? "工作节点 Token 已复制" : "复制工作节点 Token"}
+                onClick={copy}
+              >
                 {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
               </ActionIcon>
             </Tooltip>
@@ -425,6 +435,7 @@ export const WorkersSection = () => {
                       size="sm"
                       variant="subtle"
                       disabled={isLocal}
+                      aria-label={`重命名工作节点：${worker.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRename(worker);
@@ -437,6 +448,8 @@ export const WorkersSection = () => {
                       variant="subtle"
                       color={worker.enabled ? "orange" : "green"}
                       disabled={isLocal}
+                      aria-label={`${worker.enabled ? "停用" : "启用"}工作节点：${worker.name}`}
+                      aria-pressed={worker.enabled}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggleEnabled(worker);
@@ -449,6 +462,7 @@ export const WorkersSection = () => {
                       variant="subtle"
                       color="red"
                       disabled={isLocal}
+                      aria-label={`删除工作节点：${worker.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(worker);

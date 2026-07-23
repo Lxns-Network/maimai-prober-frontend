@@ -443,7 +443,9 @@ function ChartContent() {
 
           <div>
             <Group gap="xs">
-              <Title order={3}>谱面预览</Title>
+              <Title order={1} size="h3">
+                谱面预览
+              </Title>
               <Badge variant="light">测试版</Badge>
             </Group>
             {chartData && (
@@ -494,6 +496,7 @@ function ChartContent() {
             radius="xl"
             onClick={() => setIsLocked((prev) => !prev)}
             aria-label={isLocked ? "解锁控制" : "锁定控制"}
+            aria-pressed={isLocked}
           >
             {isLocked ? <IconLock size={20} /> : <IconLockOpen size={20} />}
           </ActionIcon>

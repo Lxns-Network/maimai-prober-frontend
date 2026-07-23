@@ -9,6 +9,23 @@
   }
 }
 
+.skipLink {
+  position: fixed;
+  z-index: calc(var(--mantine-z-index-modal) + 1);
+  top: var(--mantine-spacing-xs);
+  left: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-body);
+  background: var(--mantine-color-text);
+  transform: translateY(calc(-100% - var(--mantine-spacing-md)));
+  transition: transform 120ms ease-out;
+
+  &:focus-visible {
+    transform: translateY(0);
+  }
+}
+
 @media (min-width: 62em) {
   .routesWrapper {
     padding-left: var(--navbar-width);

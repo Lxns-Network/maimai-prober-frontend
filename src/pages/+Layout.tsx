@@ -58,7 +58,7 @@ if (typeof document !== "undefined") {
 
 const baseTheme = {
   primaryShade: 9 as const,
-  focusRing: "never" as const,
+  focusRing: "auto" as const,
   cursorType: "pointer" as const,
   fontWeights: {
     medium: "500" as const,
@@ -182,20 +182,36 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
               toolbarRender={({ onScale, scale, onRotate, rotate }) => {
                 return (
                   <Group h={44} gap={0}>
-                    <ActionIcon variant="transparent" size={44} onClick={() => onScale(scale + 1)}>
+                    <ActionIcon
+                      aria-label="放大图片"
+                      variant="transparent"
+                      size={44}
+                      onClick={() => onScale(scale + 1)}
+                    >
                       <IconZoomIn className={classes.photoViewerIcon} />
                     </ActionIcon>
-                    <ActionIcon variant="transparent" size={44} onClick={() => onScale(scale - 1)}>
+                    <ActionIcon
+                      aria-label="缩小图片"
+                      variant="transparent"
+                      size={44}
+                      onClick={() => onScale(scale - 1)}
+                    >
                       <IconZoomOut className={classes.photoViewerIcon} />
                     </ActionIcon>
                     <ActionIcon
+                      aria-label="顺时针旋转图片"
                       variant="transparent"
                       size={44}
                       onClick={() => onRotate(rotate + 90)}
                     >
                       <IconRotateClockwise className={classes.photoViewerIcon} />
                     </ActionIcon>
-                    <ActionIcon variant="transparent" size={44} onClick={() => toggle()}>
+                    <ActionIcon
+                      aria-label={fullscreen ? "退出全屏" : "全屏查看图片"}
+                      variant="transparent"
+                      size={44}
+                      onClick={() => toggle()}
+                    >
                       {fullscreen ? (
                         <IconMinimize className={classes.photoViewerIcon} />
                       ) : (

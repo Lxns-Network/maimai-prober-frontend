@@ -1,4 +1,4 @@
-import { BackgroundImage, Card, SimpleGridProps, useComputedColorScheme } from "@mantine/core";
+import { BackgroundImage, Card, SimpleGridProps } from "@mantine/core";
 import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
 import { MaimaiScoreContent } from "./maimai/Score.tsx";
 import { ChunithmScoreContent } from "./chunithm/Score.tsx";
@@ -23,7 +23,6 @@ const Score = ({ score, onClick }: ScoreProps) => {
   const [game] = useFixedGame();
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
 
-  const computedColorScheme = useComputedColorScheme("light");
   const song = songList.find(score.id);
 
   let borderSize = 2;
@@ -39,16 +38,20 @@ const Score = ({ score, onClick }: ScoreProps) => {
 
   return (
     <Card
+      component="button"
+      type="button"
       shadow="sm"
       radius="md"
       p={0}
       h={84.5}
       className={classNameList.join(" ")}
+      aria-label={`查看 ${score.song_name} 的成绩详情`}
       style={{
         border: `${borderSize}px solid ${getScoreSecondaryColor(game, levelIndex)}`,
-        opacity: computedColorScheme === "dark" ? 0.8 : 1,
+        textAlign: "initial",
+        width: "100%",
       }}
-      onClick={() => onClick && onClick()}
+      onClick={onClick}
     >
       <BackgroundImage
         src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : score.id)}.png!webp`}

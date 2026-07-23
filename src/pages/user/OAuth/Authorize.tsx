@@ -147,11 +147,19 @@ export default function Authorize() {
   return (
     <Container className={classes.root} size={420}>
       <Group justify="center" mb={24}>
-        <Avatar src={app.logo_url} w={72} h={72} radius="md" name={app.name} color="initials" />
+        <Avatar
+          src={app.logo_url}
+          alt={`${app.name} 的应用图标`}
+          w={72}
+          h={72}
+          radius="md"
+          name={app.name}
+          color="initials"
+        />
         <ThemeIcon variant="subtle" radius="md" color="gray">
           <IconLink size={32} />
         </ThemeIcon>
-        <Avatar src="/favicon_oauth.webp" w={72} h={72} radius="md" />
+        <Avatar src="/favicon_oauth.webp" alt="maimai DX 查分器图标" w={72} h={72} radius="md" />
       </Group>
       <Title order={2} size="h2" fw={700} ta="center">
         授权 {app.name}

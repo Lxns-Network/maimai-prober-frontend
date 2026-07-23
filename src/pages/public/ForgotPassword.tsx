@@ -72,7 +72,7 @@ export default function ForgotPassword() {
 
   return (
     <Container className={classes.root} size={420}>
-      <Title order={2} size="h2" fw={900} ta="center">
+      <Title order={1} size="h2" fw={900} ta="center">
         重置 maimai DX 查分器密码
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt="sm">
@@ -82,10 +82,13 @@ export default function ForgotPassword() {
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={2} />
         <form onSubmit={form.onSubmit(forgotPasswordHandler)}>
           <TextInput
+            id="forgot-password-email"
             name="email"
             label="邮箱"
             variant="filled"
             placeholder="请输入你的邮箱"
+            autoComplete="email"
+            required
             leftSection={<IconMail size={20} stroke={1.5} />}
             {...form.getInputProps("email")}
           />

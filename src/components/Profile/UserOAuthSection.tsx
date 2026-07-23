@@ -23,7 +23,7 @@ import {
   IconAlertTriangle,
   IconTool,
 } from "@tabler/icons-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { OAuthAppProps } from "@/types/developer";
 import { scopeData } from "@/data/scopeData.tsx";
@@ -34,6 +34,7 @@ import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 
 const ScopeDisplay = ({ scopes }: { scopes: string }) => {
   const [expanded, setExpanded] = useState(false);
+  const detailsId = useId();
   const scopeList = scopes.split(" ");
 
   const hasHighRiskScope = scopeList.some(
@@ -55,6 +56,9 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
           className={classes.oauthScopeExpandButton}
           variant="subtle"
           size="sm"
+          aria-label={expanded ? "收起权限范围" : "展开权限范围"}
+          aria-expanded={expanded}
+          aria-controls={detailsId}
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
@@ -62,7 +66,7 @@ const ScopeDisplay = ({ scopes }: { scopes: string }) => {
       </Group>
 
       <div>
-        <Collapse expanded={expanded}>
+        <Collapse id={detailsId} expanded={expanded}>
           <Stack gap="xs">
             {scopeList.map((scope) => {
               const scopeInfo = scopeData[scope as keyof typeof scopeData];
@@ -150,7 +154,12 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
   return (
     <Card className={classes.oauthCard} withBorder radius="md" p={0}>
       <Group align="center" gap="md" style={{ flex: 1 }} m="xs">
-        <Avatar src={app.logo_url} radius="sm">
+        <Avatar
+          src={app.logo_url}
+          alt={`${app.name} 的应用图标`}
+          imageProps={{ loading: "lazy" }}
+          radius="sm"
+        >
           {app.name.charAt(0).toUpperCase()}
         </Avatar>
 
@@ -160,7 +169,12 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
               {app.name}
             </Text>
             {app.website && (
-              <ActionIcon variant="subtle" size="sm" onClick={handleVisitWebsite}>
+              <ActionIcon
+                variant="subtle"
+                size="sm"
+                aria-label={`访问 ${app.name} 的网站`}
+                onClick={handleVisitWebsite}
+              >
                 <IconExternalLink size={14} />
               </ActionIcon>
             )}
@@ -190,6 +204,7 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
           <ActionIcon
             color="red"
             variant="subtle"
+            aria-label={`撤销对 ${app.name} 的授权`}
             onClick={() =>
               openConfirmModal(
                 "撤销授权",

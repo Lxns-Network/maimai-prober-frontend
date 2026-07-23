@@ -230,6 +230,8 @@ const CommentItem = ({
       <Group>
         <Avatar
           src={`${ASSET_URL}/${game}/${game === "maimai" ? "icon" : "character"}/${comment.uploader.avatar_id || (game === "maimai" ? 1 : 0)}.png!webp`}
+          alt={`${comment.uploader.name} 的头像`}
+          imageProps={{ loading: "lazy" }}
           radius={0}
         >
           <IconPhotoOff />
@@ -259,13 +261,23 @@ const CommentItem = ({
           <ActionIcon
             variant="subtle"
             color="red"
+            aria-label={
+              comment.is_liked
+                ? `取消点赞 ${comment.uploader.name} 的评论`
+                : `点赞 ${comment.uploader.name} 的评论`
+            }
+            aria-pressed={comment.is_liked}
             onClick={() => likeCommentHandler(comment.is_liked)}
           >
             {comment.is_liked ? <IconHeartFilled size={16} /> : <IconHeart size={16} />}
           </ActionIcon>
           <Menu shadow="md" width={200} position="bottom-end">
             <Menu.Target>
-              <ActionIcon className={classes.actionIcon} variant="subtle">
+              <ActionIcon
+                className={classes.actionIcon}
+                variant="subtle"
+                aria-label={`更多评论操作：${comment.uploader.name}`}
+              >
                 <IconDots size={18} stroke={1.5} />
               </ActionIcon>
             </Menu.Target>
@@ -429,7 +441,7 @@ export const ChartComment = ({
           </Center>
         ) : comments.length === 0 ? (
           <EmptyState
-            icon={<Image src="/empty.webp" w={240} />}
+            icon={<Image src="/empty.webp" w={240} alt="" loading="lazy" />}
             title={isLoggedOut ? "请登录后查看玩家评论" : "还没有人发表看法呢~"}
           />
         ) : (

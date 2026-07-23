@@ -13,7 +13,11 @@ import {
   Text,
   Tooltip,
 } from "@mantine/core";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
+import {
+  getReadableTextColor,
+  getScoreCardBackgroundColor,
+  getScoreSecondaryColor,
+} from "@/utils/color.ts";
 import {
   getDifficulty,
   MaimaiDifficultyProps,
@@ -77,7 +81,7 @@ export const DeluxeScoreStars = ({
   const { count, rate } = getDeluxeScoreStars(deluxeScore, notes);
 
   return Array.from({ length: count }).map((_, index) => (
-    <Image key={index} src={`/assets/maimai/dx_score/${rate}.webp`} h="100%" w="auto" />
+    <Image key={index} src={`/assets/maimai/dx_score/${rate}.webp`} h="100%" w="auto" alt="" />
   ));
 };
 
@@ -139,6 +143,7 @@ export const MaimaiScoreModalContent = ({
           <PhotoView src={`${ASSET_URL}/maimai/jacket/${songList.getSongResourceId(song.id)}.png`}>
             <Avatar
               src={`${ASSET_URL}/maimai/jacket/${songList.getSongResourceId(song.id)}.png!webp`}
+              alt={`${song.title} 曲绘`}
               size={94}
               radius="md"
             >
@@ -177,10 +182,18 @@ export const MaimaiScoreModalContent = ({
           </Text>
           <Group gap={0} ml={-3} mb={-3}>
             <AspectRatio ratio={1}>
-              <Image src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`} w={rem(30)} />
+              <Image
+                src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`}
+                w={rem(30)}
+                alt={score.fc ? `FC 状态：${score.fc}` : ""}
+              />
             </AspectRatio>
             <AspectRatio ratio={1}>
-              <Image src={`/assets/maimai/music_icon/${score.fs || "blank"}.webp`} w={rem(30)} />
+              <Image
+                src={`/assets/maimai/music_icon/${score.fs || "blank"}.webp`}
+                w={rem(30)}
+                alt={score.fs ? `FS 状态：${score.fs}` : ""}
+              />
             </AspectRatio>
           </Group>
         </div>
@@ -200,7 +213,7 @@ export const MaimaiScoreModalContent = ({
               size="xl"
               fw={500}
               ta="center"
-              c="white"
+              c={getReadableTextColor(getScoreCardBackgroundColor("maimai", levelIndex))}
               style={{
                 lineHeight: rem(34),
               }}
@@ -213,7 +226,11 @@ export const MaimaiScoreModalContent = ({
       {score.achievements != -1 ? (
         <>
           <Group mt="md">
-            <Image src={`/assets/maimai/music_rank/${score?.rate}.webp`} w={rem(64)} />
+            <Image
+              src={`/assets/maimai/music_rank/${score?.rate}.webp`}
+              w={rem(64)}
+              alt={`成绩评级：${score.rate}`}
+            />
             <Box>
               <Text fz="xs" c="dimmed">
                 达成率

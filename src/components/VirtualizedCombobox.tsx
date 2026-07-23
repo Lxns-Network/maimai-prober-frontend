@@ -258,7 +258,12 @@ export function VirtualizedCombobox<T>({
                       borderBottom: "1px solid var(--mantine-color-default-border)",
                     }}
                   >
-                    <ActionIcon variant="subtle" color="gray" onClick={() => setOpened(false)}>
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      aria-label="返回选项列表"
+                      onClick={() => setOpened(false)}
+                    >
                       <IconArrowLeft size={20} />
                     </ActionIcon>
                     <motion.div

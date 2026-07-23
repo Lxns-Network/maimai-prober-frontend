@@ -158,6 +158,8 @@ const AliasModalBody = ({
           >
             <Avatar
               src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : 0)}.png!webp`}
+              alt={`${song?.title || alias.song.name || "未知曲目"} 曲绘`}
+              imageProps={{ loading: "lazy" }}
               size={94}
               radius="md"
             >
@@ -256,6 +258,8 @@ const AliasModalBody = ({
             color="teal"
             size="xl"
             variant={weight === 1 ? "filled" : "light"}
+            aria-label={weight === 1 ? "取消支持此别名" : "支持此别名"}
+            aria-pressed={weight === 1}
             onClick={() => {
               voteAliasHandler(alias.alias_id, true);
             }}
@@ -266,6 +270,8 @@ const AliasModalBody = ({
             color="red"
             size="xl"
             variant={weight === -1 ? "filled" : "light"}
+            aria-label={weight === -1 ? "取消反对此别名" : "反对此别名"}
+            aria-pressed={weight === -1}
             onClick={() => {
               voteAliasHandler(alias.alias_id, false);
             }}

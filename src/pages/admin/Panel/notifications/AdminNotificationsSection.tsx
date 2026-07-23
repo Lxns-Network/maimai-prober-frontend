@@ -126,6 +126,7 @@ export function AdminNotificationsSection() {
               <Group justify="flex-end" mt="sm" gap="xs">
                 <Tooltip label="编辑" position="top" withArrow>
                   <ActionIcon
+                    aria-label={`编辑通知：${b.title}`}
                     variant="subtle"
                     color="gray"
                     onClick={() => {
@@ -137,7 +138,12 @@ export function AdminNotificationsSection() {
                   </ActionIcon>
                 </Tooltip>
                 <Tooltip label="删除" position="top" withArrow>
-                  <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(b)}>
+                  <ActionIcon
+                    aria-label={`删除通知：${b.title}`}
+                    variant="subtle"
+                    color="red"
+                    onClick={() => handleDelete(b)}
+                  >
                     <IconTrash size={18} />
                   </ActionIcon>
                 </Tooltip>

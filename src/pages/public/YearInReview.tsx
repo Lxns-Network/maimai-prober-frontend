@@ -83,7 +83,7 @@ const LazyLoadSection = ({ children }: { children: React.ReactNode }) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (inViewport && !visible) {
+    if (inViewport) {
       setVisible(true);
     }
   }, [inViewport]);
@@ -282,7 +282,7 @@ const YearInReviewContent = ({ data, onCreateShareLink }: YearInReviewContentPro
       </Container>
 
       <Center>
-        <Image src="/year_in_review_footer.webp" maw={150} mb={50} />
+        <Image src="/year_in_review_footer.webp" maw={150} mb={50} alt="" loading="lazy" />
       </Center>
     </>
   );
@@ -320,7 +320,7 @@ export default function YearInReview() {
     if (!isSupportedYear(year)) {
       navigate("/404");
     }
-  }, [year, isLoggedOut, shareToken, navigate]);
+  }, [isLoggedOut, shareToken, year]);
 
   useEffect(() => {
     if (data) {
@@ -331,7 +331,7 @@ export default function YearInReview() {
         setShareLink(`${window.location.origin}/year-in-review/${year}/${shareToken}`);
       }
     }
-  }, [data]);
+  }, [data, shareToken, year]);
 
   const createShareLink = () => {
     const handler = async () => {
@@ -415,6 +415,7 @@ ${url}`);
                   <Avatar
                     className={classes.playerAvatar}
                     src={`${ASSET_URL}/${data.game}/${data.game === "maimai" ? "icon" : "character"}/${data.player_avatar_id}.png!webp`}
+                    alt={`${data.player_name} 的头像`}
                     size={small ? 32 : 48}
                     radius={0}
                   >

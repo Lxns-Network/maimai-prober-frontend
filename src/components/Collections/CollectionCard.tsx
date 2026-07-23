@@ -17,7 +17,11 @@ const Trophy = ({ trophy }: { trophy: CollectionProps }) => {
   if (trophy.color === "image") {
     return (
       <AspectRatio ratio={608 / 74} mt="md">
-        <Image src={`https://assets2.lxns.net/${game}/trophy/${trophy.id}.png`} />
+        <Image
+          src={`https://assets2.lxns.net/${game}/trophy/${trophy.id}.png`}
+          alt={`${trophy.name} 称号`}
+          loading="lazy"
+        />
       </AspectRatio>
     );
   }
@@ -51,28 +55,48 @@ export const CollectionCard = ({ collection, collectionType, style }: Collection
       <Center>
         {game === "maimai" && collectionType === "plate" && (
           <AspectRatio ratio={720 / 116} w="100%" mt="md">
-            <Image src={`https://assets2.lxns.net/${game}/plate/${collection.id}.png`} />
+            <Image
+              src={`https://assets2.lxns.net/${game}/plate/${collection.id}.png`}
+              alt={`${collection.name} 姓名框`}
+              loading="lazy"
+            />
           </AspectRatio>
         )}
         {collectionType === "trophy" && <Trophy trophy={collection} />}
         {collectionType === "icon" && (
           <AspectRatio ratio={1} w={128} mt="md">
-            <Image src={`https://assets2.lxns.net/${game}/icon/${collection.id}.png`} />
+            <Image
+              src={`https://assets2.lxns.net/${game}/icon/${collection.id}.png`}
+              alt={`${collection.name} 头像`}
+              loading="lazy"
+            />
           </AspectRatio>
         )}
         {collectionType === "frame" && collection.id !== 1 && (
           <AspectRatio ratio={270 / 113} w="100%" mt="md">
-            <Image src={`https://assets2.lxns.net/${game}/frame/${collection.id}.png`} />
+            <Image
+              src={`https://assets2.lxns.net/${game}/frame/${collection.id}.png`}
+              alt={`${collection.name} 背景`}
+              loading="lazy"
+            />
           </AspectRatio>
         )}
         {game === "chunithm" && collectionType === "plate" && (
           <AspectRatio ratio={576 / 228} w="100%" mt="md">
-            <Image src={`https://assets2.lxns.net/${game}/plate/${collection.id}.png`} />
+            <Image
+              src={`https://assets2.lxns.net/${game}/plate/${collection.id}.png`}
+              alt={`${collection.name} 名牌版`}
+              loading="lazy"
+            />
           </AspectRatio>
         )}
         {collectionType === "character" && (
           <AspectRatio ratio={1} w={128} mt="md">
-            <Image src={`https://assets2.lxns.net/${game}/character/${collection.id}.png`} />
+            <Image
+              src={`https://assets2.lxns.net/${game}/character/${collection.id}.png`}
+              alt={`${collection.name} 角色`}
+              loading="lazy"
+            />
           </AspectRatio>
         )}
       </Center>

@@ -1,6 +1,7 @@
 import { Badge, Box, Card, Flex, Group, rem, Text } from "@mantine/core";
 import {
   getScoreCardBackgroundColor,
+  getReadableTextColor,
   getScoreSecondaryColor,
   getTransparentColor,
 } from "@/utils/color.ts";
@@ -20,6 +21,10 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
   const isBuddy = difficulty?.is_buddy ?? false;
   const level =
     difficulty && score.type !== "utage" ? difficulty.level_value.toFixed(1) : score.level;
+  const headerColor = getScoreSecondaryColor("maimai", levelIndex);
+  const bodyColor = getScoreCardBackgroundColor("maimai", levelIndex);
+  const headerTextColor = getReadableTextColor(headerColor);
+  const bodyTextColor = getReadableTextColor(bodyColor);
 
   return (
     <>
@@ -29,10 +34,10 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
         pl="xs"
         pr="xs"
         style={{
-          backgroundColor: getTransparentColor(getScoreSecondaryColor("maimai", levelIndex), 0.95),
+          backgroundColor: getTransparentColor(headerColor, 0.95),
         }}
       >
-        <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">
+        <Text size="sm" fw={500} truncate style={{ flex: 1 }} c={headerTextColor}>
           {score.song_name}
         </Text>
         {score.type === "standard" && (
@@ -57,31 +62,28 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
         pt={0}
         pb={0}
         style={{
-          backgroundColor: getTransparentColor(
-            getScoreCardBackgroundColor("maimai", levelIndex),
-            0.7,
-          ),
+          backgroundColor: getTransparentColor(bodyColor, 0.7),
         }}
       >
         <Group h={54} justify="space-between" wrap="nowrap">
           {score.achievements != -1 ? (
             <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white">
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c={bodyTextColor}>
                 {parseInt(String(score.achievements))}
                 <span style={{ fontSize: rem(16) }}>
                   .{(String(score.achievements).split(".")[1] || "0").padEnd(4, "0")}%
                 </span>
               </Text>
-              <Text size="xs" c="white">
+              <Text size="xs" c={bodyTextColor}>
                 DX Rating: {deluxeRating}
               </Text>
             </div>
           ) : (
             <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c={bodyTextColor} mb={4}>
                 未游玩
               </Text>
-              <Text size="xs" c="white">
+              <Text size="xs" c={bodyTextColor}>
                 或未上传至查分器
               </Text>
             </div>

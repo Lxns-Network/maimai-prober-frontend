@@ -44,6 +44,43 @@ export function ExportRangeOverlay({
   const endPercent = totalDurationMs > 0 ? (range.endMs / totalDurationMs) * 100 : 0;
   const durationMs = Math.max(0, range.endMs - range.startMs);
 
+  const handleSliderKeyDown = (
+    mode: "start" | "end",
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    const currentRange = rangeRef.current;
+    const totalDuration = totalDurationMsRef.current;
+    const min =
+      mode === "start"
+        ? Math.max(0, currentRange.endMs - MAX_EXPORT_DURATION_MS)
+        : currentRange.startMs + MIN_EXPORT_DURATION_MS;
+    const max =
+      mode === "start"
+        ? currentRange.endMs - MIN_EXPORT_DURATION_MS
+        : Math.min(totalDuration, currentRange.startMs + MAX_EXPORT_DURATION_MS);
+    const current = mode === "start" ? currentRange.startMs : currentRange.endMs;
+    const stepMs = event.shiftKey ? 1000 : 100;
+    let next = current;
+
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") next -= stepMs;
+    else if (event.key === "ArrowRight" || event.key === "ArrowUp") next += stepMs;
+    else if (event.key === "PageDown") next -= 1000;
+    else if (event.key === "PageUp") next += 1000;
+    else if (event.key === "Home") next = min;
+    else if (event.key === "End") next = max;
+    else return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const clampedValue = clamp(next, min, max);
+    const nextRange =
+      mode === "start"
+        ? { startMs: clampedValue, endMs: currentRange.endMs }
+        : { startMs: currentRange.startMs, endMs: clampedValue };
+    onChangeRef.current(nextRange);
+    onPreviewRef.current?.(clampedValue);
+  };
+
   const updateDragging = useCallback((clientX: number) => {
     const rect = rootRef.current?.getBoundingClientRect();
     const width = rootWidthRef.current;
@@ -162,6 +199,8 @@ export function ExportRangeOverlay({
     <div
       ref={rootRef}
       className={`${classes.overlay} ${pannable ? classes.overlayPannable : ""}`}
+      role="group"
+      aria-label="GIF 导出范围"
       onPointerDown={(event) => {
         if (!pannable) return;
         event.preventDefault();
@@ -192,9 +231,19 @@ export function ExportRangeOverlay({
       <div
         className={`${classes.handle} ${classes.startHandle}`}
         style={{ left: `${startPercent}%` }}
+        role="slider"
+        tabIndex={0}
+        aria-label="GIF 导出起点"
+        aria-orientation="horizontal"
+        aria-valuemin={Math.round(Math.max(0, range.endMs - MAX_EXPORT_DURATION_MS))}
+        aria-valuemax={Math.round(range.endMs - MIN_EXPORT_DURATION_MS)}
+        aria-valuenow={Math.round(range.startMs)}
+        aria-valuetext={formatDuration(range.startMs)}
+        onKeyDown={(event) => handleSliderKeyDown("start", event)}
         onPointerDown={(event) => {
           event.preventDefault();
           event.stopPropagation();
+          event.currentTarget.focus();
           startDragging("start", event.clientX);
         }}
       >
@@ -203,9 +252,21 @@ export function ExportRangeOverlay({
       <div
         className={`${classes.handle} ${classes.endHandle}`}
         style={{ left: `${endPercent}%` }}
+        role="slider"
+        tabIndex={0}
+        aria-label="GIF 导出终点"
+        aria-orientation="horizontal"
+        aria-valuemin={Math.round(range.startMs + MIN_EXPORT_DURATION_MS)}
+        aria-valuemax={Math.round(
+          Math.min(totalDurationMs, range.startMs + MAX_EXPORT_DURATION_MS),
+        )}
+        aria-valuenow={Math.round(range.endMs)}
+        aria-valuetext={formatDuration(range.endMs)}
+        onKeyDown={(event) => handleSliderKeyDown("end", event)}
         onPointerDown={(event) => {
           event.preventDefault();
           event.stopPropagation();
+          event.currentTarget.focus();
           startDragging("end", event.clientX);
         }}
       >

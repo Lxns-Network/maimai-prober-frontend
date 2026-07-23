@@ -169,8 +169,9 @@ const DeveloperInfoContent = () => {
           </div>
           <Switch
             size="lg"
-            value={visible ? "visible" : "hidden"}
-            onClick={visibleHandler.toggle}
+            aria-label={visible ? "隐藏开发者 API 密钥" : "显示开发者 API 密钥"}
+            checked={visible}
+            onChange={() => visibleHandler.toggle()}
             onLabel={<Icon path={mdiEye} size={0.8} />}
             offLabel={<Icon path={mdiEyeOff} size={0.8} />}
           />
@@ -188,7 +189,12 @@ const DeveloperInfoContent = () => {
               <CopyButton value={developer.api_key} timeout={2000}>
                 {({ copied, copy }) => (
                   <Tooltip label={copied ? "已复制" : "复制"} withArrow position="right">
-                    <ActionIcon variant="subtle" color={copied ? "teal" : "gray"} onClick={copy}>
+                    <ActionIcon
+                      variant="subtle"
+                      color={copied ? "teal" : "gray"}
+                      aria-label={copied ? "API 密钥已复制" : "复制 API 密钥"}
+                      onClick={copy}
+                    >
                       {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
                     </ActionIcon>
                   </Tooltip>

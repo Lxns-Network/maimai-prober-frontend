@@ -141,7 +141,7 @@ const Leaf = ({
 }: RenderTreeNodePayload) => {
   useEffect(() => {
     if (level === 1) tree.expand(node.value);
-  }, [level]);
+  }, [level, node.value, tree]);
 
   return (
     <div
@@ -261,7 +261,7 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
         }
       }
     });
-  }, [active]);
+  }, [active, parentStack, tree]);
 
   useEffect(() => {
     handleScroll();
@@ -398,7 +398,7 @@ const Content = ({ markdown }: { markdown: string }) => {
           return (
             <LazyLoad overflow debounce={100} placeholder={<Loader />}>
               <PhotoView src={src}>
-                <Image radius="md" w="auto" src={src} alt={alt} />
+                <Image radius="md" w="auto" src={src} alt={alt} loading="lazy" />
               </PhotoView>
             </LazyLoad>
           );
@@ -499,6 +499,7 @@ const Content = ({ markdown }: { markdown: string }) => {
                       className={classes.codeBlockCopyButton}
                       color={copied ? "teal" : "gray"}
                       variant="subtle"
+                      aria-label={copied ? "代码块已复制" : "复制代码块"}
                       onClick={copy}
                     >
                       {copied ? <IconCheck width={16} /> : <IconCopy width={16} />}
@@ -557,7 +558,7 @@ export default function Page() {
         scrollTo(decodeURIComponent(window.location.hash.slice(1)));
       }, 100);
     }
-  }, [markdown]);
+  }, [handlers, markdown]);
 
   if (!markdown) {
     return (
