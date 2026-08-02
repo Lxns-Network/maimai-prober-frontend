@@ -155,7 +155,7 @@ export default function Authorize() {
       void handleAuthorize();
     }, 3000);
     return () => window.clearTimeout(timer);
-  }, [app, handleAuthorize, redirectUri]);
+  }, [app, effectiveScopes.length, handleAuthorize, redirectUri]);
 
   const handleDeny = () => {
     if (!app || !redirectUri) return;
