@@ -49,6 +49,11 @@ function isAppSchemeRedirectUri(redirectUri: string | null): boolean {
   }
 }
 
+function filterDependentOIDCScopes(scopes: string[]): string[] {
+  if (scopes.includes("openid")) return scopes;
+  return scopes.filter((scope) => scope !== "profile" && scope !== "email");
+}
+
 export default function Authorize() {
   const pageContext = usePageContext();
   const params = useMemo(
@@ -70,7 +75,9 @@ export default function Authorize() {
   const registeredScope = app?.scope ?? "";
   const allowedScopes = useMemo(() => {
     const registeredScopes = registeredScope.split(" ").filter(Boolean);
-    return requestedScopes.filter((scope) => registeredScopes.includes(scope));
+    return filterDependentOIDCScopes(
+      requestedScopes.filter((scope) => registeredScopes.includes(scope)),
+    );
   }, [registeredScope, requestedScopes]);
 
   const handleAuthorize = useCallback(async () => {
@@ -202,13 +209,7 @@ export default function Authorize() {
           {app.is_dynamic ? (
             <Checkbox.Group
               value={selectedScopes}
-              onChange={(scopes) =>
-                setSelectedScopes(
-                  scopes.includes("openid")
-                    ? scopes
-                    : scopes.filter((scope) => scope !== "profile" && scope !== "email"),
-                )
-              }
+              onChange={(scopes) => setSelectedScopes(filterDependentOIDCScopes(scopes))}
             >
               <Stack gap="sm" mt="md">
                 {allowedScopes.map((scope) => {
