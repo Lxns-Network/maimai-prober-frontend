@@ -86,7 +86,8 @@ export const validateRedirectUri = (uri: string) => {
         scheme === "http" &&
         parsed.hostname !== "localhost" &&
         parsed.hostname !== "127.0.0.1" &&
-        parsed.hostname !== "[::1]"
+        parsed.hostname !== "[::1]" &&
+        parsed.hostname !== "::1"
       ) {
         return "不安全的回调地址，HTTP 协议仅允许 localhost、127.0.0.1 或 [::1]";
       }

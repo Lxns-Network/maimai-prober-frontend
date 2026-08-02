@@ -100,7 +100,7 @@ export default function Authorize() {
   }, [registeredScope, requestedScopes]);
 
   const handleAuthorize = useCallback(async () => {
-    if (!app) return;
+    if (!app || !redirectUri) return;
     setIsAuthorizing(true);
     try {
       const resource = params.get("resource");
@@ -135,7 +135,14 @@ export default function Authorize() {
   }, [allowedScopes, app, confirmOAuthAuthorize, params, redirectUri, selectedScopes]);
 
   useEffect(() => {
-    if (!app || app.is_dynamic || !app.user_authorized || isOOBRedirectUri(redirectUri)) return;
+    if (
+      !app ||
+      !redirectUri ||
+      app.is_dynamic ||
+      !app.user_authorized ||
+      isOOBRedirectUri(redirectUri)
+    )
+      return;
     setCode("authorized");
     const timer = window.setTimeout(() => {
       void handleAuthorize();
@@ -144,7 +151,7 @@ export default function Authorize() {
   }, [app, handleAuthorize, redirectUri]);
 
   const handleDeny = () => {
-    if (!app) return;
+    if (!app || !redirectUri) return;
     if (isOOBRedirectUri(redirectUri)) {
       setCode("unauthorized");
     } else if (redirectUri) {
@@ -165,17 +172,23 @@ export default function Authorize() {
     );
   }
 
-  if (error || !app) {
+  if (error || !app || !redirectUri) {
     return (
       <Container className={classes.root} size={420}>
         <Alert
           radius="md"
           icon={<IconExclamationCircle />}
-          title={`无效的应用`}
+          title="无效的授权请求"
           color="red"
           mb="md"
         >
-          <Text size="sm">{error instanceof Error && error.message}</Text>
+          <Text size="sm">
+            {error instanceof Error
+              ? error.message
+              : !redirectUri
+                ? "请求中的回调地址缺失或未在应用中注册"
+                : "无法读取应用信息"}
+          </Text>
         </Alert>
       </Container>
     );
