@@ -144,6 +144,7 @@ export default function Authorize() {
     if (
       !app ||
       !redirectUri ||
+      effectiveScopes.length === 0 ||
       app.is_dynamic ||
       !app.user_authorized ||
       isOOBRedirectUri(redirectUri)
@@ -178,7 +179,7 @@ export default function Authorize() {
     );
   }
 
-  if (error || !app || !redirectUri) {
+  if (error || !app || !redirectUri || allowedScopes.length === 0) {
     return (
       <Container className={classes.root} size={420}>
         <Alert
@@ -193,7 +194,9 @@ export default function Authorize() {
               ? error.message
               : !redirectUri
                 ? "请求中的回调地址缺失或未在应用中注册"
-                : "无法读取应用信息"}
+                : allowedScopes.length === 0
+                  ? "应用未请求任何可授权的权限"
+                  : "无法读取应用信息"}
           </Text>
         </Alert>
       </Container>
