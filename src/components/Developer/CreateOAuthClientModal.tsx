@@ -85,6 +85,9 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       },
       scopes: (value) => {
         if (!value || value.length === 0) return "至少选择一个权限范围";
+        if ((value.includes("profile") || value.includes("email")) && !value.includes("openid")) {
+          return "用户资料和邮箱权限需要同时选择验证用户身份";
+        }
         return null;
       },
     },
@@ -266,10 +269,25 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
           description="选择应用需要的权限范围，用户在授权时会看到这些权限"
           withAsterisk
           {...form.getInputProps("scopes")}
+          onChange={(scopes) => {
+            form.setFieldValue(
+              "scopes",
+              scopes.includes("openid")
+                ? scopes
+                : scopes.filter((scope) => scope !== "profile" && scope !== "email"),
+            );
+          }}
         >
           <SimpleGrid type="container" cols={{ base: 1, "350px": 2 }} spacing="xs" mt="xs">
             {Object.entries(scopeData).map(([key, value]) => (
-              <Switch key={key} value={key} label={value.title} />
+              <Switch
+                key={key}
+                value={key}
+                label={value.title}
+                disabled={
+                  (key === "profile" || key === "email") && !form.values.scopes?.includes("openid")
+                }
+              />
             ))}
           </SimpleGrid>
         </Switch.Group>

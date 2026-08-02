@@ -1,6 +1,21 @@
 import { Mark } from "@mantine/core";
 
 export const scopeData = {
+  openid: {
+    title: "验证用户身份",
+    description: "允许应用通过 OpenID Connect 获取你的稳定用户标识。",
+    high_risk: false,
+  },
+  profile: {
+    title: "读取基本资料",
+    description: "包括你的用户名等基本资料，需要同时允许验证用户身份。",
+    high_risk: false,
+  },
+  email: {
+    title: "读取邮箱地址",
+    description: "允许应用读取你的邮箱地址，需要同时允许验证用户身份。",
+    high_risk: false,
+  },
   read_user_profile: {
     title: "读取用户信息",
     description: "包括你的用户名、邮箱等基本信息。",

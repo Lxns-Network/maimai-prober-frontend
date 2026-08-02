@@ -80,6 +80,7 @@ export default function Authorize() {
       const resource = params.get("resource");
       const data = await confirmOAuthAuthorize({
         client_id: params.get("client_id") || "",
+        response_type: params.get("response_type") || "",
         redirect_uri: params.get("redirect_uri") || "",
         scope: app.is_dynamic
           ? selectedScopes.filter((s) => allowedScopes.includes(s)).join(" ")
@@ -87,6 +88,7 @@ export default function Authorize() {
         code_challenge: params.get("code_challenge") || "",
         code_challenge_method: params.get("code_challenge_method") || "",
         state: params.get("state") || "",
+        nonce: params.get("nonce") || "",
         ...(resource ? { resource } : {}),
       });
       if (isOOBRedirectUri(redirectUri)) {
@@ -198,7 +200,16 @@ export default function Authorize() {
             {app.is_dynamic ? "请选择要授予该应用的权限：" : "该应用将会获得以下权限："}
           </Text>
           {app.is_dynamic ? (
-            <Checkbox.Group value={selectedScopes} onChange={setSelectedScopes}>
+            <Checkbox.Group
+              value={selectedScopes}
+              onChange={(scopes) =>
+                setSelectedScopes(
+                  scopes.includes("openid")
+                    ? scopes
+                    : scopes.filter((scope) => scope !== "profile" && scope !== "email"),
+                )
+              }
+            >
               <Stack gap="sm" mt="md">
                 {allowedScopes.map((scope) => {
                   const s = scope as keyof typeof scopeData;
@@ -210,6 +221,10 @@ export default function Authorize() {
                       value={scope}
                       label={meta ? meta.title : scope}
                       description={meta?.description}
+                      disabled={
+                        (scope === "profile" || scope === "email") &&
+                        !selectedScopes.includes("openid")
+                      }
                     />
                   );
                 })}
