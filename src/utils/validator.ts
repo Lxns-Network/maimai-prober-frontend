@@ -72,6 +72,9 @@ export const validateRedirectUri = (uri: string) => {
     if (["javascript", "data", "file", "vbscript"].includes(scheme)) {
       return "回调地址使用了不安全的协议";
     }
+    if (parsed.username || parsed.password) {
+      return "回调地址不能包含用户名或密码";
+    }
     if (parsed.hash) {
       return "回调地址不能包含哈希片段";
     }

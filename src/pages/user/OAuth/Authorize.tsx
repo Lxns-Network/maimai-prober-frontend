@@ -64,7 +64,8 @@ export default function Authorize() {
   const { mutateAsync: confirmOAuthAuthorize } = useConfirmOAuthAuthorize();
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [code, setCode] = useState("");
-  const redirectUri = params.get("redirect_uri");
+  const redirectUri =
+    params.get("redirect_uri") || app?.redirect_uri || app?.redirect_uris?.[0] || null;
   const requestedScopes = useMemo(
     () => (params.get("scope") || "").split(" ").filter(Boolean),
     [params],
@@ -88,7 +89,7 @@ export default function Authorize() {
       const data = await confirmOAuthAuthorize({
         client_id: params.get("client_id") || "",
         response_type: params.get("response_type") || "",
-        redirect_uri: params.get("redirect_uri") || "",
+        redirect_uri: redirectUri || "",
         scope: app.is_dynamic
           ? selectedScopes.filter((s) => allowedScopes.includes(s)).join(" ")
           : allowedScopes.join(" "),
