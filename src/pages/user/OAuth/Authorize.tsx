@@ -54,6 +54,21 @@ function filterDependentOIDCScopes(scopes: string[]): string[] {
   return scopes.filter((scope) => scope !== "profile" && scope !== "email");
 }
 
+function resolveRedirectUri(
+  redirectUris: string[] | undefined,
+  legacyRedirectUri: string | undefined,
+  requestedRedirectUri: string | null,
+): string | null {
+  let registeredRedirectUris = redirectUris ?? [];
+  if (registeredRedirectUris.length === 0 && legacyRedirectUri) {
+    registeredRedirectUris = [legacyRedirectUri];
+  }
+  if (requestedRedirectUri) {
+    return registeredRedirectUris.includes(requestedRedirectUri) ? requestedRedirectUri : null;
+  }
+  return registeredRedirectUris.length === 1 ? registeredRedirectUris[0] : null;
+}
+
 export default function Authorize() {
   const pageContext = usePageContext();
   const params = useMemo(
@@ -64,8 +79,11 @@ export default function Authorize() {
   const { mutateAsync: confirmOAuthAuthorize } = useConfirmOAuthAuthorize();
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [code, setCode] = useState("");
-  const redirectUri =
-    params.get("redirect_uri") || app?.redirect_uri || app?.redirect_uris?.[0] || null;
+  const redirectUri = resolveRedirectUri(
+    app?.redirect_uris,
+    app?.redirect_uri,
+    params.get("redirect_uri"),
+  );
   const requestedScopes = useMemo(
     () => (params.get("scope") || "").split(" ").filter(Boolean),
     [params],
