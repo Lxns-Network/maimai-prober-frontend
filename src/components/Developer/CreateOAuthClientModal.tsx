@@ -2,17 +2,17 @@ import { useForm } from "@mantine/form";
 import { validateText, validateUrl, validateRedirectUri } from "@/utils/validator.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import {
+  Accordion,
   Alert,
   Avatar,
+  Badge,
   Box,
   Button,
   Checkbox,
-  Fieldset,
   Group,
   HoverCard,
   Modal,
   SimpleGrid,
-  Stack,
   Switch,
   TagsInput,
   Text,
@@ -281,41 +281,54 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
             );
           }}
         >
-          <Stack gap="sm" mt="xs">
-            {scopeGroups.map((group) => (
-              <Fieldset
-                key={group.key}
-                variant="filled"
-                radius="md"
-                legend={
-                  <Text size="sm" fw={500}>
-                    {group.title}{" "}
-                    <Text component="span" inherit c="dimmed" fw={400}>
-                      · {group.protocol}
-                    </Text>
-                  </Text>
-                }
-              >
-                <Text size="xs" c="dimmed" mb="sm">
-                  {group.description}
-                </Text>
-                <SimpleGrid type="container" cols={{ base: 1, "440px": 2 }} spacing="xs">
-                  {group.scopes.map((key) => (
-                    <Switch
-                      key={key}
-                      value={key}
-                      label={scopeData[key].title}
-                      description={scopeData[key].description}
-                      disabled={
-                        (key === "profile" || key === "email") &&
-                        !form.values.scopes?.includes("openid")
-                      }
-                    />
-                  ))}
-                </SimpleGrid>
-              </Fieldset>
-            ))}
-          </Stack>
+          <Accordion multiple variant="contained" mt="xs">
+            {scopeGroups.map((group) => {
+              const selectedCount = group.scopes.filter((scope) =>
+                form.values.scopes?.includes(scope),
+              ).length;
+
+              return (
+                <Accordion.Item key={group.key} value={group.key}>
+                  <Accordion.Control>
+                    <Group justify="space-between" wrap="nowrap" pr="xs">
+                      <Box>
+                        <Text size="sm" fw={500}>
+                          {group.title}{" "}
+                          <Text component="span" inherit c="dimmed" fw={400}>
+                            · {group.protocol}
+                          </Text>
+                        </Text>
+                        <Text size="xs" c="dimmed" mt={2}>
+                          {group.description}
+                        </Text>
+                      </Box>
+                      {selectedCount > 0 && (
+                        <Badge variant="light" size="sm" style={{ flexShrink: 0 }}>
+                          已选 {selectedCount}
+                        </Badge>
+                      )}
+                    </Group>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <SimpleGrid type="container" cols={{ base: 1, "440px": 2 }} spacing="sm">
+                      {group.scopes.map((key) => (
+                        <Switch
+                          key={key}
+                          value={key}
+                          label={scopeData[key].title}
+                          description={scopeData[key].description}
+                          disabled={
+                            (key === "profile" || key === "email") &&
+                            !form.values.scopes?.includes("openid")
+                          }
+                        />
+                      ))}
+                    </SimpleGrid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              );
+            })}
+          </Accordion>
         </Switch.Group>
         {form.values.scopes?.includes("read_user_token") && (
           <Alert variant="light" color="yellow" icon={<IconAlertCircle />} title="注意" mt="lg">
