@@ -316,7 +316,6 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
                           key={key}
                           value={key}
                           label={scopeData[key].title}
-                          description={scopeData[key].description}
                           disabled={
                             (key === "profile" || key === "email") &&
                             !form.values.scopes?.includes("openid")

@@ -47,14 +47,14 @@ export const scopeGroups = [
     key: "oauth",
     title: "API 授权",
     protocol: "OAuth 2.0",
-    description: "用于调用查分器 API，按应用实际需要选择最小权限范围。",
+    description: "调用查分器 API 所需的权限。",
     scopes: ["read_user_profile", "read_player", "write_player", "read_user_token"],
   },
   {
     key: "oidc",
     title: "登录与身份",
     protocol: "OpenID Connect",
-    description: "用于识别登录用户；如需基本资料或邮箱，请在验证身份的基础上继续选择。",
+    description: "用于登录并获取用户身份信息。",
     scopes: ["openid", "profile", "email"],
   },
 ] as const satisfies ReadonlyArray<{
