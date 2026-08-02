@@ -110,19 +110,24 @@ export default function Authorize() {
   );
 
   const handleAuthorize = useCallback(async () => {
-    if (!app || !redirectUri || effectiveScopes.length === 0) return;
+    const clientId = params.get("client_id");
+    if (!app || !clientId || !redirectUri || effectiveScopes.length === 0) return;
     setIsAuthorizing(true);
     try {
       const resource = params.get("resource");
       const nonce = params.get("nonce");
+      const responseType = params.get("response_type");
+      const codeChallenge = params.get("code_challenge");
+      const codeChallengeMethod = params.get("code_challenge_method");
+      const state = params.get("state");
       const data = await confirmOAuthAuthorize({
-        client_id: params.get("client_id") || "",
-        response_type: params.get("response_type") || "",
-        redirect_uri: redirectUri || "",
+        client_id: clientId,
+        redirect_uri: redirectUri,
         scope: effectiveScopes.join(" "),
-        code_challenge: params.get("code_challenge") || "",
-        code_challenge_method: params.get("code_challenge_method") || "",
-        state: params.get("state") || "",
+        ...(responseType ? { response_type: responseType } : {}),
+        ...(codeChallenge ? { code_challenge: codeChallenge } : {}),
+        ...(codeChallengeMethod ? { code_challenge_method: codeChallengeMethod } : {}),
+        ...(state ? { state } : {}),
         ...(nonce ? { nonce } : {}),
         ...(resource ? { resource } : {}),
       });
