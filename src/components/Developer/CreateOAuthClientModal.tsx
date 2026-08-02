@@ -12,6 +12,7 @@ import {
   Modal,
   SimpleGrid,
   Switch,
+  TagsInput,
   Text,
   Textarea,
   TextInput,
@@ -35,7 +36,7 @@ interface FormValues {
   description: string;
   website: string;
   logo_url?: string;
-  redirect_uri: string;
+  redirect_uris: string[];
   scope?: string;
   scopes?: string[];
 }
@@ -46,6 +47,9 @@ interface CreateOAuthClientModalProps {
   onClose(): void;
 }
 
+const MAX_REDIRECT_URIS = 10;
+const MAX_REDIRECT_URI_LENGTH = 2048;
+
 export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClientModalProps) => {
   const [oobChecked, setOobChecked] = useState(false);
   const form = useForm<FormValues>({
@@ -53,7 +57,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       name: "",
       description: "",
       website: "",
-      redirect_uri: "",
+      redirect_uris: [],
       scopes: [],
     },
 
@@ -67,7 +71,18 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
         }),
       description: (value) => validateText(value, { allowEmpty: true, textLabel: "应用描述" }),
       website: (value) => validateUrl(value, { allowEmpty: true, urlLabel: "应用网站" }),
-      redirect_uri: (value) => validateRedirectUri(value),
+      redirect_uris: (values) => {
+        if (values.length === 0) return "至少添加一个回调地址";
+        if (values.length > MAX_REDIRECT_URIS) return `最多添加 ${MAX_REDIRECT_URIS} 个回调地址`;
+        for (const value of values) {
+          if (value.length > MAX_REDIRECT_URI_LENGTH)
+            return `单个回调地址不能超过 ${MAX_REDIRECT_URI_LENGTH} 个字符`;
+          const error = validateRedirectUri(value);
+          if (error) return error;
+        }
+        if (new Set(values).size !== values.length) return "回调地址不能重复";
+        return null;
+      },
       scopes: (value) => {
         if (!value || value.length === 0) return "至少选择一个权限范围";
         return null;
@@ -79,7 +94,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       description: values.description,
       website: values.website,
       logo_url: values.logo_url || "",
-      redirect_uri: values.redirect_uri,
+      redirect_uris: values.redirect_uris,
       scope: values.scopes?.join(" ") || "",
     }),
   });
@@ -141,9 +156,14 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       form.setFieldValue("description", app.description || "");
       form.setFieldValue("website", app.website || "");
       form.setFieldValue("logo_url", app.logo_url || "");
-      form.setFieldValue("redirect_uri", app.redirect_uri || "");
+      const redirectUris = app.redirect_uris?.length
+        ? app.redirect_uris
+        : app.redirect_uri
+          ? [app.redirect_uri]
+          : [];
+      form.setFieldValue("redirect_uris", redirectUris);
       form.setFieldValue("scopes", app.scope ? app.scope.split(" ") : []);
-      setOobChecked(app.redirect_uri === "urn:ietf:wg:oauth:2.0:oob");
+      setOobChecked(redirectUris.length === 1 && redirectUris[0] === "urn:ietf:wg:oauth:2.0:oob");
     } else {
       form.reset();
       setOobChecked(false);
@@ -204,13 +224,17 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
           mb="xs"
           {...form.getInputProps("description")}
         />
-        <TextInput
+        <TagsInput
           label="回调地址"
-          description="OAuth 授权成功后，用户将被重定向到此地址"
+          description="OAuth 授权成功后，用户将被重定向到请求中指定的已注册地址"
           placeholder="https://example.com/callback"
           mb="xs"
           withAsterisk
-          {...form.getInputProps("redirect_uri")}
+          disabled={oobChecked}
+          maxTags={MAX_REDIRECT_URIS}
+          splitChars={[",", " "]}
+          clearable
+          {...form.getInputProps("redirect_uris")}
         />
         <Group gap="xs" align="center" mb="xs">
           <Checkbox
@@ -219,8 +243,8 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
             onChange={(event) => {
               setOobChecked(event.currentTarget.checked);
               form.setFieldValue(
-                "redirect_uri",
-                event.currentTarget.checked ? "urn:ietf:wg:oauth:2.0:oob" : "",
+                "redirect_uris",
+                event.currentTarget.checked ? ["urn:ietf:wg:oauth:2.0:oob"] : [],
               );
             }}
           />

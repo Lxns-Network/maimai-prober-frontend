@@ -11,6 +11,7 @@ import {
   Grid,
   Group,
   Loader,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -39,6 +40,9 @@ import classes from "./DeveloperOAuthSection.module.css";
 
 const MAX_APPS = 5;
 
+const getRedirectUris = (app: OAuthAppProps): string[] =>
+  app.redirect_uris?.length ? app.redirect_uris : app.redirect_uri ? [app.redirect_uri] : [];
+
 const TextInputWithCopyButton = ({ label, value }: { label: string; value: string }) => (
   <TextInput
     label={label}
@@ -61,16 +65,23 @@ const TextInputWithCopyButton = ({ label, value }: { label: string; value: strin
 
 const OAuthAppCard = ({
   app,
-  authLink,
+  authLinks,
   onEdit,
   onDelete,
 }: {
   app: OAuthAppProps;
-  authLink: string;
+  authLinks: { redirectUri: string; value: string }[];
   onEdit: () => void;
   onDelete: () => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const redirectUris = getRedirectUris(app);
+  const [selectedRedirectUri, setSelectedRedirectUri] = useState(redirectUris[0] ?? "");
+  const activeRedirectUri = redirectUris.includes(selectedRedirectUri)
+    ? selectedRedirectUri
+    : (redirectUris[0] ?? "");
+  const activeAuthLink =
+    authLinks.find((authLink) => authLink.redirectUri === activeRedirectUri)?.value ?? "";
 
   return (
     <Card className={classes.appCard} withBorder radius="md" p={0}>
@@ -87,7 +98,8 @@ const OAuthAppCard = ({
             <Group gap={4} wrap="nowrap" style={{ minWidth: 0 }}>
               <IconLink size={12} style={{ color: "var(--mantine-color-dimmed)", flexShrink: 0 }} />
               <Text size="xs" c="dimmed" truncate>
-                {app.redirect_uri}
+                {redirectUris[0]}
+                {redirectUris.length > 1 && `（另有 ${redirectUris.length - 1} 个）`}
               </Text>
             </Group>
             {app.create_time && (
@@ -139,8 +151,24 @@ const OAuthAppCard = ({
             <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInputWithCopyButton label="应用密钥" value={app.client_secret || ""} />
             </Grid.Col>
+            {redirectUris.length > 1 && (
+              <Grid.Col span={12}>
+                <Select
+                  label="回调地址"
+                  variant="filled"
+                  data={redirectUris}
+                  value={activeRedirectUri}
+                  onChange={(value) => setSelectedRedirectUri(value ?? activeRedirectUri)}
+                  allowDeselect={false}
+                  searchable
+                  comboboxProps={{
+                    transitionProps: { transition: "fade", duration: 100, timingFunction: "ease" },
+                  }}
+                />
+              </Grid.Col>
+            )}
             <Grid.Col span={12}>
-              <TextInputWithCopyButton label="OAuth 授权链接" value={authLink} />
+              <TextInputWithCopyButton label="OAuth 授权链接" value={activeAuthLink} />
             </Grid.Col>
           </Grid>
         </Collapse>
@@ -156,14 +184,19 @@ export const DeveloperOAuthSection = () => {
   const [opened, modal] = useDisclosure(false);
   const [selectedApp, setSelectedApp] = useState<OAuthAppProps | null>(null);
 
-  const generateOAuthAppLink = (app: OAuthAppProps) => {
-    const params = new URLSearchParams({
-      response_type: "code",
-      client_id: app.client_id || "",
-      redirect_uri: app.redirect_uri,
-      scope: Array.isArray(app.scope) ? app.scope.join(" ") : app.scope,
+  const generateOAuthAppLinks = (app: OAuthAppProps) => {
+    return getRedirectUris(app).map((redirectUri) => {
+      const params = new URLSearchParams({
+        response_type: "code",
+        client_id: app.client_id || "",
+        redirect_uri: redirectUri,
+        scope: Array.isArray(app.scope) ? app.scope.join(" ") : app.scope,
+      });
+      return {
+        redirectUri,
+        value: `${window.location.origin}/oauth/authorize?${params.toString()}`,
+      };
     });
-    return `${window.location.origin}/oauth/authorize?${params.toString()}`;
   };
 
   const openCreate = () => {
@@ -222,7 +255,7 @@ export const DeveloperOAuthSection = () => {
               <OAuthAppCard
                 key={app.client_id || app.name}
                 app={app}
-                authLink={generateOAuthAppLink(app)}
+                authLinks={generateOAuthAppLinks(app)}
                 onEdit={() => {
                   setSelectedApp(app);
                   modal.open();

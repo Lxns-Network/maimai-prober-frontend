@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Title,
   Text,
@@ -51,34 +51,34 @@ function isAppSchemeRedirectUri(redirectUri: string | null): boolean {
 
 export default function Authorize() {
   const pageContext = usePageContext();
-  const params = new URLSearchParams(pageContext.urlParsed.search);
+  const params = useMemo(
+    () => new URLSearchParams(pageContext.urlParsed.search),
+    [pageContext.urlParsed.search],
+  );
   const { app, isLoading, error } = useOAuthApp(params);
-  const confirmOAuthAuthorize = useConfirmOAuthAuthorize();
+  const { mutateAsync: confirmOAuthAuthorize } = useConfirmOAuthAuthorize();
   const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [code, setCode] = useState("");
-  const requestedScopes = (params.get("scope") || "").split(" ").filter(Boolean);
+  const redirectUri = params.get("redirect_uri");
+  const requestedScopes = useMemo(
+    () => (params.get("scope") || "").split(" ").filter(Boolean),
+    [params],
+  );
   const [selectedScopes, setSelectedScopes] = useState<string[]>(requestedScopes);
   // only ever offer/grant scopes the client is actually registered for — clients may over-request
   // (e.g. an MCP client reading the AS metadata picks up read_user_token, which is not an MCP scope)
-  const registeredScopes = (app?.scope ?? "").split(" ").filter(Boolean);
-  const allowedScopes = requestedScopes.filter((s) => registeredScopes.includes(s));
+  const registeredScope = app?.scope ?? "";
+  const allowedScopes = useMemo(() => {
+    const registeredScopes = registeredScope.split(" ").filter(Boolean);
+    return requestedScopes.filter((scope) => registeredScopes.includes(scope));
+  }, [registeredScope, requestedScopes]);
 
-  useEffect(() => {
-    if (!app) return;
-    if (!app.is_dynamic && app.user_authorized && !isOOBRedirectUri(app.redirect_uri)) {
-      setCode("authorized");
-      setTimeout(() => {
-        handleAuthorize();
-      }, 3000);
-    }
-  }, [app]);
-
-  const handleAuthorize = async () => {
+  const handleAuthorize = useCallback(async () => {
     if (!app) return;
     setIsAuthorizing(true);
     try {
       const resource = params.get("resource");
-      const data = await confirmOAuthAuthorize.mutateAsync({
+      const data = await confirmOAuthAuthorize({
         client_id: params.get("client_id") || "",
         redirect_uri: params.get("redirect_uri") || "",
         scope: app.is_dynamic
@@ -89,10 +89,10 @@ export default function Authorize() {
         state: params.get("state") || "",
         ...(resource ? { resource } : {}),
       });
-      if (isOOBRedirectUri(app.redirect_uri)) {
+      if (isOOBRedirectUri(redirectUri)) {
         setCode(data.code);
-      } else {
-        const redirect = new URL(app.redirect_uri);
+      } else if (redirectUri) {
+        const redirect = new URL(redirectUri);
         redirect.searchParams.set("code", data.code);
         if (data.state) {
           redirect.searchParams.set("state", data.state);
@@ -104,14 +104,23 @@ export default function Authorize() {
     } finally {
       setIsAuthorizing(false);
     }
-  };
+  }, [allowedScopes, app, confirmOAuthAuthorize, params, redirectUri, selectedScopes]);
+
+  useEffect(() => {
+    if (!app || app.is_dynamic || !app.user_authorized || isOOBRedirectUri(redirectUri)) return;
+    setCode("authorized");
+    const timer = window.setTimeout(() => {
+      void handleAuthorize();
+    }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [app, handleAuthorize, redirectUri]);
 
   const handleDeny = () => {
     if (!app) return;
-    if (isOOBRedirectUri(app.redirect_uri)) {
+    if (isOOBRedirectUri(redirectUri)) {
       setCode("unauthorized");
-    } else {
-      const redirect = new URL(app.redirect_uri);
+    } else if (redirectUri) {
+      const redirect = new URL(redirectUri);
       redirect.searchParams.set("error", "access_denied");
       if (params.get("state")) {
         redirect.searchParams.set("state", params.get("state") || "");
@@ -300,13 +309,13 @@ export default function Authorize() {
               </Button>
             </Group>
 
-            {isOOBRedirectUri(app.redirect_uri) ? (
+            {isOOBRedirectUri(redirectUri) ? (
               <Box mt="sm">
                 <Text size="xs" c="dimmed">
                   授权后将会显示授权码，请将其复制到应用中
                 </Text>
               </Box>
-            ) : isAppSchemeRedirectUri(app.redirect_uri) ? (
+            ) : isAppSchemeRedirectUri(redirectUri) ? (
               <Box mt="sm">
                 <Text size="xs" c="dimmed">
                   授权后将会跳转回
@@ -321,7 +330,7 @@ export default function Authorize() {
                   授权后将会跳转到
                 </Text>
                 <Text size="xs" fw={500} mt={2}>
-                  {app.redirect_uri.replace(/^(http|https):\/\/([^/]+).+/, "$1://$2")}
+                  {redirectUri?.replace(/^(http|https):\/\/([^/]+).+/, "$1://$2")}
                 </Text>
               </Box>
             )}

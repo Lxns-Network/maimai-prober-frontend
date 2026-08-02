@@ -79,7 +79,12 @@ export const validateRedirectUri = (uri: string) => {
       if (!parsed.hostname) {
         return "回调地址必须包含有效的主机名";
       }
-      if (scheme === "http" && parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
+      if (
+        scheme === "http" &&
+        parsed.hostname !== "localhost" &&
+        parsed.hostname !== "127.0.0.1" &&
+        parsed.hostname !== "[::1]"
+      ) {
         return "不安全的回调地址，HTTP 协议仅允许 localhost 或 127.0.0.1";
       }
     } else {
