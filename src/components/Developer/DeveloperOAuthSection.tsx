@@ -98,7 +98,7 @@ const OAuthAppCard = ({
             <Group gap={4} wrap="nowrap" style={{ minWidth: 0 }}>
               <IconLink size={12} style={{ color: "var(--mantine-color-dimmed)", flexShrink: 0 }} />
               <Text size="xs" c="dimmed" truncate>
-                {redirectUris[0]}
+                {redirectUris[0] || "未配置回调地址"}
                 {redirectUris.length > 1 && `（另有 ${redirectUris.length - 1} 个）`}
               </Text>
             </Group>

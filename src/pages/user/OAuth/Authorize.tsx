@@ -88,6 +88,9 @@ export default function Authorize() {
     () => (params.get("scope") || "").split(" ").filter(Boolean),
     [params],
   );
+  const hasInvalidOIDCDependency =
+    !requestedScopes.includes("openid") &&
+    requestedScopes.some((scope) => scope === "profile" || scope === "email");
   const [selectedScopes, setSelectedScopes] = useState<string[]>(requestedScopes);
   useEffect(() => {
     setSelectedScopes(requestedScopes);
@@ -187,7 +190,7 @@ export default function Authorize() {
     );
   }
 
-  if (error || !app || !redirectUri || allowedScopes.length === 0) {
+  if (error || !app || !redirectUri || hasInvalidOIDCDependency || allowedScopes.length === 0) {
     return (
       <Container className={classes.root} size={420}>
         <Alert
@@ -202,9 +205,11 @@ export default function Authorize() {
               ? error.message
               : !redirectUri
                 ? "请求中的回调地址缺失或未在应用中注册"
-                : allowedScopes.length === 0
-                  ? "应用未请求任何可授权的权限"
-                  : "无法读取应用信息"}
+                : hasInvalidOIDCDependency
+                  ? "profile 和 email 权限必须同时请求 openid"
+                  : allowedScopes.length === 0
+                    ? "应用未请求任何可授权的权限"
+                    : "无法读取应用信息"}
           </Text>
         </Alert>
       </Container>
