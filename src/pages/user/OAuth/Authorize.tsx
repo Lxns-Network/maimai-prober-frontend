@@ -98,9 +98,16 @@ export default function Authorize() {
       requestedScopes.filter((scope) => registeredScopes.includes(scope)),
     );
   }, [registeredScope, requestedScopes]);
+  const effectiveScopes = useMemo(
+    () =>
+      app?.is_dynamic
+        ? selectedScopes.filter((scope) => allowedScopes.includes(scope))
+        : allowedScopes,
+    [allowedScopes, app?.is_dynamic, selectedScopes],
+  );
 
   const handleAuthorize = useCallback(async () => {
-    if (!app || !redirectUri) return;
+    if (!app || !redirectUri || effectiveScopes.length === 0) return;
     setIsAuthorizing(true);
     try {
       const resource = params.get("resource");
@@ -109,9 +116,7 @@ export default function Authorize() {
         client_id: params.get("client_id") || "",
         response_type: params.get("response_type") || "",
         redirect_uri: redirectUri || "",
-        scope: app.is_dynamic
-          ? selectedScopes.filter((s) => allowedScopes.includes(s)).join(" ")
-          : allowedScopes.join(" "),
+        scope: effectiveScopes.join(" "),
         code_challenge: params.get("code_challenge") || "",
         code_challenge_method: params.get("code_challenge_method") || "",
         state: params.get("state") || "",
@@ -133,7 +138,7 @@ export default function Authorize() {
     } finally {
       setIsAuthorizing(false);
     }
-  }, [allowedScopes, app, confirmOAuthAuthorize, params, redirectUri, selectedScopes]);
+  }, [app, confirmOAuthAuthorize, effectiveScopes, params, redirectUri]);
 
   useEffect(() => {
     if (
@@ -352,7 +357,7 @@ export default function Authorize() {
               <Button
                 onClick={handleAuthorize}
                 loading={isAuthorizing}
-                disabled={app.is_dynamic && selectedScopes.length === 0}
+                disabled={app.is_dynamic && effectiveScopes.length === 0}
               >
                 授权应用
               </Button>
