@@ -99,6 +99,7 @@ export const validateRedirectUri = (uri: string) => {
         return "自定义协议的回调地址协议部分必须以字母开头，并且只能包含字母、数字、加号、点和连字符";
       }
     }
+    return null;
   } catch (e) {
     return "回调地址格式不正确";
   }
