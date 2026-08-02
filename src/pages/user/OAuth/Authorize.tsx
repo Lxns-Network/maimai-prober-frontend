@@ -89,6 +89,9 @@ export default function Authorize() {
     [params],
   );
   const [selectedScopes, setSelectedScopes] = useState<string[]>(requestedScopes);
+  useEffect(() => {
+    setSelectedScopes(requestedScopes);
+  }, [requestedScopes]);
   // only ever offer/grant scopes the client is actually registered for — clients may over-request
   // (e.g. an MCP client reading the AS metadata picks up read_user_token, which is not an MCP scope)
   const registeredScope = app?.scope ?? "";
