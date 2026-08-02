@@ -104,6 +104,7 @@ export default function Authorize() {
     setIsAuthorizing(true);
     try {
       const resource = params.get("resource");
+      const nonce = params.get("nonce");
       const data = await confirmOAuthAuthorize({
         client_id: params.get("client_id") || "",
         response_type: params.get("response_type") || "",
@@ -114,7 +115,7 @@ export default function Authorize() {
         code_challenge: params.get("code_challenge") || "",
         code_challenge_method: params.get("code_challenge_method") || "",
         state: params.get("state") || "",
-        nonce: params.get("nonce") || "",
+        ...(nonce ? { nonce } : {}),
         ...(resource ? { resource } : {}),
       });
       if (isOOBRedirectUri(redirectUri)) {

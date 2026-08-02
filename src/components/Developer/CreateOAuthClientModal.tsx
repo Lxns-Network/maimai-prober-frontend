@@ -232,7 +232,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
         />
         <TagsInput
           label="回调地址"
-          description="OAuth 授权成功后，用户将被重定向到请求中指定的已注册地址"
+          description="授权成功后跳转到请求指定的地址；仅有一个地址时可省略"
           placeholder="https://example.com/callback"
           mb="xs"
           withAsterisk
