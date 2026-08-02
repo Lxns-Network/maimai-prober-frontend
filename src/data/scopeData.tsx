@@ -17,8 +17,8 @@ export const scopeData = {
     high_risk: false,
   },
   read_user_profile: {
-    title: "读取用户信息",
-    description: "包括你的用户名、邮箱等基本信息。",
+    title: "读取站内账户资料（API）",
+    description: "通过查分器 API 读取你的用户名、邮箱等账户信息。",
     high_risk: false,
   },
   read_player: {
@@ -41,3 +41,26 @@ export const scopeData = {
     high_risk: true,
   },
 };
+
+export const scopeGroups = [
+  {
+    key: "oidc",
+    title: "登录与身份",
+    protocol: "OpenID Connect",
+    description: "用于识别登录用户；如需基本资料或邮箱，请在验证身份的基础上继续选择。",
+    scopes: ["openid", "profile", "email"],
+  },
+  {
+    key: "oauth",
+    title: "API 授权",
+    protocol: "OAuth 2.0",
+    description: "用于调用查分器 API，按应用实际需要选择最小权限范围。",
+    scopes: ["read_user_profile", "read_player", "write_player", "read_user_token"],
+  },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  title: string;
+  protocol: string;
+  description: string;
+  scopes: ReadonlyArray<keyof typeof scopeData>;
+}>;

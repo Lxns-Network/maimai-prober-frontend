@@ -7,10 +7,12 @@ import {
   Box,
   Button,
   Checkbox,
+  Fieldset,
   Group,
   HoverCard,
   Modal,
   SimpleGrid,
+  Stack,
   Switch,
   TagsInput,
   Text,
@@ -29,7 +31,7 @@ import {
 import { IconAlertCircle, IconHelp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
-import { scopeData } from "@/data/scopeData.tsx";
+import { scopeData, scopeGroups } from "@/data/scopeData.tsx";
 
 interface FormValues {
   name: string;
@@ -179,6 +181,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       onClose={onClose}
       onExitTransitionEnd={form.reset}
       title={!app ? "创建 OAuth 应用" : "编辑 OAuth 应用"}
+      size="lg"
       centered
     >
       <form
@@ -278,18 +281,41 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
             );
           }}
         >
-          <SimpleGrid type="container" cols={{ base: 1, "350px": 2 }} spacing="xs" mt="xs">
-            {Object.entries(scopeData).map(([key, value]) => (
-              <Switch
-                key={key}
-                value={key}
-                label={value.title}
-                disabled={
-                  (key === "profile" || key === "email") && !form.values.scopes?.includes("openid")
+          <Stack gap="sm" mt="xs">
+            {scopeGroups.map((group) => (
+              <Fieldset
+                key={group.key}
+                variant="filled"
+                radius="md"
+                legend={
+                  <Text size="sm" fw={500}>
+                    {group.title}{" "}
+                    <Text component="span" inherit c="dimmed" fw={400}>
+                      · {group.protocol}
+                    </Text>
+                  </Text>
                 }
-              />
+              >
+                <Text size="xs" c="dimmed" mb="sm">
+                  {group.description}
+                </Text>
+                <SimpleGrid type="container" cols={{ base: 1, "440px": 2 }} spacing="xs">
+                  {group.scopes.map((key) => (
+                    <Switch
+                      key={key}
+                      value={key}
+                      label={scopeData[key].title}
+                      description={scopeData[key].description}
+                      disabled={
+                        (key === "profile" || key === "email") &&
+                        !form.values.scopes?.includes("openid")
+                      }
+                    />
+                  ))}
+                </SimpleGrid>
+              </Fieldset>
             ))}
-          </SimpleGrid>
+          </Stack>
         </Switch.Group>
         {form.values.scopes?.includes("read_user_token") && (
           <Alert variant="light" color="yellow" icon={<IconAlertCircle />} title="注意" mt="lg">
