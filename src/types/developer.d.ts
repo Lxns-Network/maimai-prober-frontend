@@ -27,7 +27,8 @@ export interface OAuthAppProps {
   description?: string;
   website?: string;
   logo_url?: string;
-  redirect_uri: string;
+  redirect_uri?: string;
+  redirect_uris: string[];
   scope: string;
   create_time?: string;
   update_time?: string;

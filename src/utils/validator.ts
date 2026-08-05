@@ -72,6 +72,9 @@ export const validateRedirectUri = (uri: string) => {
     if (["javascript", "data", "file", "vbscript"].includes(scheme)) {
       return "回调地址使用了不安全的协议";
     }
+    if (parsed.username || parsed.password) {
+      return "回调地址不能包含用户名或密码";
+    }
     if (parsed.hash) {
       return "回调地址不能包含哈希片段";
     }
@@ -79,8 +82,14 @@ export const validateRedirectUri = (uri: string) => {
       if (!parsed.hostname) {
         return "回调地址必须包含有效的主机名";
       }
-      if (scheme === "http" && parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
-        return "不安全的回调地址，HTTP 协议仅允许 localhost 或 127.0.0.1";
+      const hostname = parsed.hostname.replace(/^\[|\]$/g, "");
+      if (
+        scheme === "http" &&
+        hostname !== "localhost" &&
+        hostname !== "127.0.0.1" &&
+        hostname !== "::1"
+      ) {
+        return "不安全的回调地址，HTTP 协议仅允许 localhost、127.0.0.1 或 [::1]";
       }
     } else {
       if (scheme.length < 2) {
@@ -90,6 +99,7 @@ export const validateRedirectUri = (uri: string) => {
         return "自定义协议的回调地址协议部分必须以字母开头，并且只能包含字母、数字、加号、点和连字符";
       }
     }
+    return null;
   } catch (e) {
     return "回调地址格式不正确";
   }

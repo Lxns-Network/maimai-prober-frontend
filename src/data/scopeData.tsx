@@ -1,6 +1,21 @@
 import { Mark } from "@mantine/core";
 
 export const scopeData = {
+  openid: {
+    title: "验证用户身份",
+    description: "允许应用确认当前登录的是你，并获取用于识别你的唯一标识。",
+    high_risk: false,
+  },
+  profile: {
+    title: "读取基本资料",
+    description: "允许应用获取你的查分器用户名等基本资料。",
+    high_risk: false,
+  },
+  email: {
+    title: "读取邮箱地址",
+    description: "允许应用获取你在查分器中绑定的邮箱地址。",
+    high_risk: false,
+  },
   read_user_profile: {
     title: "读取用户信息",
     description: "包括你的用户名、邮箱等基本信息。",
@@ -26,3 +41,26 @@ export const scopeData = {
     high_risk: true,
   },
 };
+
+export const scopeGroups = [
+  {
+    key: "oauth",
+    title: "API 授权",
+    protocol: "OAuth 2.0",
+    description: "调用查分器 API 所需的权限。",
+    scopes: ["read_user_profile", "read_player", "write_player", "read_user_token"],
+  },
+  {
+    key: "oidc",
+    title: "登录与身份",
+    protocol: "OpenID Connect",
+    description: "用于登录并获取用户身份信息。",
+    scopes: ["openid", "profile", "email"],
+  },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  title: string;
+  protocol: string;
+  description: string;
+  scopes: ReadonlyArray<keyof typeof scopeData>;
+}>;

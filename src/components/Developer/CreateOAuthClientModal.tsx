@@ -2,8 +2,10 @@ import { useForm } from "@mantine/form";
 import { validateText, validateUrl, validateRedirectUri } from "@/utils/validator.ts";
 import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import {
+  Accordion,
   Alert,
   Avatar,
+  Badge,
   Box,
   Button,
   Checkbox,
@@ -12,6 +14,7 @@ import {
   Modal,
   SimpleGrid,
   Switch,
+  TagsInput,
   Text,
   Textarea,
   TextInput,
@@ -28,14 +31,14 @@ import {
 import { IconAlertCircle, IconHelp } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
-import { scopeData } from "@/data/scopeData.tsx";
+import { scopeData, scopeGroups } from "@/data/scopeData.tsx";
 
 interface FormValues {
   name: string;
   description: string;
   website: string;
   logo_url?: string;
-  redirect_uri: string;
+  redirect_uris: string[];
   scope?: string;
   scopes?: string[];
 }
@@ -46,6 +49,9 @@ interface CreateOAuthClientModalProps {
   onClose(): void;
 }
 
+const MAX_REDIRECT_URIS = 10;
+const MAX_REDIRECT_URI_LENGTH = 2048;
+
 export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClientModalProps) => {
   const [oobChecked, setOobChecked] = useState(false);
   const form = useForm<FormValues>({
@@ -53,7 +59,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       name: "",
       description: "",
       website: "",
-      redirect_uri: "",
+      redirect_uris: [],
       scopes: [],
     },
 
@@ -67,9 +73,23 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
         }),
       description: (value) => validateText(value, { allowEmpty: true, textLabel: "应用描述" }),
       website: (value) => validateUrl(value, { allowEmpty: true, urlLabel: "应用网站" }),
-      redirect_uri: (value) => validateRedirectUri(value),
+      redirect_uris: (values) => {
+        if (values.length === 0) return "至少添加一个回调地址";
+        if (values.length > MAX_REDIRECT_URIS) return `最多添加 ${MAX_REDIRECT_URIS} 个回调地址`;
+        for (const value of values) {
+          if (value.length > MAX_REDIRECT_URI_LENGTH)
+            return `单个回调地址不能超过 ${MAX_REDIRECT_URI_LENGTH} 个字符`;
+          const error = validateRedirectUri(value);
+          if (error) return error;
+        }
+        if (new Set(values).size !== values.length) return "回调地址不能重复";
+        return null;
+      },
       scopes: (value) => {
         if (!value || value.length === 0) return "至少选择一个权限范围";
+        if ((value.includes("profile") || value.includes("email")) && !value.includes("openid")) {
+          return "用户资料和邮箱权限需要同时选择验证用户身份";
+        }
         return null;
       },
     },
@@ -79,7 +99,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       description: values.description,
       website: values.website,
       logo_url: values.logo_url || "",
-      redirect_uri: values.redirect_uri,
+      redirect_uris: values.redirect_uris,
       scope: values.scopes?.join(" ") || "",
     }),
   });
@@ -141,9 +161,14 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       form.setFieldValue("description", app.description || "");
       form.setFieldValue("website", app.website || "");
       form.setFieldValue("logo_url", app.logo_url || "");
-      form.setFieldValue("redirect_uri", app.redirect_uri || "");
+      const redirectUris = app.redirect_uris?.length
+        ? app.redirect_uris
+        : app.redirect_uri
+          ? [app.redirect_uri]
+          : [];
+      form.setFieldValue("redirect_uris", redirectUris);
       form.setFieldValue("scopes", app.scope ? app.scope.split(" ") : []);
-      setOobChecked(app.redirect_uri === "urn:ietf:wg:oauth:2.0:oob");
+      setOobChecked(redirectUris.length === 1 && redirectUris[0] === "urn:ietf:wg:oauth:2.0:oob");
     } else {
       form.reset();
       setOobChecked(false);
@@ -156,6 +181,7 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
       onClose={onClose}
       onExitTransitionEnd={form.reset}
       title={!app ? "创建 OAuth 应用" : "编辑 OAuth 应用"}
+      size="lg"
       centered
     >
       <form
@@ -204,13 +230,17 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
           mb="xs"
           {...form.getInputProps("description")}
         />
-        <TextInput
+        <TagsInput
           label="回调地址"
-          description="OAuth 授权成功后，用户将被重定向到此地址"
+          description="授权成功后跳转到请求指定的地址；仅有一个地址时可省略"
           placeholder="https://example.com/callback"
           mb="xs"
           withAsterisk
-          {...form.getInputProps("redirect_uri")}
+          disabled={oobChecked}
+          maxTags={MAX_REDIRECT_URIS}
+          splitChars={[",", " "]}
+          clearable
+          {...form.getInputProps("redirect_uris")}
         />
         <Group gap="xs" align="center" mb="xs">
           <Checkbox
@@ -219,8 +249,8 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
             onChange={(event) => {
               setOobChecked(event.currentTarget.checked);
               form.setFieldValue(
-                "redirect_uri",
-                event.currentTarget.checked ? "urn:ietf:wg:oauth:2.0:oob" : "",
+                "redirect_uris",
+                event.currentTarget.checked ? ["urn:ietf:wg:oauth:2.0:oob"] : [],
               );
             }}
           />
@@ -242,12 +272,62 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
           description="选择应用需要的权限范围，用户在授权时会看到这些权限"
           withAsterisk
           {...form.getInputProps("scopes")}
+          onChange={(scopes) => {
+            form.setFieldValue(
+              "scopes",
+              scopes.includes("openid")
+                ? scopes
+                : scopes.filter((scope) => scope !== "profile" && scope !== "email"),
+            );
+          }}
         >
-          <SimpleGrid type="container" cols={{ base: 1, "350px": 2 }} spacing="xs" mt="xs">
-            {Object.entries(scopeData).map(([key, value]) => (
-              <Switch key={key} value={key} label={value.title} />
-            ))}
-          </SimpleGrid>
+          <Accordion multiple variant="contained" mt="xs">
+            {scopeGroups.map((group) => {
+              const selectedCount = group.scopes.filter((scope) =>
+                form.values.scopes?.includes(scope),
+              ).length;
+
+              return (
+                <Accordion.Item key={group.key} value={group.key}>
+                  <Accordion.Control>
+                    <Group justify="space-between" wrap="nowrap" pr="xs">
+                      <Box>
+                        <Text size="sm" fw={500}>
+                          {group.title}{" "}
+                          <Text component="span" inherit c="dimmed" fw={400}>
+                            · {group.protocol}
+                          </Text>
+                        </Text>
+                        <Text size="xs" c="dimmed" mt={2}>
+                          {group.description}
+                        </Text>
+                      </Box>
+                      {selectedCount > 0 && (
+                        <Badge variant="light" size="sm" style={{ flexShrink: 0 }}>
+                          已选 {selectedCount}
+                        </Badge>
+                      )}
+                    </Group>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <SimpleGrid type="container" cols={{ base: 1, "440px": 2 }} spacing="sm">
+                      {group.scopes.map((key) => (
+                        <Switch
+                          key={key}
+                          value={key}
+                          label={scopeData[key].title}
+                          disabled={
+                            (key === "profile" || key === "email") &&
+                            !form.values.scopes?.includes("openid")
+                          }
+                        />
+                      ))}
+                    </SimpleGrid>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              );
+            })}
+          </Accordion>
         </Switch.Group>
         {form.values.scopes?.includes("read_user_token") && (
           <Alert variant="light" color="yellow" icon={<IconAlertCircle />} title="注意" mt="lg">
