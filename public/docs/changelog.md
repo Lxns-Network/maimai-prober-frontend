@@ -2,6 +2,12 @@
 
 ---
 
+## 2026/8/5
+
+- OAuth 应用现在最多可以登记 10 个回调地址
+- 新增 OpenID Connect 支持，可通过 `openid`、`profile` 和 `email` 权限完成用户登录与身份识别
+- 开发者面板和授权页面现在会分别展示 API 授权与身份认证权限
+
 ## 2026/6/29
 
 - 玩家 Best 50 接口新增官方候选曲目（Selection 10）字段（[#57](https://github.com/Lxns-Network/maimai-prober-frontend/issues/57)）

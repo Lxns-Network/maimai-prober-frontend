@@ -4,7 +4,7 @@
 
 欢迎来到[落雪咖啡屋 maimai DX 查分器](/)的 OAuth 接入指南！
 
-在这里，你将了解如何使用 OAuth 2.0 协议获取用户授权，并通过 API 接口访问用户的游戏数据等信息。
+在这里，你将了解如何使用 OAuth 2.0 获取用户授权、调用查分器 API，以及通过 OpenID Connect（OIDC）完成用户登录和身份识别。
 
 ::: warning 注意
 该功能目前处于测试阶段，部分功能可能会有所变动。
@@ -16,7 +16,7 @@
 
 个人 API 密钥虽然可以访问用户数据，但是存在安全隐患：如果密钥泄露，其他人可以随意访问用户数据。而 OAuth 则提供了更细粒度的权限控制和更安全的授权流程。
 
-开发者可以通过 OAuth 获取访问令牌（Access Token），并使用此令牌访问用户的游戏数据。用户可以随时撤销授权，确保数据安全。
+开发者可以通过 OAuth 获取访问令牌（Access Token），并使用此令牌访问用户授权的数据。需要登录能力时，还可以请求 OIDC 权限并获取 ID Token，以安全地识别当前用户。用户可以随时撤销授权，确保数据安全。
 
 ## 接入步骤
 
@@ -29,11 +29,31 @@
 - **应用名称**：你的应用名称，将在授权页面中显示。
 - **应用描述**（可选）：简要描述你的应用功能。
 - **应用图标**（可选）：上传一个应用图标，将在授权页面中显示。
-- **回调地址**：OAuth 授权成功后，用户将被重定向到此 URL。请确保你的应用能够处理此 URL。
-- **应用权限**：选择你的应用需要的权限范围，如读取玩家数据、写入玩家数据等。
+- **回调地址**：授权完成后用户将被重定向到请求指定的地址。每个应用最多可以登记 10 个回调地址。
+- **应用权限**：根据用途选择 API 授权或 OpenID Connect 身份认证所需的权限。
+
+授权请求中的 `redirect_uri` 必须与已登记的某个回调地址完全一致。Web 应用应使用 HTTPS；本地开发可以使用 `localhost`、`127.0.0.1` 或 `[::1]` 的 HTTP 地址，移动端和桌面端应用也可以使用自定义协议地址。
 
 ::: info 提示
 如果你没有回调地址，你可以勾选“无回调地址”，这将在授权成功后直接返回授权码，而不是重定向到回调地址。
+:::
+
+#### 权限范围
+
+应用权限分为两组：
+
+| 分组       | 权限                | 用途                                          |
+| ---------- | ------------------- | --------------------------------------------- |
+| API 授权   | `read_user_profile` | 通过 API 读取用户信息                         |
+| API 授权   | `read_player`       | 读取玩家信息、谱面成绩和历史成绩              |
+| API 授权   | `write_player`      | 更新玩家信息、上传或删除成绩                  |
+| API 授权   | `read_user_token`   | 读取个人 API 密钥，通常不建议申请             |
+| 登录与身份 | `openid`            | 验证用户身份并获取稳定的用户标识 `sub`        |
+| 登录与身份 | `profile`           | 获取用户名等基本资料，必须同时申请 `openid`   |
+| 登录与身份 | `email`             | 获取用户绑定的邮箱地址，必须同时申请 `openid` |
+
+::: info 如何选择
+如果应用需要调用查分器 API，请申请对应的 API 权限；如果应用只需要“使用查分器账号登录”，请申请 `openid`，并按需添加 `profile` 或 `email`。同时需要登录和访问 API 时，可以组合申请两组权限。
 :::
 
 ### 2. 获取 OAuth 授权链接
@@ -46,8 +66,33 @@
 https://maimai.lxns.net/oauth/authorize?response_type=code&client_id=[应用 ID]&redirect_uri=[回调地址]&scope=[应用权限]
 ```
 
+常用参数如下：
+
+| 参数名                  | 必填      | 说明                                                   |
+| ----------------------- | --------- | ------------------------------------------------------ |
+| `response_type`         | 是        | 固定为 `code`                                          |
+| `client_id`             | 是        | 创建应用后获得的应用 ID                                |
+| `redirect_uri`          | 是        | 本次授权使用的回调地址，必须与已登记地址完全一致       |
+| `scope`                 | 是        | 以空格分隔的权限列表                                   |
+| `state`                 | 推荐      | 用于关联请求和回调，并防止跨站请求伪造                 |
+| `nonce`                 | OIDC 推荐 | 绑定授权请求和 ID Token，防止重放攻击；最长 255 个字符 |
+| `code_challenge`        | PKCE 必填 | 由 `code_verifier` 计算得到的挑战值                    |
+| `code_challenge_method` | PKCE 必填 | 推荐并应使用 `S256`                                    |
+
+仅调用查分器 API 的示例：
+
+```
+https://maimai.lxns.net/oauth/authorize?response_type=code&client_id=[应用 ID]&redirect_uri=[回调地址]&scope=read_player&state=[随机值]
+```
+
+使用查分器账号登录的示例：
+
+```
+https://maimai.lxns.net/oauth/authorize?response_type=code&client_id=[应用 ID]&redirect_uri=[回调地址]&scope=openid%20profile%20email&state=[随机值]&nonce=[随机值]
+```
+
 ::: info 提示
-你可以直接将此链接嵌入到你的应用中，或者通过其他方式分享给用户。如果你想区分不同用户或应用，你可以在链接中添加 `state` 参数来携带额外信息。
+你可以直接将此链接嵌入到你的应用中，或者通过其他方式分享给用户。建议为每次授权生成随机 `state`，将它与当前用户会话关联，并在回调时进行校验。
 :::
 
 ::: info 提示
@@ -58,7 +103,7 @@ https://maimai.lxns.net/oauth/authorize?response_type=code&client_id=[应用 ID]
 
 用户点击授权链接后，将被重定向到授权页面。在此页面，用户登录查分器账号后可以查看你的应用信息，并选择是否授权。
 
-如果用户同意授权，将会被重定向到你提供的回调地址，并附带一个授权码。如果无回调地址，则会直接显示授权码（形如 `JVJ6-VPTM-MGHZ`）。
+如果用户同意授权，将会被重定向到本次请求的回调地址，并附带一个授权码。如果应用配置为无回调地址，则会直接显示授权码（形如 `JVJ6-VPTM-MGHZ`）。回调中的 `state` 应与授权请求中发送的值完全一致。
 
 ### 4. 使用授权码获取访问令牌
 
@@ -78,13 +123,14 @@ POST /api/v0/oauth/token
 
 #### 响应体
 
-| 字段名          | 类型    | 说明                             |
-| --------------- | ------- | -------------------------------- |
-| `access_token`  | string  | 访问令牌，用于访问用户数据       |
-| `token_type`    | string  | 令牌类型，通常为 `Bearer`        |
-| `expires_in`    | integer | 访问令牌的有效期，单位为秒       |
-| `refresh_token` | string  | 刷新令牌，用于获取新的访问令牌   |
-| `scope`         | string  | 授权范围，表示应用可以访问的权限 |
+| 字段名          | 类型    | 说明                                            |
+| --------------- | ------- | ----------------------------------------------- |
+| `access_token`  | string  | 访问令牌，用于访问用户数据                      |
+| `token_type`    | string  | 令牌类型，通常为 `Bearer`                       |
+| `expires_in`    | integer | 访问令牌的有效期，单位为秒                      |
+| `refresh_token` | string  | 刷新令牌，用于获取新的访问令牌                  |
+| `scope`         | string  | 授权范围，表示应用可以访问的权限                |
+| `id_token`      | string  | OIDC ID Token，仅在授权范围包含 `openid` 时返回 |
 
 ::: danger 破坏性变更
 访问令牌响应的字段现已位于响应**顶层**（符合 OAuth 2.0 标准）。为兼容旧版集成，`data` 包装（即 `data.access_token`）暂时保留，但**已废弃，并将在未来版本中移除**。请尽快改为从响应顶层直接读取 `access_token` 等字段。
@@ -106,7 +152,8 @@ POST /api/v0/oauth/token
   "token_type": "Bearer",
   "expires_in": 900,
   "refresh_token": "SjiF1mnYY0qa1PEJhjeyDQPGPcBjWOKu",
-  "scope": "read_player write_player"
+  "scope": "openid profile email",
+  "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Im1haW1haS1wcm9iZXItb2lkYy0xIn0..."
 }
 ```
 
@@ -183,6 +230,67 @@ POST /api/v0/oauth/token
 
 响应体与获取访问令牌时相同，将包含新的访问令牌和刷新令牌。
 
+授权范围包含 `openid` 时，刷新令牌响应也会包含新的 `id_token`。刷新流程生成的 ID Token 不包含初次授权请求中的 `nonce`。
+
+## 使用 OpenID Connect
+
+OIDC 使用与 OAuth 相同的授权码流程。客户端无需硬编码各个端点，可以从发现文档读取服务端元数据：
+
+```
+GET https://maimai.lxns.net/.well-known/openid-configuration
+```
+
+发现文档包含 `issuer`、`authorization_endpoint`、`token_endpoint`、`userinfo_endpoint` 和 `jwks_uri` 等字段。OAuth 授权服务器元数据也可以从以下地址获取：
+
+```
+GET https://maimai.lxns.net/.well-known/oauth-authorization-server
+```
+
+### 验证 ID Token
+
+ID Token 使用 RS256 签名。客户端应根据发现文档中的 `jwks_uri` 获取公钥，并至少完成以下校验：
+
+1. 使用 JWKS 中与 Token `kid` 对应的公钥验证签名和 `RS256` 算法。
+2. 确认 `iss` 与发现文档中的 `issuer` 完全一致。
+3. 确认 `aud` 包含当前应用的 `client_id`。
+4. 确认 `exp` 尚未过期。
+5. 如果授权请求发送了 `nonce`，确认 Token 中的 `nonce` 与请求值一致。
+
+`sub` 是当前用户在查分器中的稳定标识，客户端应使用 `iss` 与 `sub` 的组合作为外部账号标识，不要使用用户名或邮箱作为唯一标识。
+
+### 获取用户信息
+
+授权范围包含 `openid` 时，可以使用访问令牌调用 UserInfo 端点：
+
+```
+GET https://maimai.lxns.net/api/v0/oauth/userinfo
+Authorization: Bearer [access_token]
+```
+
+响应中的声明由已授权权限决定：
+
+| 权限      | 返回的声明                   |
+| --------- | ---------------------------- |
+| `openid`  | `sub`                        |
+| `profile` | `name`、`preferred_username` |
+| `email`   | `email`、`email_verified`    |
+
+响应示例：
+
+```json
+{
+  "sub": "12345",
+  "name": "example-user",
+  "preferred_username": "example-user",
+  "email": "user@example.com",
+  "email_verified": false
+}
+```
+
+::: warning 注意
+UserInfo 端点要求访问令牌包含 `openid`。`profile` 和 `email` 仅控制相应声明是否返回，不能单独申请。
+:::
+
 ## 访问令牌请求方式
 
 获取访问令牌有两种方式：**应用密钥**和**PKCE**（Proof Key for Code Exchange）。这两种方式适用于不同类型的客户端。
@@ -195,13 +303,13 @@ POST /api/v0/oauth/token
 
 #### 请求参数
 
-| 参数名          | 类型   | 说明                                  |
-| --------------- | ------ | ------------------------------------- |
-| `client_id`     | string | 应用 ID                               |
-| `client_secret` | string | 应用密钥                              |
-| `grant_type`    | string | 授权类型，固定为 `authorization_code` |
-| `code`          | string | 从回调地址获取的授权码                |
-| `redirect_uri`  | string | 回调地址，必须与创建应用时一致        |
+| 参数名          | 类型   | 说明                                         |
+| --------------- | ------ | -------------------------------------------- |
+| `client_id`     | string | 应用 ID                                      |
+| `client_secret` | string | 应用密钥                                     |
+| `grant_type`    | string | 授权类型，固定为 `authorization_code`        |
+| `code`          | string | 从回调地址获取的授权码                       |
+| `redirect_uri`  | string | 必须与授权请求及某个已登记的回调地址完全一致 |
 
 #### 请求示例
 
@@ -290,13 +398,13 @@ PKCE 通过在授权请求中添加一个随机生成的 `code_verifier` 和 `co
 
 #### 请求参数
 
-| 参数名          | 类型   | 说明                                  |
-| --------------- | ------ | ------------------------------------- |
-| `client_id`     | string | 应用 ID                               |
-| `grant_type`    | string | 授权类型，固定为 `authorization_code` |
-| `code`          | string | 从回调地址获取的授权码                |
-| `redirect_uri`  | string | 回调地址，必须与创建应用时一致        |
-| `code_verifier` | string | PKCE 验证码                           |
+| 参数名          | 类型   | 说明                                         |
+| --------------- | ------ | -------------------------------------------- |
+| `client_id`     | string | 应用 ID                                      |
+| `grant_type`    | string | 授权类型，固定为 `authorization_code`        |
+| `code`          | string | 从回调地址获取的授权码                       |
+| `redirect_uri`  | string | 必须与授权请求及某个已登记的回调地址完全一致 |
+| `code_verifier` | string | PKCE 验证码                                  |
 
 #### 请求示例
 

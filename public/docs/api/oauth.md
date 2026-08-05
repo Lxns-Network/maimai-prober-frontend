@@ -4,6 +4,8 @@
 
 该文档的所有请求均需要在请求头加入 **OAuth 生成的访问密钥**，请参考 [OAuth 接入指南](/docs/oauth-guide)获取详细信息。
 
+本文档中的 `read_user_profile`、`read_player`、`write_player` 和 `read_user_token` 都是用于调用查分器 API 的 OAuth 权限。`openid`、`profile` 和 `email` 属于 OpenID Connect 身份认证权限，不会单独授予下列 API 的访问能力；需要同时登录用户并调用 API 时，请组合申请对应权限。
+
 请求头示例：
 
 ```
