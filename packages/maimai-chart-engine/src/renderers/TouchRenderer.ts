@@ -18,6 +18,8 @@ const FIREWORK_DURATION_MS = 1333;
 // 星爆最大可见半径：baseRadius(radius/4.5) × scale 峰值 5.0，留 5% 边距。
 const FIREWORK_EXTENT_RATIO = (5.0 / 4.5) * 1.05;
 const FIREWORK_SCALE_PEAK = 5.0;
+// 精灵/掩膜相对峰值半径的 5% 边距（与 FIREWORK_EXTENT_RATIO 同源）。
+const FIREWORK_EXTENT_MARGIN = 1.05;
 // scale 低于此值走矢量绘制（成本 ∝ 面积），达到后切精灵（缩小率 ≤2:1 无极端采样）。
 const FIREWORK_SPRITE_MIN_SCALE = 2.5;
 const FIREWORK_HOLE_START_SEC = 0.6;
@@ -26,6 +28,19 @@ const FIREWORK_END_SEC = 1.1;
 // 烟花触发时刻
 export function fireworkTriggerMs(note: TouchNote | TouchHoldStartNote): number {
   return note.type === "touch-hold-start" ? note.timingMs + note.durationMs : note.timingMs;
+}
+
+/** 烟花峰值半径：至少覆盖播放圆最远端；圆心触发保持原大小（radius × 5/4.5）。 */
+function fireworkCoveragePeakRadius(
+  playRadius: number,
+  playCenterX: number,
+  playCenterY: number,
+  originX: number,
+  originY: number,
+): number {
+  const centeredPeakRadius = playRadius * (FIREWORK_SCALE_PEAK / 4.5);
+  const distanceFromCenter = Math.hypot(originX - playCenterX, originY - playCenterY);
+  return Math.max(centeredPeakRadius, playRadius + distanceFromCenter);
 }
 
 // 15 片 pastel wedge，颜色循环。
@@ -851,13 +866,23 @@ export class TouchRenderer extends BaseRenderer {
     const position = this.getTouchPosition(latestNote.position);
     const rotation = (ageMs / FIREWORK_DURATION_MS) * ((72 * Math.PI) / 180);
     const ctx = this.context.ctx;
-    const half = this.context.radius * FIREWORK_EXTENT_RATIO;
+    const centeredPeakRadius = (this.context.radius / 4.5) * FIREWORK_SCALE_PEAK;
+    const peakRadius = fireworkCoveragePeakRadius(
+      this.context.radius,
+      this.context.centerX,
+      this.context.centerY,
+      position.x,
+      position.y,
+    );
+    const coverageMultiplier = peakRadius / centeredPeakRadius;
+    const effectScale = scale * coverageMultiplier;
+    const half = peakRadius * FIREWORK_EXTENT_MARGIN;
 
     if (tSec <= FIREWORK_HOLE_START_SEC) {
       // 成长期无掩膜：小 scale 走矢量，达阈值切精灵。
-      if (scale > 0 && scale < FIREWORK_SPRITE_MIN_SCALE) {
-        this.drawWedgesVector(ctx, position.x, position.y, scale, rotation);
-      } else if (scale > 0) {
+      if (effectScale > 0 && effectScale < FIREWORK_SPRITE_MIN_SCALE) {
+        this.drawWedgesVector(ctx, position.x, position.y, effectScale, rotation);
+      } else if (effectScale > 0) {
         const drawHalf = half * (scale / FIREWORK_SCALE_PEAK);
         ctx.save();
         ctx.translate(position.x, position.y);
@@ -880,7 +905,7 @@ export class TouchRenderer extends BaseRenderer {
     this.drawFireworkBalls(scratch, 0, 0, tSec - 0.1);
 
     // 掩膜 = 实心核心 + 羽化边缘，从中心扩张擦除。
-    const outerR = (this.context.radius / 4.5) * scale;
+    const outerR = (this.context.radius / 4.5) * effectScale;
     const holeSpan = FIREWORK_END_SEC - FIREWORK_HOLE_START_SEC;
     const linearU = Math.min(1, (tSec - FIREWORK_HOLE_START_SEC) / holeSpan);
     // alpha 前 20% 快速升到 1 让实心 mask 早早可见；尺寸 smoothstep 起停柔和。
