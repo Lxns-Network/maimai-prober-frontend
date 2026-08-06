@@ -3,13 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { getSentryUser, isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
 import * as Sentry from "@sentry/react";
 import { queryKeys } from "./queryKeys.ts";
+import { refreshAccessToken } from "@/utils/api/api.ts";
 
 export const useUserToken = () => {
   const shouldFetch = !isTokenUndefined();
 
   const { data, error, isLoading, refetch } = useQuery<{ token: string }>({
     queryKey: queryKeys.user.refresh(),
+    queryFn: refreshAccessToken,
     enabled: shouldFetch,
+    retry: false,
   });
 
   useEffect(() => {
