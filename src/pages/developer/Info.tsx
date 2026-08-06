@@ -146,7 +146,7 @@ const DeveloperInfoContent = () => {
           <Button
             size="sm"
             component="a"
-            href="https://qm.qq.com/q/SfEFsTAAYm"
+            href="https://qm.qq.com/q/Erjj159Ji8"
             target="_blank"
             rel="noreferrer"
             leftSection={<Icon path={mdiQqchat} size={0.8} />}
