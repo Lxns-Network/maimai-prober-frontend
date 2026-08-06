@@ -144,11 +144,13 @@ export const SongDifficultyList = ({ song, scores, setScores, style }: SongDiffi
         score &&
           setScores((prev: (MaimaiScoreProps | ChunithmScoreProps)[]) => {
             const index = prev.findIndex(
-              (record) => record.id === score.id && record.level_index === score.level_index,
+              (record) =>
+                record.id === score.id &&
+                record.level_index === score.level_index &&
+                (!("type" in record) || !("type" in score) || record.type === score.type),
             );
             if (index >= 0) {
-              prev[index] = score;
-              return [...prev];
+              return prev.map((record, recordIndex) => (recordIndex === index ? score : record));
             } else {
               return [...prev, score];
             }

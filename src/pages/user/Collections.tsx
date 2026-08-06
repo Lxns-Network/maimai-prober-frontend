@@ -1,7 +1,7 @@
-import { useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { getCollectionById, getPlayerCollectionById } from "@/utils/api/player.ts";
 import { Text, Space, Checkbox, Flex, Group, Select } from "@mantine/core";
-import { usePrevious, useToggle } from "@mantine/hooks";
+import { useToggle } from "@mantine/hooks";
 import { RequiredSong } from "@/components/Collections/RequiredSong";
 import { CollectionCombobox } from "@/components/Collections/CollectionCombobox.tsx";
 import { IconPlaylist, IconPlaylistOff } from "@tabler/icons-react";
@@ -36,6 +36,12 @@ interface State {
   collectionType: string | null;
   collectionId: number | null;
 }
+
+const getCollectionSelectionKey = (
+  game: Game,
+  collectionType: string | null,
+  collectionId: number | null,
+) => `${game}:${collectionType ?? ""}:${collectionId ?? ""}`;
 
 type Action =
   | {
@@ -83,7 +89,7 @@ const CollectionsContent = () => {
   const pageContext = usePageContext();
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const [game] = useGame();
-  const prevGame = usePrevious(game);
+  const previousGame = useRef(game);
   const [state, dispatch] = useReducer(reducer, {
     collectionType: (() => {
       const type = searchParams.get("collection_type");
@@ -108,86 +114,129 @@ const CollectionsContent = () => {
   const [onlyRequired, toggleOnlyRequired] = useToggle();
   const [isCollectionLoading, setIsCollectionLoading] = useState(false);
   const isLoggedOut = !localStorage.getItem("token");
+  const collectionRequestId = useRef(0);
+  const loadedCollectionKey = useRef<string | null>(null);
+  const currentSelectionKey = getCollectionSelectionKey(game, collectionType, collectionId);
+  const currentSelectionKeyRef = useRef(currentSelectionKey);
+  const loadCollectionRef = useRef<(id: number) => Promise<void>>(async () => undefined);
+  currentSelectionKeyRef.current = currentSelectionKey;
 
-  const getCollectionHandler = async (id: number) => {
-    if (!collectionType) return;
-    setIsCollectionLoading(true);
-    try {
-      const res = await getCollectionById(game, collectionType, id);
-      const data = await res.json();
-      setCollection(data);
-    } catch (error) {
-      openRetryModal("收藏品获取失败", `${error}`, () => getCollectionHandler(id));
-    } finally {
-      setIsCollectionLoading(false);
-    }
-  };
+  const commitCollection = useCallback(
+    (next: CollectionProps | null, selectionKey: string | null) => {
+      loadedCollectionKey.current = next ? selectionKey : null;
+      setCollection(next);
+    },
+    [],
+  );
 
-  const getPlayerCollectionHandler = async (id: number) => {
-    if (!collectionType) return;
-    setIsCollectionLoading(true);
-    try {
-      const res = await getPlayerCollectionById(game, collectionType, id);
-      const data = await res.json();
-      if (!data.success) {
-        // 如果玩家数据不存在，回退到公共 API
-        if (data.code === 404) {
-          await getCollectionHandler(id);
+  const loadCollection = useCallback(
+    async (id: number) => {
+      if (!collectionType) return;
+
+      const requestKey = getCollectionSelectionKey(game, collectionType, id);
+      if (currentSelectionKeyRef.current !== requestKey) return;
+
+      const requestId = ++collectionRequestId.current;
+      const isCurrentRequest = () =>
+        requestId === collectionRequestId.current && currentSelectionKeyRef.current === requestKey;
+      setIsCollectionLoading(true);
+      try {
+        if (isLoggedOut) {
+          const res = await getCollectionById(game, collectionType, id);
+          if (!res.ok) throw new Error(`请求失败：${res.status}`);
+          const data = await res.json();
+          if (isCurrentRequest()) commitCollection(data, requestKey);
           return;
         }
-        setCollection(filteredCollections.find((plate) => plate.id === id) || null);
+
+        const res = await getPlayerCollectionById(game, collectionType, id);
+        const data = await res.json();
+        if (!isCurrentRequest()) return;
+
+        if (data.success) {
+          commitCollection(data.data, requestKey);
+          return;
+        }
+
+        if (data.code === 404) {
+          const publicRes = await getCollectionById(game, collectionType, id);
+          if (!publicRes.ok) throw new Error(`请求失败：${publicRes.status}`);
+          const publicData = await publicRes.json();
+          if (isCurrentRequest()) commitCollection(publicData, requestKey);
+          return;
+        }
+
+        commitCollection(collections.find((item) => item.id === id) || null, requestKey);
         throw new Error(data.message);
+      } catch (error) {
+        if (!isCurrentRequest()) return;
+        openRetryModal("收藏品获取失败", `${error}`, () => {
+          if (currentSelectionKeyRef.current === requestKey) {
+            void loadCollectionRef.current(id);
+          }
+        });
+      } finally {
+        if (isCurrentRequest()) setIsCollectionLoading(false);
       }
-      setCollection(data.data);
-    } catch (error) {
-      openRetryModal("收藏品获取失败", `${error}`, () => getPlayerCollectionHandler(id));
-    } finally {
-      setIsCollectionLoading(false);
-    }
-  };
+    },
+    [collectionType, collections, commitCollection, game, isLoggedOut],
+  );
+  loadCollectionRef.current = loadCollection;
 
   useEffect(() => {
-    if (prevGame !== undefined && prevGame !== game) {
+    if (previousGame.current !== game) {
+      collectionRequestId.current += 1;
       setFilteredCollections([]);
-      window.history.replaceState(null, "", window.location.pathname);
+      commitCollection(null, null);
+      setIsCollectionLoading(false);
+      window.history.replaceState(window.history.state, "", window.location.pathname);
       dispatch({ type: "RESET_COLLECTION_ID" });
       dispatch({
         type: "SET_FROM_SELECT",
         payload: { collectionType: game === "maimai" ? "plate" : "trophy" },
       });
     }
-  }, [game]);
+    previousGame.current = game;
+  }, [commitCollection, game]);
 
   useEffect(() => {
-    if (collectionId === null) return;
-
-    // 先设置为基本信息，等待接口返回完整信息
-    setCollection(collections.find((collection) => collection.id === collectionId) || null);
-    setRecords([]);
-
-    if (!isLoggedOut) {
-      getPlayerCollectionHandler(collectionId);
-    } else {
-      getCollectionHandler(collectionId);
+    if (collectionId === null) {
+      collectionRequestId.current += 1;
+      commitCollection(null, null);
+      setRecords([]);
+      setIsCollectionLoading(false);
+      return;
     }
-  }, [collectionId]);
+
+    const selectionKey = getCollectionSelectionKey(game, collectionType, collectionId);
+    commitCollection(
+      collections.find((collection) => collection.id === collectionId) || null,
+      selectionKey,
+    );
+    setRecords([]);
+    void loadCollection(collectionId);
+  }, [collectionId, collectionType, collections, commitCollection, game, loadCollection]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDisplayCollectionType(state.collectionType);
+      setDisplayCollectionType(collectionType);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [collectionType]);
 
   useEffect(() => {
-    if (!collection) {
+    if (
+      !collection ||
+      collection.id !== collectionId ||
+      loadedCollectionKey.current !== currentSelectionKey
+    ) {
       setRecords([]);
       return;
     }
 
     window.history.replaceState(
-      null,
+      window.history.state,
       "",
       `${window.location.pathname}?game=${game}&collection_type=${collectionType || ""}&collection_id=${collection.id.toString()}`,
     );
@@ -227,7 +276,7 @@ const CollectionsContent = () => {
     });
 
     setRecords(convertedRecords);
-  }, [collection]);
+  }, [collection, collectionId, collectionType, currentSelectionKey, game]);
 
   useEffect(() => {
     setFilteredCollections(
@@ -250,7 +299,7 @@ const CollectionsContent = () => {
               payload: { collectionType: value },
             });
             window.history.replaceState(
-              null,
+              window.history.state,
               "",
               `${window.location.pathname}?game=${game}&collection_type=${value || ""}`,
             );

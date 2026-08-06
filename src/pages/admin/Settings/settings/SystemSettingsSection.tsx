@@ -37,24 +37,29 @@ export const SystemSettingsSection = () => {
   const [settings, setSettings] = useState<Record<string, unknown>>({});
   const [fetching, setFetching] = useState(true);
 
-  const fetchSettings = async () => {
-    setFetching(true);
-    try {
-      const res = await getSystemSettings();
-      const data = await res.json();
-      if (data.code !== 200) {
-        throw new Error(data.message || "获取失败");
-      }
-      setSettings(data.data || {});
-    } catch (error) {
-      openRetryModal("获取系统设置失败", `${error}`, fetchSettings);
-    } finally {
-      setFetching(false);
-    }
-  };
-
   useEffect(() => {
-    fetchSettings();
+    let cancelled = false;
+
+    const fetchSettings = async () => {
+      setFetching(true);
+      try {
+        const res = await getSystemSettings();
+        const data = await res.json();
+        if (data.code !== 200) {
+          throw new Error(data.message || "获取失败");
+        }
+        if (!cancelled) setSettings(data.data || {});
+      } catch (error) {
+        if (!cancelled) openRetryModal("获取系统设置失败", `${error}`, fetchSettings);
+      } finally {
+        if (!cancelled) setFetching(false);
+      }
+    };
+
+    void fetchSettings();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleChange = async (key: string, value: string | boolean | string[] | null) => {

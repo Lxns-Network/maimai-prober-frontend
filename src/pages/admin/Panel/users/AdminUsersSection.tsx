@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Group, TextInput, Button, Text, keys, Card, Badge, Popover } from "@mantine/core";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { deleteUsers, getUsers } from "@/utils/api/user.ts";
@@ -27,6 +27,7 @@ const PERMISSION_OPTIONS = [
   { label: "开发者", value: UserPermission.Developer.toString() },
   { label: "管理员", value: UserPermission.Administrator.toString() },
 ];
+const PAGE_SIZES = [10, 15, 20];
 
 function filterData(data: UserProps[], search: string) {
   const query = search.toLowerCase().trim();
@@ -81,12 +82,9 @@ const AdminUsersContent = () => {
   const [editUserModalOpened, editUserModal] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
-  const PAGE_SIZES = [10, 15, 20];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);
-  const [displayUsers, setDisplayUsers] = useState<UserProps[]>([]);
 
-  const [sortedUsers, setSortedUsers] = useState(users);
   const [sortStatus, setSortStatus] = useState<DataTableSortStatus<UserProps>>({
     columnAccessor: "id",
     direction: "asc",
@@ -96,47 +94,28 @@ const AdminUsersContent = () => {
   const [publishModalOpened, publishModal] = useDisclosure(false);
   const [selectedUsers, setSelectedUsers] = useState<UserProps[]>([]);
 
-  useEffect(() => {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    setDisplayUsers(sortedUsers.slice(start, end));
-  }, [page]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayUsers(sortedUsers.slice(0, pageSize));
-  }, [pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayUsers(sortedUsers.slice(0, pageSize));
-  }, [sortedUsers]);
-
-  useEffect(() => {
-    setSortedUsers(
+  const sortedUsers = useMemo(
+    () =>
       sortData(filterByPermission(users, permissionFilter), {
         sortBy: sortStatus.columnAccessor as keyof UserProps,
         reversed: sortStatus.direction === "desc",
         search,
       }),
-    );
-  }, [users, search, sortStatus, permissionFilter]);
+    [permissionFilter, search, sortStatus, users],
+  );
+  const displayUsers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedUsers.slice(start, start + pageSize);
+  }, [page, pageSize, sortedUsers]);
 
-  const getUserHandler = async () => {
-    try {
-      const res = await getUsers();
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setUsers(data.data);
-      setSortedUsers(data.data);
-    } catch (error) {
-      openRetryModal("用户列表获取失败", `${error}`, getUserHandler);
-    } finally {
-      setFetching(false);
-    }
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [pageSize, permissionFilter, search, sortStatus]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(sortedUsers.length / pageSize));
+    setPage((currentPage) => Math.min(currentPage, totalPages));
+  }, [pageSize, sortedUsers.length]);
 
   const deleteUsersHandler = async () => {
     try {
@@ -152,26 +131,36 @@ const AdminUsersContent = () => {
         message: `所选的 ${selectedUsers.length} 名用户已经被删除。`,
         color: "green",
       });
-      selectedUsers.forEach((user) => {
-        const index = users.findIndex((u) => u.id === user.id);
-        users.splice(index, 1);
-        setUsers(users);
-        setSortedUsers(
-          sortData(users, {
-            sortBy: sortStatus.columnAccessor as keyof UserProps,
-            reversed: sortStatus.direction === "desc",
-            search,
-          }),
-        );
-        setSelectedUsers([]);
-      });
+      const selectedIds = new Set(selectedUsers.map((user) => user.id));
+      setUsers((currentUsers) => currentUsers.filter((user) => !selectedIds.has(user.id)));
+      setSelectedUsers([]);
     } catch (error) {
       openRetryModal("删除失败", `${error}`, deleteUsersHandler);
     }
   };
 
   useEffect(() => {
-    getUserHandler();
+    let cancelled = false;
+
+    const fetchUsers = async () => {
+      try {
+        const res = await getUsers();
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message);
+        }
+        if (!cancelled) setUsers(data.data);
+      } catch (error) {
+        if (!cancelled) openRetryModal("用户列表获取失败", `${error}`, fetchUsers);
+      } finally {
+        if (!cancelled) setFetching(false);
+      }
+    };
+
+    void fetchUsers();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const { width } = useViewportSize();
@@ -182,13 +171,11 @@ const AdminUsersContent = () => {
         user={activeUser as UserProps}
         opened={editUserModalOpened}
         onClose={() => {
-          const index = users.findIndex((user) => user.id === activeUser?.id);
-          users.splice(index, 1);
-          if (activeUser?.deleted != true) {
-            users.push(activeUser as UserProps);
-          }
-          const newUsers = users.sort((a, b) => a.id - b.id);
-          setUsers(newUsers);
+          setUsers((currentUsers) => {
+            const remainingUsers = currentUsers.filter((user) => user.id !== activeUser?.id);
+            if (!activeUser || activeUser.deleted) return remainingUsers;
+            return [...remainingUsers, activeUser].sort((a, b) => a.id - b.id);
+          });
 
           editUserModal.close();
         }}

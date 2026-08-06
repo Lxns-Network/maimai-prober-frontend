@@ -13,6 +13,7 @@ export async function getSong(
     method: "GET",
   });
   if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`曲目详情请求失败：${res.status}`);
   return await res.json();
 }
 
@@ -28,5 +29,9 @@ export async function getSongCollections(
     method: "GET",
   });
   if (res.status === 404) return null;
-  return await res.json();
+  if (!res.ok) throw new Error(`关联收藏品请求失败：${res.status}`);
+
+  const data = (await res.json()) as unknown;
+  if (!Array.isArray(data)) throw new Error("关联收藏品响应格式无效");
+  return data as SongCollectionItemProps[];
 }

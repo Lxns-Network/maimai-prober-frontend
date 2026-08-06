@@ -1,8 +1,7 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Text, Flex, Anchor, Space } from "@mantine/core";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { usePrevious } from "@mantine/hooks";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
 import { Link } from "@/components/Link";
@@ -47,7 +46,6 @@ const reducer = (state: State, action: Action): State => {
 
 const SongsContent = () => {
   const [game] = useGame();
-  const prevGame = usePrevious(game);
   const pageContext = usePageContext();
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const getSongList = useSongListStore((state) => state.getSongList);
@@ -68,34 +66,45 @@ const SongsContent = () => {
   const [songCollections, setSongCollections] = useState<SongCollectionItemProps[] | null>(null);
 
   const switchingGame = useRef(false);
+  const previousGame = useRef(game);
+  const collectionsRequestId = useRef(0);
   const isSongMatchingGame =
     song &&
     ((game === "maimai" && "standard" in (song.difficulties || {})) ||
       (game === "chunithm" && !("standard" in (song.difficulties || {}))));
   const { scores: fetchedScores } = useSongBests(game, isSongMatchingGame ? song : null);
 
-  const getSongCollectionsHandler = async (songId: number) => {
-    try {
-      const data = await getSongCollections(game, songId);
-      setSongCollections(data);
-    } catch (error) {
-      console.error("获取关联收藏品失败", error);
-      setSongCollections(null);
-    }
-  };
+  const getSongCollectionsHandler = useCallback(
+    async (songId: number) => {
+      const requestId = ++collectionsRequestId.current;
+      try {
+        const data = await getSongCollections(game, songId);
+        if (requestId !== collectionsRequestId.current) return;
+        setSongCollections(data);
+      } catch (error) {
+        if (requestId !== collectionsRequestId.current) return;
+        console.error("获取关联收藏品失败", error);
+        setSongCollections(null);
+      }
+    },
+    [game],
+  );
 
   useEffect(() => {
-    const newSongList = getSongList(game);
-    setSongList(newSongList);
+    setSongList(getSongList(game));
+  }, [game, getSongList]);
 
-    if (prevGame !== undefined && prevGame !== game) {
+  useEffect(() => {
+    if (previousGame.current !== game) {
       switchingGame.current = true;
       setSong(null);
       setScores([]);
       setSongCollections(null);
-      window.history.replaceState(null, "", window.location.pathname);
+      collectionsRequestId.current += 1;
+      window.history.replaceState(window.history.state, "", window.location.pathname);
       dispatch({ type: "RESET_SONG_ID" });
     }
+    previousGame.current = game;
   }, [game]);
 
   useEffect(() => {
@@ -105,7 +114,7 @@ const SongsContent = () => {
     }
     if (!song || !songId) return;
     window.history.replaceState(
-      null,
+      window.history.state,
       "",
       `${window.location.pathname}?game=${game}&song_id=${song.id.toString()}`,
     );
@@ -117,18 +126,24 @@ const SongsContent = () => {
 
   useEffect(() => {
     if (!songId) {
+      collectionsRequestId.current += 1;
       setSong(null);
+      setSongCollections(null);
       return;
     }
 
-    const song = songList?.songs.find((song) => song.id === songId);
-    if (!song) return;
+    const song = songList.find(songId);
+    if (!song) {
+      setSong(null);
+      setSongCollections(null);
+      return;
+    }
 
     setSong(song);
     setScores([]);
     setSongCollections(null);
     getSongCollectionsHandler(song.id);
-  }, [songId, songList?.songs]);
+  }, [getSongCollectionsHandler, songId, songList]);
 
   return (
     <div>
@@ -136,7 +151,8 @@ const SongsContent = () => {
         value={songId ?? undefined}
         onOptionSubmit={(value) => {
           if (value === 0) {
-            window.history.replaceState(null, "", window.location.pathname);
+            collectionsRequestId.current += 1;
+            window.history.replaceState(window.history.state, "", window.location.pathname);
             dispatch({ type: "RESET_SONG_ID" });
             return;
           }

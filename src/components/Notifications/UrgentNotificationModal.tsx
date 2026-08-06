@@ -12,9 +12,18 @@ const keyOf = (n: NotificationProps) => `${n.category}-${n.id}`;
 
 function loadSeen(): string[] {
   try {
-    return JSON.parse(localStorage.getItem(SEEN_KEY) || "[]");
+    const value = JSON.parse(localStorage.getItem(SEEN_KEY) || "[]") as unknown;
+    return Array.isArray(value) && value.every((item) => typeof item === "string") ? value : [];
   } catch {
     return [];
+  }
+}
+
+function storeSeen(values: string[]) {
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify(values));
+  } catch {
+    return;
   }
 }
 
@@ -36,7 +45,7 @@ export function UrgentNotificationModal() {
 
   const dismiss = (read: boolean) => {
     if (current) {
-      localStorage.setItem(SEEN_KEY, JSON.stringify([...loadSeen(), keyOf(current)]));
+      storeSeen([...loadSeen(), keyOf(current)]);
       if (read) markRead({ category: current.category, id: current.id });
     }
     setOpened(false);

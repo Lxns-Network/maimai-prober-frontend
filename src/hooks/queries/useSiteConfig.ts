@@ -13,16 +13,17 @@ interface ConfigProps {
 }
 
 export const useSiteConfig = () => {
-  const { data, error, isLoading } = useQuery<ConfigProps>({
+  const { data, error, isLoading, refetch } = useQuery<ConfigProps>({
     queryKey: queryKeys.config.site(),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnReconnect: true,
   });
 
   return {
     config: data,
     isLoading,
     error,
+    refetch,
   };
 };

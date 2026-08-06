@@ -1,6 +1,15 @@
 import { fetchAPI } from "../api.ts";
 import { notifications } from "@mantine/notifications";
 
+function clearCachedSongs(dataKey: string, hashKey: string) {
+  try {
+    localStorage.removeItem(dataKey);
+    localStorage.removeItem(hashKey);
+  } catch {
+    return;
+  }
+}
+
 export interface MaimaiDifficultyProps {
   type: string;
   difficulty: number;
@@ -62,29 +71,51 @@ export class MaimaiSongList {
   versions: MaimaiVersionProps[] = [];
 
   async fetch(hash?: string): Promise<MaimaiSongList["songs"]> {
-    const cachedHash = localStorage.getItem("maimai_songs_hash");
-    const cachedData = localStorage.getItem("maimai_songs");
+    let cachedHash: string | null = null;
+    let cachedData: string | null = null;
+    try {
+      cachedHash = localStorage.getItem("maimai_songs_hash");
+      cachedData = localStorage.getItem("maimai_songs");
+    } catch {
+      cachedHash = null;
+      cachedData = null;
+    }
 
     if (hash && cachedHash === hash && cachedData) {
-      const parsedData = JSON.parse(cachedData) as MaimaiSongList;
-      if (parsedData.songs?.length) {
-        this.updateData(parsedData);
-        return this.songs;
+      try {
+        const parsedData = JSON.parse(cachedData) as MaimaiSongList;
+        if (parsedData.songs?.length) {
+          this.updateData(parsedData);
+          return this.songs;
+        }
+      } catch {
+        clearCachedSongs("maimai_songs", "maimai_songs_hash");
       }
     }
 
     const res = await fetchAPI("maimai/song/list", { method: "GET" });
-    const data = (await res.json()) as MaimaiSongList;
+    if (!res.ok) throw new Error(`舞萌 DX 曲目列表请求失败：${res.status}`);
 
-    if (data?.songs?.length) {
+    const data = (await res.json()) as MaimaiSongList;
+    if (!Array.isArray(data?.songs) || data.songs.length === 0) {
+      throw new Error("舞萌 DX 曲目列表响应格式无效");
+    }
+
+    this.updateData(data);
+    let cacheUpdated = true;
+    try {
       localStorage.setItem("maimai_songs", JSON.stringify(data));
       localStorage.setItem("maimai_songs_hash", hash || "");
-      this.updateData(data);
-      notifications.show({
-        title: "已更新曲目列表",
-        message: "检测到「舞萌 DX」曲目列表更新，已更新本地缓存。",
-      });
+    } catch {
+      cacheUpdated = false;
     }
+    notifications.show({
+      title: "已更新曲目列表",
+      message: cacheUpdated
+        ? "检测到「舞萌 DX」曲目列表更新，已更新本地缓存。"
+        : "曲目列表已载入，但浏览器存储空间不足，刷新后可能需要重新下载。",
+      color: cacheUpdated ? undefined : "yellow",
+    });
 
     return this.songs;
   }

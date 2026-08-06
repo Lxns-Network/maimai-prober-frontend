@@ -188,26 +188,34 @@ const AdminDevelopersContent = () => {
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
-  const getDevelopersHandler = async () => {
-    try {
-      const res = await getDevelopers();
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setDevelopers(
-        data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
-          return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
-        }),
-      );
-      setFetching(false);
-    } catch (error) {
-      openRetryModal("开发者列表获取失败", `${error}`, getDevelopersHandler);
-    }
-  };
-
   useEffect(() => {
-    getDevelopersHandler();
+    let cancelled = false;
+
+    const fetchDevelopers = async () => {
+      try {
+        const res = await getDevelopers();
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message);
+        }
+        if (cancelled) return;
+        setDevelopers(
+          data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
+            return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
+          }),
+        );
+        setFetching(false);
+      } catch (error) {
+        if (!cancelled) {
+          openRetryModal("开发者列表获取失败", `${error}`, fetchDevelopers);
+        }
+      }
+    };
+
+    void fetchDevelopers();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const [page, setPage] = useState(1);

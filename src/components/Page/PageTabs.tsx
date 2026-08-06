@@ -1,13 +1,31 @@
 import { PageProps } from "./Page.tsx";
 import { Tabs } from "@mantine/core";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import classes from "./PageTabs.module.css";
-import { usePageContext } from "vike-react/usePageContext";
 
 export const PageTabs = (props: PageProps) => {
-  const pageContext = usePageContext();
-  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || props.tabs?.[0].id);
+  const tabIds = useMemo(() => props.tabs?.map((tab) => tab.id) ?? [], [props.tabs]);
+  const defaultTab = tabIds[0] ?? null;
+  const [activeTab, setActiveTab] = useState<string | null>(() => {
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    return requestedTab && tabIds.includes(requestedTab) ? requestedTab : defaultTab;
+  });
+
+  useEffect(() => {
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    if (activeTab && tabIds.includes(activeTab) && (!requestedTab || requestedTab === activeTab)) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    if (defaultTab) {
+      url.searchParams.set("tab", defaultTab);
+    } else {
+      url.searchParams.delete("tab");
+    }
+    window.history.replaceState(window.history.state, "", url.toString());
+    setActiveTab(defaultTab);
+  }, [activeTab, defaultTab, tabIds]);
 
   return (
     <Tabs

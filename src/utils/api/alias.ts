@@ -35,6 +35,7 @@ export class AliasList {
   }
 
   private parseSearchMap() {
+    this.searchMap = {};
     this.aliases.forEach((alias) => {
       alias.aliases.forEach((aliasText: string) => {
         this.searchMap[aliasText] = this.searchMap[aliasText] || [];
@@ -45,7 +46,11 @@ export class AliasList {
 
   async fetch() {
     const res = await fetchAPI(`${this.game}/alias/list`, { method: "GET" });
-    const data = await res?.json();
+    if (!res.ok) throw new Error(`别名列表请求失败：${res.status}`);
+
+    const data = (await res.json()) as { aliases?: AliasEntry[] };
+    if (!Array.isArray(data.aliases)) throw new Error("别名列表响应格式无效");
+
     this.aliases = data.aliases;
     this.parseSearchMap();
 

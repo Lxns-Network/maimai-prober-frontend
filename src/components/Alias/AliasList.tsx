@@ -24,12 +24,14 @@ export const AliasList = ({ aliases, onMutate }: AliasListProps) => {
 
   useEffect(() => {
     if (alias.alias_id) {
-      const newDisplayAliases = [...displayAliases];
-      const index = newDisplayAliases.findIndex((a) => a.alias_id === alias.alias_id);
-      if (index !== -1) {
-        newDisplayAliases[index] = alias;
-      }
-      setDisplayAliases(newDisplayAliases);
+      setDisplayAliases((currentAliases) => {
+        const index = currentAliases.findIndex((item) => item.alias_id === alias.alias_id);
+        if (index === -1) return currentAliases;
+
+        const nextAliases = [...currentAliases];
+        nextAliases[index] = alias;
+        return nextAliases;
+      });
     }
   }, [alias]);
 
