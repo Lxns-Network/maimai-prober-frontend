@@ -4,12 +4,20 @@ export interface UserProps {
   id: number;
   name: string;
   email: string;
+  email_verified: boolean;
+  email_verified_time?: string;
   permission: number;
   register_time: string;
   bind: UserBindProps;
   token?: string;
   // extra
   deleted?: boolean;
+}
+
+export interface EmailVerificationSendResponse {
+  sent: boolean;
+  email_verified: boolean;
+  expires_in?: number;
 }
 
 export interface UserBindProps {

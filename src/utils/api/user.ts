@@ -9,6 +9,14 @@ export async function updateUserProfile(data: object): Promise<Response> {
   return fetchAPI("user/profile", { method: "POST", body: data });
 }
 
+export async function sendEmailVerification(): Promise<Response> {
+  return fetchAPI("user/email/verification", { method: "POST" });
+}
+
+export async function confirmEmailVerification(token: string): Promise<Response> {
+  return fetchAPI("user/email/verification/confirm", { method: "POST", body: { token } });
+}
+
 export async function getUserCrawlToken(): Promise<Response> {
   return fetchAPI("user/crawl/token", { method: "GET" });
 }

@@ -1,14 +1,18 @@
-import { Alert, Button, Card, Group, Switch, Text, TextInput } from "@mantine/core";
+import { Alert, Badge, Button, Card, Group, Switch, Text, TextInput } from "@mantine/core";
 import { Icon } from "@/components/MdiIcon";
 import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import { TransformedValues, useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "@/utils/validator";
-import { useUpdateUserProfile } from "@/hooks/mutations/useUserMutations.ts";
+import {
+  useSendEmailVerification,
+  useUpdateUserProfile,
+} from "@/hooks/mutations/useUserMutations.ts";
 import classes from "./Profile.module.css";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { useUser } from "@/hooks/queries/useUser.ts";
+import { useState } from "react";
 
 interface FormValues {
   name: string;
@@ -16,10 +20,13 @@ interface FormValues {
 }
 
 export const UserSection = () => {
-  const { user, setData } = useUser();
+  const { user, invalidate } = useUser();
   const [visible, visibleHandler] = useDisclosure(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const { mutate: mutateUpdateProfile } = useUpdateUserProfile();
+  const { mutate: sendEmailVerification, isPending: isSendingEmailVerification } =
+    useSendEmailVerification();
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -54,21 +61,39 @@ export const UserSection = () => {
           message: "你的账号详情保存成功。",
           color: "green",
         });
-        setData((prev) =>
-          prev
-            ? {
-                ...prev,
-                name: form.values.name || prev.name,
-                email: form.values.email || prev.email,
-              }
-            : prev,
-        );
+        setVerificationSent(false);
+        void invalidate();
       },
       onError: (error) => {
         openRetryModal("保存失败", `${error}`, () => updateUserProfileHandler(values));
       },
       onSettled: () => {
         form.reset();
+      },
+    });
+  };
+
+  const sendEmailVerificationHandler = () => {
+    sendEmailVerification(undefined, {
+      onSuccess: (result) => {
+        if (result.email_verified) {
+          void invalidate();
+          notifications.show({
+            title: "邮箱已验证",
+            message: "当前邮箱已经完成验证。",
+            color: "green",
+          });
+          return;
+        }
+        notifications.show({
+          title: "验证邮件已发送",
+          message: "请在 30 分钟内前往邮箱完成验证。",
+          color: "green",
+        });
+        setVerificationSent(true);
+      },
+      onError: (error) => {
+        openRetryModal("发送失败", `${error}`, sendEmailVerificationHandler);
       },
     });
   };
@@ -101,11 +126,40 @@ export const UserSection = () => {
           {...form.getInputProps("name")}
         />
         <TextInput
-          label="邮箱"
+          label={
+            <Group gap={6}>
+              <Text component="span" size="sm" fw={500}>
+                邮箱
+              </Text>
+              <Badge color={user.email_verified ? "green" : "gray"} variant="light" size="xs">
+                {user.email_verified ? "已验证" : "未验证"}
+              </Badge>
+            </Group>
+          }
           variant="filled"
           placeholder={visible ? user.email : user.email.replace(/./g, "•")}
           {...form.getInputProps("email")}
         />
+        {!user.email_verified && (
+          <Group gap={0} mt={4}>
+            <Text size="xs" c="dimmed">
+              {form.values.email ? "请先保存新的邮箱地址。" : "当前邮箱尚未验证。"}
+            </Text>
+            {!form.values.email && (
+              <Button
+                type="button"
+                size="compact-xs"
+                variant="subtle"
+                px={4}
+                loading={isSendingEmailVerification}
+                disabled={verificationSent}
+                onClick={sendEmailVerificationHandler}
+              >
+                {verificationSent ? "验证邮件已发送" : "发送验证邮件"}
+              </Button>
+            )}
+          </Group>
+        )}
         <Group justify="flex-end" mt="md">
           <Button type="submit" disabled={!form.isDirty()}>
             保存
