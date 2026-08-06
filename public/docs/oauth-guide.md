@@ -283,9 +283,11 @@ Authorization: Bearer [access_token]
   "name": "example-user",
   "preferred_username": "example-user",
   "email": "user@example.com",
-  "email_verified": false
+  "email_verified": true
 }
 ```
+
+`email_verified` 会反映用户当前绑定邮箱的实际验证状态。用户尚未验证邮箱时，该字段为 `false`。
 
 ::: warning 注意
 UserInfo 端点要求访问令牌包含 `openid`。`profile` 和 `email` 仅控制相应声明是否返回，不能单独申请。

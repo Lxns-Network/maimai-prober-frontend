@@ -19,12 +19,34 @@ import {
   sendBatchEmail,
   updateUser,
   deleteUser,
+  sendEmailVerification,
+  confirmEmailVerification,
 } from "@/utils/api/user.ts";
 import type {
+  EmailVerificationSendResponse,
   PasskeyRegisterData,
   PasskeyAuthenticateData,
   PasskeyUpdateNameData,
 } from "@/types/user";
+
+export const useSendEmailVerification = (
+  options?: UseMutationOptions<EmailVerificationSendResponse, Error, void>,
+) => {
+  return useMutation({
+    mutationFn: () => apiMutationFn<EmailVerificationSendResponse>(() => sendEmailVerification()),
+    ...options,
+  });
+};
+
+export const useConfirmEmailVerification = (
+  options?: UseMutationOptions<{ email_verified: boolean }, Error, string>,
+) => {
+  return useMutation({
+    mutationFn: (token: string) =>
+      apiMutationFn<{ email_verified: boolean }>(() => confirmEmailVerification(token)),
+    ...options,
+  });
+};
 
 export const useUpdateUserProfile = (options?: UseMutationOptions<unknown, Error, object>) => {
   return useMutation({
