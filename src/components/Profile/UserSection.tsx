@@ -12,16 +12,13 @@ import classes from "./Profile.module.css";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { useUser } from "@/hooks/queries/useUser.ts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { emailVerificationSentMessage } from "@/utils/emailVerification.ts";
+import { useEmailVerificationPolling } from "@/hooks/useEmailVerificationPolling.ts";
 
 interface FormValues {
   name: string;
   email: string;
-}
-
-function verificationEmailSentMessage(expiresIn?: number): string {
-  if (!expiresIn || expiresIn <= 0) return "请尽快前往邮箱完成验证。";
-  return `请在 ${Math.ceil(expiresIn / 60)} 分钟内前往邮箱完成验证。`;
 }
 
 export const UserSection = () => {
@@ -32,6 +29,25 @@ export const UserSection = () => {
   const { mutate: mutateUpdateProfile } = useUpdateUserProfile();
   const { mutate: sendEmailVerification, isPending: isSendingEmailVerification } =
     useSendEmailVerification();
+  const {
+    checkNow: checkEmailVerification,
+    isChecking: isCheckingEmailVerification,
+    timedOut: emailVerificationPollingTimedOut,
+  } = useEmailVerificationPolling({
+    active: verificationSent,
+    verified: user?.email_verified ?? false,
+    invalidate,
+  });
+
+  useEffect(() => {
+    if (!verificationSent || !user?.email_verified) return;
+    setVerificationSent(false);
+    notifications.show({
+      title: "邮箱验证成功",
+      message: "当前邮箱已经完成验证。",
+      color: "green",
+    });
+  }, [user?.email_verified, verificationSent]);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -92,7 +108,7 @@ export const UserSection = () => {
         }
         notifications.show({
           title: "验证邮件已发送",
-          message: verificationEmailSentMessage(result.expires_in),
+          message: emailVerificationSentMessage(result.expires_in),
           color: "green",
         });
         setVerificationSent(true);
@@ -148,21 +164,38 @@ export const UserSection = () => {
         {!user.email_verified && (
           <Group gap={0} mt={4}>
             <Text size="xs" c="dimmed">
-              {form.values.email ? "请先保存新的邮箱地址。" : "当前邮箱尚未验证。"}
+              {form.values.email
+                ? "请先保存新的邮箱地址。"
+                : verificationSent
+                  ? emailVerificationPollingTimedOut
+                    ? "自动检查已暂停，可手动检查验证状态。"
+                    : "验证邮件已发送，正在等待验证。"
+                  : "当前邮箱尚未验证。"}
             </Text>
-            {!form.values.email && (
-              <Button
-                type="button"
-                size="compact-xs"
-                variant="subtle"
-                px={4}
-                loading={isSendingEmailVerification}
-                disabled={verificationSent}
-                onClick={sendEmailVerificationHandler}
-              >
-                {verificationSent ? "验证邮件已发送" : "发送验证邮件"}
-              </Button>
-            )}
+            {!form.values.email &&
+              (verificationSent ? (
+                <Button
+                  type="button"
+                  size="compact-xs"
+                  variant="subtle"
+                  px={4}
+                  loading={isCheckingEmailVerification}
+                  onClick={() => void checkEmailVerification()}
+                >
+                  检查验证状态
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="compact-xs"
+                  variant="subtle"
+                  px={4}
+                  loading={isSendingEmailVerification}
+                  onClick={sendEmailVerificationHandler}
+                >
+                  发送验证邮件
+                </Button>
+              ))}
           </Group>
         )}
         <Group justify="flex-end" mt="md">
