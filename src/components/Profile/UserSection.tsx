@@ -19,6 +19,11 @@ interface FormValues {
   email: string;
 }
 
+function verificationEmailSentMessage(expiresIn?: number): string {
+  if (!expiresIn || expiresIn <= 0) return "请尽快前往邮箱完成验证。";
+  return `请在 ${Math.ceil(expiresIn / 60)} 分钟内前往邮箱完成验证。`;
+}
+
 export const UserSection = () => {
   const { user, invalidate } = useUser();
   const [visible, visibleHandler] = useDisclosure(false);
@@ -87,7 +92,7 @@ export const UserSection = () => {
         }
         notifications.show({
           title: "验证邮件已发送",
-          message: "请在 30 分钟内前往邮箱完成验证。",
+          message: verificationEmailSentMessage(result.expires_in),
           color: "green",
         });
         setVerificationSent(true);

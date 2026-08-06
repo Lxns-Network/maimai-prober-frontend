@@ -17,7 +17,7 @@ export default function VerifyEmail() {
     () => new URLSearchParams(pageContext.urlParsed.search).get("token") ?? "",
     [pageContext.urlParsed.search],
   );
-  const verificationStarted = useRef(false);
+  const lastVerificationToken = useRef<string | null>(null);
   const [state, setState] = useState<VerificationState>(token ? "verifying" : "error");
   const [errorMessage, setErrorMessage] = useState(
     token ? "" : "验证链接缺少必要参数，请返回账号详情重新发送验证邮件。",
@@ -25,14 +25,24 @@ export default function VerifyEmail() {
   const { mutate: confirmEmailVerification } = useConfirmEmailVerification();
 
   useEffect(() => {
-    if (!token || verificationStarted.current) return;
-    verificationStarted.current = true;
+    if (!token) {
+      lastVerificationToken.current = null;
+      setErrorMessage("验证链接缺少必要参数，请返回账号详情重新发送验证邮件。");
+      setState("error");
+      return;
+    }
+    if (lastVerificationToken.current === token) return;
+    lastVerificationToken.current = token;
+    setErrorMessage("");
+    setState("verifying");
     confirmEmailVerification(token, {
       onSuccess: () => {
+        if (lastVerificationToken.current !== token) return;
         setState("verified");
         void queryClient.invalidateQueries({ queryKey: queryKeys.user.profile() });
       },
       onError: () => {
+        if (lastVerificationToken.current !== token) return;
         setErrorMessage("验证链接无效或已过期，请返回账号详情重新发送验证邮件。");
         setState("error");
       },
