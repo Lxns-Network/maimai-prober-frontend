@@ -25,7 +25,7 @@ export default function ResetPassword() {
     if (!token) {
       navigate("/login", { overwriteLastHistoryEntry: true });
     }
-  }, []);
+  }, [token]);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -61,7 +61,7 @@ export default function ResetPassword() {
 
   return (
     <Container className={classes.root} size={420}>
-      <Title order={2} size="h2" fw={900} ta="center">
+      <Title order={1} size="h2" fw={900} ta="center">
         重置 maimai DX 查分器密码
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt="sm">
@@ -71,19 +71,25 @@ export default function ResetPassword() {
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={2} />
         <form onSubmit={form.onSubmit(resetPasswordHandler)}>
           <PasswordInput
+            id="reset-password"
             name="password"
             label="密码"
             variant="filled"
             placeholder="请输入你的密码"
+            autoComplete="new-password"
+            required
             mb="sm"
             leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps("password")}
           />
           <PasswordInput
-            name="confirm-password"
+            id="reset-confirm-password"
+            name="confirm_password"
             label="确认密码"
             variant="filled"
             placeholder="请再次输入你的密码"
+            autoComplete="new-password"
+            required
             mb="sm"
             leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps("confirm_password")}

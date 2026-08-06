@@ -36,6 +36,7 @@ export const MaimaiPlayerContent = ({ player, onCollectionEdit, editable }: Play
       >
         <Avatar
           src={`${ASSET_URL}/maimai/icon/${player.icon ? player.icon.id : 0}.png!webp`}
+          alt={`${player.name} 的头像`}
           size={94}
           radius="md"
           styles={(theme) => ({
@@ -73,12 +74,17 @@ export const MaimaiPlayerContent = ({ player, onCollectionEdit, editable }: Play
             src={`/assets/maimai/course_rank/${player.course_rank || 0}.webp`}
             h={36}
             w="auto"
+            alt={`段位：${player.course_rank || 0}`}
           />
           <Box h={40} w={78} style={{ overflow: "hidden" }}>
-            <Image src={`/assets/maimai/class_rank/${player.class_rank || 0}.webp`} mt={-5} />
+            <Image
+              src={`/assets/maimai/class_rank/${player.class_rank || 0}.webp`}
+              mt={-5}
+              alt={`阶级：${player.class_rank || 0}`}
+            />
           </Box>
           <Group gap={2} ml="xs" wrap="nowrap">
-            <Image src="/assets/maimai/icon_star.webp" h={30} w="auto" />
+            <Image src="/assets/maimai/icon_star.webp" h={30} w="auto" alt="" />
             <Text>×{player.star}</Text>
           </Group>
         </Group>

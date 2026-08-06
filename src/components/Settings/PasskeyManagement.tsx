@@ -207,7 +207,7 @@ export const PasskeyManagement = () => {
                       {(() => {
                         const { icon } = getPasskeyInfo(passkey.aaguid);
                         return icon ? (
-                          <Image src={icon} alt="" w={18} h={18} />
+                          <Image src={icon} alt="" w={18} h={18} loading="lazy" />
                         ) : (
                           <IconFingerprint size={18} />
                         );
@@ -257,12 +257,17 @@ export const PasskeyManagement = () => {
                     </Stack>
                   </Box>
                   <Group gap="xs">
-                    <ActionIcon variant="light" onClick={() => showEditModal(passkey)}>
+                    <ActionIcon
+                      variant="light"
+                      aria-label={`编辑通行密钥：${passkey.name || "未命名的通行密钥"}`}
+                      onClick={() => showEditModal(passkey)}
+                    >
                       <IconEdit size={16} />
                     </ActionIcon>
                     <ActionIcon
                       variant="light"
                       color="red"
+                      aria-label={`删除通行密钥：${passkey.name || "未命名的通行密钥"}`}
                       onClick={() =>
                         openConfirmModal(
                           "删除通行密钥",

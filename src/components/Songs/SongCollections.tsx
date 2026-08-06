@@ -51,7 +51,11 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
         return (
           <Center h={26}>
             <AspectRatio ratio={608 / 74}>
-              <Image src={`https://assets2.lxns.net/${game}/trophy/${collection.id}.png`} />
+              <Image
+                src={`https://assets2.lxns.net/${game}/trophy/${collection.id}.png`}
+                alt={`${collection.name} 称号`}
+                loading="lazy"
+              />
             </AspectRatio>
           </Center>
         );
@@ -72,7 +76,11 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
       const ratio = game === "maimai" ? 720 / 116 : 576 / 228;
       return (
         <AspectRatio ratio={ratio} w="100%">
-          <Image src={`https://assets2.lxns.net/${game}/plate/${collection.id}.png`} />
+          <Image
+            src={`https://assets2.lxns.net/${game}/plate/${collection.id}.png`}
+            alt={`${collection.name} 姓名框`}
+            loading="lazy"
+          />
         </AspectRatio>
       );
     }
@@ -80,7 +88,11 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
     if (type === "icon" || type === "character") {
       return (
         <AspectRatio ratio={1} w={64}>
-          <Image src={`https://assets2.lxns.net/${game}/${type}/${collection.id}.png`} />
+          <Image
+            src={`https://assets2.lxns.net/${game}/${type}/${collection.id}.png`}
+            alt={`${collection.name} ${collectionTypeLabelMap[type]}`}
+            loading="lazy"
+          />
         </AspectRatio>
       );
     }
@@ -88,7 +100,11 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
     if (type === "frame" && collection.id !== 1) {
       return (
         <AspectRatio ratio={270 / 113} w="100%">
-          <Image src={`https://assets2.lxns.net/${game}/frame/${collection.id}.png`} />
+          <Image
+            src={`https://assets2.lxns.net/${game}/frame/${collection.id}.png`}
+            alt={`${collection.name} 背景`}
+            loading="lazy"
+          />
         </AspectRatio>
       );
     }

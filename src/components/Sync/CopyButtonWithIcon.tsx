@@ -16,7 +16,12 @@ export const CopyButtonWithIcon = ({ label, content, ...others }: CopyButtonWith
         <CopyButton value={content} timeout={2000}>
           {({ copied, copy }) => (
             <Tooltip label={copied ? "已复制" : label} withArrow position="right">
-              <ActionIcon variant="subtle" color={copied ? "teal" : "gray"} onClick={copy}>
+              <ActionIcon
+                variant="subtle"
+                color={copied ? "teal" : "gray"}
+                aria-label={copied ? `${label}已复制` : label}
+                onClick={copy}
+              >
                 {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
               </ActionIcon>
             </Tooltip>

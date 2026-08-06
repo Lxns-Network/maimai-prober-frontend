@@ -19,7 +19,6 @@ import {
   Text,
   Textarea,
   TextInput,
-  ThemeIcon,
   Tooltip,
   UnstyledButton,
 } from "@mantine/core";
@@ -71,6 +70,7 @@ import { formatDuration } from "../../utils/format";
 import { clamp } from "../../utils/math";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import { openConfirmModal } from "@/utils/modal";
+import { getReadableTextColor } from "@/utils/color";
 import classes from "./Controls.module.css";
 
 function getErrorMessage(error: unknown): string {
@@ -80,12 +80,11 @@ function getErrorMessage(error: unknown): string {
 function getDifficultyTextColor(
   isSelected: boolean,
   isLightColor: boolean,
-  fallback: string,
+  backgroundColor: string,
 ): string {
-  if (isSelected && isLightColor) return "#BE6FF8";
-  if (isSelected) return "#fff";
+  if (isSelected) return getReadableTextColor(backgroundColor);
   if (isLightColor) return "#c4b5fd";
-  return fallback;
+  return backgroundColor;
 }
 
 function isSupportedAudioFile(file: File): boolean {
@@ -627,6 +626,7 @@ export function PlaybackControls({
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
               size="lg"
+              aria-label="上一小节"
               onClick={() => stepMeasure(-1)}
             >
               <IconChevronsLeft size={20} />
@@ -638,6 +638,7 @@ export function PlaybackControls({
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
               size="lg"
+              aria-label="上一位置"
               onClick={() => stepPosition(-1)}
             >
               <IconChevronLeft size={20} />
@@ -645,10 +646,23 @@ export function PlaybackControls({
           </Tooltip>
 
           {pendingPlay && !isPlaying ? (
-            <ActionIcon variant="filled" size="xl" radius="xl" loading={true} />
+            <ActionIcon
+              variant="filled"
+              size="xl"
+              radius="xl"
+              loading={true}
+              aria-label="正在准备播放"
+            />
           ) : (
             <Tooltip label={isPlaying ? "暂停" : "播放"} portalProps={fullscreenPortalProps}>
-              <ActionIcon variant="filled" size="xl" radius="xl" onClick={togglePlayback}>
+              <ActionIcon
+                variant="filled"
+                size="xl"
+                radius="xl"
+                aria-label={isPlaying ? "暂停" : "播放"}
+                aria-pressed={isPlaying}
+                onClick={togglePlayback}
+              >
                 {isPlaying ? <IconPlayerPause size={24} /> : <IconPlayerPlay size={24} />}
               </ActionIcon>
             </Tooltip>
@@ -659,6 +673,7 @@ export function PlaybackControls({
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
               size="lg"
+              aria-label="下一位置"
               onClick={() => stepPosition(1)}
             >
               <IconChevronRight size={20} />
@@ -670,6 +685,7 @@ export function PlaybackControls({
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
               size="lg"
+              aria-label="下一小节"
               onClick={() => stepMeasure(1)}
             >
               <IconChevronsRight size={20} />
@@ -683,6 +699,7 @@ export function PlaybackControls({
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
               size="lg"
+              aria-label="重新播放当前小节"
               onClick={restartCurrentMeasure}
             >
               <IconRefresh size={20} />
@@ -697,6 +714,8 @@ export function PlaybackControls({
               variant="subtle"
               color={isFullscreen ? "white" : "gray"}
               size="lg"
+              aria-label={soundEnabled ? "关闭正解音" : "开启正解音"}
+              aria-pressed={soundEnabled}
               onClick={() => setSoundEnabled(!soundEnabled)}
             >
               {soundEnabled ? <IconVolume size={20} /> : <IconVolumeOff size={20} />}
@@ -717,6 +736,7 @@ export function PlaybackControls({
                   color={isFullscreen ? "white" : "gray"}
                   size="lg"
                   aria-label="画面导出"
+                  aria-expanded={captureMenuOpened}
                 >
                   <IconCamera size={20} />
                 </ActionIcon>
@@ -793,6 +813,8 @@ export function PlaybackControls({
                 variant="subtle"
                 color={isFullscreen ? "white" : "gray"}
                 size="lg"
+                aria-label={isFullscreen ? "退出全屏" : "全屏预览"}
+                aria-pressed={isFullscreen}
                 onClick={onToggleFullscreen}
               >
                 {isFullscreen ? <IconMinimize size={20} /> : <IconMaximize size={20} />}
@@ -1129,7 +1151,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
         <Stack gap="md">
           <div>
             <Group justify="space-between" mb={4}>
-              <Text size="sm" fw={500}>
+              <Text id="chart-hi-speed-label" size="sm" fw={500}>
                 流速
               </Text>
               <Text size="sm" c="dimmed" ff="monospace">
@@ -1139,6 +1161,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
             <Slider
               value={hiSpeed}
               onChange={setHiSpeed}
+              aria-labelledby="chart-hi-speed-label"
+              aria-valuetext={`${hiSpeed}`}
               min={3}
               max={9}
               step={0.25}
@@ -1159,7 +1183,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
 
           <div>
             <Group justify="space-between" mb={4}>
-              <Text size="sm" fw={500}>
+              <Text id="chart-playback-speed-label" size="sm" fw={500}>
                 播放速度
               </Text>
               <Text size="sm" c="dimmed" ff="monospace">
@@ -1169,6 +1193,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
             <Slider
               value={playbackSpeed}
               onChange={setPlaybackSpeed}
+              aria-labelledby="chart-playback-speed-label"
+              aria-valuetext={`${playbackSpeed.toPrecision(2)} 倍速`}
               min={0.1}
               max={1.0}
               step={0.05}
@@ -1192,9 +1218,9 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
             />
             <HoverCard width={280} shadow="md" withArrow>
               <HoverCard.Target>
-                <ThemeIcon variant="subtle" color="gray" size="xs" style={{ cursor: "pointer" }}>
+                <ActionIcon variant="subtle" color="gray" size="xs" aria-label="保持谱面流速说明">
                   <IconHelp />
-                </ThemeIcon>
+                </ActionIcon>
               </HoverCard.Target>
               <HoverCard.Dropdown>
                 <Text size="sm">降低播放速度时，自动提高谱面流速，使音符的视觉速度保持不变。</Text>
@@ -1223,6 +1249,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               <UnstyledButton
                 key={diff}
                 onClick={() => handleDifficultyChange(diff)}
+                aria-pressed={isSelected}
+                aria-label={`选择 ${name}${displayLevel ? ` ${displayLevel}` : ""} 难度`}
                 className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
                 style={{
                   backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
@@ -1238,7 +1266,12 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
       )}
 
       <Card className={classes.card} radius="lg" withBorder>
-        <UnstyledButton onClick={() => setShowDisplaySettings(!showDisplaySettings)} w="100%">
+        <UnstyledButton
+          onClick={() => setShowDisplaySettings(!showDisplaySettings)}
+          w="100%"
+          aria-expanded={showDisplaySettings}
+          aria-controls="chart-display-settings"
+        >
           <Group justify="space-between">
             <Group gap="xs">
               <IconAdjustments size={20} />
@@ -1247,6 +1280,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               </Text>
             </Group>
             <IconChevronDown
+              aria-hidden="true"
               size={16}
               style={{
                 transition: "transform 0.2s",
@@ -1256,7 +1290,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
           </Group>
         </UnstyledButton>
 
-        <Collapse expanded={showDisplaySettings}>
+        <Collapse id="chart-display-settings" expanded={showDisplaySettings}>
           <Stack gap="md" mt="md">
             <div>
               <Text size="sm" mb={4}>
@@ -1299,48 +1333,66 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
             </div>
 
             <Group justify="space-between">
-              <Text size="sm">显示判定点打击特效</Text>
+              <Text id="chart-show-hit-effect-label" size="sm">
+                显示判定点打击特效
+              </Text>
               <Switch
+                aria-labelledby="chart-show-hit-effect-label"
                 checked={showHitEffect}
                 onChange={(e) => setShowHitEffect(e.currentTarget.checked)}
               />
             </Group>
 
             <Group justify="space-between">
-              <Text size="sm">星星头旋转</Text>
+              <Text id="chart-slide-rotation-label" size="sm">
+                星星头旋转
+              </Text>
               <Switch
+                aria-labelledby="chart-slide-rotation-label"
                 checked={slideRotation}
                 onChange={(e) => setSlideRotation(e.currentTarget.checked)}
               />
             </Group>
 
             <Group justify="space-between">
-              <Text size="sm">使用粉色星星头</Text>
+              <Text id="chart-pink-slide-start-label" size="sm">
+                使用粉色星星头
+              </Text>
               <Switch
+                aria-labelledby="chart-pink-slide-start-label"
                 checked={pinkSlideStart}
                 onChange={(e) => setPinkSlideStart(e.currentTarget.checked)}
               />
             </Group>
 
             <Group justify="space-between">
-              <Text size="sm">高亮保护套</Text>
+              <Text id="chart-highlight-ex-notes-label" size="sm">
+                高亮保护套
+              </Text>
               <Switch
+                aria-labelledby="chart-highlight-ex-notes-label"
                 checked={highlightExNotes}
                 onChange={(e) => setHighlightExNotes(e.currentTarget.checked)}
               />
             </Group>
 
             <Group justify="space-between">
-              <Text size="sm">使用标准颜色的绝赞星星</Text>
+              <Text id="chart-normal-break-slide-label" size="sm">
+                使用标准颜色的绝赞星星
+              </Text>
               <Switch
+                aria-labelledby="chart-normal-break-slide-label"
                 checked={normalColorBreakSlide}
                 onChange={(e) => setNormalColorBreakSlide(e.currentTarget.checked)}
               />
             </Group>
 
             <Group justify="space-between">
-              <Text size="sm">显示烟花特效</Text>
+              <Text id="chart-show-fireworks-label" size="sm">
+                显示烟花特效
+              </Text>
               <Switch
+                aria-labelledby="chart-show-fireworks-label"
                 checked={showFireworks}
                 onChange={(e) => setShowFireworks(e.currentTarget.checked)}
               />
@@ -1384,7 +1436,12 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
       </Card>
 
       <Card className={classes.card} radius="lg" withBorder>
-        <UnstyledButton onClick={() => setShowMusicSettings(!showMusicSettings)} w="100%">
+        <UnstyledButton
+          onClick={() => setShowMusicSettings(!showMusicSettings)}
+          w="100%"
+          aria-expanded={showMusicSettings}
+          aria-controls="chart-audio-settings"
+        >
           <Group justify="space-between">
             <Group gap="xs">
               <IconMusic size={20} />
@@ -1393,6 +1450,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               </Text>
             </Group>
             <IconChevronDown
+              aria-hidden="true"
               size={16}
               style={{
                 transition: "transform 0.2s",
@@ -1402,21 +1460,33 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
           </Group>
         </UnstyledButton>
 
-        <Collapse expanded={showMusicSettings}>
+        <Collapse id="chart-audio-settings" expanded={showMusicSettings}>
           <Stack gap="md" mt="md">
             <div>
               <Group justify="space-between" mb={4}>
-                <Text size="sm">音乐音量</Text>
+                <Text id="chart-music-volume-label" size="sm">
+                  音乐音量
+                </Text>
                 <Text size="sm" c="dimmed" ff="monospace">
                   {Math.round(musicVolume * 100)}%
                 </Text>
               </Group>
-              <Slider value={musicVolume} onChange={setMusicVolume} min={0} max={1} step={0.1} />
+              <Slider
+                value={musicVolume}
+                onChange={setMusicVolume}
+                aria-labelledby="chart-music-volume-label"
+                aria-valuetext={`${Math.round(musicVolume * 100)}%`}
+                min={0}
+                max={1}
+                step={0.1}
+              />
             </div>
 
             <div>
               <Group justify="space-between" mb={4}>
-                <Text size="sm">音乐偏移</Text>
+                <Text id="chart-music-offset-label" size="sm">
+                  音乐偏移
+                </Text>
                 <Group gap={4}>
                   <Text size="sm" c="dimmed" ff="monospace">
                     {musicOffset}ms
@@ -1435,6 +1505,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               <Slider
                 value={musicOffset}
                 onChange={setMusicOffset}
+                aria-labelledby="chart-music-offset-label"
+                aria-valuetext={`${musicOffset} 毫秒`}
                 min={-2000}
                 max={2000}
                 step={10}
@@ -1458,7 +1530,9 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
 
             <div>
               <Group justify="space-between" mb={4}>
-                <Text size="sm">正解音偏移</Text>
+                <Text id="chart-sound-offset-label" size="sm">
+                  正解音偏移
+                </Text>
                 <Group gap={4}>
                   <Text size="sm" c="dimmed" ff="monospace">
                     {soundOffset}ms
@@ -1477,6 +1551,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               <Slider
                 value={soundOffset}
                 onChange={setSoundOffset}
+                aria-labelledby="chart-sound-offset-label"
+                aria-valuetext={`${soundOffset} 毫秒`}
                 min={-200}
                 max={200}
                 step={5}
@@ -1502,7 +1578,12 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
       </Card>
 
       <Card className={classes.card} radius="lg" withBorder>
-        <UnstyledButton onClick={() => setShowVideoSettings(!showVideoSettings)} w="100%">
+        <UnstyledButton
+          onClick={() => setShowVideoSettings(!showVideoSettings)}
+          w="100%"
+          aria-expanded={showVideoSettings}
+          aria-controls="chart-video-settings"
+        >
           <Group justify="space-between">
             <Group gap="xs">
               <IconMovie size={20} />
@@ -1511,6 +1592,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               </Text>
             </Group>
             <IconChevronDown
+              aria-hidden="true"
               size={16}
               style={{
                 transition: "transform 0.2s",
@@ -1520,11 +1602,14 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
           </Group>
         </UnstyledButton>
 
-        <Collapse expanded={showVideoSettings}>
+        <Collapse id="chart-video-settings" expanded={showVideoSettings}>
           <Stack gap="md" mt="md">
             <Group justify="space-between">
-              <Text size="sm">显示背景视频</Text>
+              <Text id="chart-show-video-label" size="sm">
+                显示背景视频
+              </Text>
               <Switch
+                aria-labelledby="chart-show-video-label"
                 checked={showVideo}
                 onChange={(e) => {
                   if (e.currentTarget.checked) {

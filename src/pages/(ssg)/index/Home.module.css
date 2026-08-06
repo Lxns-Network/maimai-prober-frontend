@@ -70,7 +70,7 @@
   -webkit-mask-image: url("/logo_foreground.webp");
   -webkit-mask-size: cover;
 
-  &:after {
+  &::after {
     content: "";
     position: absolute;
     inset: 0;

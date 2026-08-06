@@ -171,6 +171,50 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     [calculateSeekPosition, updatePlayheadVisual, setPreciseTime, throttledSeekToStore],
   );
 
+  const seekToTimeMs = useCallback(
+    (timeMs: number) => {
+      if (!chartData || totalDurationMs <= 0) return;
+
+      const clampedMs = Math.max(0, Math.min(totalDurationMs, timeMs));
+      const targetBeats = Math.max(
+        0,
+        Math.min(maxBeats, msToBeats(clampedMs, chartData.bpmEvents, chartData.bpm)),
+      );
+      const percent = (clampedMs / totalDurationMs) * 100;
+      const measure = Math.floor(targetBeats / beatsPerMeasure);
+
+      updatePlayheadVisual(percent, measure);
+      playbackTimeRef.current = targetBeats;
+      setPreciseTime(targetBeats, true);
+    },
+    [chartData, totalDurationMs, maxBeats, beatsPerMeasure, updatePlayheadVisual, setPreciseTime],
+  );
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!chartData || totalDurationMs <= 0) return;
+
+      const currentBeats = useGameStore.getState().isPlaying
+        ? playbackTimeRef.current
+        : useGameStore.getState().timeline.preciseTime;
+      const currentMs = beatsToMs(currentBeats, chartData.bpmEvents, chartData.bpm);
+      const stepMs = event.shiftKey ? 5000 : 1000;
+      let targetMs: number | null = null;
+
+      if (event.key === "ArrowLeft" || event.key === "ArrowDown") targetMs = currentMs - stepMs;
+      if (event.key === "ArrowRight" || event.key === "ArrowUp") targetMs = currentMs + stepMs;
+      if (event.key === "PageDown") targetMs = currentMs - 5000;
+      if (event.key === "PageUp") targetMs = currentMs + 5000;
+      if (event.key === "Home") targetMs = 0;
+      if (event.key === "End") targetMs = totalDurationMs;
+      if (targetMs === null) return;
+
+      event.preventDefault();
+      seekToTimeMs(targetMs);
+    },
+    [chartData, totalDurationMs, seekToTimeMs],
+  );
+
   const startDragging = useCallback(
     (clientX: number) => {
       isDraggingRef.current = true;
@@ -325,8 +369,17 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
     <div
       ref={containerRef}
       className={classes.container}
+      role="slider"
+      tabIndex={0}
+      aria-label="谱面播放时间轴"
+      aria-orientation="horizontal"
+      aria-valuemin={0}
+      aria-valuemax={Math.round(totalDurationMs)}
+      aria-valuenow={Math.round((progressPercent / 100) * totalDurationMs)}
+      aria-valuetext={`第 ${currentMeasure} 小节`}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
+      onKeyDown={handleKeyDown}
     >
       <ChartDensityTimeline
         notes={chartData.notes}

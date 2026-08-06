@@ -262,6 +262,9 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
                       className={classes.actionIcon}
                       variant="subtle"
                       mr="xs"
+                      aria-label="选择 Rating 趋势图版本"
+                      aria-expanded={combobox.dropdownOpened}
+                      aria-haspopup="listbox"
                       onClick={() => combobox.toggleDropdown()}
                     >
                       <IconDots size={18} stroke={1.5} />

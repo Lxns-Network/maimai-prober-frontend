@@ -1,9 +1,10 @@
-import { Overlay, ScrollArea, Transition } from "@mantine/core";
+import { Drawer, ScrollArea } from "@mantine/core";
 import Navbar from "./Navbar/Navbar.tsx";
 import Header from "./Header/Header.tsx";
 import classes from "./Shell.module.css";
 import React, { useEffect, useRef, useState } from "react";
-import { useScroll, useWindowSize } from "react-use";
+import { useScroll } from "react-use";
+import { useMediaQuery } from "@mantine/hooks";
 import { CreateScoreModalProvider } from "../ModalProvider/CreateScoreModalProvider.tsx";
 import { ScoreModalProvider } from "../ModalProvider/ScoreModalProvider.tsx";
 import { CreateAliasModalProvider } from "../ModalProvider/CreateAliasModalProvider.tsx";
@@ -19,20 +20,20 @@ interface ShellProps {
 }
 
 export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, children }: ShellProps) {
-  const { width } = useWindowSize();
+  const isMobile = useMediaQuery(`(max-width: ${NAVBAR_BREAKPOINT}px)`);
   const [headerHeight, setHeaderHeight] = useState(0);
-  const headerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
   const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(null);
-  const [lastScrollTop, setLastScrollTop] = useState(0);
+  const lastScrollTopRef = useRef(0);
   const scrollState = useScroll(viewportRef as React.RefObject<HTMLElement>);
 
   useEffect(() => {
     const currentScrollTop = scrollState.y;
 
-    if (Math.abs(lastScrollTop - currentScrollTop) > 50) {
-      setScrollDirection(currentScrollTop > lastScrollTop ? "down" : "up");
-      setLastScrollTop(currentScrollTop);
+    if (Math.abs(lastScrollTopRef.current - currentScrollTop) > 50) {
+      setScrollDirection(currentScrollTop > lastScrollTopRef.current ? "down" : "up");
+      lastScrollTopRef.current = currentScrollTop;
     }
   }, [scrollState.y]);
 
@@ -41,35 +42,22 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   }, [navbarOpened]);
 
   useEffect(() => {
-    if (!scrollDirection) return;
+    const header = headerRef.current;
+    if (!header) return;
 
-    let frameRequest = 0;
-    let start: number | undefined = undefined;
-
-    const updateHeight = (timestamp: number) => {
-      if (start === undefined) start = timestamp;
-      const elapsed = timestamp - start;
-
-      const currentHeight = headerRef.current?.clientHeight || 56;
-      setHeaderHeight((prevHeight) => (prevHeight !== currentHeight ? currentHeight : prevHeight));
-
-      if (elapsed < 300) {
-        frameRequest = requestAnimationFrame(updateHeight);
-      }
+    const updateHeight = () => {
+      const currentHeight = header.clientHeight || 56;
+      setHeaderHeight((previousHeight) =>
+        previousHeight === currentHeight ? previousHeight : currentHeight,
+      );
     };
 
-    frameRequest = requestAnimationFrame(updateHeight);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(header);
 
-    return () => {
-      if (frameRequest) cancelAnimationFrame(frameRequest);
-    };
-  }, [scrollDirection]);
-
-  useEffect(() => {
-    if (headerRef.current) {
-      setHeaderHeight(headerRef.current.clientHeight);
-    }
-  }, [headerRef.current, width]);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
@@ -81,14 +69,31 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
         } as React.CSSProperties
       }
     >
-      <Transition
-        mounted={navbarOpened}
-        transition="slide-right"
-        duration={300}
-        timingFunction="ease"
-      >
-        {(styles) => <Navbar style={styles} onClose={onNavbarToggle} />}
-      </Transition>
+      <a className={classes.skipLink} href="#main-content">
+        跳到主要内容
+      </a>
+
+      {isMobile ? (
+        <Drawer
+          opened={navbarOpened}
+          onClose={onNavbarToggle}
+          position="left"
+          size="300px"
+          title="主导航"
+          closeButtonProps={{ "aria-label": "关闭主导航" }}
+          styles={{
+            content: { display: "flex", flexDirection: "column" },
+            body: { flex: 1, minHeight: 0, padding: 0 },
+          }}
+        >
+          <Navbar
+            style={{ position: "static", width: "100%", height: "100%", borderRight: 0 }}
+            onClose={onNavbarToggle}
+          />
+        </Drawer>
+      ) : (
+        <Navbar onClose={onNavbarToggle} />
+      )}
 
       <Header
         navbarOpened={navbarOpened}
@@ -98,17 +103,9 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
       />
 
       <ScrollArea className={classes.routesWrapper} type="scroll" viewportRef={viewportRef}>
-        <Transition
-          mounted={navbarOpened && width <= NAVBAR_BREAKPOINT}
-          transition="fade"
-          duration={300}
-          timingFunction="ease"
-        >
-          {(styles) => (
-            <Overlay color="#000" style={styles} onClick={onNavbarToggle} zIndex={100} />
-          )}
-        </Transition>
-        {children}
+        <main id="main-content" tabIndex={-1}>
+          {children}
+        </main>
       </ScrollArea>
 
       <ScoreModalProvider />

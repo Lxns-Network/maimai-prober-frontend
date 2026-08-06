@@ -221,6 +221,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                         ? `${ASSET_URL}/${game}/jacket/${songList?.getSongResourceId(songState.song!.id)}.png!webp`
                         : null
                     }
+                    alt={`${songState?.song?.title || "未知曲目"} 曲绘`}
                     size={28}
                     radius="md"
                   >
@@ -295,6 +296,9 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                       className={classes.actionIcon}
                       variant="subtle"
                       mr="xs"
+                      aria-label="选择历史记录最低评级"
+                      aria-expanded={combobox.dropdownOpened}
+                      aria-haspopup="listbox"
                       onClick={() => combobox.toggleDropdown()}
                     >
                       <IconDots size={18} stroke={1.5} />

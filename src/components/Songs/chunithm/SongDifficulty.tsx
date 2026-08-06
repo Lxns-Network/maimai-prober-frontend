@@ -12,11 +12,14 @@ import {
   Stack,
   Text,
   Title,
-  useComputedColorScheme,
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
 import { ChunithmDifficultyProps, ChunithmVersionProps } from "@/utils/api/song/chunithm.ts";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
+import {
+  getReadableTextColor,
+  getScoreCardBackgroundColor,
+  getScoreSecondaryColor,
+} from "@/utils/color.ts";
 import { ChunithmScoreProps } from "@/types/score";
 
 interface SongDifficultyProps {
@@ -32,10 +35,13 @@ export const ChunithmSongDifficulty = ({
   versions,
   onClick,
 }: SongDifficultyProps) => {
-  const computedColorScheme = useComputedColorScheme("light");
-
   const isWorldsEnd = !!difficulty?.star;
   const colorIndex = difficulty.difficulty;
+  const backgroundColor = getScoreCardBackgroundColor("chunithm", colorIndex);
+  const textColor = getReadableTextColor(backgroundColor);
+  const difficultyName = isWorldsEnd
+    ? "WORLD'S END"
+    : ["BASIC", "ADVANCED", "EXPERT", "MASTER", "ULTIMA"][difficulty.difficulty];
 
   let borderSize = 2;
   const classNameList = [classes.scoreCard];
@@ -47,8 +53,10 @@ export const ChunithmSongDifficulty = ({
 
   return (
     <Card
+      component="button"
+      type="button"
       className={classNameList.join(" ")}
-      c="white"
+      c={textColor}
       mih={82.5}
       pt={5}
       p="0.5rem"
@@ -60,12 +68,11 @@ export const ChunithmSongDifficulty = ({
           ")",
           ", 0.95)",
         ),
-        backgroundColor: getScoreCardBackgroundColor("chunithm", colorIndex).replace(
-          ")",
-          ", 0.95)",
-        ),
-        opacity: computedColorScheme === "dark" ? 0.8 : 1,
+        backgroundColor: backgroundColor.replace(")", ", 0.95)"),
+        textAlign: "initial",
+        width: "100%",
       }}
+      aria-label={`打开 ${difficultyName} ${difficulty.level} 成绩详情`}
       onClick={onClick}
     >
       <Flex align="center" ml="0.5rem" mr="0.5rem" mb={5}>
@@ -78,7 +85,7 @@ export const ChunithmSongDifficulty = ({
           </Text>
         ) : (
           <Text fz="sm" fw={500} style={{ flex: 1 }}>
-            {["BASIC", "ADVANCED", "EXPERT", "MASTER", "ULTIMA"][difficulty.difficulty]}
+            {difficultyName}
             <Title component="span" order={3} fw={500} ml="xs">
               {difficulty.level_value.toFixed(1)}
             </Title>
@@ -86,10 +93,20 @@ export const ChunithmSongDifficulty = ({
         )}
         <Flex>
           {score?.full_combo && (
-            <Image src={`/assets/chunithm/music_icon/${score.full_combo}.webp`} w={rem(94)} />
+            <Image
+              src={`/assets/chunithm/music_icon/${score.full_combo}.webp`}
+              w={rem(94)}
+              alt={`FULL COMBO 状态：${score.full_combo}`}
+              loading="lazy"
+            />
           )}
           {score?.full_chain && (
-            <Image src={`/assets/chunithm/music_icon/${score.full_chain}.webp`} w={rem(94)} />
+            <Image
+              src={`/assets/chunithm/music_icon/${score.full_chain}.webp`}
+              w={rem(94)}
+              alt={`FULL CHAIN 状态：${score.full_chain}`}
+              loading="lazy"
+            />
           )}
         </Flex>
         {difficulty?.star && <Rating count={difficulty.star} value={5} size={12} readOnly />}
@@ -101,15 +118,26 @@ export const ChunithmSongDifficulty = ({
           p="1rem"
           pt="xs"
           pb="xs"
-          style={{ color: "var(--mantine-text-dark)", backgroundColor: "#424242" }}
+          c={getReadableTextColor("#424242")}
+          bg="#424242"
         >
           <Group>
             <Stack gap={8}>
               <AspectRatio ratio={132 / 24}>
-                <Image src={`/assets/chunithm/music_rank/${score.rank}.webp`} w={rem(94)} />
+                <Image
+                  src={`/assets/chunithm/music_rank/${score.rank}.webp`}
+                  w={rem(94)}
+                  alt={`成绩评级：${score.rank}`}
+                  loading="lazy"
+                />
               </AspectRatio>
               <AspectRatio ratio={132 / 24}>
-                <Image src={`/assets/chunithm/music_icon/${score.clear}.webp`} w={rem(94)} />
+                <Image
+                  src={`/assets/chunithm/music_icon/${score.clear}.webp`}
+                  w={rem(94)}
+                  alt={`通关状态：${score.clear}`}
+                  loading="lazy"
+                />
               </AspectRatio>
             </Stack>
             <Box>

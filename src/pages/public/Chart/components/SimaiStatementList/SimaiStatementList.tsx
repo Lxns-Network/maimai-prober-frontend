@@ -186,8 +186,22 @@ const StatementRow = memo(function StatementRow({
   const rowClass = [classes.row, isActive && classes.rowActive, isMarkerRow && classes.rowMarker]
     .filter(Boolean)
     .join(" ");
+  const statementLabel = statement.markerText
+    ? `跳转到第 ${statement.beat.toFixed(2)} 拍，${statement.markerText}`
+    : `跳转到第 ${statement.beat.toFixed(2)} 拍，${statement.chunks
+        .map((chunk) => chunk.text || "空拍")
+        .join("，")}`;
   return (
-    <div className={rowClass} onClick={() => seekTo(statement.beat)}>
+    <button
+      type="button"
+      className={rowClass}
+      aria-label={statementLabel}
+      aria-current={isActive ? "true" : undefined}
+      onClick={(event) => {
+        const chunk = (event.target as HTMLElement).closest<HTMLElement>("[data-beat]");
+        seekTo(chunk ? Number(chunk.dataset.beat) : statement.beat);
+      }}
+    >
       <span className={classes.beat}>{statement.beat.toFixed(2)}</span>
       {statement.markerText ? (
         <span className={classes.markerText}>{statement.markerText}</span>
@@ -204,21 +218,14 @@ const StatementRow = memo(function StatementRow({
               .filter(Boolean)
               .join(" ");
             return (
-              <span
-                key={ci}
-                className={chunkClass}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  seekTo(c.beat);
-                }}
-              >
+              <span key={ci} className={chunkClass} data-beat={c.beat}>
                 {c.text}
               </span>
             );
           })}
         </span>
       )}
-    </div>
+    </button>
   );
 });
 
@@ -339,6 +346,8 @@ export function SimaiStatementList({
           setExpanded((v) => !v);
         }}
         w="100%"
+        aria-expanded={expanded}
+        aria-controls="simai-statement-content"
       >
         <Group justify="space-between">
           <Group gap="xs">
@@ -348,6 +357,7 @@ export function SimaiStatementList({
             </Text>
           </Group>
           <IconChevronDown
+            aria-hidden="true"
             size={16}
             style={{
               transition: "transform 0.2s",
@@ -357,7 +367,7 @@ export function SimaiStatementList({
         </Group>
       </UnstyledButton>
 
-      <Collapse expanded={expanded} keepMounted={false}>
+      <Collapse id="simai-statement-content" expanded={expanded} keepMounted={false}>
         <div className={classes.viewportWrap}>
           <ScrollArea
             h={240}
@@ -409,6 +419,7 @@ export function SimaiStatementList({
                 size="sm"
                 variant="subtle"
                 color="gray"
+                aria-label="恢复 Simai 语句自动滚动"
                 onClick={() => setAutoScroll(true)}
               >
                 <IconCurrentLocation size={14} />

@@ -124,8 +124,9 @@ export const UserTokenSection = () => {
         </div>
         <Switch
           size="lg"
-          value={visible ? "visible" : "hidden"}
-          onClick={visibleHandler.toggle}
+          aria-label={visible ? "隐藏个人 API 密钥" : "显示个人 API 密钥"}
+          checked={visible}
+          onChange={() => visibleHandler.toggle()}
           onLabel={<Icon path={mdiEye} size={0.8} />}
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
@@ -137,7 +138,12 @@ export const UserTokenSection = () => {
           <CopyButton value={user?.token} timeout={2000}>
             {({ copied, copy }) => (
               <Tooltip label={copied ? "已复制" : "复制"} withArrow position="right">
-                <ActionIcon variant="subtle" color={copied ? "teal" : "gray"} onClick={copy}>
+                <ActionIcon
+                  variant="subtle"
+                  color={copied ? "teal" : "gray"}
+                  aria-label={copied ? "个人 API Token 已复制" : "复制个人 API Token"}
+                  onClick={copy}
+                >
                   {copied ? <IconCheck size={20} /> : <IconCopy size={20} />}
                 </ActionIcon>
               </Tooltip>

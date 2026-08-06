@@ -57,6 +57,7 @@ export const ChunithmPlayerContent = ({
       >
         <Avatar
           src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`}
+          alt={`${player.name} 的角色头像`}
           size={94}
           p={5}
           radius="md"
@@ -123,6 +124,7 @@ export const ChunithmPlayerContent = ({
                   src={`/assets/chunithm/class_emblem/base/${player.class_emblem.base}.webp`}
                   h={24}
                   w="auto"
+                  alt={`阶级底座：${player.class_emblem.base}`}
                 />
               )}
               {player.class_emblem.medal !== 0 && (
@@ -130,6 +132,7 @@ export const ChunithmPlayerContent = ({
                   src={`/assets/chunithm/class_emblem/medal/${player.class_emblem.medal}.webp`}
                   h={40}
                   w="auto"
+                  alt={`阶级徽章：${player.class_emblem.medal}`}
                   style={{
                     position: player.class_emblem.base ? "absolute" : "static",
                   }}

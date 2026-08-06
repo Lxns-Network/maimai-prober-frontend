@@ -79,7 +79,7 @@ export default function Register() {
 
   return (
     <Container className={classes.root} size={420}>
-      <Title order={2} size="h2" fw={900} ta="center">
+      <Title order={1} size="h2" fw={900} ta="center">
         注册到 maimai DX 查分器
       </Title>
       <Text c="dimmed" size="sm" ta="center" mt="sm">
@@ -89,40 +89,53 @@ export default function Register() {
         <LoadingOverlay visible={visible} overlayProps={{ radius: "sm", blur: 2 }} zIndex={2} />
         <form onSubmit={form.onSubmit(registerHandler)}>
           <TextInput
+            id="register-username"
             name="name"
             label="用户名"
             variant="filled"
             placeholder="请输入你的用户名"
+            autoComplete="username"
+            required
+            aria-describedby="register-username-description"
             mb={4}
             leftSection={<IconUser size={20} stroke={1.5} />}
             {...form.getInputProps("name")}
           />
-          <Text c="dimmed" size="xs" ta="left" mb="sm">
+          <Text id="register-username-description" c="dimmed" size="xs" ta="left" mb="sm">
             此用户名将会作为你的 maimai DX 查分器账号的唯一标识，且不会用作查分用途。
           </Text>
           <TextInput
+            id="register-email"
             name="email"
             label="邮箱"
             variant="filled"
             placeholder="请输入你的邮箱"
+            autoComplete="email"
+            required
             mb="sm"
             leftSection={<IconMail size={20} stroke={1.5} />}
             {...form.getInputProps("email")}
           />
           <PasswordInput
+            id="register-password"
             name="password"
             label="密码"
             variant="filled"
             placeholder="请输入你的密码"
+            autoComplete="new-password"
+            required
             mb="sm"
             leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps("password")}
           />
           <PasswordInput
-            name="confirm-password"
+            id="register-confirm-password"
+            name="confirm_password"
             label="确认密码"
             variant="filled"
             placeholder="请再次输入你的密码"
+            autoComplete="new-password"
+            required
             mb="sm"
             leftSection={<IconLock size={20} stroke={1.5} />}
             {...form.getInputProps("confirm_password")}
@@ -133,7 +146,13 @@ export default function Register() {
             ，请在注册后根据指引绑定你的游戏账号。
           </Text>
           <Group justify="flex-end" mt="sm">
-            <Button size="sm" variant="default" color="gray" onClick={() => navigate("/login")}>
+            <Button
+              size="sm"
+              type="button"
+              variant="default"
+              color="gray"
+              onClick={() => navigate("/login")}
+            >
               登录
             </Button>
             <Button size="sm" type="submit">

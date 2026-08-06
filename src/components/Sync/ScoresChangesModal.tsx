@@ -40,14 +40,18 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game; icon: ScoreChangeDeta
             src={`/assets/${game}/music_icon/${icon.old || "blank"}_xs.webp`}
             h={rem(24)}
             w={rem(24)}
+            alt={`原状态：${icon.old || "无"}`}
+            loading="lazy"
           />
-          <ThemeIcon variant="subtle" color="gray" size={20}>
+          <ThemeIcon variant="subtle" color="gray" size={20} aria-hidden="true">
             <IconArrowRight />
           </ThemeIcon>
           <Image
             src={`/assets/${game}/music_icon/${icon.new || "blank"}_xs.webp`}
             h={rem(24)}
             w={rem(24)}
+            alt={`新状态：${icon.new || "无"}`}
+            loading="lazy"
           />
         </Group>
       );
@@ -58,14 +62,18 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game; icon: ScoreChangeDeta
           src={`/assets/${game}/music_icon/${icon.old || "blank"}.webp`}
           h={rem(24)}
           w={rem(24)}
+          alt={`原状态：${icon.old || "无"}`}
+          loading="lazy"
         />
-        <ThemeIcon variant="subtle" color="gray" size={20}>
+        <ThemeIcon variant="subtle" color="gray" size={20} aria-hidden="true">
           <IconArrowRight />
         </ThemeIcon>
         <Image
           src={`/assets/${game}/music_icon/${icon.new || "blank"}.webp`}
           h={rem(24)}
           w={rem(24)}
+          alt={`新状态：${icon.new || "无"}`}
+          loading="lazy"
         />
       </Group>
     );
@@ -77,6 +85,8 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game; icon: ScoreChangeDeta
         h={rem(24)}
         w="auto"
         ml={-3}
+        alt={`状态：${icon.old || "无"}`}
+        loading="lazy"
       />
     );
   }
@@ -86,6 +96,8 @@ const MusicIconChangeCell = ({ game, icon }: { game: Game; icon: ScoreChangeDeta
       h={rem(24)}
       w="auto"
       ml={-3}
+      alt={`状态：${icon.old || "无"}`}
+      loading="lazy"
     />
   );
 };

@@ -121,3 +121,68 @@ export const getScoreCardBackgroundColor = (game: string, level_index: number) =
 export const getTransparentColor = (color: string, opacity = 0.95) => {
   return color.replace(")", `, ${opacity})`).replace("rgb(", "rgba(");
 };
+
+type RgbColor = [number, number, number];
+
+function parseRgbColor(color: string): RgbColor | null {
+  const normalized = color.trim();
+
+  if (normalized.startsWith("#")) {
+    const hex = normalized.slice(1);
+    const expanded =
+      hex.length === 3
+        ? hex
+            .split("")
+            .map((value) => value.repeat(2))
+            .join("")
+        : hex;
+    if (!/^[0-9a-f]{6}$/i.test(expanded)) return null;
+    return [
+      parseInt(expanded.slice(0, 2), 16),
+      parseInt(expanded.slice(2, 4), 16),
+      parseInt(expanded.slice(4, 6), 16),
+    ];
+  }
+
+  const match = normalized.match(/^rgba?\((.+)\)$/i);
+  if (!match) return null;
+  const channels = match[1]
+    .split(/[,\s/]+/)
+    .filter(Boolean)
+    .slice(0, 3)
+    .map(Number);
+  if (channels.length !== 3 || channels.some((channel) => !Number.isFinite(channel))) return null;
+  return channels.map((channel) => Math.max(0, Math.min(255, channel))) as RgbColor;
+}
+
+function relativeLuminance([red, green, blue]: RgbColor): number {
+  const [r, g, b] = [red, green, blue].map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(first: RgbColor, second: RgbColor): number {
+  const firstLuminance = relativeLuminance(first);
+  const secondLuminance = relativeLuminance(second);
+  const lighter = Math.max(firstLuminance, secondLuminance);
+  const darker = Math.min(firstLuminance, secondLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Returns whichever candidate text color has the stronger WCAG contrast against the background. */
+export function getReadableTextColor(
+  backgroundColor: string,
+  lightColor = "#ffffff",
+  darkColor = "#1a1b1e",
+): string {
+  const background = parseRgbColor(backgroundColor);
+  const light = parseRgbColor(lightColor);
+  const dark = parseRgbColor(darkColor);
+  if (!background || !light || !dark) return lightColor;
+
+  return contrastRatio(background, dark) >= contrastRatio(background, light)
+    ? darkColor
+    : lightColor;
+}

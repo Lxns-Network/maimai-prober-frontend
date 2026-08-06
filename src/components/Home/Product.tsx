@@ -38,7 +38,14 @@ export const Product = ({ title, tags, description, image, button, url }: Produc
           {button}
         </Button>
       </Stack>
-      <Avatar src={`./product/${image}.webp`} h="auto" w={96} radius="md" />
+      <Avatar
+        src={`./product/${image}.webp`}
+        alt={`${title} 产品图标`}
+        imageProps={{ loading: "lazy" }}
+        h="auto"
+        w={96}
+        radius="md"
+      />
     </Card>
   );
 };

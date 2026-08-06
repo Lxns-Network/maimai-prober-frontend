@@ -18,7 +18,11 @@ import {
   Text,
   Tooltip,
 } from "@mantine/core";
-import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
+import {
+  getReadableTextColor,
+  getScoreCardBackgroundColor,
+  getScoreSecondaryColor,
+} from "@/utils/color.ts";
 import {
   getDifficulty,
   ChunithmSongProps,
@@ -73,6 +77,7 @@ export const ChunithmScoreModalContent = ({
           >
             <Avatar
               src={`${ASSET_URL}/chunithm/jacket/${difficulty?.origin_id ?? songList.getSongResourceId(song.id)}.png!webp`}
+              alt={`${song.title} 曲绘`}
               size={94}
               radius="md"
             >
@@ -99,12 +104,14 @@ export const ChunithmScoreModalContent = ({
               <Image
                 src={`/assets/chunithm/music_icon/${score.full_combo || "fullcombo_blank"}.webp`}
                 w={rem(94)}
+                alt={score.full_combo ? `FULL COMBO 状态：${score.full_combo}` : ""}
               />
             </AspectRatio>
             <AspectRatio ratio={132 / 24}>
               <Image
                 src={`/assets/chunithm/music_icon/${score.full_chain || "fullchain_blank"}.webp`}
                 w={rem(94)}
+                alt={score.full_chain ? `FULL CHAIN 状态：${score.full_chain}` : ""}
               />
             </AspectRatio>
           </Flex>
@@ -148,7 +155,9 @@ export const ChunithmScoreModalContent = ({
                 size="xl"
                 fw={500}
                 ta="center"
-                c="white"
+                c={getReadableTextColor(
+                  getScoreCardBackgroundColor("chunithm", score.level_index || 0),
+                )}
                 style={{
                   lineHeight: rem(34),
                 }}
@@ -168,12 +177,17 @@ export const ChunithmScoreModalContent = ({
           <Group mt="md">
             <Stack gap={8}>
               <AspectRatio ratio={132 / 24}>
-                <Image src={`/assets/chunithm/music_rank/${score.rank}.webp`} w={rem(94)} />
+                <Image
+                  src={`/assets/chunithm/music_rank/${score.rank}.webp`}
+                  w={rem(94)}
+                  alt={`成绩评级：${score.rank}`}
+                />
               </AspectRatio>
               <AspectRatio ratio={132 / 24}>
                 <Image
                   src={`/assets/chunithm/music_icon/${score.clear || "failed"}.webp`}
                   w={rem(94)}
+                  alt={`通关状态：${score.clear || "failed"}`}
                 />
               </AspectRatio>
             </Stack>

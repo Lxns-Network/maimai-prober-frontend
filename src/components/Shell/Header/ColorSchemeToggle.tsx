@@ -22,6 +22,11 @@ const colorSchemes = {
 
 export const ColorSchemeToggle = () => {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const nextColorScheme = match(colorScheme)
+    .with("auto", () => "dark" as const)
+    .with("dark", () => "light" as const)
+    .with("light", () => "auto" as const)
+    .exhaustive();
 
   return (
     <Group justify="center">
@@ -29,15 +34,8 @@ export const ColorSchemeToggle = () => {
         <ActionIcon
           variant="light"
           size={rem(32)}
-          onClick={() =>
-            setColorScheme(
-              match(colorScheme)
-                .with("auto", () => "dark" as const)
-                .with("dark", () => "light" as const)
-                .with("light", () => "auto" as const)
-                .exhaustive(),
-            )
-          }
+          aria-label={`当前为${colorSchemes[colorScheme].label}，切换到${colorSchemes[nextColorScheme].label}`}
+          onClick={() => setColorScheme(nextColorScheme)}
           color={colorSchemes[colorScheme].color}
         >
           {colorSchemes[colorScheme].icon}

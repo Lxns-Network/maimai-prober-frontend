@@ -40,7 +40,13 @@ const RateStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
         }
         return (
           <Group key={r.id} mb="xs" h={30} wrap="nowrap">
-            <Image src={`/assets/chunithm/music_rank/${r.id}_s.webp`} h={18} w="auto" />
+            <Image
+              src={`/assets/chunithm/music_rank/${r.id}_s.webp`}
+              h={18}
+              w="auto"
+              alt={`${r.id.toUpperCase()} 及以上成绩数`}
+              loading="lazy"
+            />
             <Divider style={{ flex: 1 }} variant="dashed" />
             <Text fz={20} style={{ lineHeight: rem(20) }}>
               <NumberFormatter value={count} thousandSeparator />
@@ -62,7 +68,13 @@ const FullComboStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
     <Box w="100%">
       {full_combo.map((r, index) => (
         <Group key={r} mb="xs" h={30} wrap="nowrap">
-          <Image src={`/assets/chunithm/music_icon/${r}_s.webp`} h={18} w="auto" />
+          <Image
+            src={`/assets/chunithm/music_icon/${r}_s.webp`}
+            h={18}
+            w="auto"
+            alt={`${r} 及以上全连数`}
+            loading="lazy"
+          />
           <Divider style={{ flex: 1 }} variant="dashed" />
           <Text fz={20} style={{ lineHeight: rem(20) }}>
             <NumberFormatter

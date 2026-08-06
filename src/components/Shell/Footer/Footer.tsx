@@ -3,7 +3,7 @@ import classes from "./Footer.module.css";
 
 export const Footer = () => {
   return (
-    <div className={classes.footer}>
+    <footer className={classes.footer}>
       <Flex className={classes.footerInner} align="center" gap="xs" justify="space-between">
         <Text fw="bold" fz="lg">
           maimai DX 查分器
@@ -32,6 +32,6 @@ export const Footer = () => {
           </Text>
         </Group>
       </Flex>
-    </div>
+    </footer>
   );
 };
