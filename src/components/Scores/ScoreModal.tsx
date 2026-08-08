@@ -112,13 +112,14 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   const isLoggedOut = isTokenUndefined();
   const { comments } = useScoreComments({
     game,
-    params: !isLoggedOut
-      ? {
-          song_id: score ? `${score.id}` : "",
-          level_index: score ? `${score.level_index}` : "",
-          ...(score && "type" in score ? { song_type: score.type } : {}),
-        }
-      : undefined,
+    params:
+      !isLoggedOut && score
+        ? {
+            song_id: `${score.id}`,
+            level_index: `${score.level_index}`,
+            ...("type" in score ? { song_type: score.type } : {}),
+          }
+        : undefined,
   });
   const commentCount = comments.length;
 
