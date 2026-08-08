@@ -31,6 +31,7 @@ import { useSiteConfig } from "@/hooks/queries/useSiteConfig.ts";
 import { useUserToken } from "@/hooks/queries/useUserToken.ts";
 import { useVersionChecker } from "@/hooks/useVersionChecker.tsx";
 import { HelmetProvider } from "react-helmet-async";
+import { APIError } from "@/utils/errors.ts";
 
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
@@ -128,7 +129,11 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   const [game] = useGame();
 
   useEffect(() => {
-    if (userTokenError) {
+    const sessionExpired =
+      userTokenError instanceof APIError &&
+      (userTokenError.status === 401 || userTokenError.status === 403);
+
+    if (sessionExpired) {
       Sentry.setUser(null);
       logout();
 

@@ -10,7 +10,7 @@
 
 ### 1. 获取 API 密钥
 
-- **开发者 API**：前往[开发者面板](/developer)申请成为开发者，获取开发者 API 密钥。
+- **开发者 API**：完成邮箱验证后，前往[开发者面板](/developer)申请成为开发者，获取开发者 API 密钥。
 - **个人 API**：前往[账号详情](/user/profile)生成个人 API 密钥。
 - **OAuth API**：参见 [OAuth 接入指南](/docs/oauth-guide)。
 

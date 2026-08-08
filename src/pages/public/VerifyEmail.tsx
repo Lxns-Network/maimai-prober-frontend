@@ -17,39 +17,52 @@ export default function VerifyEmail() {
     () => new URLSearchParams(pageContext.urlParsed.search).get("token") ?? "",
     [pageContext.urlParsed.search],
   );
-  const lastVerificationToken = useRef<string | null>(null);
-  const verificationRequestId = useRef(0);
+  const verificationAttempt = useRef<{
+    token: string;
+    promise: Promise<{ email_verified: boolean }>;
+  } | null>(null);
   const [state, setState] = useState<VerificationState>(token ? "verifying" : "error");
   const [errorMessage, setErrorMessage] = useState(
     token ? "" : "验证链接缺少必要参数，请返回账号详情重新发送验证邮件。",
   );
-  const { mutate: confirmEmailVerification } = useConfirmEmailVerification();
+  const { mutateAsync: confirmEmailVerification } = useConfirmEmailVerification();
 
   useEffect(() => {
     if (!token) {
-      lastVerificationToken.current = null;
-      verificationRequestId.current += 1;
+      verificationAttempt.current = null;
       setErrorMessage("验证链接缺少必要参数，请返回账号详情重新发送验证邮件。");
       setState("error");
       return;
     }
-    if (Object.is(lastVerificationToken.current, token)) return;
-    lastVerificationToken.current = token;
-    const requestId = ++verificationRequestId.current;
+
+    let attempt = verificationAttempt.current;
+    if (!attempt || !Object.is(attempt.token, token)) {
+      attempt = {
+        token,
+        promise: confirmEmailVerification(token),
+      };
+      verificationAttempt.current = attempt;
+    }
+
+    let active = true;
     setErrorMessage("");
     setState("verifying");
-    confirmEmailVerification(token, {
-      onSuccess: () => {
-        if (requestId !== verificationRequestId.current) return;
+    void attempt.promise.then(
+      () => {
+        if (!active || !Object.is(verificationAttempt.current, attempt)) return;
         setState("verified");
         void queryClient.invalidateQueries({ queryKey: queryKeys.user.profile() });
       },
-      onError: () => {
-        if (requestId !== verificationRequestId.current) return;
+      () => {
+        if (!active || !Object.is(verificationAttempt.current, attempt)) return;
         setErrorMessage("验证链接无效或已过期，请返回账号详情重新发送验证邮件。");
         setState("error");
       },
-    });
+    );
+
+    return () => {
+      active = false;
+    };
   }, [confirmEmailVerification, queryClient, token]);
 
   return (

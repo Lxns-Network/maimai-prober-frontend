@@ -31,7 +31,7 @@ export const getSentryUser = () => {
   };
 };
 
-export const isTokenExpired = () => {
+export const isTokenExpired = (bufferMs = 0) => {
   if (!isBrowser()) return true;
   const token = localStorage.getItem("token");
   if (!token) {
@@ -47,7 +47,7 @@ export const isTokenExpired = () => {
       return true;
     }
 
-    return currentTime > expirationTime;
+    return currentTime + bufferMs > expirationTime;
   } catch (error) {
     return true;
   }
