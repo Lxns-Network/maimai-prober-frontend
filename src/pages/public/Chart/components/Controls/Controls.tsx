@@ -46,6 +46,7 @@ import {
   IconClipboard,
   IconUpload,
   IconLink,
+  IconSparkles,
 } from "@tabler/icons-react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
@@ -1048,9 +1049,20 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
       {import.meta.env.DEV && (
         <Card className={classes.card} radius="lg" withBorder>
           <Stack gap="xs">
-            <Text size="sm" fw={500}>
-              谱面调试
-            </Text>
+            <Group justify="space-between" align="center">
+              <Text size="sm" fw={500}>
+                谱面调试
+              </Text>
+              <Button
+                size="xs"
+                variant="light"
+                component="a"
+                href={`/chart/hit-fx${typeof window === "undefined" ? "" : window.location.search}`}
+                leftSection={<IconSparkles size={14} />}
+              >
+                打击特效预览
+              </Button>
+            </Group>
             <SegmentedControl
               size="xs"
               value={debugChartFileType}

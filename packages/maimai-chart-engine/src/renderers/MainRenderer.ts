@@ -35,6 +35,9 @@ import {
   NOTE_VISIBILITY_AFTER_MS,
 } from "../utils/constants";
 import { fireworkTriggerMs } from "./TouchRenderer";
+import { HOLD_RELEASE_EFFECT_DURATION_MS } from "../effects/constants";
+import { HoldEffectRenderer } from "../effects/HoldEffectRenderer";
+import { TouchHitEffectRenderer } from "../effects/TouchHitEffectRenderer";
 
 const MAX_DPR = 2;
 const FULLSCREEN_MIN_DPR = 1;
@@ -229,6 +232,8 @@ export class MainRenderer {
   private slideRenderer!: SlideRenderer;
   private holdRenderer!: HoldRenderer;
   private touchRenderer!: TouchRenderer;
+  private holdEffectRenderer!: HoldEffectRenderer;
+  private touchHitEffectRenderer!: TouchHitEffectRenderer;
 
   private sensorImage: HTMLImageElement | null = null;
   private sensorImagePath: string;
@@ -294,6 +299,8 @@ export class MainRenderer {
     this.slideRenderer = new SlideRenderer(context, this.noteRenderer);
     this.holdRenderer = new HoldRenderer(context);
     this.touchRenderer = new TouchRenderer(context);
+    this.holdEffectRenderer = new HoldEffectRenderer(context);
+    this.touchHitEffectRenderer = new TouchHitEffectRenderer(context);
   }
 
   private createRenderContext(): RenderContext {
@@ -315,6 +322,8 @@ export class MainRenderer {
     this.slideRenderer.updateContext(context);
     this.holdRenderer.updateContext(context);
     this.touchRenderer.updateContext(context);
+    this.holdEffectRenderer.updateContext(context);
+    this.touchHitEffectRenderer.updateContext(context);
   }
 
   private loadAssets(): void {
@@ -455,6 +464,20 @@ export class MainRenderer {
 
   setShowHitEffect(enabled: boolean): void {
     this.config.showHitEffect = enabled;
+  }
+
+  /**
+   * 清空为纯黑并绘制判定线（与谱面播放同路径）。
+   * 供 hit-fx 预览等工具复用舞台素材，不要自行画圈/渐变。
+   */
+  renderEmptyStage(): void {
+    this.clear();
+    this.renderJudgmentLine();
+  }
+
+  /** 当前逻辑坐标系下的 RenderContext（resize 后有效）。 */
+  getRenderContext(): RenderContext {
+    return this.createRenderContext();
   }
 
   setFullscreenMaxPixels(maxPixels: number): void {
@@ -647,6 +670,28 @@ export class MainRenderer {
 
     // 击打特效画在最上层，盖住所有 note。
     if (this.config.showHitEffect) {
+      // 按钮 hold 持续按压特效（InitializeHold）
+      this.holdEffectRenderer.renderHoldPressEffects(
+        prepared.holds,
+        holdEndMap,
+        timing.currentTimeMs,
+        (position, holdStartTiming) => this.getHoldEndKey(position, holdStartTiming),
+      );
+      // 按钮 hold 结束特效（FinishHold → FX_GAM_Notes_Hold_Release_00）
+      this.holdEffectRenderer.renderHoldReleaseEffects(
+        prepared.holds,
+        holdEndMap,
+        timing.currentTimeMs,
+        (position, holdStartTiming) => this.getHoldEndKey(position, holdStartTiming),
+      );
+      // touch-hold 持续按压特效（同 InitializeHold，位置在 touch sensor）
+      this.renderTouchHoldPressEffects(touches, timing.currentTimeMs);
+      // touch-hold 结束特效（同 FinishHold，位置在 touch sensor）
+      this.renderTouchHoldReleaseEffects(touches, timing.currentTimeMs);
+      // touch 命中（InitializeCenter → FX_GAM_Notes_Touch_00）
+      this.touchHitEffectRenderer.renderTouchHitEffects(touches, timing.currentTimeMs, (pos) =>
+        this.touchRenderer.getTouchPosition(pos),
+      );
       this.renderTapHitEffect(hitEffectNotes, timing.currentTimeMs);
     }
 
@@ -1397,6 +1442,45 @@ export class MainRenderer {
       tap.type === "break",
       isSimultaneous,
     );
+  }
+
+  /** touch-hold 头～尾期间在 sensor 点播放 hold 持续按压特效。 */
+  private renderTouchHoldPressEffects(
+    touches: readonly (TouchNote | TouchHoldStartNote)[],
+    currentTimeMs: number,
+  ): void {
+    for (let i = 0; i < touches.length; i++) {
+      const note = touches[i];
+      if (!isTouchHoldStartNote(note)) continue;
+      const startMs = note.timingMs;
+      const endMs = note.timingMs + note.durationMs;
+      if (currentTimeMs < startMs || currentTimeMs >= endMs) continue;
+      const origin = this.touchRenderer.getTouchPosition(note.position);
+      this.holdEffectRenderer.renderPressRippleAt(
+        origin.x,
+        origin.y,
+        startMs,
+        endMs,
+        currentTimeMs,
+      );
+    }
+  }
+
+  /** touch-hold 尾部在 sensor 点播放 FinishHold 释放特效。 */
+  private renderTouchHoldReleaseEffects(
+    touches: readonly (TouchNote | TouchHoldStartNote)[],
+    currentTimeMs: number,
+  ): void {
+    for (let i = 0; i < touches.length; i++) {
+      const note = touches[i];
+      if (!isTouchHoldStartNote(note)) continue;
+      const endMs = note.timingMs + note.durationMs;
+      if (currentTimeMs < endMs || currentTimeMs >= endMs + HOLD_RELEASE_EFFECT_DURATION_MS) {
+        continue;
+      }
+      const origin = this.touchRenderer.getTouchPosition(note.position);
+      this.holdEffectRenderer.renderHoldReleaseAt(origin.x, origin.y, endMs, currentTimeMs);
+    }
   }
 
   private renderTapHitEffect(notes: Note[], currentTimeMs: number): void {
