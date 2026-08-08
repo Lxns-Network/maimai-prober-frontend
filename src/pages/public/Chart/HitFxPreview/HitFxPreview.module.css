@@ -1,13 +1,35 @@
 .root {
-  min-height: 100vh;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  z-index: 250;
+  box-sizing: border-box;
+  width: min(960px, calc(100vw - 32px));
+  min-height: 0;
+  max-height: calc(100vh - 32px);
+  overflow-x: hidden;
+  overflow-y: auto;
   background: var(--mantine-color-body);
   padding: var(--mantine-spacing-md);
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: var(--mantine-shadow-xl);
+  overscroll-behavior: contain;
+  transform: translate(-50%, -50%);
+
+  @mixin smaller-than $mantine-breakpoint-sm {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+  }
 }
 
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: var(--mantine-spacing-md);
+  min-width: 0;
   max-width: 1200px;
   margin: 0 auto;
 
@@ -20,6 +42,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--mantine-spacing-sm);
+  min-width: 0;
   min-height: 0;
 }
 
@@ -52,12 +75,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--mantine-spacing-md);
-}
-
-.hotkeyHint {
-  font-size: var(--mantine-font-size-xs);
-  color: var(--mantine-color-dimmed);
-  line-height: 1.5;
+  min-width: 0;
 }
 
 .phaseBar {

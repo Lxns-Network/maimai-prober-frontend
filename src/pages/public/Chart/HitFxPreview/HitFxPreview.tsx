@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Group,
-  Kbd,
   Radio,
   ScrollArea,
   SegmentedControl,
@@ -274,7 +273,11 @@ function starColor(isBreak: boolean, isEach: boolean): string {
   return COLORS.SLIDE_CYAN;
 }
 
-export function HitFxPreview() {
+interface HitFxPreviewProps {
+  onClose: () => void;
+}
+
+export function HitFxPreview({ onClose }: HitFxPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<MainRenderer | null>(null);
@@ -334,20 +337,6 @@ export function HitFxPreview() {
   useEffect(() => {
     restart();
   }, [fxKind, touchPos, button, restart]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.code === "Space") {
-        e.preventDefault();
-        restart();
-      } else if (e.key === "l" || e.key === "L") {
-        setLoop((v) => !v);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [restart]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -610,8 +599,6 @@ export function HitFxPreview() {
     currentMs < approachMs
       ? `进场 ${currentMs} / ${Math.round(approachMs)} ms`
       : `打击 ${currentMs - Math.round(approachMs)} / ${Math.round(afterMs)} ms`;
-  const chartHref = `/chart${typeof window === "undefined" ? "" : window.location.search}`;
-
   const groups = useMemo(() => {
     const map = new Map<string, FxOption[]>();
     for (const o of FX_OPTIONS) {
@@ -626,10 +613,10 @@ export function HitFxPreview() {
     <div className={classes.root}>
       <div className={classes.layout}>
         <Card className={classes.stageCard} radius="lg" withBorder padding="md">
-          <Group justify="space-between" wrap="nowrap">
+          <Group justify="space-between" wrap="wrap">
             <Group gap="sm">
               <Tooltip label="返回谱面预览">
-                <ActionIcon variant="default" component="a" href={chartHref} aria-label="返回">
+                <ActionIcon variant="default" onClick={onClose} aria-label="返回">
                   <IconArrowLeft size={18} />
                 </ActionIcon>
               </Tooltip>
@@ -726,7 +713,7 @@ export function HitFxPreview() {
               {needsButton(fxKind) && (
                 <div>
                   <Text size="sm" fw={600} mb={6}>
-                    按钮位 {button}
+                    Note 位置
                   </Text>
                   <Slider
                     value={button}
@@ -734,6 +721,7 @@ export function HitFxPreview() {
                     min={1}
                     max={8}
                     step={1}
+                    mb="md"
                     marks={[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ value: n, label: String(n) }))}
                   />
                 </div>
@@ -753,23 +741,6 @@ export function HitFxPreview() {
                 </div>
               )}
             </Stack>
-          </Card>
-
-          <Card radius="lg" withBorder padding="md">
-            <Text size="sm" fw={600} mb={6}>
-              快捷键
-            </Text>
-            <div className={classes.hotkeyHint}>
-              <div>
-                <Kbd>Space</Kbd> 重播
-              </div>
-              <div>
-                <Kbd>L</Kbd> 循环
-              </div>
-            </div>
-            <Text size="xs" c="dimmed" mt="sm">
-              /chart/hit-fx · 全 note 打击演示
-            </Text>
           </Card>
         </Stack>
       </div>
