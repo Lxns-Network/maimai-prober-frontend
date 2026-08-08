@@ -148,23 +148,16 @@ export const SystemSettingsSection = () => {
         },
       ],
     },
+  ];
+
+  const taskSettingsConfig: SettingProps[] = [
     {
       key: "proxy.max_pending_tasks",
       title: "排队任务上限",
-      description: "达到上限后将暂时拒绝新的代理任务。",
+      description: "达到上限后将暂时拒绝新的任务。",
       optionType: "select",
       options: PENDING_TASK_OPTIONS,
       defaultValue: String(SETTINGS_DEFAULTS["proxy.max_pending_tasks"]),
-    },
-  ];
-
-  const workerSettingsConfig: SettingProps[] = [
-    {
-      key: "worker.remote_only",
-      title: "仅使用远程工作节点",
-      description: "启用后将禁用本地工作节点，所有任务将由远程工作节点处理。",
-      optionType: "switch",
-      defaultValue: SETTINGS_DEFAULTS["worker.remote_only"] as boolean,
     },
     {
       key: "worker.task_timeout",
@@ -177,10 +170,20 @@ export const SystemSettingsSection = () => {
     {
       key: "worker.task_expire",
       title: "任务过期时间",
-      description: "已完成或失败的任务超过此时间后将被自动删除。",
+      description: "已完成或失败的任务超过此时间后将自动删除。",
       optionType: "select",
       options: EXPIRE_OPTIONS,
       defaultValue: String(SETTINGS_DEFAULTS["worker.task_expire"]),
+    },
+  ];
+
+  const workerSettingsConfig: SettingProps[] = [
+    {
+      key: "worker.remote_only",
+      title: "仅使用远程工作节点",
+      description: "启用后将禁用本地工作节点，所有任务将由远程工作节点处理。",
+      optionType: "switch",
+      defaultValue: SETTINGS_DEFAULTS["worker.remote_only"] as boolean,
     },
   ];
 
@@ -210,12 +213,12 @@ export const SystemSettingsSection = () => {
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
-          OAuth
+          任务调度
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          配置 OAuth 动态客户端的生命周期
+          配置任务队列容量与任务生命周期
         </Text>
-        <SettingList data={oauthSettingsConfig} value={valueMap} onChange={handleChange} />
+        <SettingList data={taskSettingsConfig} value={valueMap} onChange={handleChange} />
       </Card>
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
@@ -223,9 +226,19 @@ export const SystemSettingsSection = () => {
           工作节点
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          配置工作节点的运行模式与任务参数
+          配置本地与远程工作节点的运行模式
         </Text>
         <SettingList data={workerSettingsConfig} value={valueMap} onChange={handleChange} />
+      </Card>
+      <Card withBorder radius="md" className={classes.card} mb="md">
+        <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+        <Text fz="lg" fw={700}>
+          OAuth
+        </Text>
+        <Text fz="xs" c="dimmed" mt={3} mb="lg">
+          配置 OAuth 动态客户端的生命周期
+        </Text>
+        <SettingList data={oauthSettingsConfig} value={valueMap} onChange={handleChange} />
       </Card>
       <RecalculateSection />
     </div>
