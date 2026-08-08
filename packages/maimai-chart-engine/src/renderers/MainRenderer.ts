@@ -35,7 +35,7 @@ import {
   NOTE_VISIBILITY_AFTER_MS,
 } from "../utils/constants";
 import { fireworkTriggerMs } from "./TouchRenderer";
-import { HOLD_RELEASE_EFFECT_DURATION_MS } from "../effects/constants";
+import { HIT_EFFECT_COLORS, HOLD_RELEASE_EFFECT_DURATION_MS } from "../effects/constants";
 import { HoldEffectRenderer } from "../effects/HoldEffectRenderer";
 import { TouchHitEffectRenderer } from "../effects/TouchHitEffectRenderer";
 
@@ -146,6 +146,7 @@ interface PreparedRenderNotes {
   touches: (TouchNote | TouchHoldStartNote)[];
   fireworkTouches: (TouchNote | TouchHoldStartNote)[];
   holds: HoldStartNote[];
+  holdEffectNotes: HoldStartNote[];
   holdEndMap: Map<string, HoldEndNote>;
   noteMeta: WeakMap<Note, RenderNoteMeta>;
   approachGroups: ApproachIndicatorGroup[];
@@ -158,6 +159,7 @@ interface PreparedRenderNotes {
   touchIndex: TimeWindowIndex;
   layeredIndex: TimeWindowIndex;
   approachIndex: TimeWindowIndex;
+  holdEffectIndex: TimeWindowIndex;
   /** 谱面内最小的 note 流速倍率幅值（|<HS*x>|，≤1），粗筛窗口按它放大提前量 */
   minHiSpeed: number;
 }
@@ -253,6 +255,7 @@ export class MainRenderer {
     touches: [],
     fireworkTouches: [],
     holds: [],
+    holdEffectNotes: [],
     holdEndMap: new Map(),
     noteMeta: new WeakMap(),
     approachGroups: [],
@@ -265,6 +268,7 @@ export class MainRenderer {
     touchIndex: EMPTY_TIME_WINDOW_INDEX,
     layeredIndex: EMPTY_TIME_WINDOW_INDEX,
     approachIndex: EMPTY_TIME_WINDOW_INDEX,
+    holdEffectIndex: EMPTY_TIME_WINDOW_INDEX,
     minHiSpeed: 1,
   };
   private visibleTouchCountByPos = new Map<string, number>();
@@ -467,7 +471,7 @@ export class MainRenderer {
   }
 
   /**
-   * 清空为纯黑并绘制判定线（与谱面播放同路径）。
+   * 清空舞台并绘制判定线；背景视频行为与正常播放一致。
    * 供 hit-fx 预览等工具复用舞台素材，不要自行画圈/渐变。
    */
   renderEmptyStage(): void {
@@ -618,8 +622,17 @@ export class MainRenderer {
     this.ctx.arc(this.centerX, this.centerY, this.logicalSize / 2, 0, Math.PI * 2);
     this.ctx.clip();
 
-    const { slides, touches, approachGroups, hitEffectNotes, layeredHeads, holdEndMap, noteMeta } =
-      prepared;
+    const {
+      slides,
+      touches,
+      approachGroups,
+      hitEffectNotes,
+      layeredHeads,
+      holdEffectNotes,
+      holdEffectIndex,
+      holdEndMap,
+      noteMeta,
+    } = prepared;
 
     const nowMs = timing.currentTimeMs;
     // HS<1 的 note 接近时间更长,粗筛提前量按谱面最小倍率放大
@@ -670,19 +683,26 @@ export class MainRenderer {
 
     // 击打特效画在最上层，盖住所有 note。
     if (this.config.showHitEffect) {
+      const [holdLo, holdHi] = windowRange(holdEffectIndex, nowMs, lookAheadMs);
       // 按钮 hold 持续按压特效（InitializeHold）
       this.holdEffectRenderer.renderHoldPressEffects(
-        prepared.holds,
+        holdEffectNotes,
         holdEndMap,
         timing.currentTimeMs,
         (position, holdStartTiming) => this.getHoldEndKey(position, holdStartTiming),
+        HIT_EFFECT_COLORS.perfect,
+        holdLo,
+        holdHi,
       );
       // 按钮 hold 结束特效（FinishHold → FX_GAM_Notes_Hold_Release_00）
       this.holdEffectRenderer.renderHoldReleaseEffects(
-        prepared.holds,
+        holdEffectNotes,
         holdEndMap,
         timing.currentTimeMs,
         (position, holdStartTiming) => this.getHoldEndKey(position, holdStartTiming),
+        HIT_EFFECT_COLORS.perfect,
+        holdLo,
+        holdHi,
       );
       // touch-hold 持续按压特效（同 InitializeHold，位置在 touch sensor）
       this.renderTouchHoldPressEffects(touches, timing.currentTimeMs);
@@ -912,6 +932,7 @@ export class MainRenderer {
     fireworkTouches.sort((a, b) => fireworkTriggerMs(a) - fireworkTriggerMs(b));
 
     const timingOf = (note: Note) => note.timingMs;
+    const holdEffectNotes = [...holds].sort((a, b) => a.timingMs - b.timingMs);
 
     let minHiSpeed = 1;
     for (const note of notes) {
@@ -925,6 +946,7 @@ export class MainRenderer {
       touches,
       fireworkTouches,
       holds,
+      holdEffectNotes,
       holdEndMap,
       noteMeta,
       approachGroups,
@@ -945,6 +967,14 @@ export class MainRenderer {
         approachGroups,
         (group) => group.timingMs,
         (group) => group.timingMs,
+      ),
+      holdEffectIndex: buildTimeWindowIndex(
+        holdEffectNotes,
+        (hold) => hold.timingMs,
+        (hold) => {
+          const holdEnd = holdEndMap.get(this.getHoldEndKey(hold.position, hold.timing));
+          return holdEnd ? holdEnd.timingMs + HOLD_RELEASE_EFFECT_DURATION_MS : hold.timingMs;
+        },
       ),
     };
   }

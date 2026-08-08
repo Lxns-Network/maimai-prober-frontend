@@ -251,6 +251,7 @@ export class HoldEffectRenderer extends BaseRenderer {
   /**
    * 按钮 hold 持续按压特效（InitializeHold）。
    * holdEndMap key 与 MainRenderer.getHoldEndKey 一致。
+   * startIndex/endIndex 用于传入按时间裁剪后的 hold 索引范围，endIndex 不包含在内。
    */
   renderHoldPressEffects(
     holds: readonly HoldStartNote[],
@@ -258,10 +259,12 @@ export class HoldEffectRenderer extends BaseRenderer {
     currentTimeMs: number,
     getHoldEndKey: (position: ButtonPosition, holdStartTiming: number) => string,
     color: Rgb = HIT_EFFECT_COLORS.perfect,
+    startIndex = 0,
+    endIndex = holds.length,
   ): void {
     if (!holds.length) return;
 
-    for (let i = 0; i < holds.length; i++) {
+    for (let i = startIndex; i < endIndex; i++) {
       const hold = holds[i];
       const holdEnd = holdEndMap.get(getHoldEndKey(hold.position, hold.timing));
       if (!holdEnd) continue;
@@ -281,6 +284,7 @@ export class HoldEffectRenderer extends BaseRenderer {
 
   /**
    * 按钮 hold 尾部释放特效（FinishHold）。窗口为 hold 结束后的最长粒子生命周期。
+   * startIndex/endIndex 用于传入按时间裁剪后的 hold 索引范围，endIndex 不包含在内。
    */
   renderHoldReleaseEffects(
     holds: readonly HoldStartNote[],
@@ -288,10 +292,12 @@ export class HoldEffectRenderer extends BaseRenderer {
     currentTimeMs: number,
     getHoldEndKey: (position: ButtonPosition, holdStartTiming: number) => string,
     color: Rgb = HIT_EFFECT_COLORS.perfect,
+    startIndex = 0,
+    endIndex = holds.length,
   ): void {
     if (!holds.length) return;
 
-    for (let i = 0; i < holds.length; i++) {
+    for (let i = startIndex; i < endIndex; i++) {
       const hold = holds[i];
       const holdEnd = holdEndMap.get(getHoldEndKey(hold.position, hold.timing));
       if (!holdEnd) continue;
