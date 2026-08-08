@@ -80,7 +80,7 @@ API 返回的所有时间**均为 UTC 时间**，其格式形似 `2024-01-01T00:
 
 `client_name` 和 `scope` 可省略；默认客户端名称为 `MCP Client`，默认权限为 `read_user_profile read_player write_player`。`redirect_uris` 必须包含 1 至 10 个不重复的 URI，每个 URI 最长 2048 个字符，仅支持 HTTPS 或 `localhost`、`127.0.0.1`、`::1` 的 HTTP 地址。动态客户端不能申请 `read_user_token`，授权时必须使用 `S256` PKCE。
 
-#### 响应体
+#### 响应体（201）
 
 成功返回 `201`：
 
