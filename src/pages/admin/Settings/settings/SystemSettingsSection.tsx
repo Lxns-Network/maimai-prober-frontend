@@ -95,11 +95,18 @@ export const SystemSettingsSection = () => {
       key === "worker.task_timeout" ||
       key === "worker.task_expire" ||
       key === "worker.max_pending_tasks" ||
-      key === "oauth.dynamic_client_retention" ||
-      key === "oauth.dynamic_client_max_count"
-    ) {
-      parsedValue = Number(value);
-    }
+		key === "oauth.dynamic_client_retention" ||
+		key === "oauth.dynamic_client_max_count"
+	) {
+		if (typeof value !== "string" || value.trim() === "") {
+			return;
+		}
+		const numericValue = Number(value);
+		if (!Number.isFinite(numericValue)) {
+			return;
+		}
+		parsedValue = numericValue;
+	}
 
     try {
       const res = await updateSystemSettings({ [key]: parsedValue });
