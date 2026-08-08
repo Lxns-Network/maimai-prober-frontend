@@ -31,10 +31,11 @@ export const useScoreComments = ({ game, params }: UseScoreCommentsOptions) => {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(params as Record<string, string> | undefined);
   const key = queryKeys.comments.list(game, urlParams);
+  const enabled = Boolean(params?.song_id && params.level_index !== "");
 
   const { data, error, isLoading } = useQuery<Comment[]>({
     queryKey: key,
-    enabled: !!params,
+    enabled,
   });
 
   return {
