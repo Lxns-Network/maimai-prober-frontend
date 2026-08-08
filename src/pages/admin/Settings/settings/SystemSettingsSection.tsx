@@ -15,6 +15,7 @@ const SETTINGS_DEFAULTS: Record<string, unknown> = {
   "worker.task_timeout": 900,
   "worker.task_expire": 86400,
   "oauth.dynamic_client_retention": 2592000,
+  "oauth.dynamic_client_max_count": 10000,
 };
 
 const PENDING_TASK_OPTIONS = [
@@ -50,6 +51,15 @@ const DYNAMIC_CLIENT_RETENTION_OPTIONS = [
   { value: "7776000", label: "90 天" },
 ];
 
+const DYNAMIC_CLIENT_MAX_COUNT_OPTIONS = [
+  { value: "1000", label: "1,000 个" },
+  { value: "5000", label: "5,000 个" },
+  { value: "10000", label: "10,000 个" },
+  { value: "25000", label: "25,000 个" },
+  { value: "50000", label: "50,000 个" },
+  { value: "100000", label: "100,000 个" },
+];
+
 export const SystemSettingsSection = () => {
   const [settings, setSettings] = useState<Record<string, unknown>>({});
   const [fetching, setFetching] = useState(true);
@@ -82,7 +92,8 @@ export const SystemSettingsSection = () => {
       key === "worker.task_timeout" ||
       key === "worker.task_expire" ||
       key === "worker.max_pending_tasks" ||
-      key === "oauth.dynamic_client_retention"
+      key === "oauth.dynamic_client_retention" ||
+      key === "oauth.dynamic_client_max_count"
     ) {
       parsedValue = Number(value);
     }
@@ -117,7 +128,8 @@ export const SystemSettingsSection = () => {
       key === "worker.task_timeout" ||
       key === "worker.task_expire" ||
       key === "worker.max_pending_tasks" ||
-      key === "oauth.dynamic_client_retention"
+      key === "oauth.dynamic_client_retention" ||
+      key === "oauth.dynamic_client_max_count"
     ) {
       valueMap[key] = String(val);
     } else {
@@ -193,6 +205,14 @@ export const SystemSettingsSection = () => {
       options: DYNAMIC_CLIENT_RETENTION_OPTIONS,
       defaultValue: String(SETTINGS_DEFAULTS["oauth.dynamic_client_retention"]),
     },
+    {
+      key: "oauth.dynamic_client_max_count",
+      title: "动态客户端数量上限",
+      description: "达到上限后将暂时拒绝新的动态客户端注册。",
+      optionType: "select",
+      options: DYNAMIC_CLIENT_MAX_COUNT_OPTIONS,
+      defaultValue: String(SETTINGS_DEFAULTS["oauth.dynamic_client_max_count"]),
+    },
   ];
 
   return (
@@ -223,7 +243,7 @@ export const SystemSettingsSection = () => {
           OAuth
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          配置 OAuth 动态客户端的生命周期
+          配置 OAuth 动态客户端的生命周期与数量上限
         </Text>
         <SettingList data={oauthSettingsConfig} value={valueMap} onChange={handleChange} />
       </Card>
