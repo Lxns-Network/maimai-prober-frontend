@@ -332,9 +332,11 @@ from flask import Flask, request, session
 import requests
 import urllib.parse
 import secrets
+import os
 
 app = Flask(__name__)
-app.secret_key = "replace-with-a-random-secret"
+# 使用 secrets.token_hex(32) 生成后写入环境变量
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 # 应用信息
 CLIENT_ID = "e07f2ae3-795b-4368-b55f-5f27b0b3eae0"
@@ -439,9 +441,11 @@ import urllib.parse
 import secrets
 import hashlib
 import base64
+import os
 
 app = Flask(__name__)
-app.secret_key = "replace-with-a-random-secret"
+# 使用 secrets.token_hex(32) 生成后写入环境变量
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 # 应用信息（公共客户端，无 secret）
 CLIENT_ID = "e07f2ae3-795b-4368-b55f-5f27b0b3eae0"
