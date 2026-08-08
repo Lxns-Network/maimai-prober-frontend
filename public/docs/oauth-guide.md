@@ -32,7 +32,7 @@
 - **回调地址**：授权完成后用户将被重定向到请求指定的地址。每个应用最多可以登记 10 个回调地址。
 - **应用权限**：根据用途选择 API 授权或 OpenID Connect 身份认证所需的权限。
 
-授权请求中的 `redirect_uri` 必须与已登记的某个回调地址完全一致。Web 应用应使用 HTTPS；本地开发可以使用 `localhost`、`127.0.0.1` 或 `[::1]` 的 HTTP 地址，移动端和桌面端应用也可以使用自定义协议地址。
+授权请求中的 `redirect_uri` 必须与已登记的某个回调地址完全一致。Web 应用应使用 HTTPS；本地开发可以使用 `localhost`、`127.0.0.1` 或 `[::1]` 的 HTTP 地址。
 
 ::: info 提示
 如果你没有回调地址，你可以勾选“无回调地址”，这将在授权成功后直接返回授权码，而不是重定向到回调地址。
@@ -68,16 +68,16 @@ https://maimai.lxns.net/oauth/authorize?response_type=code&client_id=[应用 ID]
 
 常用参数如下：
 
-| 参数名                  | 必填      | 说明                                                   |
-| ----------------------- | --------- | ------------------------------------------------------ |
-| `response_type`         | 是        | 固定为 `code`                                          |
-| `client_id`             | 是        | 创建应用后获得的应用 ID                                |
-| `redirect_uri`          | 是        | 本次授权使用的回调地址，必须与已登记地址完全一致       |
-| `scope`                 | 是        | 以空格分隔的权限列表                                   |
-| `state`                 | 推荐      | 用于关联请求和回调，并防止跨站请求伪造                 |
-| `nonce`                 | OIDC 推荐 | 绑定授权请求和 ID Token，防止重放攻击；最长 255 个字符 |
-| `code_challenge`        | PKCE 必填 | 由 `code_verifier` 计算得到的挑战值                    |
-| `code_challenge_method` | PKCE 必填 | 推荐并应使用 `S256`                                    |
+| 参数名                  | 必填             | 说明                                                   |
+| ----------------------- | ---------------- | ------------------------------------------------------ |
+| `response_type`         | 是               | 固定为 `code`                                          |
+| `client_id`             | 是               | 创建应用后获得的应用 ID                                |
+| `redirect_uri`          | 是               | 本次授权使用的回调地址，必须与已登记地址完全一致       |
+| `scope`                 | 是               | 以空格分隔的权限列表                                   |
+| `state`                 | 推荐             | 用于关联请求和回调，并防止跨站请求伪造                 |
+| `nonce`                 | OIDC 推荐        | 绑定授权请求和 ID Token，防止重放攻击；最长 255 个字符 |
+| `code_challenge`        | 使用 PKCE 时必填 | 由 `code_verifier` 计算得到的挑战值                    |
+| `code_challenge_method` | 使用 PKCE 时必填 | 固定为 `S256`                                          |
 
 仅调用查分器 API 的示例：
 
@@ -96,7 +96,7 @@ https://maimai.lxns.net/oauth/authorize?response_type=code&client_id=[应用 ID]
 :::
 
 ::: info 提示
-如果你是公共客户端，无法存储并使用 `client_secret`，可以使用 [PKCE](#pkce)（Proof Key for Code Exchange） 来增强安全性。
+公共客户端应使用 [PKCE](#pkce)（Proof Key for Code Exchange）。授权请求带有 `code_challenge` 时，兑换授权码必须提交对应的 `code_verifier`；`client_secret` 作为额外的客户端认证信息进行校验。
 :::
 
 ### 3. 用户授权
@@ -132,8 +132,8 @@ POST /api/v0/oauth/token
 | `scope`         | string  | 授权范围，表示应用可以访问的权限                |
 | `id_token`      | string  | OIDC ID Token，仅在授权范围包含 `openid` 时返回 |
 
-::: danger 破坏性变更
-访问令牌响应的字段现已位于响应**顶层**（符合 OAuth 2.0 标准）。为兼容旧版集成，`data` 包装（即 `data.access_token`）暂时保留，但**已废弃，并将在未来版本中移除**。请尽快改为从响应顶层直接读取 `access_token` 等字段。
+::: info 响应格式
+访问令牌响应字段位于响应**顶层**，请读取 `access_token`、`token_type`、`expires_in`、`refresh_token` 和 `scope` 等字段。
 :::
 
 ::: info 提示
@@ -141,7 +141,7 @@ POST /api/v0/oauth/token
 :::
 
 ::: warning 注意
-访问令牌有效期为 15 分钟，过期后需使用刷新令牌重新获取。系统将返回新的访问令牌，同时刷新令牌保持有效（除非手动撤销或超过 30 天有效期）。请确保安全存储刷新令牌，以便持续获取新的访问令牌。
+访问令牌有效期为 15 分钟。刷新令牌有效期为 30 天，每次成功刷新后响应都会包含新的刷新令牌，原令牌立即失效。请确保安全存储刷新令牌，并在成功响应后保存新令牌。
 :::
 
 #### 响应示例
@@ -203,17 +203,17 @@ POST /api/v0/oauth/token
 ```
 
 ::: warning 注意
-刷新令牌有效期为 30 天。每次使用刷新令牌获取新的访问令牌时，系统将同时颁发一个新的刷新令牌，**旧令牌自动失效**。
+刷新令牌有效期为 30 天。每次成功使用刷新令牌后，响应都会包含新的刷新令牌，原令牌立即失效；重复提交已失效的令牌会返回 `invalid_grant`。
 :::
 
 #### 请求参数
 
-| 参数名          | 类型   | 说明                             |
-| --------------- | ------ | -------------------------------- |
-| `client_id`     | string | 应用 ID                          |
-| `client_secret` | string | 应用密钥，PKCE 不需要此参数      |
-| `grant_type`    | string | 授权类型，固定为 `refresh_token` |
-| `refresh_token` | string | 从上一步获取的刷新令牌           |
+| 参数名          | 类型   | 说明                                     |
+| --------------- | ------ | ---------------------------------------- |
+| `client_id`     | string | 应用 ID                                  |
+| `client_secret` | string | 机密客户端的应用密钥；使用 PKCE 时可省略 |
+| `grant_type`    | string | 授权类型，固定为 `refresh_token`         |
+| `refresh_token` | string | 从上一步获取的刷新令牌                   |
 
 #### 请求示例
 
@@ -295,13 +295,11 @@ UserInfo 端点要求访问令牌包含 `openid`。`profile` 和 `email` 仅控�
 
 ## 访问令牌请求方式
 
-获取访问令牌有两种方式：**应用密钥**和**PKCE**（Proof Key for Code Exchange）。这两种方式适用于不同类型的客户端。
-
-你可以选择其中一种方式来获取访问令牌，也可以根据你的应用类型和安全需求结合使用。
+授权码兑换支持**应用密钥**和 **PKCE**（Proof Key for Code Exchange）。公共客户端使用 PKCE，机密客户端使用应用密钥。授权请求带有 `code_challenge` 时，兑换授权码必须提交对应的 `code_verifier`；请求同时带有 `client_secret` 时，服务器会校验两项。未使用 PKCE 时，兑换授权码必须提交有效的 `client_secret`。
 
 ### 应用密钥
 
-如果你的应用是机密客户端（如服务器端应用），你可以使用应用密钥认证来获取访问令牌。此方式需要在请求中提供 `client_secret`。
+机密客户端（如服务器端应用）可以使用应用密钥认证来获取访问令牌。此方式需要在请求中提供有效的 `client_secret`。
 
 #### 请求参数
 
@@ -330,11 +328,15 @@ UserInfo 端点要求访问令牌包含 `openid`。`profile` 和 `email` 仅控�
 以下是一个使用应用密钥获取访问令牌的示例代码，演示如何处理 OAuth 授权流程：
 
 ```python
-from flask import Flask, request
+from flask import Flask, request, session
 import requests
 import urllib.parse
+import secrets
+import os
 
 app = Flask(__name__)
+# 使用 secrets.token_hex(32) 生成后写入环境变量
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 # 应用信息
 CLIENT_ID = "e07f2ae3-795b-4368-b55f-5f27b0b3eae0"
@@ -349,12 +351,14 @@ PLAYER_API_URL = "https://maimai.lxns.net/api/v0/user/maimai/player"
 @app.route("/")
 def home():
     scope = ["read_player"]
+    state = secrets.token_urlsafe(16)
+    session["oauth_state"] = state
     query = {
         "response_type": "code",
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
         "scope": " ".join(scope),
-        "state": "test"  # 可选，如果不需要可以注释掉这一行
+        "state": state
     }
     url = f"{AUTHORIZE_URL}?{urllib.parse.urlencode(query)}"
     return f'<a href="{url}">点击授权</a>'
@@ -364,6 +368,8 @@ def callback():
     code = request.args.get("code")
     if not code:
         return "授权失败，未获取到授权码", 400
+    if request.args.get("state") != session.pop("oauth_state", None):
+        return "授权失败，state 校验未通过", 400
 
     # 获取访问码
     resp = requests.post(TOKEN_URL, data={
@@ -406,7 +412,7 @@ PKCE 通过在授权请求中添加一个随机生成的 `code_verifier` 和 `co
 | `grant_type`    | string | 授权类型，固定为 `authorization_code`        |
 | `code`          | string | 从回调地址获取的授权码                       |
 | `redirect_uri`  | string | 必须与授权请求及某个已登记的回调地址完全一致 |
-| `code_verifier` | string | PKCE 验证码                                  |
+| `code_verifier` | string | 生成授权请求时保存的原始验证字符串           |
 
 #### 请求示例
 
@@ -425,18 +431,21 @@ PKCE 通过在授权请求中添加一个随机生成的 `code_verifier` 和 `co
 以下是一个使用 PKCE 的示例代码，演示如何生成 `code_verifier` 和 `code_challenge`，并在授权请求中使用它们：
 
 ::: warning 注意
-示例中通过 `state` 参数传递 `code_verifier` 仅用作示范，实际应用中不建议将其暴露在 URL 中。
+请在用户会话或其他受保护的服务端存储中保存 `code_verifier`，不要将其放入 `state` 或其他 URL 参数。
 :::
 
 ```python
-from flask import Flask, request
+from flask import Flask, request, session
 import requests
 import urllib.parse
 import secrets
 import hashlib
 import base64
+import os
 
 app = Flask(__name__)
+# 使用 secrets.token_hex(32) 生成后写入环境变量
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 # 应用信息（公共客户端，无 secret）
 CLIENT_ID = "e07f2ae3-795b-4368-b55f-5f27b0b3eae0"
@@ -462,6 +471,9 @@ def home():
     # 生成随机 code_verifier
     code_verifier = generate_code_verifier()
     code_challenge = generate_code_challenge(code_verifier)
+    state = secrets.token_urlsafe(16)
+    session["oauth_state"] = state
+    session["code_verifier"] = code_verifier
 
     query = {
         "response_type": "code",
@@ -470,7 +482,7 @@ def home():
         "scope": " ".join(scope),
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
-        "state": code_verifier
+        "state": state
     }
     url = f"{AUTHORIZE_URL}?{urllib.parse.urlencode(query)}"
     return f'<a href="{url}">点击授权</a>'
@@ -480,6 +492,11 @@ def callback():
     code = request.args.get("code")
     if not code:
         return "授权失败，未获取到授权码", 400
+    if request.args.get("state") != session.pop("oauth_state", None):
+        return "授权失败，state 校验未通过", 400
+    code_verifier = session.pop("code_verifier", None)
+    if not code_verifier:
+        return "授权失败，code_verifier 不存在", 400
 
     # 用 code_verifier 换 token
     resp = requests.post(TOKEN_URL, data={
@@ -487,7 +504,7 @@ def callback():
         "code": code,
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
-        "code_verifier": request.args.get("state")
+        "code_verifier": code_verifier
     })
     token_data = resp.json()
     access_token = token_data["access_token"]
