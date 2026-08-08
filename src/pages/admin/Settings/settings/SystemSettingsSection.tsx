@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Card, Text, LoadingOverlay } from "@mantine/core";
+import { Card, Text, LoadingOverlay, NumberFormatter } from "@mantine/core";
 import classes from "@/pages/Page.module.css";
 import { SettingList, SettingProps } from "@/components/Settings/SettingList.tsx";
 import { getSystemSettings, updateSystemSettings } from "@/utils/api/admin.ts";
@@ -18,13 +18,21 @@ const SETTINGS_DEFAULTS: Record<string, unknown> = {
   "oauth.dynamic_client_max_count": 10000,
 };
 
-const PENDING_TASK_OPTIONS = [
-  { value: "50", label: "50 个" },
-  { value: "100", label: "100 个" },
-  { value: "200", label: "200 个" },
-  { value: "500", label: "500 个" },
-  { value: "1000", label: "1000 个" },
-];
+const countNumberFormatter = new Intl.NumberFormat("en-US");
+
+const createCountOptions = (values: number[]) =>
+  values.map((value) => ({
+    value: String(value),
+    label: `${countNumberFormatter.format(value)} 个`,
+  }));
+
+const renderCountOption = ({ option }: { option: { value: string; label: string } }) => (
+  <>
+    <NumberFormatter value={option.value} thousandSeparator /> 个
+  </>
+);
+
+const PENDING_TASK_OPTIONS = createCountOptions([50, 100, 200, 500, 1000]);
 
 const TIMEOUT_OPTIONS = [
   { value: "300", label: "5 分钟" },
@@ -51,14 +59,9 @@ const DYNAMIC_CLIENT_RETENTION_OPTIONS = [
   { value: "7776000", label: "90 天" },
 ];
 
-const DYNAMIC_CLIENT_MAX_COUNT_OPTIONS = [
-  { value: "1000", label: "1,000 个" },
-  { value: "5000", label: "5,000 个" },
-  { value: "10000", label: "10,000 个" },
-  { value: "25000", label: "25,000 个" },
-  { value: "50000", label: "50,000 个" },
-  { value: "100000", label: "100,000 个" },
-];
+const DYNAMIC_CLIENT_MAX_COUNT_OPTIONS = createCountOptions([
+  1000, 5000, 10000, 25000, 50000, 100000,
+]);
 
 export const SystemSettingsSection = () => {
   const [settings, setSettings] = useState<Record<string, unknown>>({});
@@ -176,6 +179,7 @@ export const SystemSettingsSection = () => {
       description: "达到上限后将暂时拒绝新的任务。",
       optionType: "select",
       options: PENDING_TASK_OPTIONS,
+      renderOption: renderCountOption,
       defaultValue: String(SETTINGS_DEFAULTS["worker.max_pending_tasks"]),
     },
     {
@@ -211,6 +215,7 @@ export const SystemSettingsSection = () => {
       description: "达到上限后将暂时拒绝新的动态客户端注册。",
       optionType: "select",
       options: DYNAMIC_CLIENT_MAX_COUNT_OPTIONS,
+      renderOption: renderCountOption,
       defaultValue: String(SETTINGS_DEFAULTS["oauth.dynamic_client_max_count"]),
     },
   ];

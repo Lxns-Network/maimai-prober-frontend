@@ -19,6 +19,8 @@ interface OptionProps {
   label: string;
 }
 
+type OptionRenderer = (input: { option: OptionProps; checked?: boolean }) => React.ReactNode;
+
 export interface SettingProps {
   key: string;
   title: string;
@@ -29,6 +31,7 @@ export interface SettingProps {
   defaultValue?: string | boolean | string[]; // string[] 选项类型为 'multi-select' 时需要
   settings?: SettingProps[]; // 选项类型为 'group' 时需要
   options?: OptionProps[]; // 选项类型为 'select' 或 'multi-select' 时需要
+  renderOption?: OptionRenderer; // 自定义下拉选项渲染
   onChange?: (value: string | boolean | string[] | null) => void; // 选项更改时的回调函数
   onClick?: () => void; // 选项类型为 'button' 时需要
   render?: () => React.ReactNode; // 选项类型为 'custom' 时需要
@@ -106,6 +109,7 @@ const Setting = ({
                   <Select
                     variant="filled"
                     data={data.options || []}
+                    renderOption={data.renderOption}
                     value={
                       value && data.key in value
                         ? (value[data.key] as string)
@@ -125,6 +129,7 @@ const Setting = ({
                   <MultiSelect
                     variant="filled"
                     data={data.options || []}
+                    renderOption={data.renderOption}
                     placeholder={data.placeholder}
                     value={
                       value && data.key in value
