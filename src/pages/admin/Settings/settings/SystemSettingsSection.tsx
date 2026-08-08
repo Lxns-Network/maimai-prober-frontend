@@ -10,7 +10,7 @@ import { RecalculateSection } from "../recalculate/RecalculateSection.tsx";
 const SETTINGS_DEFAULTS: Record<string, unknown> = {
   "proxy.maintenance.maimai": false,
   "proxy.maintenance.chunithm": false,
-  "proxy.max_pending_tasks": 200,
+  "worker.max_pending_tasks": 200,
   "worker.remote_only": false,
   "worker.task_timeout": 900,
   "worker.task_expire": 86400,
@@ -81,7 +81,7 @@ export const SystemSettingsSection = () => {
     if (
       key === "worker.task_timeout" ||
       key === "worker.task_expire" ||
-      key === "proxy.max_pending_tasks" ||
+      key === "worker.max_pending_tasks" ||
       key === "oauth.dynamic_client_retention"
     ) {
       parsedValue = Number(value);
@@ -116,7 +116,7 @@ export const SystemSettingsSection = () => {
     if (
       key === "worker.task_timeout" ||
       key === "worker.task_expire" ||
-      key === "proxy.max_pending_tasks" ||
+      key === "worker.max_pending_tasks" ||
       key === "oauth.dynamic_client_retention"
     ) {
       valueMap[key] = String(val);
@@ -159,12 +159,12 @@ export const SystemSettingsSection = () => {
       defaultValue: SETTINGS_DEFAULTS["worker.remote_only"] as boolean,
     },
     {
-      key: "proxy.max_pending_tasks",
+      key: "worker.max_pending_tasks",
       title: "排队任务上限",
       description: "达到上限后将暂时拒绝新的任务。",
       optionType: "select",
       options: PENDING_TASK_OPTIONS,
-      defaultValue: String(SETTINGS_DEFAULTS["proxy.max_pending_tasks"]),
+      defaultValue: String(SETTINGS_DEFAULTS["worker.max_pending_tasks"]),
     },
     {
       key: "worker.task_timeout",
