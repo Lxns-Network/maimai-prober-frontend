@@ -68,16 +68,16 @@ https://maimai.lxns.net/oauth/authorize?response_type=code&client_id=[应用 ID]
 
 常用参数如下：
 
-| 参数名                  | 必填      | 说明                                                   |
-| ----------------------- | --------- | ------------------------------------------------------ |
-| `response_type`         | 是        | 固定为 `code`                                          |
-| `client_id`             | 是        | 创建应用后获得的应用 ID                                |
-| `redirect_uri`          | 是        | 本次授权使用的回调地址，必须与已登记地址完全一致       |
-| `scope`                 | 是        | 以空格分隔的权限列表                                   |
-| `state`                 | 推荐      | 用于关联请求和回调，并防止跨站请求伪造                 |
-| `nonce`                 | OIDC 推荐 | 绑定授权请求和 ID Token，防止重放攻击；最长 255 个字符 |
-| `code_challenge`        | 使用 PKCE 时必填 | 由 `code_verifier` 计算得到的挑战值              |
-| `code_challenge_method` | 使用 PKCE 时必填 | 固定为 `S256`                                    |
+| 参数名                  | 必填             | 说明                                                   |
+| ----------------------- | ---------------- | ------------------------------------------------------ |
+| `response_type`         | 是               | 固定为 `code`                                          |
+| `client_id`             | 是               | 创建应用后获得的应用 ID                                |
+| `redirect_uri`          | 是               | 本次授权使用的回调地址，必须与已登记地址完全一致       |
+| `scope`                 | 是               | 以空格分隔的权限列表                                   |
+| `state`                 | 推荐             | 用于关联请求和回调，并防止跨站请求伪造                 |
+| `nonce`                 | OIDC 推荐        | 绑定授权请求和 ID Token，防止重放攻击；最长 255 个字符 |
+| `code_challenge`        | 使用 PKCE 时必填 | 由 `code_verifier` 计算得到的挑战值                    |
+| `code_challenge_method` | 使用 PKCE 时必填 | 固定为 `S256`                                          |
 
 仅调用查分器 API 的示例：
 
@@ -208,12 +208,12 @@ POST /api/v0/oauth/token
 
 #### 请求参数
 
-| 参数名          | 类型   | 说明                             |
-| --------------- | ------ | -------------------------------- |
-| `client_id`     | string | 应用 ID                          |
+| 参数名          | 类型   | 说明                                     |
+| --------------- | ------ | ---------------------------------------- |
+| `client_id`     | string | 应用 ID                                  |
 | `client_secret` | string | 机密客户端的应用密钥；使用 PKCE 时可省略 |
-| `grant_type`    | string | 授权类型，固定为 `refresh_token` |
-| `refresh_token` | string | 从上一步获取的刷新令牌           |
+| `grant_type`    | string | 授权类型，固定为 `refresh_token`         |
+| `refresh_token` | string | 从上一步获取的刷新令牌                   |
 
 #### 请求示例
 
@@ -412,7 +412,7 @@ PKCE 通过在授权请求中添加一个随机生成的 `code_verifier` 和 `co
 | `grant_type`    | string | 授权类型，固定为 `authorization_code`        |
 | `code`          | string | 从回调地址获取的授权码                       |
 | `redirect_uri`  | string | 必须与授权请求及某个已登记的回调地址完全一致 |
-| `code_verifier` | string | 生成授权请求时保存的原始验证字符串             |
+| `code_verifier` | string | 生成授权请求时保存的原始验证字符串           |
 
 #### 请求示例
 
