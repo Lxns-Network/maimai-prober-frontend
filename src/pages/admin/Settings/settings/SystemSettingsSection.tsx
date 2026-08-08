@@ -152,6 +152,13 @@ export const SystemSettingsSection = () => {
 
   const taskSettingsConfig: SettingProps[] = [
     {
+      key: "worker.remote_only",
+      title: "仅使用远程工作节点",
+      description: "启用后将禁用本地工作节点，所有任务将由远程工作节点处理。",
+      optionType: "switch",
+      defaultValue: SETTINGS_DEFAULTS["worker.remote_only"] as boolean,
+    },
+    {
       key: "proxy.max_pending_tasks",
       title: "排队任务上限",
       description: "达到上限后将暂时拒绝新的任务。",
@@ -174,16 +181,6 @@ export const SystemSettingsSection = () => {
       optionType: "select",
       options: EXPIRE_OPTIONS,
       defaultValue: String(SETTINGS_DEFAULTS["worker.task_expire"]),
-    },
-  ];
-
-  const workerSettingsConfig: SettingProps[] = [
-    {
-      key: "worker.remote_only",
-      title: "仅使用远程工作节点",
-      description: "启用后将禁用本地工作节点，所有任务将由远程工作节点处理。",
-      optionType: "switch",
-      defaultValue: SETTINGS_DEFAULTS["worker.remote_only"] as boolean,
     },
   ];
 
@@ -216,19 +213,9 @@ export const SystemSettingsSection = () => {
           任务调度
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          配置任务队列容量与任务生命周期
+          配置任务队列与任务执行方式
         </Text>
         <SettingList data={taskSettingsConfig} value={valueMap} onChange={handleChange} />
-      </Card>
-      <Card withBorder radius="md" className={classes.card} mb="md">
-        <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
-        <Text fz="lg" fw={700}>
-          工作节点
-        </Text>
-        <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          配置本地与远程工作节点的运行模式
-        </Text>
-        <SettingList data={workerSettingsConfig} value={valueMap} onChange={handleChange} />
       </Card>
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={fetching} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
