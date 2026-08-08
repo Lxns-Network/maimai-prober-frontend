@@ -49,6 +49,10 @@
 }
 ```
 
+#### 响应体
+
+无成功响应体。
+
 ### GET `/api/v0/maimai/player/{friend_code}`
 
 获取玩家信息。
@@ -101,12 +105,12 @@
 
 #### 查询参数
 
-| 参数名        | 类型                        | 说明                         |
-| ------------- | --------------------------- | ---------------------------- |
-| `song_id`     | `int`                       | 曲目 ID，与 `song_name` 冲突 |
-| `song_name`   | `string`                    | 曲名，与 `song_id` 冲突      |
-| `level_index` | [`LevelIndex`](#levelindex) | 难度                         |
-| `song_type`   | [`SongType`](#songtype)     | 谱面类型                     |
+| 参数名        | 类型                        | 说明                               |
+| ------------- | --------------------------- | ---------------------------------- |
+| `song_id`     | `int`                       | 曲目 ID；未提供 `song_name` 时使用 |
+| `song_name`   | `string`                    | 曲名；同时提供时优先使用           |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度                               |
+| `song_type`   | [`SongType`](#songtype)     | 谱面类型                           |
 
 #### 响应体
 
@@ -155,7 +159,7 @@
 
 同 [Best 50](#get-apiv0maimaiplayerfriend_codebests)。
 
-### GET `/api/v0/maimai/player/{friend_code}/bests`
+### GET `/api/v0/maimai/player/{friend_code}/bests`（指定曲目）
 
 获取玩家缓存单曲所有谱面的成绩。
 
@@ -171,11 +175,11 @@
 
 #### 查询参数
 
-| 参数名      | 类型                    | 说明                         |
-| ----------- | ----------------------- | ---------------------------- |
-| `song_id`   | `int`                   | 曲目 ID，与 `song_name` 冲突 |
-| `song_name` | `string`                | 曲名，与 `song_id` 冲突      |
-| `song_type` | [`SongType`](#songtype) | 谱面类型                     |
+| 参数名      | 类型                    | 说明                               |
+| ----------- | ----------------------- | ---------------------------------- |
+| `song_id`   | `int`                   | 曲目 ID；未提供 `song_name` 时使用 |
+| `song_name` | `string`                | 曲名；同时提供时优先使用           |
+| `song_type` | [`SongType`](#songtype) | 单曲模式必填，谱面类型             |
 
 #### 响应体
 
@@ -202,6 +206,10 @@ JSON 格式的玩家成绩：
 | 字段名   | 类型                | 说明     |
 | -------- | ------------------- | -------- |
 | `scores` | [`Score[]`](#score) | 玩家成绩 |
+
+#### 响应体
+
+[ScoreChanges[]](#scorechanges)
 
 #### 请求示例
 
@@ -288,7 +296,7 @@ JSON 格式的玩家成绩：
 
 | 参数名    | 类型  | 说明                               |
 | --------- | ----- | ---------------------------------- |
-| `version` | `int` | 值可空，游戏版本，默认值为 `25500` |
+| `version` | `int` | 可选；不提供时使用当前最新游戏版本 |
 
 ::: info 提示
 指定 `version` 参数时，将会返回指定版本范围内的 DX Rating 趋势。
@@ -325,11 +333,12 @@ JSON 格式的玩家成绩：
 
 #### 查询参数
 
-| 参数名        | 类型                        | 说明     |
-| ------------- | --------------------------- | -------- |
-| `song_id`     | `int`                       | 曲目 ID  |
-| `song_type`   | [`SongType`](#songtype)     | 谱面类型 |
-| `level_index` | [`LevelIndex`](#levelindex) | 难度     |
+| 参数名        | 类型                        | 说明                               |
+| ------------- | --------------------------- | ---------------------------------- |
+| `song_id`     | `int`                       | 曲目 ID；未提供 `song_name` 时使用 |
+| `song_name`   | `string`                    | 曲名；同时提供时优先使用           |
+| `song_type`   | [`SongType`](#songtype)     | 谱面类型                           |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度                               |
 
 #### 响应体
 
@@ -387,9 +396,11 @@ JSON 格式的玩家成绩：
 不支持流式传输，上传的 HTML 源代码应当完整。
 :::
 
-## 个人 API
+#### 响应体
 
-仅列举部分 API 接口，完整接口请参考前端调用。
+上传成绩页面并解析出成绩时返回 [ScoreChanges[]](#scorechanges)；上传玩家资料或收藏品成功时无 `data` 字段。
+
+## 个人 API
 
 ### GET `/api/v0/user/maimai/player`
 
@@ -419,7 +430,276 @@ JSON 格式的玩家成绩：
 | -------- | ------------------- | -------- |
 | `scores` | [`Score[]`](#score) | 玩家成绩 |
 
+#### 响应体
+
+[ScoreChanges[]](#scorechanges)
+
+### PUT `/api/v0/user/maimai/player`
+
+更新玩家收藏品。
+
+#### 请求体
+
+[Player](#player)（仅支持 `icon`、`name_plate`、`frame`）
+
+#### 响应体
+
+无成功响应体。
+
+### GET `/api/v0/user/maimai/player/heatmap`
+
+获取成绩上传热力图。
+
+#### 响应体
+
+日期与成绩数量的映射，键为日期（格式为 `YYYY-MM-DD`），值为该日期上传的成绩数量。
+
+### GET `/api/v0/user/maimai/player/trend`
+
+获取当前用户的 DX Rating 趋势。
+
+#### 查询参数
+
+| 参数名    | 类型  | 说明                               |
+| --------- | ----- | ---------------------------------- |
+| `version` | `int` | 可选；不提供时使用当前最新游戏版本 |
+
+#### 响应体
+
+[RatingTrend[]](#ratingtrend)
+
+### POST `/api/v0/user/maimai/player/html`
+
+通过 NET HTML 源代码上传玩家资料或成绩。请求体为完整 HTML，`Content-Type` 为 `text/plain`。
+
+#### 响应体
+
+上传成绩页面并解析出成绩时返回 [ScoreChanges[]](#scorechanges)；上传玩家资料或收藏品成功时无 `data` 字段。
+
+### DELETE `/api/v0/user/maimai/player/score`
+
+删除指定曲目、谱面类型和难度的最近一条成绩。
+
+#### 查询参数
+
+| 参数名        | 类型                        | 说明                               |
+| ------------- | --------------------------- | ---------------------------------- |
+| `song_id`     | `int`                       | 曲目 ID；未提供 `song_name` 时使用 |
+| `song_name`   | `string`                    | 曲名；同时提供时优先使用           |
+| `song_type`   | [`SongType`](#songtype)     | 谱面类型                           |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度                               |
+
+#### 响应体
+
+无成功响应体。
+
+### GET `/api/v0/user/maimai/player/score/history`
+
+获取指定谱面的成绩游玩历史（仅返回带有 `play_time` 的成绩）。
+
+#### 查询参数
+
+| 参数名        | 类型                        | 说明                               |
+| ------------- | --------------------------- | ---------------------------------- |
+| `song_id`     | `int`                       | 曲目 ID；未提供 `song_name` 时使用 |
+| `song_name`   | `string`                    | 曲名；同时提供时优先使用           |
+| `song_type`   | [`SongType`](#songtype)     | 谱面类型                           |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度                               |
+
+#### 响应体
+
+[Score[]](#score)
+
+### GET `/api/v0/user/maimai/player/score/ranking`
+
+获取指定谱面的玩家成绩排名。
+
+#### 查询参数
+
+| 参数名        | 类型                        | 说明                               |
+| ------------- | --------------------------- | ---------------------------------- |
+| `song_id`     | `int`                       | 曲目 ID；未提供 `song_name` 时使用 |
+| `song_name`   | `string`                    | 曲名；同时提供时优先使用           |
+| `song_type`   | [`SongType`](#songtype)     | 谱面类型                           |
+| `level_index` | [`LevelIndex`](#levelindex) | 难度                               |
+
+#### 响应体
+
+[ScoreRanking[]](#scoreranking)
+
+### GET `/api/v0/user/maimai/player/bests`
+
+获取 Best 50 或指定曲目的最佳成绩。
+
+#### 查询参数
+
+| 参数名      | 类型                    | 说明                                   |
+| ----------- | ----------------------- | -------------------------------------- |
+| `song_id`   | `int`                   | 可选；未提供 `song_name` 时作为曲目 ID |
+| `song_name` | `string`                | 可选；同时提供时优先使用               |
+| `song_type` | [`SongType`](#songtype) | 单曲模式必填，谱面类型                 |
+
+#### 响应体
+
+无曲目参数时为 [Best 50](#get-apiv0maimaiplayerfriend_codebests)；提供曲目参数时为 [Score[]](#score)。
+
+### DELETE `/api/v0/user/maimai/player/scores`
+
+删除当前用户的全部成绩。提供 `song_id` 或 `song_name`，以及 `song_type` 和 `level_index` 时，仅删除该谱面的全部历史成绩。
+
+#### 查询参数
+
+| 参数名        | 类型                        | 说明                                   |
+| ------------- | --------------------------- | -------------------------------------- |
+| `song_id`     | `int`                       | 可选；未提供 `song_name` 时作为曲目 ID |
+| `song_name`   | `string`                    | 可选；同时提供时优先使用               |
+| `song_type`   | [`SongType`](#songtype)     | 单曲删除时使用                         |
+| `level_index` | [`LevelIndex`](#levelindex) | 单曲删除时使用                         |
+
+#### 响应体
+
+无成功响应体。
+
+### GET `/api/v0/user/maimai/player/scores/export/{format}`
+
+导出当前用户成绩。
+
+#### URL 参数
+
+| 参数名   | 类型     | 说明         |
+| -------- | -------- | ------------ |
+| `format` | `string` | 固定为 `csv` |
+
+#### 响应体
+
+返回 `text/csv` 文件，不使用 JSON envelope。
+
+### POST `/api/v0/user/maimai/player/scores/import`
+
+从 CSV 文件导入成绩；导入会覆盖当前用户已有的全部成绩（包括历史成绩）。
+
+#### 请求体
+
+`multipart/form-data`，文件字段名必须为 `file`。
+
+#### 响应体
+
+无成功响应体。
+
+### GET `/api/v0/user/maimai/player/{collection_type}/{collection_id}`
+
+获取当前用户指定收藏品的完成进度。
+
+#### URL 参数
+
+| 参数名            | 类型     | 说明                                                  |
+| ----------------- | -------- | ----------------------------------------------------- |
+| `collection_type` | `string` | 收藏品类型，值为 `trophy`、`icon`、`plate` 或 `frame` |
+| `collection_id`   | `int`    | 收藏品 ID                                             |
+
+#### 响应体
+
+[Collection](#collection)
+
+### GET `/api/v0/user/maimai/player/{collection_type}`
+
+获取当前用户指定类型的收藏品列表。
+
+#### URL 参数
+
+| 参数名            | 类型     | 说明                                                       |
+| ----------------- | -------- | ---------------------------------------------------------- |
+| `collection_type` | `string` | 收藏品类型，值为 `trophies`、`icons`、`plates` 或 `frames` |
+
+#### 响应体
+
+[PlayerCollection[]](#playercollection)
+
+### GET `/api/v0/user/maimai/player/year-in-review/{year}`
+
+获取指定年份的年度总结。
+
+#### URL 参数
+
+| 参数名 | 类型  | 说明                                       |
+| ------ | ----- | ------------------------------------------ |
+| `year` | `int` | 总结年份，范围为 `2024` 至当前年份的前一年 |
+
+#### 查询参数
+
+| 参数名  | 类型   | 说明                              |
+| ------- | ------ | --------------------------------- |
+| `agree` | `bool` | 首次生成该年份总结时必填为 `true` |
+
+#### 响应体
+
+[YearInReview](#yearinreview)
+
+### POST `/api/v0/user/maimai/player/year-in-review/{year}/share`
+
+设置年度总结是否公开。
+
+#### URL 参数
+
+| 参数名 | 类型  | 说明                                                         |
+| ------ | ----- | ------------------------------------------------------------ |
+| `year` | `int` | 总结年份，范围为 `2024` 至当前年份；应与已生成的年度总结一致 |
+
+#### 请求体
+
+```json
+{
+  "public": true
+}
+```
+
+#### 响应体
+
+| 字段名        | 类型     | 说明                           |
+| ------------- | -------- | ------------------------------ |
+| `share_token` | `string` | 公开时返回；取消公开时为空数据 |
+
 ## 公共 API
+
+### GET `/api/v0/maimai/crawl/statistic`
+
+获取近期玩家数据爬取统计。
+
+#### 响应体
+
+| 字段名               | 类型    | 说明                              |
+| -------------------- | ------- | --------------------------------- |
+| `success_rate`       | `float` | 近期爬取成功率，范围为 `0` 至 `1` |
+| `average_crawl_time` | `int`   | 平均爬取耗时，单位为毫秒          |
+
+### GET `/api/v0/maimai/year-in-review/{year}/share/{share_token}`
+
+获取公开的年度总结。
+
+#### URL 参数
+
+| 参数名        | 类型     | 说明                               |
+| ------------- | -------- | ---------------------------------- |
+| `year`        | `int`    | 总结年份，范围为 `2024` 至当前年份 |
+| `share_token` | `string` | 年度总结分享令牌                   |
+
+#### 响应体
+
+[YearInReview](#yearinreview)
+
+### GET `/api/v0/maimai/wechat/auth`
+
+获取舞萌 DX 微信 OAuth 授权地址。
+
+#### 查询参数
+
+| 参数名  | 类型     | 说明                        |
+| ------- | -------- | --------------------------- |
+| `token` | `string` | 可选，Base64 编码的爬取令牌 |
+
+#### 响应
+
+返回 HTTP `302 Found`，通过 `Location` 响应头重定向到微信授权页面，不返回 JSON 响应体。
 
 ### GET `/api/v0/maimai/song/list`
 
@@ -429,7 +709,7 @@ JSON 格式的玩家成绩：
 
 | 参数名    | 类型   | 说明                                       |
 | --------- | ------ | ------------------------------------------ |
-| `version` | `int`  | 值可空，游戏版本，默认值为 `25500`         |
+| `version` | `int`  | 可选；不提供时使用当前最新游戏版本         |
 | `notes`   | `bool` | 值可空，是否包含谱面物量，默认值为 `false` |
 
 #### 响应体
@@ -448,7 +728,7 @@ JSON 格式的玩家成绩：
 
 | 参数名    | 类型  | 说明                               |
 | --------- | ----- | ---------------------------------- |
-| `version` | `int` | 值可空，游戏版本，默认值为 `25500` |
+| `version` | `int` | 可选；不提供时使用当前最新游戏版本 |
 
 #### URL 参数
 
@@ -459,6 +739,26 @@ JSON 格式的玩家成绩：
 #### 响应体
 
 [Song](#song)
+
+### GET `/api/v0/maimai/song-collections/{song_id}`
+
+获取与指定曲目关联的收藏品引用。
+
+#### 查询参数
+
+| 参数名    | 类型  | 说明                               |
+| --------- | ----- | ---------------------------------- |
+| `version` | `int` | 可选；不提供时使用当前最新资源版本 |
+
+#### URL 参数
+
+| 参数名    | 类型  | 说明    |
+| --------- | ----- | ------- |
+| `song_id` | `int` | 曲目 ID |
+
+#### 响应体
+
+[CollectionReference[]](#collectionreference)
 
 ### GET `/api/v0/maimai/alias/list`
 
@@ -476,10 +776,10 @@ JSON 格式的玩家成绩：
 
 #### 查询参数
 
-| 参数名     | 类型   | 说明                                       |
-| ---------- | ------ | ------------------------------------------ |
-| `version`  | `int`  | 值可空，游戏版本，默认值为 `25500`         |
-| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
+| 参数名     | 类型   | 说明                                      |
+| ---------- | ------ | ----------------------------------------- |
+| `version`  | `int`  | 可选；不提供时使用当前最新游戏版本        |
+| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `true` |
 
 #### URL 参数
 
@@ -504,7 +804,7 @@ JSON 格式的玩家成绩：
 
 | 参数名    | 类型  | 说明                               |
 | --------- | ----- | ---------------------------------- |
-| `version` | `int` | 值可空，游戏版本，默认值为 `25500` |
+| `version` | `int` | 可选；不提供时使用当前最新游戏版本 |
 
 #### URL 参数
 
@@ -525,7 +825,7 @@ JSON 格式的玩家成绩：
 
 | 参数名    | 类型  | 说明                               |
 | --------- | ----- | ---------------------------------- |
-| `version` | `int` | 值可空，游戏版本，默认值为 `25500` |
+| `version` | `int` | 可选；不提供时使用当前最新游戏版本 |
 
 #### 响应体
 
@@ -541,7 +841,7 @@ JSON 格式的玩家成绩：
 
 | 参数名    | 类型  | 说明                               |
 | --------- | ----- | ---------------------------------- |
-| `version` | `int` | 值可空，游戏版本，默认值为 `25500` |
+| `version` | `int` | 可选；不提供时使用当前最新游戏版本 |
 
 #### URL 参数
 
@@ -634,12 +934,51 @@ JSON 格式的玩家成绩：
 
 DX Rating 趋势
 
-| 字段名     | 类型     | 说明                   |
-| ---------- | -------- | ---------------------- |
-| `total`    | `int`    | 总 DX Rating           |
-| `standard` | `int`    | 旧版本谱面总 DX Rating |
-| `dx`       | `int`    | 现版本谱面总 DX Rating |
-| `date`     | `string` | 日期                   |
+| 字段名           | 类型     | 说明                   |
+| ---------------- | -------- | ---------------------- |
+| `total`          | `int`    | 总 DX Rating           |
+| `standard_total` | `int`    | 旧版本谱面总 DX Rating |
+| `dx_total`       | `int`    | 现版本谱面总 DX Rating |
+| `date`           | `string` | 日期                   |
+
+### ScoreChangeDetail
+
+成绩字段变化
+
+| 字段名 | 类型  | 说明                         |
+| ------ | ----- | ---------------------------- |
+| `old`  | `any` | 变化前的值，新增成绩时可为空 |
+| `new`  | `any` | 变化后的值，没有变化时可为空 |
+
+### ScoreChanges
+
+成绩上传变化
+
+| 字段名         | 类型                                      | 说明            |
+| -------------- | ----------------------------------------- | --------------- |
+| `id`           | `int`                                     | 曲目 ID         |
+| `song_name`    | `string`                                  | 曲名            |
+| `level`        | `string`                                  | 难度标级        |
+| `level_index`  | [`LevelIndex`](#levelindex)               | 难度            |
+| `type`         | [`SongType`](#songtype)                   | 谱面类型        |
+| `achievements` | [`ScoreChangeDetail`](#scorechangedetail) | 达成率变化      |
+| `fc`           | [`ScoreChangeDetail`](#scorechangedetail) | FULL COMBO 变化 |
+| `fs`           | [`ScoreChangeDetail`](#scorechangedetail) | FULL SYNC 变化  |
+| `dx_score`     | [`ScoreChangeDetail`](#scorechangedetail) | DX 分数变化     |
+| `dx_rating`    | [`ScoreChangeDetail`](#scorechangedetail) | DX Rating 变化  |
+
+### ScoreRanking
+
+谱面成绩排名
+
+| 字段名         | 类型     | 说明                |
+| -------------- | -------- | ------------------- |
+| `ranking`      | `int`    | 排名                |
+| `player_name`  | `string` | 值可空，玩家名称    |
+| `achievements` | `float`  | 达成率              |
+| `dx_score`     | `int`    | DX 分数             |
+| `upload_time`  | `string` | 成绩上传的 UTC 时间 |
+| `friend_code`  | `int`    | 值可空，玩家好友码  |
 
 ### Song
 
@@ -765,14 +1104,38 @@ DX Rating 趋势
 
 收藏品
 
-| 字段名        | 类型                                          | 说明                                   |
-| ------------- | --------------------------------------------- | -------------------------------------- |
-| `id`          | `int`                                         | 收藏品 ID                              |
-| `name`        | `string`                                      | 收藏品名称                             |
-| `color`       | [`TrophyColor`](#trophycolor)                 | 值可空，仅玩家称号，称号颜色           |
-| `description` | `string`                                      | 值可空，收藏品说明                     |
-| `genre`       | `string`                                      | 值可空，除玩家称号，收藏品分类（日文） |
-| `required`    | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求                     |
+| 字段名        | 类型                                          | 说明                             |
+| ------------- | --------------------------------------------- | -------------------------------- |
+| `id`          | `int`                                         | 收藏品 ID                        |
+| `name`        | `string`                                      | 收藏品名称                       |
+| `color`       | [`TrophyColor`](#trophycolor)                 | 值可空，仅玩家称号，称号颜色     |
+| `description` | `string`                                      | 收藏品说明                       |
+| `genre`       | `string`                                      | 除玩家称号外的收藏品分类（日文） |
+| `required`    | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求               |
+
+### PlayerCollection
+
+玩家收藏品
+
+| 字段名        | 类型                          | 说明               |
+| ------------- | ----------------------------- | ------------------ |
+| `id`          | `int`                         | 收藏品 ID          |
+| `name`        | `string`                      | 收藏品名称         |
+| `genre`       | `string`                      | 收藏品分类（日文） |
+| `color`       | [`TrophyColor`](#trophycolor) | 值可空，称号颜色   |
+| `is_favorite` | `bool`                        | 值可空，是否为收藏 |
+
+### CollectionReference
+
+曲目关联的收藏品引用
+
+| 字段名  | 类型     | 说明               |
+| ------- | -------- | ------------------ |
+| `type`  | `string` | 收藏品类型         |
+| `id`    | `int`    | 收藏品 ID          |
+| `name`  | `string` | 收藏品名称         |
+| `color` | `string` | 值可空，称号颜色   |
+| `genre` | `string` | 收藏品分类（日文） |
 
 ### CollectionRequired
 
@@ -808,6 +1171,53 @@ DX Rating 趋势
 | `id`    | `int`    | 收藏品分类 ID    |
 | `title` | `string` | 分类标题         |
 | `genre` | `string` | 分类标题（日文） |
+
+### MostUploadedSong
+
+年度上传最多的曲目
+
+| 字段名           | 类型  | 说明                        |
+| ---------------- | ----- | --------------------------- |
+| `latest_version` | `int` | 当前版本中上传最多的曲目 ID |
+| `all_version`    | `int` | 所有版本中上传最多的曲目 ID |
+
+### RatingGrowth
+
+年度 Rating 增长
+
+| 字段名           | 类型     | 说明                                                                 |
+| ---------------- | -------- | -------------------------------------------------------------------- |
+| `earliest_bests` | `object` | 年度最早成绩时点的 [Best 50](#get-apiv0maimaiplayerfriend_codebests) |
+| `latest_bests`   | `object` | 年度最晚成绩时点的 [Best 50](#get-apiv0maimaiplayerfriend_codebests) |
+
+### YearInReview
+
+年度总结
+
+| 字段名                       | 类型                                    | 说明                                       |
+| ---------------------------- | --------------------------------------- | ------------------------------------------ |
+| `game`                       | `string`                                | 游戏类型，固定为 `maimai`                  |
+| `year`                       | `int`                                   | 总结年份                                   |
+| `latest_version`             | `int`                                   | 当前最新游戏版本                           |
+| `player_name`                | `string`                                | 玩家名称                                   |
+| `player_avatar_id`           | `int`                                   | 玩家头像收藏品 ID                          |
+| `player_total_uploads`       | `map[int]int`                           | 以游戏版本 ID 为键的玩家成绩上传数量       |
+| `prober_total_uploads`       | `int`                                   | 查分器在该年份的成绩上传总数               |
+| `player_most_uploaded_song`  | [`MostUploadedSong`](#mostuploadedsong) | 上传次数最多的曲目                         |
+| `player_most_uploaded_songs` | `map[int]int`                           | 以曲目 ID 为键的上传次数（最多 10 首）     |
+| `player_upload_days`         | `int`                                   | 上传成绩的天数                             |
+| `player_tags`                | `map[int]float`                         | 值可空，玩家成绩标签权重                   |
+| `player_monthly_uploads`     | `map[int]int`                           | 以月份（`1` 至 `12`）为键的成绩上传数量    |
+| `player_hourly_uploads`      | `map[int]int`                           | 以偶数小时为键的成绩上传数量               |
+| `player_song_timeline`       | `map[int][]int`                         | 以月份为键的曲目 ID 列表（每月最多 3 首）  |
+| `generate_time`              | `string`                                | 生成时间（UTC）                            |
+| `rate_distribute`            | `map[string]int`                        | 值可空，评级分布；仅 2025 年及以后         |
+| `rank_distribute`            | `map[string]int`                        | 不返回，舞萌 DX 使用 `rate_distribute`     |
+| `full_combo_distribute`      | `map[string]int`                        | 值可空，FULL COMBO 分布；仅 2025 年及以后  |
+| `rating_growth`              | [`RatingGrowth`](#ratinggrowth)         | 值可空，年度 Rating 增长；仅 2025 年及以后 |
+| `difficulty_distribute`      | `map[string]int`                        | 值可空，难度标级分布；仅 2025 年及以后     |
+| `most_played_genres`         | `map[string]int`                        | 值可空，曲目分类分布；仅 2025 年及以后     |
+| `most_played_bpm_ranges`     | `map[string]int`                        | 值可空，BPM 区间分布；仅 2025 年及以后     |
 
 ## 枚举类型
 
@@ -889,8 +1299,8 @@ FULL SYNC 类型
 
 | 值        | 类型     | 说明 |
 | --------- | -------- | ---- |
-| `normal`  | `string` | 普通 |
-| `bronze`  | `string` | 铜   |
-| `silver`  | `string` | 银   |
-| `gold`    | `string` | 金   |
-| `rainbow` | `string` | 虹   |
+| `Normal`  | `string` | 普通 |
+| `Bronze`  | `string` | 铜   |
+| `Silver`  | `string` | 银   |
+| `Gold`    | `string` | 金   |
+| `Rainbow` | `string` | 虹   |
