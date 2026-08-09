@@ -1,5 +1,5 @@
 import { useForm } from "@mantine/form";
-import { validatePassword } from "@/utils/validator.ts";
+import { validateExistingPassword, validateNewPassword } from "@/utils/validator.ts";
 import { useEditUserPassword } from "@/hooks/mutations/useUserMutations.ts";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
@@ -24,10 +24,9 @@ export const EditPasswordModal = ({ opened, close }: { opened: boolean; close():
     },
 
     validate: {
-      current_password: (value) =>
-        validatePassword(value, { allowEmpty: false, passwordLabel: "原密码" }),
+      current_password: (value) => validateExistingPassword(value, { passwordLabel: "原密码" }),
       new_password: (value) =>
-        validatePassword(value, { allowEmpty: false, passwordLabel: "新密码" }),
+        validateNewPassword(value, { allowEmpty: false, passwordLabel: "新密码" }),
       confirm_new_password: (value, values) =>
         value === values.new_password ? null : "两次输入的新密码不一致",
     },
