@@ -71,9 +71,6 @@ export default defineConfig({
     },
   },
   assetsInclude: ["**/*.md"],
-  optimizeDeps: {
-    include: ["react-lazyload", "react-color-extractor"],
-  },
   build: {
     rollupOptions: {
       output: {
@@ -90,8 +87,8 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 2000,
-    reportCompressedSize: false,
+    chunkSizeWarningLimit: 1000,
+    reportCompressedSize: true,
     sourcemap: true,
     cssCodeSplit: true,
   },

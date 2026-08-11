@@ -60,6 +60,7 @@ export class MaimaiSongList {
   songs: MaimaiSongProps[] = [];
   genres: MaimaiGenreProps[] = [];
   versions: MaimaiVersionProps[] = [];
+  private songsById = new Map<number, MaimaiSongProps>();
 
   async fetch(hash?: string): Promise<MaimaiSongList["songs"]> {
     const cachedHash = localStorage.getItem("maimai_songs_hash");
@@ -93,14 +94,16 @@ export class MaimaiSongList {
     this.songs = data.songs;
     this.genres = data.genres;
     this.versions = data.versions;
+    this.songsById = new Map(this.songs.map((song) => [song.id, song]));
   }
 
   find(id: number) {
-    return this.songs.find((song: MaimaiSongProps) => song.id === id);
+    return this.songsById.get(id);
   }
 
   push(...songs: MaimaiSongProps[]) {
     this.songs.push(...songs);
+    songs.forEach((song) => this.songsById.set(song.id, song));
   }
 
   getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {

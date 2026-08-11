@@ -43,13 +43,13 @@ import { ChartComment } from "./ChartComment.tsx";
 import { useScoreComments } from "@/hooks/queries/useScoreComments.ts";
 import { isTokenUndefined } from "@/utils/session.ts";
 import { rankData, ScoreHistory } from "./ScoreHistory.tsx";
-import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface ScoreModalProps {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
   opened: boolean;
   onClose: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
+  navigateFromOverlay: (url: string) => void;
 }
 
 const difficultyLabelData = {
@@ -89,8 +89,13 @@ type DifficultyState =
   | { game: "maimai"; difficulty: MaimaiDifficultyProps | null }
   | { game: "chunithm"; difficulty: ChunithmDifficultyProps | null };
 
-export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
-  const { navigateFromOverlay } = useBackDismiss(opened, () => onClose());
+export const ScoreModal = ({
+  game,
+  score,
+  opened,
+  onClose,
+  navigateFromOverlay,
+}: ScoreModalProps) => {
   const [songState, setSongState] = useState<SongState | null>(null);
   const [difficultyState, setDifficultyState] = useState<DifficultyState | null>(null);
   const combobox = useCombobox({

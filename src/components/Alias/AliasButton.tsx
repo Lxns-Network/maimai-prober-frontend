@@ -12,8 +12,6 @@ import {
 } from "@mantine/core";
 import { IconCheck, IconChevronRight, IconNorthStar } from "@tabler/icons-react";
 import classes from "./Alias.module.css";
-import { useEffect, useState } from "react";
-import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -25,13 +23,9 @@ export function AliasButton({
   onClick,
   ...others
 }: { alias: AliasProps; onClick?: () => void } & UnstyledButtonProps) {
-  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps>();
   const [game] = useFixedGame();
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
-
-  useEffect(() => {
-    setSong(songList.find(alias.song.id));
-  }, [alias.song.id]);
+  const song = songList.find(alias.song.id);
 
   return (
     <UnstyledButton className={classes.alias} onClick={onClick} {...others}>

@@ -20,32 +20,26 @@ import { ASSET_URL } from "@/main";
 import { IconPhotoOff } from "@tabler/icons-react";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
-import { useState } from "react";
-import { ColorExtractor } from "react-color-extractor";
 import { Game } from "@/types/game";
 import { useMediaQuery } from "@mantine/hooks";
+import { useImagePalette } from "@/hooks/useImagePalette.ts";
 
-const SongImage = ({ game, id }: { game: Game; id: number }) => {
-  const [colors, setColors] = useState<string[]>([]);
+const SongImage = ({ game, id, alt }: { game: Game; id: number; alt: string }) => {
+  const src = `${ASSET_URL}/${game}/jacket/${id}.png!webp`;
+  const colors = useImagePalette(src);
 
   return (
-    <>
-      <ColorExtractor
-        src={`${ASSET_URL}/${game}/jacket/${id}.png!webp`}
-        getColors={(colors: string[]) => setColors(colors)}
-      />
-      <Box
-        className={classes.jacket}
-        style={{
-          "--primary-color": colors && colors[0],
-          "--secondary-color": colors && colors[1],
-        }}
-      >
-        <Avatar src={`${ASSET_URL}/${game}/jacket/${id}.png!webp`} size={94} radius="md" mx="auto">
-          <IconPhotoOff />
-        </Avatar>
-      </Box>
-    </>
+    <Box
+      className={classes.jacket}
+      style={{
+        "--primary-color": colors && colors[0],
+        "--secondary-color": colors && colors[1],
+      }}
+    >
+      <Avatar src={src} alt={alt} imageProps={{ loading: "lazy" }} size={94} radius="md" mx="auto">
+        <IconPhotoOff />
+      </Avatar>
+    </Box>
   );
 };
 
@@ -90,7 +84,11 @@ export const SongRankingSection = ({ data }: { data: YearInReviewProps }) => {
             padding="xl"
             ta="center"
           >
-            <SongImage game={data.game} id={parseInt(key)} />
+            <SongImage
+              game={data.game}
+              id={parseInt(key)}
+              alt={value === 0 ? "" : `${song?.title || "未知曲目"} 曲绘`}
+            />
             {value === 0 ? (
               <Text fz="xl" fw={500} lh="xs" className={classes.cardTitle} mt="md">
                 虚位以待

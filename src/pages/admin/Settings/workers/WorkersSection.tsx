@@ -123,6 +123,7 @@ const TokenDisplay = ({ token }: { token: string }) => {
 const QUERY_KEY = ["user/admin/workers"] as const;
 
 const emptyWorkers: WorkerProps[] = [];
+const PAGE_SIZES = [10, 15, 20];
 
 const StatCard = ({
   icon,
@@ -167,12 +168,9 @@ export const WorkersSection = () => {
     return { total, online, activeTasks, maxTasks };
   }, [workers]);
 
-  const PAGE_SIZES = [10, 15, 20];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);
-  const [displayWorkers, setDisplayWorkers] = useState<WorkerProps[]>([]);
 
-  const [sortedWorkers, setSortedWorkers] = useState<WorkerProps[]>([]);
   const [sortStatus, setSortStatus] = useState<DataTableSortStatus<WorkerProps>>({
     columnAccessor: "id",
     direction: "asc",
@@ -181,30 +179,27 @@ export const WorkersSection = () => {
   const [selectedWorkers, setSelectedWorkers] = useState<WorkerProps[]>([]);
   const [expandedWorkerIds, setExpandedWorkerIds] = useState<number[]>([]);
 
-  useEffect(() => {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    setDisplayWorkers(sortedWorkers.slice(start, end));
-  }, [page]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayWorkers(sortedWorkers.slice(0, pageSize));
-  }, [pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayWorkers(sortedWorkers.slice(0, pageSize));
-  }, [sortedWorkers]);
-
-  useEffect(() => {
-    setSortedWorkers(
+  const sortedWorkers = useMemo(
+    () =>
       sortData(workers, {
         sortBy: sortStatus.columnAccessor as keyof WorkerProps,
         reversed: sortStatus.direction === "desc",
       }),
-    );
-  }, [workers, sortStatus]);
+    [sortStatus, workers],
+  );
+  const displayWorkers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedWorkers.slice(start, start + pageSize);
+  }, [page, pageSize, sortedWorkers]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [pageSize, sortStatus]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(sortedWorkers.length / pageSize));
+    setPage((currentPage) => Math.min(currentPage, totalPages));
+  }, [pageSize, sortedWorkers.length]);
 
   const handleCreate = () => {
     openFormModal(

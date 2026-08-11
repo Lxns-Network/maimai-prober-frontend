@@ -12,7 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { useToggle } from "@mantine/hooks";
 import { useAudio } from "react-use";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { HTMLMediaProps } from "react-use/lib/factory/createHTMLMediaHook";
 
 interface AudioPlayerProps extends React.ComponentPropsWithoutRef<typeof Container> {
@@ -28,13 +28,15 @@ export const AudioPlayer = ({
   audioProps,
   ...others
 }: AudioPlayerProps) => {
+  const [isRepeat, toggleIsRepeat] = useToggle();
   const [audio, state, controls, ref] = useAudio({
     src,
     crossOrigin: "anonymous",
     ...audioProps,
+    loop: isRepeat,
   });
-  const [isPlaying, toggleIsPlaying] = useToggle();
-  const [isRepeat, toggleIsRepeat] = useToggle();
+  const onFrequencyChangeRef = useRef(onFrequencyChange);
+  const isPlaying = state.playing;
 
   const parseTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -43,54 +45,82 @@ export const AudioPlayer = ({
   };
 
   useEffect(() => {
-    if (isPlaying) {
-      controls.pause();
-      toggleIsPlaying();
-    }
-  }, [src]);
+    onFrequencyChangeRef.current = onFrequencyChange;
+  }, [onFrequencyChange]);
 
   useEffect(() => {
-    if (state.time === state.duration && isRepeat) {
-      controls.seek(0);
-      controls.play();
-    } else if (state.time === state.duration && isPlaying) {
-      toggleIsPlaying();
-    }
-  }, [state.time]);
+    const element = ref.current;
+    if (!element) return;
 
-  useEffect(() => {
-    if (!ref.current) return;
+    let context: AudioContext | null = null;
+    let source: MediaElementAudioSourceNode | null = null;
+    let analyser: AnalyserNode | null = null;
+    let frequencyData: Uint8Array<ArrayBuffer> | null = null;
+    let frameRequest: number | null = null;
 
-    ref.current.addEventListener(
-      "canplaythrough",
-      () => {
-        const context = new AudioContext();
-        const analyser = context.createAnalyser();
+    const stopVisualization = () => {
+      if (frameRequest !== null) {
+        cancelAnimationFrame(frameRequest);
+        frameRequest = null;
+      }
+      if (frequencyData) {
+        frequencyData.fill(0);
+        onFrequencyChangeRef.current?.(frequencyData);
+      }
+    };
 
+    const renderFrame = () => {
+      if (!analyser || !frequencyData) return;
+      analyser.getByteFrequencyData(frequencyData);
+      onFrequencyChangeRef.current?.(frequencyData);
+      frameRequest = requestAnimationFrame(renderFrame);
+    };
+
+    const startVisualization = () => {
+      if (!analyser || frameRequest !== null) return;
+      frameRequest = requestAnimationFrame(renderFrame);
+    };
+
+    const handlePlay = () => {
+      if (!onFrequencyChangeRef.current) return;
+
+      if (!context) {
+        let nextContext: AudioContext | null = null;
         try {
-          const source = context.createMediaElementSource(ref.current!);
-          source.connect(analyser);
+          nextContext = new AudioContext();
+          const nextSource = nextContext.createMediaElementSource(element);
+          const nextAnalyser = nextContext.createAnalyser();
+          nextSource.connect(nextAnalyser);
+          nextAnalyser.connect(nextContext.destination);
+
+          context = nextContext;
+          source = nextSource;
+          analyser = nextAnalyser;
+          frequencyData = new Uint8Array(nextAnalyser.frequencyBinCount);
         } catch {
+          if (nextContext) void nextContext.close().catch(() => undefined);
           return;
         }
+      }
 
-        analyser.connect(context.destination);
+      void context.resume().catch(() => undefined);
+      startVisualization();
+    };
 
-        const bufferLength = analyser.frequencyBinCount;
-        const frequencyData = new Uint8Array(bufferLength);
+    element.addEventListener("play", handlePlay);
+    element.addEventListener("pause", stopVisualization);
+    element.addEventListener("ended", stopVisualization);
 
-        const renderFrame = () => {
-          analyser.getByteFrequencyData(frequencyData);
-          requestAnimationFrame(renderFrame);
-
-          onFrequencyChange && onFrequencyChange(frequencyData);
-        };
-
-        renderFrame();
-      },
-      { once: true },
-    );
-  }, [ref.current]);
+    return () => {
+      element.removeEventListener("play", handlePlay);
+      element.removeEventListener("pause", stopVisualization);
+      element.removeEventListener("ended", stopVisualization);
+      stopVisualization();
+      source?.disconnect();
+      analyser?.disconnect();
+      if (context) void context.close().catch(() => undefined);
+    };
+  }, [ref]);
 
   return (
     <Container w="100%" p="md" {...others}>
@@ -141,7 +171,6 @@ export const AudioPlayer = ({
             radius="50%"
             size="lg"
             onClick={() => {
-              toggleIsPlaying();
               if (isPlaying) {
                 controls.pause();
               } else {
