@@ -23,7 +23,7 @@ export class HoldRenderer extends BaseRenderer {
     startNote: HoldStartNote | null = null,
     endNote: HoldEndNote | null = null,
     currentTimeMs: number = 0,
-    isBreakHold: boolean = false,
+    isBreak: boolean = false,
     isSimultaneous: boolean = false,
     exScaleFactor: number = 1,
   ): void {
@@ -125,7 +125,7 @@ export class HoldRenderer extends BaseRenderer {
       if (isEx) {
         const exScale = 1.19 * exScaleFactor;
         let exColor: string;
-        if (isBreakHold) {
+        if (isBreak) {
           exColor = COLORS.EX_OVERLAY_BREAK;
         } else if (isSimultaneous) {
           exColor = COLORS.EX_OVERLAY_SIMULTANEOUS;

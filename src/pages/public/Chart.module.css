@@ -82,3 +82,36 @@
   opacity: 1;
   pointer-events: auto;
 }
+
+.fullscreenInfoPanel {
+  position: fixed;
+  top: 50%;
+  z-index: 200;
+  max-width: calc(100vw - 48px);
+  pointer-events: none;
+}
+
+@media (orientation: portrait) {
+  .fullscreenInfoPanel {
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (orientation: landscape) {
+  /* 将 canvas 和 HUD 作为 flex 兄弟级元素横向排列，并作为一个整体在视口中央对齐。
+     解除 position: fixed，使其处于正常文档流中，从而自然相邻。 */
+  .fullscreen {
+    gap: 24px;
+  }
+
+  .fullscreenInfoPanel {
+    position: static;
+    top: auto;
+    max-width: none;
+    transform: none;
+  }
+}

@@ -24,6 +24,7 @@ export function applyCurrentRendererSettings(renderer: MainRenderer): void {
   renderer.setNormalColorBreakSlide(settingsState.normalColorBreakSlide);
   renderer.setShowFireworks(settingsState.showFireworks);
   renderer.setShowHitEffect(settingsState.showHitEffect);
+  renderer.setVideoBrightness(settingsState.videoBrightness);
   renderer.setPlaybackSpeed(useGameStore.getState().playbackSpeed);
 }
 
@@ -45,6 +46,7 @@ export function useRendererSettings({
   const normalColorBreakSlide = useGameSettingsStore((s) => s.normalColorBreakSlide);
   const showFireworks = useGameSettingsStore((s) => s.showFireworks);
   const showHitEffect = useGameSettingsStore((s) => s.showHitEffect);
+  const videoBrightness = useGameSettingsStore((s) => s.videoBrightness);
 
   const renderCurrentFrame = useCallback(() => {
     renderFrame(playbackTimeRef.current);
@@ -79,6 +81,7 @@ export function useRendererSettings({
     normalColorBreakSlide,
     showFireworks,
     showHitEffect,
+    videoBrightness,
     renderCurrentFrame,
   ]);
 }

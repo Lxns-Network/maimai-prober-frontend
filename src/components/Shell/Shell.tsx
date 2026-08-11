@@ -8,6 +8,7 @@ import { CreateScoreModalProvider } from "../ModalProvider/CreateScoreModalProvi
 import { ScoreModalProvider } from "../ModalProvider/ScoreModalProvider.tsx";
 import { CreateAliasModalProvider } from "../ModalProvider/CreateAliasModalProvider.tsx";
 import { UrgentNotificationModal } from "@/components/Notifications/UrgentNotificationModal.tsx";
+import useGameStore from "@/pages/public/Chart/stores/useGameStore.ts";
 
 export const NAVBAR_BREAKPOINT = 992;
 
@@ -22,6 +23,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   const { width } = useWindowSize();
   const [headerHeight, setHeaderHeight] = useState(0);
   const headerRef = useRef<HTMLDivElement>(null);
+  const isChartFullscreen = useGameStore((state) => state.isFullscreen);
 
   const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(null);
   const [lastScrollTop, setLastScrollTop] = useState(0);
@@ -77,7 +79,11 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
       style={
         {
           "--navbar-width": "300px",
-          "--header-height": headerHeight ? `${headerHeight}px` : undefined,
+          "--header-height": isChartFullscreen
+            ? "0px"
+            : headerHeight
+              ? `${headerHeight}px`
+              : undefined,
         } as React.CSSProperties
       }
     >
@@ -90,12 +96,14 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
         {(styles) => <Navbar style={styles} onClose={onNavbarToggle} />}
       </Transition>
 
-      <Header
-        navbarOpened={navbarOpened}
-        onNavbarToggle={onNavbarToggle}
-        gameTabsVisible={!scrollDirection || scrollDirection === "up"}
-        headerRef={headerRef}
-      />
+      {!isChartFullscreen && (
+        <Header
+          navbarOpened={navbarOpened}
+          onNavbarToggle={onNavbarToggle}
+          gameTabsVisible={!scrollDirection || scrollDirection === "up"}
+          headerRef={headerRef}
+        />
+      )}
 
       <ScrollArea className={classes.routesWrapper} type="scroll" viewportRef={viewportRef}>
         <Transition

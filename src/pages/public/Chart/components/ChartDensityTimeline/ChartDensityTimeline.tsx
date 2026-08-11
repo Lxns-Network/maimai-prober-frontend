@@ -2,16 +2,14 @@ import { useMemo, type CSSProperties } from "react";
 import { useElementSize } from "@mantine/hooks";
 import type { Note } from "@lxns-network/maimai-chart-engine";
 import clsx from "clsx";
-import { match, P } from "ts-pattern";
+import {
+  DEFAULT_BUCKET_DURATION_MS,
+  calculateNoteCounts,
+  getMaxCount,
+  type NoteCountKey,
+} from "../../utils/chartDensity";
 import { pickTimeMarkerInterval } from "./timeMarkers";
 import classes from "./ChartDensityTimeline.module.css";
-
-type NoteCountKey = "tap" | "hold" | "slide" | "touch" | "break";
-
-type NoteCountData = Record<NoteCountKey, number> & {
-  startMs: number;
-  total: number;
-};
 
 type ChartDensityTimelineProps = {
   notes: Note[];
@@ -27,7 +25,6 @@ type ChartDensityTimelineProps = {
   style?: CSSProperties;
 };
 
-const DEFAULT_BUCKET_DURATION_MS = 500;
 const DEFAULT_BAR_MAX_HEIGHT = 32;
 const MIN_BAR_WIDTH_PX = 2;
 const FALLBACK_MAX_BUCKETS = 600;
@@ -52,71 +49,6 @@ function formatTimeLabel(timeMs: number): string {
   const minutes = Math.floor(timeMs / 60000);
   const seconds = Math.floor((timeMs % 60000) / 1000);
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
-
-function classifyNote(note: Note): NoteCountKey | null {
-  return match(note.type)
-    .returnType<NoteCountKey | null>()
-    .with("break", () => "break")
-    .with(P.union("tap", "simultaneous"), () => "tap")
-    .with(P.union("hold-start", "hold-start-simultaneous"), () => "hold")
-    .with("slide", () => "slide")
-    .with(P.union("touch", "touch-hold-start"), () => "touch")
-    .with(P.union("hold-end", "hold-end-simultaneous", "touch-hold-end"), () => null)
-    .exhaustive();
-}
-
-function createEmptyBucket(startMs: number): NoteCountData {
-  return {
-    startMs,
-    tap: 0,
-    hold: 0,
-    slide: 0,
-    touch: 0,
-    break: 0,
-    total: 0,
-  };
-}
-
-function calculateNoteCounts(
-  notes: Note[],
-  windowStartMs: number,
-  durationMs: number,
-  bucketDurationMs: number,
-): NoteCountData[] {
-  if (durationMs <= 0) return [];
-
-  const windowEndMs = windowStartMs + durationMs;
-  const firstBucketIndex = Math.floor(windowStartMs / bucketDurationMs);
-  const lastBucketIndex = Math.floor(windowEndMs / bucketDurationMs);
-  const bucketCount = lastBucketIndex - firstBucketIndex + 1;
-  const buckets: NoteCountData[] = Array.from({ length: bucketCount }, (_, i) =>
-    createEmptyBucket((firstBucketIndex + i) * bucketDurationMs),
-  );
-
-  for (const note of notes) {
-    if (note.timingMs < windowStartMs || note.timingMs > windowEndMs) continue;
-
-    const absoluteBucketIndex = Math.floor(note.timingMs / bucketDurationMs);
-    const bucket = buckets[absoluteBucketIndex - firstBucketIndex];
-    if (!bucket) continue;
-
-    const bucketKey = classifyNote(note);
-    if (!bucketKey) continue;
-
-    bucket[bucketKey]++;
-    bucket.total++;
-  }
-
-  return buckets;
-}
-
-function getMaxCount(buckets: NoteCountData[]): number {
-  let max = 0;
-  for (const bucket of buckets) {
-    max = Math.max(max, bucket.total);
-  }
-  return max || 1;
 }
 
 function getTimeMarkers(windowStartMs: number, durationMs: number, intervalMs: number) {

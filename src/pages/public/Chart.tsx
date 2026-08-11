@@ -14,6 +14,7 @@ import {
 import { Notifications } from "@mantine/notifications";
 import { IconArrowLeft, IconLock, IconLockOpen } from "@tabler/icons-react";
 import { ChartCanvas } from "@/pages/public/Chart/components/ChartCanvas";
+import { ChartInfoPanel } from "@/pages/public/Chart/components/ChartInfoPanel";
 import { Controls, PlaybackControls } from "@/pages/public/Chart/components/Controls";
 import { useGameStore } from "@/pages/public/Chart/stores/useGameStore";
 import { useGameSettingsStore } from "@/pages/public/Chart/stores/useGameSettingsStore";
@@ -485,6 +486,9 @@ function ChartContent() {
               isFullscreen={true}
               portalTarget={fullscreenEl}
             />
+          </div>
+          <div className={classes.fullscreenInfoPanel}>
+            <ChartInfoPanel fullscreen />
           </div>
           <ActionIcon
             className={`${classes.lockButton} ${isLocked || showControls ? classes.showButton : ""}`}
