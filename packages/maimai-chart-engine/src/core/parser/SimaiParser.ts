@@ -606,7 +606,7 @@ function parseNoteString(
   }
 
   // 尝试匹配滑条模式：1-5[4:1] 或 1b-5[4:1] 或复杂模式：1-4[8:5]>3[384:47]...
-  const slideMatch = noteStr.match(/^(\d+)([bx?!]*[-><^vpqszVw*]+.*)$/i);
+  const slideMatch = noteStr.match(/^(\d+)([bx?!@]*[-><^vpqszVw*]+.*)$/i);
   if (slideMatch && /[-><^vpqszVw]/i.test(slideMatch[2])) {
     const startPosition = parseInt(slideMatch[1]) as ButtonPosition;
     const slideNotation = slideMatch[2];
@@ -626,6 +626,8 @@ function parseNoteString(
       .otherwise(() => null);
     const isStartBreak = startModifiers.includes("b");
     const isHeadless = headlessMarker !== null;
+    // simai `@`：保留滑条头，但画成普通 TAP 而非星星头。
+    const hasTapHead = !isHeadless && startModifiers.includes("@");
     const isEx = noteStr.toLowerCase().includes("x");
 
     // 按 * 分割滑条
@@ -733,6 +735,7 @@ function parseNoteString(
           .with("?", () => "fade" as const)
           .with(null, () => undefined)
           .exhaustive(),
+        hasTapHead,
         isStartBreak,
         allSlideBreaks,
         isEx,
@@ -870,16 +873,16 @@ function parseNoteString(
     }
   }
 
-  // 尝试匹配简单按下/中断/星形 TAP：1, 1b, 1x, 1bx, 1$, 1$$
-  const tapMatch = noteStr.match(/^(\d+)([bx]*)(\${0,2})$/i);
+  // 尝试匹配简单按下/中断/星形 TAP：1, 1b, 1x, 1bx, 1$, 1$$；simai 修饰符顺序自由，`1$b` 等价于 `1b$`
+  const tapMatch = noteStr.match(/^(\d+)([bx$]*)$/i);
   if (tapMatch) {
     const position = parseInt(tapMatch[1]);
     const modifiers = tapMatch[2].toLowerCase();
-    const stars = tapMatch[3];
+    const starCount = modifiers.split("$").length - 1;
     const isBreak = modifiers.includes("b");
     const isEx = modifiers.includes("x");
-    const isStar = stars.length > 0;
-    const isSpinningStar = stars.length === 2;
+    const isStar = starCount > 0;
+    const isSpinningStar = starCount >= 2;
 
     if (position >= 1 && position <= 8) {
       const tapNote: TapNote = {
