@@ -214,6 +214,8 @@ export interface SlideNote extends BaseNote {
   isHeadless?: boolean;
   /** 无头滑条 tracing star 显示方式：simai `?` 为 fade，`!` 为 pop */
   headlessMode?: "fade" | "pop";
+  /** 滑条头是否画成普通 TAP 而非星星头（simai `@`）；isHeadless 时无意义 */
+  hasTapHead?: boolean;
   /** 滑条起始 Note 是否为绝赞 */
   isStartBreak?: boolean;
   /** 每个滑条路径是否为绝赞 */
