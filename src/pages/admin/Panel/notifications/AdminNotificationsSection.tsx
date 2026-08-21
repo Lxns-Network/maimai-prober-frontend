@@ -11,6 +11,7 @@ import {
   Text,
   Tooltip,
   Typography,
+  VisuallyHidden,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -122,16 +123,26 @@ export function AdminNotificationsSection() {
               <Group gap="xs" mt={4}>
                 <Tooltip label="已阅读人数" position="top" withArrow>
                   <Group gap={4} wrap="nowrap">
-                    <IconEyeCheck size={14} style={{ color: "var(--mantine-color-dimmed)" }} />
+                    <IconEyeCheck
+                      aria-hidden="true"
+                      size={14}
+                      style={{ color: "var(--mantine-color-dimmed)" }}
+                    />
                     <Text c="dimmed" size="xs">
+                      <VisuallyHidden>已阅读人数：</VisuallyHidden>
                       {b.read_count ?? 0}
                     </Text>
                   </Group>
                 </Tooltip>
                 <Tooltip label="发布时间" position="top" withArrow>
                   <Group gap={4} wrap="nowrap">
-                    <IconCalendarUp size={14} style={{ color: "var(--mantine-color-dimmed)" }} />
+                    <IconCalendarUp
+                      aria-hidden="true"
+                      size={14}
+                      style={{ color: "var(--mantine-color-dimmed)" }}
+                    />
                     <Text c="dimmed" size="xs">
+                      <VisuallyHidden>发布时间：</VisuallyHidden>
                       {dayjs(b.create_time).format("YYYY-MM-DD HH:mm")}
                     </Text>
                   </Group>
@@ -139,8 +150,13 @@ export function AdminNotificationsSection() {
                 {b.expire_time && (
                   <Tooltip label="过期时间" position="top" withArrow>
                     <Group gap={4} wrap="nowrap">
-                      <IconCalendarDue size={14} style={{ color: "var(--mantine-color-dimmed)" }} />
+                      <IconCalendarDue
+                        aria-hidden="true"
+                        size={14}
+                        style={{ color: "var(--mantine-color-dimmed)" }}
+                      />
                       <Text c="dimmed" size="xs">
+                        <VisuallyHidden>过期时间：</VisuallyHidden>
                         {dayjs(b.expire_time).format("YYYY-MM-DD HH:mm")}
                       </Text>
                     </Group>
