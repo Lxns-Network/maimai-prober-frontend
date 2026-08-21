@@ -5485,7 +5485,6 @@ __metadata:
     remark-rehype: "npm:11.1.2"
     remark-slug: "npm:7.0.1"
     remark-toc: "npm:9.0.0"
-    rxjs: "npm:7.8.2"
     shiki: "npm:3.23.0"
     stylelint: "npm:16.26.1"
     stylelint-config-standard-scss: "npm:13.1.0"
@@ -7900,15 +7899,6 @@ __metadata:
   dependencies:
     queue-microtask: "npm:^1.2.2"
   checksum: 10c0/200b5ab25b5b8b7113f9901bfe3afc347e19bb7475b267d55ad0eb86a62a46d77510cb0f232507c9e5d497ebda569a08a9867d0d14f57a82ad5564d991588b39
-  languageName: node
-  linkType: hard
-
-"rxjs@npm:7.8.2":
-  version: 7.8.2
-  resolution: "rxjs@npm:7.8.2"
-  dependencies:
-    tslib: "npm:^2.1.0"
-  checksum: 10c0/1fcd33d2066ada98ba8f21fcbbcaee9f0b271de1d38dc7f4e256bfbc6ffcdde68c8bfb69093de7eeb46f24b1fb820620bf0223706cff26b4ab99a7ff7b2e2c45
   languageName: node
   linkType: hard
 
