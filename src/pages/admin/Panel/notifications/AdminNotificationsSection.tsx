@@ -11,9 +11,17 @@ import {
   Text,
   Tooltip,
   Typography,
+  VisuallyHidden,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
+import {
+  IconCalendarDue,
+  IconCalendarUp,
+  IconEdit,
+  IconEyeCheck,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -112,10 +120,49 @@ export function AdminNotificationsSection() {
                   )}
                 </Group>
               </Flex>
-              <Text c="dimmed" size="xs" mt={4}>
-                发布于 {dayjs(b.create_time).format("YYYY-MM-DD HH:mm")}
-                {b.expire_time && ` · 过期于 ${dayjs(b.expire_time).format("YYYY-MM-DD HH:mm")}`}
-              </Text>
+              <Group gap="xs" mt={4}>
+                <Tooltip label="已阅读人数" position="top" withArrow>
+                  <Group gap={4} wrap="nowrap">
+                    <IconEyeCheck
+                      aria-hidden="true"
+                      size={14}
+                      style={{ color: "var(--mantine-color-dimmed)" }}
+                    />
+                    <Text c="dimmed" size="xs">
+                      <VisuallyHidden>已阅读人数：</VisuallyHidden>
+                      {b.read_count ?? 0}
+                    </Text>
+                  </Group>
+                </Tooltip>
+                <Tooltip label="发布时间" position="top" withArrow>
+                  <Group gap={4} wrap="nowrap">
+                    <IconCalendarUp
+                      aria-hidden="true"
+                      size={14}
+                      style={{ color: "var(--mantine-color-dimmed)" }}
+                    />
+                    <Text c="dimmed" size="xs">
+                      <VisuallyHidden>发布时间：</VisuallyHidden>
+                      {dayjs(b.create_time).format("YYYY-MM-DD HH:mm")}
+                    </Text>
+                  </Group>
+                </Tooltip>
+                {b.expire_time && (
+                  <Tooltip label="过期时间" position="top" withArrow>
+                    <Group gap={4} wrap="nowrap">
+                      <IconCalendarDue
+                        aria-hidden="true"
+                        size={14}
+                        style={{ color: "var(--mantine-color-dimmed)" }}
+                      />
+                      <Text c="dimmed" size="xs">
+                        <VisuallyHidden>过期时间：</VisuallyHidden>
+                        {dayjs(b.expire_time).format("YYYY-MM-DD HH:mm")}
+                      </Text>
+                    </Group>
+                  </Tooltip>
+                )}
+              </Group>
             </Accordion.Control>
             <Accordion.Panel>
               <Typography>
