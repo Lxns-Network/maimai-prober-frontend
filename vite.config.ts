@@ -52,7 +52,7 @@ export default defineConfig({
       closeBundle() {
         const version = Date.now().toString();
         fs.writeFileSync(
-          path.resolve(__dirname, "dist/client/version.json"),
+          path.resolve(import.meta.dirname, "dist/client/version.json"),
           JSON.stringify({ version }),
         );
       },
