@@ -1,9 +1,26 @@
 import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import vike from "vike/plugin";
 import * as fs from "node:fs";
 import path from "node:path";
+
+function generateVersionPlugin(): Plugin {
+  let projectRoot = process.cwd();
+
+  return {
+    name: "generate-version",
+    configResolved(config) {
+      projectRoot = config.root;
+    },
+    closeBundle() {
+      const version = Date.now().toString();
+      const outputPath = path.resolve(projectRoot, "dist/client/version.json");
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+      fs.writeFileSync(outputPath, JSON.stringify({ version }));
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -47,16 +64,7 @@ export default defineConfig({
         });
       },
     },
-    {
-      name: "generate-version",
-      closeBundle() {
-        const version = Date.now().toString();
-        fs.writeFileSync(
-          path.resolve(import.meta.dirname, "dist/client/version.json"),
-          JSON.stringify({ version }),
-        );
-      },
-    },
+    generateVersionPlugin(),
     sentryVitePlugin({
       org: "lxns-network",
       project: "maimai-prober-frontend",
