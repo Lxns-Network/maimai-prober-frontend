@@ -115,7 +115,8 @@
     "vite": "8.2.2"
   },
   "resolutions": {
-    "prosemirror-model": "1.25.9"
+    "prosemirror-model": "1.25.11",
+    "minimatch@npm:^9.0.4": "npm:10.2.6"
   },
   "overrides": {
     "react-lazyload": {
