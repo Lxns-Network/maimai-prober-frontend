@@ -21,11 +21,11 @@ import {
   HI_SPEED_CONVERSION_FACTOR,
   HI_SPEED_DEFAULT,
   HIT_EFFECT_COLORS,
-  HOLD_RELEASE_EFFECT_DURATION_MS,
   HoldEffectRenderer,
   HoldRenderer,
   MainRenderer,
   NOTE_HIT_EFFECT_DURATION_MS,
+  TOUCH_HOLD_CENTRE_BURST_ANGLE,
   NoteRenderer,
   SlideRenderer,
   TouchHitEffectRenderer,
@@ -439,12 +439,13 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         };
       };
 
-      const drawTapHit = (shape: "hexagon" | "star") => {
-        if (t < hitAt || t >= hitAt + NOTE_HIT_EFFECT_DURATION_MS) return;
-        const p = (t - hitAt) / NOTE_HIT_EFFECT_DURATION_MS;
+      const drawTapHitAt = (from: number, shape: "hexagon" | "star") => {
+        if (t < from || t >= from + NOTE_HIT_EFFECT_DURATION_MS) return;
+        const p = (t - from) / NOTE_HIT_EFFECT_DURATION_MS;
         const origin = ringPos();
         noteFx.renderTapHitEffect(origin.x, origin.y, btn, COLORS.HIT_EFFECT_GOLD, p, shape);
       };
+      const drawTapHit = (shape: "hexagon" | "star") => drawTapHitAt(hitAt, shape);
 
       // ---------- 按钮 Tap 系 ----------
       if (
@@ -497,7 +498,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         const isEach = kind === "hold-each";
         const isBreakHold = kind === "hold-break";
         const isEx = kind === "hold-ex";
-        const holdBodyMs = Math.max(0, s.afterMs - HOLD_RELEASE_EFFECT_DURATION_MS);
+        const holdBodyMs = Math.max(0, s.afterMs - NOTE_HIT_EFFECT_DURATION_MS);
         const holdEndAt = hitAt + holdBodyMs;
         const { start, end } = makeHold(btn, hitAt, holdBodyMs, {
           each: isEach,
@@ -531,8 +532,8 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
           const origin = ringPos();
           holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t, color);
         } else if (t >= holdEndAt) {
-          const origin = ringPos();
-          holdFx.renderHoldReleaseAt(origin.x, origin.y, holdEndAt, t, color);
+          // hold 尾播的就是 tap 命中特效，绝赞 hold 用星形
+          drawTapHitAt(holdEndAt, isBreakHold ? "star" : "hexagon");
         }
       }
 
@@ -563,16 +564,28 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
 
       // ---------- Touch Hold ----------
       if (kind === "touch-hold") {
-        const holdBodyMs = Math.max(0, s.afterMs - HOLD_RELEASE_EFFECT_DURATION_MS);
+        const holdBodyMs = Math.max(0, s.afterMs - NOTE_HIT_EFFECT_DURATION_MS);
         const holdEndAt = hitAt + holdBodyMs;
         const hold = makeTouchHold(s.touchPos, hitAt, holdBodyMs);
         touchNote.renderTouch(hold, 0, t, false);
         if (t >= hitAt && t < holdEndAt) {
           const origin = touchNote.getTouchPosition(s.touchPos);
           holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t, color);
-        } else if (t >= holdEndAt) {
+        } else if (t >= holdEndAt && t < holdEndAt + NOTE_HIT_EFFECT_DURATION_MS) {
           const origin = touchNote.getTouchPosition(s.touchPos);
-          holdFx.renderHoldReleaseAt(origin.x, origin.y, holdEndAt, t, color);
+          // C 在圆心上没有径向方向，固定朝右上；其余 sensor 朝圆心
+          const angle =
+            s.touchPos === "C"
+              ? TOUCH_HOLD_CENTRE_BURST_ANGLE
+              : Math.atan2(centerY - origin.y, centerX - origin.x);
+          noteFx.renderHitEffectAt(
+            origin.x,
+            origin.y,
+            angle,
+            COLORS.HIT_EFFECT_GOLD,
+            (t - holdEndAt) / NOTE_HIT_EFFECT_DURATION_MS,
+            "hexagon",
+          );
         }
       }
 

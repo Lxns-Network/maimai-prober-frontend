@@ -6,9 +6,6 @@ export const HIT_EFFECT_COLORS = {
   perfect: { r: 1, g: 1, b: 0 },
 } as const;
 
-/** FX_GAM_Notes_Hold_Release_00 的最长粒子生命周期。 */
-export const HOLD_RELEASE_EFFECT_DURATION_MS = 500;
-
 /** FX_hy_00_910 的径向 alpha 剖面（中心 → 外缘，来自原始 RGBA）。 */
 export const FX_HY_00_910_ALPHA_PROFILE = [
   0.666, 0.667, 0.671, 0.679, 0.685, 0.693, 0.7, 0.709, 0.718, 0.727, 0.736, 0.744, 0.753, 0.763,
