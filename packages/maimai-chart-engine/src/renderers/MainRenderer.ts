@@ -1043,7 +1043,9 @@ export class MainRenderer {
             ? COLORS.BREAK_ORANGE
             : isSimultaneous
               ? COLORS.SIMULTANEOUS_GOLD
-              : COLORS.SLIDE_CYAN;
+              : note.hasTapHead
+                ? COLORS.TAP_PINK
+                : COLORS.SLIDE_CYAN;
         }
         if (!pos.visible) continue;
 
@@ -1176,37 +1178,55 @@ export class MainRenderer {
 
     const meta = this.getNoteMeta(noteMeta, slide);
     const isSimultaneous = meta.simultaneousNoteCount >= 2;
-    // 接近圈由 renderApproachIndicators 统一画（在底层），这里只画星星头。
-    const color = this.getStarHeadColor(slide.timing, slide.isStartBreak ?? false, isSimultaneous);
 
-    const rotation = this.config.slideRotation
-      ? this.slideRenderer.calculateStarRotation(slide, currentTimeMs)
-      : 0;
-
-    if (slide.isSplitSlide) {
-      const noteSize = this.getStarNoteSize(pos.scale);
-      if (slide.isEx) {
-        this.slideRenderer.renderExSplitStarRing(
-          pos.x,
-          pos.y,
-          noteSize,
-          slide.isStartBreak ?? false,
-          isSimultaneous,
-          this.exScale,
-        );
-      }
-      this.renderSplitSlideStar(pos.x, pos.y, noteSize, color, rotation, slide.isEx ?? false);
-    } else {
-      this.renderStarHead(
+    // 接近圈由 renderApproachIndicators 统一画（在底层），这里只画滑条头。
+    if (slide.hasTapHead) {
+      this.noteRenderer.renderTapNote(
         pos.x,
         pos.y,
         pos.scale,
-        color,
-        rotation,
+        slide.position,
+        slide.isStartBreak ?? false,
+        isSimultaneous,
         slide.isEx ?? false,
+        slide.timing,
+        this.exScale,
+      );
+    } else {
+      const color = this.getStarHeadColor(
+        slide.timing,
         slide.isStartBreak ?? false,
         isSimultaneous,
       );
+      const rotation = this.config.slideRotation
+        ? this.slideRenderer.calculateStarRotation(slide, currentTimeMs)
+        : 0;
+
+      if (slide.isSplitSlide) {
+        const noteSize = this.getStarNoteSize(pos.scale);
+        if (slide.isEx) {
+          this.slideRenderer.renderExSplitStarRing(
+            pos.x,
+            pos.y,
+            noteSize,
+            slide.isStartBreak ?? false,
+            isSimultaneous,
+            this.exScale,
+          );
+        }
+        this.renderSplitSlideStar(pos.x, pos.y, noteSize, color, rotation, slide.isEx ?? false);
+      } else {
+        this.renderStarHead(
+          pos.x,
+          pos.y,
+          pos.scale,
+          color,
+          rotation,
+          slide.isEx ?? false,
+          slide.isStartBreak ?? false,
+          isSimultaneous,
+        );
+      }
     }
 
     if (this.config.showBreakIndex && slide.isStartBreak && meta.noExBreakIndex && !slide.isEx) {

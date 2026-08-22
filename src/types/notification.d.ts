@@ -52,6 +52,7 @@ export interface AdminBroadcast {
   audience_type: "all" | "permission" | "users";
   audience_permission?: number;
   persistent: boolean;
+  read_count: number;
   create_time: string;
   update_time?: string;
   expire_time?: string;

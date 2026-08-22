@@ -123,7 +123,8 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   });
   const commentCount = comments.length;
 
-  const { songDetail } = useSongDetail(game, score?.id ?? null);
+  const songId = score?.id ?? null;
+  const { songDetail } = useSongDetail(game, songId);
 
   useEffect(() => {
     setSongState(null);
@@ -155,12 +156,12 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   }, [songState, score, songList]);
 
   useEffect(() => {
-    if (!score || !songList) {
+    if (songId === null || !songList) {
       setSongState(null);
       return;
     }
 
-    const song = songList.find(score.id);
+    const song = songList.find(songId);
     if (!song) {
       setSongState(null);
       return;
@@ -171,7 +172,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     } else if (game === "chunithm") {
       setSongState({ game: "chunithm", song: song as ChunithmSongProps });
     }
-  }, [score, songList, game]);
+  }, [songId, songList, game]);
 
   function isMaimaiScoreProps(obj: unknown): obj is MaimaiScoreProps {
     if (!obj) return false;

@@ -233,6 +233,7 @@ const AdminDevelopersContent = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
+            style={{ width: "100%", minWidth: 0 }}
           >
             <ResponsivePagination total={totalPages} value={page} onChange={handlePageChange} />
           </motion.div>
@@ -260,6 +261,7 @@ const AdminDevelopersContent = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
+            style={{ width: "100%", minWidth: 0 }}
           >
             <ResponsivePagination total={totalPages} value={page} onChange={handlePageChange} />
           </motion.div>

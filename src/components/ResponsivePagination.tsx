@@ -1,6 +1,6 @@
 import { CSSProperties, useRef, useState } from "react";
 import { Group, Pagination, PaginationProps, Text } from "@mantine/core";
-import { useIsomorphicEffect, useViewportSize } from "@mantine/hooks";
+import { useElementSize, useIsomorphicEffect } from "@mantine/hooks";
 
 // 统一分页：尺寸按「是否放得下」实测决定，宽页数放不下降 md，md 放不下降 sm，最后塌缩为居中的「‹ 当前/总数 ›」。
 // 用组合式（Pagination.Root + wrap="nowrap" 的 Group）渲染，强制单行——一体化 <Pagination> 内部那个
@@ -25,8 +25,7 @@ export function ResponsivePagination({
   mb,
   ...rest
 }: PaginationProps) {
-  const { width: viewportWidth } = useViewportSize();
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const { ref: wrapRef, width: availableWidth } = useElementSize<HTMLDivElement>();
   const widestRef = useRef<HTMLDivElement>(null);
   const wideRef = useRef<HTMLDivElement>(null);
   const mdRef = useRef<HTMLDivElement>(null);
@@ -34,18 +33,17 @@ export function ResponsivePagination({
   const [mode, setMode] = useState<"widest" | "wide" | "md" | "sm" | "text">("widest");
 
   useIsomorphicEffect(() => {
-    const wrap = wrapRef.current;
-    if (!wrap || !widestRef.current || !wideRef.current || !mdRef.current || !smRef.current) {
+    if (!widestRef.current || !wideRef.current || !mdRef.current || !smRef.current) {
       return;
     }
-    const available = Math.ceil(wrap.getBoundingClientRect().width);
+    const available = Math.ceil(availableWidth);
     if (!available) return;
     if (widestRef.current.offsetWidth <= available) setMode("widest");
     else if (wideRef.current.offsetWidth <= available) setMode("wide");
     else if (mdRef.current.offsetWidth <= available) setMode("md");
     else if (smRef.current.offsetWidth <= available) setMode("sm");
     else setMode("text");
-  }, [viewportWidth, total, value, siblings]);
+  }, [availableWidth, total, value, siblings]);
 
   if (hideWithOnePage && total <= 1) return null;
 

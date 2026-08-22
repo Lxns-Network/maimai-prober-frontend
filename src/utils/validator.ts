@@ -29,7 +29,14 @@ export const validateUserName = (name: string, { allowEmpty = false }) => {
   return null;
 };
 
-export const validatePassword = (
+const newPasswordMinLength = 8;
+const newPasswordMaxLength = 18;
+
+export const validateExistingPassword = (password: string, { passwordLabel = "密码" } = {}) => {
+  return password.length === 0 ? `${passwordLabel}不能为空` : null;
+};
+
+export const validateNewPassword = (
   password: string,
   { allowEmpty = false, passwordLabel = "密码" },
 ) => {
@@ -38,8 +45,9 @@ export const validatePassword = (
   } else if (password.length === 0 && allowEmpty) {
     return null;
   }
-  if (password.length < 6 || password.length > 16) {
-    return `${passwordLabel}长度必须在 6 到 16 字符之间`;
+  const characterLength = Array.from(password).length;
+  if (characterLength < newPasswordMinLength || characterLength > newPasswordMaxLength) {
+    return `${passwordLabel}长度必须在 ${newPasswordMinLength} 到 ${newPasswordMaxLength} 字符之间`;
   }
   return null;
 };

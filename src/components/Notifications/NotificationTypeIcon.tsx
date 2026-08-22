@@ -24,7 +24,7 @@ export function NotificationTypeIcon({ type, level, unread }: NotificationTypeIc
   if (unread === undefined) return themeIcon;
 
   return (
-    <Indicator color="red" size={8} offset={4} disabled={!unread}>
+    <Indicator color="red" size={8} offset={4} disabled={!unread} zIndex={1}>
       {themeIcon}
     </Indicator>
   );

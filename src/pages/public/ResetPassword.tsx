@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Title, Text, Group, Button, LoadingOverlay, PasswordInput, Card } from "@mantine/core";
 import { Container } from "@mantine/core";
-import { validatePassword } from "@/utils/validator.ts";
+import { validateNewPassword } from "@/utils/validator.ts";
 import { useForm } from "@mantine/form";
 import { IconLock } from "@tabler/icons-react";
 import classes from "../Form.module.css";
@@ -25,7 +25,7 @@ export default function ResetPassword() {
     if (!token) {
       navigate("/login", { overwriteLastHistoryEntry: true });
     }
-  }, []);
+  }, [token]);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -34,7 +34,7 @@ export default function ResetPassword() {
     },
 
     validate: {
-      password: (value) => validatePassword(value, { allowEmpty: false }),
+      password: (value) => validateNewPassword(value, { allowEmpty: false }),
       confirm_password: (value, values) =>
         value === values.password ? null : "两次输入的密码不一致",
     },

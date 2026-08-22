@@ -17,7 +17,7 @@ import {
 import { Container } from "@mantine/core";
 import { solveCaptcha } from "@/utils/captcha";
 import { useForm } from "@mantine/form";
-import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
+import { validateEmail, validateExistingPassword, validateUserName } from "@/utils/validator.ts";
 import { IconAlertCircle, IconLock, IconMail, IconUser } from "@tabler/icons-react";
 import classes from "../Form.module.css";
 import {
@@ -79,8 +79,9 @@ export default function Login() {
         }
       }
 
-      if (validatePassword(values.password, { allowEmpty: false })) {
-        errors.password = validatePassword(values.password, { allowEmpty: false });
+      const passwordError = validateExistingPassword(values.password);
+      if (passwordError) {
+        errors.password = passwordError;
       }
 
       return errors;

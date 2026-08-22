@@ -13,7 +13,7 @@ import {
 import { Container } from "@mantine/core";
 import { solveCaptcha } from "@/utils/captcha";
 import { useForm } from "@mantine/form";
-import { validateEmail, validatePassword, validateUserName } from "@/utils/validator.ts";
+import { validateEmail, validateNewPassword, validateUserName } from "@/utils/validator.ts";
 import { IconLock, IconMail, IconUser } from "@tabler/icons-react";
 import classes from "../Form.module.css";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
@@ -43,7 +43,7 @@ export default function Register() {
     validate: {
       name: (value) => validateUserName(value, { allowEmpty: false }),
       email: (value) => validateEmail(value, { allowEmpty: false }),
-      password: (value) => validatePassword(value, { allowEmpty: false }),
+      password: (value) => validateNewPassword(value, { allowEmpty: false }),
       confirm_password: (value, values) =>
         value === values.password ? null : "两次输入的密码不一致",
     },
