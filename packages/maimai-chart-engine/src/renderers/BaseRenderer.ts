@@ -21,6 +21,19 @@ export function mixHexColor(color: string, target: string, amount: number): stri
   return `#${toHex(mix(r, tr))}${toHex(mix(g, tg))}${toHex(mix(b, tb))}`;
 }
 
+/**
+ * 按倍率缩放 #rrggbb 的亮度，逐通道乘算并钳到 [0,255]。
+ * 与 mixHexColor(color, "#ffffff"|"#000000", …) 不同：后者对亮暗两侧不对称，
+ * 且会把已经饱和的通道往白里拉，不适合做"整体调亮/调暗"。
+ */
+export function scaleHexBrightness(color: string, factor: number): string {
+  const channel = (offset: number) => {
+    const value = Math.round(Number.parseInt(color.slice(offset, offset + 2), 16) * factor);
+    return Math.max(0, Math.min(255, value)).toString(16).padStart(2, "0");
+  };
+  return `#${channel(1)}${channel(3)}${channel(5)}`;
+}
+
 export function getGradientColors(
   ddrColor: string | null,
   isBreak: boolean,
@@ -238,6 +251,10 @@ export abstract class BaseRenderer {
 
   protected mixHexColor(color: string, target: string, amount: number): string {
     return mixHexColor(color, target, amount);
+  }
+
+  protected scaleHexBrightness(color: string, factor: number): string {
+    return scaleHexBrightness(color, factor);
   }
 
   protected drawRing(x: number, y: number, innerRadius: number, outerRadius: number): void {

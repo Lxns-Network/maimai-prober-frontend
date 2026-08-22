@@ -142,10 +142,27 @@ export class NoteRenderer extends BaseRenderer {
     p.closePath();
   }
 
+  /** 按钮 note 的命中特效：朝向取按钮角度（由圆心指向按钮，即向外）。 */
   renderTapHitEffect(
     x: number,
     y: number,
     position: ButtonPosition,
+    color: string,
+    progress: number,
+    type: "hexagon" | "star",
+  ): void {
+    this.renderHitEffectAt(x, y, this.getButtonAngle(position), color, progress, type);
+  }
+
+  /**
+   * 命中特效本体。angle 决定星群朝向与图形自转，调用方自己决定朝哪：
+   * 按钮 note 用按钮角度（向外），touch hold 用指向圆心的方向（向内）。
+   * progress ∈ [0,1] 是特效自身的归一化年龄，超出区间由调用方跳过。
+   */
+  renderHitEffectAt(
+    x: number,
+    y: number,
+    angle: number,
     color: string,
     progress: number,
     type: "hexagon" | "star",
@@ -158,7 +175,6 @@ export class NoteRenderer extends BaseRenderer {
     const subRad = Math.max(0, Math.min(1, 1 - (8 / 9) * progress * progress));
 
     const baseR = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5;
-    const angle = this.getButtonAngle(position);
     const sub1 = angle + Math.PI / 6;
     const sub2 = angle - Math.PI / 6;
     const r0 = baseR * scale;

@@ -4,10 +4,34 @@ import {
   NOTE_SIZE_RATIO,
   HOLD_WIDTH_RATIO,
   HOLD_INNER_RATIO,
+  HOLD_ACTIVE_BRIGHTNESS_CURVE,
+  HOLD_ACTIVE_BRIGHTNESS_MAX,
+  HOLD_ACTIVE_BRIGHTNESS_MIN,
+  HOLD_ACTIVE_GLOW_RAMP,
+  HOLD_ACTIVE_CYCLE_MS,
+  HOLD_ACTIVE_GLOW_RATIO,
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
   NOTE_LIGHTEN_RATIO,
 } from "../utils/constants";
+
+/**
+ * 按住期间本体的亮度倍率，相位与波纹发射共用 HOLD_ACTIVE_CYCLE_MS 这一个时钟。
+ * elapsedMs 是距按下的时间，可为负（note 还在接近），此时返回 1。
+ */
+function activeBodyBrightness(elapsedMs: number): number {
+  if (elapsedMs < 0) return 1;
+  const steps = HOLD_ACTIVE_BRIGHTNESS_CURVE.length;
+  const position = ((elapsedMs % HOLD_ACTIVE_CYCLE_MS) / HOLD_ACTIVE_CYCLE_MS) * steps;
+  const index = Math.floor(position);
+  const t = position - index;
+  const a = HOLD_ACTIVE_BRIGHTNESS_CURVE[index % steps];
+  const b = HOLD_ACTIVE_BRIGHTNESS_CURVE[(index + 1) % steps];
+  return (
+    HOLD_ACTIVE_BRIGHTNESS_MIN +
+    (a + (b - a) * t) * (HOLD_ACTIVE_BRIGHTNESS_MAX - HOLD_ACTIVE_BRIGHTNESS_MIN)
+  );
+}
 
 export class HoldRenderer extends BaseRenderer {
   constructor(context: RenderContext) {
@@ -163,6 +187,18 @@ export class HoldRenderer extends BaseRenderer {
         ctx.fill();
       }
 
+      const isPressed =
+        startNote !== null &&
+        endNote !== null &&
+        currentTimeMs >= startNote.timingMs &&
+        currentTimeMs < endNote.timingMs;
+
+      // 按住时整条本体随 HOLD_ACTIVE_CYCLE_MS 一起明暗呼吸（实测 ±10%，沿长度均匀）。
+      const brightness = isPressed ? activeBodyBrightness(currentTimeMs - startNote!.timingMs) : 1;
+      const tint = (hex: string) =>
+        brightness === 1 ? hex : this.scaleHexBrightness(hex, brightness);
+      const outlineColor = tint(COLORS.WHITE);
+
       const strokeWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
 
       // 外六 + 内六各做一圈 wider black，环 fill 覆盖内侧 halo 只剩外缘黑边。
@@ -191,7 +227,8 @@ export class HoldRenderer extends BaseRenderer {
       ctx.closePath();
       this.stroke(COLORS.BLACK, strokeWidth * 3);
 
-      const lightColor = this.mixHexColor(color[0], "#ffffff", NOTE_LIGHTEN_RATIO);
+      const lightColor = tint(this.mixHexColor(color[0], "#ffffff", NOTE_LIGHTEN_RATIO));
+      const bodyColor = tint(color[1]);
       const segments = [
         { os: startTip, oe: startLeft, is: innerStartTip, ie: innerStartLeft },
         { os: startLeft, oe: endBackLeft, is: innerStartLeft, ie: innerEndBackLeft },
@@ -204,7 +241,7 @@ export class HoldRenderer extends BaseRenderer {
       for (const { os, oe, is: innerS, ie: innerE } of segments) {
         const gradient = ctx.createLinearGradient(os.x, os.y, oe.x, oe.y);
         gradient.addColorStop(0, lightColor);
-        gradient.addColorStop(1, color[1]);
+        gradient.addColorStop(1, bodyColor);
 
         ctx.beginPath();
         ctx.moveTo(os.x, os.y);
@@ -224,7 +261,7 @@ export class HoldRenderer extends BaseRenderer {
       ctx.lineTo(endBackRight.x, endBackRight.y);
       ctx.lineTo(startRight.x, startRight.y);
       ctx.closePath();
-      this.stroke(COLORS.WHITE, strokeWidth);
+      this.stroke(outlineColor, strokeWidth);
 
       ctx.beginPath();
       ctx.moveTo(innerStartTip.x, innerStartTip.y);
@@ -234,13 +271,17 @@ export class HoldRenderer extends BaseRenderer {
       ctx.lineTo(innerEndBackRight.x, innerEndBackRight.y);
       ctx.lineTo(innerStartRight.x, innerStartRight.y);
       ctx.closePath();
-      this.stroke(COLORS.WHITE, strokeWidth);
+      this.stroke(outlineColor, strokeWidth);
 
-      const centerSize = holdWidth * 0.15;
-      ctx.beginPath();
-      ctx.arc(startX, startY, centerSize, 0, Math.PI * 2);
-      ctx.fillStyle = color[0];
-      ctx.fill();
+      if (isPressed) {
+        this.drawActiveHeadGlow(startX, startY, color[0]);
+      } else {
+        const centerSize = holdWidth * 0.15;
+        ctx.beginPath();
+        ctx.arc(startX, startY, centerSize, 0, Math.PI * 2);
+        ctx.fillStyle = color[0];
+        ctx.fill();
+      }
 
       // 终点 dot 只在终点进入 approach 后半段才显示（与终点展开节奏一致）。
       if (endPosition.visible && endNote && currentTimeMs) {
@@ -255,6 +296,32 @@ export class HoldRenderer extends BaseRenderer {
         }
       }
     });
+  }
+
+  /**
+   * 按压中的 hold 头部辉光：暖色热芯 → 饱和红 → 暗红拖尾，径向淡出。
+   * 只在头部停在判定线上（[start, end) 窗口内）时画，接近中的头仍是平面圆点。
+   * 色阶按实机 break hold 的测量结果逐通道反解；普通 hold 未取到录像，沿用同一倍率、换本体色。
+   * 辉光本身不随 HOLD_ACTIVE_CYCLE_MS 闪烁（实测振幅 0.8/均值 134），只有本体会。
+   */
+  private drawActiveHeadGlow(x: number, y: number, noteColor: string): void {
+    const outer = this.scaleByRadius(HOLD_ACTIVE_GLOW_RATIO);
+    if (outer < 1) return;
+
+    const base = [1, 3, 5].map((i) => Number.parseInt(noteColor.slice(i, i + 2), 16));
+    const ctx = this.context.ctx;
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, outer);
+    for (const [stop, mr, mg, mb] of HOLD_ACTIVE_GLOW_RAMP) {
+      const ch = (value: number, mul: number) =>
+        Math.max(0, Math.min(255, Math.round(value * mul)));
+      gradient.addColorStop(stop, `rgb(${ch(base[0], mr)},${ch(base[1], mg)},${ch(base[2], mb)})`);
+    }
+    gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+    ctx.beginPath();
+    ctx.arc(x, y, outer, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
   }
 
   private scalePoint(centerX: number, centerY: number, point: Point2D, scale: number): Point2D {
