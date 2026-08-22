@@ -513,11 +513,6 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         });
         const startPos = noteFx.calculateNotePosition(start, 0, t);
         const endPos = noteFx.calculateNotePosition(end, 0, t);
-        // 与引擎一致：按压波纹画在 note 之下、用引擎默认色（画在上面会把头部洗白）。
-        if (t >= hitAt && t < holdEndAt) {
-          const origin = ringPos();
-          holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t);
-        }
         // hold 头在按住期间仍可见
         if (startPos.visible && t < holdEndAt) {
           const grad: [string, string] = isBreakHold
@@ -538,6 +533,11 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
             isEach,
             1,
           );
+        }
+        // 与引擎一致：按压波纹在特效层，画在 note 之上，用引擎默认色。
+        if (t >= hitAt && t < holdEndAt) {
+          const origin = ringPos();
+          holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t);
         }
         if (t >= holdEndAt) {
           // hold 尾播的就是 tap 命中特效，绝赞 hold 用星形
@@ -584,12 +584,12 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         const holdBodyMs = Math.max(0, s.afterMs - NOTE_HIT_EFFECT_DURATION_MS);
         const holdEndAt = hitAt + holdBodyMs;
         const hold = makeTouchHold(s.touchPos, hitAt, holdBodyMs);
-        // 与引擎一致：按压波纹画在 note 之下、用引擎默认色。
+        touchNote.renderTouch(hold, 0, t, false);
+        // 与引擎一致：按压波纹在特效层，画在 note 之上，用引擎默认色。
         if (t >= hitAt && t < holdEndAt) {
           const origin = touchNote.getTouchPosition(s.touchPos);
           holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t);
         }
-        touchNote.renderTouch(hold, 0, t, false);
         if (t >= holdEndAt && t < holdEndAt + NOTE_HIT_EFFECT_DURATION_MS) {
           const origin = touchNote.getTouchPosition(s.touchPos);
           // C 在圆心上没有径向方向，固定朝右上；其余 sensor 朝圆心

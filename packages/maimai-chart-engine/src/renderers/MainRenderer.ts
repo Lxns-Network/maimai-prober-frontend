@@ -669,27 +669,6 @@ export class MainRenderer {
     const [groupLo, groupHi] = windowRange(prepared.approachIndex, nowMs, lookAheadMs);
     this.renderApproachIndicators(approachGroups, groupLo, groupHi, noteMeta, timing);
 
-    // hold 按压波纹在 note 之下：实机里波纹从不透 hold 本体，画在上面会把头部洗白。
-    const [holdLo, holdHi] = windowRange(holdEffectIndex, nowMs, lookAheadMs);
-    const [touchHoldLo, touchHoldHi] = windowRange(touchHoldIndex, nowMs, lookAheadMs);
-    if (this.config.showHitEffect) {
-      this.holdEffectRenderer.renderHoldPressEffects(
-        holdEffectNotes,
-        holdEndMap,
-        timing.currentTimeMs,
-        (position, holdStartTiming) => this.getHoldEndKey(position, holdStartTiming),
-        undefined,
-        holdLo,
-        holdHi,
-      );
-      this.renderTouchHoldPressEffects(
-        touchHoldNotes,
-        timing.currentTimeMs,
-        touchHoldLo,
-        touchHoldHi,
-      );
-    }
-
     // tap / hold / slide 星星头同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
     const [headLo, headHi] = windowRange(prepared.layeredIndex, nowMs, lookAheadMs);
     this.renderTapApproachArcs(layeredHeads, headLo, headHi, noteMeta, timing);
@@ -708,8 +687,26 @@ export class MainRenderer {
       );
     }
 
-    // 命中/释放特效画在最上层，盖住所有 note；持续按压的波纹在上面已经画过。
+    // 特效层统一画在最上层，盖住所有 note；按压波纹先画，命中/释放特效叠在波纹之上。
     if (this.config.showHitEffect) {
+      // hold / touch-hold 持续按压波纹
+      const [holdLo, holdHi] = windowRange(holdEffectIndex, nowMs, lookAheadMs);
+      const [touchHoldLo, touchHoldHi] = windowRange(touchHoldIndex, nowMs, lookAheadMs);
+      this.holdEffectRenderer.renderHoldPressEffects(
+        holdEffectNotes,
+        holdEndMap,
+        timing.currentTimeMs,
+        (position, holdStartTiming) => this.getHoldEndKey(position, holdStartTiming),
+        undefined,
+        holdLo,
+        holdHi,
+      );
+      this.renderTouchHoldPressEffects(
+        touchHoldNotes,
+        timing.currentTimeMs,
+        touchHoldLo,
+        touchHoldHi,
+      );
       // touch-hold 结束特效
       this.renderTouchHoldReleaseEffects(
         touchHoldNotes,
