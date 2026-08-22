@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { useShallow } from "zustand/react/shallow";
 import { notifications } from "@mantine/notifications";
 import {
@@ -10,6 +19,7 @@ import {
   Group,
   HoverCard,
   Menu,
+  Portal,
   Progress,
   SegmentedControl,
   Select,
@@ -46,6 +56,7 @@ import {
   IconClipboard,
   IconUpload,
   IconLink,
+  IconSparkles,
 } from "@tabler/icons-react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
@@ -72,6 +83,10 @@ import { clamp } from "../../utils/math";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import { openConfirmModal } from "@/utils/modal";
 import classes from "./Controls.module.css";
+
+const DevHitFxPreview = import.meta.env.DEV
+  ? lazy(() => import("../../HitFxPreview/HitFxPreview"))
+  : null;
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -1021,6 +1036,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);
   const [showMusicSettings, setShowMusicSettings] = useState(false);
   const [showVideoSettings, setShowVideoSettings] = useState(false);
+  const [hitFxPreviewOpened, setHitFxPreviewOpened] = useState(false);
+  const closeHitFxPreview = useCallback(() => setHitFxPreviewOpened(false), []);
 
   const handleDifficultyChange = useCallback(
     (difficulty: ChartDifficulty) => {
@@ -1048,9 +1065,19 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
       {import.meta.env.DEV && (
         <Card className={classes.card} radius="lg" withBorder>
           <Stack gap="xs">
-            <Text size="sm" fw={500}>
-              谱面调试
-            </Text>
+            <Group justify="space-between" align="center">
+              <Text size="sm" fw={500}>
+                谱面调试
+              </Text>
+              <Button
+                size="xs"
+                variant="light"
+                onClick={() => setHitFxPreviewOpened(true)}
+                leftSection={<IconSparkles size={14} />}
+              >
+                打击特效预览
+              </Button>
+            </Group>
             <SegmentedControl
               size="xs"
               value={debugChartFileType}
@@ -1555,6 +1582,31 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
           </Stack>
         </Collapse>
       </Card>
+      {DevHitFxPreview && hitFxPreviewOpened ? (
+        <Portal>
+          <Suspense
+            fallback={
+              <Card
+                radius="lg"
+                withBorder
+                shadow="xl"
+                p="md"
+                style={{
+                  position: "fixed",
+                  right: 24,
+                  bottom: 24,
+                  zIndex: 250,
+                  width: "min(360px, calc(100vw - 48px))",
+                }}
+              >
+                <Text>正在加载预览…</Text>
+              </Card>
+            }
+          >
+            <DevHitFxPreview onClose={closeHitFxPreview} />
+          </Suspense>
+        </Portal>
+      ) : null}
     </Stack>
   );
 }

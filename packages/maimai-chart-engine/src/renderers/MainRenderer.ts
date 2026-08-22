@@ -33,8 +33,11 @@ import {
   RAINBOW_SPEED_DEG_PER_SEC,
   NOTE_HIT_EFFECT_DURATION_MS,
   NOTE_VISIBILITY_AFTER_MS,
+  TOUCH_HOLD_CENTRE_BURST_ANGLE,
 } from "../utils/constants";
 import { fireworkTriggerMs } from "./TouchRenderer";
+import { HoldEffectRenderer } from "../effects/HoldEffectRenderer";
+import { TouchHitEffectRenderer } from "../effects/TouchHitEffectRenderer";
 
 const MAX_DPR = 2;
 const FULLSCREEN_MIN_DPR = 1;
@@ -143,6 +146,7 @@ interface PreparedRenderNotes {
   touches: (TouchNote | TouchHoldStartNote)[];
   fireworkTouches: (TouchNote | TouchHoldStartNote)[];
   holds: HoldStartNote[];
+  holdEffectNotes: HoldStartNote[];
   holdEndMap: Map<string, HoldEndNote>;
   noteMeta: WeakMap<Note, RenderNoteMeta>;
   approachGroups: ApproachIndicatorGroup[];
@@ -155,6 +159,7 @@ interface PreparedRenderNotes {
   touchIndex: TimeWindowIndex;
   layeredIndex: TimeWindowIndex;
   approachIndex: TimeWindowIndex;
+  holdEffectIndex: TimeWindowIndex;
   /** 谱面内最小的 note 流速倍率幅值（|<HS*x>|，≤1），粗筛窗口按它放大提前量 */
   minHiSpeed: number;
 }
@@ -229,6 +234,8 @@ export class MainRenderer {
   private slideRenderer!: SlideRenderer;
   private holdRenderer!: HoldRenderer;
   private touchRenderer!: TouchRenderer;
+  private holdEffectRenderer!: HoldEffectRenderer;
+  private touchHitEffectRenderer!: TouchHitEffectRenderer;
 
   private sensorImage: HTMLImageElement | null = null;
   private sensorImagePath: string;
@@ -248,6 +255,7 @@ export class MainRenderer {
     touches: [],
     fireworkTouches: [],
     holds: [],
+    holdEffectNotes: [],
     holdEndMap: new Map(),
     noteMeta: new WeakMap(),
     approachGroups: [],
@@ -260,6 +268,7 @@ export class MainRenderer {
     touchIndex: EMPTY_TIME_WINDOW_INDEX,
     layeredIndex: EMPTY_TIME_WINDOW_INDEX,
     approachIndex: EMPTY_TIME_WINDOW_INDEX,
+    holdEffectIndex: EMPTY_TIME_WINDOW_INDEX,
     minHiSpeed: 1,
   };
   private visibleTouchCountByPos = new Map<string, number>();
@@ -294,6 +303,8 @@ export class MainRenderer {
     this.slideRenderer = new SlideRenderer(context, this.noteRenderer);
     this.holdRenderer = new HoldRenderer(context);
     this.touchRenderer = new TouchRenderer(context);
+    this.holdEffectRenderer = new HoldEffectRenderer(context);
+    this.touchHitEffectRenderer = new TouchHitEffectRenderer(context);
   }
 
   private createRenderContext(): RenderContext {
@@ -315,6 +326,8 @@ export class MainRenderer {
     this.slideRenderer.updateContext(context);
     this.holdRenderer.updateContext(context);
     this.touchRenderer.updateContext(context);
+    this.holdEffectRenderer.updateContext(context);
+    this.touchHitEffectRenderer.updateContext(context);
   }
 
   private loadAssets(): void {
@@ -457,6 +470,20 @@ export class MainRenderer {
     this.config.showHitEffect = enabled;
   }
 
+  /**
+   * 清空舞台并绘制判定线；背景视频行为与正常播放一致。
+   * 供 hit-fx 预览等工具复用舞台素材，不要自行画圈/渐变。
+   */
+  renderEmptyStage(): void {
+    this.clear();
+    this.renderJudgmentLine();
+  }
+
+  /** 当前逻辑坐标系下的 RenderContext（resize 后有效）。 */
+  getRenderContext(): RenderContext {
+    return this.createRenderContext();
+  }
+
   setFullscreenMaxPixels(maxPixels: number): void {
     this.fullscreenMaxPixels = maxPixels;
   }
@@ -595,8 +622,17 @@ export class MainRenderer {
     this.ctx.arc(this.centerX, this.centerY, this.logicalSize / 2, 0, Math.PI * 2);
     this.ctx.clip();
 
-    const { slides, touches, approachGroups, hitEffectNotes, layeredHeads, holdEndMap, noteMeta } =
-      prepared;
+    const {
+      slides,
+      touches,
+      approachGroups,
+      hitEffectNotes,
+      layeredHeads,
+      holdEffectNotes,
+      holdEffectIndex,
+      holdEndMap,
+      noteMeta,
+    } = prepared;
 
     const nowMs = timing.currentTimeMs;
     // HS<1 的 note 接近时间更长,粗筛提前量按谱面最小倍率放大
@@ -627,6 +663,21 @@ export class MainRenderer {
     const [groupLo, groupHi] = windowRange(prepared.approachIndex, nowMs, lookAheadMs);
     this.renderApproachIndicators(approachGroups, groupLo, groupHi, noteMeta, timing);
 
+    // hold 按压波纹在 note 之下：实机里波纹从不透 hold 本体，画在上面会把头部洗白。
+    const [holdLo, holdHi] = windowRange(holdEffectIndex, nowMs, lookAheadMs);
+    if (this.config.showHitEffect) {
+      this.holdEffectRenderer.renderHoldPressEffects(
+        holdEffectNotes,
+        holdEndMap,
+        timing.currentTimeMs,
+        (position, holdStartTiming) => this.getHoldEndKey(position, holdStartTiming),
+        undefined,
+        holdLo,
+        holdHi,
+      );
+      this.renderTouchHoldPressEffects(touches, timing.currentTimeMs);
+    }
+
     // tap / hold / slide 星星头同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
     const [headLo, headHi] = windowRange(prepared.layeredIndex, nowMs, lookAheadMs);
     this.renderTapApproachArcs(layeredHeads, headLo, headHi, noteMeta, timing);
@@ -645,8 +696,14 @@ export class MainRenderer {
       );
     }
 
-    // 击打特效画在最上层，盖住所有 note。
+    // 命中/释放特效画在最上层，盖住所有 note；持续按压的波纹在上面已经画过。
     if (this.config.showHitEffect) {
+      // touch-hold 结束特效
+      this.renderTouchHoldReleaseEffects(touches, timing.currentTimeMs);
+      // touch 命中（InitializeCenter → FX_GAM_Notes_Touch_00）
+      this.touchHitEffectRenderer.renderTouchHitEffects(touches, timing.currentTimeMs, (pos) =>
+        this.touchRenderer.getTouchPosition(pos),
+      );
       this.renderTapHitEffect(hitEffectNotes, timing.currentTimeMs);
     }
 
@@ -830,6 +887,7 @@ export class MainRenderer {
         }
       }
 
+      // hold 尾也在列表里：实机 hold 结束播的就是 tap 命中特效，形状按是否绝赞选。
       if (
         isButtonNote(note) &&
         !isTouchNote(note) &&
@@ -867,6 +925,7 @@ export class MainRenderer {
     fireworkTouches.sort((a, b) => fireworkTriggerMs(a) - fireworkTriggerMs(b));
 
     const timingOf = (note: Note) => note.timingMs;
+    const holdEffectNotes = [...holds].sort((a, b) => a.timingMs - b.timingMs);
 
     let minHiSpeed = 1;
     for (const note of notes) {
@@ -880,6 +939,7 @@ export class MainRenderer {
       touches,
       fireworkTouches,
       holds,
+      holdEffectNotes,
       holdEndMap,
       noteMeta,
       approachGroups,
@@ -900,6 +960,15 @@ export class MainRenderer {
         approachGroups,
         (group) => group.timingMs,
         (group) => group.timingMs,
+      ),
+      holdEffectIndex: buildTimeWindowIndex(
+        holdEffectNotes,
+        (hold) => hold.timingMs,
+        (hold) => {
+          // 只剩按压波纹用这个索引，窗口到 hold 尾为止即可。
+          const holdEnd = holdEndMap.get(this.getHoldEndKey(hold.position, hold.timing));
+          return holdEnd ? holdEnd.timingMs : hold.timingMs;
+        },
       ),
     };
   }
@@ -1419,6 +1488,58 @@ export class MainRenderer {
     );
   }
 
+  /** touch-hold 头～尾期间在 sensor 点播放 hold 持续按压特效。 */
+  private renderTouchHoldPressEffects(
+    touches: readonly (TouchNote | TouchHoldStartNote)[],
+    currentTimeMs: number,
+  ): void {
+    for (let i = 0; i < touches.length; i++) {
+      const note = touches[i];
+      if (!isTouchHoldStartNote(note)) continue;
+      const startMs = note.timingMs;
+      const endMs = note.timingMs + note.durationMs;
+      if (currentTimeMs < startMs || currentTimeMs >= endMs) continue;
+      const origin = this.touchRenderer.getTouchPosition(note.position);
+      this.holdEffectRenderer.renderPressRippleAt(
+        origin.x,
+        origin.y,
+        startMs,
+        endMs,
+        currentTimeMs,
+      );
+    }
+  }
+
+  /** touch-hold 尾部在 sensor 点播放 FinishHold 释放特效。 */
+  private renderTouchHoldReleaseEffects(
+    touches: readonly (TouchNote | TouchHoldStartNote)[],
+    currentTimeMs: number,
+  ): void {
+    for (let i = 0; i < touches.length; i++) {
+      const note = touches[i];
+      if (!isTouchHoldStartNote(note)) continue;
+      const endMs = note.timingMs + note.durationMs;
+      if (currentTimeMs < endMs || currentTimeMs >= endMs + NOTE_HIT_EFFECT_DURATION_MS) {
+        continue;
+      }
+      const origin = this.touchRenderer.getTouchPosition(note.position);
+      // 按钮 note 的特效朝外（按钮角度），touch hold 反过来朝圆心——实机录像就是这样，
+      // 两边的约定不同是有意的。C 在圆心上，没有径向方向，单独取固定角度。
+      const angle =
+        note.position === "C"
+          ? TOUCH_HOLD_CENTRE_BURST_ANGLE
+          : Math.atan2(this.centerY - origin.y, this.centerX - origin.x);
+      this.noteRenderer.renderHitEffectAt(
+        origin.x,
+        origin.y,
+        angle,
+        COLORS.HIT_EFFECT_GOLD,
+        (currentTimeMs - endMs) / NOTE_HIT_EFFECT_DURATION_MS,
+        "hexagon",
+      );
+    }
+  }
+
   private renderTapHitEffect(notes: Note[], currentTimeMs: number): void {
     // hitEffectNotes 按 timingMs 升序，二分定位窗口下界（currentTimeMs - DURATION），之后线性扫。
     const windowStartMs = currentTimeMs - NOTE_HIT_EFFECT_DURATION_MS;
@@ -1456,7 +1577,12 @@ export class MainRenderer {
         note.position as ButtonPosition,
         COLORS.HIT_EFFECT_GOLD,
         pos.progress,
-        note.type === "break" || (isTapNote(note) && note.isStar) ? "star" : "hexagon",
+        // hold 尾的 type 永远不是 "break"，绝赞 hold 要靠 isBreakHold 才能选到星形。
+        note.type === "break" ||
+          (isTapNote(note) && note.isStar) ||
+          (isHoldEndNote(note) && note.isBreakHold)
+          ? "star"
+          : "hexagon",
       );
     }
   }
