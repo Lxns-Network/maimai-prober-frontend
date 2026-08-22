@@ -714,7 +714,7 @@ export class MainRenderer {
         touchHoldLo,
         touchHoldHi,
       );
-      // touch 命中（InitializeCenter → FX_GAM_Notes_Touch_00）
+      // touch 命中特效
       this.touchHitEffectRenderer.renderTouchHitEffects(touches, timing.currentTimeMs, (pos) =>
         this.touchRenderer.getTouchPosition(pos),
       );
@@ -1534,7 +1534,7 @@ export class MainRenderer {
     }
   }
 
-  /** touch-hold 尾部在 sensor 点播放 FinishHold 释放特效。[startIndex, endIndex) 来自 touchHoldIndex 粗筛。 */
+  /** touch-hold 尾部在 sensor 点播放释放特效。[startIndex, endIndex) 来自 touchHoldIndex 粗筛。 */
   private renderTouchHoldReleaseEffects(
     touchHolds: readonly TouchHoldStartNote[],
     currentTimeMs: number,
