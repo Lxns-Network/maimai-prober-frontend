@@ -5,17 +5,17 @@ import { HOLD_ACTIVE_CYCLE_MS } from "../utils/constants";
 type Rgb = { r: number; g: number; b: number };
 
 /**
- * Hold 按压波纹的数值来自实机外部输出录像的逐帧测量，**不是** FX_GAM_Notes_Hold_00 的 prefab 参数：
- * 后者的 lifetime(0.5s)、rateOverTime(10)、size/alpha 曲线和 FX_hy_00_246 剖面都与实机画面对不上
- * （prefab 参数画出来是一坨几乎静止的实心光斑，实机是若干条细环持续外扩）。改回 prefab 数值会重新引入该 bug。
+ * Hold 按压波纹的数值来自实机外部输出录像的逐帧测量，**不是**游戏内置的粒子配置参数：
+ * 后者的生命周期、发射率、size/alpha 曲线和贴图剖面都与实机画面对不上
+ * （按那套参数画出来是一坨几乎静止的实心光斑，实机是若干条细环持续外扩）。改回那套数值会重新引入该 bug。
  *
  * 实测（2.3s / 138 帧录像，23 颗波纹平均，σ ≤ 0.0024R，单位为判定圈半径 R）：
  * - 发射不是匀速：每个 HOLD_ACTIVE_CYCLE_MS 循环内连发 3 颗（间隔 4 帧），然后空 8 帧。
  *   同屏颗数因此在 1~3 之间起伏；匀速发射会稳定在 2~3 颗，看起来就没有实机的呼吸感。
  * - 环峰 0.1355R 出生，线性外扩 0.735 R/s，11 帧后在 0.2583R 消失
  * - alpha 峰值 1（按 R 通道对 age 2~10 线性拟合，斜率 -0.101/帧、age 11 归零），最初一帧维持峰值；
- *   出生帧看起来更暗是被 note 本体挡住的，
- *   不是淡入——波纹画在 note 之下，这个遮挡是自然发生的
+ *   实机录像里出生帧看起来更暗是波纹被 note 本体挡住，不是淡入。
+ *   本引擎按产品决定把特效层统一画在 note 之上，因此出生帧不做遮挡处理。
  * - 单颗是细环而非实心圆，且环宽**按半径等比缩放**（FWHM/峰半径在 0.173R 与 0.223R 处同为 0.165）
  */
 const RIPPLE_CYCLE = HOLD_ACTIVE_CYCLE_MS / 1000;
@@ -83,7 +83,7 @@ export class HoldEffectRenderer extends BaseRenderer {
   }
 
   /**
-   * 按钮 hold 持续按压特效（InitializeHold）。
+   * 按钮 hold 持续按压特效。
    * holdEndMap key 与 MainRenderer.getHoldEndKey 一致。
    * startIndex/endIndex 用于传入按时间裁剪后的 hold 索引范围，endIndex 不包含在内。
    */
@@ -140,8 +140,8 @@ export class HoldEffectRenderer extends BaseRenderer {
   }
 
   /**
-   * FinishHold → FX_GAM_Notes_Hold_Release_00 的 Ring 和两组星粒子。
-   * 纯 Canvas 重建；窗口 [endMs, endMs + 0.5s)。
+   * 按住期间的波纹群：按发射相位枚举当前存活的波纹并逐颗绘制。
+   * elapsedSec 是距按下的秒数。
    */
   private drawRipples(
     ctx: CanvasRenderingContext2D,

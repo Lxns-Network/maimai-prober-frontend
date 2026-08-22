@@ -1,29 +1,29 @@
 import { BaseRenderer, RenderContext } from "../renderers/BaseRenderer";
 import { TouchHoldStartNote, TouchNote, TouchPosition } from "../types";
-import { FX_HY_00_910_ALPHA_PROFILE, HIT_EFFECT_COLORS } from "./constants";
+import { HIT_EFFECT_COLORS, TOUCH_RING_ALPHA_PROFILE } from "./constants";
 
 type Rgb = { r: number; g: number; b: number };
 type StarFrame = 0 | 1 | 2 | 3;
 
 /**
- * SDGB InitializeCenter → FX_GAM_Notes_Touch_00
+ * 实机 touch 命中特效的纯 Canvas 重建。
  *
- * Root localScale = 70。
- * 组成（按 SDGB prefab/resource）：
- * - Ring：FX_hy_00_910 的径向 alpha 剖面，startSize 2.5，life 0.5
- * - Star_Small×2：各 maxP4，圆周 r=0.5 出生，speed=0
- * - Star_Round×2：各 maxP4，圆周 r=0.6 出生，短距外飞
- * - 星点：FX_hy_18_050 的四种 alpha 形态，用 Canvas 路径按粒子稳定随机选择。
+ * 根缩放 = 70（内部单位）。
+ * 组成（按原版粒子参数）：
+ * - Ring：径向 alpha 剖面见 TOUCH_RING_ALPHA_PROFILE，初始尺寸 2.5，生命 0.5s
+ * - 小星：两组各 4 颗，圆周 r=0.5 出生，速度 0
+ * - 圆星：两组各 4 颗，圆周 r=0.6 出生，短距外飞
+ * - 星点贴图有四种 alpha 形态，用 Canvas 路径按粒子稳定随机选择。
  */
 const JUDGE_RADIUS_UNITS = 480;
 const ROOT_SCALE = 70;
 const LIFE = 0.5;
 
-// Ring：startSize 2.5 → 直径
+// Ring：初始尺寸 2.5 → 直径
 const RING_START_SIZE = 2.5 * ROOT_SCALE;
 const RING_MAX_SIZE = 540;
 
-// Small stars（2×maxP4 → 8）
+// Small stars（2 组 ×4 → 8）
 const SMALL_COUNT = 8;
 const SMALL_SHAPE_R = 0.5 * ROOT_SCALE;
 const SMALL_SIZE = 0.3 * ROOT_SCALE;
@@ -139,8 +139,8 @@ function clampedTravel(age: number, startSpeed: number, clampSpeed: number): num
 }
 
 /**
- * Touch 命中特效（InitializeCenter）。
- * 径向 Ring + 四路星点粒子，保持与 AC 的粒子数量、半径、生命周期和速度曲线一致。
+ * Touch 命中特效。
+ * 径向 Ring + 四路星点粒子，保持与实机的粒子数量、半径、生命周期和速度曲线一致。
  */
 export class TouchHitEffectRenderer extends BaseRenderer {
   constructor(context: RenderContext) {
@@ -175,6 +175,8 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     for (let i = lo; i < touches.length; i++) {
       const n = touches[i];
       if (n.timingMs > currentTimeMs) break;
+      // touch-hold 不播这个特效，也就不该让它把同 sensor 上还在播的 touch 特效顶掉。
+      if (n.type === "touch-hold-start") continue;
       const key = String(n.position);
       const prev = lastByPos.get(key);
       if (prev === undefined || n.timingMs > prev) lastByPos.set(key, n.timingMs);
@@ -236,7 +238,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
   }
 
   /**
-   * Ring 粒子：按 FX_hy_00_910 的径向 alpha 剖面绘制扩张软环。
+   * Ring 粒子：按实测径向 alpha 剖面绘制扩张软环。
    * 该贴图不是纯描边，也不是中心径向渐变；外圈有一次明显的亮峰。
    */
   private drawCenterRing(
@@ -261,7 +263,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     for (let i = 0; i < rings; i++) {
       const t0 = (0.96 * i) / rings;
       const t1 = (0.96 * (i + 1)) / rings;
-      const p = sampleProfile(FX_HY_00_910_ALPHA_PROFILE, (t0 + t1) / 2);
+      const p = sampleProfile(TOUCH_RING_ALPHA_PROFILE, (t0 + t1) / 2);
       const ringAlpha = p * alpha;
       if (ringAlpha <= 0.01) continue;
 
@@ -313,14 +315,14 @@ export class TouchHitEffectRenderer extends BaseRenderer {
       const outerR = size * 0.55;
       if (outerR < 0.5) continue;
 
-      // FX_hy_18_050 是 4 列形态表；用稳定随机列复现粒子各自的形态。
+      // 星点贴图是 4 列形态表；用稳定随机列复现粒子各自的形态。
       const frame = Math.min(3, Math.floor(h4 * 4)) as StarFrame;
       this.drawStarFrame(ctx, x, y, outerR, h3 * Math.PI * 2, color, alpha, frame);
     }
   }
 
   /**
-   * FX_hy_18_050 的四列透明形态的 Canvas 重建：软心、宽实心、窄实心、描边。
+   * 星点贴图四列透明形态的 Canvas 重建：软心、宽实心、窄实心、描边。
    * 只绘制路径和渐变，不依赖运行时图片资源。
    */
   private drawStarFrame(

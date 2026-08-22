@@ -338,6 +338,12 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
     restart();
   }, [fxKind, touchPos, button, restart]);
 
+  // 播放中切换循环开关/间隔时把 epoch 重锚到当前相位：elapsed 按新周期重解释会瞬移，
+  // 关循环时累计多轮的 elapsed 还会立刻饱和并自停。
+  useEffect(() => {
+    playEpochRef.current = performance.now() - scrubRef.current * durationMs;
+  }, [loop, loopGapMs, durationMs]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -528,10 +534,12 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
             1,
           );
         }
+        // 与引擎一致：按压波纹在特效层，画在 note 之上，用引擎默认色。
         if (t >= hitAt && t < holdEndAt) {
           const origin = ringPos();
-          holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t, color);
-        } else if (t >= holdEndAt) {
+          holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t);
+        }
+        if (t >= holdEndAt) {
           // hold 尾播的就是 tap 命中特效，绝赞 hold 用星形
           drawTapHitAt(holdEndAt, isBreakHold ? "star" : "hexagon");
         }
@@ -546,19 +554,28 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
           const size = (radius / 12.5) * pos.scale * 1.15 * 1.25;
           slide.drawStar(pos.x, pos.y, size, starColor(isBreak, false), 0, false);
         }
-        drawTapHit("hexagon");
+        // 绝赞 slide 头与引擎一致用星形命中特效
+        drawTapHit(isBreak ? "star" : "hexagon");
       }
 
       // ---------- Touch ----------
       if (kind === "touch" || kind === "touch-each" || kind === "touch-firework") {
         const each = kind === "touch-each";
         const note = makeTouch(s.touchPos, hitAt, { hasFirework: kind === "touch-firework" });
+        // 与引擎一致：烟花内切圆裁剪、画在最底层（note 之下）。
+        if (kind === "touch-firework" && t >= hitAt) {
+          const ctx = context.ctx;
+          touchNote.warmFireworkResources();
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, centerX, 0, Math.PI * 2);
+          ctx.clip();
+          touchNote.renderTouchFireworks([note], t);
+          ctx.restore();
+        }
         touchNote.renderTouch(note, 0, t, each);
         if (t >= hitAt) {
           touchFx.renderTouchHitEffects([note], t, (pos) => touchNote.getTouchPosition(pos), color);
-        }
-        if (kind === "touch-firework" && t >= hitAt) {
-          touchNote.renderTouchFireworks([note], t);
         }
       }
 
@@ -568,10 +585,12 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         const holdEndAt = hitAt + holdBodyMs;
         const hold = makeTouchHold(s.touchPos, hitAt, holdBodyMs);
         touchNote.renderTouch(hold, 0, t, false);
+        // 与引擎一致：按压波纹在特效层，画在 note 之上，用引擎默认色。
         if (t >= hitAt && t < holdEndAt) {
           const origin = touchNote.getTouchPosition(s.touchPos);
-          holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t, color);
-        } else if (t >= holdEndAt && t < holdEndAt + NOTE_HIT_EFFECT_DURATION_MS) {
+          holdFx.renderPressRippleAt(origin.x, origin.y, hitAt, holdEndAt, t);
+        }
+        if (t >= holdEndAt && t < holdEndAt + NOTE_HIT_EFFECT_DURATION_MS) {
           const origin = touchNote.getTouchPosition(s.touchPos);
           // C 在圆心上没有径向方向，固定朝右上；其余 sensor 朝圆心
           const angle =
@@ -650,6 +669,11 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
                 onClick={() => {
                   if (playing) setPlaying(false);
                   else {
+                    // 播完后再按播放 = 从头重播，否则 elapsed 已饱和会在下一帧立刻自停。
+                    if (scrubRef.current >= 1) {
+                      scrubRef.current = 0;
+                      setScrub(0);
+                    }
                     playEpochRef.current = performance.now() - scrubRef.current * durationMs;
                     setPlaying(true);
                   }
