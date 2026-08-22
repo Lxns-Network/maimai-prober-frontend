@@ -291,7 +291,8 @@ export class HoldRenderer extends BaseRenderer {
           const endCenterSize = endWidth * 0.15;
           ctx.beginPath();
           ctx.arc(endX, endY, endCenterSize, 0, Math.PI * 2);
-          ctx.fillStyle = color[0];
+          // 终点 dot 与本体一起呼吸（实测是整条 note 一起明暗）。
+          ctx.fillStyle = tint(color[0]);
           ctx.fill();
         }
       }

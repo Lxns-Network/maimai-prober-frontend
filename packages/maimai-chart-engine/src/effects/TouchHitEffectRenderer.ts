@@ -175,6 +175,8 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     for (let i = lo; i < touches.length; i++) {
       const n = touches[i];
       if (n.timingMs > currentTimeMs) break;
+      // touch-hold 不播这个特效，也就不该让它把同 sensor 上还在播的 touch 特效顶掉。
+      if (n.type === "touch-hold-start") continue;
       const key = String(n.position);
       const prev = lastByPos.get(key);
       if (prev === undefined || n.timingMs > prev) lastByPos.set(key, n.timingMs);
