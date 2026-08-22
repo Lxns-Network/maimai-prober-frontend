@@ -4,17 +4,12 @@ import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import { TransformedValues, useForm } from "@mantine/form";
 import { validateEmail, validateUserName } from "@/utils/validator";
-import {
-  useSendEmailVerification,
-  useUpdateUserProfile,
-} from "@/hooks/mutations/useUserMutations.ts";
+import { useUpdateUserProfile } from "@/hooks/mutations/useUserMutations.ts";
 import classes from "./Profile.module.css";
 import { openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { useUser } from "@/hooks/queries/useUser.ts";
-import { useEffect, useState } from "react";
-import { emailVerificationSentMessage } from "@/utils/emailVerification.ts";
-import { useEmailVerificationPolling } from "@/hooks/useEmailVerificationPolling.ts";
+import { useEmailVerificationFlow } from "@/hooks/useEmailVerificationFlow.ts";
 
 interface FormValues {
   name: string;
@@ -24,30 +19,21 @@ interface FormValues {
 export const UserSection = () => {
   const { user, invalidate } = useUser();
   const [visible, visibleHandler] = useDisclosure(false);
-  const [verificationSent, setVerificationSent] = useState(false);
 
   const { mutate: mutateUpdateProfile } = useUpdateUserProfile();
-  const { mutate: sendEmailVerification, isPending: isSendingEmailVerification } =
-    useSendEmailVerification();
   const {
+    verificationSent,
+    sendVerification: sendEmailVerificationHandler,
+    isSending: isSendingEmailVerification,
     checkNow: checkEmailVerification,
     isChecking: isCheckingEmailVerification,
     timedOut: emailVerificationPollingTimedOut,
-  } = useEmailVerificationPolling({
-    active: verificationSent,
+    resetVerificationSent,
+  } = useEmailVerificationFlow({
     verified: user?.email_verified ?? false,
     invalidate,
+    verifiedMessage: "当前邮箱已经完成验证。",
   });
-
-  useEffect(() => {
-    if (!verificationSent || !user?.email_verified) return;
-    setVerificationSent(false);
-    notifications.show({
-      title: "邮箱验证成功",
-      message: "当前邮箱已经完成验证。",
-      color: "green",
-    });
-  }, [user?.email_verified, verificationSent]);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -82,7 +68,10 @@ export const UserSection = () => {
           message: "你的账号详情保存成功。",
           color: "green",
         });
-        setVerificationSent(false);
+        // 只有真的换绑了邮箱才作废"验证邮件已发送"状态；只改用户名不该打断等待中的验证。
+        if (values.email) {
+          resetVerificationSent();
+        }
         void invalidate();
       },
       onError: (error) => {
@@ -90,31 +79,6 @@ export const UserSection = () => {
       },
       onSettled: () => {
         form.reset();
-      },
-    });
-  };
-
-  const sendEmailVerificationHandler = () => {
-    sendEmailVerification(undefined, {
-      onSuccess: (result) => {
-        if (result.email_verified) {
-          void invalidate();
-          notifications.show({
-            title: "邮箱已验证",
-            message: "当前邮箱已经完成验证。",
-            color: "green",
-          });
-          return;
-        }
-        notifications.show({
-          title: "验证邮件已发送",
-          message: emailVerificationSentMessage(result.expires_in),
-          color: "green",
-        });
-        setVerificationSent(true);
-      },
-      onError: (error) => {
-        openRetryModal("发送失败", `${error}`, sendEmailVerificationHandler);
       },
     });
   };

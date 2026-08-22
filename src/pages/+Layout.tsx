@@ -10,7 +10,7 @@ import {
 import { ModalsProvider } from "@mantine/modals";
 import { ManagedModalsBackGuard } from "@/components/ModalProvider/ManagedModalsBackGuard.tsx";
 import { notifications, Notifications } from "@mantine/notifications";
-import { logout } from "@/utils/session";
+import { logout, isTokenUndefined } from "@/utils/session";
 import * as Sentry from "@sentry/react";
 import { usePageContext } from "vike-react/usePageContext";
 import { navigate } from "vike/client/router";
@@ -110,9 +110,13 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   const [game] = useGame();
 
   useEffect(() => {
+    // 401/403 是会话过期；其余失败若刷新流程已把本地 token 清掉（明确拒绝），同样按会话过期处理，
+    // 避免用户留在一个所有请求都会失败的半登录状态里。
     const sessionExpired =
-      userTokenError instanceof APIError &&
-      (userTokenError.status === 401 || userTokenError.status === 403);
+      userTokenError != null &&
+      ((userTokenError instanceof APIError &&
+        (userTokenError.status === 401 || userTokenError.status === 403)) ||
+        isTokenUndefined());
 
     if (sessionExpired) {
       Sentry.setUser(null);

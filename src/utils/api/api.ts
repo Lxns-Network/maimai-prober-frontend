@@ -58,13 +58,14 @@ async function requestTokenRefresh(): Promise<RefreshTokenData> {
     if (!response.ok) {
       const error = await getRefreshError(response);
 
-      if (response.status === 401 || response.status === 403) {
+      const canRetry = response.status === 408 || response.status === 429 || response.status >= 500;
+      if (!canRetry) {
+        // 非瞬时失败（401/403/400 等）说明 token 已不可用：清掉过期 token，
+        // 让 useUserToken/Layout 走会话过期流程引导重新登录，避免卡死在坏 token 上。
         localStorage.removeItem("token");
         throw error;
       }
-
-      const canRetry = response.status === 408 || response.status === 429 || response.status >= 500;
-      if (!canRetry || attempt === REFRESH_RETRY_DELAYS.length) {
+      if (attempt === REFRESH_RETRY_DELAYS.length) {
         throw error;
       }
 
@@ -73,23 +74,11 @@ async function requestTokenRefresh(): Promise<RefreshTokenData> {
       continue;
     }
 
+    let data: ApiResponse<RefreshTokenData>;
     try {
-      const data = (await response.json()) as ApiResponse<RefreshTokenData>;
-      if (!data.success || !data.data?.token) {
-        throw new APIError(data.message || "服务器返回了无效的响应", {
-          code: data.code,
-          status: response.status,
-        });
-      }
-
-      localStorage.setItem("token", data.data.token);
-      queryClient.setQueryData(["user/refresh"], data.data);
-      return data.data;
-    } catch (error) {
-      lastError =
-        error instanceof APIError
-          ? error
-          : new APIError("服务器返回了无效的响应", { status: response.status });
+      data = (await response.json()) as ApiResponse<RefreshTokenData>;
+    } catch {
+      lastError = new APIError("服务器返回了无效的响应", { status: response.status });
 
       if (attempt < REFRESH_RETRY_DELAYS.length) {
         await delay(REFRESH_RETRY_DELAYS[attempt]);
@@ -98,6 +87,19 @@ async function requestTokenRefresh(): Promise<RefreshTokenData> {
 
       throw lastError;
     }
+
+    if (!data.success || !data.data?.token) {
+      // 业务层明确拒绝不是瞬时错误，不重试；同样视为 token 失效。
+      localStorage.removeItem("token");
+      throw new APIError(data.message || "服务器返回了无效的响应", {
+        code: data.code,
+        status: response.status,
+      });
+    }
+
+    localStorage.setItem("token", data.data.token);
+    queryClient.setQueryData(["user/refresh"], data.data);
+    return data.data;
   }
 
   throw lastError || new APIError("登录状态刷新失败");
@@ -123,7 +125,8 @@ export async function fetchAPI(
   endpoint: string,
   options: { method: string; body?: unknown; headers?: Record<string, string> },
 ): Promise<Response> {
-  if (endpoint !== "user/refresh") {
+  // 登出与刷新本身不做预检刷新：刷新持续失败时登出必须仍然可达，否则用户会被锁在坏会话里。
+  if (endpoint !== "user/refresh" && endpoint !== "user/logout") {
     await ensureTokenValid();
   }
 
