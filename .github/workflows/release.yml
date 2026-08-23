@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      # FRONTEND_VERSION lands in dist/client/version.json, which the running site serves
+      # and useVersionChecker polls, so the tag is what identifies the live build.
+      - name: Build
+        env:
+          FRONTEND_VERSION: ${{ steps.version.outputs.VERSION }}
+        run: yarn build
+
+      - name: Verify the stamp
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          got=$(node -e "process.stdout.write(require('./dist/client/version.json').version)")
+          if [ "$got" != "$VERSION" ]; then
+            echo "version.json says '$got', expected '$VERSION'" >&2
+            exit 1
+          fi
+
+      # Only dist/client is served; dist/server is the SSR half and the deployed site does
+      # not use it. Packaged with the directory as the root so it unpacks over dist/client.
+      - name: Package
+        run: |
+          mkdir -p build
+          tar -czf build/dist-client.tar.gz -C dist/client .
+          cd build && sha256sum dist-client.tar.gz > dist-client.tar.gz.sha256
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/dist-client.tar.gz
+            build/dist-client.tar.gz.sha256
+          tag_name: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # DEPLOY_REPO_SSH_KEY is a write deploy key on Lxns-Network/maimai-prober-deploy,
+      # separate from the backend's so either can be revoked alone.
+      - name: Pin the version in the deploy repository
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_REPO_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes"
+          git clone --depth 1 git@github.com:Lxns-Network/maimai-prober-deploy.git deploy
+          cd deploy
+          echo "$VERSION" > VERSIONS/frontend
+          if git diff --quiet; then
+            echo "already pinned to $VERSION"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "deploy(frontend): $VERSION"
+          git push
