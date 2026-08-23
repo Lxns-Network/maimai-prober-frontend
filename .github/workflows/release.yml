@@ -92,3 +92,20 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -am "deploy(frontend): $VERSION"
           git push
+
+      # The key this uses is pinned to receive.sh by authorized_keys, so it can ask for a
+      # deploy and nothing else — not a shell, not scp. The artifact goes over stdin and the
+      # checksum is verified on the far side before anything is staged.
+      - name: Deploy
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_ssh_key
+          chmod 600 ~/.ssh/deploy_ssh_key
+          ssh-keyscan -t ed25519 "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          sum=$(cut -d' ' -f1 build/dist-client.tar.gz.sha256)
+          ssh -i ~/.ssh/deploy_ssh_key -o IdentitiesOnly=yes -o BatchMode=yes             "ubuntu@${DEPLOY_HOST}" "deploy frontend ${VERSION} ${sum}" < build/dist-client.tar.gz
