@@ -68,6 +68,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Before the trigger, not after: VERSIONS is the desired state the host reads, so it has
+      # to be current when the host looks. A deploy that then fails leaves desired and actual
+      # apart, which is a state the timer retries out of, not a lie in a record.
       # DEPLOY_REPO_SSH_KEY is a write deploy key on Lxns-Network/maimai-prober-deploy,
       # separate from the backend's so either can be revoked alone.
       - name: Pin the version in the deploy repository
@@ -93,12 +96,12 @@ jobs:
           git commit -am "deploy(frontend): $VERSION"
           git push
 
-      # The key this uses is pinned to receive.sh by authorized_keys, so it can ask for a
-      # deploy and nothing else — not a shell, not scp. The artifact goes over stdin and the
-      # checksum is verified on the far side before anything is staged.
-      - name: Deploy
+      # Only a word goes over this link. The artifact is fetched by the host itself, through
+      # its proxy at around 700 KiB/s — pushing it in from a runner measured 26, some twenty
+      # minutes for the binary. The key is pinned by authorized_keys to receive.sh, so it can
+      # ask for this and nothing else: no shell, no scp.
+      - name: Trigger the deploy
         env:
-          VERSION: ${{ steps.version.outputs.VERSION }}
           DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
         run: |
@@ -107,5 +110,4 @@ jobs:
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_ssh_key
           chmod 600 ~/.ssh/deploy_ssh_key
           ssh-keyscan -t ed25519 "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          sum=$(cut -d' ' -f1 build/dist-client.tar.gz.sha256)
-          ssh -i ~/.ssh/deploy_ssh_key -o IdentitiesOnly=yes -o BatchMode=yes             "ubuntu@${DEPLOY_HOST}" "deploy frontend ${VERSION} ${sum}" < build/dist-client.tar.gz
+          ssh -i ~/.ssh/deploy_ssh_key -o IdentitiesOnly=yes -o BatchMode=yes             "ubuntu@${DEPLOY_HOST}" "update"
