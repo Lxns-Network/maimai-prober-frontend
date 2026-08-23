@@ -14,7 +14,9 @@ function generateVersionPlugin(): Plugin {
       projectRoot = config.root;
     },
     closeBundle() {
-      const version = Date.now().toString();
+      // A release stamps its tag here so /version.json names the build that is live, the
+      // way /api/v0/health does for the backend. Local builds keep the timestamp.
+      const version = process.env.FRONTEND_VERSION || Date.now().toString();
       const outputPath = path.resolve(projectRoot, "dist/client/version.json");
       fs.mkdirSync(path.dirname(outputPath), { recursive: true });
       fs.writeFileSync(outputPath, JSON.stringify({ version }));
