@@ -611,7 +611,7 @@ JSON 格式的玩家成绩：
 | `dx_rating`        | `float`                     | 仅获取 `Score` 时返回，DX Rating，计算时需要向下取整                                                                                            |
 | `rate`             | [`RateType`](#ratetype)     | 仅获取 `Score` 时返回，评级类型                                                                                                                 |
 | `type`             | [`SongType`](#songtype)     | 谱面类型                                                                                                                                        |
-| `play_time`        | `string`                    | 值可空，游玩的 UTC 时间，精确到分钟；上传时忽略，仅通过 HTML 上传写入 |
+| `play_time`        | `string`                    | 值可空，游玩的 UTC 时间，精确到分钟；上传时忽略，仅通过 HTML 上传写入                                                                           |
 | `upload_time`      | `string`                    | 仅获取 `Score` 时返回，成绩被同步时的 UTC 时间                                                                                                  |
 | `last_played_time` | `string`                    | 仅[获取成绩列表](#get-apiv0maimaiplayerfriend_codescores)、[获取最佳成绩](#get-apiv0maimaiplayerfriend_codebest)时返回，谱面最后游玩的 UTC 时间 |
 
