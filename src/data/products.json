@@ -63,5 +63,13 @@
     "image": "sakiko",
     "button": "了解更多",
     "url": "https://sakiko.moeneko.cc"
+  },
+  {
+    "title": "恋萌萌",
+    "tags": ["QQ 机器人", "舞萌", "中二节奏", "OSU"],
+    "description": "一款东方主题音游QQ娱乐机器人，原型为《东方Project》角色：古明地恋。现已支持Markdown消息美观输出",
+    "image": "lianmengmeng",
+    "button": "添加",
+    "url": "https://bot.q.qq.com/s/btt3bvl2q?id=102091267"
   }
 ]
