@@ -239,70 +239,7 @@ export const ProxySyncSection = () => {
     };
   }, [proxyReady, game, sseResetKey, isLoggedOut]);
 
-  const proxyPresentation = (() => {
-    if (isProxyAvailable) {
-      return {
-        title: "HTTP 代理已配置",
-        description: "代理服务和 Wahlap 路由均正常",
-        color: "teal",
-        icon: "success" as const,
-      };
-    }
-    if (proxySkipped) {
-      return {
-        title: "已跳过 HTTP 代理检测",
-        description: "仍可继续操作，但无法预先确认代理状态",
-        color: "gray",
-        icon: "paused" as const,
-      };
-    }
-    if (idle) {
-      return {
-        title: "已暂停检测 HTTP 代理",
-        description: "请移动鼠标或触摸屏幕以继续检测",
-        color: "gray",
-        icon: "paused" as const,
-      };
-    }
-    switch (proxyStatus) {
-      case "network_error":
-        return {
-          title: "网络或代理连接异常",
-          description: "无法访问查分器服务，请检查网络和代理地址",
-          color: "red",
-          icon: "warning" as const,
-        };
-      case "not_configured":
-        return {
-          title: "未检测到 HTTP 代理",
-          description: "请确认系统代理已开启，且地址与端口正确",
-          color: "red",
-          icon: "warning" as const,
-        };
-      case "route_missing":
-        return {
-          title: "代理已连接，但规则未生效",
-          description: "Wahlap 请求未经过查分器代理，请检查 Clash 规则",
-          color: "orange",
-          icon: "warning" as const,
-        };
-      case "unverified":
-        return {
-          title: "暂时无法确认代理状态",
-          description: "若使用 Clash，请重新导入代理配置后重试",
-          color: "yellow",
-          icon: "warning" as const,
-        };
-      case "checking":
-      default:
-        return {
-          title: "正在检测 HTTP 代理",
-          description: "正在检查代理服务和 Wahlap 路由",
-          color: undefined,
-          icon: "loading" as const,
-        };
-    }
-  })();
+  const hasNetworkError = proxyStatus === "network_error";
 
   return (
     <>
@@ -354,7 +291,7 @@ export const ProxySyncSection = () => {
       >
         <Stepper.Step
           label="步骤 1"
-          loading={proxyStatus === "checking" && !proxySkipped}
+          loading={!isProxyAvailable && !proxySkipped}
           description={
             <Group gap="xs" w={containerWidth}>
               <Group gap="xs" justify="space-between" w="100%">
@@ -376,31 +313,47 @@ export const ProxySyncSection = () => {
               <Card withBorder radius="md" className={classes.card} mb="md" p={0} w="100%">
                 <Flex align="center" justify="space-between" m="md">
                   <Group className={classes.loaderText} wrap="nowrap">
-                    <div>
-                      <Text size="lg" c={proxyPresentation.color}>
-                        {proxyPresentation.title}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        {proxyPresentation.description}
-                      </Text>
-                    </div>
+                    {isProxyAvailable ? (
+                      <div>
+                        <Text size="lg" c="teal">
+                          HTTP 代理已配置
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          请继续执行下一步操作
+                        </Text>
+                      </div>
+                    ) : hasNetworkError ? (
+                      <div>
+                        <Text size="lg" c="red">
+                          网络连接已断开
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          请检查你的 HTTP 代理设置是否正确
+                        </Text>
+                      </div>
+                    ) : idle ? (
+                      <div>
+                        <Text size="lg">已暂停检测 HTTP 代理</Text>
+                        <Text size="xs" c="dimmed">
+                          请移动鼠标或触摸屏幕以继续检测
+                        </Text>
+                      </div>
+                    ) : (
+                      <div>
+                        <Text size="lg">正在检测 HTTP 代理</Text>
+                        <Text size="xs" c="dimmed">
+                          正在检测 HTTP 代理是否正确配置
+                        </Text>
+                      </div>
+                    )}
                   </Group>
-                  {proxyPresentation.icon === "success" ? (
+                  {isProxyAvailable ? (
                     <ThemeIcon variant="light" color="teal" size="xl" radius="xl">
                       <Icon path={mdiCheck} size={10} />
                     </ThemeIcon>
-                  ) : proxyPresentation.icon === "paused" ? (
+                  ) : idle ? (
                     <ThemeIcon variant="light" color="gray" size="xl" radius="xl">
                       <Icon path={mdiPause} size={10} />
-                    </ThemeIcon>
-                  ) : proxyPresentation.icon === "warning" ? (
-                    <ThemeIcon
-                      variant="light"
-                      color={proxyPresentation.color}
-                      size="xl"
-                      radius="xl"
-                    >
-                      <IconAlertCircle size={24} />
                     </ThemeIcon>
                   ) : (
                     <Loader size="md" />
@@ -509,14 +462,7 @@ export const ProxySyncSection = () => {
           description={
             <Stack gap="xs" w={containerWidth}>
               <Text fz="sm">复制微信 OAuth 链接，发送至安全的聊天中并打开</Text>
-              {game &&
-                (proxyReady ? (
-                  <WechatOAuthLink game={game} crawlToken={crawlToken} />
-                ) : (
-                  <Button disabled fullWidth>
-                    请先完成或跳过 HTTP 代理检测
-                  </Button>
-                ))}
+              {game && <WechatOAuthLink game={game} crawlToken={crawlToken} />}
               {!isLoggedOut && (
                 <Text>
                   <CrawlTokenAlert token={crawlToken} resetHandler={loadCrawlToken} />
