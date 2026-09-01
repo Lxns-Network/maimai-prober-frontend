@@ -101,6 +101,11 @@ export const ProxySyncSection = () => {
   }, [isLoggedOut]);
 
   useEffect(() => {
+    if (!game) return;
+
+    let cancelled = false;
+    setCrawlStatistic(null);
+
     const getCrawlStatisticHandler = async () => {
       try {
         const res = await getCrawlStatistic(game);
@@ -108,13 +113,17 @@ export const ProxySyncSection = () => {
         if (!data.success) {
           throw new Error(data.message);
         }
-        setCrawlStatistic(data.data);
+        if (!cancelled) setCrawlStatistic(data.data);
       } catch (error) {
         console.log(error);
       }
     };
 
-    if (game) getCrawlStatisticHandler();
+    void getCrawlStatisticHandler();
+
+    return () => {
+      cancelled = true;
+    };
   }, [game]);
 
   useEffect(() => {
@@ -157,6 +166,17 @@ export const ProxySyncSection = () => {
 
     let lastStatus: CrawlStatusProps["status"] | null = null;
     let waitingForNewTask = sseResetKey > 0;
+    let reconnectId: number | undefined;
+    let stopped = false;
+
+    const scheduleReconnect = (delayMs: number) => {
+      if (stopped) return;
+      if (reconnectId !== undefined) window.clearTimeout(reconnectId);
+      reconnectId = window.setTimeout(() => {
+        reconnectId = undefined;
+        void connectSSE();
+      }, delayMs);
+    };
 
     const connectSSE = async () => {
       try {
@@ -168,6 +188,10 @@ export const ProxySyncSection = () => {
           signal: abortController.signal,
         });
 
+        if (res.status === 503) {
+          scheduleReconnect(1000);
+          return;
+        }
         if (!res.ok || !res.body) return;
 
         const reader = res.body.getReader();
@@ -221,23 +245,25 @@ export const ProxySyncSection = () => {
         }
 
         if (lastStatus && lastStatus !== "completed" && lastStatus !== "failed") {
-          setTimeout(connectSSE, 3000);
+          scheduleReconnect(3000);
         }
       } catch (error) {
         if ((error as DOMException).name === "AbortError") return;
         console.error("SSE connection error:", error);
         if (lastStatus && lastStatus !== "completed" && lastStatus !== "failed") {
-          setTimeout(connectSSE, 3000);
+          scheduleReconnect(3000);
         }
       }
     };
 
-    connectSSE();
+    void connectSSE();
 
     return () => {
+      stopped = true;
       abortController.abort();
+      if (reconnectId !== undefined) window.clearTimeout(reconnectId);
     };
-  }, [proxyReady, game, sseResetKey, isLoggedOut]);
+  }, [proxyReady, sseResetKey, isLoggedOut]);
 
   const hasNetworkError = proxyStatus === "network_error";
 
@@ -436,9 +462,7 @@ export const ProxySyncSection = () => {
                       近期爬取成功率
                     </Text>
                     <Text fz="md">
-                      {crawlStatistic
-                        ? `${(crawlStatistic.success_rate * 100).toFixed(2)}%`
-                        : "N/A"}
+                      {crawlStatistic ? `${(crawlStatistic.success_rate * 100).toFixed(2)}%` : "-"}
                     </Text>
                   </Paper>
                   <Paper className={classes.subParameters}>
@@ -448,7 +472,7 @@ export const ProxySyncSection = () => {
                     <Text>
                       {crawlStatistic
                         ? `${(crawlStatistic.average_crawl_time / 1000).toFixed(2)} 秒`
-                        : "N/A"}
+                        : "-"}
                     </Text>
                   </Paper>
                 </Group>
