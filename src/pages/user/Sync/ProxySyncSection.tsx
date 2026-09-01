@@ -312,12 +312,24 @@ export const ProxySyncSection = () => {
         opened={resultModalOpened}
         onClose={() => setResultModalOpened(false)}
       />
-      {new Date().getHours() >= 18 && (
-        <Alert radius="md" icon={<IconAlertCircle />} title="游玩高峰期警告" color="yellow" mb="xl">
+      {crawlStatistic && crawlStatistic.success_rate < 0.6 && (
+        <Alert
+          radius="md"
+          icon={<IconAlertCircle />}
+          title={crawlStatistic.success_rate < 0.15 ? "同步失败率过高" : "同步成功率较低"}
+          color={crawlStatistic.success_rate < 0.15 ? "red" : "yellow"}
+          mb="xl"
+        >
           <Text size="sm" mb="md">
-            由于现在是游玩高峰期，同步成绩可能会十分缓慢，甚至同步失败。我们建议你在日间或凌晨进行同步，或者尝试更改爬取设置以增加稳定性。
+            {crawlStatistic.success_rate < 0.15
+              ? `当前「${game === "maimai" ? "舞萌 DX" : "中二节奏"}」服务器的近期爬取成功率仅有 ${(crawlStatistic.success_rate * 100).toFixed(2)}%，继续同步大概率会失败，建议更改爬取设置以增加稳定性，或稍后再试。`
+              : `当前「${game === "maimai" ? "舞萌 DX" : "中二节奏"}」服务器的近期爬取成功率为 ${(crawlStatistic.success_rate * 100).toFixed(2)}%，同步成功率可能受影响。建议更改爬取设置以增加稳定性，或稍后再试。`}
           </Text>
-          <Button variant="outline" color="yellow" onClick={() => navigate("/user/settings")}>
+          <Button
+            variant="outline"
+            color={crawlStatistic.success_rate < 0.15 ? "red" : "yellow"}
+            onClick={() => navigate("/user/settings")}
+          >
             更改爬取设置
           </Button>
         </Alert>
