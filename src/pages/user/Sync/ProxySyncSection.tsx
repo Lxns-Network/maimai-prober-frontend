@@ -32,7 +32,7 @@ import {
 import { navigate } from "vike/client/router";
 import { openAlertModal } from "@/utils/modal";
 import { notifications } from "@mantine/notifications";
-import { checkProxy } from "@/utils/checkProxy.ts";
+import { checkProxy, type ProxyCheckStatus } from "@/utils/checkProxy.ts";
 import { getUserCrawlToken } from "@/utils/api/user.ts";
 import { API_URL } from "@/utils/api/api.ts";
 import { getCrawlStatistic } from "@/utils/api/misc.ts";
@@ -64,14 +64,12 @@ interface CrawlStatusProps {
 }
 
 export const ProxySyncSection = () => {
-  const [isProxyAvailable, setIsProxyAvailable] = useState(false);
+  const [proxyStatus, setProxyStatus] = useState<ProxyCheckStatus | "checking">("checking");
   const [proxySkipped, setProxySkipped] = useState(false);
-  const [hasNetworkError, setHasNetworkError] = useState(false);
   const [crawlToken, setCrawlToken] = useState<string | null>(null);
   const [crawlStatistic, setCrawlStatistic] = useState<CrawlStatisticProps | null>(null);
   const [crawlStatus, setCrawlStatus] = useState<CrawlStatusProps | null>(null);
   const [resultModalOpened, setResultModalOpened] = useState(false);
-  const [step, setStep] = useState(0);
   const [sseResetKey, setSseResetKey] = useState(0);
   const [game, setGame] = useGame();
   const idle = useIdle(60000);
@@ -80,6 +78,8 @@ export const ProxySyncSection = () => {
   const [containerWidth, setContainerWidth] = useState(width);
   const small = useMediaQuery("(max-width: 600px)");
   const extraSmall = useMediaQuery("(max-width: 400px)");
+  const isProxyAvailable = proxyStatus === "available";
+  const proxyReady = isProxyAvailable || proxySkipped;
 
   const loadCrawlToken = async () => {
     try {
@@ -89,7 +89,6 @@ export const ProxySyncSection = () => {
         throw new Error(data.message);
       }
       setCrawlToken(data.data.token);
-      setStep(1);
     } catch (error) {
       console.log(error);
     }
@@ -99,7 +98,7 @@ export const ProxySyncSection = () => {
     if (!isLoggedOut) {
       loadCrawlToken();
     }
-  }, []);
+  }, [isLoggedOut]);
 
   useEffect(() => {
     const getCrawlStatisticHandler = async () => {
@@ -127,27 +126,29 @@ export const ProxySyncSection = () => {
   }, [width]);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (idle || step > 1 || proxySkipped) return;
+    if (idle || proxySkipped || crawlStatus) return;
 
-      checkProxy().then((result) => {
-        if (result.proxyAvailable && !result.networkError) {
-          setStep(1);
-        } else {
-          setStep(0);
-        }
-        setIsProxyAvailable(result.proxyAvailable);
-        setHasNetworkError(result.networkError);
-      });
-    }, 5000);
+    let cancelled = false;
+    let retryId: number | undefined;
+
+    const runCheck = async () => {
+      const status = await checkProxy();
+      if (cancelled) return;
+      setProxyStatus(status);
+      retryId = window.setTimeout(runCheck, 5000);
+    };
+
+    setProxyStatus("checking");
+    void runCheck();
 
     return () => {
-      clearInterval(intervalId);
+      cancelled = true;
+      if (retryId !== undefined) window.clearTimeout(retryId);
     };
-  }, [idle, step, proxySkipped]);
+  }, [crawlStatus, idle, proxySkipped]);
 
   useEffect(() => {
-    if (isLoggedOut || !(isProxyAvailable || proxySkipped)) return;
+    if (isLoggedOut || !proxyReady) return;
 
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -204,17 +205,13 @@ export const ProxySyncSection = () => {
             lastStatus = status.status;
             setCrawlStatus((prev) => ({ ...prev, ...status }));
 
-            if (status.status === "pending" || status.status === "assigned") {
-              setStep(2);
-            } else if (status.status === "completed") {
-              setStep(3);
+            if (status.status === "completed") {
               notifications.show({
                 title: "同步游戏数据成功",
                 message: "你的游戏数据已成功同步到 maimai DX 查分器。",
                 color: "green",
               });
             } else if (status.status === "failed") {
-              setStep(3);
               openAlertModal(
                 "同步游戏数据失败",
                 status.error_message || "你的游戏数据同步时出现了错误，请查看同步结果了解详情。",
@@ -240,9 +237,72 @@ export const ProxySyncSection = () => {
     return () => {
       abortController.abort();
     };
-  }, [isProxyAvailable, proxySkipped, game, sseResetKey]);
+  }, [proxyReady, game, sseResetKey, isLoggedOut]);
 
-  const proxyReady = isProxyAvailable || proxySkipped;
+  const proxyPresentation = (() => {
+    if (isProxyAvailable) {
+      return {
+        title: "HTTP 代理已配置",
+        description: "代理服务和 Wahlap 路由均正常",
+        color: "teal",
+        icon: "success" as const,
+      };
+    }
+    if (proxySkipped) {
+      return {
+        title: "已跳过 HTTP 代理检测",
+        description: "仍可继续操作，但无法预先确认代理状态",
+        color: "gray",
+        icon: "paused" as const,
+      };
+    }
+    if (idle) {
+      return {
+        title: "已暂停检测 HTTP 代理",
+        description: "请移动鼠标或触摸屏幕以继续检测",
+        color: "gray",
+        icon: "paused" as const,
+      };
+    }
+    switch (proxyStatus) {
+      case "network_error":
+        return {
+          title: "网络或代理连接异常",
+          description: "无法访问查分器服务，请检查网络和代理地址",
+          color: "red",
+          icon: "warning" as const,
+        };
+      case "not_configured":
+        return {
+          title: "未检测到 HTTP 代理",
+          description: "请确认系统代理已开启，且地址与端口正确",
+          color: "red",
+          icon: "warning" as const,
+        };
+      case "route_missing":
+        return {
+          title: "代理已连接，但规则未生效",
+          description: "Wahlap 请求未经过查分器代理，请检查 Clash 规则",
+          color: "orange",
+          icon: "warning" as const,
+        };
+      case "unverified":
+        return {
+          title: "暂时无法确认代理状态",
+          description: "若使用 Clash，请重新导入代理配置后重试",
+          color: "yellow",
+          icon: "warning" as const,
+        };
+      case "checking":
+      default:
+        return {
+          title: "正在检测 HTTP 代理",
+          description: "正在检查代理服务和 Wahlap 路由",
+          color: undefined,
+          icon: "loading" as const,
+        };
+    }
+  })();
 
   return (
     <>
@@ -282,7 +342,7 @@ export const ProxySyncSection = () => {
       >
         <Stepper.Step
           label="步骤 1"
-          loading={!isProxyAvailable && !proxySkipped}
+          loading={proxyStatus === "checking" && !proxySkipped}
           description={
             <Group gap="xs" w={containerWidth}>
               <Group gap="xs" justify="space-between" w="100%">
@@ -295,7 +355,6 @@ export const ProxySyncSection = () => {
                     styles={{ section: { marginInlineStart: 2 } }}
                     onClick={() => {
                       setProxySkipped(true);
-                      setStep(1);
                     }}
                   >
                     跳过
@@ -305,47 +364,31 @@ export const ProxySyncSection = () => {
               <Card withBorder radius="md" className={classes.card} mb="md" p={0} w="100%">
                 <Flex align="center" justify="space-between" m="md">
                   <Group className={classes.loaderText} wrap="nowrap">
-                    {isProxyAvailable ? (
-                      <div>
-                        <Text size="lg" c="teal">
-                          HTTP 代理已配置
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          请继续执行下一步操作
-                        </Text>
-                      </div>
-                    ) : hasNetworkError ? (
-                      <div>
-                        <Text size="lg" c="red">
-                          网络连接已断开
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          请检查你的 HTTP 代理设置是否正确
-                        </Text>
-                      </div>
-                    ) : idle ? (
-                      <div>
-                        <Text size="lg">已暂停检测 HTTP 代理</Text>
-                        <Text size="xs" c="dimmed">
-                          请移动鼠标或触摸屏幕以继续检测
-                        </Text>
-                      </div>
-                    ) : (
-                      <div>
-                        <Text size="lg">正在检测 HTTP 代理</Text>
-                        <Text size="xs" c="dimmed">
-                          正在检测 HTTP 代理是否正确配置
-                        </Text>
-                      </div>
-                    )}
+                    <div>
+                      <Text size="lg" c={proxyPresentation.color}>
+                        {proxyPresentation.title}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {proxyPresentation.description}
+                      </Text>
+                    </div>
                   </Group>
-                  {isProxyAvailable ? (
+                  {proxyPresentation.icon === "success" ? (
                     <ThemeIcon variant="light" color="teal" size="xl" radius="xl">
                       <Icon path={mdiCheck} size={10} />
                     </ThemeIcon>
-                  ) : idle ? (
+                  ) : proxyPresentation.icon === "paused" ? (
                     <ThemeIcon variant="light" color="gray" size="xl" radius="xl">
                       <Icon path={mdiPause} size={10} />
+                    </ThemeIcon>
+                  ) : proxyPresentation.icon === "warning" ? (
+                    <ThemeIcon
+                      variant="light"
+                      color={proxyPresentation.color}
+                      size="xl"
+                      radius="xl"
+                    >
+                      <IconAlertCircle size={24} />
                     </ThemeIcon>
                   ) : (
                     <Loader size="md" />
@@ -454,7 +497,14 @@ export const ProxySyncSection = () => {
           description={
             <Stack gap="xs" w={containerWidth}>
               <Text fz="sm">复制微信 OAuth 链接，发送至安全的聊天中并打开</Text>
-              {game && <WechatOAuthLink game={game} crawlToken={crawlToken} />}
+              {game &&
+                (proxyReady ? (
+                  <WechatOAuthLink game={game} crawlToken={crawlToken} />
+                ) : (
+                  <Button disabled fullWidth>
+                    请先完成或跳过 HTTP 代理检测
+                  </Button>
+                ))}
               {!isLoggedOut && (
                 <Text>
                   <CrawlTokenAlert token={crawlToken} resetHandler={loadCrawlToken} />
@@ -604,7 +654,6 @@ export const ProxySyncSection = () => {
                         leftSection={<IconRepeat size={18} />}
                         onClick={() => {
                           setCrawlStatus(null);
-                          setStep(1);
                           setSseResetKey((k) => k + 1);
                         }}
                       >
