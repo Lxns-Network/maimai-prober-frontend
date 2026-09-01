@@ -1,20 +1,16 @@
 import { API_URL } from "@/utils/api/api.ts";
 
 const PROXY_CHECK_URL = "https://proxy.maimai.lxns.net:8080/check";
-const WAHLAP_CHECK_URL = "https://maimai.wahlap.com/maimai-mobile/error/";
 const PROBE_TIMEOUT_MS = 5000;
 
-export type ProxyCheckStatus =
-  | "available"
-  | "network_error"
-  | "not_configured"
-  | "route_missing"
-  | "unverified";
+export type ProxyCheckStatus = "available" | "network_error" | "not_configured" | "unverified";
 
 interface ProxyMarker {
   via_proxy?: boolean;
   nonce?: string;
 }
+
+type ProxyMarkerResult = "verified" | "mismatch" | "unreachable";
 
 const fetchWithTimeout = async (input: RequestInfo | URL, init?: RequestInit) => {
   const controller = new AbortController();
@@ -26,22 +22,19 @@ const fetchWithTimeout = async (input: RequestInfo | URL, init?: RequestInit) =>
   }
 };
 
-const checkAPI = async (nonce: string) => {
+const checkAPI = async () => {
   try {
-    const response = await fetchWithTimeout(
-      `${API_URL}/health?nonce=${encodeURIComponent(nonce)}`,
-      {
-        cache: "no-store",
-        credentials: "omit",
-      },
-    );
+    const response = await fetchWithTimeout(`${API_URL}/health`, {
+      cache: "no-store",
+      credentials: "omit",
+    });
     return response.ok;
   } catch {
     return false;
   }
 };
 
-const checkProxyMarker = async (nonce: string) => {
+const checkProxyMarker = async (nonce: string): Promise<ProxyMarkerResult> => {
   try {
     const url = new URL(PROXY_CHECK_URL);
     url.searchParams.set("nonce", nonce);
@@ -49,42 +42,24 @@ const checkProxyMarker = async (nonce: string) => {
       cache: "no-store",
       credentials: "omit",
     });
-    if (!response.ok) return false;
+    if (!response.ok) return "unreachable";
     const marker = (await response.json()) as ProxyMarker;
-    return marker.via_proxy === true && marker.nonce === nonce;
+    if (marker.via_proxy === true && marker.nonce === nonce) return "verified";
+    return "mismatch";
   } catch {
-    return false;
-  }
-};
-
-const checkWahlapRoute = async (nonce: string) => {
-  try {
-    const url = new URL(WAHLAP_CHECK_URL);
-    url.searchParams.set("nonce", nonce);
-    await fetchWithTimeout(url, {
-      cache: "no-store",
-      credentials: "omit",
-      mode: "no-cors",
-    });
-    return true;
-  } catch {
-    return false;
+    return "unreachable";
   }
 };
 
 /**
- * Checks API reachability, verifies the configured LXNS proxy, and confirms that Wahlap traffic uses it.
+ * Checks API reachability and verifies the configured LXNS HTTP proxy via its /check marker.
  */
 export const checkProxy = async (): Promise<ProxyCheckStatus> => {
   const nonce = window.crypto.randomUUID();
-  const [apiAvailable, proxyVerified, wahlapDirectlyReachable] = await Promise.all([
-    checkAPI(nonce),
-    checkProxyMarker(nonce),
-    checkWahlapRoute(nonce),
-  ]);
+  const [apiAvailable, proxyResult] = await Promise.all([checkAPI(), checkProxyMarker(nonce)]);
 
   if (!apiAvailable) return "network_error";
-  if (proxyVerified) return wahlapDirectlyReachable ? "route_missing" : "available";
-  if (wahlapDirectlyReachable) return "not_configured";
-  return "unverified";
+  if (proxyResult === "verified") return "available";
+  if (proxyResult === "mismatch") return "unverified";
+  return "not_configured";
 };
