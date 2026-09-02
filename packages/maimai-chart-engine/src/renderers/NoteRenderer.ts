@@ -22,10 +22,12 @@ export const INVISIBLE_NOTE_POSITION: NoteRenderPosition = Object.freeze({
 const TAP_SPRITE_HALF_RATIO = 1.7;
 const TAP_SPRITE_SUPERSAMPLE = 2;
 
-// 命中特效 progress 量化帧数；半边距覆盖最大离心 + 描边 + 烘焙 blur 扩展。
-const HIT_FX_FRAME_COUNT = 24;
-const HIT_FX_SPRITE_HALF_RATIO = 1.8;
+// 单颗六边形/星 stamp 的半边距（描边 + 宽 halo + 核 blur）与超采样。集群位姿按 progress 实时摆。
+const HIT_FX_SHAPE_HALF_RATIO = 2;
 const HIT_FX_SPRITE_SUPERSAMPLE = 2;
+const HIT_FX_CORE_BLUR_RATIO = (4 / 300) * 0.7;
+const HIT_FX_HALO_BLUR_SCALE = 2.4;
+const HIT_FX_HALO_ALPHA = 0.55;
 
 type HitEffectShape = "hexagon" | "star";
 
@@ -33,9 +35,9 @@ export class NoteRenderer extends BaseRenderer {
   // 按 (方位,配色,EX) 预渲染的 tap sprite，radius/mirror 变化时整体失效。
   private tapSpriteCache = new Map<string, HTMLCanvasElement>();
   private tapSpriteBasis = "";
-  // 按 (形状,帧) 预烘焙的命中特效，radius / backingScale / color 变化时整体失效。
-  private hitEffectSpriteCache = new Map<string, HTMLCanvasElement>();
-  private hitEffectSpriteBasis = "";
+  // 六边形 / 星各一张预烘焙 stamp（含 glow），radius / backingScale / color 变化时整体失效。
+  private hitEffectShapeCache = new Map<HitEffectShape, HTMLCanvasElement>();
+  private hitEffectShapeBasis = "";
 
   constructor(context: RenderContext) {
     super(context);
@@ -181,41 +183,59 @@ export class NoteRenderer extends BaseRenderer {
     const alpha = 1 - 4 * (progress - 0.5) * (progress - 0.5);
     if (alpha <= 0 || scale <= 0) return;
 
-    const frame = Math.max(
-      0,
-      Math.min(HIT_FX_FRAME_COUNT - 1, Math.floor(progress * HIT_FX_FRAME_COUNT)),
-    );
-    const sprite = this.getHitEffectSprite(type, frame, color);
-    const size = sprite.width / HIT_FX_SPRITE_SUPERSAMPLE;
+    const subAng = 1 - (progress - 1) * (progress - 1);
+    const subRad = Math.max(0, Math.min(1, 1 - (8 / 9) * progress * progress));
+    const baseR = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5;
+    if (baseR <= 0) return;
+
+    const r0 = baseR * scale;
+    const rSmall = r0 * 0.7;
+    const rBig = r0 * 0.8;
+    const off = baseR * subRad * 0.7;
+    const sprite = this.getHitEffectShapeSprite(type, color);
+    const logical = sprite.width / HIT_FX_SPRITE_SUPERSAMPLE;
+    const destSize = (r: number) => logical * (r / baseR);
+
     const ctx = this.context.ctx;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
-    ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
+    ctx.globalAlpha = alpha;
+    const blit = (lx: number, ly: number, r: number) => {
+      const s = destSize(r);
+      ctx.drawImage(sprite, lx - s / 2, ly - s / 2, s, s);
+    };
+    blit(0, 0, r0);
+    const sub1 = Math.PI / 6;
+    const sub2 = -Math.PI / 6;
+    const a1a = sub1 + Math.PI * subAng;
+    blit(Math.cos(a1a) * off, Math.sin(a1a) * off * 0.7, rSmall);
+    const a1b = sub1 + Math.PI * (1 + subAng);
+    blit(Math.cos(a1b) * off, Math.sin(a1b) * off, rSmall);
+    const a2a = sub2 - Math.PI * subAng;
+    blit(Math.cos(a2a) * off, Math.sin(a2a) * off, rBig);
+    const a2b = sub2 + Math.PI * (1 - subAng);
+    blit(Math.cos(a2b) * off, Math.sin(a2b) * off, rBig);
     ctx.restore();
   }
 
   /**
-   * 命中特效按 progress 量化成 24 帧预烘焙（含 glow），radius / backingScale / color 变化时整体失效。
-   * 热路径只 drawImage，不得再设 ctx.filter。
+   * 单颗六边形/星 stamp（核 blur + 更宽的低 alpha halo）。热路径按 progress 摆 5 份。
+   * filter 半径按超采样 backing 像素计，缩回逻辑尺寸后才与旧 live blur 同量；live 路径不得设 ctx.filter。
    */
-  private getHitEffectSprite(
-    type: HitEffectShape,
-    frame: number,
-    color: string,
-  ): HTMLCanvasElement {
+  private getHitEffectShapeSprite(type: HitEffectShape, color: string): HTMLCanvasElement {
     const cx = this.context.centerX;
     const backingScale = cx > 0 ? this.context.canvas.width / (cx * 2) : 1;
     const basis = `${this.context.radius}|${backingScale}|${color}`;
-    if (basis !== this.hitEffectSpriteBasis) {
-      this.hitEffectSpriteCache.clear();
-      this.hitEffectSpriteBasis = basis;
+    if (basis !== this.hitEffectShapeBasis) {
+      this.hitEffectShapeCache.clear();
+      this.hitEffectShapeBasis = basis;
     }
-    const key = `${type}|${frame}`;
-    const cached = this.hitEffectSpriteCache.get(key);
+    const cached = this.hitEffectShapeCache.get(type);
     if (cached) return cached;
 
-    const half = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5 * HIT_FX_SPRITE_HALF_RATIO;
+    const refR = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5;
+    const half = refR * HIT_FX_SHAPE_HALF_RATIO;
     const sprite = document.createElement("canvas");
     sprite.width = sprite.height = Math.max(2, Math.ceil(half * 2 * HIT_FX_SPRITE_SUPERSAMPLE));
     const offscreenCtx = sprite.getContext("2d")!;
@@ -227,57 +247,28 @@ export class NoteRenderer extends BaseRenderer {
       sprite.width / 2,
       sprite.height / 2,
     );
-    this.paintHitEffectFrame(offscreenCtx, (frame + 0.5) / HIT_FX_FRAME_COUNT, type, color);
-    this.hitEffectSpriteCache.set(key, sprite);
-    return sprite;
-  }
-
-  /** 在原点、angle=0 处绘制一帧命中特效（仅烘焙用；blur 打在小画布上）。 */
-  private paintHitEffectFrame(
-    ctx: CanvasRenderingContext2D,
-    progress: number,
-    type: HitEffectShape,
-    color: string,
-  ): void {
-    const scale = 1 - 0.75 * (progress - 1) * (progress - 1);
-    const alpha = 1 - 4 * (progress - 0.5) * (progress - 0.5);
-    if (alpha <= 0 || scale <= 0) return;
-
-    const subAng = 1 - (progress - 1) * (progress - 1);
-    const subRad = Math.max(0, Math.min(1, 1 - (8 / 9) * progress * progress));
-    const baseR = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5;
-    const r0 = baseR * scale;
-    const rSmall = r0 * 0.7;
-    const rBig = r0 * 0.8;
-    const off = baseR * subRad * 0.7;
     const path = new Path2D();
-    const add = (cx: number, cy: number, r: number) => {
-      if (type === "star") {
-        this.starSubPath(path, cx, cy, 5, r, r * 0.5, Math.PI);
-      } else {
-        this.hexagonSubPath(path, cx, cy, r, 0);
-      }
-    };
-
-    add(0, 0, r0);
-    const sub1 = Math.PI / 6;
-    const sub2 = -Math.PI / 6;
-    const a1a = sub1 + Math.PI * subAng;
-    add(Math.cos(a1a) * off, Math.sin(a1a) * off * 0.7, rSmall);
-    const a1b = sub1 + Math.PI * (1 + subAng);
-    add(Math.cos(a1b) * off, Math.sin(a1b) * off, rSmall);
-    const a2a = sub2 - Math.PI * subAng;
-    add(Math.cos(a2a) * off, Math.sin(a2a) * off, rBig);
-    const a2b = sub2 + Math.PI * (1 - subAng);
-    add(Math.cos(a2b) * off, Math.sin(a2b) * off, rBig);
-
-    const blurPx = this.scaleByRadius(4 / 300) * subAng * 0.7;
-    ctx.strokeStyle = color;
-    ctx.globalAlpha = alpha;
-    ctx.lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
-    ctx.lineJoin = "round";
-    if (blurPx >= 0.5) ctx.filter = `blur(${blurPx}px)`;
-    ctx.stroke(path);
+    if (type === "star") {
+      this.starSubPath(path, 0, 0, 5, refR, refR * 0.5, Math.PI);
+    } else {
+      this.hexagonSubPath(path, 0, 0, refR, 0);
+    }
+    const coreBlurPx = this.scaleByRadius(HIT_FX_CORE_BLUR_RATIO) * HIT_FX_SPRITE_SUPERSAMPLE;
+    const haloBlurPx = coreBlurPx * HIT_FX_HALO_BLUR_SCALE;
+    offscreenCtx.strokeStyle = color;
+    offscreenCtx.lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
+    offscreenCtx.lineJoin = "round";
+    if (haloBlurPx >= 0.5) {
+      offscreenCtx.save();
+      offscreenCtx.globalAlpha = HIT_FX_HALO_ALPHA;
+      offscreenCtx.filter = `blur(${haloBlurPx}px)`;
+      offscreenCtx.stroke(path);
+      offscreenCtx.restore();
+    }
+    if (coreBlurPx >= 0.5) offscreenCtx.filter = `blur(${coreBlurPx}px)`;
+    offscreenCtx.stroke(path);
+    this.hitEffectShapeCache.set(type, sprite);
+    return sprite;
   }
 
   renderApproachArc(position: ButtonPosition, noteX: number, noteY: number, color: string): void {
