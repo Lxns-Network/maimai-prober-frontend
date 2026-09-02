@@ -93,3 +93,36 @@
   stroke: #22c55e;
   stroke-width: 2;
 }
+
+.debugProfile {
+  display: grid;
+  grid-template-columns: max-content 1fr 1fr;
+  column-gap: 10px;
+  row-gap: 1px;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+
+  & > span {
+    text-align: right;
+  }
+
+  & > span:nth-child(3n + 1) {
+    text-align: left;
+    color: rgb(255 255 255 / 0.62);
+  }
+}
+
+.debugProfile .debugProfileNotable {
+  color: #facc15;
+}
+
+.debugProfile .debugProfileHeavy {
+  color: #f87171;
+}
+
+.debugProfile .debugProfileTotal {
+  margin-top: 2px;
+  padding-top: 2px;
+  border-top: 1px solid rgb(255 255 255 / 0.16);
+  font-weight: 700;
+}

@@ -12,6 +12,9 @@ import { useBackgroundVideoSource } from "./hooks/useBackgroundVideoSource";
 import { useFrameCaptureEvents } from "./hooks/useFrameCaptureEvents";
 import { applyCurrentRendererSettings, useRendererSettings } from "./hooks/useRendererSettings";
 import { useWakeLock } from "./hooks/useWakeLock";
+import { useInstallBenchmarkConsole } from "../../bench/installBenchmarkConsole";
+import { FRAME_PROFILE_EVENT } from "../../bench/playbackProfile";
+import { CHART_BENCH_ENABLED } from "../../bench/benchEnabled";
 
 export function ChartCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -77,6 +80,11 @@ export function ChartCanvas() {
     });
 
     renderer.renderFrame(chart, currentBeats, timeline.beatsPerMeasure);
+
+    if (CHART_BENCH_ENABLED) {
+      const profile = renderer.getLastFrameProfile();
+      if (profile) window.dispatchEvent(new CustomEvent(FRAME_PROFILE_EVENT, { detail: profile }));
+    }
   }, []);
 
   const updateCanvasDebugInfo = useCallback((force: boolean = false) => {
@@ -91,6 +99,7 @@ export function ChartCanvas() {
 
     const rect = canvas.getBoundingClientRect();
     const gameState = useGameStore.getState();
+    const renderProfile = rendererRef.current?.takeFrameProfile() ?? null;
     setCanvasDebugInfo((previous) => {
       const fps = fpsRef.current;
       const previousHistory = previous?.fpsHistory ?? [];
@@ -107,12 +116,14 @@ export function ChartCanvas() {
         clockSource: previewAudioRef.current.getClockSource(),
         fps,
         fpsHistory,
+        renderProfile: renderProfile ?? previous?.renderProfile ?? null,
       };
     });
   }, []);
 
   useFrameCaptureEvents(canvasRef);
   useWakeLock(isPlaying);
+  useInstallBenchmarkConsole();
   useBackgroundVideoSource({ videoRef: bgVideoRef, chartData, renderFrame });
   useRendererSettings({
     rendererRef,
@@ -127,6 +138,7 @@ export function ChartCanvas() {
 
     const renderer = new MainRenderer(canvas);
     renderer.setIsPlaying(useGameStore.getState().isPlaying);
+    renderer.setProfilingEnabled(CHART_BENCH_ENABLED);
     applyCurrentRendererSettings(renderer);
     rendererRef.current = renderer;
 

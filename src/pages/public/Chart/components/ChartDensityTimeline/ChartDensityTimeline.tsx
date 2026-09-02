@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from "react";
+import { memo, useMemo, type CSSProperties } from "react";
 import { useElementSize } from "@mantine/hooks";
 import type { Note } from "@lxns-network/maimai-chart-engine";
 import clsx from "clsx";
@@ -135,7 +135,12 @@ function getTimeMarkers(windowStartMs: number, durationMs: number, intervalMs: n
   return markers;
 }
 
-export function ChartDensityTimeline({
+/**
+ * 密度图的 props 在播放期间不会变（notes 引用稳定、窗口只在导出拖拽时动），
+ * 但父级 Controls / NoteCountGraph 会随播放状态重渲染。memo 让几百个 bar 的 DOM 树
+ * 只在自身输入变化时重建——trace 里 60–95ms 的长任务就来自这里被拖着重渲染。
+ */
+export const ChartDensityTimeline = memo(function ChartDensityTimeline({
   notes,
   durationMs,
   windowStartMs = 0,
@@ -189,6 +194,43 @@ export function ChartDensityTimeline({
     [windowStartMs, durationMs, rootWidth],
   );
 
+  // bar 元素树按输入缓存：即便组件因 memo 失效重渲染（如尺寸变化），
+  // 只要分桶结果没变就复用同一批 React 元素，跳过几百个节点的 reconcile。
+  const bars = useMemo(() => {
+    const windowEndMs = windowStartMs + durationMs;
+    const elements = [];
+    for (const bucket of buckets) {
+      if (bucket.total === 0) continue;
+
+      const visibleStartMs = Math.max(bucket.startMs, windowStartMs);
+      const visibleEndMs = Math.min(bucket.startMs + effectiveBucketDurationMs, windowEndMs);
+      if (visibleEndMs <= visibleStartMs) continue;
+
+      const height = Math.max(2, (bucket.total / maxCount) * barMaxHeight);
+      const leftPercent = ((visibleStartMs - windowStartMs) / durationMs) * 100;
+      const widthPercent = ((visibleEndMs - visibleStartMs) / durationMs) * 100;
+
+      elements.push(
+        <div
+          key={bucket.startMs}
+          className={classes.graphBar}
+          style={{
+            left: `${leftPercent}%`,
+            width: `${widthPercent}%`,
+            height: `${height}px`,
+          }}
+        >
+          {NOTE_COLOR_ENTRIES.map(([key, color]) => {
+            const ratio = bucket[key] / bucket.total;
+            if (ratio === 0) return null;
+            return <div key={key} style={{ flex: ratio, width: "100%", backgroundColor: color }} />;
+          })}
+        </div>,
+      );
+    }
+    return elements;
+  }, [buckets, windowStartMs, durationMs, effectiveBucketDurationMs, maxCount, barMaxHeight]);
+
   if (durationMs <= 0 || buckets.length === 0) return null;
 
   return (
@@ -226,45 +268,7 @@ export function ChartDensityTimeline({
         </div>
       )}
 
-      <div className={classes.graphBars}>
-        {buckets.map((bucket) => {
-          if (bucket.total === 0) {
-            return null;
-          }
-
-          const windowEndMs = windowStartMs + durationMs;
-          const visibleStartMs = Math.max(bucket.startMs, windowStartMs);
-          const visibleEndMs = Math.min(bucket.startMs + effectiveBucketDurationMs, windowEndMs);
-          if (visibleEndMs <= visibleStartMs) {
-            return null;
-          }
-
-          const heightRatio = bucket.total / maxCount;
-          const height = Math.max(2, heightRatio * barMaxHeight);
-          const leftPercent = ((visibleStartMs - windowStartMs) / durationMs) * 100;
-          const widthPercent = ((visibleEndMs - visibleStartMs) / durationMs) * 100;
-
-          return (
-            <div
-              key={bucket.startMs}
-              className={classes.graphBar}
-              style={{
-                left: `${leftPercent}%`,
-                width: `${widthPercent}%`,
-                height: `${height}px`,
-              }}
-            >
-              {NOTE_COLOR_ENTRIES.map(([key, color]) => {
-                const ratio = bucket[key] / bucket.total;
-                if (ratio === 0) return null;
-                return (
-                  <div key={key} style={{ flex: ratio, width: "100%", backgroundColor: color }} />
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
+      <div className={classes.graphBars}>{bars}</div>
     </div>
   );
-}
+});
