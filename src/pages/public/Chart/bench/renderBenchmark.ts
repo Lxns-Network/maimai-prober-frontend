@@ -25,7 +25,9 @@ export interface RenderBenchmarkOptions {
   syncGpu?: boolean;
   /** 预热帧数（不计入统计），让 sprite 缓存、JIT 稳定。默认 60。 */
   warmupFrames?: number;
-  /** 完整测量轮数。默认 1；正式跑分使用 3 轮并取中位数。 */
+  /** 完整预热轮数（不计入统计），使用与吞吐轮相同的 GPU 栅栏路径。默认 0。 */
+  warmupPasses?: number;
+  /** 完整测量轮数。默认 1；正式跑分使用 5 轮并取中位数。 */
   passes?: number;
   /**
    * 吞吐采样块大小。设置后，每块连续渲染这些帧，块末尾可选强制 GPU 同步；块耗时除以
@@ -85,6 +87,10 @@ export interface ThroughputResult {
   score: number;
   /** (最高分 - 最低分) / 中位数；超过 5% 时不宜判断小幅优化。 */
   scoreSpreadPercent: number;
+  /** 各轮分数的样本标准差 / 平均值。 */
+  scoreRelativeStdDevPercent: number;
+  stabilityThresholdPercent: number;
+  stable: boolean;
   passes: ThroughputPassResult[];
 }
 
@@ -105,6 +111,7 @@ export interface RenderBenchmarkResult {
     sampledFrames: number;
     profiledFrames: number;
     warmupFrames: number;
+    warmupPasses: number;
     settings: RendererSettings;
     userAgent: string;
     timestamp: string;
@@ -129,11 +136,23 @@ export interface RenderBenchmarkResult {
   }[];
   /** 端到端墙钟时间（含 yield、含 syncGpu 时的 GPU 等待）。 */
   wallMs: number;
+  /** shell runner 注入；DevTools 直接调用 run() 时不存在。 */
+  environment?: BenchmarkEnvironment;
+}
+
+export interface BenchmarkEnvironment {
+  mode: "production" | "development";
+  crossOriginIsolated: boolean;
+  gpuRenderer: string;
+  browserVersion: string;
+  platform: string;
+  arch: string;
 }
 
 const HEAVIEST_FRAME_COUNT = 20;
 /** 约一个 120Hz 帧预算；CPU 侧单帧超过它基本必掉帧。 */
 export const STALL_FRAME_MS = 8;
+const DEFAULT_STABILITY_THRESHOLD_PERCENT = 5;
 
 function percentile(sorted: Float64Array, p: number): number {
   if (sorted.length === 0) return 0;
@@ -159,6 +178,15 @@ function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+}
+
+function relativeStandardDeviationPercent(values: number[]): number {
+  if (values.length < 2) return 0;
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  if (mean === 0) return 0;
+  const variance =
+    values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1);
+  return (Math.sqrt(variance) / mean) * 100;
 }
 
 function yieldToBrowser(): Promise<void> {
@@ -205,6 +233,7 @@ export async function runRenderBenchmark(
   const dpr = options.dpr ?? 1.3;
   const syncGpu = options.syncGpu ?? false;
   const warmupFrames = options.warmupFrames ?? 60;
+  const warmupPasses = Math.max(0, Math.floor(options.warmupPasses ?? 0));
   const yieldEveryFrames = options.yieldEveryFrames ?? 240;
   const passes = Math.max(1, Math.floor(options.passes ?? 1));
   const throughputChunkFrames = Math.max(0, Math.floor(options.throughputChunkFrames ?? 0));
@@ -264,7 +293,10 @@ export async function runRenderBenchmark(
   let completedFrames = 0;
 
   if (throughputChunkFrames > 0) {
-    for (let pass = 0; pass < passes; pass++) {
+    const runThroughputPass = async (
+      pass: number,
+      measured: boolean,
+    ): Promise<ThroughputPassResult> => {
       const passThroughput: number[] = [];
       for (let chunkStart = 0; chunkStart < frames; ) {
         const chunkEnd = Math.min(frames, chunkStart + throughputChunkFrames);
@@ -290,28 +322,38 @@ export async function runRenderBenchmark(
 
         const actualChunkFrames = chunkEnd - chunkStart;
         const syncStart = performance.now();
-        if (syncGpu && fenceCtx) fenceCtx.getImageData(0, 0, actualChunkFrames, 1);
+        if ((syncGpu || !measured) && fenceCtx) {
+          fenceCtx.getImageData(0, 0, actualChunkFrames, 1);
+        }
         const gpuSync = performance.now() - syncStart;
         const msPerFrame = (performance.now() - throughputStart) / actualChunkFrames;
         passThroughput.push(msPerFrame);
-        throughputMsPerFrame.push(msPerFrame);
-        if (gpuSyncMs) gpuSyncMs.push(gpuSync / actualChunkFrames);
-
-        completedFrames += actualChunkFrames;
+        if (measured) {
+          throughputMsPerFrame.push(msPerFrame);
+          if (gpuSyncMs) gpuSyncMs.push(gpuSync / actualChunkFrames);
+          completedFrames += actualChunkFrames;
+        }
         chunkStart = chunkEnd;
-        options.onProgress?.(completedFrames, workFrames);
+        if (measured) options.onProgress?.(completedFrames, workFrames);
         await yieldToBrowser();
       }
 
       const stats = computeStageStats(passThroughput);
-      throughputPasses.push({
-        pass: pass + 1,
+      return {
+        pass,
         chunks: passThroughput.length,
         p50MsPerFrame: stats.p50,
         p95MsPerFrame: stats.p95,
         avgMsPerFrame: stats.avg,
         score: stats.avg > 0 ? 1000 / stats.avg : 0,
-      });
+      };
+    };
+
+    for (let pass = 0; pass < warmupPasses; pass++) {
+      await runThroughputPass(0, false);
+    }
+    for (let pass = 0; pass < passes; pass++) {
+      throughputPasses.push(await runThroughputPass(pass + 1, true));
     }
 
     renderer.setProfilingEnabled(true);
@@ -377,6 +419,9 @@ export async function runRenderBenchmark(
 
   const passScores = throughputPasses.map((pass) => pass.score);
   const score = median(passScores);
+  const scoreSpreadPercent =
+    score > 0 ? ((Math.max(...passScores) - Math.min(...passScores)) / score) * 100 : 0;
+  const scoreRelativeStdDevPercent = relativeStandardDeviationPercent(passScores);
   const throughput =
     throughputChunkFrames > 0
       ? {
@@ -384,8 +429,10 @@ export async function runRenderBenchmark(
           chunks: throughputMsPerFrame.length,
           msPerFrame: computeStageStats(throughputMsPerFrame),
           score,
-          scoreSpreadPercent:
-            score > 0 ? ((Math.max(...passScores) - Math.min(...passScores)) / score) * 100 : 0,
+          scoreSpreadPercent,
+          scoreRelativeStdDevPercent,
+          stabilityThresholdPercent: DEFAULT_STABILITY_THRESHOLD_PERCENT,
+          stable: scoreRelativeStdDevPercent <= DEFAULT_STABILITY_THRESHOLD_PERCENT,
           passes: throughputPasses,
         }
       : null;
@@ -407,6 +454,7 @@ export async function runRenderBenchmark(
       sampledFrames,
       profiledFrames,
       warmupFrames,
+      warmupPasses,
       settings,
       userAgent: navigator.userAgent,
       timestamp: new Date().toISOString(),
@@ -443,6 +491,7 @@ export function formatRenderBenchmarkReport(result: RenderBenchmarkResult): stri
       lines.length - 1,
       0,
       `score: ${result.throughput.score.toFixed(0)} stress frames/s (median full-pass throughput, spread ${result.throughput.scoreSpreadPercent.toFixed(1)}%)`,
+      `stability: ${result.throughput.stable ? "stable" : "UNSTABLE"} (RSD ${result.throughput.scoreRelativeStdDevPercent.toFixed(1)}%, limit ${result.throughput.stabilityThresholdPercent.toFixed(1)}%)`,
       `throughput: p50 ${result.throughput.msPerFrame.p50.toFixed(3)} / p95 ${result.throughput.msPerFrame.p95.toFixed(3)} ms/frame, ${result.throughput.chunkFrames} frames/chunk`,
     );
   }

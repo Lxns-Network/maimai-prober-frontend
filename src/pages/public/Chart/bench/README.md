@@ -3,7 +3,7 @@
 ## 标准跑分
 
 ```sh
-# 生产构建、固定压测谱面、固定设置、三轮取中位数
+# 生产构建、固定压测谱面、完整预热一轮、五轮取中位数
 yarn chart:bench --out .bench/current.json
 
 # 修改前后对照
@@ -12,9 +12,9 @@ yarn chart:bench --out .bench/after.json --compare .bench/before.json
 
 标准跑分不下载线上谱面或音乐。它使用版本化的 `LXNS Renderer Stress` 合成谱面：240 BPM、20 个有效小节、5440 个渲染 Note，覆盖 tap / break / EX / hold / touch / touch hold、烟花、旋转星星和全部 13 种 slide path；密度高于正常谱面。固定参数为 1440 逻辑像素、DPR 1.3、120 个谱面采样点/秒、全部视觉效果开启。
 
-分数单位是 **stress frames/s，越高越好**。每轮把整张压测谱面尽快连续渲染，每帧向一个独立的栅栏 Canvas 像素写入当前画面，并在轮末读回栅栏，确保中途画面不会因下一帧 clear 被浏览器丢弃，也确保 Canvas 命令和 GPU 光栅化全部完成；`1000 / 全轮平均 ms/frame` 是该轮分数，最终成绩取三轮中位数。正式跑分关闭逐阶段 profiler，之后另跑一轮生成 CPU 阶段诊断，因此打点开销不会进入主分数。
+分数单位是 **stress frames/s，越高越好**。先用完整谱面跑一轮不计分预热，再正式测五轮。每轮把整张压测谱面尽快连续渲染，每帧向一个独立的栅栏 Canvas 像素写入当前画面，并在轮末读回栅栏，确保中途画面不会因下一帧 clear 被浏览器丢弃，也确保 Canvas 命令和 GPU 光栅化全部完成；`1000 / 全轮平均 ms/frame` 是该轮分数，最终成绩取五轮中位数。正式跑分关闭逐阶段 profiler，之后另跑一轮生成 CPU 阶段诊断，因此打点开销不会进入主分数。
 
-结果会记录压测谱面版本和内容 hash，不同 hash、画布或采样设置会拒绝对比。`spread` 是三轮最高与最低分之差占中位数的比例；超过 5% 时本轮噪声过大，应重跑后再判断小幅优化。
+结果会记录压测谱面版本、内容 hash、浏览器版本和 GPU renderer，不同 hash、画布、采样设置或运行环境会拒绝对比。`spread` 是五轮最高与最低分之差占中位数的比例，`RSD` 是各轮相对标准差；RSD 超过 5% 会把结果标成 `UNSTABLE`，比较报告也会标成 `INCONCLUSIVE`，不得据此判断优化效果。稳定结果仍只应在同一台机器、同一电源与温度条件下比较。
 
 ## 工具层级
 
@@ -23,7 +23,7 @@ yarn chart:bench --out .bench/after.json --compare .bench/before.json
 | 层           | 入口                                                                                                            | 用途                                                                                                                                                                       |
 | ------------ | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 实时面板     | `yarn dev` → `/chart` 右上角 DEV 角标 → 展开 → **Frame Profile (CPU)**                                          | 播放中看各阶段 avg/max（250ms 窗口），定位当前瓶颈                                                                                                                         |
-| 标准跑分     | `yarn chart:bench`                                                                                              | 生产构建 + 固定压测谱面，输出可长期对照的单一成绩、三轮波动和阶段诊断                                                                                                      |
+| 标准跑分     | `yarn chart:bench`                                                                                              | 生产构建 + 固定压测谱面，输出可长期对照的中位成绩、五轮离散度和阶段诊断                                                                                                    |
 | 页面内基准   | DevTools console：`await __chartBench.run({...})`                                                               | 不依赖播放/音频/rAF，按固定步进渲染一段谱面，输出各阶段 p50/p95/p99/max + 最重帧列表                                                                                       |
 | 无头基准     | `node scripts/chart-bench.mjs --chart <id> ...`                                                                 | 从 shell 一条命令跑完，可 `--out` 存 JSON、`--compare` 对照，供 agent 做改动前后验证                                                                                       |
 | 真实播放剖析 | `node scripts/chart-bench.mjs --chart <id> --playback --fullscreen` 或 console `__chartBench.profilePlayback()` | 真的走 rAF + 音频时钟 + 合成，逐帧记录 rAF 间隔与 CPU 耗时，报告掉帧率、掉帧时刻、该帧 CPU 占比、以及那一帧间隔内发生的 store 写入。回答"掉帧是 JS、GPU 还是 React 重渲染" |
@@ -70,11 +70,22 @@ node scripts/chart-bench.mjs --chart 11663 --start 30000 --end 60000 --out .benc
 ## 已知坑
 
 - **默认必须真 GPU。** 脚本用 `channel: "chromium"` + `--use-angle=metal`。headless_shell / SwiftShader 软件光栅会在命令缓冲刷新时阻塞几百 ms 到几 s，并被算到恰好触发刷新的那个阶段上，`max` / `p99` 完全失真（首次冒烟里 `fireworks max 2145ms` 就是这样来的）。`env:` 行会打印实际 renderer，看到 `SwiftShader` 就别信数字。
-- **`performance.now()` 精度。** 非 cross-origin isolated 页面精度只有 100µs，单帧阶段耗时大多量化成 0。脚本给 dev server 加了 COOP/COEP 头；手动在浏览器里跑 `__chartBench.run()` 时没有这层，数字会粗一档。
+- **`performance.now()` 精度。** 非 cross-origin isolated 页面精度只有 100µs，单帧阶段耗时大多量化成 0。脚本会给 dev 和生产预览都加 COOP/COEP 头并在运行前强制校验；手动在普通页面里跑 `__chartBench.run()` 时没有这层，数字会粗一档。
 - **`--sync-gpu` 的 `gpuSync` 绝对值没意义**，里面大半是刷新 + 读回的固定开销；只在同尺寸下做相对比较。
 - 不可用 `yarn dev --port`：vike 会拦截 Vite CLI 参数报 Unknown option。脚本走 Vite JS API 起 server。
 
-## 基线（2026-09-02，M4，Chromium 1234，1440px × 1.3 dpr）
+## 参考基线
+
+固定压力谱面经完整预热后的独立运行结果（2026-09-03，Chromium 151.0.7922.34，Metal）：
+
+| 运行 | 五轮分数                    | 中位分数 | RSD  | 极差 |
+| ---- | --------------------------- | -------- | ---- | ---- |
+| A    | 165 / 167 / 164 / 168 / 164 | 165      | 1.1% | 2.6% |
+| B    | 158 / 161 / 162 / 162 / 160 | 161      | 1.1% | 2.8% |
+
+两次独立运行的中位分数相差 2.5%，比较器判定为测量噪声。当前机器上，小于 3% 的单次前后差异不足以证明优化有效；应重跑或改用真实播放指标确认。
+
+### 真实谱面与播放（2026-09-02，M4，Chromium 1234）
 
 系ぎて [DX] Re:MASTER（1366 notes）30s–60s @120fps，3600 帧：
 

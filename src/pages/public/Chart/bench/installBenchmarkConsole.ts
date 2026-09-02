@@ -88,6 +88,7 @@ function formatComparison(a: RenderBenchmarkResult, b: RenderBenchmarkResult): s
       a.config.dpr,
       a.config.syncGpu,
       a.config.passes,
+      a.config.warmupPasses,
       a.config.settings,
       a.throughput?.chunkFrames,
     ];
@@ -99,6 +100,7 @@ function formatComparison(a: RenderBenchmarkResult, b: RenderBenchmarkResult): s
       b.config.dpr,
       b.config.syncGpu,
       b.config.passes,
+      b.config.warmupPasses,
       b.config.settings,
       b.throughput?.chunkFrames,
     ];
@@ -106,7 +108,25 @@ function formatComparison(a: RenderBenchmarkResult, b: RenderBenchmarkResult): s
       throw new Error("Incompatible stress benchmark settings");
     }
   }
+  if (a.environment || b.environment) {
+    if (JSON.stringify(a.environment) !== JSON.stringify(b.environment)) {
+      throw new Error("Incompatible benchmark environments");
+    }
+  }
   const num = (value: number) => value.toFixed(3).padStart(COMPARE_NUMBER_WIDTH);
+  const unstable = a.throughput?.stable === false || b.throughput?.stable === false;
+  const scoreDeltaPercent =
+    a.throughput && b.throughput && a.throughput.score > 0
+      ? ((b.throughput.score - a.throughput.score) / a.throughput.score) * 100
+      : null;
+  const noiseFloorPercent =
+    a.throughput && b.throughput
+      ? Math.max(
+          3,
+          a.throughput.scoreRelativeStdDevPercent * 2,
+          b.throughput.scoreRelativeStdDevPercent * 2,
+        )
+      : null;
   const lines = [
     `A: ${a.config.chartTitle} ${a.config.frames}f ${a.config.timestamp}  stalls ${a.stallFrames}`,
     `B: ${b.config.chartTitle} ${b.config.frames}f ${b.config.timestamp}  stalls ${b.stallFrames}`,
@@ -114,6 +134,11 @@ function formatComparison(a: RenderBenchmarkResult, b: RenderBenchmarkResult): s
       ? [
           `score: ${a.throughput.score.toFixed(0)} -> ${b.throughput.score.toFixed(0)} stress frames/s  ${formatDelta(a.throughput.score, b.throughput.score)}`,
           `spread: ${a.throughput.scoreSpreadPercent.toFixed(1)}% -> ${b.throughput.scoreSpreadPercent.toFixed(1)}%`,
+          unstable
+            ? "verdict: INCONCLUSIVE (at least one benchmark is unstable)"
+            : Math.abs(scoreDeltaPercent!) < noiseFloorPercent!
+              ? `verdict: within measured noise (minimum meaningful delta ${noiseFloorPercent!.toFixed(1)}%)`
+              : `verdict: ${scoreDeltaPercent! > 0 ? "improvement" : "regression"} (${scoreDeltaPercent!.toFixed(1)}%, noise floor ${noiseFloorPercent!.toFixed(1)}%)`,
         ]
       : []),
     "",

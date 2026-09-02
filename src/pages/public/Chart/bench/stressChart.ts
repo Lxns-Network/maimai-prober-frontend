@@ -81,8 +81,9 @@ export const STRESS_BENCHMARK_PRESET = {
   fps: 120,
   size: 1440,
   dpr: 1.3,
-  passes: 3,
+  passes: 5,
   warmupFrames: 120,
+  warmupPasses: 1,
   syncGpu: true,
   /** 整轮只在末尾读回一次，避免重复 getImageData 触发 Chrome 切到软件 Canvas。 */
   throughputChunkFrames: 2401,

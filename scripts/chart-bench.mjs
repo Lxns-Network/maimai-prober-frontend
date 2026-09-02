@@ -31,8 +31,8 @@
 // --trace 会把基准期间的 Chrome trace（含 GPU / GC / 光栅任务）写到指定文件，可拖进
 // chrome://tracing 或 DevTools Performance 面板打开；用来归因 CPU 阶段表看不到的 GPU / GC 停顿。
 //
-// 依赖 playwright-core 与其对应版本的 Chromium 缓存；仓库不带这个依赖，通过 --playwright 或
-// CHART_BENCH_PLAYWRIGHT 指向任意一份已安装的 playwright-core 包目录（含 node_modules 的上层）。
+// 仓库包含 playwright-core，但不提交 Chromium 本体。--playwright 或 CHART_BENCH_PLAYWRIGHT
+// 可指向另一份已安装的 playwright-core 包目录（含 node_modules 的上层）。
 
 import { createServer } from "vite";
 import { build as vikeBuild, preview as vikePreview } from "vike/api";
@@ -234,6 +234,22 @@ const isolationHeaders = {
   "Cross-Origin-Embedder-Policy": "credentialless",
 };
 
+/** Vike 的生产 HTML 由自定义中间件返回，需要在它之前补上隔离响应头。 */
+function benchmarkIsolationPlugin() {
+  return {
+    name: "chart-benchmark-isolation",
+    enforce: "pre",
+    configurePreviewServer(server) {
+      server.middlewares.use((_request, response, next) => {
+        for (const [name, value] of Object.entries(isolationHeaders)) {
+          response.setHeader(name, value);
+        }
+        next();
+      });
+    },
+  };
+}
+
 let server;
 if (args.prod) {
   process.env.VITE_CHART_BENCH = "1";
@@ -247,6 +263,7 @@ if (args.prod) {
       root,
       configFile: path.join(root, "vite.config.ts"),
       logLevel: "warn",
+      plugins: [benchmarkIsolationPlugin()],
       preview: { port, strictPort: true, host: "127.0.0.1", headers: isolationHeaders },
     },
   });
@@ -324,6 +341,14 @@ try {
   console.log(
     `env: ${args.prod ? "production build" : "dev server"} crossOriginIsolated=${env.isolated} renderer=${env.gpu}`,
   );
+  if (!env.isolated) {
+    throw new Error(
+      "benchmark page is not cross-origin isolated; timing precision is insufficient",
+    );
+  }
+  if (useGpu && /swiftshader|llvmpipe|software/i.test(env.gpu)) {
+    throw new Error(`benchmark requires hardware acceleration, got ${env.gpu}`);
+  }
 
   const tracePath = args.trace ? path.resolve(root, String(args.trace)) : null;
   if (tracePath) {
@@ -360,6 +385,14 @@ try {
     : args.stress
       ? await page.evaluate(() => window.__chartBench.score())
       : await page.evaluate((options) => window.__chartBench.run(options), benchOptions);
+  result.environment = {
+    mode: args.prod ? "production" : "development",
+    crossOriginIsolated: env.isolated,
+    gpuRenderer: env.gpu,
+    browserVersion: await browser.version(),
+    platform: process.platform,
+    arch: process.arch,
+  };
 
   if (tracePath) {
     await browser.stopTracing();
