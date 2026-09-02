@@ -23,9 +23,7 @@ import { useDeveloper } from "@/hooks/queries/useDeveloper.ts";
 import { useSendDeveloperApply } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { navigate } from "vike/client/router";
 import { useUser } from "@/hooks/queries/useUser.ts";
-import { useSendEmailVerification } from "@/hooks/mutations/useUserMutations.ts";
-import { emailVerificationSentMessage } from "@/utils/emailVerification.ts";
-import { useEmailVerificationPolling } from "@/hooks/useEmailVerificationPolling.ts";
+import { useEmailVerificationFlow } from "@/hooks/useEmailVerificationFlow.ts";
 
 interface FormValues {
   name: string;
@@ -37,23 +35,24 @@ export default function DeveloperApply() {
   const { developer, isLoading: isDeveloperLoading } = useDeveloper();
   const { user, isLoading: isUserLoading, invalidate: invalidateUser } = useUser();
   const { mutate: sendApply } = useSendDeveloperApply();
-  const { mutate: sendEmailVerification, isPending: isSendingEmailVerification } =
-    useSendEmailVerification();
   const [submitting, setSubmitting] = useState(false);
   const [applied, setApplied] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
 
   const emailVerificationRequired = !developer && user?.email_verified !== true;
+  // developer 查询未返回前不下结论：已提交申请的用户不该先闪一屏"需要验证邮箱"。
   const showEmailVerificationRequired =
-    !isUserLoading && Boolean(user) && emailVerificationRequired;
+    !isUserLoading && !isDeveloperLoading && Boolean(user) && emailVerificationRequired;
   const {
+    verificationSent,
+    sendVerification: sendEmailVerificationHandler,
+    isSending: isSendingEmailVerification,
     checkNow: checkEmailVerification,
     isChecking: isCheckingEmailVerification,
     timedOut: emailVerificationPollingTimedOut,
-  } = useEmailVerificationPolling({
-    active: verificationSent,
+  } = useEmailVerificationFlow({
     verified: user?.email_verified ?? false,
     invalidate: invalidateUser,
+    verifiedMessage: "你现在可以提交开发者申请。",
   });
 
   const form = useForm<FormValues>({
@@ -98,31 +97,6 @@ export default function DeveloperApply() {
     });
   };
 
-  const sendEmailVerificationHandler = () => {
-    sendEmailVerification(undefined, {
-      onSuccess: (result) => {
-        if (result.email_verified) {
-          void invalidateUser();
-          notifications.show({
-            title: "邮箱已验证",
-            message: "当前邮箱已经完成验证。",
-            color: "green",
-          });
-          return;
-        }
-        notifications.show({
-          title: "验证邮件已发送",
-          message: emailVerificationSentMessage(result.expires_in),
-          color: "green",
-        });
-        setVerificationSent(true);
-      },
-      onError: (error) => {
-        openRetryModal("发送失败", `${error}`, sendEmailVerificationHandler);
-      },
-    });
-  };
-
   useEffect(() => {
     if (!developer) return;
 
@@ -137,16 +111,6 @@ export default function DeveloperApply() {
       setApplied(true);
     }
   }, [developer, setFormValues]);
-
-  useEffect(() => {
-    if (!verificationSent || !user?.email_verified) return;
-    setVerificationSent(false);
-    notifications.show({
-      title: "邮箱验证成功",
-      message: "你现在可以提交开发者申请。",
-      color: "green",
-    });
-  }, [user?.email_verified, verificationSent]);
 
   return (
     <Container className={classes.root} size={420}>

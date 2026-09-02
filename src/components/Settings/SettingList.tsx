@@ -110,6 +110,8 @@ const Setting = ({
                     variant="filled"
                     data={data.options || []}
                     renderOption={data.renderOption}
+                    // 设置项没有"未选择"状态：禁止点击已选项反选出 null。
+                    allowDeselect={false}
                     value={
                       value && data.key in value
                         ? (value[data.key] as string)
