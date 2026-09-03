@@ -1,4 +1,8 @@
-import { isTokenExpired, isTokenUndefined } from "@/utils/session.ts";
+import {
+  isTokenExpired,
+  isTokenUndefined,
+  redirectExpiredSessionToLogin,
+} from "@/utils/session.ts";
 import { queryClient } from "@/lib/queryClient.ts";
 import { APIError } from "@/utils/errors.ts";
 import { ApiResponse } from "@/types/api";
@@ -59,8 +63,11 @@ async function requestTokenRefresh(): Promise<RefreshTokenData> {
       const error = await getRefreshError(response);
 
       if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem("token");
-        throw error;
+        redirectExpiredSessionToLogin();
+        throw new APIError("登录会话已过期，请重新登录。", {
+          code: error.code,
+          status: response.status,
+        });
       }
 
       const canRetry = response.status === 408 || response.status === 429 || response.status >= 500;

@@ -10,10 +10,9 @@ import {
 import { ModalsProvider } from "@mantine/modals";
 import { ManagedModalsBackGuard } from "@/components/ModalProvider/ManagedModalsBackGuard.tsx";
 import { notifications, Notifications } from "@mantine/notifications";
-import { logout } from "@/utils/session";
+import { redirectExpiredSessionToLogin } from "@/utils/session";
 import * as Sentry from "@sentry/react";
 import { usePageContext } from "vike-react/usePageContext";
-import { navigate } from "vike/client/router";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -116,16 +115,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
 
     if (sessionExpired) {
       Sentry.setUser(null);
-      logout();
-
-      if (pageContext.urlPathname !== "/login") {
-        const redirect = encodeURIComponent(
-          window.location.pathname + window.location.search + window.location.hash,
-        );
-        navigate(`/login?redirect=${redirect}`, {
-          overwriteLastHistoryEntry: true,
-        });
-      }
+      redirectExpiredSessionToLogin();
     }
   }, [userTokenError]);
 

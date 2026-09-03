@@ -1,6 +1,47 @@
 import { logoutUser } from "./api/user.ts";
 
 const isBrowser = () => typeof window !== "undefined";
+const SESSION_EXPIRED_KEY = "session_expired";
+
+let isRedirectingExpiredSession = false;
+
+const storeSessionExpired = () => {
+  try {
+    sessionStorage.setItem(SESSION_EXPIRED_KEY, "1");
+  } catch {
+    return;
+  }
+};
+
+/** Clears the local session and reloads the login page with a one-time expiry notice. */
+export const redirectExpiredSessionToLogin = () => {
+  if (!isBrowser() || isRedirectingExpiredSession) return;
+
+  isRedirectingExpiredSession = true;
+  const currentPath = window.location.pathname + window.location.search + window.location.hash;
+  localStorage.removeItem("token");
+  storeSessionExpired();
+
+  if (window.location.pathname === "/login") {
+    window.location.reload();
+    return;
+  }
+
+  window.location.replace(`/login?redirect=${encodeURIComponent(currentPath)}`);
+};
+
+/** Returns whether the login page should show the session-expired notice, consuming the flag. */
+export const consumeSessionExpired = () => {
+  if (!isBrowser()) return false;
+
+  try {
+    const expired = sessionStorage.getItem(SESSION_EXPIRED_KEY) === "1";
+    sessionStorage.removeItem(SESSION_EXPIRED_KEY);
+    return expired;
+  } catch {
+    return false;
+  }
+};
 
 const getLoginSessionPayload = () => {
   if (!isBrowser()) return null;

@@ -21,6 +21,7 @@ import { validateEmail, validateExistingPassword, validateUserName } from "@/uti
 import { IconAlertCircle, IconLock, IconMail, IconUser } from "@tabler/icons-react";
 import classes from "../Form.module.css";
 import {
+  consumeSessionExpired,
   getSentryUser,
   isTokenExpired,
   isTokenUndefined,
@@ -47,13 +48,12 @@ export default function Login() {
   const { mutate: login } = useLogin();
 
   useEffect(() => {
-    if (pageContext.loginState) {
-      if (pageContext.loginState.expired) {
-        openAlertModal("你已登出", "登录会话已过期，请重新登录。");
-      }
-      if (pageContext.loginState.reset) {
-        openAlertModal("重置成功", "请使用新密码登录。");
-      }
+    const sessionExpired = consumeSessionExpired() || pageContext.loginState?.expired;
+
+    if (sessionExpired) {
+      openAlertModal("你已登出", "登录会话已过期，请重新登录。");
+    } else if (pageContext.loginState?.reset) {
+      openAlertModal("重置成功", "请使用新密码登录。");
     }
   }, [pageContext.loginState]);
 
