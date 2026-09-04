@@ -16,6 +16,7 @@ type ExportChartGifOptions = {
     GameSettingsState,
     | "hiSpeed"
     | "alwaysKeepHiSpeed"
+    | "slideDelay"
     | "slideRotation"
     | "mirrorMode"
     | "judgmentLineDesign"
@@ -107,6 +108,7 @@ export async function exportChartGif({
   renderer.resizeToSize(size);
   renderer.setHiSpeed(settings.hiSpeed);
   renderer.setAlwaysKeepHiSpeed(settings.alwaysKeepHiSpeed);
+  renderer.setSlideDelay(settings.slideDelay);
   renderer.setPlaybackSpeed(1);
   renderer.setSlideRotation(settings.slideRotation);
   renderer.setMirrorMode(settings.mirrorMode);

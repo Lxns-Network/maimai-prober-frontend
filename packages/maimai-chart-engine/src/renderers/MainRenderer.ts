@@ -201,6 +201,7 @@ export class MainRenderer {
   private config: RendererConfig = {
     hiSpeed: HI_SPEED_DEFAULT * HI_SPEED_CONVERSION_FACTOR,
     alwaysKeepHiSpeed: false,
+    slideDelay: 0,
     playbackSpeed: 1.0,
     mirrorMode: "none",
     highlightExNotes: false,
@@ -414,6 +415,13 @@ export class MainRenderer {
 
   setAlwaysKeepHiSpeed(alwaysKeepHiSpeed: boolean): void {
     this.config.alwaysKeepHiSpeed = alwaysKeepHiSpeed;
+    this.updateRenderersContext();
+  }
+
+  /** 调整轨迹出现时机；有限值钳到 [-1, 1] 并取 0.1 步长，非有限值忽略。 */
+  setSlideDelay(slideDelay: number): void {
+    if (!Number.isFinite(slideDelay)) return;
+    this.config.slideDelay = Math.round(Math.max(-1, Math.min(1, slideDelay)) * 10) / 10 || 0;
     this.updateRenderersContext();
   }
 
@@ -820,6 +828,7 @@ export class MainRenderer {
   }
 
   private prepareRenderNotes(notes: Note[]): PreparedRenderNotes {
+    this.slideRenderer.invalidateTrackLayer();
     const slides: SlideNote[] = [];
     const touches: (TouchNote | TouchHoldStartNote)[] = [];
     const fireworkTouches: (TouchNote | TouchHoldStartNote)[] = [];

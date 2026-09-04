@@ -23,6 +23,7 @@ import {
 } from "../utils/constants";
 import { detectSlideShape, SLIDE_AREA_STEP_MAP } from "../utils/slideAreaSteps";
 import { SLIDE_BARS } from "../utils/slideBars";
+import { getSlideTrackAppearance } from "../core/timing/slideAppearance";
 
 export type SlideRenderMode = "tracks" | "stars";
 
@@ -42,18 +43,6 @@ interface ArrowPaths {
 }
 type ArrowPathSet = ArrowPaths[];
 
-// 每帧向 staging 层最多绘制的轨迹条数，控制单帧重建成本。
-const TRACKS_PER_BUILD_STEP = 12;
-
-interface TrackBuildJob {
-  signature: string;
-  entries: { note: SlideNote; index: number; isSimultaneous: boolean }[];
-  currentBeat: number;
-  currentTimeMs: number;
-  nextIndex: number;
-  staging: HTMLCanvasElement;
-}
-
 export class SlideRenderer extends BaseRenderer {
   private noteRenderer: NoteRenderer;
   private pathMetricsCache = new WeakMap<SlideSegment[], SlidePathMetrics>();
@@ -63,14 +52,10 @@ export class SlideRenderer extends BaseRenderer {
     SlideSegment,
     { basis: string; byKey: Map<string, ArrowPathSet> }
   >();
-  // 稳定轨迹（alpha=1）离屏层：签名不变时每帧只 drawImage 复用。
+  // 透明度稳定时复用整层；淡入帧直接按原顺序绘制。
   private trackLayer: HTMLCanvasElement | null = null;
   private trackLayerCtx: CanvasRenderingContext2D | null = null;
   private trackLayerSignature = "";
-  private trackLayerBuiltAtMs = -Infinity;
-  private trackStaging: HTMLCanvasElement | null = null;
-  private trackStagingCtx: CanvasRenderingContext2D | null = null;
-  private trackBuildJob: TrackBuildJob | null = null;
 
   // 同参重复路径只画一次，完全重叠时渲染结果与全量绘制一致。
   private getRenderPathIndexes(note: SlideNote): number[] {
@@ -310,68 +295,73 @@ export class SlideRenderer extends BaseRenderer {
     mode: SlideRenderMode = "tracks",
     hasSimultaneousSlide: boolean,
   ): void {
-    const approachHalf = this.getNoteApproachTimeMs(note) / 2;
-    const visibilityStart = note.timingMs - approachHalf;
-
     const durationMs = note.allDurationMs ? note.allDurationMs[pathIndex] : note.durationMs;
     const delayMs = note.allDelayMs
       ? note.allDelayMs[pathIndex]
       : (note.delayMs ?? 60000 / note.bpm);
     const slideStart = note.timingMs + delayMs;
 
-    if (currentTimeMs < visibilityStart || currentTimeMs > slideStart + durationMs) {
+    if (currentTimeMs > slideStart + durationMs) {
       return;
     }
 
-    let alpha = 1;
-    if (currentTimeMs < note.timingMs) {
-      const fadeProgress = (currentTimeMs - visibilityStart) / approachHalf;
-      alpha = Math.max(0, Math.min(1, fadeProgress));
+    let progress = 0;
+    if (currentTimeMs >= slideStart) {
+      progress = durationMs > 0 ? Math.min(1, (currentTimeMs - slideStart) / durationMs) : 1;
     }
 
-    this.withContext(() => {
-      this.context.ctx.globalAlpha = alpha;
-
-      let progress = 0;
-      if (currentTimeMs >= slideStart) {
-        const elapsed = currentTimeMs - slideStart;
-        progress = Math.min(1, elapsed / durationMs);
+    const isSimultaneous = hasSimultaneousSlide || (note.isSplitSlide ?? false);
+    if (mode === "stars") {
+      if (currentTimeMs >= note.timingMs) {
+        this.renderSlideStar(note, progress, segments, pathIndex, currentTimeMs, isSimultaneous);
       }
+      return;
+    }
 
-      const isSimultaneous = hasSimultaneousSlide || (note.isSplitSlide ?? false);
+    const ordinary = this.getTrackAppearance(note, currentTimeMs, false);
+    const wifi = this.getTrackAppearance(note, currentTimeMs, true);
+    if (ordinary.alpha === 0 && wifi.alpha === 0) return;
 
-      if (mode === "tracks") {
-        const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
-        const metrics = this.getSlidePathMetrics(segments);
-        if (!metrics) return;
+    const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
+    const metrics = this.getSlidePathMetrics(segments);
+    if (!metrics) return;
 
-        // 反序绘制：先拼接的段（i 小）后画 = 在上层。拼接拐点处前段（含补的 junction 箭头）
-        // 盖住后段起点，符合"先拼接的星星在上层"。
-        for (let i = segments.length - 1; i >= 0; i--) {
-          const segment = segments[i];
-          const range = metrics.segmentRanges[i];
+    this.withContext(() => {
+      for (let i = segments.length - 1; i >= 0; i--) {
+        const segment = segments[i];
+        const alpha = segment.type === "w" ? wifi.alpha : ordinary.alpha;
+        if (alpha === 0) continue;
+        this.context.ctx.globalAlpha = alpha;
+        const range = metrics.segmentRanges[i];
 
-          let segmentProgress = 0;
-          if (progress > range.start) {
-            segmentProgress =
-              progress >= range.end ? 1 : (progress - range.start) / (range.end - range.start);
-          }
-
-          this.renderSlideSegment(
-            segment,
-            isBreak,
-            segmentProgress,
-            isSimultaneous,
-            this.context.config.normalColorBreakSlide,
-            i < segments.length - 1, // 非末段：末端是拼接拐点，需补 junction 箭头
-          );
+        let segmentProgress = 0;
+        if (progress > range.start) {
+          segmentProgress =
+            progress >= range.end ? 1 : (progress - range.start) / (range.end - range.start);
         }
-      } else {
-        if (currentTimeMs >= note.timingMs) {
-          this.renderSlideStar(note, progress, segments, pathIndex, currentTimeMs, isSimultaneous);
-        }
+
+        this.renderSlideSegment(
+          segment,
+          isBreak,
+          segmentProgress,
+          isSimultaneous,
+          this.context.config.normalColorBreakSlide,
+          i < segments.length - 1,
+        );
       }
     });
+  }
+
+  private getTrackAppearance(note: SlideNote, currentTimeMs: number, isWifi: boolean) {
+    return getSlideTrackAppearance(
+      {
+        noteTimeMs: note.timingMs,
+        approachTimeMs: this.getNoteApproachTimeMs(note),
+        slideDelay: this.context.config.slideDelay,
+      },
+      currentTimeMs,
+      isWifi,
+    );
   }
 
   private getSlidePathMetrics(segments: SlideSegment[]): SlidePathMetrics | null {
@@ -450,11 +440,7 @@ export class SlideRenderer extends BaseRenderer {
     const steps = SLIDE_AREA_STEP_MAP["wifi"];
     const N = steps[steps.length - 1]; // 箭头总数 = 11
 
-    let hiddenCount = 0;
-    if (progress > 0 && steps.length >= 2) {
-      const i = Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)));
-      hiddenCount = steps[i] + 1;
-    }
+    const hiddenCount = this.getHiddenCount(segment, progress);
 
     const pivot = this.noteRenderer.getPositionOnRing(segment.startPos);
     const endPivot = this.noteRenderer.getPositionOnRing(segment.endPos);
@@ -501,14 +487,16 @@ export class SlideRenderer extends BaseRenderer {
   }
 
   // 与 renderSlidePath 相同的 progress→hiddenCount 推导，只取失效签名。
-  private trackStateKey(note: SlideNote, currentTimeMs: number): string {
+  private trackStateKey(
+    note: SlideNote,
+    currentTimeMs: number,
+  ): { key: string; isFading: boolean } {
     const pathIndexes =
       note.isSplitSlide && note.allSlideSegments ? this.getRenderPathIndexes(note) : [0];
     let key = "";
-    // 淡入期 alpha 连续变化，25ms 分桶让层随渐入重建（重建频率由节流兜底）。
-    if (currentTimeMs < note.timingMs) {
-      key += `~${Math.floor((note.timingMs - currentTimeMs) / 25)}`;
-    }
+    let isFading = false;
+    const ordinary = this.getTrackAppearance(note, currentTimeMs, false);
+    const wifi = this.getTrackAppearance(note, currentTimeMs, true);
     for (const i of pathIndexes) {
       const segments = note.allSlideSegments ? note.allSlideSegments[i] : note.slideSegments;
       if (!segments || segments.length === 0) continue;
@@ -521,12 +509,16 @@ export class SlideRenderer extends BaseRenderer {
       }
       let progress = 0;
       if (currentTimeMs >= slideStart) {
-        progress = Math.min(1, (currentTimeMs - slideStart) / durationMs);
+        progress = durationMs > 0 ? Math.min(1, (currentTimeMs - slideStart) / durationMs) : 1;
       }
       key += `|${i}`;
       const metrics = this.getSlidePathMetrics(segments);
       if (!metrics) continue;
       for (let s = 0; s < segments.length; s++) {
+        const appearance = segments[s].type === "w" ? wifi : ordinary;
+        key += `:${appearance.alpha}`;
+        isFading ||= appearance.isFading;
+        if (appearance.alpha === 0) continue;
         const range = metrics.segmentRanges[s];
         let segmentProgress = 0;
         if (progress > range.start) {
@@ -536,10 +528,14 @@ export class SlideRenderer extends BaseRenderer {
         key += `,${this.getHiddenCount(segments[s], segmentProgress)}`;
       }
     }
-    return key;
+    return { key, isFading };
   }
 
-  /** 稳定轨迹整体走离屏层：签名不变时每帧只合成一次 drawImage。 */
+  invalidateTrackLayer(): void {
+    this.trackLayerSignature = "";
+  }
+
+  /** 淡入逐帧直接绘制；稳定层按签名同步重建，暂停、跳转和导出不依赖后续帧。 */
   renderStableTracks(
     entries: { note: SlideNote; index: number; isSimultaneous: boolean }[],
     currentBeat: number,
@@ -548,97 +544,54 @@ export class SlideRenderer extends BaseRenderer {
     const mainCtx = this.context.ctx;
     const canvas = this.context.canvas;
     if (entries.length === 0) {
-      this.trackLayerSignature = "";
-      this.trackBuildJob = null;
+      this.invalidateTrackLayer();
       return;
     }
 
-    let signature = `${canvas.width}x${canvas.height}|${this.context.radius}|${this.context.config.mirrorMode}|${this.context.config.normalColorBreakSlide ? 1 : 0}`;
+    const { config } = this.context;
+    let signature = `${canvas.width}x${canvas.height}|${this.context.radius}|${config.mirrorMode}|${config.normalColorBreakSlide ? 1 : 0}|${config.slideDelay}|${this.getApproachTimeMs()}`;
+    let isFading = false;
     for (const entry of entries) {
-      signature += `;${entry.index}:${entry.isSimultaneous ? 1 : 0}${this.trackStateKey(entry.note, currentTimeMs)}`;
+      const state = this.trackStateKey(entry.note, currentTimeMs);
+      signature += `;${entry.index}:${entry.isSimultaneous ? 1 : 0}${state.key}`;
+      isFading ||= state.isFading;
     }
 
-    // 双缓冲分帧重建：staging 层每帧最多画 TRACKS_PER_BUILD_STEP 条，画完与前台互换。
-    const job = this.trackBuildJob;
-    if (signature === this.trackLayerSignature) {
-      this.trackBuildJob = null;
-    } else if (job && job.signature === signature) {
-      this.advanceTrackBuildJob(job);
-    } else if (Math.abs(currentTimeMs - this.trackLayerBuiltAtMs) >= 33 || !this.trackLayer) {
-      const staging = this.acquireTrackStaging(canvas, mainCtx);
-      this.trackBuildJob = {
-        signature,
-        entries: entries.slice(),
-        currentBeat,
-        currentTimeMs,
-        nextIndex: 0,
-        staging,
-      };
-      // 首帧没有可显示的前台层时同步完成，避免轨迹空白。
-      do {
-        this.advanceTrackBuildJob(this.trackBuildJob);
-      } while (this.trackBuildJob && !this.trackLayer);
+    if (isFading) {
+      this.invalidateTrackLayer();
+      for (const entry of entries) {
+        this.renderSlide(entry.note, currentBeat, currentTimeMs, "tracks", entry.isSimultaneous);
+      }
+      return;
     }
 
-    if (!this.trackLayer) return;
+    if (signature !== this.trackLayerSignature) {
+      if (!this.trackLayer) {
+        this.trackLayer = document.createElement("canvas");
+        this.trackLayerCtx = this.trackLayer.getContext("2d");
+      }
+      if (this.trackLayer.width !== canvas.width) this.trackLayer.width = canvas.width;
+      if (this.trackLayer.height !== canvas.height) this.trackLayer.height = canvas.height;
+
+      const ctx = this.trackLayerCtx!;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.setTransform(mainCtx.getTransform());
+      this.context.ctx = ctx;
+      try {
+        for (const entry of entries) {
+          this.renderSlide(entry.note, currentBeat, currentTimeMs, "tracks", entry.isSimultaneous);
+        }
+      } finally {
+        this.context.ctx = mainCtx;
+      }
+      this.trackLayerSignature = signature;
+    }
+
     mainCtx.save();
     mainCtx.setTransform(1, 0, 0, 1, 0, 0);
-    mainCtx.drawImage(this.trackLayer, 0, 0);
+    mainCtx.drawImage(this.trackLayer!, 0, 0);
     mainCtx.restore();
-  }
-
-  private acquireTrackStaging(
-    canvas: HTMLCanvasElement,
-    mainCtx: CanvasRenderingContext2D,
-  ): HTMLCanvasElement {
-    if (
-      !this.trackStaging ||
-      this.trackStaging.width !== canvas.width ||
-      this.trackStaging.height !== canvas.height
-    ) {
-      this.trackStaging = document.createElement("canvas");
-      this.trackStaging.width = canvas.width;
-      this.trackStaging.height = canvas.height;
-      this.trackStagingCtx = this.trackStaging.getContext("2d");
-    }
-    const ctx = this.trackStagingCtx!;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, this.trackStaging.width, this.trackStaging.height);
-    ctx.setTransform(mainCtx.getTransform());
-    return this.trackStaging;
-  }
-
-  private advanceTrackBuildJob(job: TrackBuildJob): void {
-    const mainCtx = this.context.ctx;
-    this.context.ctx = this.trackStagingCtx!;
-    try {
-      const end = Math.min(job.entries.length, job.nextIndex + TRACKS_PER_BUILD_STEP);
-      for (; job.nextIndex < end; job.nextIndex++) {
-        const entry = job.entries[job.nextIndex];
-        this.renderSlide(
-          entry.note,
-          job.currentBeat,
-          job.currentTimeMs,
-          "tracks",
-          entry.isSimultaneous,
-        );
-      }
-    } finally {
-      this.context.ctx = mainCtx;
-    }
-
-    if (job.nextIndex >= job.entries.length) {
-      // 完成:staging 与前台互换
-      const front = this.trackLayer;
-      const frontCtx = this.trackLayerCtx;
-      this.trackLayer = job.staging;
-      this.trackLayerCtx = this.trackStagingCtx;
-      this.trackStaging = front;
-      this.trackStagingCtx = frontCtx;
-      this.trackLayerSignature = job.signature;
-      this.trackLayerBuiltAtMs = job.currentTimeMs;
-      this.trackBuildJob = null;
-    }
   }
 
   // chunky 隐藏：areaStep[i] = 累积隐藏数量，floor 对齐分段时序。
@@ -646,9 +599,11 @@ export class SlideRenderer extends BaseRenderer {
     const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos, segment.midPos);
     if (!shape) return 0;
     const steps = SLIDE_AREA_STEP_MAP[shape.shape];
-    return steps && steps.length >= 2
-      ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
-      : 0;
+    const hiddenCount =
+      steps && steps.length >= 2
+        ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
+        : 0;
+    return segment.type === "w" && progress > 0 ? hiddenCount + 1 : hiddenCount;
   }
 
   private drawSegmentArrows(segment: SlideSegment, progress: number, isJunctionEnd: boolean): void {
@@ -1000,7 +955,6 @@ export class SlideRenderer extends BaseRenderer {
     ctx.save();
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
-    ctx.globalAlpha = ctx.globalAlpha * 0.5;
 
     // 整片扇形拼成一个 Path2D，投影（整体偏移）和本体各填充一次。
     const fanPath = new Path2D();

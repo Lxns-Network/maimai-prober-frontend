@@ -16,6 +16,7 @@ export function applyCurrentRendererSettings(renderer: MainRenderer): void {
   renderer.setFullscreenMaxPixels(FULLSCREEN_QUALITY_MP[settingsState.fullscreenQuality]);
   renderer.setHiSpeed(settingsState.hiSpeed);
   renderer.setAlwaysKeepHiSpeed(settingsState.alwaysKeepHiSpeed);
+  renderer.setSlideDelay(settingsState.slideDelay);
   renderer.setSlideRotation(settingsState.slideRotation);
   renderer.setMirrorMode(settingsState.mirrorMode);
   renderer.setJudgmentLineDesign(settingsState.judgmentLineDesign);
@@ -37,6 +38,7 @@ export function useRendererSettings({
   const fullscreenQuality = useGameSettingsStore((s) => s.fullscreenQuality);
   const hiSpeed = useGameSettingsStore((s) => s.hiSpeed);
   const alwaysKeepHiSpeed = useGameSettingsStore((s) => s.alwaysKeepHiSpeed);
+  const slideDelay = useGameSettingsStore((s) => s.slideDelay);
   const slideRotation = useGameSettingsStore((s) => s.slideRotation);
   const mirrorMode = useGameSettingsStore((s) => s.mirrorMode);
   const judgmentLineDesign = useGameSettingsStore((s) => s.judgmentLineDesign);
@@ -70,6 +72,7 @@ export function useRendererSettings({
     rendererRef,
     hiSpeed,
     alwaysKeepHiSpeed,
+    slideDelay,
     playbackSpeed,
     slideRotation,
     mirrorMode,
