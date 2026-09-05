@@ -55,6 +55,8 @@ The root `src/pages/+config.ts` sets `ssr: false` and `lang: zh-Hans` globally.
 - Background video sync is best-effort visual media sync and should follow the chart/audio playhead. It should not become the source of truth for preview timing.
 - Seek while playing is a scheduled handoff: stop old music, compute the target once, schedule the new `AudioBufferSourceNode` at a short future `AudioContext.currentTime`, hold the visual playhead at that target, then switch back to the audio output clock once the new source is audible. Avoid compatibility shims such as old `playbackStartTime`/`playbackStartPositionMs` store fields.
 
+**Chart render performance.** Do not eyeball FPS. `MainRenderer` has per-stage CPU timing (`setProfilingEnabled` / `takeFrameProfile`), shown in the DEV overlay on `/chart`; `scripts/chart-bench.mjs` runs a headless, playback-independent benchmark and can `--compare` against a saved baseline. Before/after numbers for any renderer change should come from it. See [src/pages/public/Chart/bench/README.md](src/pages/public/Chart/bench/README.md) for usage, stage meanings, and known pitfalls (software rasterizer skews `max`; timer precision needs cross-origin isolation).
+
 **Misc.** Path alias `@/` → `src/` (configured in both vite and tsconfig). Sentry handles error monitoring and uploads sourcemaps at build time. The build writes a timestamped `dist/client/version.json`; `useVersionChecker` uses it to prompt users to reload onto a new deploy.
 
 ## Code comments

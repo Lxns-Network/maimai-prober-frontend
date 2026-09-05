@@ -175,9 +175,16 @@ export function PlaybackControls({
   isFullscreen,
   portalTarget,
 }: PlaybackControlsProps) {
+  // 只订阅真正用到的键。整 store 订阅（useShallow(state => state)）会让播放中每次
+  // timeline / 音频状态更新都重渲染整棵控件树，是 trace 里 60–95ms 长任务的来源。
+  const isPlaying = useGameStore((s) => s.isPlaying);
+  const pendingPlay = useGameStore((s) => s.pendingPlay);
+  const chartData = useGameStore((s) => s.chartData);
+  const preciseTime = useGameStore((s) => s.timeline.preciseTime);
+  const currentMeasure = useGameStore((s) => s.timeline.currentMeasure);
+  const totalMeasures = useGameStore((s) => s.timeline.totalMeasures);
+  const beatsPerMeasure = useGameStore((s) => s.timeline.beatsPerMeasure);
   const {
-    isPlaying,
-    pendingPlay,
     togglePlayback,
     restartCurrentMeasure,
     stepMeasure,
@@ -185,14 +192,23 @@ export function PlaybackControls({
     getCurrentTimeInBeats,
     getCurrentTimeInMs,
     setPreciseTime,
-    chartData,
     pause,
-    timeline,
-  } = useGameStore(useShallow((state) => state));
+  } = useGameStore(
+    useShallow((s) => ({
+      togglePlayback: s.togglePlayback,
+      restartCurrentMeasure: s.restartCurrentMeasure,
+      stepMeasure: s.stepMeasure,
+      stepPosition: s.stepPosition,
+      getCurrentTimeInBeats: s.getCurrentTimeInBeats,
+      getCurrentTimeInMs: s.getCurrentTimeInMs,
+      setPreciseTime: s.setPreciseTime,
+      pause: s.pause,
+    })),
+  );
 
   const totalDurationMs = chartData
     ? beatsToMs(
-        Math.max(0, timeline.totalMeasures - 1) * timeline.beatsPerMeasure,
+        Math.max(0, totalMeasures - 1) * beatsPerMeasure,
         chartData.bpmEvents,
         chartData.bpm,
       )
@@ -234,7 +250,11 @@ export function PlaybackControls({
   const zoomWindowDurationMsRef = useRef(zoomWindowDurationMs);
   zoomWindowDurationMsRef.current = zoomWindowDurationMs;
 
-  const currentMs = chartData ? getCurrentTimeInMs() : 0;
+  const currentMs = chartData
+    ? isPlaying
+      ? getCurrentTimeInMs()
+      : beatsToMs(preciseTime, chartData.bpmEvents, chartData.bpm)
+    : 0;
   const [isExportingGif, setIsExportingGif] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [captureMenuOpened, setCaptureMenuOpened] = useState(false);
@@ -375,7 +395,7 @@ export function PlaybackControls({
       const blob = await exportChartGif({
         chart: chartData,
         range: exportRange,
-        beatsPerMeasure: timeline.beatsPerMeasure,
+        beatsPerMeasure: beatsPerMeasure,
         settings,
         onProgress: setExportProgress,
         video,
@@ -538,7 +558,7 @@ export function PlaybackControls({
                 className={classes.exportOverviewPlayheadBadge}
                 style={{ left: `${clamp((currentMs / totalDurationMs) * 100, 0, 100)}%` }}
               >
-                {timeline.currentMeasure}
+                {currentMeasure}
               </div>
             </div>
           )}
@@ -821,17 +841,20 @@ export function PlaybackControls({
 }
 
 export function Controls({ isUtage }: { isUtage?: boolean }) {
-  const {
-    playbackSpeed,
-    rawSimaiText,
-    selectedDifficulty,
-    chartData,
-    setPlaybackSpeed,
-    setChartData,
-    setSelectedDifficulty,
-    setRawSimaiText,
-    setMusicUrl,
-  } = useGameStore(useShallow((state) => state));
+  const playbackSpeed = useGameStore((s) => s.playbackSpeed);
+  const rawSimaiText = useGameStore((s) => s.rawSimaiText);
+  const selectedDifficulty = useGameStore((s) => s.selectedDifficulty);
+  const chartData = useGameStore((s) => s.chartData);
+  const { setPlaybackSpeed, setChartData, setSelectedDifficulty, setRawSimaiText, setMusicUrl } =
+    useGameStore(
+      useShallow((s) => ({
+        setPlaybackSpeed: s.setPlaybackSpeed,
+        setChartData: s.setChartData,
+        setSelectedDifficulty: s.setSelectedDifficulty,
+        setRawSimaiText: s.setRawSimaiText,
+        setMusicUrl: s.setMusicUrl,
+      })),
+    );
 
   // 手动编辑当前谱面文本并重新加载
   const [debugSimai, setDebugSimai] = useState(rawSimaiText);

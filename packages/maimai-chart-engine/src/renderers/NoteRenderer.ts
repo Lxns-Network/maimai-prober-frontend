@@ -18,14 +18,41 @@ export const INVISIBLE_NOTE_POSITION: NoteRenderPosition = Object.freeze({
   visible: false,
 });
 
-// sprite 相对基准尺寸的边距倍率（覆盖 EX 环 ×1.43 + 描边）与超采样倍率。
 const TAP_SPRITE_HALF_RATIO = 1.7;
 const TAP_SPRITE_SUPERSAMPLE = 2;
+
+// 单颗六边形/星 stamp 的超采样与 glow 参数。集群位姿按 progress 实时摆。
+const HIT_FX_SPRITE_SUPERSAMPLE = 2;
+const HIT_FX_CORE_BLUR_RATIO = (4 / 300) * 0.7;
+const HIT_FX_HALO_BLUR_SCALE = 2.4;
+const HIT_FX_HALO_ALPHA = 0.55;
+
+/**
+ * 精灵合成范围按实际墨迹算。留白虽是全透明像素，却每帧都要参与合成：
+ * tap 裁掉烘焙画布的透明边缘再贴图，命中特效 stamp 直接收紧画布，密谱下分别少填
+ * 约 59% 和 51% 的目标像素。
+ *
+ * tap 仍按旧尺寸烘焙，以保持原有的像素中心与抗锯齿结果；裁剪矩形与原画布保持同奇偶，
+ * source/destination 比例固定为 noteScale / SS，因此只跳过全透明边缘，不改变图形映射。
+ * 命中特效的目标尺寸由 sprite.width 反推，图形与 refR 同比，渲染半径与 half 无关。
+ *
+ * TAIL 是 `ctx.filter = blur(N)` 实际扩散到的半径与 N 的比值，**实测值**：Chromium 下
+ * 描边外沿到 alpha 归零处为 2.43×N（六边形）/ 2.27×N（星），不是按 σ=N/2 推的 1.5×。
+ * 取小了会把 halo 外圈直接切掉——1.5× 时逐像素对照有约 1000 个像素单向变暗。
+ */
+const SPRITE_BLUR_TAIL_RATIO = 2.5;
+const SPRITE_AA_MARGIN_PX = 1;
+const TAP_SPRITE_CROP_MARGIN_PX = 1;
+
+type HitEffectShape = "hexagon" | "star";
 
 export class NoteRenderer extends BaseRenderer {
   // 按 (方位,配色,EX) 预渲染的 tap sprite，radius/mirror 变化时整体失效。
   private tapSpriteCache = new Map<string, HTMLCanvasElement>();
   private tapSpriteBasis = "";
+  // 六边形 / 星各一张预烘焙 stamp（含 glow），radius / backingScale / color 变化时整体失效。
+  private hitEffectShapeCache = new Map<HitEffectShape, HTMLCanvasElement>();
+  private hitEffectShapeBasis = "";
 
   constructor(context: RenderContext) {
     super(context);
@@ -149,7 +176,7 @@ export class NoteRenderer extends BaseRenderer {
     position: ButtonPosition,
     color: string,
     progress: number,
-    type: "hexagon" | "star",
+    type: HitEffectShape,
   ): void {
     this.renderHitEffectAt(x, y, this.getButtonAngle(position), color, progress, type);
   }
@@ -165,56 +192,104 @@ export class NoteRenderer extends BaseRenderer {
     angle: number,
     color: string,
     progress: number,
-    type: "hexagon" | "star",
+    type: HitEffectShape,
   ): void {
-    // progress ∈ [0,1] 驱动 scale 上升 + 中段最亮 + 子图形旋转/离心。
     const scale = 1 - 0.75 * (progress - 1) * (progress - 1);
     const alpha = 1 - 4 * (progress - 0.5) * (progress - 0.5);
     if (alpha <= 0 || scale <= 0) return;
+
     const subAng = 1 - (progress - 1) * (progress - 1);
     const subRad = Math.max(0, Math.min(1, 1 - (8 / 9) * progress * progress));
-
     const baseR = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5;
-    const sub1 = angle + Math.PI / 6;
-    const sub2 = angle - Math.PI / 6;
+    if (baseR <= 0) return;
+
     const r0 = baseR * scale;
     const rSmall = r0 * 0.7;
     const rBig = r0 * 0.8;
     const off = baseR * subRad * 0.7;
+    const sprite = this.getHitEffectShapeSprite(type, color);
+    const logical = sprite.width / HIT_FX_SPRITE_SUPERSAMPLE;
+    const destSize = (r: number) => logical * (r / baseR);
 
-    // 中心 + ±15° 偏轴各 2 个旋转副本合进同一条 Path2D，一次 stroke 触发一次 filter pass。
-    const path = new Path2D();
-    const add = (cx: number, cy: number, r: number) => {
-      if (type === "star") {
-        this.starSubPath(path, cx, cy, 5, r, r * 0.5, angle + Math.PI);
-      } else {
-        this.hexagonSubPath(path, cx, cy, r, angle);
-      }
+    const ctx = this.context.ctx;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.globalAlpha = alpha;
+    const blit = (lx: number, ly: number, r: number) => {
+      const s = destSize(r);
+      ctx.drawImage(sprite, lx - s / 2, ly - s / 2, s, s);
     };
-
-    add(x, y, r0);
+    blit(0, 0, r0);
+    const sub1 = Math.PI / 6;
+    const sub2 = -Math.PI / 6;
     const a1a = sub1 + Math.PI * subAng;
-    add(x + Math.cos(a1a) * off, y + Math.sin(a1a) * off * 0.7, rSmall);
+    blit(Math.cos(a1a) * off, Math.sin(a1a) * off * 0.7, rSmall);
     const a1b = sub1 + Math.PI * (1 + subAng);
-    add(x + Math.cos(a1b) * off, y + Math.sin(a1b) * off, rSmall);
+    blit(Math.cos(a1b) * off, Math.sin(a1b) * off, rSmall);
     const a2a = sub2 - Math.PI * subAng;
-    add(x + Math.cos(a2a) * off, y + Math.sin(a2a) * off, rBig);
+    blit(Math.cos(a2a) * off, Math.sin(a2a) * off, rBig);
     const a2b = sub2 + Math.PI * (1 - subAng);
-    add(x + Math.cos(a2b) * off, y + Math.sin(a2b) * off, rBig);
+    blit(Math.cos(a2b) * off, Math.sin(a2b) * off, rBig);
+    ctx.restore();
+  }
 
-    // blur < 0.5px 时跳过 filter 设置（progress 端点处不可感知，避免 GPU pass）。
-    const blurPx = this.scaleByRadius(4 / 300) * subAng * 0.7;
-    const useBlur = blurPx >= 0.5;
+  /**
+   * 单颗六边形/星 stamp（核 blur + 更宽的低 alpha halo）。热路径按 progress 摆 5 份。
+   * filter 半径按超采样 backing 像素计，缩回逻辑尺寸后才与旧 live blur 同量；live 路径不得设 ctx.filter。
+   */
+  private getHitEffectShapeSprite(type: HitEffectShape, color: string): HTMLCanvasElement {
+    const cx = this.context.centerX;
+    const backingScale = cx > 0 ? this.context.canvas.width / (cx * 2) : 1;
+    const basis = `${this.context.radius}|${backingScale}|${color}`;
+    if (basis !== this.hitEffectShapeBasis) {
+      this.hitEffectShapeCache.clear();
+      this.hitEffectShapeBasis = basis;
+    }
+    const cached = this.hitEffectShapeCache.get(type);
+    if (cached) return cached;
 
-    this.withContext(() => {
-      const ctx = this.context.ctx;
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = alpha;
-      ctx.lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
-      ctx.lineJoin = "round";
-      if (useBlur) ctx.filter = `blur(${blurPx}px)`;
-      ctx.stroke(path);
-    });
+    const refR = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5;
+    const coreBlurPx = this.scaleByRadius(HIT_FX_CORE_BLUR_RATIO) * HIT_FX_SPRITE_SUPERSAMPLE;
+    const haloBlurPx = coreBlurPx * HIT_FX_HALO_BLUR_SCALE;
+    // 墨迹 = 图形外顶点 + 圆角 join 的半个描边 + halo 高斯尾（blur 以超采样像素计，换回逻辑像素）。
+    const strokeHalf = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
+    const half =
+      refR +
+      strokeHalf +
+      (haloBlurPx / HIT_FX_SPRITE_SUPERSAMPLE) * SPRITE_BLUR_TAIL_RATIO +
+      SPRITE_AA_MARGIN_PX;
+    const sprite = document.createElement("canvas");
+    sprite.width = sprite.height = Math.max(2, Math.ceil(half * 2 * HIT_FX_SPRITE_SUPERSAMPLE));
+    const offscreenCtx = sprite.getContext("2d")!;
+    offscreenCtx.setTransform(
+      HIT_FX_SPRITE_SUPERSAMPLE,
+      0,
+      0,
+      HIT_FX_SPRITE_SUPERSAMPLE,
+      sprite.width / 2,
+      sprite.height / 2,
+    );
+    const path = new Path2D();
+    if (type === "star") {
+      this.starSubPath(path, 0, 0, 5, refR, refR * 0.5, Math.PI);
+    } else {
+      this.hexagonSubPath(path, 0, 0, refR, 0);
+    }
+    offscreenCtx.strokeStyle = color;
+    offscreenCtx.lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
+    offscreenCtx.lineJoin = "round";
+    if (haloBlurPx >= 0.5) {
+      offscreenCtx.save();
+      offscreenCtx.globalAlpha = HIT_FX_HALO_ALPHA;
+      offscreenCtx.filter = `blur(${haloBlurPx}px)`;
+      offscreenCtx.stroke(path);
+      offscreenCtx.restore();
+    }
+    if (coreBlurPx >= 0.5) offscreenCtx.filter = `blur(${coreBlurPx}px)`;
+    offscreenCtx.stroke(path);
+    this.hitEffectShapeCache.set(type, sprite);
+    return sprite;
   }
 
   renderApproachArc(position: ButtonPosition, noteX: number, noteY: number, color: string): void {
@@ -468,8 +543,89 @@ export class NoteRenderer extends BaseRenderer {
       return;
     }
     const sprite = this.getTapSprite(position, isBreak, isSimultaneous, isEx, highlightExScale);
-    const size = (sprite.width / TAP_SPRITE_SUPERSAMPLE) * noteScale;
-    this.context.ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+    let cropSize = Math.ceil(
+      this.getTapSpriteCropHalf(isEx, highlightExScale) * 2 * TAP_SPRITE_SUPERSAMPLE,
+    );
+    if (cropSize % 2 !== sprite.width % 2) cropSize++;
+    cropSize = Math.min(cropSize, sprite.width);
+    const sourceOffset = (sprite.width - cropSize) / 2;
+    const size = (cropSize / TAP_SPRITE_SUPERSAMPLE) * noteScale;
+    this.context.ctx.drawImage(
+      sprite,
+      sourceOffset,
+      sourceOffset,
+      cropSize,
+      cropSize,
+      x - size / 2,
+      y - size / 2,
+      size,
+      size,
+    );
+  }
+
+  /**
+   * tap 精灵的裁剪半边距，取实际画到的最外圈：EX 时是 EX 环外径，否则是白描边外的黑边。
+   * 与 drawTapNoteVector 的绘制顺序绑定；返回逻辑单位，调用方会对齐原精灵的奇偶像素中心。
+   */
+  private getTapSpriteCropHalf(isEx: boolean, highlightExScale: number): number {
+    const outerRadius = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36;
+    const strokeW = this.getNoteStrokeWidth();
+    const ink = isEx
+      ? Math.max(outerRadius * 1.19 * highlightExScale, outerRadius + strokeW / 2)
+      : outerRadius + strokeW * 1.5;
+    return ink + TAP_SPRITE_CROP_MARGIN_PX;
+  }
+
+  /**
+   * 校验每张已烘焙 tap 精灵的裁剪矩形确实覆盖了全部非透明像素，返回违规描述（空数组=通过）。
+   *
+   * 裁剪半径是照着 drawTapNoteVector 的绘制顺序手工推导的，一旦有人给 tap 加了更外圈的笔画，
+   * 裁剪会静默把它切掉，而定点截图未必覆盖到那个组合。这个检查把"手工推导"和"实际墨迹"对上。
+   *
+   * 只给工具链用：会对每张已缓存精灵做一次 getImageData，不要放进渲染热路径。
+   * 只能校验当前已经烘焙过的精灵，因此调用前需要先渲染足够多的画面。
+   */
+  validateTapSpriteCrops(): string[] {
+    const violations: string[] = [];
+    for (const [key, sprite] of this.tapSpriteCache) {
+      const parts = key.split("|");
+      const isEx = parts[3] === "1";
+      const highlightExScale = Number(parts[4]);
+      let cropSize = Math.ceil(
+        this.getTapSpriteCropHalf(isEx, highlightExScale) * 2 * TAP_SPRITE_SUPERSAMPLE,
+      );
+      if (cropSize % 2 !== sprite.width % 2) cropSize++;
+      cropSize = Math.min(cropSize, sprite.width);
+      const inset = (sprite.width - cropSize) / 2;
+      const spriteCtx = sprite.getContext("2d");
+      if (!spriteCtx) continue;
+      const { data } = spriteCtx.getImageData(0, 0, sprite.width, sprite.height);
+      let minX = sprite.width;
+      let minY = sprite.height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < sprite.height; y++) {
+        for (let x = 0; x < sprite.width; x++) {
+          if (data[(y * sprite.width + x) * 4 + 3] === 0) continue;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (maxX < 0) continue;
+      if (
+        minX < inset ||
+        minY < inset ||
+        maxX >= sprite.width - inset ||
+        maxY >= sprite.height - inset
+      ) {
+        violations.push(
+          `tap sprite ${key}: ink [${minX},${minY}]-[${maxX},${maxY}] escapes crop inset ${inset} of ${sprite.width}px`,
+        );
+      }
+    }
+    return violations;
   }
 
   private getTapSprite(

@@ -47,6 +47,37 @@ export interface MainRendererConfig {
   sensorImagePath?: string;
 }
 
+/** renderFrame 的分阶段计时点，按执行顺序排列；total 为整帧。 */
+export const RENDER_PROFILE_STAGES = [
+  "prepare",
+  "clear",
+  "judgeLine",
+  "fireworks",
+  "hud",
+  "tracks",
+  "slideStars",
+  "approach",
+  "heads",
+  "touches",
+  "effects",
+  "total",
+] as const;
+export type RenderProfileStage = (typeof RENDER_PROFILE_STAGES)[number];
+
+/**
+ * 一段采样窗口内的分阶段耗时统计（毫秒）。只覆盖 JS 计算与 Canvas 命令录制的 CPU 时间，
+ * 不含 GPU 光栅化；filter / shadowBlur 之类的 GPU 开销不会体现在这里。
+ */
+export interface RenderFrameProfile {
+  frames: number;
+  avgMs: Record<RenderProfileStage, number>;
+  maxMs: Record<RenderProfileStage, number>;
+}
+
+const PROFILE_STAGE_INDEX = Object.fromEntries(
+  RENDER_PROFILE_STAGES.map((stage, index) => [stage, index]),
+) as Record<RenderProfileStage, number>;
+
 // tap / hold / slide 星星头同层、按时间分层（早的在上）的合并列表，按 timingMs 降序（晚的先画/在底）。
 type LayeredNote =
   | { kind: "tap"; note: TapNote }
@@ -280,6 +311,14 @@ export class MainRenderer {
   private pendingTapArcs: { position: ButtonPosition; distance: number; color: string }[] = [];
   private pendingStableTracks: { note: SlideNote; index: number; isSimultaneous: boolean }[] = [];
 
+  private profilingEnabled = false;
+  private profileSumMs = new Float64Array(RENDER_PROFILE_STAGES.length);
+  private profileMaxMs = new Float64Array(RENDER_PROFILE_STAGES.length);
+  private profileLastMs = new Float64Array(RENDER_PROFILE_STAGES.length);
+  private profileFrames = 0;
+  private profileFrameStartMs = 0;
+  private profileStageStartMs = 0;
+
   constructor(canvas: HTMLCanvasElement, config: MainRendererConfig = {}) {
     this.canvas = canvas;
     this.sensorImagePath = config.sensorImagePath ?? "/assets/maimai/chart/sensor.webp";
@@ -363,8 +402,9 @@ export class MainRenderer {
     this.applySize(size, effectiveDpr);
   }
 
-  resizeToSize(size: number): void {
-    this.applySize(size, 1);
+  /** 脱离 DOM 的固定尺寸（GIF 导出、离屏基准测试）：size 为逻辑边长，dpr 决定 backing 像素。 */
+  resizeToSize(size: number, dpr: number = 1): void {
+    this.applySize(size, dpr);
   }
 
   private applySize(logicalSize: number, dpr: number): void {
@@ -385,6 +425,7 @@ export class MainRenderer {
   }
 
   renderFrame(chart: Chart, currentBeats: number, beatsPerMeasure: number): void {
+    this.profileBegin();
     const prepared = this.getPreparedRenderNotes(chart.notes);
     const timingTimeline = this.getTimingTimeline(chart);
     const timing: RenderFrameTiming = {
@@ -399,10 +440,15 @@ export class MainRenderer {
     const fraction = beatInMeasure - Math.floor(beatInMeasure);
 
     this.setBeatDisplayInfo(measure, beat, fraction, timing.divisor);
+    this.profileMark("prepare");
     this.clear();
+    this.profileMark("clear");
     this.renderJudgmentLine();
+    this.profileMark("judgeLine");
     this.renderFireworks(prepared.fireworkTouches, timing);
+    this.profileMark("fireworks");
     this.renderNotes(prepared, timing);
+    this.profileEnd();
   }
 
   setHiSpeed(hiSpeed: number): void {
@@ -619,6 +665,7 @@ export class MainRenderer {
     if (this.config.showNoteTotal || this.config.showBreakCount) {
       this.renderNoteCounts(prepared, timing.currentTimeMs);
     }
+    this.profileMark("hud");
 
     this.ctx.save();
     // 与烟花同款内切圆裁剪：负流速 note 从圈外进场，超出部分裁掉。
@@ -655,6 +702,7 @@ export class MainRenderer {
       });
     }
     this.slideRenderer.renderStableTracks(layerTracks, timing.currentBeat, timing.currentTimeMs);
+    this.profileMark("tracks");
 
     for (let i = slideHi - 1; i >= slideLo; i--) {
       this.slideRenderer.renderSlide(
@@ -665,6 +713,7 @@ export class MainRenderer {
         this.getNoteMeta(noteMeta, slides[i]).simultaneousSlideCount >= 2,
       );
     }
+    this.profileMark("slideStars");
 
     const [groupLo, groupHi] = windowRange(prepared.approachIndex, nowMs, lookAheadMs);
     this.renderApproachIndicators(approachGroups, groupLo, groupHi, noteMeta, timing);
@@ -672,7 +721,9 @@ export class MainRenderer {
     // tap / hold / slide 星星头同层、按时间分层（早的在上）；列表在 prepareRenderNotes 预排序。
     const [headLo, headHi] = windowRange(prepared.layeredIndex, nowMs, lookAheadMs);
     this.renderTapApproachArcs(layeredHeads, headLo, headHi, noteMeta, timing);
+    this.profileMark("approach");
     this.renderLayeredHeads(layeredHeads, headLo, headHi, holdEndMap, noteMeta, timing);
+    this.profileMark("heads");
 
     // touch 最上层，覆盖普通 note。
     const [touchLo, touchHi] = windowRange(prepared.touchIndex, nowMs, lookAheadMs);
@@ -686,6 +737,7 @@ export class MainRenderer {
         this.getNoteMeta(noteMeta, touches[i]).simultaneousNoteCount >= 2,
       );
     }
+    this.profileMark("touches");
 
     // 特效层统一画在最上层，盖住所有 note；按压波纹先画，命中/释放特效叠在波纹之上。
     if (this.config.showHitEffect) {
@@ -720,8 +772,87 @@ export class MainRenderer {
       );
       this.renderTapHitEffect(hitEffectNotes, timing.currentTimeMs);
     }
+    this.profileMark("effects");
 
     this.ctx.restore();
+  }
+
+  /**
+   * 开关分阶段计时。关闭时各计时点只剩一次布尔判断；开启后由 takeFrameProfile 消费。
+   * 关闭会同时丢弃已累计的数据。
+   */
+  /** 见 NoteRenderer.validateTapSpriteCrops；供基准/回归工具在渲染若干帧后调用。 */
+  validateSpriteCrops(): string[] {
+    return this.noteRenderer.validateTapSpriteCrops();
+  }
+
+  setProfilingEnabled(enabled: boolean): void {
+    this.profilingEnabled = enabled;
+    if (!enabled) this.resetProfile();
+  }
+
+  /**
+   * 取走自上次调用以来累计的分阶段耗时并清零。
+   * 未开启计时或期间没有渲染过帧时返回 null，调用方应沿用上一份结果而不是清空显示。
+   */
+  takeFrameProfile(): RenderFrameProfile | null {
+    if (!this.profilingEnabled || this.profileFrames === 0) return null;
+    const frames = this.profileFrames;
+    const avgMs = {} as Record<RenderProfileStage, number>;
+    const maxMs = {} as Record<RenderProfileStage, number>;
+    for (let i = 0; i < RENDER_PROFILE_STAGES.length; i++) {
+      const stage = RENDER_PROFILE_STAGES[i];
+      avgMs[stage] = this.profileSumMs[i] / frames;
+      maxMs[stage] = this.profileMaxMs[i];
+    }
+    this.resetProfile();
+    return { frames, avgMs, maxMs };
+  }
+
+  /**
+   * 最近一次 renderFrame 的各阶段耗时（毫秒），不受 takeFrameProfile 清零影响。
+   * 用于把单帧 CPU 耗时和这一帧的 rAF 间隔配对。未开启计时时返回 null。
+   */
+  getLastFrameProfile(): Record<RenderProfileStage, number> | null {
+    if (!this.profilingEnabled) return null;
+    const result = {} as Record<RenderProfileStage, number>;
+    for (let i = 0; i < RENDER_PROFILE_STAGES.length; i++) {
+      result[RENDER_PROFILE_STAGES[i]] = this.profileLastMs[i];
+    }
+    return result;
+  }
+
+  private resetProfile(): void {
+    this.profileSumMs.fill(0);
+    this.profileMaxMs.fill(0);
+    this.profileFrames = 0;
+  }
+
+  private profileBegin(): void {
+    if (!this.profilingEnabled) return;
+    const now = performance.now();
+    this.profileFrameStartMs = now;
+    this.profileStageStartMs = now;
+  }
+
+  /** 把上一个计时点到现在的耗时记到 stage 上，并把计时点推进到现在。 */
+  private profileMark(stage: RenderProfileStage): void {
+    if (!this.profilingEnabled) return;
+    const now = performance.now();
+    this.profileRecord(PROFILE_STAGE_INDEX[stage], now - this.profileStageStartMs);
+    this.profileStageStartMs = now;
+  }
+
+  private profileEnd(): void {
+    if (!this.profilingEnabled) return;
+    this.profileRecord(PROFILE_STAGE_INDEX.total, performance.now() - this.profileFrameStartMs);
+    this.profileFrames++;
+  }
+
+  private profileRecord(index: number, durationMs: number): void {
+    this.profileSumMs[index] += durationMs;
+    this.profileLastMs[index] = durationMs;
+    if (durationMs > this.profileMaxMs[index]) this.profileMaxMs[index] = durationMs;
   }
 
   private getPreparedRenderNotes(notes: Note[]): PreparedRenderNotes {

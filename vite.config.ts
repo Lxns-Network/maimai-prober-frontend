@@ -86,6 +86,7 @@ export default defineConfig({
     sentryVitePlugin({
       org: "lxns-network",
       project: "maimai-prober-frontend",
+      disable: process.env.VITE_CHART_BENCH === "1",
       sourcemaps: {
         filesToDeleteAfterUpload: "dist/**/*.map",
       },

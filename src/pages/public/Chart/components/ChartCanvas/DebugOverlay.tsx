@@ -1,4 +1,9 @@
 import { useState } from "react";
+import {
+  RENDER_PROFILE_STAGES,
+  type RenderFrameProfile,
+  type RenderProfileStage,
+} from "@lxns-network/maimai-chart-engine";
 import classes from "./DebugOverlay.module.css";
 
 const FPS_SAMPLE_INTERVAL_MS = 250;
@@ -15,6 +20,54 @@ export interface CanvasDebugInfo {
   clockSource: "audio" | "raf";
   fps: number;
   fpsHistory: number[];
+  renderProfile: RenderFrameProfile | null;
+}
+
+/** 分阶段表按占比着色的阈值（相对 total 的比例）。 */
+const PROFILE_HEAVY_RATIO = 0.35;
+const PROFILE_NOTABLE_RATIO = 0.15;
+
+function getProfileStageClass(
+  stage: RenderProfileStage,
+  profile: RenderFrameProfile,
+): string | undefined {
+  if (stage === "total") return classes.debugProfileTotal;
+  const total = profile.avgMs.total;
+  if (total <= 0) return undefined;
+  const ratio = profile.avgMs[stage] / total;
+  if (ratio >= PROFILE_HEAVY_RATIO) return classes.debugProfileHeavy;
+  if (ratio >= PROFILE_NOTABLE_RATIO) return classes.debugProfileNotable;
+  return undefined;
+}
+
+function RenderProfileTable({ profile }: { profile: RenderFrameProfile }) {
+  return (
+    <>
+      <div className={classes.debugGraphHeader}>
+        <span>Frame Profile (CPU)</span>
+        <span>{profile.frames} frames</span>
+      </div>
+      <div className={classes.debugProfile}>
+        <span />
+        <span>avg</span>
+        <span>max</span>
+        {RENDER_PROFILE_STAGES.map((stage) => {
+          const className = getProfileStageClass(stage, profile);
+          return [
+            <span key={`${stage}-name`} className={className}>
+              {stage}
+            </span>,
+            <span key={`${stage}-avg`} className={className}>
+              {profile.avgMs[stage].toFixed(2)}
+            </span>,
+            <span key={`${stage}-max`} className={className}>
+              {profile.maxMs[stage].toFixed(1)}
+            </span>,
+          ];
+        })}
+      </div>
+    </>
+  );
 }
 
 interface FpsGraphPoint {
@@ -165,6 +218,7 @@ export function DebugOverlay({ debugInfo }: { debugInfo: CanvasDebugInfo | null 
               </>
             )}
           </svg>
+          {debugInfo.renderProfile && <RenderProfileTable profile={debugInfo.renderProfile} />}
         </div>
       )}
     </div>

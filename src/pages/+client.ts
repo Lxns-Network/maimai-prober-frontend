@@ -12,25 +12,27 @@ import "../index.css";
 import * as Sentry from "@sentry/react";
 import { getSentryUser } from "../utils/session.ts";
 
-Sentry.init({
-  dsn: "https://6f7c9d4f59ea874de247d03efb40d9dd@o4509891862134784.ingest.us.sentry.io/4509891875962880",
-  environment: import.meta.env.MODE,
-  integrations: [
-    Sentry.browserTracingIntegration(),
-    Sentry.browserProfilingIntegration(),
-    Sentry.replayIntegration({
-      maskAllText: false,
-      blockAllMedia: false,
-    }),
-  ],
-  tracesSampleRate: 1.0,
-  tracePropagationTargets: ["localhost", /^https:\/\/maimai.lxns.net/],
-  profileSessionSampleRate: 1.0,
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
-});
+if (import.meta.env.PROD) {
+  Sentry.init({
+    dsn: "https://6f7c9d4f59ea874de247d03efb40d9dd@o4509891862134784.ingest.us.sentry.io/4509891875962880",
+    environment: import.meta.env.MODE,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.browserProfilingIntegration(),
+      Sentry.replayIntegration({
+        maskAllText: false,
+        blockAllMedia: false,
+      }),
+    ],
+    tracesSampleRate: 1.0,
+    tracePropagationTargets: ["localhost", /^https:\/\/maimai.lxns.net/],
+    profileSessionSampleRate: 1.0,
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  });
 
-const sentryUser = getSentryUser();
-if (sentryUser) {
-  Sentry.setUser(sentryUser);
+  const sentryUser = getSentryUser();
+  if (sentryUser) {
+    Sentry.setUser(sentryUser);
+  }
 }

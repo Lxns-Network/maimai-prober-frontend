@@ -35,6 +35,10 @@ const ROUND_SIZE = 0.6 * ROOT_SCALE;
 const ROUND_START_SPEED = 10 * ROOT_SCALE;
 const ROUND_CLAMP_SPEED = 2.0 * ROOT_SCALE;
 
+// 星点四帧烘焙：参考 outerR（逻辑像素）与半边距倍率（覆盖 frame 0 的 1.08 尖端 + 描边）。
+const STAR_SPRITE_REF_OUTER_R = 32;
+const STAR_SPRITE_HALF_RATIO = 1.4;
+
 type HermiteKey = { t: number; v: number; inSlope: number; outSlope: number };
 type Keyframe = { t: number; v: number };
 
@@ -102,15 +106,6 @@ function evalKeys(keys: Keyframe[], t: number): number {
   return keys[keys.length - 1].v;
 }
 
-function sampleProfile(profile: readonly number[], t: number): number {
-  if (t <= 0) return profile[0];
-  if (t >= 1) return profile[profile.length - 1];
-  const x = t * (profile.length - 1);
-  const i = Math.floor(x);
-  const u = x - i;
-  return profile[i] + (profile[Math.min(i + 1, profile.length - 1)] - profile[i]) * u;
-}
-
 function hash01(seed: number): number {
   let x = (seed | 0) * 1664525 + 1013904223;
   x = (x ^ (x >>> 16)) >>> 0;
@@ -143,6 +138,10 @@ function clampedTravel(age: number, startSpeed: number, clampSpeed: number): num
  * 径向 Ring + 四路星点粒子，保持与实机的粒子数量、半径、生命周期和速度曲线一致。
  */
 export class TouchHitEffectRenderer extends BaseRenderer {
+  // 四列星点形态预烘焙，backingScale / color 变化时整体失效。
+  private starSprites: HTMLCanvasElement[] | null = null;
+  private starSpriteBasis = "";
+
   constructor(context: RenderContext) {
     super(context);
   }
@@ -238,8 +237,8 @@ export class TouchHitEffectRenderer extends BaseRenderer {
   }
 
   /**
-   * Ring 粒子：按实测径向 alpha 剖面绘制扩张软环。
-   * 该贴图不是纯描边，也不是中心径向渐变；外圈有一次明显的亮峰。
+   * Ring 粒子：按实测径向 alpha 剖面画一张径向渐变圆。
+   * 剖面在外圈有一次明显亮峰，不是纯描边，也不是从中心衰减的光斑。
    */
   private drawCenterRing(
     ctx: CanvasRenderingContext2D,
@@ -259,22 +258,18 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     const alpha = evalKeys(RING_ALPHA_KEYS, life);
     if (alpha <= 0.01) return;
 
-    const rings = 48;
-    for (let i = 0; i < rings; i++) {
-      const t0 = (0.96 * i) / rings;
-      const t1 = (0.96 * (i + 1)) / rings;
-      const p = sampleProfile(TOUCH_RING_ALPHA_PROFILE, (t0 + t1) / 2);
-      const ringAlpha = p * alpha;
-      if (ringAlpha <= 0.01) continue;
-
-      const outer = Math.max(0.2, t1 * radius);
-      const inner = t0 * radius;
-      ctx.beginPath();
-      ctx.arc(ox, oy, outer, 0, Math.PI * 2);
-      if (inner > 0.15) ctx.arc(ox, oy, inner, 0, Math.PI * 2, true);
-      ctx.fillStyle = rgba(color, ringAlpha);
-      ctx.fill("evenodd");
+    const profile = TOUCH_RING_ALPHA_PROFILE;
+    const last = profile.length - 1;
+    const gradient = ctx.createRadialGradient(ox, oy, 0, ox, oy, radius);
+    for (let i = 0; i <= last; i++) {
+      gradient.addColorStop((i / last) * 0.96, rgba(color, profile[i] * alpha));
     }
+    gradient.addColorStop(1, rgba(color, 0));
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(ox, oy, radius, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   private drawStarBurst(
@@ -298,7 +293,10 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     const alpha = Math.min(1, sizeMul * 1.05);
     const travel =
       startSpeed > 0 && clampSpeed > 0 ? clampedTravel(age, startSpeed, clampSpeed) : 0;
+    const sprites = this.getStarSprites(color);
 
+    ctx.save();
+    ctx.globalAlpha = alpha;
     for (let i = 0; i < count; i++) {
       const h1 = hash01(seedBase + i * 4 + 1);
       const h2 = hash01(seedBase + i * 4 + 2);
@@ -317,13 +315,50 @@ export class TouchHitEffectRenderer extends BaseRenderer {
 
       // 星点贴图是 4 列形态表；用稳定随机列复现粒子各自的形态。
       const frame = Math.min(3, Math.floor(h4 * 4)) as StarFrame;
-      this.drawStarFrame(ctx, x, y, outerR, h3 * Math.PI * 2, color, alpha, frame);
+      const destHalf = outerR * STAR_SPRITE_HALF_RATIO;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(h3 * Math.PI * 2);
+      ctx.drawImage(sprites[frame], -destHalf, -destHalf, destHalf * 2, destHalf * 2);
+      ctx.restore();
     }
+    ctx.restore();
   }
 
   /**
-   * 星点贴图四列透明形态的 Canvas 重建：软心、宽实心、窄实心、描边。
-   * 只绘制路径和渐变，不依赖运行时图片资源。
+   * 星点四帧按 backingScale 与颜色烘焙。热路径只 drawImage，矢量路径仅用于烘焙。
+   */
+  private getStarSprites(color: Rgb): HTMLCanvasElement[] {
+    const cx = this.context.centerX;
+    const backingScale = cx > 0 ? this.context.canvas.width / (cx * 2) : 1;
+    const basis = `${backingScale}|${color.r}|${color.g}|${color.b}`;
+    if (this.starSprites && this.starSpriteBasis === basis) return this.starSprites;
+
+    const half = STAR_SPRITE_REF_OUTER_R * STAR_SPRITE_HALF_RATIO;
+    const sizePx = Math.max(2, Math.ceil(half * 2 * Math.max(1, backingScale)));
+    const sprites: HTMLCanvasElement[] = [];
+    for (let frame = 0; frame < 4; frame++) {
+      const sprite = document.createElement("canvas");
+      sprite.width = sprite.height = sizePx;
+      const sctx = sprite.getContext("2d")!;
+      sctx.setTransform(
+        Math.max(1, backingScale),
+        0,
+        0,
+        Math.max(1, backingScale),
+        sizePx / 2,
+        sizePx / 2,
+      );
+      this.drawStarFrame(sctx, 0, 0, STAR_SPRITE_REF_OUTER_R, 0, color, 1, frame as StarFrame);
+      sprites.push(sprite);
+    }
+    this.starSprites = sprites;
+    this.starSpriteBasis = basis;
+    return sprites;
+  }
+
+  /**
+   * 星点贴图四列透明形态的矢量重建（仅烘焙）：软心、宽实心、窄实心、描边。
    */
   private drawStarFrame(
     ctx: CanvasRenderingContext2D,

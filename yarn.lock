@@ -5458,6 +5458,7 @@ __metadata:
     motion: "npm:12.43.0"
     node-vibrant: "npm:3.2.1-alpha.1"
     oxfmt: "npm:^0.53.0"
+    playwright-core: "npm:1.62.0"
     postcss: "npm:8.5.26"
     postcss-mixins: "npm:9.0.4"
     postcss-nested: "npm:6.2.0"
@@ -6841,6 +6842,15 @@ __metadata:
   bin:
     pixelmatch: bin/pixelmatch
   checksum: 10c0/81fee4a8f3f8d462ada5fc7809399384f99c137fa44974e9eddd52dcd0f0d5838387e2c4cd2397f6adbbc2a6728688ff6124faf0091a1c776d57277f9d42e9fa
+  languageName: node
+  linkType: hard
+
+"playwright-core@npm:1.62.0":
+  version: 1.62.0
+  resolution: "playwright-core@npm:1.62.0"
+  bin:
+    playwright-core: cli.js
+  checksum: 10c0/bc7c770cc4118a7ea65d2c357fc271aaef49af6b5b8964aa19d765d4ea3473e56af926f693123fd63ed6e580830059905722ac68fbf22a31a5b1533e11600228
   languageName: node
   linkType: hard
 

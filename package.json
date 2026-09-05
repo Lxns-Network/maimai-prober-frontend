@@ -7,6 +7,10 @@
   ],
   "type": "module",
   "scripts": {
+    "chart:bench": "node scripts/chart-bench.mjs --stress --prod",
+    "chart:bench:paired": "node scripts/chart-bench-paired.mjs",
+    "chart:fill": "node scripts/chart-fill-audit.mjs",
+    "chart:visual": "node scripts/chart-visual-regression.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "format": "oxfmt --write .",
@@ -105,6 +109,7 @@
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-plugin-react-refresh": "0.4.26",
     "oxfmt": "^0.53.0",
+    "playwright-core": "1.62.0",
     "postcss": "8.5.26",
     "postcss-preset-mantine": "1.18.0",
     "postcss-simple-vars": "7.0.1",
