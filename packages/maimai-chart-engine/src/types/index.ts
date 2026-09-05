@@ -394,6 +394,8 @@ export interface RendererConfig {
   hiSpeed: number;
   /** 保持固定流速 */
   alwaysKeepHiSpeed: boolean;
+  /** 星星轨迹出现时机：-1.0（早）至 1.0（晚），步长 0.1；不改变滑动时刻 */
+  slideDelay: number;
   /** 播放速度：0.1-1.0 */
   playbackSpeed: number;
   /** 镜像模式：上下反、左右反、全反 */
