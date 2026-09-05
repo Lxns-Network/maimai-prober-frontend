@@ -9,8 +9,8 @@
 //        [--playwright <dir>] [--playback] [--fullscreen] [--device-dpr 2] [--prod]
 //
 // --prod：先 `vite build`（VITE_CHART_BENCH=1 让 __chartBench 与帧计时进生产包），再用
-// `vite preview` 提供 dist/client。dev 模式下 React 会给每个组件发 performance.measure、
-// Sentry Replay 录 DOM，这两项在 trace 里能占到长任务的一半以上，掉帧的绝对值不可信；
+// `vite preview` 提供 dist/client。dev 模式下仍有 React 组件诊断打点与调试面板开销，
+// 尽管 Sentry 已改为只在生产构建初始化，dev 掉帧的绝对值仍不能代表生产表现；
 // 判断"用户会不会掉帧"必须用 --prod。构建约 1 分钟，dist 会被覆盖。
 //
 // --playback：不跑离屏基准，改为真实播放 start→end 一遍，记录每个 rAF 的间隔与该帧 CPU 耗时，

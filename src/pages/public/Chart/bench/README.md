@@ -142,7 +142,9 @@ node scripts/chart-bench.mjs --chart 11663 --start 30000 --end 60000 --out .benc
 node scripts/chart-bench.mjs --chart 11663 --start 30000 --end 60000 --out .bench/after.json --compare .bench/before.json
 ```
 
-**判断"用户会不会掉帧"必须加 `--prod`**（`vike build` + `vike preview`，约 40s）。dev 模式下 React 给每个组件发 `performance.measure`、Sentry Replay 录 DOM，两者合计占 dev 长任务采样的 50% 以上，掉帧的绝对值不可信；`--prod` 会设 `VITE_CHART_BENCH=1` 把基准工具编进生产包（普通 `yarn build` 不含）。
+**判断"用户会不会掉帧"必须加 `--prod`**（`vike build` + `vike preview`，约 40s）。dev 模式仍有 React 组件诊断打点和 DEV 调试面板，掉帧的绝对值不能代表生产表现；`--prod` 会设 `VITE_CHART_BENCH=1` 把基准工具编进生产包（普通 `yarn build` 不含）。
+
+Sentry 仅在 `import.meta.env.PROD` 为 true 时初始化：`yarn dev` 不再安装 Tracing、Profiling 或 Replay。需要调试监控时使用生产构建预览；`--prod` 基准也保留生产监控配置，只关闭构建时的 sourcemap 上传。不要通过覆盖全局 `performance.measure` 或混用生产版 React 来消除开发诊断开销。
 
 参数：`--stress`（固定压测谱面）、`--chart <id>`（线上真实谱面）、`--prod`、`--difficulty`（0-based，同 URL 参数）、`--fps`（步进，默认 120）、`--size` / `--dpr`（默认 1440 / 1.3）、`--sync-gpu`、`--no-gpu`、`--port`、`--trace <file>`（导出 Chrome trace，含 GPU / GC / 光栅任务，拖进 `chrome://tracing` 或 DevTools Performance 面板看）、`--playwright <dir>`（用另一份 playwright-core）。`.bench/` 已 gitignore。
 
@@ -254,7 +256,9 @@ total        0.035  0.175  0.445 14.180
 
 CPU 侧 p95 仅 0.18ms/帧，离 144Hz 的 6.9ms 预算很远；最重的帧全在 `tracks`（滑条轨迹层重建）和 `heads`。这张谱面上渲染器 JS 不是瓶颈。
 
-### 真实播放：dev 与 prod 的差别就是全部答案
+### 真实播放：dev 与 prod 的历史对照
+
+以下为 2026-09-02 的历史测量，当时 dev 仍初始化 Sentry。2026-09-06 已关闭 dev 的 Sentry 初始化；下列百分比是当时的长任务采样归因，不是整页 CPU 占比，也不是这次修改后的重测结果。
 
 同一段谱面（0–20s，含起播），全屏 dpr 2 ≈ 2.5MP backing，无头 Chromium 120Hz：
 
@@ -280,7 +284,7 @@ CPU 侧 p95 仅 0.18ms/帧，离 144Hz 的 6.9ms 预算很远；最重的帧全�
 
 因此在本机（M4 / Chromium / Metal）上，**当前实现没有可复现的性能瓶颈**。用户截图里 FPS 从 120 掉到 ~60 的深坑，最可能的解释按顺序：
 
-1. **跑的是 `yarn dev`**——dev 构建的 React 打点 + Sentry Replay 恰好能制造这种形态的偶发深坑；
+1. **跑的是 `yarn dev`**——历史 trace 中 React 打点 + Sentry Replay 能制造这种形态的偶发深坑；当前 dev 已关闭 Sentry，但仍有 React 开发诊断和调试面板开销；
 2. 真机上其它进程 / 浏览器扩展 / 后台标签页的干扰；
 3. 不同 GPU（Intel 集显、Windows ANGLE D3D11）上 filter / 大 backing 的代价与 Metal 不同——这需要在目标机器上用 `--prod --playback --trace` 复测，脚本支持在任何装了 Chromium 的机器上跑。
 
