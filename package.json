@@ -113,7 +113,8 @@
   },
   "resolutions": {
     "prosemirror-model": "1.25.11",
-    "minimatch@npm:^9.0.4": "npm:10.2.6"
+    "minimatch@npm:^9.0.4": "npm:10.2.6",
+    "mdast-util-gfm-autolink-literal@npm:^2.0.0": "patch:mdast-util-gfm-autolink-literal@npm%3A2.0.1#~/.yarn/patches/mdast-util-gfm-autolink-literal-npm-2.0.1-dd870d9308.patch"
   },
   "overrides": {
     "react-lazyload": {

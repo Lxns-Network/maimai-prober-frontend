@@ -123,7 +123,7 @@ dist
 .vscode-test
 
 # yarn v2
-.yarn/
+.yarn/*
 !.yarn/patches/
 .pnp.*
 
