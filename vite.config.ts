@@ -100,6 +100,7 @@ export default defineConfig({
         },
       },
     },
+    target: ["chrome111", "edge111", "firefox114", "safari15"],
     chunkSizeWarningLimit: 2000,
     reportCompressedSize: false,
     sourcemap: true,

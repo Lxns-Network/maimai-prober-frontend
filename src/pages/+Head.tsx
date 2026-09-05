@@ -1,6 +1,41 @@
 import { ColorSchemeScript } from "@mantine/core";
 import { UMAMI_SCRIPT_URL, UMAMI_WEBSITE_ID } from "@/main";
 
+// Inline and ahead of the module imports: vike's client router, web-vitals and ts-pattern all
+// call these unguarded, and Safari only has them from 15.4.
+const polyfillScript = `
+(function () {
+  function at(n) {
+    var len = this.length;
+    n = Math.trunc(n) || 0;
+    if (n < 0) n += len;
+    if (n < 0 || n >= len) return undefined;
+    return this[n];
+  }
+
+  if (!Array.prototype.at) {
+    Object.defineProperty(Array.prototype, "at", { value: at, writable: true, configurable: true });
+  }
+
+  if (!String.prototype.at) {
+    Object.defineProperty(String.prototype, "at", { value: at, writable: true, configurable: true });
+  }
+
+  if (!Object.hasOwn) {
+    Object.defineProperty(Object, "hasOwn", {
+      value: function (target, key) {
+        if (target === null || target === undefined) {
+          throw new TypeError("Cannot convert undefined or null to object");
+        }
+        return Object.prototype.hasOwnProperty.call(Object(target), key);
+      },
+      writable: true,
+      configurable: true
+    });
+  }
+})();
+`;
+
 const chunkRecoveryScript = `
 (function () {
   var KEY = "chunk_reload_log";
@@ -83,6 +118,7 @@ const chunkRecoveryScript = `
 export default function Head() {
   return (
     <>
+      <script dangerouslySetInnerHTML={{ __html: polyfillScript }} />
       <script dangerouslySetInnerHTML={{ __html: chunkRecoveryScript }} />
       {UMAMI_SCRIPT_URL && UMAMI_WEBSITE_ID && (
         <script defer src={UMAMI_SCRIPT_URL} data-website-id={UMAMI_WEBSITE_ID} />
