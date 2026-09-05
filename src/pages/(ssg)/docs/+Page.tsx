@@ -4,6 +4,7 @@ import {
   Anchor,
   Box,
   Center,
+  Code,
   Container,
   CopyButton,
   Flex,
@@ -51,6 +52,7 @@ import {
   createShikiAdapter,
 } from "@mantine/code-highlight";
 import clsx from "clsx";
+import { ErrorBoundary } from "react-error-boundary";
 import { useData } from "vike-react/useData";
 
 async function loadShiki() {
@@ -62,7 +64,7 @@ async function loadShiki() {
       import("@shikijs/langs/json"),
       import("@shikijs/langs/bash"),
     ],
-    engine: createJavaScriptRegexEngine(),
+    engine: createJavaScriptRegexEngine({ forgiving: true }),
   });
 }
 
@@ -506,18 +508,20 @@ const Content = ({ markdown }: { markdown: string }) => {
                   </Tooltip>
                 )}
               </CopyButton>
-              <CodeHighlight
-                code={codeElement.props.children}
-                language={codeElement.props.className?.replace("language-", "") || "text"}
-                withCopyButton={false}
-                styles={{
-                  pre: {
-                    overflow: "unset",
-                    width: "0",
-                  },
-                }}
-                radius="md"
-              />
+              <ErrorBoundary fallback={<Code block>{codeElement.props.children}</Code>}>
+                <CodeHighlight
+                  code={codeElement.props.children}
+                  language={codeElement.props.className?.replace("language-", "") || "text"}
+                  withCopyButton={false}
+                  styles={{
+                    pre: {
+                      overflow: "unset",
+                      width: "0",
+                    },
+                  }}
+                  radius="md"
+                />
+              </ErrorBoundary>
             </div>
           );
         },
