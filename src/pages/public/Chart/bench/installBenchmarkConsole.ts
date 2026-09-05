@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { MainRenderer } from "@lxns-network/maimai-chart-engine";
 import { useGameStore } from "../stores/useGameStore";
 import { useGameSettingsStore } from "../stores/useGameSettingsStore";
+import { msToBeats } from "../utils/timeConversion";
 import {
   formatRenderBenchmarkReport,
   runRenderBenchmark,
@@ -25,7 +26,7 @@ import {
 
 /**
  * DevTools 里可直接调用的谱面渲染基准入口，挂在 `window.__chartBench`。
- * 只在 DEV 安装；用当前页面已加载的谱面和当前渲染设置。
+ * 只在启用基准工具的构建中安装；用当前页面已加载的谱面和当前渲染设置。
  */
 export interface ChartBenchConsole {
   /** 当前页面是否已加载好谱面；自动化脚本用它轮询就绪。 */
@@ -37,6 +38,8 @@ export interface ChartBenchConsole {
    * 画面由 ChartCanvas 的暂停预览 rAF 循环重画，调用后需等一帧才能读到新画面。
    */
   seekBeats(beat: number): void;
+  /** 暂停并把播放头移到指定谱面毫秒，按当前谱面的 BPM 变速表换算。 */
+  seekMs(ms: number): void;
   /**
    * 校验已烘焙 tap 精灵的裁剪矩形没有切掉墨迹，返回违规描述（空数组=通过）。
    * 只覆盖当前已经烘焙过的精灵，因此要先渲染/seek 过足够多的画面再调用。
@@ -180,6 +183,13 @@ function createChartBenchConsole(rendererRef?: {
       const store = useGameStore.getState();
       if (store.isPlaying) store.pause();
       store.setPreciseTime(beat, true);
+    },
+    seekMs(ms) {
+      const store = useGameStore.getState();
+      const chart = store.chartData;
+      if (!chart) throw new Error("No chart loaded");
+      if (store.isPlaying) store.pause();
+      store.setPreciseTime(msToBeats(ms, chart.bpmEvents, chart.bpm), true);
     },
     validateSpriteCrops() {
       const renderer = rendererRef?.current;

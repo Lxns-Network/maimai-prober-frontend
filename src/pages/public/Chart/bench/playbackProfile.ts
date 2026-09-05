@@ -15,6 +15,8 @@ export interface PlaybackProfileOptions {
   endMs?: number;
   /** 判定掉帧的 rAF 间隔阈值。默认按测得的显示器刷新周期 × 1.5。 */
   droppedFrameMs?: number;
+  /** 音乐尚未加载时等待真正开始播放的最长时间；超时抛错，避免产生 0 帧的假通过。 */
+  startTimeoutMs?: number;
   signal?: AbortSignal;
 }
 
@@ -137,7 +139,7 @@ function recordStoreWrites(sink: StoreWrite[], chartMsNow: () => number): () => 
 /**
  * 从 startMs 播放到 endMs，记录每个 rAF 的间隔与 ChartCanvas 上报的该帧 CPU 阶段耗时。
  * 依赖 ChartCanvas 在每次 renderFrame 后通过 `maimai-chart-frame-profile` 事件上报单帧 profile
- * （仅 DEV 安装）。播放结束或 signal 中止时 resolve；页面没有谱面时抛错。
+ * （基准构建安装）。播放达到 endMs 后 resolve；提前停止、超时或 signal 中止时抛错。
  */
 export async function runPlaybackProfile(
   options: PlaybackProfileOptions = {},
@@ -154,6 +156,10 @@ export async function runPlaybackProfile(
 
   const refreshIntervalMs = await measureRefreshInterval();
   const droppedFrameMs = options.droppedFrameMs ?? refreshIntervalMs * 1.5;
+  const startTimeoutMs = options.startTimeoutMs ?? 15_000;
+  if (!Number.isFinite(startTimeoutMs) || startTimeoutMs <= 0) {
+    throw new Error("startTimeoutMs must be a positive number");
+  }
 
   const intervals: number[] = [];
   const cpuTotals: number[] = [];
@@ -177,9 +183,12 @@ export async function runPlaybackProfile(
   await new Promise<void>((resolve, reject) => {
     let lastTimestamp = -1;
     let rafId = 0;
+    let startTimeoutId: number | null = null;
+    let started = false;
     let stopRecording: (() => void) | null = null;
     const finish = () => {
       cancelAnimationFrame(rafId);
+      if (startTimeoutId !== null) window.clearTimeout(startTimeoutId);
       window.removeEventListener(FRAME_PROFILE_EVENT, onFrameProfile);
       useGameStore.getState().pause();
       stopRecording?.();
@@ -192,9 +201,23 @@ export async function runPlaybackProfile(
       }
       const state = useGameStore.getState();
       const nowMs = beatsToMs(playbackTimeRef.current, chart.bpmEvents, chart.bpm);
-      if (!state.isPlaying || nowMs >= endMs) {
+      if (!started) {
+        if (state.isPlaying) {
+          started = true;
+          if (startTimeoutId !== null) window.clearTimeout(startTimeoutId);
+        } else {
+          rafId = requestAnimationFrame(tick);
+          return;
+        }
+      }
+      if (nowMs >= endMs) {
         finish();
         resolve();
+        return;
+      }
+      if (!state.isPlaying) {
+        finish();
+        reject(new Error("Playback stopped before reaching endMs"));
         return;
       }
       // 间隔无条件记录：一次停顿里 ChartCanvas 的 rAF 往往根本没跑，若以"有 profile"为记录条件，
@@ -240,8 +263,17 @@ export async function runPlaybackProfile(
     store.play();
     // 起播的 seek / play 本身必然写 store，从这里开始记才是"播放中"的写入。
     stopRecording = recordStoreWrites(storeWrites, chartMsNow);
+    startTimeoutId = window.setTimeout(() => {
+      if (started) return;
+      finish();
+      reject(new Error(`Playback did not start within ${startTimeoutMs}ms`));
+    }, startTimeoutMs);
     rafId = requestAnimationFrame(tick);
   });
+
+  if (intervals.length === 0) {
+    throw new Error("Playback profile captured no frames");
+  }
 
   const stages = {} as Record<RenderProfileStage, StageStats>;
   for (const stage of RENDER_PROFILE_STAGES) stages[stage] = computeStats(stageSamples.get(stage)!);

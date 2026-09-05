@@ -9,7 +9,6 @@ import { fileURLToPath } from "node:url";
 import { preview } from "vite";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const beatMs = 250;
 const sampleTimesMs = [
   1000, 1031, 1250, 3000, 3141, 5250, 7333, 9000, 11000, 13062, 15500, 17777, 20000,
 ];
@@ -110,12 +109,13 @@ try {
           destHeight = source.height ?? 0;
         }
         const transform = this.getTransform();
-        const deviceWidth = Math.abs(destWidth * transform.a);
-        const deviceHeight = Math.abs(destHeight * transform.d);
+        const deviceArea = Math.abs(
+          destWidth * destHeight * (transform.a * transform.d - transform.b * transform.c),
+        );
         audit.records.push({
           sourceWidth: source.width ?? 0,
           sourceHeight: source.height ?? 0,
-          deviceArea: deviceWidth * deviceHeight,
+          deviceArea,
         });
       }
       return originalDrawImage.apply(this, callArgs);
@@ -144,12 +144,12 @@ try {
   const frames = [];
   for (const timeMs of sampleTimesMs) {
     const frame = await page.evaluate(
-      async ([beat]) => {
+      async ([timeMs]) => {
         // 暂停态只在播放头变化时重画，所以统计窗口必须罩住 seek 本身。
         window.__fillAudit.records.length = 0;
         window.__fillAudit.frames = 0;
         window.__fillAudit.active = true;
-        window.__chartBench.seekBeats(beat);
+        window.__chartBench.seekMs(timeMs);
         await new Promise((resolve) =>
           requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))),
         );
@@ -185,7 +185,7 @@ try {
             .slice(0, 8),
         };
       },
-      [timeMs / beatMs],
+      [timeMs],
     );
     frames.push({ timeMs, ...frame });
   }

@@ -180,6 +180,7 @@ export function PlaybackControls({
   const isPlaying = useGameStore((s) => s.isPlaying);
   const pendingPlay = useGameStore((s) => s.pendingPlay);
   const chartData = useGameStore((s) => s.chartData);
+  const preciseTime = useGameStore((s) => s.timeline.preciseTime);
   const currentMeasure = useGameStore((s) => s.timeline.currentMeasure);
   const totalMeasures = useGameStore((s) => s.timeline.totalMeasures);
   const beatsPerMeasure = useGameStore((s) => s.timeline.beatsPerMeasure);
@@ -249,7 +250,11 @@ export function PlaybackControls({
   const zoomWindowDurationMsRef = useRef(zoomWindowDurationMs);
   zoomWindowDurationMsRef.current = zoomWindowDurationMs;
 
-  const currentMs = chartData ? getCurrentTimeInMs() : 0;
+  const currentMs = chartData
+    ? isPlaying
+      ? getCurrentTimeInMs()
+      : beatsToMs(preciseTime, chartData.bpmEvents, chartData.bpm)
+    : 0;
   const [isExportingGif, setIsExportingGif] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [captureMenuOpened, setCaptureMenuOpened] = useState(false);
