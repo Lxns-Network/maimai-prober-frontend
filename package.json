@@ -8,6 +8,8 @@
   "type": "module",
   "scripts": {
     "chart:bench": "node scripts/chart-bench.mjs --stress --prod",
+    "chart:bench:paired": "node scripts/chart-bench-paired.mjs",
+    "chart:visual": "node scripts/chart-visual-regression.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "format": "oxfmt --write .",

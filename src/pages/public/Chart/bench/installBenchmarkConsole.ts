@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type { MainRenderer } from "@lxns-network/maimai-chart-engine";
 import { useGameStore } from "../stores/useGameStore";
 import { useGameSettingsStore } from "../stores/useGameSettingsStore";
 import {
@@ -31,6 +32,16 @@ export interface ChartBenchConsole {
   hasChart(): boolean;
   /** 切换应用内全屏（100vmin 画布），让 backing store 尺寸接近真机全屏播放。 */
   setFullscreen(enabled: boolean): void;
+  /**
+   * 暂停并把播放头移到指定拍，用于确定性截图对照（渲染改动的画面回归）。
+   * 画面由 ChartCanvas 的暂停预览 rAF 循环重画，调用后需等一帧才能读到新画面。
+   */
+  seekBeats(beat: number): void;
+  /**
+   * 校验已烘焙 tap 精灵的裁剪矩形没有切掉墨迹，返回违规描述（空数组=通过）。
+   * 只覆盖当前已经烘焙过的精灵，因此要先渲染/seek 过足够多的画面再调用。
+   */
+  validateSpriteCrops(): string[];
   /** 把内置固定压测谱面装进播放器，供人工观察或 profilePlayback 使用。 */
   loadStressChart(): Omit<StressChartFixture, "chart"> & { noteCount: number };
   /** 用固定谱面、设置、画布和三轮采样运行可跨版本对照的统一跑分。 */
@@ -153,7 +164,9 @@ function formatComparison(a: RenderBenchmarkResult, b: RenderBenchmarkResult): s
   return lines.join("\n");
 }
 
-function createChartBenchConsole(): ChartBenchConsole {
+function createChartBenchConsole(rendererRef?: {
+  current: MainRenderer | null;
+}): ChartBenchConsole {
   const bench: ChartBenchConsole = {
     last: null,
     lastPlayback: null,
@@ -162,6 +175,16 @@ function createChartBenchConsole(): ChartBenchConsole {
     },
     setFullscreen(enabled) {
       useGameStore.getState().setIsFullscreen(enabled);
+    },
+    seekBeats(beat) {
+      const store = useGameStore.getState();
+      if (store.isPlaying) store.pause();
+      store.setPreciseTime(beat, true);
+    },
+    validateSpriteCrops() {
+      const renderer = rendererRef?.current;
+      if (!renderer) throw new Error("renderer not mounted");
+      return renderer.validateSpriteCrops();
     },
     loadStressChart() {
       const fixture = createStressChartFixture();
@@ -240,12 +263,12 @@ function createChartBenchConsole(): ChartBenchConsole {
 }
 
 /** CHART_BENCH_ENABLED 时把 `window.__chartBench` 装到页面上，组件卸载时移除；否则是空操作。 */
-export function useInstallBenchmarkConsole(): void {
+export function useInstallBenchmarkConsole(rendererRef?: { current: MainRenderer | null }): void {
   useEffect(() => {
     if (!CHART_BENCH_ENABLED) return;
-    window.__chartBench = createChartBenchConsole();
+    window.__chartBench = createChartBenchConsole(rendererRef);
     return () => {
       delete window.__chartBench;
     };
-  }, []);
+  }, [rendererRef]);
 }

@@ -576,6 +576,58 @@ export class NoteRenderer extends BaseRenderer {
     return ink + TAP_SPRITE_CROP_MARGIN_PX;
   }
 
+  /**
+   * 校验每张已烘焙 tap 精灵的裁剪矩形确实覆盖了全部非透明像素，返回违规描述（空数组=通过）。
+   *
+   * 裁剪半径是照着 drawTapNoteVector 的绘制顺序手工推导的，一旦有人给 tap 加了更外圈的笔画，
+   * 裁剪会静默把它切掉，而定点截图未必覆盖到那个组合。这个检查把"手工推导"和"实际墨迹"对上。
+   *
+   * 只给工具链用：会对每张已缓存精灵做一次 getImageData，不要放进渲染热路径。
+   * 只能校验当前已经烘焙过的精灵，因此调用前需要先渲染足够多的画面。
+   */
+  validateTapSpriteCrops(): string[] {
+    const violations: string[] = [];
+    for (const [key, sprite] of this.tapSpriteCache) {
+      const parts = key.split("|");
+      const isEx = parts[3] === "1";
+      const highlightExScale = Number(parts[4]);
+      let cropSize = Math.ceil(
+        this.getTapSpriteCropHalf(isEx, highlightExScale) * 2 * TAP_SPRITE_SUPERSAMPLE,
+      );
+      if (cropSize % 2 !== sprite.width % 2) cropSize++;
+      cropSize = Math.min(cropSize, sprite.width);
+      const inset = (sprite.width - cropSize) / 2;
+      const spriteCtx = sprite.getContext("2d");
+      if (!spriteCtx) continue;
+      const { data } = spriteCtx.getImageData(0, 0, sprite.width, sprite.height);
+      let minX = sprite.width;
+      let minY = sprite.height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < sprite.height; y++) {
+        for (let x = 0; x < sprite.width; x++) {
+          if (data[(y * sprite.width + x) * 4 + 3] === 0) continue;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (maxX < 0) continue;
+      if (
+        minX < inset ||
+        minY < inset ||
+        maxX >= sprite.width - inset ||
+        maxY >= sprite.height - inset
+      ) {
+        violations.push(
+          `tap sprite ${key}: ink [${minX},${minY}]-[${maxX},${maxY}] escapes crop inset ${inset} of ${sprite.width}px`,
+        );
+      }
+    }
+    return violations;
+  }
+
   private getTapSprite(
     position: ButtonPosition,
     isBreak: boolean,

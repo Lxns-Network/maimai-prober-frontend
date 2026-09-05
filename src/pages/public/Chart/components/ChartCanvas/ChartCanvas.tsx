@@ -123,7 +123,7 @@ export function ChartCanvas() {
 
   useFrameCaptureEvents(canvasRef);
   useWakeLock(isPlaying);
-  useInstallBenchmarkConsole();
+  useInstallBenchmarkConsole(rendererRef);
   useBackgroundVideoSource({ videoRef: bgVideoRef, chartData, renderFrame });
   useRendererSettings({
     rendererRef,

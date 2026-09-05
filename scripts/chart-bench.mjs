@@ -38,6 +38,7 @@ import { createServer } from "vite";
 import { build as vikeBuild, preview as vikePreview } from "vike/api";
 import { createRequire } from "node:module";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readTraceEvents } from "./lib/traceEvents.mjs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -101,19 +102,45 @@ async function runPlaybackMode(page, options) {
 /**
  * 把 trace 里渲染进程主线程的长任务（> 8ms）按内部事件归因打印出来，并统计 GC 与 GPU 反压等待。
  * 不替代 DevTools 的火焰图，只用来快速回答"掉帧那一刻主线程在等什么"。
+ * 流式读取：20s 播放 trace 可超过 500MB，整文件 JSON.parse 会触发 V8 字符串长度上限。
  */
-function summarizeTrace(tracePath) {
-  const events = JSON.parse(readFileSync(tracePath, "utf8")).traceEvents;
+async function summarizeTrace(tracePath) {
   const threadNames = new Map();
-  for (const e of events) {
-    if (e.ph === "M" && e.name === "thread_name") threadNames.set(`${e.pid}:${e.tid}`, e.args.name);
+  const mainCandidates = new Map();
+  const xEvents = [];
+  const flushes = [];
+  const profiles = new Map();
+  for await (const e of readTraceEvents(tracePath)) {
+    if (e.ph === "M" && e.name === "thread_name") {
+      threadNames.set(`${e.pid}:${e.tid}`, e.args.name);
+      continue;
+    }
+    if (e.ph === "X") {
+      if (e.name === "CommandBuffer::Flush") flushes.push(e.dur / 1000);
+      const key = `${e.pid}:${e.tid}`;
+      mainCandidates.set(key, (mainCandidates.get(key) ?? 0) + 1);
+      xEvents.push(e);
+      continue;
+    }
+    if (e.name === "Profile") {
+      profiles.set(`${e.pid}:${e.id}`, {
+        thread: `${e.pid}:${e.tid}`,
+        startTime: e.args.data.startTime,
+        chunks: [],
+      });
+    } else if (e.name === "ProfileChunk") {
+      profiles.get(`${e.pid}:${e.id}`)?.chunks.push({ ts: e.ts, data: e.args.data });
+    }
   }
-  const mainKey = [...threadNames].find(([, name]) => name === "CrRendererMain")?.[0];
+  // 页面所在渲染进程的主线程是事件最多的 CrRendererMain（还会有扩展 / 空白页的渲染进程）。
+  const mainKey = [...threadNames]
+    .filter(([, name]) => name === "CrRendererMain")
+    .map(([key]) => key)
+    .sort((a, b) => (mainCandidates.get(b) ?? 0) - (mainCandidates.get(a) ?? 0))[0];
   if (!mainKey) return;
-  const [pid, tid] = mainKey.split(":").map(Number);
-  const onMain = (e) => e.ph === "X" && e.pid === pid && e.tid === tid;
+  const onMain = xEvents.filter((e) => `${e.pid}:${e.tid}` === mainKey);
   const sum = (re) => {
-    const xs = events.filter((e) => onMain(e) && re.test(e.name));
+    const xs = onMain.filter((e) => re.test(e.name));
     const total = xs.reduce((a, e) => a + e.dur, 0) / 1000;
     const max = Math.max(0, ...xs.map((e) => e.dur)) / 1000;
     return `n=${xs.length} total=${total.toFixed(1)}ms max=${max.toFixed(2)}ms`;
@@ -130,27 +157,24 @@ function summarizeTrace(tracePath) {
   );
   console.log(`  MinorGC                                ${sum(/^MinorGC$/)}`);
   console.log(`  MajorGC                                ${sum(/^MajorGC$/)}`);
-  const flushes = events
-    .filter((e) => e.ph === "X" && e.name === "CommandBuffer::Flush")
-    .map((e) => e.dur / 1000)
-    .sort((a, b) => a - b);
+  flushes.sort((a, b) => a - b);
   if (flushes.length) {
     const at = (q) => flushes[Math.floor((flushes.length - 1) * q)].toFixed(2);
     console.log(
       `gpu process CommandBuffer::Flush: n=${flushes.length} p50=${at(0.5)} p95=${at(0.95)} max=${at(1)}ms`,
     );
   }
-  const profile = collectCpuProfile(events, pid);
-  const longTasks = events
-    .filter((e) => onMain(e) && e.name === "RunTask" && e.dur > 8000)
+  const profile = collectCpuProfile([...profiles.values()].filter((p) => p.thread === mainKey));
+  const longTasks = onMain
+    .filter((e) => e.name === "RunTask" && e.dur > 8000)
     .sort((a, b) => b.dur - a.dur)
     .slice(0, 8);
   if (longTasks.length) {
     console.log(`main-thread tasks > 8ms: ${longTasks.length} shown (top by duration)`);
     for (const task of longTasks) {
       const inside = new Map();
-      for (const e of events) {
-        if (!onMain(e) || e.name === "RunTask") continue;
+      for (const e of onMain) {
+        if (e.name === "RunTask") continue;
         if (e.ts < task.ts || e.ts + e.dur > task.ts + task.dur) continue;
         inside.set(e.name, (inside.get(e.name) ?? 0) + e.dur);
       }
@@ -160,7 +184,7 @@ function summarizeTrace(tracePath) {
         .map(([name, dur]) => `${name}=${(dur / 1000).toFixed(1)}`)
         .join("  ");
       console.log(`  ${(task.dur / 1000).toFixed(1).padStart(6)}ms  ${top}`);
-      for (const line of profile.appFramesIn(task.ts, task.ts + task.dur, 4)) {
+      for (const line of profile.framesIn(task.ts, task.ts + task.dur, 4)) {
         console.log(`            ${line}`);
       }
     }
@@ -168,21 +192,19 @@ function summarizeTrace(tracePath) {
 }
 
 /**
- * 把 trace 里 v8.cpu_profiler 的采样拼回一条时间线，提供"某时间窗内应用代码（src/、packages/）
- * 哪些帧出现最多"的查询。Profile / ProfileChunk 由采样线程发出，只能按 pid + id 关联。
+ * 把 v8.cpu_profiler 的采样拼回一条时间线，提供"某时间窗内哪些栈帧出现最多"的查询。
+ * 优先报告应用代码（src/、packages/）；窗口内没有应用帧时退回到浏览器内建帧
+ * （GC、Canvas 内建函数等），这样 GC 停顿和纹理上传也能被点名，而不是打印 (root)/(idle)。
  */
-function collectCpuProfile(events, pid) {
+function collectCpuProfile(profiles) {
   const nodes = new Map();
   const parentOf = new Map();
   const samples = [];
   const times = [];
-  for (const prof of events.filter((e) => e.name === "Profile" && e.pid === pid)) {
-    let t = prof.args.data.startTime;
-    const chunks = events
-      .filter((e) => e.name === "ProfileChunk" && e.pid === pid && e.id === prof.id)
-      .sort((a, b) => a.ts - b.ts);
-    for (const chunk of chunks) {
-      const data = chunk.args.data;
+  for (const prof of profiles) {
+    let t = prof.startTime;
+    for (const chunk of prof.chunks.sort((a, b) => a.ts - b.ts)) {
+      const data = chunk.data;
       for (const node of data.cpuProfile?.nodes ?? []) {
         nodes.set(node.id, node);
         if (node.parent != null) parentOf.set(node.id, node.parent);
@@ -199,12 +221,17 @@ function collectCpuProfile(events, pid) {
   }
   const label = (id) => {
     const frame = nodes.get(id)?.callFrame ?? {};
-    const url = (frame.url || "").replace(/^.*\/(src|packages)\//, "$1/").replace(/\?v=\w+$/, "");
+    const url = (frame.url || "")
+      .replace(/^.*\/(src|packages)\//, "$1/")
+      .replace(/^https?:\/\/[^/]+\//, "")
+      .replace(/\?v=\w+$/, "");
     return `${frame.functionName || "(anon)"} ${url}:${frame.lineNumber}`;
   };
+  const isNoise = (text) => /^\((root|idle|program)\) :/.test(text);
   return {
-    appFramesIn(startTs, endTs, limit) {
-      const counts = new Map();
+    framesIn(startTs, endTs, limit) {
+      const app = new Map();
+      const builtin = new Map();
       let total = 0;
       for (let i = 0; i < samples.length; i++) {
         if (times[i] < startTs || times[i] > endTs) continue;
@@ -213,15 +240,17 @@ function collectCpuProfile(events, pid) {
         let id = samples[i];
         for (let depth = 0; id != null && depth < 60; depth++) {
           const text = label(id);
-          if (/^\S+ (src|packages)\//.test(text) && !seen.has(text)) {
+          if (!seen.has(text) && !isNoise(text)) {
             seen.add(text);
-            counts.set(text, (counts.get(text) ?? 0) + 1);
+            const bucket = /^\S+ (src|packages|assets)\//.test(text) ? app : builtin;
+            bucket.set(text, (bucket.get(text) ?? 0) + 1);
           }
           id = parentOf.get(id);
         }
       }
       if (total === 0) return ["(no cpu profile samples in window)"];
-      return [...counts]
+      const pick = app.size > 0 ? app : builtin;
+      return [...pick]
         .sort((a, b) => b[1] - a[1])
         .slice(0, limit)
         .map(([text, n]) => `${String(Math.round((n / total) * 100)).padStart(3)}%  ${text}`);
@@ -397,7 +426,7 @@ try {
   if (tracePath) {
     await browser.stopTracing();
     console.log(`\ntrace saved ${path.relative(root, tracePath)}`);
-    summarizeTrace(tracePath);
+    await summarizeTrace(tracePath);
   }
 
   if (args.out) {

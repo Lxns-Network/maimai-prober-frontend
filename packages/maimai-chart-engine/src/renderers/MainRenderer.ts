@@ -781,6 +781,11 @@ export class MainRenderer {
    * 开关分阶段计时。关闭时各计时点只剩一次布尔判断；开启后由 takeFrameProfile 消费。
    * 关闭会同时丢弃已累计的数据。
    */
+  /** 见 NoteRenderer.validateTapSpriteCrops；供基准/回归工具在渲染若干帧后调用。 */
+  validateSpriteCrops(): string[] {
+    return this.noteRenderer.validateTapSpriteCrops();
+  }
+
   setProfilingEnabled(enabled: boolean): void {
     this.profilingEnabled = enabled;
     if (!enabled) this.resetProfile();
