@@ -27,6 +27,7 @@ yarn chart:bench --out .bench/after.json --compare .bench/before.json
 | 实时面板     | `yarn dev` → `/chart` 右上角 DEV 角标 → 展开 → **Frame Profile (CPU)**                                          | 播放中看各阶段 avg/max（250ms 窗口），定位当前瓶颈                                                                                                                         |
 | 标准跑分     | `yarn chart:bench`                                                                                              | 生产构建 + 固定压测谱面，输出可长期对照的中位成绩、五轮离散度和阶段诊断                                                                                                    |
 | **配对对照** | `yarn chart:bench:paired --baseline <checkout>`                                                                 | 同一 Chromium、同一页面内交错跑两份生产构建，输出配对 delta 的 95% 置信区间。**唯一可用来判定优化有效性的入口**                                                            |
+| 合成面积审计 | `yarn chart:fill`                                                                                               | 统计每帧实际贴了多少像素（drawImage 的设备面积），**确定性、不受 GPU 争抢与降频影响**，用来定位填充热点                                                                    |
 | 像素回归     | `yarn chart:visual --out <dir> --compare <dir>`                                                                 | 13 个固定谱面时刻截图，先验证同构建重复捕获逐像素一致，再与基线目录逐像素比对并按预算判定                                                                                  |
 | 页面内基准   | DevTools console：`await __chartBench.run({...})`                                                               | 不依赖播放/音频/rAF，按固定步进渲染一段谱面，输出各阶段 p50/p95/p99/max + 最重帧列表                                                                                       |
 | 无头基准     | `node scripts/chart-bench.mjs --chart <id> ...`                                                                 | 从 shell 一条命令跑完，可 `--out` 存 JSON、`--compare` 对照，供 agent 做改动前后验证                                                                                       |
@@ -77,6 +78,30 @@ yarn chart:visual --out .bench/shots-after --compare .bench/shots-before
 
 判据是**没有成片单向变暗/变亮**：精灵裁剪之类的改动会让大面积像素出现 ±1~2/255 的重采样抖动（面积可达数个百分点但 MAE < 0.05），这是可接受的；一旦出现上千个单向变暗的像素，就说明裁掉了真实墨迹而不是透明边缘。
 
+## 合成面积审计（不受 GPU 争抢影响的确定性信号）
+
+```sh
+yarn chart:fill --out .bench/fill.json
+```
+
+工作负载是 GPU 填充受限的（CPU 2.18ms / 整帧 4.91ms），而这台机器的 wall-clock 又被 GPU 争抢和降频搅得很难测。面积审计绕开时间：它挂住 `drawImage`，把每次贴图的**设备像素面积**累加起来，同一份代码跑多少次都是同一个数。
+
+它回答的是"我们要求 GPU 填多少像素"，而不是"这次填了多久"。填充量降下去时间不一定跟着降（可能被别的东西卡住），但填充量没降就一定不是填充优化。
+
+当前 HEAD 在压测谱面上的画像（1440px / DPR 2 / 全屏，2.5 Mpx 画布）：
+
+| 精灵源          | 每帧贴图数 | 每帧面积  | 占比 |
+| --------------- | ---------- | --------- | ---- |
+| 224² touch 花瓣 | 582        | 29.15 Mpx | 86%  |
+| 1581² 背景      | 1          | 2.50 Mpx  | 7%   |
+| 480² tap        | 68         | 1.40 Mpx  | 4%   |
+| 99² 命中特效    | 199        | 0.42 Mpx  | 1%   |
+| 590² 烟花       | 34         | 0.35 Mpx  | 2%   |
+
+**每帧合成 33.8 Mpx = 画布的 1352%（13.5 倍 overdraw），其中 86% 是 touch 花瓣。** 每颗 touch 要贴 12 次（3 层 × 4 花瓣），而 224² 的精灵里大约一半是全透明留白。
+
+> **注意这个分布来自压测谱面**，它每 1/16 拍固定放 4 颗 touch，touch 密度远高于真实谱面。真实谱面上 tap 占比会高得多。定位热点时要记得先确认目标谱面的构成。
+
 ## 分阶段含义
 
 `MainRenderer.renderFrame` 里按执行顺序打点（见 `RENDER_PROFILE_STAGES`）：
@@ -123,6 +148,7 @@ node scripts/chart-bench.mjs --chart 11663 --start 30000 --end 60000 --out .benc
 - 不可用 `yarn dev --port`：vike 会拦截 Vite CLI 参数报 Unknown option。脚本走 Vite JS API 起 server。
 - **`vike/api` 的 `preview()` 只认调用方自己的项目根**，无法在一个进程里服务另一个 checkout（会抛 vike bug 断言）。配对脚本因此直接用 Vite 的 `preview()` + `configFile: false` + `appType: "mpa"` 提供各自的 `dist/client`。
 - **`ctx.filter = blur(N)` 的实际扩散半径不是按 σ=N/2 推的 1.5×N。** Chromium 实测描边外沿到 alpha 归零处为 2.43×N（六边形）/ 2.27×N（星形），烘焙精灵按 2.5×N 留边。取 1.5× 会把 halo 外圈直接切掉，逐像素对照会出现约 1000 个单向变暗的像素。
+- **宿主 UI 会跟基准抢 GPU。** 实测跑分期间 `WindowServer` 占 50% CPU、Codex 自己的 GPU 进程占 42%，这和"热降频"产生一模一样的现象（分数腰斩、RSD 飙到 30%）。**别把所有漂移都归因成温度**；GPU 受限的负载尤其敏感。可行的对策是配对 + 交错 + `--cooldown-sec` + 多轮，或者干脆改用不依赖时间的[合成面积审计](#合成面积审计不受-gpu-争抢影响的确定性信号)。
 - **配对基线不需要完整 checkout。** 预览服务只读 `<root>/dist/client`，所以基线可以是一个只放了 `dist/` 的普通目录。另外共享 `node_modules` 软链的 worktree 里 `yarn vike build` 会因为 `.bin/vike` 缺失而失败，用 `node node_modules/vite/bin/vite.js build`（等价于 `yarn build` 的构建步骤）或直接在主 worktree 里构建后拷 `dist`。
 - **大 trace 不能整文件 `JSON.parse`。** 20s 播放的 trace 可超过 500MB，触发 V8 单字符串上限 `ERR_STRING_TOO_LONG`。`scripts/lib/traceEvents.mjs` 按顶层对象边界流式产出事件。
 
