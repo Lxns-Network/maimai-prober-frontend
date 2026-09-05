@@ -122,12 +122,23 @@ try {
     };
   }, settingsOverride);
 
-  await page.goto(`http://127.0.0.1:${port}/chart/`, { waitUntil: "domcontentloaded" });
+  // --chart 走线上真实谱面（需要网络）；不给就用内置压测谱面。
+  const url = new URL(`http://127.0.0.1:${port}/chart/`);
+  if (args.chart) url.searchParams.set("chart_id", String(args.chart));
+  if (args.difficulty !== undefined) url.searchParams.set("difficulty", String(args.difficulty));
+  await page.goto(url.toString(), { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => window.__chartBench !== undefined, null, { timeout: 60_000 });
-  await page.evaluate(() => {
-    window.__chartBench.loadStressChart();
-    window.__chartBench.setFullscreen(true);
-  });
+  if (args.chart) {
+    await page.waitForFunction(() => window.__chartBench.hasChart() === true, null, {
+      timeout: 60_000,
+    });
+    await page.evaluate(() => window.__chartBench.setFullscreen(true));
+  } else {
+    await page.evaluate(() => {
+      window.__chartBench.loadStressChart();
+      window.__chartBench.setFullscreen(true);
+    });
+  }
   await page.waitForTimeout(600);
 
   const frames = [];
