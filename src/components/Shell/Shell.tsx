@@ -8,8 +8,17 @@ import { CreateScoreModalProvider } from "../ModalProvider/CreateScoreModalProvi
 import { ScoreModalProvider } from "../ModalProvider/ScoreModalProvider.tsx";
 import { CreateAliasModalProvider } from "../ModalProvider/CreateAliasModalProvider.tsx";
 import { UrgentNotificationModal } from "@/components/Notifications/UrgentNotificationModal.tsx";
+import { VersionPill } from "./VersionPill/VersionPill.tsx";
+import { usePageContext } from "vike-react/usePageContext";
 
 export const NAVBAR_BREAKPOINT = 992;
+
+const popCenter = {
+  in: { opacity: 1, transform: "scale(1)" },
+  out: { opacity: 0, transform: "scale(0.8)" },
+  common: { transformOrigin: "center center" },
+  transitionProperty: "transform, opacity",
+};
 
 interface ShellProps {
   navbarOpened: boolean;
@@ -67,6 +76,9 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
     }
   }, [headerRef.current, width]);
 
+  const chromeVisible = !scrollDirection || scrollDirection === "up";
+  const isHome = usePageContext().urlPathname === "/";
+
   return (
     <div
       id="shell-root"
@@ -89,7 +101,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
       <Header
         navbarOpened={navbarOpened}
         onNavbarToggle={onNavbarToggle}
-        gameTabsVisible={!scrollDirection || scrollDirection === "up"}
+        gameTabsVisible={chromeVisible}
         headerRef={headerRef}
       />
 
@@ -111,6 +123,15 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
       <CreateScoreModalProvider />
       <CreateAliasModalProvider />
       <UrgentNotificationModal />
+
+      <Transition
+        mounted={isHome && chromeVisible}
+        transition={popCenter}
+        duration={300}
+        timingFunction="ease"
+      >
+        {(styles) => <VersionPill style={styles} />}
+      </Transition>
     </div>
   );
 }

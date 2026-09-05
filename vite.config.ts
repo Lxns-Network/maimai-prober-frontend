@@ -4,6 +4,25 @@ import react from "@vitejs/plugin-react";
 import vike from "vike/plugin";
 import * as fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
+
+// A release stamps its tag here so /version.json names the build that is live, the
+// way /api/v0/health does for the backend. Local builds keep the timestamp.
+const buildVersion = process.env.FRONTEND_VERSION || Date.now().toString();
+const displayVersion = process.env.FRONTEND_VERSION || "v0.0.0";
+
+function resolveCommit(): string {
+  if (process.env.GITHUB_SHA) {
+    return process.env.GITHUB_SHA.slice(0, 7);
+  }
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return "unknown";
+  }
+}
 
 function generateVersionPlugin(): Plugin {
   let projectRoot = process.cwd();
@@ -14,12 +33,9 @@ function generateVersionPlugin(): Plugin {
       projectRoot = config.root;
     },
     closeBundle() {
-      // A release stamps its tag here so /version.json names the build that is live, the
-      // way /api/v0/health does for the backend. Local builds keep the timestamp.
-      const version = process.env.FRONTEND_VERSION || Date.now().toString();
       const outputPath = path.resolve(projectRoot, "dist/client/version.json");
       fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-      fs.writeFileSync(outputPath, JSON.stringify({ version }));
+      fs.writeFileSync(outputPath, JSON.stringify({ version: buildVersion }));
     },
   };
 }
@@ -75,6 +91,10 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    __BUILD_VERSION__: JSON.stringify(displayVersion),
+    __BUILD_COMMIT__: JSON.stringify(resolveCommit()),
+  },
   resolve: {
     alias: {
       "@": "/src",
