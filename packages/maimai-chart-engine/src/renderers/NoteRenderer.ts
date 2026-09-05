@@ -18,16 +18,31 @@ export const INVISIBLE_NOTE_POSITION: NoteRenderPosition = Object.freeze({
   visible: false,
 });
 
-// sprite 相对基准尺寸的边距倍率（覆盖 EX 环 ×1.43 + 描边）与超采样倍率。
 const TAP_SPRITE_HALF_RATIO = 1.7;
 const TAP_SPRITE_SUPERSAMPLE = 2;
 
-// 单颗六边形/星 stamp 的半边距（描边 + 宽 halo + 核 blur）与超采样。集群位姿按 progress 实时摆。
-const HIT_FX_SHAPE_HALF_RATIO = 2;
+// 单颗六边形/星 stamp 的超采样与 glow 参数。集群位姿按 progress 实时摆。
 const HIT_FX_SPRITE_SUPERSAMPLE = 2;
 const HIT_FX_CORE_BLUR_RATIO = (4 / 300) * 0.7;
 const HIT_FX_HALO_BLUR_SCALE = 2.4;
 const HIT_FX_HALO_ALPHA = 0.55;
+
+/**
+ * 精灵合成范围按实际墨迹算。留白虽是全透明像素，却每帧都要参与合成：
+ * tap 裁掉烘焙画布的透明边缘再贴图，命中特效 stamp 直接收紧画布，密谱下分别少填
+ * 约 59% 和 51% 的目标像素。
+ *
+ * tap 仍按旧尺寸烘焙，以保持原有的像素中心与抗锯齿结果；裁剪矩形与原画布保持同奇偶，
+ * source/destination 比例固定为 noteScale / SS，因此只跳过全透明边缘，不改变图形映射。
+ * 命中特效的目标尺寸由 sprite.width 反推，图形与 refR 同比，渲染半径与 half 无关。
+ *
+ * TAIL 是 `ctx.filter = blur(N)` 实际扩散到的半径与 N 的比值，**实测值**：Chromium 下
+ * 描边外沿到 alpha 归零处为 2.43×N（六边形）/ 2.27×N（星），不是按 σ=N/2 推的 1.5×。
+ * 取小了会把 halo 外圈直接切掉——1.5× 时逐像素对照有约 1000 个像素单向变暗。
+ */
+const SPRITE_BLUR_TAIL_RATIO = 2.5;
+const SPRITE_AA_MARGIN_PX = 1;
+const TAP_SPRITE_CROP_MARGIN_PX = 1;
 
 type HitEffectShape = "hexagon" | "star";
 
@@ -235,7 +250,15 @@ export class NoteRenderer extends BaseRenderer {
     if (cached) return cached;
 
     const refR = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * 1.5;
-    const half = refR * HIT_FX_SHAPE_HALF_RATIO;
+    const coreBlurPx = this.scaleByRadius(HIT_FX_CORE_BLUR_RATIO) * HIT_FX_SPRITE_SUPERSAMPLE;
+    const haloBlurPx = coreBlurPx * HIT_FX_HALO_BLUR_SCALE;
+    // 墨迹 = 图形外顶点 + 圆角 join 的半个描边 + halo 高斯尾（blur 以超采样像素计，换回逻辑像素）。
+    const strokeHalf = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
+    const half =
+      refR +
+      strokeHalf +
+      (haloBlurPx / HIT_FX_SPRITE_SUPERSAMPLE) * SPRITE_BLUR_TAIL_RATIO +
+      SPRITE_AA_MARGIN_PX;
     const sprite = document.createElement("canvas");
     sprite.width = sprite.height = Math.max(2, Math.ceil(half * 2 * HIT_FX_SPRITE_SUPERSAMPLE));
     const offscreenCtx = sprite.getContext("2d")!;
@@ -253,8 +276,6 @@ export class NoteRenderer extends BaseRenderer {
     } else {
       this.hexagonSubPath(path, 0, 0, refR, 0);
     }
-    const coreBlurPx = this.scaleByRadius(HIT_FX_CORE_BLUR_RATIO) * HIT_FX_SPRITE_SUPERSAMPLE;
-    const haloBlurPx = coreBlurPx * HIT_FX_HALO_BLUR_SCALE;
     offscreenCtx.strokeStyle = color;
     offscreenCtx.lineWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 2;
     offscreenCtx.lineJoin = "round";
@@ -522,8 +543,37 @@ export class NoteRenderer extends BaseRenderer {
       return;
     }
     const sprite = this.getTapSprite(position, isBreak, isSimultaneous, isEx, highlightExScale);
-    const size = (sprite.width / TAP_SPRITE_SUPERSAMPLE) * noteScale;
-    this.context.ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+    let cropSize = Math.ceil(
+      this.getTapSpriteCropHalf(isEx, highlightExScale) * 2 * TAP_SPRITE_SUPERSAMPLE,
+    );
+    if (cropSize % 2 !== sprite.width % 2) cropSize++;
+    cropSize = Math.min(cropSize, sprite.width);
+    const sourceOffset = (sprite.width - cropSize) / 2;
+    const size = (cropSize / TAP_SPRITE_SUPERSAMPLE) * noteScale;
+    this.context.ctx.drawImage(
+      sprite,
+      sourceOffset,
+      sourceOffset,
+      cropSize,
+      cropSize,
+      x - size / 2,
+      y - size / 2,
+      size,
+      size,
+    );
+  }
+
+  /**
+   * tap 精灵的裁剪半边距，取实际画到的最外圈：EX 时是 EX 环外径，否则是白描边外的黑边。
+   * 与 drawTapNoteVector 的绘制顺序绑定；返回逻辑单位，调用方会对齐原精灵的奇偶像素中心。
+   */
+  private getTapSpriteCropHalf(isEx: boolean, highlightExScale: number): number {
+    const outerRadius = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36;
+    const strokeW = this.getNoteStrokeWidth();
+    const ink = isEx
+      ? Math.max(outerRadius * 1.19 * highlightExScale, outerRadius + strokeW / 2)
+      : outerRadius + strokeW * 1.5;
+    return ink + TAP_SPRITE_CROP_MARGIN_PX;
   }
 
   private getTapSprite(
