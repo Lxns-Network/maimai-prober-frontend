@@ -1,231 +1,267 @@
-import React, { useEffect, useRef } from "react";
+import { Anchor, Button, Card, Container, Group, Text, ThemeIcon, Title } from "@mantine/core";
+import { useMounted } from "@mantine/hooks";
 import {
-  Title,
-  Text,
-  Button,
-  Container,
-  rem,
-  SimpleGrid,
-  ThemeIcon,
-  Center,
-  AspectRatio,
-} from "@mantine/core";
-import { IconChartBar, IconCode, IconGavel, IconHandStop, IconHistory } from "@tabler/icons-react";
-import { ProductCarousel } from "@/components/Home/ProductCarousel.tsx";
+  IconArrowRight,
+  IconAward,
+  IconChartBar,
+  IconCloudUpload,
+  IconCode,
+  IconDisc,
+  IconGavel,
+  IconHelp,
+  IconMusic,
+} from "@tabler/icons-react";
+import clsx from "clsx";
+import { HeroArtwork } from "@/components/Home/HeroArtwork";
+import { ChartPreview } from "@/components/Home/ChartPreview";
+import { ProductCarousel } from "@/components/Home/ProductCarousel";
+import { ScoreShowcase } from "@/components/Home/ScoreShowcase";
+import { Link } from "@/components/Link";
 import { Footer } from "@/components/Shell/Footer/Footer";
+import { isTokenUndefined } from "@/utils/session";
 import classes from "./Home.module.css";
 
-interface FeatureProps extends React.ComponentPropsWithoutRef<"div"> {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-function Feature({ icon, title, description, ...others }: FeatureProps) {
-  return (
-    <div {...others}>
-      <ThemeIcon variant="light" size={40}>
-        {icon}
-      </ThemeIcon>
-      <Text mt="sm" mb={7}>
-        {title}
-      </Text>
-      <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
-        {description}
-      </Text>
-    </div>
-  );
-}
-
-function LogoParallax() {
-  const foregroundRef = useRef<HTMLDivElement>(null);
-  const backgroundRef = useRef<HTMLDivElement>(null);
-  const logoParallaxRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleMouseMove(e: MouseEvent) {
-      if (!logoParallaxRef.current) return;
-
-      const isTouchDevice = "ontouchstart" in window;
-      if (isTouchDevice) return;
-
-      const parallaxRect = logoParallaxRef.current.getBoundingClientRect();
-
-      // 图片中心点坐标（相对于视口）
-      const centerX = parallaxRect.left + parallaxRect.width / 2;
-      const centerY = parallaxRect.top + parallaxRect.height / 2;
-
-      // 鼠标当前位置
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-
-      // 鼠标相对图片中心的距离
-      const dx = (mouseX - centerX) / (parallaxRect.width / 2); // -1 ~ 1
-      const dy = (mouseY - centerY) / (parallaxRect.height / 2); // -1 ~ 1
-
-      // 控制最大偏移量
-      const maxOffsetX = 0.5; // px
-      const maxOffsetY = 0.5; // px
-
-      const offsetX = dx * maxOffsetX;
-      const offsetY = dy * maxOffsetY;
-
-      if (foregroundRef.current) {
-        foregroundRef.current.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-      }
-      if (backgroundRef.current) {
-        backgroundRef.current.style.transform = `translate(${-offsetX}px, ${-offsetY}px)`;
-      }
-    }
-
-    window.addEventListener("mousemove", handleMouseMove);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
-
-  return (
-    <AspectRatio className={classes.logoWrapper} ratio={1200 / 735} mb="md">
-      <div ref={logoParallaxRef} className={classes.logoParallax}>
-        <div ref={backgroundRef} className={classes.background} />
-        <div ref={foregroundRef} className={classes.foreground} />
-      </div>
-    </AspectRatio>
-  );
-}
-
-const features = [
+const shortcuts = [
   {
-    icon: <IconHandStop stroke={1.5} />,
-    title: "易于同步成绩",
-    description:
-      "摒弃传统的上传方式，我们使用如今流行的 HTTP 代理上传，方便用户随时随地上传自己的成绩。",
+    icon: IconCloudUpload,
+    title: "同步游戏数据",
+    description: "HTTP 代理成绩同步",
+    to: "/sync",
   },
   {
-    icon: <IconChartBar stroke={1.5} />,
-    title: "高效的成绩管理",
-    description:
-      "maimai DX 查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。",
+    icon: IconMusic,
+    title: "曲目查询",
+    description: "曲目与谱面信息",
+    to: "/songs",
   },
   {
-    icon: <IconHistory stroke={1.5} />,
-    title: "历史成绩查询",
-    description:
-      "我们会存储玩家上传的所有成绩，玩家可以随时查询自己的历史成绩与 DX Rating 的变化趋势。",
+    icon: IconAward,
+    title: "收藏品查询",
+    description: "称号等收藏品信息",
+    to: "/collections",
   },
   {
-    icon: <IconGavel stroke={1.5} />,
-    title: "曲目别名投票",
-    description: "maimai DX 查分器拥有一套独立的曲目别名系统，玩家可以为曲目投票或提交曲目别名。",
-  },
-  {
-    icon: <IconCode stroke={1.5} />,
-    title: "开发者友好",
-    description:
-      "我们提供了对开发者友好的 API 接口，开发者可以通过 API 接口获取、管理玩家的游戏数据。",
+    icon: IconHelp,
+    title: "帮助文档",
+    description: "使用说明与常见问题",
+    to: "/docs",
   },
 ];
 
 export default function Page() {
-  const isLoggedIn = typeof window !== "undefined" && localStorage.getItem("token");
+  const mounted = useMounted();
+  const isLoggedIn = mounted && !isTokenUndefined();
 
   return (
     <>
-      <Container className={classes.root}>
-        <LogoParallax />
-
-        <Title className={classes.title}>
-          落雪咖啡屋{" "}
-          <Text c="var(--mantine-primary-color-light-color)" component="span" inherit>
-            maimai
-          </Text>{" "}
-          DX 查分器
-        </Title>
-
-        <Container p={0} size={600}>
-          <Text size="lg" c="dimmed" className={classes.description}>
-            一个简单的{" "}
-            <Text className={classes.highlight} fw={700} component="span" inherit>
-              舞萌 DX & 中二节奏
-            </Text>{" "}
-            国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API
-            接口供开发者获取玩家的成绩数据。
-          </Text>
-        </Container>
-
-        <Container className={classes.controls} p={0}>
-          {isLoggedIn ? (
-            <>
-              <Button
-                className={classes.control}
-                size="lg"
-                variant="default"
-                c="var(--mantine-color-text)"
-                component="a"
-                href="/docs"
-              >
-                帮助文档
-              </Button>
-              <Button
-                className={classes.control}
-                size="lg"
-                variant="default"
-                c="var(--mantine-color-text)"
-                component="a"
-                href="/user/profile"
-              >
-                管理我的查分器账号
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                className={classes.control}
-                size="lg"
-                variant="default"
-                c="var(--mantine-color-text)"
-                component="a"
-                href="/login"
-              >
-                登录
-              </Button>
-              <Button className={classes.control} size="lg" component="a" href="/register">
-                注册 maimai DX 查分器账号
-              </Button>
-            </>
-          )}
-        </Container>
-
-        <Container className={classes.section} mt={rem(100)} size="lg">
-          <Center ta="center" mb={50}>
-            <div>
-              <Title order={2} mb="xs">
-                特色功能
+      <main className={classes.root}>
+        <Container size={1200} className={classes.container}>
+          <section className={classes.hero} aria-labelledby="home-title">
+            <div className={classes.heroCopy}>
+              <Title id="home-title" className={classes.title}>
+                落雪咖啡屋
+                <br />
+                <span>maimai DX</span> 查分器
               </Title>
-              <Text c="dimmed">我们的目标是为玩家提供一个简单、易用的查分器。</Text>
+              <Text className={classes.description}>
+                一个简单的{" "}
+                <Text span inherit fw={700} className={classes.highlight}>
+                  舞萌 DX & 中二节奏
+                </Text>{" "}
+                国服查分器，玩家可以查看并管理自己的成绩，同时也有公共的 API
+                接口供开发者获取玩家的成绩数据。
+              </Text>
+              <Group gap="sm" className={classes.controls}>
+                <Button
+                  component={Link}
+                  to={isLoggedIn ? "/user/profile" : "/register"}
+                  size="lg"
+                  radius="md"
+                >
+                  {isLoggedIn ? "管理我的查分器账号" : "注册 maimai DX 查分器账号"}
+                </Button>
+                <Button
+                  component={Link}
+                  to={isLoggedIn ? "/docs" : "/login"}
+                  size="lg"
+                  radius="md"
+                  variant="default"
+                >
+                  {isLoggedIn ? "帮助文档" : "登录"}
+                </Button>
+              </Group>
             </div>
-          </Center>
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={50}>
-            {features.map((feature) => (
-              <Feature {...feature} key={feature.title} />
+            <HeroArtwork />
+          </section>
+
+          <nav className={classes.shortcuts} aria-label="常用功能">
+            {shortcuts.map(({ icon: Icon, title, description, to }) => (
+              <Card
+                component={Link}
+                key={to}
+                to={to}
+                withBorder
+                radius="md"
+                className={classes.shortcut}
+              >
+                <ThemeIcon variant="light" radius="md" className={classes.shortcutIcon}>
+                  <Icon size={23} stroke={1.5} aria-hidden />
+                </ThemeIcon>
+                <span className={classes.shortcutCopy}>
+                  <Text component="span" className={classes.shortcutTitle}>
+                    {title}
+                  </Text>
+                  <Text component="span" className={classes.shortcutDescription}>
+                    {description}
+                  </Text>
+                </span>
+                <IconArrowRight className={classes.shortcutArrow} size={17} aria-hidden />
+              </Card>
             ))}
-          </SimpleGrid>
-        </Container>
+          </nav>
 
-        <Container className={classes.section} mt={rem(100)}>
-          <Center ta="center" mb={50}>
-            <div>
-              <Title order={2} mb="xs">
-                其他工具
-              </Title>
-              <Text c="dimmed">基于 maimai DX 查分器开发的第三方开发者工具。</Text>
+          <section className={classes.section} aria-labelledby="features-title">
+            <div className={classes.sectionHeading}>
+              <div>
+                <Title order={2} id="features-title" className={classes.sectionTitle}>
+                  特色功能
+                </Title>
+                <Text className={classes.sectionDescription} mt="xs">
+                  我们的目标是为玩家提供一个简单、易用的查分器。
+                </Text>
+              </div>
             </div>
-          </Center>
-          <ProductCarousel />
+
+            <div className={classes.features}>
+              <Card withBorder className={clsx(classes.feature, classes.scoreFeature)}>
+                <span className={classes.featureLabel}>
+                  <IconChartBar size={19} aria-hidden /> 游戏成绩
+                </span>
+                <Title order={3} className={classes.featureTitle}>
+                  高效的成绩管理
+                </Title>
+                <Text className={classes.featureDescription}>
+                  maimai DX
+                  查分器自带易用的成绩管理页面，采用直观的方式为用户展现他们自己的所有成绩。
+                </Text>
+                <ScoreShowcase />
+                <Anchor
+                  component={Link}
+                  to="/sync"
+                  underline="never"
+                  className={classes.featureLink}
+                >
+                  <Group component="span" gap={8} wrap="nowrap" align="center">
+                    <Text span inherit inline>
+                      同步游戏数据
+                    </Text>
+                    <IconArrowRight size={17} aria-hidden />
+                  </Group>
+                </Anchor>
+              </Card>
+
+              <Card withBorder className={clsx(classes.feature, classes.chartFeature)}>
+                <div className={classes.featureCopy}>
+                  <span className={classes.featureLabel}>
+                    <IconDisc size={19} aria-hidden /> 舞萌 DX
+                  </span>
+                  <Title order={3} className={classes.featureTitle}>
+                    谱面预览
+                  </Title>
+                  <Text className={classes.featureDescription}>
+                    在浏览器中查看舞萌 DX 谱面，支持播放、暂停与进度调整。
+                  </Text>
+                  <Anchor
+                    component={Link}
+                    to="/songs?game=maimai"
+                    underline="never"
+                    className={classes.featureLink}
+                  >
+                    <Group component="span" gap={8} wrap="nowrap" align="center">
+                      <Text span inherit inline>
+                        曲目查询
+                      </Text>
+                      <IconArrowRight size={17} aria-hidden />
+                    </Group>
+                  </Anchor>
+                </div>
+                <ChartPreview />
+              </Card>
+
+              <Card withBorder className={clsx(classes.feature, classes.aliasFeature)}>
+                <span className={classes.featureLabel}>
+                  <IconGavel size={19} aria-hidden /> 曲目别名
+                </span>
+                <Title order={3} className={classes.featureTitle}>
+                  曲目别名投票
+                </Title>
+                <Text className={classes.featureDescription}>
+                  maimai DX 查分器拥有一套独立的曲目别名系统，玩家可以为曲目投票或提交曲目别名。
+                </Text>
+                <Anchor
+                  component={Link}
+                  to={isLoggedIn ? "/alias/vote" : "/login?redirect=%2Falias%2Fvote"}
+                  underline="never"
+                  className={classes.featureLink}
+                >
+                  <Group component="span" gap={8} wrap="nowrap" align="center">
+                    <Text span inherit inline>
+                      参与投票
+                    </Text>
+                    <IconArrowRight size={17} aria-hidden />
+                  </Group>
+                </Anchor>
+                <span className={classes.aliasDecoration} aria-hidden>
+                  # 曲目别名
+                </span>
+              </Card>
+            </div>
+          </section>
+
+          <Card
+            withBorder
+            className={classes.developer}
+            component="section"
+            aria-labelledby="developer-title"
+          >
+            <div className={classes.developerIcon} aria-hidden>
+              <IconCode size={30} stroke={1.5} />
+            </div>
+            <div className={classes.developerCopy}>
+              <Title order={2} id="developer-title" className={classes.developerTitle}>
+                开发者友好
+              </Title>
+              <Text>
+                我们提供了对开发者友好的 API 接口，开发者可以通过 API 接口获取、管理玩家的游戏数据。
+              </Text>
+            </div>
+            <Button
+              component={Link}
+              to="/docs/developer-guide"
+              variant="default"
+              radius="md"
+              rightSection={<IconArrowRight size={17} aria-hidden />}
+            >
+              开发者文档
+            </Button>
+          </Card>
+
+          <section className={classes.section} aria-labelledby="tools-title">
+            <div className={classes.sectionHeading}>
+              <div>
+                <Title order={2} id="tools-title" className={classes.sectionTitle}>
+                  其他工具
+                </Title>
+                <Text className={classes.sectionDescription} mt="xs">
+                  基于 maimai DX 查分器开发的第三方开发者工具。
+                </Text>
+              </div>
+            </div>
+            <ProductCarousel />
+          </section>
         </Container>
-      </Container>
-      <Footer />
+      </main>
+      <Footer maxWidth={1200} />
     </>
   );
 }

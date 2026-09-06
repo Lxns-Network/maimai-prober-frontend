@@ -22,6 +22,7 @@ import useGame from "@/hooks/useGame.ts";
 import { ScoreFilters } from "@/hooks/useScoreFilters.ts";
 import { scoreRatingRanges } from "@/hooks/useFilteredScores.ts";
 import { match, P } from "ts-pattern";
+import { Game } from "@/types/game";
 
 const difficultyData = {
   maimai: [
@@ -155,10 +156,17 @@ interface AdvancedFilterProps {
   filters: ScoreFilters;
   setFilter: <K extends keyof ScoreFilters>(key: K, value: ScoreFilters[K]) => void;
   resetFilters: () => void;
+  game?: Game;
 }
 
-export const AdvancedFilter = ({ filters, setFilter, resetFilters }: AdvancedFilterProps) => {
-  const [game] = useGame();
+export const AdvancedFilter = ({
+  filters,
+  setFilter,
+  resetFilters,
+  game: fixedGame,
+}: AdvancedFilterProps) => {
+  const [currentGame] = useGame();
+  const game = fixedGame ?? currentGame;
 
   const {
     difficulty,

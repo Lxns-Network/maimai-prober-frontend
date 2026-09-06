@@ -45,6 +45,7 @@ const STAR_TAP_ROTATION_SPEED_RAD_PER_MS = (2 * Math.PI) / 1000;
 
 export interface MainRendererConfig {
   sensorImagePath?: string;
+  showStatistics?: boolean;
 }
 
 /** renderFrame 的分阶段计时点，按执行顺序排列；total 为整帧。 */
@@ -322,6 +323,12 @@ export class MainRenderer {
   constructor(canvas: HTMLCanvasElement, config: MainRendererConfig = {}) {
     this.canvas = canvas;
     this.sensorImagePath = config.sensorImagePath ?? "/assets/maimai/chart/sensor.webp";
+
+    if (config.showStatistics === false) {
+      this.config.showBpm = false;
+      this.config.showNoteTotal = false;
+      this.config.showBreakCount = false;
+    }
 
     // alpha: false 让浏览器知道 canvas 不透明（CSS 已经把 background 设成 #000），
     // 合成时走 RGB 路径而不是 RGBA，省一次 alpha blend pass。
