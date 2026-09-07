@@ -8,6 +8,7 @@
 - 舞萌 DX 谱面预览：
   - 新增 Touch 判定区打击效果以及 Hold 持续波纹与释放效果
   - 优化渲染性能，提升动画流畅度（[#93](https://github.com/Lxns-Network/maimai-prober-frontend/pull/93)）
+  - 新增「星星延迟」设置，并改进滑条星星的淡入与出现时机（[#94](https://github.com/Lxns-Network/maimai-prober-frontend/pull/94)）
 - 改进同步游戏数据页 HTTP 代理可用性检测，并将原「游玩高峰期警告」调整为根据近期实际爬取成功率动态展示
 - 修复中二节奏谱面的最佳成绩与最高通关评价来自不同游玩记录时相关数据计算不一致的问题
 - 修复部分旧版本 iOS 与 Safari 上页面无法正常使用的问题
