@@ -1,11 +1,22 @@
+/**
+ * 校验延迟数值是否合法。仅在数值为大于 0 的有限数时返回原值，否则返回 null。
+ */
 function getFinitePositiveLatency(value: number | undefined): number | null {
   return value !== undefined && Number.isFinite(value) && value > 0 ? value : null;
 }
 
+/**
+ * 将估算时间限制在 [0, currentTime] 区间内，保证时间非负且不超前于音频上下文当前时刻。
+ */
 function clampContextTime(time: number, currentTime: number): number {
   return Math.max(0, Math.min(time, currentTime));
 }
 
+/**
+ * 基于硬件音频输出时间戳外推当前的 AudioContext 时刻。
+ *
+ * 若环境不支持 getOutputTimestamp、调用抛错或时间戳字段无效，安全返回 null。
+ */
 function getTimestampContextTime(audioContext: AudioContext): number | null {
   try {
     const timestamp = audioContext.getOutputTimestamp();
@@ -25,6 +36,11 @@ function getTimestampContextTime(audioContext: AudioContext): number | null {
   }
 }
 
+/**
+ * 获取音频输出管道的总延迟（单位：秒）。
+ *
+ * 优先读取 outputLatency，不可用时降级为 baseLatency，均无效则回退为 0。
+ */
 function getAudioOutputLatency(audioContext: AudioContext): number {
   return (
     getFinitePositiveLatency(audioContext.outputLatency) ??
@@ -34,13 +50,18 @@ function getAudioOutputLatency(audioContext: AudioContext): number {
 }
 
 /**
- * 返回当前估算已到达输出端（即听众耳朵正在听到）的 AudioContext 时刻。
- * 供视觉时钟使用（贴合听感），不要用于 source.start()。
+ * 返回当前估算已到达物理输出端（即听众正在听到）的 AudioContext 时刻（秒）。
+ *
+ * 【调用约束】仅供视觉时钟与音画同步使用。由于该时刻已扣除输出延迟（处于过去），
+ * 严禁传入 source.start() 等音频调度方法。
+ *
+ * 返回值始终处于 [0, audioContext.currentTime] 区间内。不支持硬件时间戳时自动退化为延迟补偿。
  */
 export function getAudioContextOutputTime(audioContext: AudioContext): number {
   const currentTime = audioContext.currentTime;
   const latencyAdjustedTime = currentTime - getAudioOutputLatency(audioContext);
   const timestampTime = getTimestampContextTime(audioContext);
+  // 时间戳与延迟估算并存时取较小值（保守估计），防止时间戳抖动导致画面超前于实际听感
   const outputTime =
     timestampTime === null ? latencyAdjustedTime : Math.min(timestampTime, latencyAdjustedTime);
 

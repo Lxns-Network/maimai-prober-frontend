@@ -79,7 +79,10 @@ const PROFILE_STAGE_INDEX = Object.fromEntries(
   RENDER_PROFILE_STAGES.map((stage, index) => [stage, index]),
 ) as Record<RenderProfileStage, number>;
 
-// tap / hold / slide 星星头同层、按时间分层（早的在上）的合并列表，按 timingMs 降序（晚的先画/在底）。
+/**
+ * tap / hold / slide 星星头同层、按时间分层（早的在上）的合并列表。
+ * 按 timingMs 降序排列（晚到达的先画在底层，早到达的后绘制以位于顶层）。
+ */
 type LayeredNote =
   | { kind: "tap"; note: TapNote }
   | { kind: "hold"; note: HoldStartNote }
@@ -101,6 +104,9 @@ interface TimeWindowIndex {
 
 const EMPTY_TIME_WINDOW_INDEX: TimeWindowIndex = { timingMs: [], prefixMaxEndMs: [] };
 
+/**
+ * 构建基于音符起始时间与前缀最大结束时间的双序列索引，供时间窗口快速二分检索。
+ */
 function buildTimeWindowIndex<T>(
   items: readonly T[],
   getTimingMs: (item: T) => number,
@@ -119,7 +125,7 @@ function buildTimeWindowIndex<T>(
   return { timingMs, prefixMaxEndMs };
 }
 
-/** 返回可能可见的切片 [lo, hi)。 */
+/** 根据当前播放时间与预见提前量，二分检索在当前时间窗口内可能可见的音符索引区间 [lo, hi)。 */
 function windowRange(index: TimeWindowIndex, nowMs: number, lookAheadMs: number): [number, number] {
   const { timingMs, prefixMaxEndMs } = index;
   const limit = nowMs + lookAheadMs;
@@ -141,7 +147,7 @@ function windowRange(index: TimeWindowIndex, nowMs: number, lookAheadMs: number)
   return [lo, end];
 }
 
-/** 滑条可见结束时间：所有路径中最晚的 timingMs + delay + duration。 */
+/** 计算滑条音符所有路径中最晚的可见结束时间（所有路径中最晚的 timingMs + delay + duration）。 */
 function slideVisibleEndMs(note: SlideNote): number {
   const pathCount = note.allSlideSegments?.length ?? 1;
   let end = note.timingMs;
@@ -154,7 +160,7 @@ function slideVisibleEndMs(note: SlideNote): number {
   return end;
 }
 
-/** hold 起点整个按住期间可见；tap / slide 星星头命中后仅 NOTE_VISIBILITY_AFTER_MS。 */
+/** 计算同层音符头部的可见结束时间。Hold 起点整个按住期间可见；Tap 与 Slide 星星头命中后仅保留 NOTE_VISIBILITY_AFTER_MS。 */
 function layeredHeadEndMs(item: LayeredNote): number {
   if (item.kind === "hold") {
     return item.note.timingMs + (60000 * item.note.duration) / item.note.bpm;
@@ -162,7 +168,7 @@ function layeredHeadEndMs(item: LayeredNote): number {
   return item.note.timingMs + NOTE_VISIBILITY_AFTER_MS;
 }
 
-/** touch 命中后可见 50ms（renderTouch 同款窗口）；touch-hold 额外持续 durationMs。 */
+/** 计算 Touch 音符的可见结束时间。Touch 命中后保留 50ms（renderTouch 同款窗口）；Touch Hold 额外持续 durationMs。 */
 function touchVisibleEndMs(note: TouchNote | TouchHoldStartNote): number {
   const holdMs = note.type === "touch-hold-start" ? note.durationMs : 0;
   return note.timingMs + holdMs + 50;
@@ -194,7 +200,7 @@ interface PreparedRenderNotes {
   approachIndex: TimeWindowIndex;
   holdEffectIndex: TimeWindowIndex;
   touchHoldIndex: TimeWindowIndex;
-  /** 谱面内最小的 note 流速倍率幅值（|<HS*x>|，≤1），粗筛窗口按它放大提前量 */
+  /** 谱面内最小的音符流速倍率幅值（|<HS*x>|，≤1），用于按比例放大粗筛窗口的预见提前量。 */
   minHiSpeed: number;
 }
 
@@ -220,6 +226,10 @@ interface RenderFrameTiming {
   divisor: number;
 }
 
+/**
+ * 谱面主渲染器。
+ * 驱动背景、判定线、HUD、各类音符、烟花以及按压与命中特效的整帧绘制与分阶段性能分析。
+ */
 export class MainRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -281,8 +291,11 @@ export class MainRenderer {
   private timingTimelineChart: Chart | null = null;
   private timingTimeline: TimingTimeline | null = null;
 
-  // simulCounts / breakIdx 是静态元数据，只依赖 chart 本身。
-  // 用 notes 数组引用做缓存键——chart 切换时引用变化自然 invalidate。
+  /**
+   * 缓存预处理音符数据的原始音符数组引用。
+   * simulCounts / breakIdx 是静态元数据，只依赖 chart 本身；
+   * 用 notes 数组引用做缓存键，chart 切换时引用变化自然 invalidate。
+   */
   private preparedNotesRef: Note[] | null = null;
   private preparedRenderNotes: PreparedRenderNotes = {
     slides: [],
@@ -320,6 +333,9 @@ export class MainRenderer {
   private profileFrameStartMs = 0;
   private profileStageStartMs = 0;
 
+  /**
+   * @throws {Error} 若无法获取 Canvas 2D 绘图上下文则抛出异常。
+   */
   constructor(canvas: HTMLCanvasElement, config: MainRendererConfig = {}) {
     this.canvas = canvas;
     this.sensorImagePath = config.sensorImagePath ?? "/assets/maimai/chart/sensor.webp";
@@ -385,6 +401,10 @@ export class MainRenderer {
     this.sensorImage.src = this.sensorImagePath;
   }
 
+  /**
+   * 根据父容器尺寸更新画布尺寸与渲染上下文变换。
+   * 全屏模式下受 fullscreenMaxPixels 像素上限约束以动态调整 DPR。
+   */
   resize(isFullscreen: boolean = false): void {
     const parent = this.canvas.parentElement;
     if (!parent) return;
@@ -431,6 +451,10 @@ export class MainRenderer {
     }
   }
 
+  /**
+   * 渲染指定节拍位置的单帧画面。
+   * 包含背景、判定线、HUD、烟花、各类音符、按压波纹及命中特效。
+   */
   renderFrame(chart: Chart, currentBeats: number, beatsPerMeasure: number): void {
     this.profileBegin();
     const prepared = this.getPreparedRenderNotes(chart.notes);
@@ -458,6 +482,10 @@ export class MainRenderer {
     this.profileEnd();
   }
 
+  /**
+   * 设置音符流速。
+   * 取值须在 [3, 9] 范围，设置后同步更新各子渲染器上下文。
+   */
   setHiSpeed(hiSpeed: number): void {
     if (hiSpeed >= 3 && hiSpeed <= 9) {
       this.config.hiSpeed = hiSpeed * HI_SPEED_CONVERSION_FACTOR;
@@ -470,6 +498,10 @@ export class MainRenderer {
     this.updateRenderersContext();
   }
 
+  /**
+   * 设置回放速率。
+   * 取值须在 [0.1, 1.0] 范围，设置后同步更新各子渲染器上下文。
+   */
   setPlaybackSpeed(playbackSpeed: number): void {
     if (playbackSpeed >= 0.1 && playbackSpeed <= 1.0) {
       this.config.playbackSpeed = playbackSpeed;
@@ -545,6 +577,9 @@ export class MainRenderer {
     this.fullscreenMaxPixels = maxPixels;
   }
 
+  /**
+   * 设置背景视频元素。若视频源发生变化会自动失效当前帧缓存。
+   */
   setBackgroundVideo(video: HTMLVideoElement | null): void {
     if (video && video.src !== this.backgroundVideoSrc) {
       this.backgroundVideoSrc = video.src;
@@ -572,8 +607,12 @@ export class MainRenderer {
     this.backgroundVideoCacheReady = true;
   }
 
-  // fillRect 保证导出的背景不透明。
-  // clearRect 依赖 alpha:false，移动端 Safari 不可靠，会导致导出图透明。
+  /**
+   * 清空画布并绘制背景底色或当前背景视频帧。
+   *
+   * fillRect 保证导出的背景不透明。
+   * clearRect 依赖 alpha:false，移动端 Safari 不可靠，会导致导出图透明。
+   */
   clear(): void {
     const s = this.logicalSize;
     const video = this.backgroundVideo;
@@ -606,6 +645,7 @@ export class MainRenderer {
     this.ctx.fillRect(0, 0, s, s);
   }
 
+  /** 绘制判定线圆环与各按键指示点。若设计模式为 blind 则跳过绘制。 */
   renderJudgmentLine(): void {
     if (this.config.judgmentLineDesign === "blind") {
       return;
@@ -647,7 +687,7 @@ export class MainRenderer {
     this.ctx.restore();
   }
 
-  /** 火花特效：判定线之上、note 之下渲染，canvas 内切圆裁切。 */
+  /** 绘制 Touch 烟花特效：在判定线之上、音符之下渲染，裁剪至舞台内切圆。 */
   private renderFireworks(
     touches: readonly (TouchNote | TouchHoldStartNote)[],
     timing: RenderFrameTiming,
@@ -675,7 +715,7 @@ export class MainRenderer {
     this.profileMark("hud");
 
     this.ctx.save();
-    // 与烟花同款内切圆裁剪：负流速 note 从圈外进场，超出部分裁掉。
+    // 与烟花同款内切圆裁剪：负流速音符从圈外进场，超出部分裁掉。
     this.ctx.beginPath();
     this.ctx.arc(this.centerX, this.centerY, this.logicalSize / 2, 0, Math.PI * 2);
     this.ctx.clip();
@@ -695,7 +735,7 @@ export class MainRenderer {
     } = prepared;
 
     const nowMs = timing.currentTimeMs;
-    // HS<1 的 note 接近时间更长,粗筛提前量按谱面最小倍率放大
+    // 流速倍率小于 1 的音符接近时间更长，粗筛提前量需按谱面最小倍率放大。
     const lookAheadMs = BASE_APPROACH_TIME_MS / this.config.hiSpeed / prepared.minHiSpeed;
 
     const [slideLo, slideHi] = windowRange(prepared.slideIndex, nowMs, lookAheadMs);
@@ -746,7 +786,7 @@ export class MainRenderer {
     }
     this.profileMark("touches");
 
-    // 特效层统一画在最上层，盖住所有 note；按压波纹先画，命中/释放特效叠在波纹之上。
+    // 特效层统一画在最上层，盖住所有音符；按压波纹先画，命中/释放特效叠在波纹之上。
     if (this.config.showHitEffect) {
       // hold / touch-hold 持续按压波纹
       const [holdLo, holdHi] = windowRange(holdEffectIndex, nowMs, lookAheadMs);
@@ -766,14 +806,12 @@ export class MainRenderer {
         touchHoldLo,
         touchHoldHi,
       );
-      // touch-hold 结束特效
       this.renderTouchHoldReleaseEffects(
         touchHoldNotes,
         timing.currentTimeMs,
         touchHoldLo,
         touchHoldHi,
       );
-      // touch 命中特效
       this.touchHitEffectRenderer.renderTouchHitEffects(touches, timing.currentTimeMs, (pos) =>
         this.touchRenderer.getTouchPosition(pos),
       );
@@ -784,15 +822,15 @@ export class MainRenderer {
     this.ctx.restore();
   }
 
-  /**
-   * 开关分阶段计时。关闭时各计时点只剩一次布尔判断；开启后由 takeFrameProfile 消费。
-   * 关闭会同时丢弃已累计的数据。
-   */
-  /** 见 NoteRenderer.validateTapSpriteCrops；供基准/回归工具在渲染若干帧后调用。 */
+  /** 见 NoteRenderer.validateTapSpriteCrops；供基准与回归测试在渲染若干帧后调用。 */
   validateSpriteCrops(): string[] {
     return this.noteRenderer.validateTapSpriteCrops();
   }
 
+  /**
+   * 开关分阶段计时。关闭时各计时点只剩一次布尔判断；开启后由 takeFrameProfile 消费。
+   * 关闭会同时重置已累计的数据。
+   */
   setProfilingEnabled(enabled: boolean): void {
     this.profilingEnabled = enabled;
     if (!enabled) this.resetProfile();
@@ -1039,7 +1077,7 @@ export class MainRenderer {
         }
       }
 
-      // hold 尾也在列表里：实机 hold 结束播的就是 tap 命中特效，形状按是否绝赞选。
+      // Hold 尾也在列表里：实测 Hold 结束播放的就是 Tap 命中特效，形状按是否绝赞判定选择。
       if (
         isButtonNote(note) &&
         !isTouchNote(note) &&
@@ -1056,8 +1094,8 @@ export class MainRenderer {
     breakCompletionTimes.sort((a, b) => a - b);
     breakNoExCompletionTimes.sort((a, b) => a - b);
 
-    // tap / hold / slide 星星头同层按 timingMs 降序（早到的后画/在上层，与 maimai noteSortOrder 一致）。
-    // 在此预算一次（本函数被 notes 引用 memoize），渲染热路径直接迭代，省每帧的合并+排序+分配。
+    // tap / hold / slide 星星头同层按 timingMs 降序预排（早到达的后绘制以位于顶层，与实测渲染层级一致）。
+    // 在此预先计算（本函数由 notes 引用 memoize），渲染热路径直接迭代，避免每帧合并与排序。
     const layeredHeads: LayeredNote[] = [
       ...taps.map((note) => ({ kind: "tap" as const, note })),
       ...holds.map((note) => ({ kind: "hold" as const, note })),
@@ -1120,7 +1158,7 @@ export class MainRenderer {
         holdEffectNotes,
         (hold) => hold.timingMs,
         (hold) => {
-          // 只剩按压波纹用这个索引，窗口到 hold 尾为止即可。
+          // 仅按压波纹使用该索引，可见窗口到 Hold 结束为止即可。
           const holdEnd = holdEndMap.get(this.getHoldEndKey(hold.position, hold.timing));
           return holdEnd ? holdEnd.timingMs : hold.timingMs;
         },
@@ -1340,7 +1378,7 @@ export class MainRenderer {
     const meta = this.getNoteMeta(noteMeta, slide);
     const isSimultaneous = meta.simultaneousNoteCount >= 2;
 
-    // 接近圈由 renderApproachIndicators 统一画（在底层），这里只画滑条头。
+    // 接近环已由 renderApproachIndicators 统一在底层绘制，此处仅绘制滑条头部。
     if (slide.hasTapHead) {
       this.noteRenderer.renderTapNote(
         pos.x,
@@ -1411,7 +1449,7 @@ export class MainRenderer {
       this.ctx.translate(-x, -y);
     }
 
-    // 黑色描边（同 drawStar 的 strokeW*3 黑边）画最底层；EX 时外圈让给 EX 环，跳过
+    // 黑色外轮廓（同 drawStar 的 strokeW*3 黑边）画最底层；EX 状态下外圈让给 EX 光环，跳过。
     if (!isEx) {
       this.ctx.strokeStyle = COLORS.BLACK;
       this.ctx.lineWidth = ((2 * this.radius) / 300) * 3;
@@ -1537,7 +1575,7 @@ export class MainRenderer {
     return COLORS.SLIDE_CYAN;
   }
 
-  // 按 prepareRenderNotes 预排好的时间分层顺序（早到的 note 在上层）渲染 tap/hold/slideStart 星星头。
+  /** 按 prepareRenderNotes 预排好的时间分层顺序（早到达的后绘制以位于顶层）依次渲染 tap/hold/slideStart 头部。 */
   private renderLayeredHeads(
     layered: LayeredNote[],
     headLo: number,
@@ -1556,7 +1594,9 @@ export class MainRenderer {
     }
   }
 
-  // tap 接近弧共享圆心，整窗收集后按 (颜色,拖影档) 合批 stroke，次数与可见数无关。
+  /**
+   * Tap 接近弧共享圆心，整窗收集后按 (颜色, 拖影档) 合批 stroke，绘制调用次数与可见音符数无关。
+   */
   private renderTapApproachArcs(
     layered: LayeredNote[],
     headLo: number,
@@ -1649,7 +1689,7 @@ export class MainRenderer {
     );
   }
 
-  /** touch-hold 头～尾期间在 sensor 点播放 hold 持续按压特效。[startIndex, endIndex) 来自 touchHoldIndex 粗筛。 */
+  /** 绘制 Touch Hold 头～尾期间在传感器点的持续按压波纹特效。[startIndex, endIndex) 来自 touchHoldIndex 粗筛。 */
   private renderTouchHoldPressEffects(
     touchHolds: readonly TouchHoldStartNote[],
     currentTimeMs: number,
@@ -1672,7 +1712,7 @@ export class MainRenderer {
     }
   }
 
-  /** touch-hold 尾部在 sensor 点播放释放特效。[startIndex, endIndex) 来自 touchHoldIndex 粗筛。 */
+  /** 绘制 Touch Hold 尾部在传感器点的释放命中特效。[startIndex, endIndex) 来自 touchHoldIndex 粗筛。 */
   private renderTouchHoldReleaseEffects(
     touchHolds: readonly TouchHoldStartNote[],
     currentTimeMs: number,
@@ -1686,8 +1726,8 @@ export class MainRenderer {
         continue;
       }
       const origin = this.touchRenderer.getTouchPosition(note.position);
-      // 按钮 note 的特效朝外（按钮角度），touch hold 反过来朝圆心——实机录像就是这样，
-      // 两边的约定不同是有意的。C 在圆心上，没有径向方向，单独取固定角度。
+      // 按钮音符特效朝外（沿按键角度），Touch Hold 反过来朝向圆心——录像测量证实
+      // 两边的约定不同是有意的。中心位置（C）因在圆心上无径向方向，单独取固定爆发角度。
       const angle =
         note.position === "C"
           ? TOUCH_HOLD_CENTRE_BURST_ANGLE
@@ -1704,7 +1744,7 @@ export class MainRenderer {
   }
 
   private renderTapHitEffect(notes: Note[], currentTimeMs: number): void {
-    // hitEffectNotes 按 timingMs 升序，二分定位窗口下界（currentTimeMs - DURATION），之后线性扫。
+    // hitEffectNotes 按 timingMs 升序，二分定位进入特效持续窗口的起始音符（currentTimeMs - DURATION），之后线性扫描。
     const windowStartMs = currentTimeMs - NOTE_HIT_EFFECT_DURATION_MS;
     let lo = 0;
     let hi = notes.length;
@@ -1714,7 +1754,7 @@ export class MainRenderer {
       else hi = mid;
     }
 
-    // 同 position 后到的 note 已命中时让前面的特效退场。
+    // 同一按键位置若有更晚的音符已命中，则提前终止先前音符的命中特效。
     const lastHitTimingByPos = new Map<ButtonPosition, number>();
     for (let i = lo; i < notes.length; i++) {
       const n = notes[i];
@@ -1740,7 +1780,7 @@ export class MainRenderer {
         note.position as ButtonPosition,
         COLORS.HIT_EFFECT_GOLD,
         pos.progress,
-        // hold 尾 / slide 头的 type 永远不是 "break"，绝赞要靠各自的 break 标记才能选到星形。
+        // Hold 尾与 Slide 头自身类型非 break，需通过各自的标记判断是否展示绝赞星形特效。
         note.type === "break" ||
           (isTapNote(note) && note.isStar) ||
           (isHoldEndNote(note) && note.isBreakHold) ||
@@ -1829,7 +1869,7 @@ export class MainRenderer {
       const { measure, beat, fraction, divisor } = this.beatDisplayInfo;
 
       this.ctx.font = `bold ${smallFontSize}px sans-serif`;
-      this.ctx.fillStyle = "#94a3b8"; // slate-400
+      this.ctx.fillStyle = "#94a3b8";
 
       const fractionStr = Math.floor(fraction * 100)
         .toString()
@@ -1872,7 +1912,7 @@ export class MainRenderer {
 
     this.ctx.save();
     this.ctx.font = `bold ${fontSize}px sans-serif`;
-    // 纯偏移阴影代替 shadowBlur
+    // 纯偏移阴影代替 shadowBlur：避免 GPU 高斯模糊 pass
     this.ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
     this.ctx.shadowOffsetX = (2 * this.radius) / 300;
     this.ctx.shadowOffsetY = (2 * this.radius) / 300;

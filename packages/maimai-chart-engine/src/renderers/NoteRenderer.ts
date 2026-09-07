@@ -28,15 +28,14 @@ const HIT_FX_HALO_BLUR_SCALE = 2.4;
 const HIT_FX_HALO_ALPHA = 0.55;
 
 /**
- * 精灵合成范围按实际墨迹算。留白虽是全透明像素，却每帧都要参与合成：
- * tap 裁掉烘焙画布的透明边缘再贴图，命中特效 stamp 直接收紧画布，密谱下分别少填
- * 约 59% 和 51% 的目标像素。
+ * 精灵合成范围按实际墨迹算。留白全透明像素每帧都会参与合成：
+ * Tap 裁掉烘焙画布的透明边缘再贴图，命中特效 stamp 直接收紧画布。
  *
- * tap 仍按旧尺寸烘焙，以保持原有的像素中心与抗锯齿结果；裁剪矩形与原画布保持同奇偶，
+ * Tap 仍按旧尺寸烘焙，以保持原有的像素中心与抗锯齿结果；裁剪矩形与原画布保持同奇偶，
  * source/destination 比例固定为 noteScale / SS，因此只跳过全透明边缘，不改变图形映射。
  * 命中特效的目标尺寸由 sprite.width 反推，图形与 refR 同比，渲染半径与 half 无关。
  *
- * TAIL 是 `ctx.filter = blur(N)` 实际扩散到的半径与 N 的比值，**实测值**：Chromium 下
+ * TAIL 是 `ctx.filter = blur(N)` 实际扩散到的半径与 N 的比值，实测值：Chromium 下
  * 描边外沿到 alpha 归零处为 2.43×N（六边形）/ 2.27×N（星），不是按 σ=N/2 推的 1.5×。
  * 取小了会把 halo 外圈直接切掉——1.5× 时逐像素对照有约 1000 个像素单向变暗。
  */
@@ -46,8 +45,12 @@ const TAP_SPRITE_CROP_MARGIN_PX = 1;
 
 type HitEffectShape = "hexagon" | "star";
 
+/**
+ * 基础音符与相关特效渲染器。
+ * 负责 Tap 音符、命中特效、接近弧、双押连接线、EX 判定环及 Break 序号标记等元素的绘制。
+ */
 export class NoteRenderer extends BaseRenderer {
-  // 按 (方位,配色,EX) 预渲染的 tap sprite，radius/mirror 变化时整体失效。
+  // 按 (方位, 配色, EX) 预渲染的 Tap 精灵缓存，radius / mirror 变化时整体失效。
   private tapSpriteCache = new Map<string, HTMLCanvasElement>();
   private tapSpriteBasis = "";
   // 六边形 / 星各一张预烘焙 stamp（含 glow），radius / backingScale / color 变化时整体失效。
@@ -58,14 +61,20 @@ export class NoteRenderer extends BaseRenderer {
     super(context);
   }
 
+  /** 获取指定按键方位在判定圈上的二维坐标。 */
   getPositionOnRing(position: ButtonPosition): Point2D {
     return this.getButtonPosition(position);
   }
 
+  /** 获取指定按键方位的弧度角（以屏幕中心为原点）。 */
   getAngle(position: ButtonPosition): number {
     return this.getButtonAngle(position);
   }
 
+  /**
+   * 计算音符命中特效的渲染坐标与归一化进度。
+   * 特效未激活（尚未到达判定时间或已超出持续时长）时，返回对象的 progress 为 -1。
+   */
   calculateHitEffectPosition(
     note: Note,
     currentTimeMs: number,
@@ -81,6 +90,10 @@ export class NoteRenderer extends BaseRenderer {
     };
   }
 
+  /**
+   * 计算音符在当前时间戳下的渲染位置与缩放比例。
+   * 超出可见时间范围（登场前或打完消失后）时返回 INVISIBLE_NOTE_POSITION（visible 为 false）。
+   */
   calculateNotePosition(
     note: Note,
     _currentBeat: number,
@@ -169,7 +182,7 @@ export class NoteRenderer extends BaseRenderer {
     p.closePath();
   }
 
-  /** 按钮 note 的命中特效：朝向取按钮角度（由圆心指向按钮，即向外）。 */
+  /** 渲染按键音符的命中特效：朝向取按键角度（由圆心指向按键，即向外）。 */
   renderTapHitEffect(
     x: number,
     y: number,
@@ -182,9 +195,9 @@ export class NoteRenderer extends BaseRenderer {
   }
 
   /**
-   * 命中特效本体。angle 决定星群朝向与图形自转，调用方自己决定朝哪：
-   * 按钮 note 用按钮角度（向外），touch hold 用指向圆心的方向（向内）。
-   * progress ∈ [0,1] 是特效自身的归一化年龄，超出区间由调用方跳过。
+   * 命中特效本体。angle 决定星群朝向与图形自转，调用方自己决定朝向：
+   * 按键音符用按键角度（向外），Touch Hold 用指向圆心的方向（向内）。
+   * progress ∈ [0, 1] 是特效自身的归一化年龄，超出区间或透明度归零时跳过渲染。
    */
   renderHitEffectAt(
     x: number,
@@ -237,6 +250,7 @@ export class NoteRenderer extends BaseRenderer {
   /**
    * 单颗六边形/星 stamp（核 blur + 更宽的低 alpha halo）。热路径按 progress 摆 5 份。
    * filter 半径按超采样 backing 像素计，缩回逻辑尺寸后才与旧 live blur 同量；live 路径不得设 ctx.filter。
+   * 判定圈半径、backingScale 或颜色变更时缓存整体失效重建。
    */
   private getHitEffectShapeSprite(type: HitEffectShape, color: string): HTMLCanvasElement {
     const cx = this.context.centerX;
@@ -292,6 +306,7 @@ export class NoteRenderer extends BaseRenderer {
     return sprite;
   }
 
+  /** 渲染单个音符的接近弧（包含中心主弧及两侧渐隐拖影）。 */
   renderApproachArc(position: ButtonPosition, noteX: number, noteY: number, color: string): void {
     const angle = this.getButtonAngle(position);
     const distance = this.distanceToCenter(noteX, noteY);
@@ -303,7 +318,7 @@ export class NoteRenderer extends BaseRenderer {
 
     ctx.save();
 
-    // i=0 是主弧（按钮中心 ±π/8），i>0 是左右两侧的拖影（按 alpha 递减）。
+    // i=0 是主弧（按键中心 ±π/8），i>0 是左右两侧的拖影（按 alpha 递减）。
     for (let i = 4; i >= 0; i--) {
       const alpha = i === 0 ? 0.4 : 0.4 * (1 - i / 5);
       ctx.globalAlpha = alpha;
@@ -339,7 +354,10 @@ export class NoteRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /** 所有接近弧共享圆心，按 (颜色, 拖影档) 合并 path，一档一次 stroke，总次数与 note 数无关。 */
+  /**
+   * 批量渲染音符接近弧。
+   * 所有接近弧共享圆心，按 (颜色, 拖影档) 合并 Path2D，一档一次 stroke，总绘制次数与音符数无关。
+   */
   renderApproachArcsBatch(
     arcs: { position: ButtonPosition; distance: number; color: string }[],
   ): void {
@@ -388,6 +406,10 @@ export class NoteRenderer extends BaseRenderer {
     ctx.restore();
   }
 
+  /**
+   * 渲染双押音符之间的圆弧连接线。
+   * 沿两按键间较短圆弧绘制；正对位（间距为 4 个按键）时绘制整圈。
+   */
   renderSimultaneousConnector(
     startPos: ButtonPosition,
     endPos: ButtonPosition,
@@ -418,6 +440,7 @@ export class NoteRenderer extends BaseRenderer {
     });
   }
 
+  /** 渲染 EX 音符的外层发光判定环。 */
   renderExRing(
     x: number,
     y: number,
@@ -429,7 +452,6 @@ export class NoteRenderer extends BaseRenderer {
     const innerRadius = noteSize;
     const outerRadius = noteSize * 1.19 * scaleFactor;
 
-    // 根据类型选择颜色
     let color: string;
     if (noteType === "break") {
       color = COLORS.EX_OVERLAY_BREAK;
@@ -446,6 +468,7 @@ export class NoteRenderer extends BaseRenderer {
     });
   }
 
+  /** 渲染 Break 音符的三角形装饰标记，尖端朝向按键放射方向。 */
   renderBreakTriangle(x: number, y: number, size: number, position: ButtonPosition): void {
     const angle = this.getButtonAngle(position);
     const triangleSize = size * 1.4;
@@ -481,6 +504,10 @@ export class NoteRenderer extends BaseRenderer {
     return getGradientColors(ddrColor, isBreak, isSimultaneous);
   }
 
+  /**
+   * 渲染带方向性四段渐变的 Tap 音符圆环。
+   * 渐变起始角与按键方位角对齐。
+   */
   private renderDirectionalTapRing(
     x: number,
     y: number,
@@ -516,6 +543,10 @@ export class NoteRenderer extends BaseRenderer {
     }
   }
 
+  /**
+   * 渲染单个 Tap 音符（包含渐变外环、内外黑白描边、EX 发光环及中心圆点）。
+   * 优先使用离屏烘焙精灵加速绘制；当启用动态节拍着色模式时自动回退为矢量绘制。
+   */
   renderTapNote(
     x: number,
     y: number,
@@ -527,7 +558,7 @@ export class NoteRenderer extends BaseRenderer {
     timing: number,
     highlightExScale: number = 1,
   ): void {
-    // DDR 配色随 timing 变化，无法 sprite 化，走矢量路径。
+    // 动态节拍着色模式（DDR 配色）随 timing 变化，无法精灵化，回退至矢量路径绘制。
     if (this.context.config.ddrColorMode) {
       this.drawTapNoteVector(
         x,
@@ -564,7 +595,8 @@ export class NoteRenderer extends BaseRenderer {
   }
 
   /**
-   * tap 精灵的裁剪半边距，取实际画到的最外圈：EX 时是 EX 环外径，否则是白描边外的黑边。
+   * 计算 Tap 精灵的实际墨迹裁剪半径（逻辑像素）。
+   * 取实际画到的最外圈：EX 时是 EX 环外径，否则是白描边外的黑边。
    * 与 drawTapNoteVector 的绘制顺序绑定；返回逻辑单位，调用方会对齐原精灵的奇偶像素中心。
    */
   private getTapSpriteCropHalf(isEx: boolean, highlightExScale: number): number {
@@ -577,13 +609,14 @@ export class NoteRenderer extends BaseRenderer {
   }
 
   /**
-   * 校验每张已烘焙 tap 精灵的裁剪矩形确实覆盖了全部非透明像素，返回违规描述（空数组=通过）。
+   * 校验每张已烘焙 Tap 精灵的裁剪矩形确实覆盖了全部非透明像素，返回违规描述列表（空数组表示全部通过）。
    *
-   * 裁剪半径是照着 drawTapNoteVector 的绘制顺序手工推导的，一旦有人给 tap 加了更外圈的笔画，
-   * 裁剪会静默把它切掉，而定点截图未必覆盖到那个组合。这个检查把"手工推导"和"实际墨迹"对上。
+   * 裁剪半径是照着 drawTapNoteVector 的绘制顺序手工推导的，一旦有人给 Tap 加了更外圈的笔画，
+   * 裁剪会静默将其切掉，而定点截图未必覆盖到该组合。本检查用于核对手工推导边界与实际墨迹。
    *
-   * 只给工具链用：会对每张已缓存精灵做一次 getImageData，不要放进渲染热路径。
-   * 只能校验当前已经烘焙过的精灵，因此调用前需要先渲染足够多的画面。
+   * 调用约束：
+   * - 仅供工具链与调试使用；内部包含 getImageData 读取像素开销，严禁在渲染热路径中调用。
+   * - 仅能校验当前缓存中已烘焙的精灵，调用前需确保已渲染相关音符画面。
    */
   validateTapSpriteCrops(): string[] {
     const violations: string[] = [];
@@ -628,6 +661,10 @@ export class NoteRenderer extends BaseRenderer {
     return violations;
   }
 
+  /**
+   * 获取或烘焙指定属性组合的 Tap 音符离屏精灵画布。
+   * 判定圈半径或镜像配置变更时，缓存自动失效。
+   */
   private getTapSprite(
     position: ButtonPosition,
     isBreak: boolean,
@@ -667,6 +704,7 @@ export class NoteRenderer extends BaseRenderer {
     return sprite;
   }
 
+  /** 矢量绘制单个 Tap 音符的所有图层（供离屏烘焙或动态着色回退使用）。 */
   private drawTapNoteVector(
     x: number,
     y: number,
@@ -733,6 +771,7 @@ export class NoteRenderer extends BaseRenderer {
     });
   }
 
+  /** 渲染 Break 音符的连击序号文本。 */
   renderBreakIndex(x: number, y: number, scale: number, index: number): void {
     const fontSize = Math.round(((30 * this.context.radius) / 300) * scale);
 

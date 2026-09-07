@@ -1,33 +1,35 @@
 import { ButtonPosition, SlidePathType } from "../types";
 
 /**
- * Slide 分区消失（chunky disappearance）的数据驱动表。
+ * 滑条分段消失（chunky disappearance）步进数据与几何形状判定工具。
  *
- * 每种 slide 形状路径上的箭头总数 + progress 分位上的累积消失到第几个 bar。
- *
- * 用法：
- *   1. `detectSlideShape(slideType, startPos, endPos)` → `{ shape, mirror }`
- *   2. `SLIDE_AREA_STEP_MAP[shape]` → `number[]`，N+1 个值（含起始 0 和终点）。
- *   3. 非 wifi 渲染：`hiddenCount = steps[floor(progress * (steps.length - 1))]`
- *   4. wifi 渲染（chunky 隐藏 inclusive）：`hiddenCount = steps[i] + 1`
+ * 核心调用流程：
+ * 1. `detectSlideShape(slideType, startPos, endPos, midPos?)` → `{ shape, mirror } | null`
+ * 2. 依据形状标识索引 `SLIDE_AREA_STEP_MAP[shape]`，按进度分位计算当前隐藏的箭头数。
  */
 
 const MIRROR_KEYS: readonly number[] = [-1, 1, 8, 7, 6, 5, 4, 3, 2];
 const UPPER_HALF: ReadonlySet<number> = new Set([1, 2, 7, 8]);
 
-/** 沿 button 1-5 对角轴的反射：1↔1, 2↔8, 3↔7, 4↔6, 5↔5。 */
+/**
+ * 获取按键沿 1-5 对角轴镜像对称后的对应按键编号（1↔1, 2↔8, 3↔7, 4↔6, 5↔5）。
+ * 若传入无映射关系的值则原样返回。
+ */
 export function mirrorKey(key: number): number {
   return MIRROR_KEYS[key] ?? key;
 }
 
-/** 起点在上半盘（button 1/2/7/8）。用于 `>` / `<` 方向消歧。 */
+/**
+ * 判断指定按键是否位于圆盘上半区域（按键 1、2、7、8）。
+ */
 export function isUpperHalf(key: number): boolean {
   return UPPER_HALF.has(key);
 }
 
 /**
- * 起点 → 终点的 CW 相对距离（1..8）。结果 1 表示原地（少数 slide 允许），
- * 2 表示 CW 一步，以此类推；7 表示 CW 七步 = CCW 一步。
+ * 计算起点到终点沿顺时针方向的相对步距（返回值范围 1..8）。
+ *
+ * 返回 1 表示起止点重合，2 表示顺时针相隔 1 步，8 表示顺时针相隔 7 步（即逆时针 1 步）。
  */
 export function relativeEnd(startPos: ButtonPosition, endPos: ButtonPosition): number {
   const d = (((endPos - startPos) % 8) + 8) % 8;
@@ -35,16 +37,23 @@ export function relativeEnd(startPos: ButtonPosition, endPos: ButtonPosition): n
 }
 
 export interface SlideShape {
-  /** SLIDE_AREA_STEP_MAP 的键。 */
+  /** 基础几何形状标识，对应 SLIDE_AREA_STEP_MAP 的键。 */
   shape: string;
-  /** 是否需要沿 button 1-5 对角轴反射（左右卷互换）。 */
+  /** 是否需要沿按键 1-5 对角轴进行镜像翻转。 */
   mirror: boolean;
 }
 
 /**
- * simai 字符 + 起止按钮 → 形状模板名 + 是否镜像；V 折返还需传入 midPos 拐点。
- * 返回 null 表示 slide 不合法（如 `1-2` 太近、`1v5` 穿心、`1^1` 同点，
- * 或 V 缺 midPos / midPos 不在 start±2 / 长度越界）。
+ * 根据滑条路径类型与起止按键位置，解析对应的标准几何形状标识及镜像状态。
+ * 折线滑条（`V`）必须传入拐点按键 `midPos`。
+ *
+ * 当几何参数不符合规范时返回 `null`：
+ * - 直线（`-`）：起止点相邻或重合（相对步距不在 3..7 范围内）；
+ * - 穿心 V 型（`v`）：起止点关于圆心正对（相对步距为 5）；
+ * - 短弧（`^`）：起止点重合或正对（无唯一短弧）；
+ * - S / Z 型（`s` / `z`）：起止点非圆心正对（相对步距不为 5）；
+ * - 折线（`V`）：缺少 `midPos`、拐点不在起点 ±2 键位、或折返相对步距不在 2..5 范围内；
+ * - 未知或未支持的路径类型。
  */
 export function detectSlideShape(
   slideType: SlidePathType,
@@ -56,16 +65,15 @@ export function detectSlideShape(
 
   switch (slideType) {
     case "-": {
-      // 必须至少隔一键：rel ∈ [3, 7]
       if (rel < 3 || rel > 7) return null;
-      // 归一化到短弧方向：line6→line4, line7→line3，bar 数和 area step 完全一致。
+      // 对称弦长两端的分区步进与箭头数相同，通过镜像复用跨度较小的模板（line6→line4, line7→line3）
       const normRel = rel > 5 ? 10 - rel : rel;
       const mirror = normRel !== rel;
       return { shape: `line${normRel}`, mirror };
     }
 
     case ">":
-      // 顺时针弧；起点在上半盘走原版，否则走镜像版本（保证视觉永远偏外侧）
+      // 圆弧基础模板以向上外凸为基准，下半区域起点需沿 1-5 轴镜像以保持外凸朝向
       return isUpperHalf(startPos)
         ? { shape: `circle${rel}`, mirror: false }
         : { shape: `circle${mirrorKey(rel)}`, mirror: true };
@@ -76,14 +84,13 @@ export function detectSlideShape(
         : { shape: `circle${mirrorKey(rel)}`, mirror: true };
 
     case "^":
-      // 取短边方向。rel<5 走 CW 短边 = circle 原版；rel>5 走 CCW 短边 = 镜像。
       if (rel === 1 || rel === 5) return null;
+      // 沿圆周走短弧路径：跨度超过半圆（rel > 5）时逆时针为短边，镜像复用顺时针圆弧模板
       return rel < 5
         ? { shape: `circle${rel}`, mirror: false }
         : { shape: `circle${mirrorKey(rel)}`, mirror: true };
 
     case "v":
-      // 穿心 V，不能终点 = 起点对称（rel = 5）
       if (rel === 5) return null;
       return { shape: `v${rel}`, mirror: false };
 
@@ -100,7 +107,6 @@ export function detectSlideShape(
       return { shape: `pq${mirrorKey(rel)}`, mirror: true };
 
     case "s":
-      // s 必须穿心
       if (rel !== 5) return null;
       return { shape: "s", mirror: false };
 
@@ -110,12 +116,13 @@ export function detectSlideShape(
 
     case "V": {
       if (midPos === undefined) return null;
-      const leftCorner = (((startPos + 5) % 8) + 1) as ButtonPosition; // start-2
-      const rightCorner = (((startPos + 1) % 8) + 1) as ButtonPosition; // start+2
+      // 拐点必须位于起点两侧相隔 2 键处（start ± 2）；右侧拐点通过镜像映射至 L 基础模板
+      const leftCorner = (((startPos + 5) % 8) + 1) as ButtonPosition;
+      const rightCorner = (((startPos + 1) % 8) + 1) as ButtonPosition;
       if (midPos === leftCorner && rel >= 2 && rel <= 5) {
         return { shape: `L${rel}`, mirror: false };
       }
-      const mirrorRel = ((8 - (rel - 1)) % 8) + 1; // 镜像侧相对距
+      const mirrorRel = ((8 - (rel - 1)) % 8) + 1;
       if (midPos === rightCorner && mirrorRel >= 2 && mirrorRel <= 5) {
         return { shape: `L${mirrorRel}`, mirror: true };
       }
@@ -131,15 +138,19 @@ export function detectSlideShape(
 }
 
 /**
- * 每个形状的 bar 累积索引序列 `[s0, s1, ..., sN]`：sN 是箭头总数，progress 区间
- * [i/N, (i+1)/N) 内已消失的箭头数 = s_i，跨区间时差 `s_{i+1} - s_i` 一次性消失
- * （chunk 大小非均匀，跟 slide 横穿的触摸 zone 挂钩）。
+ * 各几何形状对应的箭头分段消失累积索引表。
+ *
+ * 键为标准形状标识（来自 `detectSlideShape`），值为累积步进数组 `[s0, s1, ..., sN]`：
+ * - `s0` 为 0，末尾元素 `sN` 为该形状的总箭头数；
+ * - 进度在 `[i/N, (i+1)/N)` 区间内已消失的箭头数为 `s_i`，跨区间时一次性隐藏 `s_{i+1} - s_i` 个箭头；
+ * - 非 wifi 滑条：`hiddenCount = steps[Math.floor(progress * (steps.length - 1))]`；
+ * - wifi 滑条：步进点采用包含性判定（`hiddenCount = steps[i] + 1`）。
  */
 export const SLIDE_AREA_STEP_MAP: { readonly [shape: string]: readonly number[] } = {
   line3: [0, 2, 8, 13],
   line4: [0, 3, 8, 12, 18],
   line5: [0, 3, 6, 11, 15, 19],
-  // line6/line7 已归一化到 line4/line3
+  // line6 / line7 经镜像归一化复用 line4 / line3 步进序列
 
   circle1: [0, 3, 11, 19, 27, 35, 43, 50, 58, 63],
   circle2: [0, 3, 7],
@@ -158,7 +169,7 @@ export const SLIDE_AREA_STEP_MAP: { readonly [shape: string]: readonly number[] 
   v7: [0, 3, 6, 11, 15, 19],
   v8: [0, 3, 6, 11, 15, 19],
 
-  // ppqq = 长卷（pp / qq 共用，qq 在 detectSlideShape 处用 mirror=true 转出）
+  // pp 与 qq 互为镜像，共用 ppqq 基础模板步进（qq 标记 mirror: true）
   ppqq1: [0, 3, 7, 13, 17, 26, 32, 35],
   ppqq2: [0, 3, 7, 12, 16, 25, 28],
   ppqq3: [0, 3, 6, 12, 15, 22],
@@ -168,7 +179,7 @@ export const SLIDE_AREA_STEP_MAP: { readonly [shape: string]: readonly number[] 
   ppqq7: [0, 3, 7, 13, 17, 27, 31, 37, 41, 46],
   ppqq8: [0, 3, 7, 12, 16, 25, 29, 35, 41],
 
-  // pq = 短卷（p / q 共用，q 用 mirror=true）
+  // p 与 q 互为镜像，共用 pq 基础模板步进（q 标记 mirror: true）
   pq1: [0, 3, 8, 11, 14, 17, 21, 24, 27, 33],
   pq2: [0, 3, 8, 11, 14, 18, 21, 24, 30],
   pq3: [0, 3, 9, 12, 16, 19, 23, 27],
