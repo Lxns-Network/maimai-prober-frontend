@@ -28,6 +28,18 @@ export function getSlideAppearanceStartMs({
 }
 
 /**
+ * Ports the `num3 + 200f <= currentMsec` branch of SlideFan.UpdateAlpha (SDGB
+ * 1.55 SlideFan.cs:181), where num3 is the time remaining until note time.
+ * Comparing that remaining time against an absolute timestamp mixes units, but
+ * the quirk is the arcade's own: it holds from a few seconds into any chart
+ * onwards, which is what keeps visible Wi-Fi tracks at 0.5 instead of their
+ * default alpha. Do not normalize the units without re-checking the arcade.
+ */
+function isArcadeWifiHalfAlpha(noteTimeMs: number, currentTimeMs: number): boolean {
+  return noteTimeMs - currentTimeMs + 200 <= currentTimeMs;
+}
+
+/**
  * Returns track opacity in chart milliseconds, independently of star movement.
  * Short ordinary fades are clamped for Canvas, which ignores out-of-range alpha.
  * The arcade's JudgeAdjustMs makes ordinary tracks opaque 50 ms before note time;
@@ -50,7 +62,7 @@ export function getSlideTrackAppearance(
 
   if (isWifi && elapsed > 200) {
     return {
-      alpha: timing.noteTimeMs - currentTimeMs + 200 <= currentTimeMs ? 0.5 : WIFI_TRACK_ALPHA,
+      alpha: isArcadeWifiHalfAlpha(timing.noteTimeMs, currentTimeMs) ? 0.5 : WIFI_TRACK_ALPHA,
       isFading: false,
     };
   }
