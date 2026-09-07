@@ -8,13 +8,10 @@ interface PreviewScene {
   draw: () => void;
 }
 
-/** 预览固定 60fps 出帧；阈值留 1ms 容差，避免 60Hz 屏上 rAF 抖动导致掉帧。 */
-const FRAME_INTERVAL_MS = 1000 / 60 - 1;
+const MAX_PREVIEW_DPR = 3;
 
-/** chart_id=10363 MASTER 原谱 128–152 拍；片段数据保留了前后小节供入场与滑条渲染。 */
 const previewRange = { startBeat: 12, endBeat: 36 };
 
-/** 无音频的首页展示；不读取或修改完整谱面预览的播放状态。 */
 export default function ChartPreviewCanvas({ playing }: { playing: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<PreviewScene | null>(null);
@@ -39,7 +36,7 @@ export default function ChartPreviewCanvas({ playing }: { playing: boolean }) {
     const resize = () => {
       const width = canvas.getBoundingClientRect().width;
       renderer.resizeToSize(
-        Math.max(1, Math.round(width * Math.min(window.devicePixelRatio || 1, 2))),
+        Math.max(1, Math.round(width * Math.min(window.devicePixelRatio || 1, MAX_PREVIEW_DPR))),
       );
       draw();
     };
@@ -63,14 +60,10 @@ export default function ChartPreviewCanvas({ playing }: { playing: boolean }) {
 
     let frame = 0;
     let previousTime: number | null = null;
-    let lastDrawTime = 0;
     const animate = (time: number) => {
       if (previousTime !== null) elapsedRef.current += time - previousTime;
       previousTime = time;
-      if (time - lastDrawTime >= FRAME_INTERVAL_MS) {
-        scene.draw();
-        lastDrawTime = time;
-      }
+      scene.draw();
       frame = requestAnimationFrame(animate);
     };
     const updatePlayback = () => {

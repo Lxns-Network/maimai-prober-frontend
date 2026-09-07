@@ -17,7 +17,7 @@ import {
 import { useReducedMotion } from "@mantine/hooks";
 import { IconArrowsSort, IconDots, IconFilter, IconPlus } from "@tabler/icons-react";
 import clsx from "clsx";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { memo, type ReactNode, useEffect, useRef, useState } from "react";
 import { AnimatedGrid } from "@/components/AnimatedGrid";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter";
 import { ScoreCard } from "@/components/Scores/ScoreList";
@@ -28,7 +28,7 @@ import { MaimaiScoreModalContent } from "@/components/Scores/maimai/ScoreModal";
 import { countActiveFilters, scoreRatingRanges } from "@/hooks/useFilteredScores";
 import { type ScoreFilters, useScoreFilters } from "@/hooks/useScoreFilters";
 import type { MaimaiScoreProps } from "@/types/score";
-import { getDifficulty } from "@/utils/api/song/maimai";
+import { getDifficulty, type MaimaiDifficultyProps } from "@/utils/api/song/maimai";
 import classes from "./ScoreShowcase.module.css";
 import {
   showcaseDetailScore,
@@ -125,10 +125,21 @@ function TapLabel({
   );
 }
 
+const HistoryChart = memo(function HistoryChart() {
+  return <MaimaiScoreHistory scores={showcaseHistory} minAchievements={rankData.maimai.A} />;
+});
+
+const ChartDetails = memo(function ChartDetails({
+  difficulty,
+}: {
+  difficulty: MaimaiDifficultyProps;
+}) {
+  return <MaimaiChart difficulty={difficulty} />;
+});
+
 const DETAIL_CYCLE_MS = 12000;
 const MODAL_HEADER_HEIGHT = 60;
 
-/** 成绩详情弹窗的移动端全屏布局：先展示成绩信息，滚到手风琴后依次点开游玩历史记录与谱面详情。 */
 export function ScoreDetailScene() {
   const reducedMotion = useReducedMotion();
   const viewport = useRef<HTMLDivElement>(null);
@@ -155,7 +166,6 @@ export function ScoreDetailScene() {
       timers.add(id);
     };
 
-    // 场景整体被 CSS transform 缩放，getBoundingClientRect 是缩放后的值，换算回 scrollTop 用的逻辑像素
     const measure = (value: string) => {
       const box = viewport.current;
       const item = box?.querySelector<HTMLElement>(`[data-item="${value}"]`);
@@ -170,7 +180,6 @@ export function ScoreDetailScene() {
       };
     };
 
-    // 整项（标题 + 已展开的面板）已经完整可见时不滚动，避免多余的位移
     const ensureVisible = (value: string) => {
       const found = measure(value);
       if (!found) return;
@@ -195,7 +204,7 @@ export function ScoreDetailScene() {
       if (viewport.current && viewport.current.scrollTop > 0) {
         viewport.current.scrollTo({ top: 0, behavior: "smooth" });
       }
-      // 先点谱面详情：此时全部折叠、目标离顶部近；再点游玩历史记录时它位于谱面详情上方，同样在视野内
+      // 先点谱面详情，再点游玩历史记录时它位于谱面详情上方
       after(2400, () => tap("chart"));
       after(7000, () => tap("history"));
       after(DETAIL_CYCLE_MS, cycle);
@@ -246,7 +255,7 @@ export function ScoreDetailScene() {
               </ActionIcon>
             </Center>
             <Accordion.Panel>
-              <MaimaiScoreHistory scores={showcaseHistory} minAchievements={rankData.maimai.A} />
+              <HistoryChart />
             </Accordion.Panel>
           </Accordion.Item>
           {difficulty && (
@@ -257,7 +266,7 @@ export function ScoreDetailScene() {
                 </TapLabel>
               </Accordion.Control>
               <Accordion.Panel>
-                <MaimaiChart difficulty={difficulty} />
+                <ChartDetails difficulty={difficulty} />
               </Accordion.Panel>
             </Accordion.Item>
           )}
