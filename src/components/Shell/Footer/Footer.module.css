@@ -12,7 +12,8 @@
 }
 
 .footerInner {
-  max-width: calc(896px + var(--mantine-spacing-xl) * 2);
+  /* 默认与 Mantine md 容器等宽；页面可通过 Footer 的 maxWidth 覆盖，使页脚与正文对齐 */
+  max-width: var(--footer-max-width, calc(896px + var(--mantine-spacing-xl) * 2));
   margin: 0 auto;
   padding: var(--mantine-spacing-xl);
 

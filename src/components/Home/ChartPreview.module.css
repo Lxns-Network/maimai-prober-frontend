@@ -1,0 +1,46 @@
+.preview {
+  flex-shrink: 0;
+  width: 180px;
+  text-align: center;
+}
+
+.frame {
+  position: relative;
+  padding: 5px;
+  border: 1px solid light-dark(var(--mantine-color-violet-2), var(--mantine-color-dark-4));
+  border-radius: 50%;
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.stage {
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #000;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.playback {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+}
+
+@media (max-width: 36em) {
+  .preview {
+    width: 140px;
+  }
+}
+
+@media (max-width: 23em) {
+  .preview {
+    width: 120px;
+  }
+}

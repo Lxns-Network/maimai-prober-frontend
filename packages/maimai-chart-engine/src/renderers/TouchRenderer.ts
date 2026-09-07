@@ -15,20 +15,27 @@ import {
 } from "../utils/constants";
 
 const FIREWORK_DURATION_MS = 1333;
-// 星爆最大可见半径：baseRadius(radius/4.5) × scale 峰值 5.0，留 5% 边距。
+// 烟花最大可见半宽相对于判定圈半径的比例：baseRadius (radius / 4.5) × 缩放峰值 5.0，附加 5% 留白。
 const FIREWORK_EXTENT_RATIO = (5.0 / 4.5) * 1.05;
 const FIREWORK_SCALE_PEAK = 5.0;
-// scale 低于此值走矢量绘制（成本 ∝ 面积），达到后切精灵（缩小率 ≤2:1 无极端采样）。
+// 烟花由实时矢量绘制切换至离屏精灵渲染的缩放比例阈值。
 const FIREWORK_SPRITE_MIN_SCALE = 2.5;
 const FIREWORK_HOLE_START_SEC = 0.6;
 const FIREWORK_END_SEC = 1.1;
 
-// 烟花触发时刻
+/**
+ * 计算音符对应的烟花特效触发时刻（毫秒）。
+ *
+ * 普通 Touch 音符在判定时刻触发，Touch Hold 音符在持续时间结束后触发。
+ *
+ * @param note Touch 音符或 Touch Hold 起始音符对象。
+ * @returns 烟花特效开始播放的绝对时间戳（毫秒）。
+ */
 export function fireworkTriggerMs(note: TouchNote | TouchHoldStartNote): number {
   return note.type === "touch-hold-start" ? note.timingMs + note.durationMs : note.timingMs;
 }
 
-// 15 片 pastel wedge，颜色循环。
+// 烟花花瓣循环色板。
 const FIREWORK_PETAL_COLORS = [
   "#FFB3BA",
   "#FFD0A8",
@@ -47,16 +54,20 @@ const FIREWORK_PETAL_COLORS = [
   "#A8CCE8",
 ];
 
+/**
+ * Touch 音符与相关特效渲染器。
+ * 负责 Touch / Touch Hold 音符本体、花瓣收拢动画、Hold 环形进度、同位置多押外框及触控烟花特效的绘制与缓存管理。
+ */
 export class TouchRenderer extends BaseRenderer {
-  // 楔形星爆几何自相似：峰值尺寸下烘焙一张全分辨率无旋转精灵，成长期按比例缩放绘制即精确。
+  // 峰值尺寸下预烘焙的烟花无旋转离屏 Canvas 精灵。
   private fireworkWedgeSprite: HTMLCanvasElement | null = null;
-  // canvas 源 drawImage 可能每帧重传纹理；ImageBitmap 不可变、GPU 常驻，就绪后优先使用。
+  // 预烘焙生成的 ImageBitmap 位图缓存，就绪后优先使用。
   private fireworkWedgeBitmap: ImageBitmap | null = null;
   private fireworkSpriteBasis = "";
-  // 消散期在烟花大小的小画布上应用 destination-out 掩膜，避免擦除主画布其他内容。
+  // 烟花消散期用于应用 destination-out 擦除掩膜的中间离屏画布。
   private fireworkScratch: HTMLCanvasElement | null = null;
   private fireworkScratchCtx: CanvasRenderingContext2D | null = null;
-  // touch 花瓣精灵缓存，key = 层|变体|花瓣索引。
+  // Touch 花瓣离屏精灵缓存，键格式为 "图层|变体|花瓣索引"。
   private touchPetalSprites = new Map<string, HTMLCanvasElement>();
   private touchSpriteBasis = "";
 
@@ -64,11 +75,18 @@ export class TouchRenderer extends BaseRenderer {
     super(context);
   }
 
-  /** canvas backing store 相对逻辑坐标的缩放（含 DPR），精灵按它烘焙保持原生分辨率。 */
+  /** 获取 Canvas backing store 相对逻辑坐标的缩放比例（包含设备像素比 DPR）。 */
   private getBackingScale(): number {
     return this.context.canvas.width / (this.context.centerX * 2);
   }
 
+  /**
+   * 获取（或懒加载烘焙）当前基准尺寸下的全分辨率烟花楔形离屏 Canvas 精灵。
+   *
+   * 当判定圈半径或缩放基准变化时触发重新烘焙，并异步生成对应的 ImageBitmap 缓存。
+   *
+   * @returns 烘焙完成的离屏 Canvas 元素。
+   */
   private getWedgeSprite(): HTMLCanvasElement {
     const backingScale = this.getBackingScale();
     const basis = `${this.context.radius}|${backingScale}`;
@@ -85,10 +103,9 @@ export class TouchRenderer extends BaseRenderer {
     spriteCtx.setTransform(backingScale, 0, 0, backingScale, sizePx / 2, sizePx / 2);
 
     const outerR = (this.context.radius / 4.5) * FIREWORK_SCALE_PEAK;
-    // 消失改由掩膜处理，alpha 全程保持 plateau。
     spriteCtx.globalAlpha = 0.589;
 
-    // 三角形 wedge 从中心辐射，wedge 角宽 < 间隙；边缘 10% radial fade 避免硬切。
+    // 楔形自中心辐射分布，角宽略小于间隙；外边缘保留 10% 径向渐变淡出。
     const N = FIREWORK_PETAL_COLORS.length;
     const halfWidth = (Math.PI / N) * 0.45;
     const FADE_INNER = 0.9;
@@ -104,7 +121,7 @@ export class TouchRenderer extends BaseRenderer {
       const grad = spriteCtx.createRadialGradient(0, 0, 0, 0, 0, outerR);
       grad.addColorStop(0, color);
       grad.addColorStop(FADE_INNER, color);
-      grad.addColorStop(1, color + "00"); // 8-hex 形式给 alpha=0
+      grad.addColorStop(1, color + "00");
       spriteCtx.fillStyle = grad;
       spriteCtx.fill(path);
     }
@@ -113,7 +130,6 @@ export class TouchRenderer extends BaseRenderer {
     this.fireworkSpriteBasis = basis;
     this.fireworkWedgeBitmap?.close();
     this.fireworkWedgeBitmap = null;
-    // 位图不可用或创建失败时保持 null，getWedgeImage 回退 canvas 精灵。
     if (typeof createImageBitmap === "function") {
       createImageBitmap(sprite)
         .then((bitmap) => {
@@ -122,7 +138,7 @@ export class TouchRenderer extends BaseRenderer {
             return;
           }
           this.fireworkWedgeBitmap = bitmap;
-          // 位图纹理首次合成时才真正上传；在与真实渲染一致的圆形 clip 内以全尺寸+半尺寸各画一次消化掉。
+          // 在极低不透明度与圆形裁剪区域内试画以预热纹理，避免产生画面可见痕迹。
           const ctx = this.context.ctx;
           const size = this.context.radius * FIREWORK_EXTENT_RATIO * 2;
           ctx.save();
@@ -141,12 +157,29 @@ export class TouchRenderer extends BaseRenderer {
     return sprite;
   }
 
+  /**
+   * 获取烟花渲染用的图像源。
+   *
+   * 优先返回已就绪的 ImageBitmap 位图缓存，未就绪或不受支持时回退至离屏 Canvas 精灵。
+   *
+   * @returns 可用于 drawImage 的 Canvas 或 ImageBitmap 对象。
+   */
   private getWedgeImage(): HTMLCanvasElement | ImageBitmap {
     const sprite = this.getWedgeSprite();
     return this.fireworkWedgeBitmap ?? sprite;
   }
 
-  // 与 getWedgeSprite 同几何/配色的实时矢量版，供小 scale 成长期使用。
+  /**
+   * 使用矢量路径直接在目标上下文绘制烟花楔形。
+   *
+   * 用于小缩放比例阶段，几何形状与渐变配色与离屏精灵保持一致。
+   *
+   * @param ctx 目标 Canvas 渲染上下文。
+   * @param x 中心点 X 坐标。
+   * @param y 中心点 Y 坐标。
+   * @param scale 烟花当前的缩放倍率。
+   * @param rotation 旋转弧度角。
+   */
   private drawWedgesVector(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -178,14 +211,18 @@ export class TouchRenderer extends BaseRenderer {
       const grad = ctx.createRadialGradient(x, y, 0, x, y, outerR);
       grad.addColorStop(0, color);
       grad.addColorStop(FADE_INNER, color);
-      grad.addColorStop(1, color + "00"); // 8-hex 形式给 alpha=0
+      grad.addColorStop(1, color + "00");
       ctx.fillStyle = grad;
       ctx.fill();
     }
     ctx.restore();
   }
 
-  /** 预热精灵与 scratch：烘焙、光栅化并上传纹理，避免首个烟花触发帧掉帧。 */
+  /**
+   * 预热烟花渲染所需的离屏精灵、中间合成画布及绘制管线资源。
+   *
+   * 建议在首个烟花触发前调用以完成纹理预烘焙与管线初始化。
+   */
   warmFireworkResources(): void {
     const backingScale = this.getBackingScale();
     const basis = `${this.context.radius}|${backingScale}`;
@@ -195,7 +232,7 @@ export class TouchRenderer extends BaseRenderer {
     const sizePx = Math.max(2, Math.ceil(half * 2 * backingScale));
     const scratch = this.acquireFireworkScratch(sizePx);
     scratch.drawImage(sprite, 0, 0);
-    // scratch 侧同样预热消散期用的 destination-out 三停渐变管线。
+    // 预热消散期使用的 destination-out 径向渐变管线。
     scratch.globalCompositeOperation = "destination-out";
     const scratchGrad = scratch.createRadialGradient(0, 0, 0, 0, 0, 1);
     scratchGrad.addColorStop(0, "rgba(0,0,0,1)");
@@ -204,7 +241,7 @@ export class TouchRenderer extends BaseRenderer {
     scratch.fillStyle = scratchGrad;
     scratch.fillRect(0, 0, 2, 2);
     scratch.globalCompositeOperation = "source-over";
-    // 主画布在与真实渲染一致的圆形 clip 内逐一走真实绘制管线，亚像素缩放+低 alpha 不可见。
+    // 在极低不透明度与圆形裁剪区域内预执行真实绘制管线，避免产生画面可见痕迹。
     const ctx = this.context.ctx;
     ctx.save();
     ctx.beginPath();
@@ -222,6 +259,14 @@ export class TouchRenderer extends BaseRenderer {
     ctx.restore();
   }
 
+  /**
+   * 获取指定像素尺寸的烟花中间合成画布上下文。
+   *
+   * 若尺寸不匹配则重新创建画布；返回前会重置变换矩阵并清空画布内容。
+   *
+   * @param sizePx 所需的画布边长像素尺寸。
+   * @returns 处于默认变换且内容已清空的 2D 上下文。
+   */
   private acquireFireworkScratch(sizePx: number): CanvasRenderingContext2D {
     if (!this.fireworkScratch || this.fireworkScratch.width !== sizePx) {
       this.fireworkScratch = document.createElement("canvas");
@@ -235,7 +280,16 @@ export class TouchRenderer extends BaseRenderer {
     return ctx;
   }
 
-  // 中心两层闪光，'lighter' 加法混合让重叠中心更亮。
+  /**
+   * 绘制烟花中心的发光光晕（外圈光晕与内核高光）。
+   *
+   * 在独立的 Canvas 状态下使用 lighter 加法混合叠加渲染；当 growT < 0 时直接返回。
+   *
+   * @param ctx 目标 Canvas 渲染上下文。
+   * @param x 中心点 X 坐标。
+   * @param y 中心点 Y 坐标。
+   * @param growT 距烟花开始膨胀的时间（秒）。
+   */
   private drawFireworkBalls(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -247,7 +301,7 @@ export class TouchRenderer extends BaseRenderer {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
-    // ---- ColorBallBig（外圈光晕）：peak 0.7 留 headroom，避免与小球叠加后硬切。
+    // 外圈光晕：峰值不透明度 0.7，与内核叠加避免过曝硬切。
     const BIG_GROW = 0.06;
     const BIG_RISE = 0.04;
     const bigRMax = baseRadius * 1.3;
@@ -274,7 +328,7 @@ export class TouchRenderer extends BaseRenderer {
       ctx.fill();
     }
 
-    // ---- ColorBall（内核高光）：peak 0.6，与外圈叠加得到纯白中心 + 平滑 falloff。
+    // 内核高光：峰值不透明度 0.6，与外圈叠加呈现纯白中心与平滑边缘衰减。
     const SMALL_GROW = 0.04;
     const SMALL_RISE = 0.02;
     const smallRMax = baseRadius * 0.55;
@@ -304,7 +358,11 @@ export class TouchRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /** 花瓣精灵半宽（逻辑单位）：花瓣尺寸 + 描边 + 阴影余量。 */
+  /**
+   * 获取 Touch 花瓣精灵包围盒的逻辑半宽（包含花瓣本体尺寸、外层描边与阴影余量）。
+   *
+   * @returns 逻辑半宽尺寸。
+   */
   private getTouchSpriteHalf(): number {
     return (
       this.scaleByRadius(TOUCH_PETAL_CLOSED_RATIO) * 1.3 +
@@ -314,7 +372,14 @@ export class TouchRenderer extends BaseRenderer {
     );
   }
 
-  /** 花瓣按 (层|变体|花瓣索引) 烘焙，连续定位绘制；sb=阴影+黑宽边、f=填充、w=白描边。 */
+  /**
+   * 获取（或懒加载烘焙）指定图层与变体的单片 Touch 花瓣离屏 Canvas 精灵。
+   *
+   * @param layer 图层类型：`"sb"` 为阴影与黑色宽边，`"f"` 为色块填充，`"w"` 为白色轮廓。
+   * @param kind 变体类型：`"n"` 为普通 Touch，`"s"` 为双押，`"h"` 为 Touch Hold。
+   * @param i 花瓣索引（0 ~ 3），对应四个象限方位。
+   * @returns 烘焙完成的花瓣离屏 Canvas 元素。
+   */
   private getTouchPetalSprite(
     layer: "sb" | "f" | "w",
     kind: "n" | "s" | "h",
@@ -326,7 +391,7 @@ export class TouchRenderer extends BaseRenderer {
       this.touchPetalSprites.clear();
       this.touchSpriteBasis = basis;
     }
-    // sb/w 层与颜色无关，simultaneous 与 normal 共用几何。
+    // 阴影与白色轮廓层与音符颜色无关，双押与普通音符共用相同几何精灵。
     const geomKind = layer === "f" ? kind : kind === "h" ? "h" : "n";
     const key = `${layer}|${geomKind}|${i}`;
     let sprite = this.touchPetalSprites.get(key);
@@ -380,7 +445,7 @@ export class TouchRenderer extends BaseRenderer {
         sctx.shadowBlur = this.scaleByRadius(8 / 300);
         sctx.shadowOffsetX = this.scaleByRadius(2 / 300);
         sctx.shadowOffsetY = this.scaleByRadius(2 / 300);
-        sctx.fillStyle = "rgba(0, 0, 0, 0.01)"; // 透明填充，只为阴影
+        sctx.fillStyle = "rgba(0, 0, 0, 0.01)"; // 填充微小透明度以触发 Canvas 阴影渲染
         sctx.beginPath();
         this.drawRoundedTriangle(tipX, tipY, leftX, leftY, rightX, rightY, cornerRadius);
         sctx.fill();
@@ -452,6 +517,14 @@ export class TouchRenderer extends BaseRenderer {
     return sprite;
   }
 
+  /**
+   * 计算指定 Touch 传感器位置在画布上的二维绝对像素坐标。
+   *
+   * 内部自动处理水平镜像映射；中心区域 "C" 对应屏幕圆心。
+   *
+   * @param touchPosition 传感器区域标识（如 "C"、"A1"~"A8"、"B1"~"B8"、"D1"~"D8"、"E1"~"E8"）。
+   * @returns 该传感器位置在画布上的二维坐标。
+   */
   getTouchPosition(touchPosition: TouchPosition): Point2D {
     const mirroredPosition = this.mirrorTouchPosition(touchPosition);
     const region = mirroredPosition[0];
@@ -476,6 +549,17 @@ export class TouchRenderer extends BaseRenderer {
     };
   }
 
+  /**
+   * 渲染单个 Touch 或 Touch Hold 音符。
+   *
+   * 绘制内容包括登场收拢动画、Hold 环形进度指示器、花瓣轮廓与填充，以及中心圆点。
+   * 若音符当前处于登场视野前或判定结束后的可见窗口外，则直接略过绘制。
+   *
+   * @param note Touch 音符或 Touch Hold 起始音符数据。
+   * @param _currentBeat 当前节拍数。
+   * @param currentTimeMs 当前谱面播放时间戳（毫秒）。
+   * @param isSimultaneous 是否与其他音符双押。
+   */
   renderTouch(
     note: TouchNote | TouchHoldStartNote,
     _currentBeat: number,
@@ -497,7 +581,6 @@ export class TouchRenderer extends BaseRenderer {
       alpha = 1 - (timeDiff - approachTime * 0.95) / (approachTime * 0.05);
     }
 
-    // 淡出期：剩余 < 150ms 时花瓣线性淡出。
     let petalAlpha = 1;
     if (timeDiff > 0 && timeDiff < approachTime) {
       const remaining = approachTime - timeDiff;
@@ -506,7 +589,6 @@ export class TouchRenderer extends BaseRenderer {
       }
     }
 
-    // 花瓣距离：approach 中 openDist → closedDist（ease-quartic），命中后保持 closedDist。
     const openDist = this.scaleByRadius(TOUCH_PETAL_OPEN_RATIO) * 1.1;
     const closedDist = this.scaleByRadius(TOUCH_PETAL_CLOSED_RATIO) * 1.3;
     let petalDist = openDist;
@@ -591,7 +673,6 @@ export class TouchRenderer extends BaseRenderer {
     ctx.save();
     ctx.globalAlpha = alpha;
 
-    // Hold 进度指示器
     if (isHoldActive && "durationMs" in note && note.durationMs !== undefined) {
       const elapsed = -timeDiff;
       const progress = Math.min(elapsed / note.durationMs, 1);
@@ -677,12 +758,12 @@ export class TouchRenderer extends BaseRenderer {
 
     ctx.globalAlpha = combinedAlpha;
     if (ddrColor) {
-      // DDR 配色动态，走原矢量路径。
+      // 按节拍动态着色模式下走实时矢量绘制路径。
       ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
       ctx.shadowBlur = this.scaleByRadius(8 / 300);
       ctx.shadowOffsetX = this.scaleByRadius(2 / 300);
       ctx.shadowOffsetY = this.scaleByRadius(2 / 300);
-      ctx.fillStyle = "rgba(0, 0, 0, 0.01)"; // 透明填充，只为阴影
+      ctx.fillStyle = "rgba(0, 0, 0, 0.01)"; // 填充微小透明度以触发 Canvas 阴影渲染
 
       ctx.beginPath();
       for (let i = 0; i < 4; i++) {
@@ -704,8 +785,7 @@ export class TouchRenderer extends BaseRenderer {
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
 
-      // 外三角 + 内三角洞各做 wider black，逐花瓣 fill 覆盖内侧 halo 只剩外缘 + 空心。
-      // wider = strokeWidth*3 让可见黑边跟随画布缩放，避免小屏下显得过粗。
+      // 外三角与内孔各绘制加宽黑色轮廓，再以填充色覆盖内侧光晕，保留外边缘与镂空。
       ctx.beginPath();
       for (let i = 0; i < 4; i++) {
         const p = petals[i];
@@ -790,7 +870,7 @@ export class TouchRenderer extends BaseRenderer {
       }
       this.stroke(COLORS.WHITE, strokeWidth);
     } else {
-      // 精灵路径：阴影+黑边 → 填充 → 白边三层依次整组绘制，保持原图层顺序。
+      // 精灵分层绘制：依次绘制全部花瓣的阴影与黑边、填充、白边，保持图层叠加次序。
       const spriteKind = isHold ? "h" : isSimultaneous ? "s" : "n";
       const spriteHalf = this.getTouchSpriteHalf();
       for (const layer of ["sb", "f", "w"] as const) {
@@ -808,7 +888,6 @@ export class TouchRenderer extends BaseRenderer {
       }
     }
 
-    // 中心点：wider black → fill → white，fill 覆盖内侧 halo。
     ctx.globalAlpha = alpha;
     const centerSize = this.scaleByRadius(TOUCH_CENTER_DOT_RATIO) * 0.8;
     ctx.beginPath();
@@ -821,7 +900,15 @@ export class TouchRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /** 烟花单例：touches 须已按 hasFirework 过滤并按 fireworkTriggerMs 升序，二分取最近已触发者。 */
+  /**
+   * 渲染当前活跃的触控烟花特效（单例）。
+   *
+   * 调用约束：`touches` 列表必须已预先按 `hasFirework` 过滤，并严格按 `fireworkTriggerMs` 升序排列。
+   * 方法内部通过二分查找定位最近触发的一个有效烟花进行播放；若未触发或特效已播放完毕则不执行绘制。
+   *
+   * @param touches 具备烟花属性且按触发时刻升序排列的 Touch / Touch Hold 音符列表。
+   * @param currentTimeMs 当前谱面播放时间戳（毫秒）。
+   */
   renderTouchFireworks(
     touches: ReadonlyArray<TouchNote | TouchHoldStartNote>,
     currentTimeMs: number,
@@ -840,7 +927,7 @@ export class TouchRenderer extends BaseRenderer {
     const tSec = ageMs / 1000;
     if (tSec >= FIREWORK_END_SEC) return;
 
-    // scale: cubic ease-out 0→peak（t=0.1→0.5），之后维持到 mask 擦完。
+    // 缩放曲线：t=0.1~0.5 阶段三次缓出至峰值，随后维持至掩膜擦除完毕。
     let scale: number;
     if (tSec < 0.1) scale = 0;
     else if (tSec < 0.5) {
@@ -854,7 +941,7 @@ export class TouchRenderer extends BaseRenderer {
     const half = this.context.radius * FIREWORK_EXTENT_RATIO;
 
     if (tSec <= FIREWORK_HOLE_START_SEC) {
-      // 成长期无掩膜：小 scale 走矢量，达阈值切精灵。
+      // 成长期无掩膜：小缩放比例使用实时矢量绘制，达到阈值后切换为离屏精灵。
       if (scale > 0 && scale < FIREWORK_SPRITE_MIN_SCALE) {
         this.drawWedgesVector(ctx, position.x, position.y, scale, rotation);
       } else if (scale > 0) {
@@ -869,7 +956,7 @@ export class TouchRenderer extends BaseRenderer {
       return;
     }
 
-    // 消散期：scratch 上合成精灵+闪光，destination-out 擦洞后整体贴回主画布。
+    // 消散期：在中间画布上合成精灵与光晕，应用 destination-out 擦除掩膜后贴回主画布。
     const backingScale = this.getBackingScale();
     const sizePx = Math.max(2, Math.ceil(half * 2 * backingScale));
     const scratch = this.acquireFireworkScratch(sizePx);
@@ -883,7 +970,7 @@ export class TouchRenderer extends BaseRenderer {
     const outerR = (this.context.radius / 4.5) * scale;
     const holeSpan = FIREWORK_END_SEC - FIREWORK_HOLE_START_SEC;
     const linearU = Math.min(1, (tSec - FIREWORK_HOLE_START_SEC) / holeSpan);
-    // alpha 前 20% 快速升到 1 让实心 mask 早早可见；尺寸 smoothstep 起停柔和。
+    // 不透明度在前 20% 快速上升至 1 使掩膜尽早可见；半径采用 smoothstep 保持起停平滑。
     const u = linearU * linearU * (3 - 2 * linearU);
     const solidR = outerR * (0.05 + u * 0.95);
     const totalR = solidR + outerR * 0.5;
@@ -906,7 +993,15 @@ export class TouchRenderer extends BaseRenderer {
     ctx.drawImage(this.fireworkScratch!, position.x - half, position.y - half, half * 2, half * 2);
   }
 
-  /** 同位置多 touch 时围一圈带 gap 的圆角框。 */
+  /**
+   * 渲染同位置多押时的外层缺口圆角边框。
+   *
+   * 当同一位置可见 Touch 数量不少于 2 个时生效；3 个及以上时会额外绘制一层更大的外边框。
+   *
+   * @param position 边框中心点坐标。
+   * @param isSimultaneous 是否与其他按键双押（决定边框颜色为金色或青色）。
+   * @param visibleTouchCount 当前位置同时处于可见状态的 Touch 音符数量。
+   */
   renderTouchBorder(position: Point2D, isSimultaneous: boolean, visibleTouchCount: number): void {
     if (visibleTouchCount < 2) {
       return;
@@ -916,7 +1011,6 @@ export class TouchRenderer extends BaseRenderer {
     const cornerRadius = this.scaleByRadius(NOTE_SIZE_RATIO);
     const color = isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.TOUCH_CYAN;
 
-    // 绘制更大的边框用于 3+ 触摸
     if (visibleTouchCount >= 3) {
       const largerSize = boxSize * 1.2;
       this.drawTouchBorderBox(position.x, position.y, largerSize, cornerRadius, color, 3);
@@ -925,6 +1019,16 @@ export class TouchRenderer extends BaseRenderer {
     this.drawTouchBorderBox(position.x, position.y, boxSize, cornerRadius, color, 3);
   }
 
+  /**
+   * 绘制单层带缺口的圆角矩形外框。
+   *
+   * @param x 中心点 X 坐标。
+   * @param y 中心点 Y 坐标。
+   * @param size 外框边长。
+   * @param cornerRadius 矩形四角圆角半径。
+   * @param color 描边颜色。
+   * @param lineWidth 相对基准半径的描边线宽基数。
+   */
   private drawTouchBorderBox(
     x: number,
     y: number,
@@ -970,6 +1074,19 @@ export class TouchRenderer extends BaseRenderer {
     ctx.restore();
   }
 
+  /**
+   * 在当前 Canvas 路径中追加指定三个顶点与圆角半径的圆角三角形路径。
+   *
+   * 仅构建闭合路径，不执行 fill 或 stroke。当 cornerRadius <= 0 时退化为尖角三角形。
+   *
+   * @param x1 顶点 1 的 X 坐标。
+   * @param y1 顶点 1 的 Y 坐标。
+   * @param x2 顶点 2 的 X 坐标。
+   * @param y2 顶点 2 的 Y 坐标。
+   * @param x3 顶点 3 的 X 坐标。
+   * @param y3 顶点 3 的 Y 坐标。
+   * @param cornerRadius 圆角半径。
+   */
   private drawRoundedTriangle(
     x1: number,
     y1: number,

@@ -1,104 +1,86 @@
 .root {
-  position: relative;
-  padding-top: 40px;
-  padding-bottom: 100px;
+  --home-border: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  --home-muted: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-1));
 
-  @mixin smaller-than $mantine-breakpoint-xs {
-    padding-top: 16px;
-  }
-}
-
-.section {
-  @mixin smaller-than $mantine-breakpoint-xs {
-    padding: 0;
-  }
-}
-
-.logoWrapper {
-  position: relative;
   overflow: hidden;
+  padding-bottom: 64px;
+  background: radial-gradient(
+    ellipse at 90% 0%,
+    light-dark(
+      alpha(var(--mantine-primary-color-1), 0.55),
+      alpha(var(--mantine-primary-color-9), 0.12)
+    ),
+    transparent 34%
+  );
 
-  @mixin smaller-than $mantine-breakpoint-xs {
-    max-width: calc(100% + 32px);
-    margin-left: -16px;
-    margin-right: -16px;
+  :where(a, button):focus-visible {
+    outline: 3px solid var(--mantine-primary-color-filled);
+    outline-offset: 5px;
   }
 }
 
-.logo {
-  opacity: 0 !important;
-
-  @mixin smaller-than $mantine-breakpoint-xs {
-    position: relative;
-    width: calc(100% + 48px);
-    left: -24px;
-  }
+.container {
+  padding-inline: var(--mantine-spacing-xl);
 }
 
-.logoParallax {
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: var(--mantine-spacing-lg);
+  padding-block: 64px 60px;
+}
+
+.heroCopy {
   position: relative;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 700px;
-  width: 100%;
-
-  @mixin smaller-than $mantine-breakpoint-xs {
-    width: calc(100% + 48px);
-  }
+  z-index: 1;
 }
 
-.background {
-  opacity: light-dark(1, 0.5);
-  width: 100%;
-  height: 100%;
-  background-image: url("/logo_background.webp");
-  background-size: cover;
-}
+.maimai,
+.chunithm {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 
-.foreground {
-  position: absolute;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("/logo_foreground.webp");
-  background-size: cover;
-
-  /* 使用mask让后续内容只显示在图片轮廓 */
-  mask-image: url("/logo_foreground.webp");
-  mask-size: cover;
-  -webkit-mask-image: url("/logo_foreground.webp");
-  -webkit-mask-size: cover;
-
-  &:after {
+  &::before {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
     content: "";
-    position: absolute;
-    inset: 0;
-    background-color: light-dark(rgba(0, 0, 0, 0), alpha(var(--mantine-color-dark-4), 0.2));
-    pointer-events: none;
   }
+}
+
+.maimai::before {
+  background: var(--mantine-color-pink-4);
+}
+
+.chunithm::before {
+  background: var(--mantine-color-yellow-5);
+}
+
+.region {
+  padding-left: var(--mantine-spacing-xs);
+  border-left: 1px solid var(--home-border);
+  color: var(--home-muted);
+  font-weight: 400;
 }
 
 .title {
-  text-align: center;
+  font-size: clamp(32px, 3.2vw, 48px);
   font-weight: 800;
-  font-size: 40px;
-  letter-spacing: -1px;
-  margin-bottom: var(--mantine-spacing-xs);
+  line-height: 1.4;
+  letter-spacing: -0.035em;
 
-  @mixin smaller-than $mantine-breakpoint-xs {
-    font-size: 28px;
-    text-align: left;
+  span {
+    color: var(--mantine-primary-color-light-color);
   }
 }
 
 .description {
-  text-align: center;
-
-  @mixin smaller-than $mantine-breakpoint-xs {
-    text-align: left;
-    font-size: var(--mantine-font-size-md);
-  }
+  margin-top: var(--mantine-spacing-lg);
+  color: var(--home-muted);
+  font-size: var(--mantine-font-size-md);
+  line-height: 1.9;
 }
 
 .highlight {
@@ -122,31 +104,437 @@
 }
 
 .controls {
-  margin-top: var(--mantine-spacing-lg);
-  display: flex;
-  justify-content: center;
+  margin-top: var(--mantine-spacing-xl);
 
-  @mixin smaller-than $mantine-breakpoint-xs {
-    flex-direction: column;
-  }
-}
-
-.control {
-  &:not(:first-of-type) {
-    margin-left: var(--mantine-spacing-md);
-
-    @mixin smaller-than $mantine-breakpoint-xs {
-      margin-left: 0;
-      margin-top: var(--mantine-spacing-md);
-    }
-  }
-
-  @mixin smaller-than $mantine-breakpoint-xs {
-    height: 42px;
+  a {
+    height: 48px;
+    padding-inline: var(--mantine-spacing-lg);
     font-size: var(--mantine-font-size-md);
   }
 }
 
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--mantine-spacing-sm);
+}
+
+.shortcut {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-lg) var(--mantine-spacing-md);
+  border-color: var(--home-border);
+  border-radius: var(--mantine-radius-lg);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  color: var(--mantine-color-text);
+  text-decoration: none;
+
+  @mixin hover {
+    background-color: var(--mantine-color-default-hover);
+  }
+}
+
+.shortcutIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-primary-color-light);
+  color: var(--mantine-primary-color-light-color);
+}
+
+.shortcutCopy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.shortcutTitle {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 650;
+}
+
+.shortcutDescription {
+  color: var(--home-muted);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.shortcutArrow {
+  display: none;
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--home-muted);
+}
+
+.section {
+  margin-top: 72px;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-lg);
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.sectionTitle {
+  font-size: var(--mantine-h2-font-size);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.sectionDescription {
+  color: var(--home-muted);
+  font-size: var(--mantine-font-size-md);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--mantine-spacing-md);
+}
+
+.feature {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: hidden;
+  padding: var(--mantine-spacing-xl);
+  border-color: var(--home-border);
+  border-radius: var(--mantine-radius-lg);
+  color: var(--mantine-color-text);
+  text-decoration: none;
+}
+
+.featureLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mantine-primary-color-light-color);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+}
+
 .featureTitle {
-  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+  position: relative;
+  margin-top: var(--mantine-spacing-md);
+  font-size: var(--mantine-font-size-xl);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.featureDescription {
+  position: relative;
+  margin-top: var(--mantine-spacing-xs);
+  color: var(--home-muted);
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.8;
+}
+
+.featureLink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-top: var(--mantine-spacing-lg);
+  color: var(--mantine-primary-color-light-color);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+
+  @mixin hover {
+    color: var(--mantine-primary-color-filled);
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.scoreFeature {
+  grid-row: span 2;
+  background: linear-gradient(
+    155deg,
+    light-dark(
+      var(--mantine-primary-color-0),
+      color-mix(in srgb, var(--mantine-primary-color-9) 35%, var(--mantine-color-dark-7))
+    ),
+    light-dark(var(--mantine-color-white), var(--mantine-color-dark-7))
+  );
+
+  .featureTitle {
+    font-size: var(--mantine-h3-font-size);
+  }
+}
+
+.chartFeature {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--mantine-spacing-md);
+  background: light-dark(
+    #f8f7fe,
+    color-mix(in srgb, var(--mantine-color-violet-9) 20%, var(--mantine-color-dark-7))
+  );
+}
+
+/* 文案撑满卡片高度：标签贴上边，链接贴下边，谱面预览仍保持垂直居中 */
+.featureCopy {
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* 描述吸收剩余高度，把链接压到底部；高度不够时退回它自身的上外边距 */
+.featureCopy .featureDescription {
+  flex: 1;
+}
+
+.aliasFeature {
+  background: light-dark(
+    #fff9f5,
+    color-mix(in srgb, var(--mantine-color-orange-9) 18%, var(--mantine-color-dark-7))
+  );
+}
+
+.aliasDecoration {
+  position: absolute;
+  right: -10px;
+  bottom: -20px;
+  transform: rotate(-12deg);
+  color: light-dark(
+    alpha(var(--mantine-color-orange-3), 0.23),
+    alpha(var(--mantine-color-orange-4), 0.06)
+  );
+  font-size: 58px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.developer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--mantine-spacing-lg);
+  margin-top: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-xl);
+  border-color: var(--home-border);
+  border-radius: var(--mantine-radius-lg);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+
+  a {
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+}
+
+.developerIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--home-border);
+  border-radius: var(--mantine-radius-lg);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  color: var(--mantine-primary-color-light-color);
+}
+
+.developerCopy {
+  flex: 1;
+
+  p {
+    margin-top: 6px;
+    color: var(--home-muted);
+    font-size: var(--mantine-font-size-sm);
+    line-height: 1.8;
+  }
+}
+
+.developerTitle {
+  font-size: var(--mantine-font-size-lg);
+  font-weight: 650;
+}
+
+/*
+ * 侧边栏（300px）在 62em 起常驻，因此同一个内容宽度对应两段窗口宽度，断点按内容宽度换算：
+ * 内容宽度 = 窗口宽度 - 24px（无侧边栏）或 - 324px（有侧边栏）。
+ * 这一档是「内容宽度 < 1000px」，两段窗口区间恰好连通，可写成单个上界。
+ */
+@media (max-width: 82em) {
+  .shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shortcutArrow {
+    display: block;
+  }
+
+  .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--mantine-spacing-sm);
+  }
+
+  .chartFeature {
+    padding-right: var(--mantine-spacing-sm);
+  }
+}
+
+/* 「内容宽度 < 876px」：两段窗口区间之间隔着侧边栏出现前的 900–992px，无法合并成单个上界 */
+@media (max-width: 56.25em), (min-width: 62em) and (max-width: 75em) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding-block: 36px 24px;
+  }
+
+  .heroCopy {
+    max-width: 520px;
+  }
+
+  .title {
+    font-size: 40px;
+  }
+
+  .features {
+    grid-template-columns: 1fr;
+  }
+
+  .scoreFeature {
+    grid-row: auto;
+  }
+
+  .developer {
+    flex-wrap: wrap;
+  }
+
+  .developerCopy {
+    flex-basis: calc(100% - 80px);
+  }
+}
+
+@media (max-width: 36em) {
+  .root {
+    padding-bottom: 40px;
+  }
+
+  .container {
+    padding-inline: var(--mantine-spacing-lg);
+  }
+
+  .hero {
+    padding-top: 30px;
+  }
+
+  .title {
+    font-size: clamp(28px, 8vw, 36px);
+  }
+
+  .description {
+    margin-top: var(--mantine-spacing-md);
+    font-size: var(--mantine-font-size-sm);
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--mantine-spacing-xs);
+    margin-top: var(--mantine-spacing-lg);
+
+    a {
+      flex-grow: 1;
+      height: 42px;
+      padding-inline: var(--mantine-spacing-sm);
+      font-size: var(--mantine-font-size-sm);
+    }
+  }
+
+  .shortcuts {
+    gap: var(--mantine-spacing-xs);
+  }
+
+  .shortcut {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--mantine-spacing-sm);
+    padding: var(--mantine-spacing-md);
+  }
+
+  .shortcutIcon {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--mantine-radius-md);
+  }
+
+  .shortcutArrow {
+    display: none;
+  }
+
+  .section {
+    margin-top: 48px;
+  }
+
+  .sectionTitle {
+    font-size: var(--mantine-h3-font-size);
+  }
+
+  /* 与首屏正文同档，一起从 md 降到 sm */
+  .sectionDescription {
+    font-size: var(--mantine-font-size-sm);
+  }
+
+  .sectionHeading {
+    gap: 8px;
+    margin-bottom: var(--mantine-spacing-lg);
+  }
+
+  .feature {
+    padding: var(--mantine-spacing-lg);
+    border-radius: var(--mantine-radius-lg);
+  }
+
+  .featureTitle,
+  .scoreFeature .featureTitle {
+    font-size: var(--mantine-font-size-xl);
+  }
+
+  .chartFeature {
+    padding-right: var(--mantine-spacing-sm);
+  }
+
+  .developer {
+    gap: var(--mantine-spacing-md);
+    padding: var(--mantine-spacing-lg);
+
+    a {
+      width: 100%;
+    }
+  }
+
+  .developerIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--mantine-radius-md);
+  }
+
+  .developerCopy {
+    flex-basis: calc(100% - 60px);
+
+    p {
+      font-size: var(--mantine-font-size-sm);
+    }
+  }
+
+  .developerTitle {
+    font-size: var(--mantine-font-size-lg);
+  }
 }

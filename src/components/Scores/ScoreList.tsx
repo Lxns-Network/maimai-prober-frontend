@@ -13,14 +13,19 @@ import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import useScoreStore from "@/hooks/useScoreStore.ts";
+import { Game } from "@/types/game";
 
 interface ScoreProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
   onClick?: () => void;
 }
 
-const Score = ({ score, onClick }: ScoreProps) => {
-  const [game] = useFixedGame();
+interface ScoreCardProps extends ScoreProps {
+  game: Game;
+}
+
+/** 单张成绩卡片，游戏由调用方指定，供成绩列表与首页展示复用。 */
+export const ScoreCard = ({ game, score, onClick }: ScoreCardProps) => {
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
 
   const computedColorScheme = useComputedColorScheme("light");
@@ -65,6 +70,11 @@ const Score = ({ score, onClick }: ScoreProps) => {
       </BackgroundImage>
     </Card>
   );
+};
+
+const Score = ({ score, onClick }: ScoreProps) => {
+  const [game] = useFixedGame();
+  return <ScoreCard game={game} score={score} onClick={onClick} />;
 };
 
 interface ScoreListProps {

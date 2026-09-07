@@ -79,9 +79,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       }),
     [themeColor],
   );
-  const [opened, setOpened] = useState(
-    typeof window !== "undefined" ? window.innerWidth > NAVBAR_BREAKPOINT : false,
-  );
+  const [opened, setOpened] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
 
   useVersionChecker();
@@ -95,6 +93,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       setOpened(window.innerWidth > NAVBAR_BREAKPOINT);
     };
 
+    handleResize();
     window.addEventListener("resize", handleResize);
 
     return () => {

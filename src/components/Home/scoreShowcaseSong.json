@@ -1,0 +1,78 @@
+{
+  "id": 456,
+  "title": "Glorious Crown",
+  "artist": "xi",
+  "genre": "maimai",
+  "bpm": 225,
+  "version": 16014,
+  "difficulties": {
+    "standard": [
+      {
+        "type": "standard",
+        "difficulty": 0,
+        "level": "7",
+        "level_value": 7,
+        "note_designer": "-",
+        "version": 16014,
+        "notes": {
+          "total": 344,
+          "tap": 317,
+          "hold": 8,
+          "slide": 12,
+          "touch": 0,
+          "break": 7
+        }
+      },
+      {
+        "type": "standard",
+        "difficulty": 1,
+        "level": "10",
+        "level_value": 10.5,
+        "note_designer": "-",
+        "version": 16014,
+        "notes": {
+          "total": 617,
+          "tap": 572,
+          "hold": 14,
+          "slide": 19,
+          "touch": 0,
+          "break": 12
+        }
+      },
+      {
+        "type": "standard",
+        "difficulty": 2,
+        "level": "13",
+        "level_value": 13.2,
+        "note_designer": "ぴちネコ",
+        "version": 16014,
+        "notes": {
+          "total": 777,
+          "tap": 642,
+          "hold": 33,
+          "slide": 65,
+          "touch": 0,
+          "break": 37
+        }
+      },
+      {
+        "type": "standard",
+        "difficulty": 3,
+        "level": "14+",
+        "level_value": 14.8,
+        "note_designer": "チャン@DP皆伝 vs Jack",
+        "version": 16014,
+        "notes": {
+          "total": 1150,
+          "tap": 989,
+          "hold": 18,
+          "slide": 89,
+          "touch": 0,
+          "break": 54
+        }
+      }
+    ],
+    "dx": [],
+    "utage": []
+  }
+}

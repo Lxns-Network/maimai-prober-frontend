@@ -1,0 +1,65 @@
+.artwork {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1.12;
+}
+
+.characters {
+  position: relative;
+  width: 112%;
+  max-width: none;
+  aspect-ratio: 1200 / 735;
+  transform: rotate(-4deg);
+  filter: drop-shadow(0 16px 18px light-dark(rgba(64, 89, 118, 0.08), rgba(0, 0, 0, 0.12)));
+}
+
+.logoBackground,
+.logoForeground {
+  width: 100%;
+  height: auto;
+}
+
+.logoBackground {
+  opacity: light-dark(1, 0.5);
+  transform: translate(calc(-1 * var(--parallax-x, 0px)), calc(-1 * var(--parallax-y, 0px)));
+}
+
+.logoForeground {
+  position: absolute;
+  inset: 0;
+  /*
+   * index.css 的 img 暗色半透明会编译成 [data-mantine-color-scheme="dark"] img，权重高于纯 class，
+   * 所以这里也用 light-dark() 生成带同样前缀的规则把前景顶回不透明，否则背景层会透过人物。
+   */
+  opacity: light-dark(1, 1);
+  transform: translate(var(--parallax-x, 0px), var(--parallax-y, 0px));
+  filter: brightness(light-dark(1, 0.9));
+}
+
+/* 与 Home.module.css 同一档：内容宽度 < 876px */
+@media (max-width: 56.25em), (min-width: 62em) and (max-width: 75em) {
+  .artwork {
+    width: 80%;
+    max-width: 460px;
+    justify-self: center;
+    aspect-ratio: 1.6;
+    margin-block: var(--mantine-spacing-md) var(--mantine-spacing-lg);
+  }
+
+  .characters {
+    width: 100%;
+  }
+}
+
+@media (max-width: 36em) {
+  .artwork {
+    width: 100%;
+    max-width: none;
+    /* 与图片自身比例一致，避免上下留白 */
+    aspect-ratio: 1200 / 735;
+    margin-block: var(--mantine-spacing-lg) var(--mantine-spacing-xl);
+  }
+}

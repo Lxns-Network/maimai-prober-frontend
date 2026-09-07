@@ -1,4 +1,4 @@
-/** 与实机命中特效的 note 判定配色一致（预览固定按 Perfect）。 */
+/** Note 命中特效各判定等级对应的 RGB 颜色映射（通道取值范围 0~1）。 */
 export const HIT_EFFECT_COLORS = {
   white: { r: 1, g: 1, b: 1 },
   good: { r: 0.25, g: 1, b: 0.25 },
@@ -6,7 +6,7 @@ export const HIT_EFFECT_COLORS = {
   perfect: { r: 1, g: 1, b: 0 },
 } as const;
 
-/** touch 命中 Ring 贴图的径向 alpha 剖面（中心 → 外缘，来自原始 RGBA）。 */
+/** Touch 命中圆环（Ring）效果的径向 alpha 剖面（中心 → 外缘，取值范围 0~1）。 */
 export const TOUCH_RING_ALPHA_PROFILE = [
   0.666, 0.667, 0.671, 0.679, 0.685, 0.693, 0.7, 0.709, 0.718, 0.727, 0.736, 0.744, 0.753, 0.763,
   0.772, 0.781, 0.791, 0.8, 0.809, 0.818, 0.826, 0.835, 0.843, 0.851, 0.858, 0.866, 0.872, 0.879,

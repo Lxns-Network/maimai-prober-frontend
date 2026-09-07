@@ -15,7 +15,7 @@ export const Product = ({ title, tags, description, image, button, url }: Produc
     <Card className={classes.product} withBorder radius="md">
       <Stack align="flex-start" justify="space-between" style={{ flex: 1 }}>
         <div>
-          <Title order={2} mb={7}>
+          <Title order={3} className={classes.title} mb="sm">
             {title}
           </Title>
           <Group gap="xs" mb="md">
@@ -25,20 +25,20 @@ export const Product = ({ title, tags, description, image, button, url }: Produc
               </Badge>
             ))}
           </Group>
-          <Text size="sm" c="dimmed" lh={1.6}>
+          <Text className={classes.description} c="dimmed">
             {description}
           </Text>
         </div>
         <Button
-          className={classes.control}
+          className={classes.button}
           variant="default"
-          size="lg"
+          radius="md"
           onClick={() => window.open(url, "_blank")}
         >
           {button}
         </Button>
       </Stack>
-      <Avatar src={`./product/${image}.webp`} h="auto" w={96} radius="md" />
+      <Avatar src={`./product/${image}.webp`} size={96} radius="md" />
     </Card>
   );
 };

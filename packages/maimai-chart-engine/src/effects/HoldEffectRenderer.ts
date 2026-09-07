@@ -5,16 +5,16 @@ import { HOLD_ACTIVE_CYCLE_MS } from "../utils/constants";
 type Rgb = { r: number; g: number; b: number };
 
 /**
- * Hold 按压波纹的数值来自实机外部输出录像的逐帧测量，**不是**游戏内置的粒子配置参数：
- * 后者的生命周期、发射率、size/alpha 曲线和贴图剖面都与实机画面对不上
- * （按那套参数画出来是一坨几乎静止的实心光斑，实机是若干条细环持续外扩）。改回那套数值会重新引入该 bug。
+ * Hold 按压波纹的数值来自录像测量的逐帧拟合，**不是**内置粒子配置参数：
+ * 后者的生命周期、发射率、size/alpha 曲线和贴图剖面都与录像画面对不上
+ * （按那套参数画出来是一坨几乎静止的实心光斑，实际测量为若干条细环持续外扩）。改回那套数值会重新引入该问题。
  *
  * 实测（2.3s / 138 帧录像，23 颗波纹平均，σ ≤ 0.0024R，单位为判定圈半径 R）：
  * - 发射不是匀速：每个 HOLD_ACTIVE_CYCLE_MS 循环内连发 3 颗（间隔 4 帧），然后空 8 帧。
- *   同屏颗数因此在 1~3 之间起伏；匀速发射会稳定在 2~3 颗，看起来就没有实机的呼吸感。
+ *   同屏颗数因此在 1~3 之间起伏；匀速发射会稳定在 2~3 颗，看起来就没有呼吸感。
  * - 环峰 0.1355R 出生，线性外扩 0.735 R/s，11 帧后在 0.2583R 消失
  * - alpha 峰值 1（按 R 通道对 age 2~10 线性拟合，斜率 -0.101/帧、age 11 归零），最初一帧维持峰值；
- *   实机录像里出生帧看起来更暗是波纹被 note 本体挡住，不是淡入。
+ *   录像测量中出生帧看起来更暗是波纹被 note 本体挡住，不是淡入。
  *   本引擎按产品决定把特效层统一画在 note 之上，因此出生帧不做遮挡处理。
  * - 单颗是细环而非实心圆，且环宽**按半径等比缩放**（FWHM/峰半径在 0.173R 与 0.223R 处同为 0.165）
  */
@@ -29,7 +29,8 @@ const RIPPLE_INNER_SCALE = 0.8;
 const RIPPLE_OUTER_SCALE = 1.2;
 
 /**
- * 波纹的默认色。实测环并不是纯黄：把 546 个环上采样点按通道回归，
+ * 波纹默认边缘色及环峰白化比例。
+ * 实测环并不是纯黄：把 546 个环上采样点按通道回归，
  * 暗处（环缘）是 B/R 0.21 的饱和黄，亮处（环峰）升到 B/R 0.66 —— 环心是发白的。
  * 因此把传入色当作环缘色，环峰按 RIPPLE_CORE_WHITEN 往白里推。
  */
@@ -37,8 +38,8 @@ const RIPPLE_EDGE_COLOR: Rgb = { r: 1, g: 0.889, b: 0.213 };
 const RIPPLE_CORE_WHITEN = 0.58;
 
 /**
- * 单颗波纹的径向 alpha 剖面，横轴 0 = 环内缘、0.5 = 环峰、1 = 环外缘。
- * 由 14 段孤立单环的亮度剖面按各自峰半径归一化后平均得到，两侧对称。
+ * 单颗波纹的径向 alpha 剖面。
+ * 横轴 0 = 环内缘、0.5 = 环峰、1 = 环外缘；由 14 段孤立单环的亮度剖面按各自峰半径归一化后平均得到，两侧对称。
  */
 const RIPPLE_RING_PROFILE: readonly (readonly [number, number])[] = [
   [0, 0],
@@ -73,9 +74,11 @@ type Wave = {
 };
 
 /**
- * Hold 按住期间的波纹，按钮 hold 和 touch-hold 共用。
- * 结束时的命中特效不在这里——那是 NoteRenderer 的 tap 命中特效，由 MainRenderer 直接调。
- * 纯 Canvas，参数取自实机录像测量（见文件顶部说明）。
+ * Hold 按压波纹渲染器，供按钮 Hold 和 Touch-Hold 共用。
+ *
+ * 跨模块边界与职责：
+ * - 仅负责按压过程中的扩散波纹绘制；结束时的命中特效不在此处，由 NoteRenderer 的 tap 命中特效负责并由 MainRenderer 直接调用。
+ * - 纯 Canvas 绘制，波纹动画参数取自录像测量（见文件顶部说明）。
  */
 export class HoldEffectRenderer extends BaseRenderer {
   constructor(context: RenderContext) {
@@ -83,9 +86,12 @@ export class HoldEffectRenderer extends BaseRenderer {
   }
 
   /**
-   * 按钮 hold 持续按压特效。
-   * holdEndMap key 与 MainRenderer.getHoldEndKey 一致。
-   * startIndex/endIndex 用于传入按时间裁剪后的 hold 索引范围，endIndex 不包含在内。
+   * 渲染处于按压状态的按钮 Hold 持续特效。
+   *
+   * 调用契约与约束：
+   * - 仅在当前时间处于 Hold 的 `[timingMs, holdEnd.timingMs)` 区间内时绘制。
+   * - `holdEndMap` 的键需与 `MainRenderer.getHoldEndKey` 生成规则一致。
+   * - `[startIndex, endIndex)` 为按时间裁剪后的 hold 索引范围（左闭右开，`endIndex` 不包含在内）。
    */
   renderHoldPressEffects(
     holds: readonly HoldStartNote[],
@@ -117,8 +123,11 @@ export class HoldEffectRenderer extends BaseRenderer {
   }
 
   /**
-   * 任意判定点上的 hold 持续按压波纹（按钮 hold / touch-hold 共用）。
-   * 窗口为 [startMs, endMs)。
+   * 在指定坐标处绘制 Hold 持续按压波纹（供按钮 Hold 与 Touch-Hold 共用）。
+   *
+   * 调用契约与副作用：
+   * - 有效绘制窗口为 `[startMs, endMs)`，且要求画布有效半径大于 0。
+   * - 绘制副作用：使用 `"screen"` 混合模式绘制，内部自行通过 `save()` / `restore()` 恢复画布状态。
    */
   renderPressRippleAt(
     x: number,
@@ -141,7 +150,6 @@ export class HoldEffectRenderer extends BaseRenderer {
 
   /**
    * 按住期间的波纹群：按发射相位枚举当前存活的波纹并逐颗绘制。
-   * elapsedSec 是距按下的秒数。
    */
   private drawRipples(
     ctx: CanvasRenderingContext2D,
@@ -153,7 +161,7 @@ export class HoldEffectRenderer extends BaseRenderer {
     /**
      * 每个循环在 RIPPLE_EMIT_OFFSETS 上各发一颗。循环下标可以为负：hold 刚按下时
      * 上一轮发出的波纹仍在屏上，跳过负数会让按压开头缺一截。
-     * 相位锚在按下时刻——录像是从 hold 中途开始的，发射相对按下的绝对相位无法观测。
+     * 相位锚在按下时刻——录像测量是从 hold 中途开始的，发射相对按下的绝对相位无法观测。
      */
     const firstCycle = Math.floor((elapsedSec - RIPPLE_LIFETIME) / RIPPLE_CYCLE);
     const lastCycle = Math.floor(elapsedSec / RIPPLE_CYCLE);
@@ -177,7 +185,7 @@ export class HoldEffectRenderer extends BaseRenderer {
       }
     }
 
-    // 大圈先画
+    // 大圈先画：按降序绘制使内层较新的小波纹叠加在外层老波纹之上
     waves.sort((a, b) => b.peakRadius - a.peakRadius);
 
     for (let i = 0; i < waves.length; i++) {
@@ -187,8 +195,10 @@ export class HoldEffectRenderer extends BaseRenderer {
   }
 
   /**
-   * 单颗波纹：环内缘到外缘的窄径向渐变，环内保持透明。
-   * 环带按峰半径等比缩放（实测 FWHM/峰半径恒为 0.165），不是固定宽度。
+   * 绘制单颗波纹环。
+   *
+   * 径向渐变由内缘向外缘分布，环内保持透明。
+   * 环带按峰半径等比缩放（实测 FWHM/峰半径恒为 0.165，非固定宽度）。
    */
   private drawRippleRing(
     ctx: CanvasRenderingContext2D,
@@ -203,8 +213,8 @@ export class HoldEffectRenderer extends BaseRenderer {
     if (outer - inner < 0.5 || alpha <= ALPHA_EPS) return;
 
     const texture = ctx.createRadialGradient(x, y, inner, x, y, outer);
-    // 发白程度跟的是实际亮度而不只是剖面值：老波纹整体变暗后应该重新变回饱和黄，
-    // 只按剖面值算会让它在环峰处始终发白。
+    // 发白程度跟随实际亮度而不只是剖面值：老波纹整体变暗后应重新变回边缘色（饱和黄），
+    // 仅按剖面值计算会导致其在环峰处始终发白。
     const brightness = alpha / RIPPLE_PEAK_ALPHA;
     for (const [stop, value] of RIPPLE_RING_PROFILE) {
       const whiten = RIPPLE_CORE_WHITEN * value * brightness * brightness;

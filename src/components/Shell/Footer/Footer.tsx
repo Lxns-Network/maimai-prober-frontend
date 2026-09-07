@@ -1,10 +1,22 @@
 import { Divider, Flex, Group, Text } from "@mantine/core";
+import type { CSSProperties } from "react";
 import classes from "./Footer.module.css";
 
-export const Footer = () => {
+interface FooterProps {
+  /** 页脚内容的最大宽度，需与所在页面的容器宽度一致；缺省时与 Mantine md 容器等宽。 */
+  maxWidth?: number;
+}
+
+export const Footer = ({ maxWidth }: FooterProps) => {
   return (
     <div className={classes.footer}>
-      <Flex className={classes.footerInner} align="center" gap="xs" justify="space-between">
+      <Flex
+        className={classes.footerInner}
+        style={maxWidth ? ({ "--footer-max-width": `${maxWidth}px` } as CSSProperties) : undefined}
+        align="center"
+        gap="xs"
+        justify="space-between"
+      >
         <Text fw="bold" fz="lg">
           maimai DX 查分器
         </Text>
