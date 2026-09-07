@@ -12,11 +12,13 @@ description: 用于在本仓库编写、审查（review）或重构代码注释�
 ## 一、核心准则与判定标准
 
 ### 1. 净信息量三原则
+
 1. **黑盒契约优先**：外部 JSDoc 服务于调用方，必须补足函数签名无法表达的信息（`@throws` 抛错条件、状态/Canvas 副作用、前置时空假设、跨模块所有权边界）。
 2. **内部实现克制**：函数内部实现优先通过命名与结构自解释；仅保留关键工程上下文（实测拟合、平台 Hack、帧预算）与不可消除复杂算法的「Why」。
 3. **零容忍噪声**：杜绝语法复述、机械直译类型、构造函数模板套话。
 
 ### 2. 判定决策流程
+
 ```
 [待检查注释]
       │
@@ -49,7 +51,9 @@ description: 用于在本仓库编写、审查（review）或重构代码注释�
 ```
 
 ### 3. 关键区分：常量的实测依据 vs 改动理由与性能战报
+
 这是审查与清理中最容易混淆的边界，必须用以下判据收紧：
+
 - **常量的实测取值依据【必须保留】**：说明当前代码中的数值或行为**为何是这个值**（例如：`0.735 R/s` 来自 138 帧录像拟合，`σ ≤ 0.0024R`；Chromium 高斯模糊实际扩散边界为 `2.43×N` 而非理论 `1.5×N`）。
   - **唯一黄金判据**：“**删掉之后，这个数字还能不能被复核和安全修改？**”——若后续维护者失去该依据将无法复核数值来源或不敢修改，必须保留。
 - **改动理由 / 性能战报【必须删除】**：讲述某次修改带来的好处、历史背景或优化心得（例如：“改成 X 后快了 30%”、“之前是 Y”、“这是推荐的优化做法”、“用局部变量缓存以避免每次查找属性”）。
@@ -60,6 +64,7 @@ description: 用于在本仓库编写、审查（review）或重构代码注释�
 ## 二、分层执行清单
 
 ### 1. 第一层：必须保留或补充 (Mandatory)
+
 编码了类型签名与代码实现无法表达的隐式契约或关键工程上下文：
 
 - **抛错条件 (`@throws`)**：函数在何种参数组合、边界条件或外部状态异常时抛错。必须用 `@throws {ErrorType} 触发条件` 清晰列出。
@@ -74,12 +79,15 @@ description: 用于在本仓库编写、审查（review）或重构代码注释�
 - **领域语法记号与魔法枚举语义 (Domain Tokens)**：文本解析中特定分隔符、首字符判定或枚举数值代表的业务规则。
 
 ### 2. 第二层：视情况保留 (Situational)
+
 函数体内部针对局部具体实现的注释：
+
 - **复杂算法与循环不变量**：二分查找的区间边界维护（如 `[lo, hi)` 左闭右开、偏右中点防死循环）、Canvas 路径镂空非零环绕规则。
 - **非显然的状态转移**：状态机在边界条件下的特殊容错跳转。
 - **执行准则**：**重构优先**（能通过提炼变量名/函数名自解释的，绝不写注释）；无法自解释时**仅写 Why**，绝不写 What。
 
 ### 3. 第三层：必须删除 (Strictly Prohibited)
+
 - **语法复述型注释**：直接复述随后的代码语句（如 `// 遍历 notes`、`// 检查 note 是否存在`、`// 返回计算结果`）。
 - **机械直译参数的 JSDoc**：仅把类型和名字直译为中文（如 `@param x X坐标`、`@param color 颜色`、`@returns 返回布尔值`）。若参数自明且无隐式边界约束，不写 `@param`。
 - **构造函数模板化套话**：`/** 创建 X 类的实例。 @param config 配置选项 */`。构造函数除非有易忽略的外部副作用，否则不写 JSDoc。
@@ -93,7 +101,9 @@ description: 用于在本仓库编写、审查（review）或重构代码注释�
 ### 1. 正面范例 (Good Patterns)
 
 #### 案例 1：完备黑盒契约与副作用说明
+
 文件：`packages/maimai-chart-engine/src/effects/TouchHitEffectRenderer.ts`
+
 ```typescript
 /**
  * 渲染当前时间窗口内的 Touch 命中特效。
@@ -107,10 +117,13 @@ description: 用于在本仓库编写、审查（review）或重构代码注释�
  */
 export function renderTouchHitEffects(...)
 ```
+
 > **解析**：说明了排序前置约束（类型无法表达）、黑盒过滤行为（无需调用方预滤）、时间窗口去重及 Canvas 状态自恢复副作用。
 
 #### 案例 2：显式调用禁忌与保守估计依据
+
 文件：`packages/maimai-chart-engine/src/core/audio/audioClock.ts`
+
 ```typescript
 /**
  * 返回当前估算已到达物理输出端（即听众正在听到）的 AudioContext 时刻（秒）。
@@ -124,10 +137,13 @@ export function getAudioContextOutputTime(audioContext: AudioContext): number {
   const outputTime = timestampTime === null ? latencyAdjustedTime : Math.min(timestampTime, latencyAdjustedTime);
 }
 ```
+
 > **解析**：划定调用红线（已扣延迟处于过去，禁用于未来调度）；行内注释精准聚焦 Why（为何取较小值）。
 
 #### 案例 3：显式声明隐蔽时空偏移与 `@throws`
+
 文件：`packages/maimai-chart-engine/src/core/parser/Ma2Parser.ts`
+
 ```typescript
 /**
  * 解析文本谱面并转换为统一的 Chart 结构。
@@ -137,8 +153,9 @@ export function getAudioContextOutputTime(audioContext: AudioContext): number {
  *
  * @throws {Error} 当谱面文本中缺少 RESOLUTION 或 BPM_DEF 声明时抛出异常
  */
-export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Chart
+export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Chart;
 ```
+
 > **解析**：揭示全局时间轴向后平移 1 小节的隐蔽副作用；明确标注异常触发条件。
 
 ---
@@ -146,7 +163,9 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
 ### 2. 退化案例审计 (Anti-Degradations)
 
 #### 案例 4 [退化]：抹杀移动端浏览器缺陷与兼容 Hack
+
 文件：`packages/maimai-chart-engine/src/renderers/MainRenderer.ts`
+
 - ❌ **错误改动**：概括为「采用不透明填充以确保导出图像背景不透明」或直接删除。
 - ✅ **正确保留**：
   ```typescript
@@ -154,20 +173,24 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
   // clearRect 依赖 alpha:false，移动端 Safari 不可靠，会导致导出图透明。
   this.ctx.fillRect(0, 0, s, s);
   ```
-> **解析**：删除 Safari 缺陷说明后，维护者极易误判为“改用 `clearRect` 性能更好”而重构，重新引发移动端导出图透明缺陷。
+  > **解析**：删除 Safari 缺陷说明后，维护者极易误判为“改用 `clearRect` 性能更好”而重构，重新引发移动端导出图透明缺陷。
 
 #### 案例 5 [退化]：误删暂存物理单位冲突的防坑警告
+
 文件：`packages/maimai-chart-engine/src/core/parser/Ma2Parser.ts`
+
 - ❌ **错误改动**：视作代码复述直接删除。
 - ✅ **正确保留**：
   ```typescript
   parentSlide.delayMs = delay; // 阶段暂存：此时单位为节拍数（beat），后续统一步骤才换算为毫秒
   parentSlide.allDelayMs.push(delay);
   ```
-> **解析**：字段名以 `Ms` 结尾但当前阶段实际存的是拍数。删除注释会导致阅读者被变量名严重误导。
+  > **解析**：字段名以 `Ms` 结尾但当前阶段实际存的是拍数。删除注释会导致阅读者被变量名严重误导。
 
 #### 案例 6 [退化]：抹杀 144Hz 硬件帧预算与性能推导数据
+
 文件：`packages/maimai-chart-engine/src/renderers/MainRenderer.ts`
+
 - ❌ **错误改动**：将行内推导整段全删，使 `MAX_DPR = 2` 沦为无法理解的魔法常数。
 - ✅ **正确保留**：
   ```typescript
@@ -178,7 +201,9 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
   ```
 
 #### 案例 7 [退化]：将实测扩散参数降级为抽象套话
+
 文件：`packages/maimai-chart-engine/src/renderers/NoteRenderer.ts`
+
 - ❌ **错误改动**：缩写为「高斯模糊实际扩散半径与模糊参数的比值，防止边缘外层光晕被截断」。
 - ✅ **正确保留**：
   ```typescript
@@ -189,10 +214,12 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
    */
   const SPRITE_BLUR_TAIL_RATIO = 2.5;
   ```
-> **解析**：记录了与理论值（1.5×）的实测偏离及逐像素对照后果，防止被后续维护误当成理论值而改小。
+  > **解析**：记录了与理论值（1.5×）的实测偏离及逐像素对照后果，防止被后续维护误当成理论值而改小。
 
 #### 案例 8 [退化]：将实测拟合依据与呼吸感机理抹平
+
 文件：`packages/maimai-chart-engine/src/effects/HoldEffectRenderer.ts`
+
 - ❌ **错误改动**：抹平成「每个周期内按偏移发射 3 颗后留空，扩散由出生半径线性外扩」。
 - ✅ **正确保留**：
   ```typescript
@@ -207,10 +234,12 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
   const RIPPLE_BIRTH_RADIUS_RATIO = 0.1355;
   const RIPPLE_GROWTH_RATIO_PER_SEC = 0.735;
   ```
-> **解析**：常量的取值依据（样本量、标准差、斜率）与被否决的替代实现（匀速发射无呼吸感）必须保留。删掉后常量失去复核基础。
+  > **解析**：常量的取值依据（样本量、标准差、斜率）与被否决的替代实现（匀速发射无呼吸感）必须保留。删掉后常量失去复核基础。
 
 #### 案例 9 [退化]：抹杀架构原语地位与跨模块所有权指针
+
 文件：`packages/maimai-chart-engine/src/core/timing/TimingTimeline.ts` 与 `packages/maimai-chart-engine/src/core/audio/AudioManager.ts`
+
 - ❌ **错误改动**：删去 `O(log n)` 复杂度契约及禁止自行开码的禁令；将指向 `usePreviewAudio` 的所有权模糊化为泛指的“外部时钟”。
 - ✅ **正确保留**：
   - `TimingTimeline`：注明其为 beat 与 ms 互转的**权威原语**，构造时积分 BPM，之后为 `O(log n)` 二分查询，应用层与渲染热路径必须复用、严禁各自开码扫描。
@@ -221,7 +250,9 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
 ### 3. 无信息量反例 (Anti-Patterns)
 
 #### 案例 10 [反例]：构造函数模板化套话
+
 文件：`packages/maimai-chart-engine/src/core/audio/AudioManager.ts`
+
 - ❌ **错误代码**：
   ```typescript
   /**
@@ -233,7 +264,9 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
 - ✅ **正确做法**：直接删除整段 JSDoc。无易忽略外部副作用的构造函数无需注释。
 
 #### 案例 11 [反例]：私有简单单行函数过度文档化
+
 文件：`packages/maimai-chart-engine/src/core/audio/audioClock.ts`
+
 - ❌ **错误代码**：
   ```typescript
   /** 校验延迟数值是否合法。仅在数值为大于 0 的有限数时返回原值，否则返回 null。 */
@@ -254,11 +287,11 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
    - **核心规则**：**注释中的领域名词必须与代码标识符使用同一套词**，不做中英互译。标识符是 `hold-start` / `HoldStartNote` / `touch-hold-start`，注释就写 `Hold` / `Touch Hold`，绝不要写成「长按」「触摸长按」。
    - **判据**：**读者能否把注释里的名词直接对上代码里的标识符？** 若需要脑内二次翻译，就是错的。
    - **同源退化剖析**：规范此前仅规定「保留/删除哪些信息」，未约束「用什么词」，导致整理中出现系统性术语漂移。这与「将实测参数降级为抽象套话」（案例 7）同属一类退化：形式上看似统一为纯中文更“整齐”，实则切断了注释与代码标识符的直连映射，人为增加读者的脑内翻译成本。
-     - *典型退化反例*：`types/index.ts` 原本有 8 处用英文 `Hold` 指音符类型（如 `/** 是否为 Hold 开始 */`、`/** 是否为绝赞 Hold */`），整理后沦为 0 处 `Hold`、22 处「长按」，与代码中的 `hold-start` / `HoldStartNote` 割裂；`HoldRenderer.ts` 甚至在同一句中自相矛盾：「负责长按音符（含普通 Hold 与 EX Hold）…」。
+     - _典型退化反例_：`types/index.ts` 原本有 8 处用英文 `Hold` 指音符类型（如 `/** 是否为 Hold 开始 */`、`/** 是否为绝赞 Hold */`），整理后沦为 0 处 `Hold`、22 处「长按」，与代码中的 `hold-start` / `HoldStartNote` 割裂；`HoldRenderer.ts` 甚至在同一句中自相矛盾：「负责长按音符（含普通 Hold 与 EX Hold）…」。
    - **禁止单方面改动既有术语**：术语属于全仓库一致性问题，不属于「优化注释」的授权范围。确有必要统一时应当作为独立任务全仓覆盖推进，严禁在逐文件清理注释时顺手改动。
    - **例外情形**：
-     1. *物理操作动作*：真正描述交互操作（如“按住”屏幕）而非音符类型名时，用中文自然表述；
-     2. *既有中文惯例*：若本仓库注释一贯使用某个中文术语，沿用既有惯例，不要单方面改成英文。判断依据是 `git show HEAD:<file>` 里的原有写法。
+     1. _物理操作动作_：真正描述交互操作（如“按住”屏幕）而非音符类型名时，用中文自然表述；
+     2. _既有中文惯例_：若本仓库注释一贯使用某个中文术语，沿用既有惯例，不要单方面改成英文。判断依据是 `git show HEAD:<file>` 里的原有写法。
    - **核查误报陷阱**：用关键词计数排查术语漂移时警惕分词误报。例如「以拍数为单位的时**长按**指定 BPM 换算」中是「时长」+「按」，并非音符类型「长按」，替换前必须结合上下文人工甄别。
 
 ---
@@ -266,7 +299,9 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
 ## 五、验证手段与审查清单
 
 ### 1. 真实可用的仓库验证命令
+
 本仓库未配置单元测试运行器（无 `test` / `jest` / `vitest` 脚本），验证基于 `package.json` 中真实存在的命令：
+
 ```bash
 # 静态类型检查与生产构建（验证未误损语法、括号、JSDoc 类型引用）
 yarn build
@@ -280,7 +315,9 @@ yarn format
 ```
 
 ### 2. 验证“仅改注释、代码逻辑零变更”的自动化手段
+
 在终端执行以下 Node.js 脚本，比对工作区与 `HEAD` 剥离注释与空白后的纯代码：
+
 ```bash
 node -e "
 const fs = require('fs');
@@ -310,9 +347,11 @@ for (const f of files) {
 if (failed) process.exit(1);
 "
 ```
+
 退出码为 `0` 证明没有改动任何可执行语句、变量名、操作符或控制流。
 
 ### 3. 人工审查（Review）核对清单
+
 - [ ] **防误删（关键工程上下文）**：实测拟合依据（录像采样/标准差/通道回归）、硬件帧预算（144Hz 6.9ms/MAX_DPR）、平台兼容 Hack（Safari 导出透明）、暂存单位脱节警告（`delayMs` 存拍数）、缓存失效依赖元组。
 - [ ] **查收紧（区分依据与战报）**：常量的实测取值依据保留；改动历史、重构战报（快了 X%、优化建议）坚决删除。判据：删掉后该数字是否仍能被安全复核与修改？
 - [ ] **查补充（外部黑盒契约）**：公有 API 的 `@throws` 条件、Canvas 混合模式/时钟平移副作用、前置排序约束（升序）、跨模块所有权指针。
