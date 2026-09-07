@@ -16,8 +16,10 @@ import {
 } from "../utils/constants";
 
 /**
- * 按住期间本体的亮度倍率，相位与波纹发射共用 HOLD_ACTIVE_CYCLE_MS 这一个时钟。
- * elapsedMs 是距按下的时间，可为负（note 还在接近），此时返回 1。
+ * 计算 Hold 按住期间本体的亮度倍率。动画相位以 HOLD_ACTIVE_CYCLE_MS 为周期循环。
+ *
+ * @param elapsedMs 距音符被按下的时间（毫秒）。小于 0 时表示音符尚未被按下，返回 1。
+ * @returns 亮度缩放倍率。
  */
 function activeBodyBrightness(elapsedMs: number): number {
   if (elapsedMs < 0) return 1;
@@ -33,11 +35,33 @@ function activeBodyBrightness(elapsedMs: number): number {
   );
 }
 
+/**
+ * Hold 音符渲染器。
+ * 负责 Hold 音符（含普通 Hold 与 EX Hold）的本体多边形、内外描边、按压发光及明暗呼吸效果的绘制。
+ */
 export class HoldRenderer extends BaseRenderer {
   constructor(context: RenderContext) {
     super(context);
   }
 
+  /**
+   * 渲染单个 Hold 音符（包含本体多边形、内外轮廓描边、EX 边框以及按压状态下的头部发光与明暗呼吸效果）。
+   *
+   * 绘制在独立的 Canvas 状态上下文中执行。当结束端尚未进入视野（`endPosition.visible` 为 false）时，
+   * 会以音符登场起点作为临时尾端渲染。
+   *
+   * @param startPosition 起始音符渲染位置与缩放。
+   * @param endPosition 结束音符渲染位置与缩放。
+   * @param buttonPosition 音符所在的按键方位。
+   * @param color 渲染用的渐变颜色对 [主色/亮色, 暗色]。
+   * @param isEx 是否为 EX 音符（绘制专属外层边框）。
+   * @param startNote 起始音符数据，传入 null 时跳过登场展开与按压状态判定。
+   * @param endNote 结束音符数据，传入 null 时跳过按压状态判定与终点圆点渲染。
+   * @param currentTimeMs 当前谱面播放时间戳（毫秒）。
+   * @param isBreakHold 是否为 Break 属性音符。
+   * @param isSimultaneous 是否与其他音符双押。
+   * @param exScaleFactor EX 外边框的缩放系数。
+   */
   renderHold(
     startPosition: NoteRenderPosition,
     endPosition: NoteRenderPosition,
@@ -64,14 +88,13 @@ export class HoldRenderer extends BaseRenderer {
       endX = endPosition.x;
       endY = endPosition.y;
     } else {
-      // 终点不可见时退回到 approach 起始距离上，画一截"未展开"的 hold。
+      // 终点尚未进入视野时，以音符登场起点作为临时尾端，呈现音符刚从屏幕中心延伸出的状态。
       const dir = startNote ? this.getNoteApproachDir(startNote) : 1;
       const approachDist = (1 + dir * -0.75) * this.context.radius;
       endX = this.context.centerX + Math.cos(angle) * approachDist;
       endY = this.context.centerY + Math.sin(angle) * approachDist;
     }
 
-    // 六边形顶点角度（前/左/右 + 背面三角）。
     const tipAngle = angle;
     const leftAngle = angle + Math.PI / 3;
     const rightAngle = angle - Math.PI / 3;
@@ -92,7 +115,7 @@ export class HoldRenderer extends BaseRenderer {
       y: startY + Math.sin(rightAngle) * holdWidth,
     };
 
-    // 终点宽度在 approach 后半段从 0 拉伸到 baseSize，营造"展开"动画。
+    // 登场前半程尾端宽度从 0 展开至基准尺寸，后半程保持全宽。
     let endScale = 1;
     if (startNote && endNote && currentTimeMs) {
       const approachHalf = this.getNoteApproachTimeMs(startNote) / 2;
@@ -157,7 +180,6 @@ export class HoldRenderer extends BaseRenderer {
           exColor = COLORS.EX_OVERLAY_NORMAL;
         }
 
-        // EX 套：外六向外扩 exScale，再用原六挖空 = 一圈边框。
         const exStartTip = this.scalePoint(startX, startY, startTip, exScale);
         const exStartLeft = this.scalePoint(startX, startY, startLeft, exScale);
         const exStartRight = this.scalePoint(startX, startY, startRight, exScale);
@@ -174,7 +196,7 @@ export class HoldRenderer extends BaseRenderer {
         ctx.lineTo(exStartRight.x, exStartRight.y);
         ctx.closePath();
 
-        // 内挖反向缠绕。
+        // 内圈使用反向缠绕路径，利用 Canvas 非零环绕规则挖空内部形成镂空边框。
         ctx.moveTo(startTip.x, startTip.y);
         ctx.lineTo(startRight.x, startRight.y);
         ctx.lineTo(endBackRight.x, endBackRight.y);
@@ -193,7 +215,6 @@ export class HoldRenderer extends BaseRenderer {
         currentTimeMs >= startNote.timingMs &&
         currentTimeMs < endNote.timingMs;
 
-      // 按住时整条本体随 HOLD_ACTIVE_CYCLE_MS 一起明暗呼吸（实测 ±10%，沿长度均匀）。
       const brightness = isPressed ? activeBodyBrightness(currentTimeMs - startNote!.timingMs) : 1;
       const tint = (hex: string) =>
         brightness === 1 ? hex : this.scaleHexBrightness(hex, brightness);
@@ -201,10 +222,8 @@ export class HoldRenderer extends BaseRenderer {
 
       const strokeWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
 
-      // 外六 + 内六各做一圈 wider black，环 fill 覆盖内侧 halo 只剩外缘黑边。
-      // EX 占用外圈，跳过外六的黑边但保留内六。wider = strokeWidth*3 让可见黑边
-      // ≈ strokeWidth，跟随画布缩放避免小屏下显得过粗。
-
+      // 先绘制加宽的黑色描边底，后续的分段色块填充会覆盖其内侧半幅，使最终显露的外边缘黑边宽度接近基准描边。
+      // EX 音符外沿已有外框，因此跳过外轮廓黑底，仅保留内轮廓。
       if (!isEx) {
         ctx.beginPath();
         ctx.moveTo(startTip.x, startTip.y);
@@ -283,7 +302,7 @@ export class HoldRenderer extends BaseRenderer {
         ctx.fill();
       }
 
-      // 终点 dot 只在终点进入 approach 后半段才显示（与终点展开节奏一致）。
+      // 待尾端在登场过程中完全展开后，才绘制终点中心圆点。
       if (endPosition.visible && endNote && currentTimeMs) {
         const approachHalf = this.getNoteApproachTimeMs(endNote) / 2;
         const endTimeDiff = endNote.timingMs - currentTimeMs;
@@ -291,7 +310,6 @@ export class HoldRenderer extends BaseRenderer {
           const endCenterSize = endWidth * 0.15;
           ctx.beginPath();
           ctx.arc(endX, endY, endCenterSize, 0, Math.PI * 2);
-          // 终点 dot 与本体一起呼吸（实测是整条 note 一起明暗）。
           ctx.fillStyle = tint(color[0]);
           ctx.fill();
         }
@@ -300,10 +318,14 @@ export class HoldRenderer extends BaseRenderer {
   }
 
   /**
-   * 按压中的 hold 头部辉光：暖色热芯 → 饱和红 → 暗红拖尾，径向淡出。
-   * 只在头部停在判定线上（[start, end) 窗口内）时画，接近中的头仍是平面圆点。
-   * 色阶按实机 break hold 的测量结果逐通道反解；普通 hold 未取到录像，沿用同一倍率、换本体色。
-   * 辉光本身不随 HOLD_ACTIVE_CYCLE_MS 闪烁（实测振幅 0.8/均值 134），只有本体会。
+   * 绘制 Hold 处于按压状态时头部的径向渐变辉光效果。
+   *
+   * 辉光由中心向外按预设色阶阶梯径向淡出。当计算出的辉光外径小于 1 像素时不执行绘制。
+   * 辉光亮度保持恒定，不随本体明暗周期呼吸。
+   *
+   * @param x 辉光中心的 X 坐标。
+   * @param y 辉光中心的 Y 坐标。
+   * @param noteColor 音符基础颜色，用于生成渐变各色阶。
    */
   private drawActiveHeadGlow(x: number, y: number, noteColor: string): void {
     const outer = this.scaleByRadius(HOLD_ACTIVE_GLOW_RATIO);
@@ -325,6 +347,15 @@ export class HoldRenderer extends BaseRenderer {
     ctx.fill();
   }
 
+  /**
+   * 以指定中心点为基准，对二维点坐标进行缩放。
+   *
+   * @param centerX 缩放中心 X 坐标。
+   * @param centerY 缩放中心 Y 坐标。
+   * @param point 待缩放的目标点。
+   * @param scale 缩放倍率。
+   * @returns 缩放后的新坐标点。
+   */
   private scalePoint(centerX: number, centerY: number, point: Point2D, scale: number): Point2D {
     return {
       x: centerX + (point.x - centerX) * scale,

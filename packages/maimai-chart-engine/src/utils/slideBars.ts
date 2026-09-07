@@ -1,13 +1,21 @@
-// AUTO-GENERATED slide bar position data（坐标含义见 SvgSlideBar；bars 按 path 起点 → 终点排列）。
-
+/**
+ * 滑条引导箭头在单位圆坐标系下的位姿数据。
+ */
 export interface SvgSlideBar {
-  /** unit-disc x (button radius = 1, center at 0) */
+  /** 单位圆 X 坐标（圆心为 0，按键判定线半径为 1）。 */
   readonly x: number;
+  /** 单位圆 Y 坐标（圆心为 0，按键判定线半径为 1，Canvas Y 轴向下）。 */
   readonly y: number;
-  /** rotation in radians, canvas y-down convention */
+  /** 引导箭头旋转角（弧度制，Canvas Y 轴向下坐标系）。 */
   readonly r: number;
 }
 
+/**
+ * 各滑条几何形状对应的标准引导箭头点位序列字典。
+ *
+ * 键为几何形状标识（对应 `SlideShape.shape`），值为按滑条路径起点至终点顺序排列的引导点位列表。
+ * 所有点位均以按键 1 为基准起始位置定义，渲染时需结合实际起始键位旋转及镜像状态进行变换。
+ */
 export const SLIDE_BARS: { readonly [shape: string]: readonly SvgSlideBar[] } = {
   L2: [
     { x: 0.292, y: -0.8865, r: 2.74889 },

@@ -61,33 +61,44 @@ function isMultiDigitNote(noteStr: string): boolean {
   return true;
 }
 
+/**
+ * 探测谱面文本中包含的可用难度。
+ *
+ * 检测 `&inote_1=` 至 `&inote_6=` 标签；若均未提供但非元数据行中包含音符按键字符（'1'-'8'），则按单难度谱面回退并标记难度 4 可用。
+ * 不抛出异常；若无可用谱面内容则返回空对象。
+ */
 export function getAvailableDifficulties(simaiText: string): AvailableDifficulties {
   const available: AvailableDifficulties = {};
   const lowerSimaiText = simaiText.toLowerCase();
 
-  // 检查 &inote_X
   for (let i = 0; i < INOTE_MARKERS.length; i++) {
     if (lowerSimaiText.includes(INOTE_MARKERS[i])) {
       available[(i + 1) as ChartDifficulty] = true;
     }
   }
 
-  // 如果没有找到 inote 段，假设它是单难度谱面
   if (Object.keys(available).length === 0) {
-    // 检查是否有谱面内容（不只是元数据）
     const hasChartContent = hasChartDigit(
       splitLines(simaiText)
         .filter((line) => !line.trimStart().startsWith("&"))
         .join(""),
     );
     if (hasChartContent) {
-      available[4] = true; // 默认 MASTER
+      available[4] = true;
     }
   }
 
   return available;
 }
 
+/**
+ * 解析 Simai 格式谱面文本并生成谱面数据对象。
+ *
+ * @param simaiText - 包含元数据与谱面内容的文本。必须为非空字符串且包含 `&` 元数据行。
+ * @param difficulty - 目标难度。未指定时默认使用可用难度中的最高难度；无 inote 标记时回退使用难度 4。
+ * @returns 解析后的谱面对象。谱面开头会自动附加 1 小节（4 拍）前奏偏移。
+ * @throws {Error} 输入为空、缺少 `&` 元数据、目标难度不存在、缺少 BPM 声明或语法解析失败时抛出。
+ */
 export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty): Chart {
   if (!simaiText || typeof simaiText !== "string") {
     throw new Error("Invalid input: expected a non-empty string");
@@ -95,7 +106,6 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
 
   const lines = splitLines(simaiText);
 
-  // Simai 格式必须包含 & 元数据标记
   if (!lines.some((line) => line.startsWith("&"))) {
     throw new Error("Invalid simai format: expected & metadata lines (e.g. &title=, &inote_4=)");
   }
@@ -111,7 +121,6 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
     inotes: {},
   };
 
-  // 第一遍：收集所有元数据和 inote 段
   let currentInote: number | null = null;
   let currentInoteContent: string[] = [];
 
@@ -120,10 +129,8 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
       const line = lines[i];
       const trimmedLine = line.trim();
 
-      // 检查 &inote_X= 开始
       const inoteMatch = trimmedLine.match(/^&inote_(\d)=(.*)$/i);
       if (inoteMatch) {
-        // 保存上一个 inote 如果存在
         if (currentInote !== null) {
           metadata.inotes[currentInote] = currentInoteContent.join("\n");
           metadata.availableDifficulties[currentInote as ChartDifficulty] = true;
@@ -134,61 +141,49 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
         continue;
       }
 
-      // 如果我们在 inote 段
       if (currentInote !== null) {
-        // 检查这行是否开始一个新的元数据段
         if (trimmedLine.startsWith("&") && !trimmedLine.startsWith("&inote")) {
-          // 保存当前 inote 并退出 inote 模式
           metadata.inotes[currentInote] = currentInoteContent.join("\n");
           metadata.availableDifficulties[currentInote as ChartDifficulty] = true;
           currentInote = null;
           currentInoteContent = [];
 
-          // 解析这行元数据
           parseMetadataLine(trimmedLine, metadata);
         } else if (!trimmedLine.startsWith("&")) {
-          // 添加到当前 inote 内容
           currentInoteContent.push(line);
         }
         continue;
       }
 
-      // 解析常规元数据行
       if (trimmedLine.startsWith("&")) {
         parseMetadataLine(trimmedLine, metadata);
       }
     }
 
-    // 保存最后一个 inote 如果存在
     if (currentInote !== null) {
       metadata.inotes[currentInote] = currentInoteContent.join("\n");
       metadata.availableDifficulties[currentInote as ChartDifficulty] = true;
     }
 
-    // 确定要解析的难度
     let selectedDifficulty = difficulty;
     const availableDiffs = Object.keys(metadata.inotes)
       .map(Number)
       .sort((a, b) => b - a);
 
     if (!selectedDifficulty && availableDiffs.length > 0) {
-      // 默认最高可用难度
       selectedDifficulty = availableDiffs[0] as ChartDifficulty;
     }
 
-    // 从 inote 或使用整个文本（用于单难度谱面）
     let chartBody = "";
 
     if (selectedDifficulty && metadata.inotes[selectedDifficulty]) {
       chartBody = metadata.inotes[selectedDifficulty];
     } else if (availableDiffs.length === 0) {
-      // 没有 inote 段 - 将整个文件视为谱面内容（旧格式）
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (line === "" || line.startsWith("&")) continue;
         chartBody += line;
       }
-      // 标记为可用（旧格式默认 MASTER）
       metadata.availableDifficulties[4] = true;
       selectedDifficulty = 4;
     } else {
@@ -197,17 +192,14 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
       );
     }
 
-    // 获取选定难度的谱师
     const designerKey = `des_${selectedDifficulty}` as keyof ChartDesigners;
     const selectedDesigner = metadata.designers[designerKey] || metadata.designer;
 
-    // &bpm 元数据缺失时回退到谱面第一个内联 BPM 声明。
     if (Number.isNaN(metadata.bpm)) {
       const inlineBpm = chartBody.match(/\((\d+(?:\.\d+)?)\)/);
       if (inlineBpm) metadata.bpm = parseFloat(inlineBpm[1]);
     }
 
-    // 解析谱面内容中的 Note
     const parseResult = parseNotes(chartBody, metadata.bpm);
     const notes = parseResult.notes;
     const bpmEvents = parseResult.bpmEvents;
@@ -218,7 +210,6 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
       throw new Error("Simai 文件缺少 BPM 声明（无 &bpm 元数据，谱面中也没有内联 BPM）");
     }
 
-    // 根据 Note 节拍计算总小节数
     let maxMeasure = 0;
     let maxTiming = 0;
 
@@ -229,12 +220,11 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
 
       let endTiming = note.timing;
 
-      // 考虑 Hold 持续时间
       if ("isHoldStart" in note && note.isHoldStart && "duration" in note) {
         endTiming = note.timing + note.duration;
       }
 
-      // 用实际 ms 的 delay+duration（含 ## 显式延迟）换算成拍，覆盖滑条真实结束时间。
+      // 滑条可能包含基于毫秒定义的延迟与持续时间（## 语法），需按最晚结束时间换算拍数以防小节截断
       if (note.type === "slide") {
         const slideNote = note as SlideNote;
         const delays = slideNote.allDelayMs ?? [slideNote.delayMs ?? 0];
@@ -246,7 +236,6 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
         endTiming = note.timing + (maxEndMs * slideNote.bpm) / 60000;
       }
 
-      // 考虑触摸 Hold 持续时间
       if (note.type === "touch-hold-start") {
         const touchHold = note as TouchHoldStartNote;
         if (touchHold.duration !== undefined) {
@@ -259,11 +248,9 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
       }
     }
 
-    // 确保我们有足够的小节容纳所有 Note
     const measuresFromTiming = Math.ceil(maxTiming / 4);
     maxMeasure = Math.max(maxMeasure, measuresFromTiming);
 
-    // 在开始时添加 1 小节偏移（用于前奏时间）
     const leadInMs = (60000 * 4) / parseResult.firstBpm;
 
     for (const note of notes) {
@@ -279,21 +266,15 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
     for (const event of bpmEvents) {
       event.timing += 4;
     }
-    // 在开始时添加初始 BPM（用于前奏时间）
-    // 使用 firstBpm（谱面中第一个 BPM）作为前奏期间的 BPM，与 leadInMs 计算保持一致
     bpmEvents.unshift({ timing: 0, bpm: parseResult.firstBpm });
 
-    // 调整拍子变化事件节拍
     for (const event of divisorEvents) {
       event.timing += 4;
     }
-    // 在开始时添加默认拍子（用于前奏时间）
     divisorEvents.unshift({ timing: 0, divisor: 4 });
-    // 排序以确保正确的顺序用于查找
     divisorEvents.sort((a, b) => a.timing - b.timing);
 
     return {
-      // 使用 firstBpm 作为基准 BPM，与前奏和 bpmEvents 保持一致
       bpm: parseResult.firstBpm,
       title: metadata.title,
       artist: metadata.artist,
@@ -302,7 +283,7 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
       designers: metadata.designers,
       difficulty: selectedDifficulty,
       availableDifficulties: metadata.availableDifficulties,
-      measures: maxMeasure + 2, // +2 for lead-in and tail（前奏和尾奏）
+      measures: maxMeasure + 2, // 预留前奏与尾奏各 1 小节缓冲
       notes,
       bpmEvents,
       divisorEvents,
@@ -314,8 +295,10 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
   }
 }
 
+/**
+ * 解析单行元数据（`&key=value`），就地更新传入的 metadata 对象。
+ */
 function parseMetadataLine(line: string, metadata: ChartMetadata): void {
-  // 通过找到第一个 = 处理多行值
   const eqIndex = line.indexOf("=");
   if (eqIndex === -1) return;
 
@@ -365,6 +348,11 @@ function parseMetadataLine(line: string, metadata: ChartMetadata): void {
   }
 }
 
+/**
+ * 遍历谱面字符流，解析所有音符及 BPM、拍数（Divisor）变化事件。
+ *
+ * 时间推进完全由逗号 `,` 驱动；状态标记（BPM、拍数、流速）就地生效并不消耗拍数。
+ */
 function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   const notes: Note[] = [];
   const bpmEvents: BpmEvent[] = [];
@@ -372,10 +360,10 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
 
   let currentBpm = initialBpm;
   let firstBpm: number | null = null;
-  let divisor = 4; // 拍子数
-  let currentBeat = 0; // 当前节拍
-  let currentMs = 0; // 当前时间（毫秒）
-  let currentHiSpeed = 1; // 视觉流速倍率，<HS*x> 起持续生效
+  let divisor = 4;
+  let currentBeat = 0;
+  let currentMs = 0;
+  let currentHiSpeed = 1;
 
   let pos = 0;
 
@@ -386,17 +374,14 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   };
 
   while (pos < chartBody.length) {
-    // 跳过空白字符
     skipWhitespace();
     if (pos >= chartBody.length) break;
 
-    // 收集整个槽位直到逗号；(bpm)/{divisor}/<HS*x> 状态标记就地消费，仅逗号推进时间。
     let noteContent = "";
     const startPos = pos;
 
     while (pos < chartBody.length && chartBody[pos] !== ",") {
       const char = chartBody[pos];
-      // 跳过空白字符（空格、换行、制表符、回车符）
       if (isWhitespace(char)) {
         pos++;
         continue;
@@ -423,7 +408,6 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
           continue;
         }
       }
-      // Hi-Speed 标记 <HS*x>：就地消费，不进入 note 内容
       if (char === "<") {
         const hsMatch = chartBody.slice(pos).match(/^<HS\*([-+]?\d*\.?\d+)>/i);
         if (hsMatch) {
@@ -436,21 +420,17 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
       pos++;
     }
 
-    // 如果没前进并遇到特殊字符，跳过
     if (pos === startPos && pos < chartBody.length && chartBody[pos] !== ",") {
       pos++;
       continue;
     }
 
-    // 计算节拍增量
     const beatIncrement = 4 / divisor;
 
-    // 解析节拍内的 Note
     if (noteContent.trim() !== "") {
       const measure = Math.floor(currentBeat / 4);
       const positionInMeasure = Math.floor(((currentBeat % 4) / 4) * 512);
 
-      // 按同时按下 Note 分隔符（反引号或斜杠）分割
       const noteGroups: string[] = [];
       let currentGroup = "";
 
@@ -475,12 +455,10 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
 
       const isSimultaneous = noteGroups.length > 1;
 
-      // 解析每个 Note 组
       for (const group of noteGroups) {
         let noteStr = group.trim();
         if (noteStr === "") continue;
 
-        // 检查延迟标记
         let hasDelayMarker = false;
         if (noteStr.startsWith("`")) {
           hasDelayMarker = true;
@@ -505,11 +483,9 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
       }
     }
 
-    // 前进节拍
     currentBeat += beatIncrement;
     currentMs += (60000 * beatIncrement) / currentBpm;
 
-    // 跳过逗号
     if (pos < chartBody.length && chartBody[pos] === ",") {
       pos++;
     }
@@ -523,7 +499,11 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   };
 }
 
-/** 解析 hold 时长：支持 [divisor:beats] 和 [#seconds] 两种格式 */
+/**
+ * 计算 Hold 音符的持续拍数。
+ *
+ * 支持 `[divisor:beats]`（按分拍与拍数）和 `[#seconds]`（按绝对秒数基于 BPM 换算）两种格式。
+ */
 function parseHoldDuration(
   divisor: string | undefined,
   beats: string | undefined,
@@ -536,6 +516,11 @@ function parseHoldDuration(
   return (parseFloat(seconds!) * bpm) / 60;
 }
 
+/**
+ * 解析单个音符字符标记（Tap、Hold、Slide、Touch 等），生成对应的音符对象列表。
+ *
+ * 若位置超出有效按键或感应区范围，返回空数组。
+ */
 function parseNoteString(
   noteStr: string,
   timing: number,
@@ -547,9 +532,8 @@ function parseNoteString(
   hasDelayMarker: boolean,
 ): Note[] {
   const notes: Note[] = [];
-  const delayOffset = hasDelayMarker ? 1 : 0; // 反引号延迟 1 毫秒
+  const delayOffset = hasDelayMarker ? 1 : 0;
 
-  // 尝试匹配 Hold Note 模式：1h[4:1] 或 1hb[4:1] 或 1h[#2.5]
   const holdMatch = noteStr.match(/^(\d+)[hbx]{1,3}\[(?:([\d.]+):([\d.]+)|#([\d.]+))\][bx]*$/i);
   if (holdMatch) {
     const position = parseInt(holdMatch[1]) as ButtonPosition;
@@ -561,7 +545,6 @@ function parseNoteString(
     if (position >= 1 && position <= 8) {
       const durationMs = (60000 * holdDuration) / bpm;
 
-      // 创建 Hold Start Note
       const holdStart: HoldStartNote = {
         position,
         timing,
@@ -579,7 +562,6 @@ function parseNoteString(
       };
       notes.push(holdStart);
 
-      // 创建 Hold End Note
       const endTiming = timing + holdDuration;
       const endTimingMs = timingMs + durationMs + delayOffset;
       const endMeasure = Math.floor(endTiming / 4);
@@ -605,7 +587,6 @@ function parseNoteString(
     }
   }
 
-  // 尝试匹配滑条模式：1-5[4:1] 或 1b-5[4:1] 或复杂模式：1-4[8:5]>3[384:47]...
   const slideMatch = noteStr.match(/^(\d+)([bx?!@]*[-><^vpqszVw*]+.*)$/i);
   if (slideMatch && /[-><^vpqszVw]/i.test(slideMatch[2])) {
     const startPosition = parseInt(slideMatch[1]) as ButtonPosition;
@@ -613,7 +594,7 @@ function parseNoteString(
     const pathStartIndex = slideNotation.search(/[-><^vpqszVw*]/i);
     const startModifiers =
       pathStartIndex >= 0 ? slideNotation.slice(0, pathStartIndex).toLowerCase() : "";
-    // simai 无头滑条：`?` 让 tracing star 渐显，`!` 让 tracing star 在滑条启动时突然出现。
+    // 无头滑条修饰符：'?' 为引导星渐显淡入，'!' 为引导星在启动时刻直接显现
     const headlessMarker = match(startModifiers)
       .when(
         (s) => s.includes("!"),
@@ -626,11 +607,10 @@ function parseNoteString(
       .otherwise(() => null);
     const isStartBreak = startModifiers.includes("b");
     const isHeadless = headlessMarker !== null;
-    // simai `@`：保留滑条头，但画成普通 TAP 而非星星头。
+    // '@' 修饰符将滑条头部由默认星形替换为普通按键外观
     const hasTapHead = !isHeadless && startModifiers.includes("@");
     const isEx = noteStr.toLowerCase().includes("x");
 
-    // 按 * 分割滑条
     const slideParts = slideNotation.split("*");
     const allSlideSegments: SlideSegment[][] = [];
     const allDurations: number[] = [];
@@ -640,32 +620,25 @@ function parseNoteString(
     const allSlideBreaks: boolean[] = [];
 
     for (const part of slideParts) {
-      // 检查此路径是否有滑条中断
       const hasBreak = /[-><^vpqszVw]\d*b/i.test(part) || /\]b/i.test(part);
       allSlideBreaks.push(hasBreak);
 
-      // 检查此路径是否有多个段和节拍
-      // 复杂路径有模式：-4[8:5]>3[384:47]-6[8:7]...
       const hasMultipleTimings = (part.match(/\[[\d.:#+]+\]/g) || []).length > 1;
 
       if (hasMultipleTimings) {
-        // 使用新的节拍感知解析器解析复杂路径
         const parseResult = parseSlideSegmentsWithTiming(startPosition, part, bpm);
         allSlideSegments.push(parseResult.segments);
         allDurations.push(parseResult.totalDuration);
         allDurationMs.push(parseResult.totalDurationMs);
-        allDelayMs.push(60000 / bpm); // 默认延迟
+        allDelayMs.push(60000 / bpm);
         allCustomLengths.push(null);
       } else {
-        // 简单路径，单节拍
         let duration = 1;
         let customDelay: number | null = null;
         let customDurationSeconds: number | null = null;
         let customLengthSeconds: number | null = null;
 
-        // 解析节拍：[a##b] 秒
         const secondsMatch = part.match(/\[([\d.]+)##([\d.]+)\]/);
-        // [#X] 单 #：整条 slide 持续 X 秒
         const secondsOnlyMatch = part.match(/\[#([\d.]+)\]/);
         if (secondsMatch) {
           customDelay = parseFloat(secondsMatch[1]);
@@ -675,7 +648,6 @@ function parseNoteString(
           customLengthSeconds = parseFloat(secondsOnlyMatch[1]);
           duration = customLengthSeconds;
         } else {
-          // 解析节拍：[delay#a:b##length] 或 [a:b]
           const timingMatch = part.match(/\[(?:([\d.]+)#)?([\d.]+):([\d.]+)(?:##([\d.]+))?\]/);
           if (timingMatch) {
             if (timingMatch[1]) {
@@ -688,13 +660,12 @@ function parseNoteString(
           }
         }
 
-        // 计算持续时间
         let durationMsValue: number;
         let delayMsValue: number;
 
         if (customLengthSeconds !== null) {
           durationMsValue = customLengthSeconds * 1000;
-          // [D##L] 走显式 delay；[#X] 无 delay，沿用 [N:M] 的 1 拍预览延迟使星头对齐。
+          // '[#X]' 格式未显式指定延迟，沿用标准 1 拍延迟以对齐引导星与拍点
           delayMsValue = customDelay !== null ? customDelay * 1000 : 60000 / bpm;
         } else {
           durationMsValue =
@@ -709,7 +680,6 @@ function parseNoteString(
         allDelayMs.push(delayMsValue);
         allCustomLengths.push(customDurationSeconds);
 
-        // 解析滑条路径（移除节拍标记和修饰符）
         const pathOnly = part
           .replace(/\[(?:(?:[\d.]+#)?[\d.]+:[\d.]+(?:##[\d.]+)?|[\d.]+##[\d.]+)\]/gi, "")
           .replace(/[bx]/gi, "");
@@ -757,7 +727,6 @@ function parseNoteString(
     }
   }
 
-  // 尝试匹配多个同时按下：12 或 135
   if (isMultiDigitNote(noteStr)) {
     const digits = noteStr.split("");
     let allValid = true;
@@ -790,7 +759,6 @@ function parseNoteString(
     }
   }
 
-  // 尝试匹配触摸 Note：A1, B5h[4:1], C1f, B5h[#2.5], etc.
   const touchMatch = noteStr.match(
     /^([ABCDE])(\d*)([hbfx]*)(?:\[(?:([\d.]+):([\d.]+)|#([\d.]+))\])?$/i,
   );
@@ -799,7 +767,6 @@ function parseNoteString(
     const sensorNum = touchMatch[2] ? parseInt(touchMatch[2]) : null;
     const modifiers = touchMatch[3] ? touchMatch[3].toLowerCase() : "";
 
-    // 验证触摸位置
     let isValidTouch = false;
     if (region === "C") {
       isValidTouch = !sensorNum || sensorNum === 1 || sensorNum === 2;
@@ -813,7 +780,6 @@ function parseNoteString(
       const hasFirework = modifiers.includes("f");
 
       if (isHold && (touchMatch[4] || touchMatch[6])) {
-        // 触摸 Hold
         const holdDuration = parseHoldDuration(touchMatch[4], touchMatch[5], touchMatch[6], bpm);
         const durationMs = (60000 * holdDuration) / bpm;
 
@@ -854,7 +820,6 @@ function parseNoteString(
         };
         notes.push(touchHoldEnd);
       } else {
-        // 普通触摸
         const touchNote: TouchNote = {
           position: touchPosition,
           timing,
@@ -873,7 +838,6 @@ function parseNoteString(
     }
   }
 
-  // 尝试匹配简单按下/中断/星形 TAP：1, 1b, 1x, 1bx, 1$, 1$$；simai 修饰符顺序自由，`1$b` 等价于 `1b$`
   const tapMatch = noteStr.match(/^(\d+)([bx$]*)$/i);
   if (tapMatch) {
     const position = parseInt(tapMatch[1]);
@@ -908,12 +872,21 @@ function parseNoteString(
 
 interface SlidePathParseResult {
   segments: SlideSegment[];
-  segmentDurations: number[]; // 每个段的持续时间（节拍）
-  segmentDurationMs: number[]; // 每个段的持续时间（毫秒）
-  totalDuration: number; // 总持续时间（节拍）
-  totalDurationMs: number; // 总持续时间（毫秒）
+  segmentDurations: number[];
+  segmentDurationMs: number[];
+  totalDuration: number;
+  totalDurationMs: number;
 }
 
+/**
+ * 解析包含独立时间标记的复合滑条路径。
+ *
+ * 逐段解析路径类型与端点，支持 V 字折线推导及多段独立时间（如 `-4[8:5]>3[384:47]`）。
+ *
+ * @param startPosition - 滑条起始按键位置（1-8）。
+ * @param pathNotation - 滑条路径标记字符串。
+ * @param defaultBpm - 未声明局部时间时使用的基准 BPM。
+ */
 function parseSlideSegmentsWithTiming(
   startPosition: number,
   pathNotation: string,
@@ -929,7 +902,6 @@ function parseSlideSegmentsWithTiming(
     const char = pathNotation[i];
     let pathType: SlidePathType | null = null;
 
-    // 检查双字符（pp, qq）
     if (i + 1 < pathNotation.length && pathNotation[i + 1] === char && "pq".includes(char)) {
       pathType = (char + char) as SlidePathType;
       i += 2;
@@ -941,7 +913,6 @@ function parseSlideSegmentsWithTiming(
       continue;
     }
 
-    // V-滑条特殊处理（有中间位置）
     if (pathType === "V") {
       let numStr = "";
       while (i < pathNotation.length && /\d/.test(pathNotation[i])) {
@@ -949,7 +920,6 @@ function parseSlideSegmentsWithTiming(
         i++;
       }
 
-      // 跳过 V-滑条数字后的节拍标记
       if (i < pathNotation.length && pathNotation[i] === "[") {
         const bracketEnd = pathNotation.indexOf("]", i);
         if (bracketEnd !== -1) {
@@ -962,8 +932,9 @@ function parseSlideSegmentsWithTiming(
         const endPos = parseInt(numStr.substring(1)) as ButtonPosition;
         const start = currentPos;
 
-        const leftCorner = ((start + 5) % 8) + 1; // start-2
-        const rightCorner = ((start + 1) % 8) + 1; // start+2
+        // 标准 V 形状要求拐点位于起点 ±2 键位且终点位于同侧有效跨度内；不满足时退化为两条直线段
+        const leftCorner = ((start + 5) % 8) + 1;
+        const rightCorner = ((start + 1) % 8) + 1;
         const d = (((endPos - start) % 8) + 8) % 8;
         const isStdV =
           (midPos === leftCorner && d >= 1 && d <= 4) ||
@@ -979,7 +950,6 @@ function parseSlideSegmentsWithTiming(
           segmentDurations.push(1);
           segmentDurationMs.push(60000 / defaultBpm);
         } else {
-          // 非标准 V-滑条，拆分为两段
           segments.push({ type: "-", startPos: start as ButtonPosition, endPos: midPos });
           segments.push({ type: "-", startPos: midPos, endPos });
           segmentDurations.push(0.5, 0.5);
@@ -989,20 +959,17 @@ function parseSlideSegmentsWithTiming(
         currentPos = endPos;
       }
     } else {
-      // 解析结束位置（可能包含中断/EX 标记，如 4b）
       let numStr = "";
       while (i < pathNotation.length && /\d/.test(pathNotation[i])) {
         numStr += pathNotation[i];
         i++;
       }
 
-      // 跳过位置后的修饰符（如中断的 'b'）
       while (i < pathNotation.length && /[bx]/i.test(pathNotation[i])) {
         i++;
       }
 
-      // 解析节拍标记：[a:b] 或 [delay#a:b] 或 [a##b]
-      let segDuration = 1; // 默认 1 节拍
+      let segDuration = 1;
       let segDurationMs = 60000 / defaultBpm;
 
       if (i < pathNotation.length && pathNotation[i] === "[") {
@@ -1010,24 +977,19 @@ function parseSlideSegmentsWithTiming(
         if (bracketEnd !== -1) {
           const timingStr = pathNotation.substring(i + 1, bracketEnd);
 
-          // 检查秒数标记：a##b
           const secondsMatch = timingStr.match(/^([\d.]+)##([\d.]+)$/);
-          // [#X] 单 #：整条 slide 持续 X 秒
           const secondsOnlyMatch = timingStr.match(/^#([\d.]+)$/);
           if (secondsMatch) {
-            // 延迟##持续时间（秒）
             segDuration = parseFloat(secondsMatch[2]);
             segDurationMs = segDuration * 1000;
           } else if (secondsOnlyMatch) {
             segDurationMs = parseFloat(secondsOnlyMatch[1]) * 1000;
             segDuration = (segDurationMs * defaultBpm) / 60000;
           } else {
-            // 检查标准标记：[delay#]a:b[##length]
             const stdMatch = timingStr.match(/^(?:([\d.]+)#)?([\d.]+):([\d.]+)(?:##([\d.]+))?$/);
             if (stdMatch) {
               segDuration = (4 / parseFloat(stdMatch[2])) * parseFloat(stdMatch[3]);
               if (stdMatch[4]) {
-                // 自定义长度（秒）
                 segDurationMs = parseFloat(stdMatch[4]) * 1000;
               } else {
                 segDurationMs = (60000 * segDuration) / defaultBpm;
@@ -1037,7 +999,6 @@ function parseSlideSegmentsWithTiming(
 
           i = bracketEnd + 1;
 
-          // 跳过节拍后的修饰符（如中断的 'b'）
           while (i < pathNotation.length && /[bx]/i.test(pathNotation[i])) {
             i++;
           }
@@ -1058,7 +1019,6 @@ function parseSlideSegmentsWithTiming(
     }
   }
 
-  // 计算总数
   const totalDuration = segmentDurations.reduce((a, b) => a + b, 0);
   const totalDurationMs = segmentDurationMs.reduce((a, b) => a + b, 0);
 
@@ -1071,6 +1031,9 @@ function parseSlideSegmentsWithTiming(
   };
 }
 
+/**
+ * 仅提取滑条路径分段结构（使用 120 BPM 缺省值填充时间占位）。
+ */
 function parseSlideSegments(startPosition: number, pathNotation: string): SlideSegment[] {
   return parseSlideSegmentsWithTiming(startPosition, pathNotation, 120).segments;
 }
