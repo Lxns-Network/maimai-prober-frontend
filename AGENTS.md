@@ -1,70 +1,211 @@
 # AGENTS.md
 
-This file provides guidance to AI agents (Claude Code and others) working in this repository. The conventions below apply to all agents.
+This document provides operational guidelines and architectural ground truth for AI agents working in this repository. Its purpose is to prevent common pitfalls, state machine violations, and invalid assumptions.
 
-This is the **maimai-prober** frontend: a Vike (vike-react) React 19 + TypeScript app. UI is built with Mantine v9, server state with TanStack Query, client state with Zustand.
+This is the **maimai-prober** frontend: a Vike (`vike-react`) React 19 + TypeScript web application. The UI is built with Mantine v9, server state is managed with TanStack Query v5, and client state is managed with Zustand v4.
 
-## Common commands
+---
 
-The package manager is **Yarn 4** (`yarn@4.13.0`). Do not use npm.
+## 1. Commands & Verification
 
-- `yarn dev` — start the Vite dev server (`0.0.0.0:3000`). `/api` is proxied to `API_TARGET` (defaults to `http://localhost:7000`).
-- `yarn build` — runs `tsc` (type check) then `vite build`. Type errors fail the build.
-- `yarn lint` — ESLint with `--max-warnings 0` (any warning fails).
-- `yarn format` / `yarn format:check` — oxfmt format / check.
-- `yarn stylelint` — lint `src/**/*.css`.
+The package manager is **Yarn 4** (`yarn@4.13.0`). Never use `npm` or `pnpm`.
 
-There is **no test runner configured** (no test script, no vitest/jest), so there is no unit-test command. Verify changes with `yarn build` (types) + `yarn lint` + manually running `yarn dev`.
+### Core Development Commands
 
-Environment variables (`.env`): `VITE_API_URL` (API base), `API_TARGET` (dev proxy target), `VITE_VIDEO_DIR` (optional local video dir for dev).
+- `yarn dev` — Starts Vite dev server (`0.0.0.0:3000`). Reverse proxies `/api` to `API_TARGET` (default: `http://localhost:7000`).
+- `yarn build` — Runs `tsc` (typecheck) followed by `vite build`. Type errors fail the build immediately. Generates client assets and `dist/client/version.json`.
+- `yarn lint` — Runs ESLint with `--max-warnings 0`. Any warning causes a failure.
+- `yarn format` / `yarn format:check` — Formats or verifies repository code using `oxfmt`.
+- `yarn stylelint` — Lints CSS stylesheets (`src/**/*.css --cache`).
+- `yarn preview` — Serves the production build locally via Vite preview.
 
-## Architecture
+### Chart Performance & Audit Suite
 
-The "big picture" — the parts that require reading several files to understand:
+- `yarn chart:bench` — Runs headless stress benchmark (`node scripts/chart-bench.mjs --stress --prod`) against the synthetic 240 BPM stress chart defined in [src/pages/public/Chart/bench/stressChart.ts](src/pages/public/Chart/bench/stressChart.ts). The JSON report is written to `--out` (usage examples use `.bench/score.json`).
+- `yarn chart:bench:paired --baseline <checkout>` — Interleaves AB/BA benchmark rounds comparing a baseline checkout and a candidate checkout within the same Chromium instance to cancel thermal drift. **This is the only valid metric for verifying renderer performance PRs** (computes 95% confidence intervals).
+- `yarn chart:fill` — Canvas 2D overdraw audit (`node scripts/chart-fill-audit.mjs`). Intercepts `drawImage` to calculate total device-pixel fill area across sampled timestamps. Deterministic and immune to GPU thermal throttling.
+- `yarn chart:visual --out <dir> [--compare <dir>]` — Captures and compares pixel-level screenshots across 13 fixed timestamps (`node scripts/chart-visual-regression.mjs`) to detect unintended visual regressions.
 
-**Vike file-based routing.** This is not a plain SPA, and not Next.js. Routes live under `src/pages/` using filename conventions: `+Page.tsx` (page), `+route.ts` (route), `+config.ts` (config), `+data.ts` (data loading), `+Layout.tsx` (layout). Pages are grouped by parentheses:
+### Testing Policy
 
-- `(csr)/` — purely client-side rendered (`ssr: false`, `prerender: false`); all authenticated pages live here.
-- `(ssg)/` — prerendered (`prerender: true`), e.g. `docs/` is statically generated from markdown.
+There is **no test runner configured** (no `test` script, no Vitest / Jest / Mocha). Verify every change using:
 
-The root `src/pages/+config.ts` sets `ssr: false` and `lang: zh-Hans` globally.
+1. `yarn build` (strict TypeScript validation)
+2. `yarn lint` (ESLint with zero warnings)
+3. `yarn format:check` and `yarn stylelint`
+4. Running the dev server (`yarn dev`) or the chart benchmark suite where applicable.
 
-**Dual-game model.** The app serves both maimai DX (`maimai`) and CHUNITHM (`chunithm`). The current game is stored in localStorage and read/written via `useGame()` ([src/hooks/useGame.ts](src/hooks/useGame.ts), which also reads the `?game=` URL param). **Almost every API path and query key is namespaced by game**: `user/${game}/...`. Follow this convention whenever adding a per-game endpoint.
+---
 
-**Two state layers.**
+## 2. Environment Variables
 
-- _Server state_ uses TanStack Query. [src/lib/queryClient.ts](src/lib/queryClient.ts) installs a global `defaultQueryFn` that treats `queryKey[0]` as the API path and fetches it directly. All query keys are centralized in [src/hooks/queries/queryKeys.ts](src/hooks/queries/queryKeys.ts); query hooks live in `src/hooks/queries/`, mutations in `src/hooks/mutations/`.
-- _Client/global state_ uses Zustand, named `src/hooks/use*Store.ts` (song lists, alias lists, score editing, etc.).
+Environment variables are defined in `.env` / `.env.local` / `.env.production`:
 
-**API layer.** `fetchAPI()` in [src/utils/api/api.ts](src/utils/api/api.ts) wraps every request: it prefixes `VITE_API_URL`, attaches the `Bearer` token from localStorage, and refreshes an expired JWT single-flight (`refreshPromise`) before retrying. Uploads go through `uploadFile()` (multipart). There are two response conventions, mapped to two query fns (see [src/hooks/queries/queryFn.ts](src/hooks/queries/queryFn.ts)): `defaultQueryFn` handles the `{ success, data }` envelope (most `/user/*` endpoints), `resourceQueryFn` handles endpoints that return data directly and signal errors via HTTP status (public `/{game}/song/*`). Errors are thrown as `APIError` ([src/utils/errors.ts](src/utils/errors.ts)).
+| Variable                          | Scope                                           | Description & Default                                                                                                  |
+| --------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_URL`                    | Client (`import.meta.env`)                      | Base URL for API requests (`http://localhost:3000/api/v0` in dev, `https://maimai.lxns.net/api/v0` in prod).           |
+| `API_TARGET`                      | Dev Server (`process.env`)                      | Target backend server proxied by Vite dev server under `/api` (default: `http://localhost:7000`).                      |
+| `VITE_ASSET_URL`                  | Client (`import.meta.env`)                      | Static asset CDN host (e.g. `https://assets.lxns.net`).                                                                |
+| `VITE_CAPTCHA_ENDPOINT`           | Client (`import.meta.env`)                      | Turnstile/Captcha verification endpoint (e.g. `https://cap.lxns.net/...`).                                             |
+| `VITE_VIDEO_DIR`                  | Dev Server (`process.env`)                      | Optional local directory containing `{song_id}.mp4` background videos served by Vite middleware at `/__video/`.        |
+| `VITE_CHART_BENCH`                | Build / Dev (`process.env` & `import.meta.env`) | Set to `"1"` by benchmark scripts to enable profiling hooks in production builds and disable Sentry sourcemap uploads. |
+| `VITE_UMAMI_SCRIPT_URL`           | Client (`import.meta.env`)                      | Umami analytics script URL.                                                                                            |
+| `VITE_UMAMI_WEBSITE_ID`           | Client (`import.meta.env`)                      | Umami website tracking ID.                                                                                             |
+| `FRONTEND_VERSION` / `GITHUB_SHA` | Build (`process.env`)                           | Build metadata injected into `__BUILD_VERSION__` and `__BUILD_COMMIT__` in `vite.config.ts`.                           |
+| `CHART_BENCH_PLAYWRIGHT`          | Scripts (`process.env`)                         | Optional custom directory containing installed Playwright packages for benchmark scripts.                              |
 
-**Auth & permissions.** The JWT is stored in localStorage as `token` and decoded client-side ([src/utils/session.ts](src/utils/session.ts)). Permissions are a **bitmask**: `UserPermission` (`User=1`, `Developer=2`, `Administrator=4`), checked via `checkPermission()`. `+Layout.tsx` watches for token invalidation and redirects to `/login`.
+---
 
-**Song data cache.** `useSongListStore` ([src/hooks/useSongListStore.ts](src/hooks/useSongListStore.ts)) holds `MaimaiSongList` / `ChunithmSongList` class instances. Their `fetch()` caches the full song list in localStorage keyed by a resource hash delivered in the site config — it only refetches when the hash changes. The song lists are loaded on startup in `+Layout.tsx`.
+## 3. Routing & Directory Conventions
 
-**UI & provider stack.** Mantine v9. All global providers live in [src/pages/+Layout.tsx](src/pages/+Layout.tsx): `MantineProvider` (theme `primaryColor` driven by `useThemeColor`), `ModalsProvider`, `Notifications` (use `@mantine/notifications` to show toasts), `PhotoProvider`, and `ErrorBoundary` (`react-error-boundary`). Icons come from `@tabler/icons-react` and `@mdi/js`.
+### Vike File Conventions
 
-**Workspace package.** `@lxns-network/maimai-chart-engine` ([packages/maimai-chart-engine](packages/maimai-chart-engine)) is the maimai chart (simai) rendering engine; it exports renderers/core/types/constants and is referenced via a yarn workspace (`workspace:*`).
+Routing is file-based using Vike conventions under `src/pages/`:
 
-**Chart preview playback architecture.** The public maimai chart preview is centered on `src/pages/public/Chart/`. Keep these ownership boundaries intact:
+- `+Page.tsx` — Page screen component.
+- `+route.ts` — Custom route path definition.
+- `+config.ts` — Page or layout configuration (`ssr`, `prerender`, etc.).
+- `+data.ts` — Data loading hook.
+- `+Layout.tsx` — Layout hierarchy wrapper.
+- `+client.ts` — Client-side startup hook (Sentry initialization, analytics).
+- `+Head.tsx` — Global and per-route `<head>` document tags.
 
-- `ChartCanvas.tsx` owns the canvas DOM, renderer lifecycle, resize/DPR handling, and the visible render loops. It should stay thin; move browser side effects such as background-video source loading, frame capture, wake lock, and renderer setting subscriptions into focused hooks under `components/ChartCanvas/hooks/`.
-- `usePreviewAudio.ts` is the only owner of preview music playback, the audible output clock, seek handoff, and answer-sound scheduling. Do not add parallel music clocks or store-level playback anchors. `timeline.preciseTime` is a paused/store snapshot; during playback, `playbackTimeRef.current` is the live playhead.
-- `AudioManager` in the chart engine only loads, prepares, and schedules answer sounds. It must not own music playback or React lifecycle state.
-- `TimingTimeline` in the chart engine is the canonical beat/ms conversion primitive. UI helpers in `src/pages/public/Chart/utils/timeConversion.ts` wrap it for app code; renderer hot paths should reuse a timeline instead of open-coding BPM scans.
-- Background video sync is best-effort visual media sync and should follow the chart/audio playhead. It should not become the source of truth for preview timing.
-- Seek while playing is a scheduled handoff: stop old music, compute the target once, schedule the new `AudioBufferSourceNode` at a short future `AudioContext.currentTime`, hold the visual playhead at that target, then switch back to the audio output clock once the new source is audible. Avoid compatibility shims such as old `playbackStartTime`/`playbackStartPositionMs` store fields.
+The root `src/pages/+config.ts` sets global defaults: `ssr: false`, `prerender: false`, `lang: "zh-Hans"`, `trailingSlash: false`.
 
-**Chart render performance.** Do not eyeball FPS. `MainRenderer` has per-stage CPU timing (`setProfilingEnabled` / `takeFrameProfile`), shown in the DEV overlay on `/chart`; `scripts/chart-bench.mjs` runs a headless, playback-independent benchmark and can `--compare` against a saved baseline. Before/after numbers for any renderer change should come from it. See [src/pages/public/Chart/bench/README.md](src/pages/public/Chart/bench/README.md) for usage, stage meanings, and known pitfalls (software rasterizer skews `max`; timer precision needs cross-origin isolation).
+### Route Entry Points vs. Screen Implementations (Critical Boundary)
 
-**Misc.** Path alias `@/` → `src/` (configured in both vite and tsconfig). Sentry handles error monitoring and uploads sourcemaps at build time. The build writes a timestamped `dist/client/version.json`; `useVersionChecker` uses it to prompt users to reload onto a new deploy.
+Do not confuse Vike route definitions with UI screen implementations:
 
-## Code comments
+1. **Route entry points (`+Page.tsx`) ONLY exist under:**
+   - `src/pages/(csr)/` — Client-side rendered routes (21 routes, e.g. `(csr)/chart/+Page.tsx`, `(csr)/user/scores/+Page.tsx`). Contains all authenticated and dynamic pages.
+   - `src/pages/(ssg)/` — Prerendered static pages (`prerender: true`), currently `(ssg)/index/+Page.tsx` (landing page) and `(ssg)/docs/+Page.tsx` (markdown documentation).
+   - `src/pages/_error/+Page.tsx` — Global error boundary page.
 
-Treat a function as a black box: callers only see the signature and should never have to read the implementation to use it. The job of a comment is to supply what the signature alone cannot.
+2. **Implementation directories contain ZERO `+Page.tsx` files:**
+   - Directories directly under `src/pages/` such as `user/`, `admin/`, `public/`, `alias/`, `developer/`, and `notifications/` contain **screen implementation components** (e.g. `src/pages/public/Chart/`, `src/pages/user/Scores/`).
+   - A route under `src/pages/(csr)/<path>/+Page.tsx` is typically a minimal wrapper importing the screen implementation and wrapping it in `<RouteGuard>`:
 
-- **Comments outside the function serve the caller.** Write them in a `/** ... */` block at the start of the function, focusing on what the interface (input/output types, naming) doesn't reveal: when it throws, side effects, call-ordering constraints, when/how an event listener or subscription must be unregistered, etc.
-- **The same applies to React `useMemo` / `useEffect` / `useCallback` / custom hooks** — add a comment only when the purpose isn't clear from the name; otherwise leave it out.
-- **Avoid comments inside the function body** unless the logic is genuinely complex. When you feel the body needs a comment, first ask whether the code could be written more clearly; only fall back to an in-body comment when there's truly no clearer form.
+     ```tsx
+     import { RouteGuard } from "@/components/RouteGuard";
+     import Scores from "@/pages/user/Scores";
 
-In one line: **put comments outside the function, not inside, describing what isn't obvious to the caller.**
+     export default function Page() {
+       return (
+         <RouteGuard>
+           <Scores />
+         </RouteGuard>
+       );
+     }
+     ```
+
+   - **Never create a `+Page.tsx` file directly inside `src/pages/user/`, `src/pages/admin/`, or other screen directories.**
+
+Path alias `@/` maps to `src/` (configured in both `tsconfig.json` and `vite.config.ts`).
+
+---
+
+## 4. Architecture & State Management
+
+### Dual-Game Model
+
+The application serves both **maimai DX** (`maimai`) and **CHUNITHM** (`chunithm`):
+
+- Active game is stored in `localStorage` and managed by `useGame()` ([src/hooks/useGame.ts](src/hooks/useGame.ts)), which also synchronizes with the `?game=` URL query parameter.
+- **Every game-specific API endpoint and TanStack Query key must be namespaced**: `user/${game}/...` or `${game}/...`. Always respect this namespacing when adding per-game functionality.
+
+### Server State & API Layer (TanStack Query)
+
+- Configured in [src/lib/queryClient.ts](src/lib/queryClient.ts).
+- All query keys are centralized in [src/hooks/queries/queryKeys.ts](src/hooks/queries/queryKeys.ts). Query hooks live in `src/hooks/queries/`, mutation hooks in `src/hooks/mutations/`.
+- All network requests pass through `fetchAPI()` or `uploadFile()` in [src/utils/api/api.ts](src/utils/api/api.ts), which prepends `VITE_API_URL`, manages the `Authorization: Bearer <token>` header, and handles token expiration.
+- **Two API response conventions** mapped to two query functions in [src/hooks/queries/queryFn.ts](src/hooks/queries/queryFn.ts):
+  1. `defaultQueryFn` — Unpacks `{ success, data, message, code }` envelopes (used by most `/user/*` endpoints). Throws `APIError` if `data.success === false`.
+  2. `resourceQueryFn` — Direct payloads without an envelope (used by public `/{game}/song/*` endpoints). Errors are signaled via HTTP status codes and parsed into `APIError`.
+- `APIError` is defined in [src/utils/errors.ts](src/utils/errors.ts).
+
+### Authentication & Permissions
+
+- JWT is stored in `localStorage` under key `"token"`.
+- Single-flight token refresh: `fetchAPI` checks token expiry with a 30-second buffer (`TOKEN_REFRESH_BUFFER_MS`). Concurrent requests share a single `refreshPromise` with backoff retries (`REFRESH_RETRY_DELAYS = [300, 1000]`).
+- Session expiry: A 401/403 or unrefreshable token triggers `redirectExpiredSessionToLogin()` ([src/utils/session.ts](src/utils/session.ts)), storing a flag in `sessionStorage` and redirecting to `/login?redirect=...`.
+- Permissions are represented as a **bitmask** ([src/utils/session.ts](src/utils/session.ts)):
+  ```ts
+  export enum UserPermission {
+    User = 1 << 0, // 1
+    Developer = 1 << 1, // 2
+    Administrator = 1 << 2, // 4
+  }
+  ```
+  Checked via `checkPermission(permission)`: `(payload.permission & permission) !== 0`.
+
+### Client State & Song Metadata Caching (Zustand)
+
+- Global client stores are named `src/hooks/use*Store.ts`.
+- `useSongListStore` ([src/hooks/useSongListStore.ts](src/hooks/useSongListStore.ts)) holds `MaimaiSongList` and `ChunithmSongList` instances ([src/utils/api/song/](src/utils/api/song/)).
+- **Resource Hash Caching**: The song lists cache full metadata in `localStorage` indexed by resource hashes, under the flat localStorage keys `{game}_songs` and `{game}_songs_hash` (e.g. `maimai_songs` / `maimai_songs_hash`) returned from site configuration (`/site/config`). The full song list is refetched over the network only when the hash changes. Loaded during startup in `src/pages/+Layout.tsx`.
+
+### UI Stack & Deployment Versioning
+
+- Mantine v9: Global providers in `src/pages/+Layout.tsx` include `MantineProvider` (primary color dynamic via `useThemeColor`), `ModalsProvider`, `Notifications` (`@mantine/notifications`), `PhotoProvider` (`react-photo-view`), and `ErrorBoundary` (`react-error-boundary`). Icons come from `@tabler/icons-react` and `@mdi/js`.
+- Build timestamp: Writes `dist/client/version.json`. In production, `useVersionChecker` ([src/hooks/useVersionChecker.tsx](src/hooks/useVersionChecker.tsx)) periodically polls this file and alerts the user to reload when a new deployment is published.
+
+---
+
+## 5. Chart Engine & Preview Architecture
+
+The maimai chart preview is located at `src/pages/public/Chart/`. It uses the workspace engine package `@lxns-network/maimai-chart-engine` ([packages/maimai-chart-engine](packages/maimai-chart-engine), referenced via `workspace:*`).
+
+### Strict Ownership Boundaries
+
+Preserve these module boundaries without exception:
+
+1. **`ChartCanvas.tsx` owns the canvas DOM, renderer lifecycle, DPR/resizing, and the render loop.**
+   - Keep this component thin.
+   - All browser side effects (background video source loading, frame capture, wake lock, renderer settings subscriptions) must live in focused hooks under `src/pages/public/Chart/components/ChartCanvas/hooks/`.
+2. **`usePreviewAudio.ts` is the sole owner of music playback, the audible output clock, seek handoff, and answer-sound scheduling.**
+   - Never introduce parallel audio clocks or store-level playback anchors.
+   - `timeline.preciseTime` in the Zustand store is a paused/snapshot timestamp; during playback, `playbackTimeRef.current` is the only live playhead.
+3. **`AudioManager` in the chart engine only loads, prepares, and schedules answer sounds / SFX.**
+   - It must never own music playback or React lifecycle state.
+4. **`TimingTimeline` is the canonical beat/ms conversion primitive.**
+   - Defined in `@lxns-network/maimai-chart-engine` (`TimingTimeline.ts`) and wrapped by `src/pages/public/Chart/utils/timeConversion.ts`.
+   - Hot paths in renderers must reuse precomputed timeline instances instead of open-coding BPM searches.
+5. **Background video sync is best-effort visual media sync.**
+   - It follows the chart/audio playhead (`/__video/{song_id}.mp4`).
+   - It must never become the source of truth for preview timing.
+6. **Seek handoff during playback is an atomic scheduled handoff:**
+   - Stop old music node, compute target time once, schedule the new `AudioBufferSourceNode` slightly in the future (`AudioContext.currentTime + 0.05s`), hold the visual playhead at the target during lead-in, and switch back to the audio output clock once the new source becomes audible.
+   - Do not reintroduce deprecated compatibility shims such as `playbackStartTime` or `playbackStartPositionMs`.
+
+### Performance Measurement Policy
+
+- **Never judge rendering performance visually or by eyeballing an FPS counter.**
+- `MainRenderer` instruments CPU timing per stage (`setProfilingEnabled` / `takeFrameProfile`), visible via the DEV overlay on `/chart`.
+- Follow the methodology in [src/pages/public/Chart/bench/README.md](src/pages/public/Chart/bench/README.md):
+  - Use `yarn chart:bench:paired --baseline <checkout>` for evaluating optimizations; absolute benchmark scores fluctuate heavily across sessions and thermal conditions.
+  - Use `yarn chart:fill` to identify Canvas 2D fill-rate hotspots.
+  - Use `yarn chart:visual` to catch rendering regressions.
+
+---
+
+## 6. Repository Relationships & Skills
+
+### Sibling Backend Repository
+
+- The Go backend lives in a sibling repository: `../maimai-prober` (or `F:\Developments\maimai-prober`).
+- The backend does **not** maintain its own user-facing changelog.
+
+### Unified Changelog (`public/docs/changelog.md`)
+
+- `public/docs/changelog.md` is the **single unified changelog** for the entire platform, covering user-visible changes from **both this frontend repository and the Go backend repository**.
+- **Changelog Skill**: When writing, updating, or reviewing release notes, follow [.agents/skills/changelog/SKILL.md](.agents/skills/changelog/SKILL.md).
+  - Only record changes that produce observable external behavioral differences for end users (players) or third-party developers (e.g. new features, UI flow changes, API protocol adjustments, visible bugfixes).
+  - Never record internal refactorings, CI/CD tweaks, dependency bumps, benchmark changes, or invisible fixes.
+  - Merge unreleased fixes into existing entries to avoid redundant noise.
+
+### Code Comments Standard
+
+- **Code Comments Skill**: [.agents/skills/code-comments/SKILL.md](.agents/skills/code-comments/SKILL.md) is the **authoritative single source of truth** for all code comment rules, decision trees, and boundary enforcement in this repository.
+  - **Core Rule**: Treat functions as black boxes. Caller-facing contracts belong outside the function in JSDoc (`/** ... */`) to document non-obvious details (`@throws`, side effects, ordering constraints, disposal requirements).
+  - Avoid comments inside function bodies unless explaining critical, non-obvious engineering context (empirical physical constant derivation, browser/canvas quirks, hardware frame budgets) or irreducible algorithmic "Why".
+  - Strictly prohibit syntax restatements, type translations, and commit-style change logs or performance bragging in comments.
