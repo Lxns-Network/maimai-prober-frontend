@@ -36,7 +36,7 @@ export function getSlideAppearanceStartMs({
  * 也正是它让已出现的 Wi-Fi 轨迹停在 0.5 而非 WIFI_TRACK_ALPHA。
  * 未经实测复核，请勿将其「修正」为同量纲比较。
  */
-function isArcadeWifiHalfAlpha(noteTimeMs: number, currentTimeMs: number): boolean {
+function isWifiTrackHalfAlpha(noteTimeMs: number, currentTimeMs: number): boolean {
   return noteTimeMs - currentTimeMs + TRACK_FADE_RAMP_MS <= currentTimeMs;
 }
 
@@ -63,7 +63,7 @@ export function getSlideTrackAppearance(
 
   if (isWifi && elapsed > TRACK_FADE_RAMP_MS) {
     return {
-      alpha: isArcadeWifiHalfAlpha(timing.noteTimeMs, currentTimeMs) ? 0.5 : WIFI_TRACK_ALPHA,
+      alpha: isWifiTrackHalfAlpha(timing.noteTimeMs, currentTimeMs) ? 0.5 : WIFI_TRACK_ALPHA,
       isFading: false,
     };
   }
