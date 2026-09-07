@@ -65,6 +65,7 @@ const SLIDE_TYPES: SlidePathType[] = [
 export const STRESS_RENDERER_SETTINGS: RendererSettings = {
   hiSpeed: 6,
   alwaysKeepHiSpeed: false,
+  slideDelay: 0,
   slideRotation: true,
   mirrorMode: "none",
   judgmentLineDesign: "simple",

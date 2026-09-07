@@ -69,9 +69,16 @@ export interface PlaybackProfileResult {
 
 const MAX_DROPPED_FRAMES = 50;
 
-/** ChartCanvas 每帧通过 `maimai-chart-frame-profile` 事件上报的单帧阶段耗时（毫秒）。 */
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) {
+    throw signal.reason ?? new DOMException("The operation was aborted", "AbortError");
+  }
+}
+
+/** 正在录制时由 ChartCanvas 交付的单帧阶段耗时（毫秒）。 */
 export type FrameProfileDetail = Record<RenderProfileStage, number>;
-export const FRAME_PROFILE_EVENT = "maimai-chart-frame-profile";
+/** 订阅期间启用 renderer 计时，返回的函数负责释放此次采集需求。 */
+export type SubscribeFrameProfile = (onFrame: (profile: FrameProfileDetail) => void) => () => void;
 
 function computeStats(values: number[]): StageStats {
   if (values.length === 0) return { avg: 0, p50: 0, p95: 0, p99: 0, max: 0 };
@@ -88,15 +95,24 @@ function computeStats(values: number[]): StageStats {
 }
 
 /** 用连续 rAF 时间戳估计显示器刷新周期（取中位数，抗首帧抖动）。 */
-async function measureRefreshInterval(): Promise<number> {
+async function measureRefreshInterval(signal?: AbortSignal): Promise<number> {
+  throwIfAborted(signal);
   const stamps: number[] = [];
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
+    let rafId = 0;
+    const abort = () => {
+      cancelAnimationFrame(rafId);
+      reject(signal?.reason);
+    };
+    signal?.addEventListener("abort", abort, { once: true });
     const tick = (t: number) => {
       stamps.push(t);
-      if (stamps.length >= 20) resolve();
-      else requestAnimationFrame(tick);
+      if (stamps.length >= 20) {
+        signal?.removeEventListener("abort", abort);
+        resolve();
+      } else rafId = requestAnimationFrame(tick);
     };
-    requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
   });
   const deltas = stamps.slice(1).map((t, i) => t - stamps[i]);
   return computeStats(deltas).p50;
@@ -138,10 +154,11 @@ function recordStoreWrites(sink: StoreWrite[], chartMsNow: () => number): () => 
 
 /**
  * 从 startMs 播放到 endMs，记录每个 rAF 的间隔与 ChartCanvas 上报的该帧 CPU 阶段耗时。
- * 依赖 ChartCanvas 在每次 renderFrame 后通过 `maimai-chart-frame-profile` 事件上报单帧 profile
- * （基准构建安装）。播放达到 endMs 后 resolve；提前停止、超时或 signal 中止时抛错。
+ * 通过 subscribeFrameProfile 申请并接收计时，结束时取消订阅；未录制时不采集单帧快照。
+ * 播放达到 endMs 后 resolve；提前停止、超时或 signal 中止时抛错。
  */
 export async function runPlaybackProfile(
+  subscribeFrameProfile: SubscribeFrameProfile,
   options: PlaybackProfileOptions = {},
 ): Promise<PlaybackProfileResult> {
   const store = useGameStore.getState();
@@ -154,7 +171,7 @@ export async function runPlaybackProfile(
   const endMs = Math.min(chartEndMs, options.endMs ?? chartEndMs);
   if (endMs <= startMs) throw new Error("endMs must be greater than startMs");
 
-  const refreshIntervalMs = await measureRefreshInterval();
+  const refreshIntervalMs = await measureRefreshInterval(options.signal);
   const droppedFrameMs = options.droppedFrameMs ?? refreshIntervalMs * 1.5;
   const startTimeoutMs = options.startTimeoutMs ?? 15_000;
   if (!Number.isFinite(startTimeoutMs) || startTimeoutMs <= 0) {
@@ -168,10 +185,6 @@ export async function runPlaybackProfile(
   const dropped: DroppedFrame[] = [];
 
   let lastFrameProfile: FrameProfileDetail | null = null;
-  const onFrameProfile = (event: Event) => {
-    lastFrameProfile = (event as CustomEvent<FrameProfileDetail>).detail;
-  };
-  window.addEventListener(FRAME_PROFILE_EVENT, onFrameProfile);
 
   const canvas = document.querySelector<HTMLCanvasElement>("canvas");
   const backingPixels = canvas ? canvas.width * canvas.height : 0;
@@ -185,13 +198,22 @@ export async function runPlaybackProfile(
     let rafId = 0;
     let startTimeoutId: number | null = null;
     let started = false;
+    let finished = false;
     let stopRecording: (() => void) | null = null;
+    let unsubscribeFrameProfile: (() => void) | null = null;
     const finish = () => {
+      if (finished) return;
+      finished = true;
       cancelAnimationFrame(rafId);
       if (startTimeoutId !== null) window.clearTimeout(startTimeoutId);
-      window.removeEventListener(FRAME_PROFILE_EVENT, onFrameProfile);
+      options.signal?.removeEventListener("abort", abort);
+      unsubscribeFrameProfile?.();
       useGameStore.getState().pause();
       stopRecording?.();
+    };
+    const abort = () => {
+      finish();
+      reject(options.signal?.reason ?? new DOMException("Playback profile aborted", "AbortError"));
     };
     const tick = (timestamp: number) => {
       if (options.signal?.aborted) {
@@ -259,6 +281,11 @@ export async function runPlaybackProfile(
       rafId = requestAnimationFrame(tick);
     };
 
+    throwIfAborted(options.signal);
+    options.signal?.addEventListener("abort", abort, { once: true });
+    unsubscribeFrameProfile = subscribeFrameProfile((profile) => {
+      lastFrameProfile = profile;
+    });
     store.setPreciseTime(msToBeats(startMs, chart.bpmEvents, chart.bpm), true);
     store.play();
     // 起播的 seek / play 本身必然写 store，从这里开始记才是"播放中"的写入。

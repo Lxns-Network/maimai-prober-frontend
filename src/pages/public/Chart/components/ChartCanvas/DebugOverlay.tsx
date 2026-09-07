@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState, type RefObject } from "react";
 import {
   RENDER_PROFILE_STAGES,
+  type MainRenderer,
   type RenderFrameProfile,
   type RenderProfileStage,
 } from "@lxns-network/maimai-chart-engine";
 import classes from "./DebugOverlay.module.css";
+import { useGameStore } from "../../stores/useGameStore";
 
 const FPS_SAMPLE_INTERVAL_MS = 250;
 const FPS_GRAPH_WIDTH = 240;
 const FPS_GRAPH_HEIGHT = 48;
 
-export interface CanvasDebugInfo {
+interface CanvasDebugInfo {
   cssWidth: number;
   cssHeight: number;
   backingWidth: number;
@@ -21,6 +23,14 @@ export interface CanvasDebugInfo {
   fps: number;
   fpsHistory: number[];
   renderProfile: RenderFrameProfile | null;
+}
+
+interface DebugOverlayProps {
+  canvasRef: RefObject<HTMLCanvasElement | null>;
+  rendererRef: RefObject<MainRenderer | null>;
+  fpsRef: { current: number };
+  getClockSource: () => "audio" | "raf";
+  onProfilingChange: (enabled: boolean) => void;
 }
 
 /** 分阶段表按占比着色的阈值（相对 total 的比例）。 */
@@ -114,9 +124,69 @@ function getFpsGraphPoints(fpsHistory: number[]): string {
     .join(" ");
 }
 
-export function DebugOverlay({ debugInfo }: { debugInfo: CanvasDebugInfo | null }) {
+export function DebugOverlay({
+  canvasRef,
+  rendererRef,
+  fpsRef,
+  getClockSource,
+  onProfilingChange,
+}: DebugOverlayProps) {
   const [expanded, setExpanded] = useState(false);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [debugInfo, setDebugInfo] = useState<CanvasDebugInfo | null>(null);
+
+  const sample = useCallback(
+    (withProfile: boolean) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const fps = fpsRef.current;
+      const playing = useGameStore.getState().isPlaying;
+      const renderProfile = withProfile ? (rendererRef.current?.takeFrameProfile() ?? null) : null;
+      setDebugInfo((previous) => ({
+        cssWidth: Math.round(rect.width),
+        cssHeight: Math.round(rect.height),
+        backingWidth: canvas.width,
+        backingHeight: canvas.height,
+        canvasDpr: rect.width > 0 ? canvas.width / rect.width : 0,
+        deviceDpr: window.devicePixelRatio || 1,
+        clockSource: getClockSource(),
+        fps,
+        fpsHistory:
+          withProfile && playing && fps > 0
+            ? [...(previous?.fpsHistory ?? []), fps].slice(-80)
+            : (previous?.fpsHistory ?? []),
+        renderProfile: renderProfile ?? previous?.renderProfile ?? null,
+      }));
+    },
+    [canvasRef, fpsRef, getClockSource, rendererRef],
+  );
+
+  useEffect(() => {
+    sample(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const updateDimensions = () => sample(false);
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    const sizeObserver = new MutationObserver(updateDimensions);
+    resizeObserver.observe(canvas);
+    sizeObserver.observe(canvas, { attributes: true, attributeFilter: ["width", "height"] });
+    return () => {
+      resizeObserver.disconnect();
+      sizeObserver.disconnect();
+    };
+  }, [canvasRef, sample]);
+
+  useEffect(() => {
+    onProfilingChange(expanded);
+    if (!expanded) return;
+    sample(true);
+    const intervalId = window.setInterval(() => sample(true), FPS_SAMPLE_INTERVAL_MS);
+    return () => {
+      window.clearInterval(intervalId);
+      onProfilingChange(false);
+    };
+  }, [expanded, onProfilingChange, sample]);
 
   if (!debugInfo) return null;
 
@@ -147,10 +217,15 @@ export function DebugOverlay({ debugInfo }: { debugInfo: CanvasDebugInfo | null 
 
   return (
     <div className={classes.debugInfo}>
-      <button type="button" className={classes.debugSummary} onClick={() => setExpanded((e) => !e)}>
+      <button
+        type="button"
+        className={classes.debugSummary}
+        aria-expanded={expanded}
+        onClick={() => setExpanded((e) => !e)}
+      >
         <span>{((debugInfo.backingWidth * debugInfo.backingHeight) / 1_000_000).toFixed(2)}MP</span>
         <span>DPR {debugInfo.canvasDpr.toFixed(2)}</span>
-        <span>{debugInfo.clockSource}</span>
+        <span>DEV</span>
       </button>
       {expanded && (
         <div className={classes.debugPanel}>

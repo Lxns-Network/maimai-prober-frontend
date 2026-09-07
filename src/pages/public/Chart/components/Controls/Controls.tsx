@@ -1022,6 +1022,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
   const {
     hiSpeed,
     alwaysKeepHiSpeed,
+    slideDelay,
     slideRotation,
     mirrorMode,
     judgmentLineDesign,
@@ -1035,6 +1036,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     soundOffset,
     setHiSpeed,
     setAlwaysKeepHiSpeed,
+    setSlideDelay,
     setSlideRotation,
     setMirrorMode,
     setJudgmentLineDesign,
@@ -1230,6 +1232,43 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               </Text>
               <Text size="xs" c="dimmed" ff="monospace">
                 1.0x
+              </Text>
+            </Group>
+          </div>
+
+          <div>
+            <Group justify="space-between" mb={4}>
+              <Text size="sm" fw={500}>
+                星星延迟
+              </Text>
+              <Text size="sm" c="dimmed" ff="monospace">
+                {slideDelay.toFixed(1)}
+              </Text>
+            </Group>
+            <Slider
+              thumbLabel="星星延迟"
+              value={slideDelay}
+              onChange={setSlideDelay}
+              min={-1}
+              max={1}
+              step={0.1}
+              label={(value) => value.toFixed(1)}
+              marks={[{ value: -1 }, { value: 0 }, { value: 1 }]}
+              onKeyDown={(event) => {
+                if (event.key.startsWith("Arrow") || event.key === "Home" || event.key === "End") {
+                  event.stopPropagation();
+                }
+              }}
+            />
+            <Group justify="space-between">
+              <Text size="xs" c="dimmed" ff="monospace">
+                -1.0
+              </Text>
+              <Text size="xs" c="dimmed" ff="monospace">
+                0.0
+              </Text>
+              <Text size="xs" c="dimmed" ff="monospace">
+                +1.0
               </Text>
             </Group>
           </div>

@@ -13,6 +13,7 @@ export const FULLSCREEN_QUALITY_MP: Record<FullscreenQuality, number> = {
 export interface GameSettingsState {
   hiSpeed: number;
   alwaysKeepHiSpeed: boolean;
+  slideDelay: number;
   slideRotation: boolean;
   mirrorMode: MirrorMode;
   judgmentLineDesign: JudgmentLineDesign;
@@ -35,6 +36,7 @@ export interface GameSettingsState {
 export interface GameSettingsActions {
   setHiSpeed: (speed: number) => void;
   setAlwaysKeepHiSpeed: (enabled: boolean) => void;
+  setSlideDelay: (delay: number) => void;
   setSlideRotation: (enabled: boolean) => void;
   setMirrorMode: (mode: MirrorMode) => void;
   setJudgmentLineDesign: (design: JudgmentLineDesign) => void;
@@ -61,6 +63,7 @@ const SETTINGS_STORE_VERSION = 1;
 const initialState: GameSettingsState = {
   hiSpeed: 6,
   alwaysKeepHiSpeed: false,
+  slideDelay: 0,
   slideRotation: true,
   mirrorMode: "none",
   judgmentLineDesign: "simple",
@@ -86,6 +89,10 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       ...initialState,
       setHiSpeed: (speed: number) => set({ hiSpeed: Math.max(3, Math.min(9, speed)) }),
       setAlwaysKeepHiSpeed: (enabled: boolean) => set({ alwaysKeepHiSpeed: enabled }),
+      setSlideDelay: (delay: number) => {
+        if (!Number.isFinite(delay)) return;
+        set({ slideDelay: Math.round(Math.max(-1, Math.min(1, delay)) * 10) / 10 || 0 });
+      },
       setSlideRotation: (enabled: boolean) => set({ slideRotation: enabled }),
       setMirrorMode: (mode: MirrorMode) => set({ mirrorMode: mode }),
       setJudgmentLineDesign: (design: JudgmentLineDesign) => set({ judgmentLineDesign: design }),
@@ -114,6 +121,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       partialize: (state) => ({
         hiSpeed: state.hiSpeed,
         alwaysKeepHiSpeed: state.alwaysKeepHiSpeed,
+        slideDelay: state.slideDelay,
         slideRotation: state.slideRotation,
         mirrorMode: state.mirrorMode,
         judgmentLineDesign: state.judgmentLineDesign,

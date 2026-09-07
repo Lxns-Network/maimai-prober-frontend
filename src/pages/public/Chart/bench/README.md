@@ -34,6 +34,10 @@ yarn chart:bench --out .bench/after.json --compare .bench/before.json
 | 真实播放剖析 | `node scripts/chart-bench.mjs --chart <id> --playback --fullscreen` 或 console `__chartBench.profilePlayback()` | 真的走 rAF + 音频时钟 + 合成，逐帧记录 rAF 间隔与 CPU 耗时，报告掉帧率、掉帧时刻、该帧 CPU 占比、以及那一帧间隔内发生的 store 写入。回答"掉帧是 JS、GPU 还是 React 重渲染" |
 | Chrome trace | 上面任一模式加 `--trace .bench/x.json`                                                                          | 导出含 GPU / GC / JS 采样栈的 trace；脚本直接打印主线程长任务（> 8ms）及每个长任务里占比最高的应用代码帧。拖进 DevTools Performance 面板可看火焰图                         |
 
+DEV 默认只安装 `__chartBench` 入口。面板折叠时不启动 250ms React 采样，也不开启 renderer 的阶段计时；展开面板后才采集并更新面板自身。`profilePlayback()` 会在录制期间单独申请计时，通过回调接收单帧数据，完成、中止、超时或页面卸载后释放。面板展开与录制可以同时使用，结束其中一项不会关闭另一项的计时。一次只允许一个 `profilePlayback()`，避免两次录制争用播放头。
+
+观察普通 DEV 播放时应收起面板；展开面板和显式录制本身会增加诊断开销，不能把这一开销当作普通播放的帧耗时。
+
 ## 配对对照（唯一可信的前后判定）
 
 ```sh

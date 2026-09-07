@@ -46,6 +46,7 @@ export type RendererSettings = Pick<
   GameSettingsState,
   | "hiSpeed"
   | "alwaysKeepHiSpeed"
+  | "slideDelay"
   | "slideRotation"
   | "mirrorMode"
   | "judgmentLineDesign"
@@ -196,6 +197,7 @@ function yieldToBrowser(): Promise<void> {
 function applySettings(renderer: MainRenderer, settings: RendererSettings): void {
   renderer.setHiSpeed(settings.hiSpeed);
   renderer.setAlwaysKeepHiSpeed(settings.alwaysKeepHiSpeed);
+  renderer.setSlideDelay(settings.slideDelay);
   renderer.setPlaybackSpeed(1);
   renderer.setSlideRotation(settings.slideRotation);
   renderer.setMirrorMode(settings.mirrorMode);

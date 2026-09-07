@@ -486,6 +486,8 @@ export interface RendererConfig {
   hiSpeed: number;
   /** 是否在调整播放倍速时保持固定的音符进场速度（自动补偿播放倍速） */
   alwaysKeepHiSpeed: boolean;
+  /** 星星轨迹出现时机（-1.0 最早 ~ 1.0 最晚，步长 0.1），不改变滑动判定时刻 */
+  slideDelay: number;
   /** 播放速度倍率（0.1 ~ 1.0） */
   playbackSpeed: number;
   /** 谱面镜像变换模式 */

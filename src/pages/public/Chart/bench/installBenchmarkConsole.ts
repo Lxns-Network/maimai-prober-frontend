@@ -16,6 +16,7 @@ import {
   runPlaybackProfile,
   type PlaybackProfileOptions,
   type PlaybackProfileResult,
+  type SubscribeFrameProfile,
 } from "./playbackProfile";
 import {
   createStressChartFixture,
@@ -167,9 +168,12 @@ function formatComparison(a: RenderBenchmarkResult, b: RenderBenchmarkResult): s
   return lines.join("\n");
 }
 
-function createChartBenchConsole(rendererRef?: {
-  current: MainRenderer | null;
-}): ChartBenchConsole {
+function createChartBenchConsole(
+  rendererRef: { current: MainRenderer | null },
+  subscribeFrameProfile: SubscribeFrameProfile,
+  signal: AbortSignal,
+): ChartBenchConsole {
+  let recording = false;
   const bench: ChartBenchConsole = {
     last: null,
     lastPlayback: null,
@@ -253,10 +257,31 @@ function createChartBenchConsole(rendererRef?: {
       return result;
     },
     async profilePlayback(options = {}) {
-      const result = await runPlaybackProfile(options);
-      bench.lastPlayback = result;
-      console.info(`[chartBench] playback\n${formatPlaybackProfileReport(result)}`);
-      return result;
+      if (recording) throw new Error("A playback profile is already running");
+      if (signal.aborted) {
+        throw signal.reason ?? new DOMException("The operation was aborted", "AbortError");
+      }
+      recording = true;
+      const profileController = new AbortController();
+      const abortProfile = (event: Event) =>
+        profileController.abort((event.target as AbortSignal).reason);
+      signal.addEventListener("abort", abortProfile, { once: true });
+      const optionSignal = options.signal;
+      optionSignal?.addEventListener("abort", abortProfile, { once: true });
+      if (optionSignal?.aborted) profileController.abort(optionSignal.reason);
+      try {
+        const result = await runPlaybackProfile(subscribeFrameProfile, {
+          ...options,
+          signal: profileController.signal,
+        });
+        bench.lastPlayback = result;
+        console.info(`[chartBench] playback\n${formatPlaybackProfileReport(result)}`);
+        return result;
+      } finally {
+        signal.removeEventListener("abort", abortProfile);
+        optionSignal?.removeEventListener("abort", abortProfile);
+        recording = false;
+      }
     },
     compare(b, a = bench.last ?? undefined) {
       if (!a) throw new Error("No baseline: run() first or pass one explicitly");
@@ -273,12 +298,24 @@ function createChartBenchConsole(rendererRef?: {
 }
 
 /** CHART_BENCH_ENABLED 时把 `window.__chartBench` 装到页面上，组件卸载时移除；否则是空操作。 */
-export function useInstallBenchmarkConsole(rendererRef?: { current: MainRenderer | null }): void {
+function useEnabledBenchmarkConsole(
+  rendererRef: { current: MainRenderer | null },
+  subscribeFrameProfile: SubscribeFrameProfile,
+): void {
   useEffect(() => {
-    if (!CHART_BENCH_ENABLED) return;
-    window.__chartBench = createChartBenchConsole(rendererRef);
+    const controller = new AbortController();
+    window.__chartBench = createChartBenchConsole(
+      rendererRef,
+      subscribeFrameProfile,
+      controller.signal,
+    );
     return () => {
+      controller.abort();
       delete window.__chartBench;
     };
-  }, [rendererRef]);
+  }, [rendererRef, subscribeFrameProfile]);
 }
+
+export const useInstallBenchmarkConsole = CHART_BENCH_ENABLED
+  ? useEnabledBenchmarkConsole
+  : () => {};

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
 import { MainRenderer } from "@lxns-network/maimai-chart-engine";
 import { usePreviewAudio } from "../../hooks/usePreviewAudio";
-import { DebugOverlay, type CanvasDebugInfo } from "./DebugOverlay";
+import { DebugOverlay } from "./DebugOverlay";
 import { beatsToMs } from "../../utils/timeConversion";
 import classes from "./ChartCanvas.module.css";
 import clsx from "clsx";
@@ -13,15 +13,14 @@ import { useFrameCaptureEvents } from "./hooks/useFrameCaptureEvents";
 import { applyCurrentRendererSettings, useRendererSettings } from "./hooks/useRendererSettings";
 import { useWakeLock } from "./hooks/useWakeLock";
 import { useInstallBenchmarkConsole } from "../../bench/installBenchmarkConsole";
-import { FRAME_PROFILE_EVENT } from "../../bench/playbackProfile";
 import { CHART_BENCH_ENABLED } from "../../bench/benchEnabled";
+import { useChartProfiling } from "./hooks/useChartProfiling";
 
 export function ChartCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MainRenderer | null>(null);
   const bgVideoRef = useRef<HTMLVideoElement>(null);
-  const [canvasDebugInfo, setCanvasDebugInfo] = useState<CanvasDebugInfo | null>(null);
 
   const animationFrameRef = useRef<number | null>(null);
 
@@ -30,7 +29,8 @@ export function ChartCanvas() {
   const lastFrameTimeRef = useRef<number>(0);
   const lastRenderTimeRef = useRef<number>(0);
   const accumulatedTimeRef = useRef<number>(0);
-  const lastDebugInfoTimeRef = useRef<number>(0);
+  const { setOverlayProfiling, subscribeFrameProfile, reportFrameProfile, syncRendererProfiling } =
+    useChartProfiling(rendererRef);
 
   const previewAudio = usePreviewAudio();
   const previewAudioRef = useRef({
@@ -49,87 +49,52 @@ export function ChartCanvas() {
   const isPlaying = useGameStore((s) => s.isPlaying);
   const chartData = useGameStore((s) => s.chartData);
 
-  const renderFrame = useCallback((beatsOverride?: number) => {
-    const renderer = rendererRef.current;
-    const chart = useGameStore.getState().chartData;
-    const timeline = useGameStore.getState().timeline;
-    const playing = useGameStore.getState().isPlaying;
+  const renderFrame = useCallback(
+    (beatsOverride?: number) => {
+      const renderer = rendererRef.current;
+      const chart = useGameStore.getState().chartData;
+      const timeline = useGameStore.getState().timeline;
+      const playing = useGameStore.getState().isPlaying;
 
-    if (!renderer) return;
+      if (!renderer) return;
 
-    if (!chart) {
-      renderer.clear();
-      renderer.renderJudgmentLine();
-      return;
-    }
-    const currentBeats = beatsOverride ?? timeline.preciseTime;
-    const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
+      if (!chart) {
+        renderer.clear();
+        renderer.renderJudgmentLine();
+        return;
+      }
+      const currentBeats = beatsOverride ?? timeline.preciseTime;
+      const currentMs = beatsToMs(currentBeats, chart.bpmEvents, chart.bpm);
 
-    const settingsState = useGameSettingsStore.getState();
-    syncBackgroundVideoFrame({
-      renderer,
-      video: bgVideoRef.current,
-      chart,
-      timeline,
-      currentBeats,
-      currentMs,
-      playing,
-      showVideo: settingsState.showVideo,
-      musicOffset: settingsState.musicOffset,
-      playbackSpeed: useGameStore.getState().playbackSpeed,
-    });
+      const settingsState = useGameSettingsStore.getState();
+      syncBackgroundVideoFrame({
+        renderer,
+        video: bgVideoRef.current,
+        chart,
+        timeline,
+        currentBeats,
+        currentMs,
+        playing,
+        showVideo: settingsState.showVideo,
+        musicOffset: settingsState.musicOffset,
+        playbackSpeed: useGameStore.getState().playbackSpeed,
+      });
 
-    renderer.renderFrame(chart, currentBeats, timeline.beatsPerMeasure);
+      renderer.renderFrame(chart, currentBeats, timeline.beatsPerMeasure);
 
-    if (CHART_BENCH_ENABLED) {
-      const profile = renderer.getLastFrameProfile();
-      if (profile) window.dispatchEvent(new CustomEvent(FRAME_PROFILE_EVENT, { detail: profile }));
-    }
-  }, []);
-
-  const updateCanvasDebugInfo = useCallback((force: boolean = false) => {
-    if (!import.meta.env.DEV) return;
-
-    const now = performance.now();
-    if (!force && now - lastDebugInfoTimeRef.current < 250) return;
-    lastDebugInfoTimeRef.current = now;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const gameState = useGameStore.getState();
-    const renderProfile = rendererRef.current?.takeFrameProfile() ?? null;
-    setCanvasDebugInfo((previous) => {
-      const fps = fpsRef.current;
-      const previousHistory = previous?.fpsHistory ?? [];
-      const fpsHistory =
-        gameState.isPlaying && fps > 0 ? [...previousHistory, fps].slice(-80) : previousHistory;
-
-      return {
-        cssWidth: Math.round(rect.width),
-        cssHeight: Math.round(rect.height),
-        backingWidth: canvas.width,
-        backingHeight: canvas.height,
-        canvasDpr: rect.width > 0 ? canvas.width / rect.width : 0,
-        deviceDpr: window.devicePixelRatio || 1,
-        clockSource: previewAudioRef.current.getClockSource(),
-        fps,
-        fpsHistory,
-        renderProfile: renderProfile ?? previous?.renderProfile ?? null,
-      };
-    });
-  }, []);
+      if (CHART_BENCH_ENABLED) reportFrameProfile(renderer);
+    },
+    [reportFrameProfile],
+  );
 
   useFrameCaptureEvents(canvasRef);
   useWakeLock(isPlaying);
-  useInstallBenchmarkConsole(rendererRef);
+  useInstallBenchmarkConsole(rendererRef, subscribeFrameProfile);
   useBackgroundVideoSource({ videoRef: bgVideoRef, chartData, renderFrame });
   useRendererSettings({
     rendererRef,
     isFullscreen,
     renderFrame,
-    updateCanvasDebugInfo,
   });
 
   useEffect(() => {
@@ -138,13 +103,12 @@ export function ChartCanvas() {
 
     const renderer = new MainRenderer(canvas);
     renderer.setIsPlaying(useGameStore.getState().isPlaying);
-    renderer.setProfilingEnabled(CHART_BENCH_ENABLED);
     applyCurrentRendererSettings(renderer);
     rendererRef.current = renderer;
+    syncRendererProfiling();
 
     const handleResize = () => {
       renderer.resize(useGameStore.getState().isFullscreen);
-      updateCanvasDebugInfo(true);
       renderFrame(playbackTimeRef.current);
     };
 
@@ -159,23 +123,14 @@ export function ChartCanvas() {
     dprMediaQuery.addEventListener("change", handleResize);
 
     return () => {
+      renderer.setProfilingEnabled(false);
       resizeObserver.disconnect();
       dprMediaQuery.removeEventListener("change", handleResize);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [renderFrame, updateCanvasDebugInfo]);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-
-    updateCanvasDebugInfo(true);
-    const intervalId = window.setInterval(() => updateCanvasDebugInfo(), 250);
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [updateCanvasDebugInfo]);
+  }, [renderFrame, syncRendererProfiling]);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -294,7 +249,15 @@ export function ChartCanvas() {
           [classes.fullscreen]: isFullscreen,
         })}
       />
-      {import.meta.env.DEV && canvasDebugInfo && <DebugOverlay debugInfo={canvasDebugInfo} />}
+      {import.meta.env.DEV && (
+        <DebugOverlay
+          canvasRef={canvasRef}
+          rendererRef={rendererRef}
+          fpsRef={fpsRef}
+          getClockSource={previewAudio.getClockSource}
+          onProfilingChange={setOverlayProfiling}
+        />
+      )}
     </div>
   );
 }

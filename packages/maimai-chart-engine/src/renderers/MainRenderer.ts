@@ -243,6 +243,7 @@ export class MainRenderer {
   private config: RendererConfig = {
     hiSpeed: HI_SPEED_DEFAULT * HI_SPEED_CONVERSION_FACTOR,
     alwaysKeepHiSpeed: false,
+    slideDelay: 0,
     playbackSpeed: 1.0,
     mirrorMode: "none",
     highlightExNotes: false,
@@ -499,6 +500,16 @@ export class MainRenderer {
   }
 
   /**
+   * 设置星星轨迹的出现时机。
+   * 有限值钳到 [-1, 1] 并对齐 0.1 步长，非有限值直接忽略；设置后同步更新各子渲染器上下文。
+   */
+  setSlideDelay(slideDelay: number): void {
+    if (!Number.isFinite(slideDelay)) return;
+    this.config.slideDelay = Math.round(Math.max(-1, Math.min(1, slideDelay)) * 10) / 10 || 0;
+    this.updateRenderersContext();
+  }
+
+  /**
    * 设置回放速率。
    * 取值须在 [0.1, 1.0] 范围，设置后同步更新各子渲染器上下文。
    */
@@ -748,7 +759,12 @@ export class MainRenderer {
         isSimultaneous: this.getNoteMeta(noteMeta, slides[i]).simultaneousSlideCount >= 2,
       });
     }
-    this.slideRenderer.renderStableTracks(layerTracks, timing.currentBeat, timing.currentTimeMs);
+    this.slideRenderer.renderStableTracks(
+      layerTracks,
+      timing.currentBeat,
+      timing.currentTimeMs,
+      !this.isPlaying,
+    );
     this.profileMark("tracks");
 
     for (let i = slideHi - 1; i >= slideLo; i--) {
@@ -996,6 +1012,7 @@ export class MainRenderer {
   }
 
   private prepareRenderNotes(notes: Note[]): PreparedRenderNotes {
+    this.slideRenderer.invalidateTrackLayer();
     const slides: SlideNote[] = [];
     const touches: (TouchNote | TouchHoldStartNote)[] = [];
     const fireworkTouches: (TouchNote | TouchHoldStartNote)[] = [];

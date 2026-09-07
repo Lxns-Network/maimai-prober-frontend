@@ -23,6 +23,7 @@ import {
 } from "../utils/constants";
 import { detectSlideShape, SLIDE_AREA_STEP_MAP } from "../utils/slideAreaSteps";
 import { SLIDE_BARS } from "../utils/slideBars";
+import { getSlideTrackAppearance } from "../core/timing/slideAppearance";
 
 export type SlideRenderMode = "tracks" | "stars";
 
@@ -47,10 +48,22 @@ type ArrowPathSet = ArrowPaths[];
 
 /** 每帧向双缓冲暂存画布最多绘制的轨迹条数，用于分摊单帧重建开销。 */
 const TRACKS_PER_BUILD_STEP = 12;
+/** 同一离屏层的最小重建间隔（谱面毫秒），为淡入期的连续变化兜底。 */
+const TRACK_LAYER_REBUILD_INTERVAL_MS = 33;
+/** 淡入期透明度逐帧连续变化，按此粒度离散分桶，以平衡渐入平滑度与离屏缓存重建开销。 */
+const TRACK_FADE_BUCKET_MS = 25;
+/** 相邻帧谱面时间前进超过此值即视为跳转，丢弃旧轨迹层以避免显示旧位置的轨迹。 */
+const TRACK_TIME_JUMP_MS = 200;
+
+interface StableTrackEntry {
+  note: SlideNote;
+  index: number;
+  isSimultaneous: boolean;
+}
 
 interface TrackBuildJob {
   signature: string;
-  entries: { note: SlideNote; index: number; isSimultaneous: boolean }[];
+  entries: StableTrackEntry[];
   currentBeat: number;
   currentTimeMs: number;
   nextIndex: number;
@@ -76,10 +89,13 @@ export class SlideRenderer extends BaseRenderer {
   private trackLayerCtx: CanvasRenderingContext2D | null = null;
   private trackLayerSignature = "";
   private trackLayerBuiltAtMs = -Infinity;
+  /** 上一次合成轨迹层的谱面时刻，用于识别 seek 跳变并作废缓存层。 */
+  private lastTrackRenderTimeMs: number | null = null;
   /** 轨迹分帧构建使用的离屏暂存画布。 */
   private trackStaging: HTMLCanvasElement | null = null;
   private trackStagingCtx: CanvasRenderingContext2D | null = null;
   private trackBuildJob: TrackBuildJob | null = null;
+  private visibleTrackEntries: StableTrackEntry[] = [];
 
   /**
    * 获取需要实际绘制的滑条路径索引列表。
@@ -386,67 +402,78 @@ export class SlideRenderer extends BaseRenderer {
     mode: SlideRenderMode = "tracks",
     hasSimultaneousSlide: boolean,
   ): void {
-    const approachHalf = this.getNoteApproachTimeMs(note) / 2;
-    const visibilityStart = note.timingMs - approachHalf;
-
     const durationMs = note.allDurationMs ? note.allDurationMs[pathIndex] : note.durationMs;
     const delayMs = note.allDelayMs
       ? note.allDelayMs[pathIndex]
       : (note.delayMs ?? 60000 / note.bpm);
     const slideStart = note.timingMs + delayMs;
 
-    if (currentTimeMs < visibilityStart || currentTimeMs > slideStart + durationMs) {
+    if (currentTimeMs > slideStart + durationMs) {
       return;
     }
 
-    let alpha = 1;
-    if (currentTimeMs < note.timingMs) {
-      const fadeProgress = (currentTimeMs - visibilityStart) / approachHalf;
-      alpha = Math.max(0, Math.min(1, fadeProgress));
+    let progress = 0;
+    if (currentTimeMs >= slideStart) {
+      progress = durationMs > 0 ? Math.min(1, (currentTimeMs - slideStart) / durationMs) : 1;
     }
 
-    this.withContext(() => {
-      this.context.ctx.globalAlpha = alpha;
-
-      let progress = 0;
-      if (currentTimeMs >= slideStart) {
-        const elapsed = currentTimeMs - slideStart;
-        progress = Math.min(1, elapsed / durationMs);
+    const isSimultaneous = hasSimultaneousSlide || (note.isSplitSlide ?? false);
+    if (mode === "stars") {
+      if (currentTimeMs >= note.timingMs) {
+        this.renderSlideStar(note, progress, segments, pathIndex, currentTimeMs, isSimultaneous);
       }
+      return;
+    }
 
-      const isSimultaneous = hasSimultaneousSlide || (note.isSplitSlide ?? false);
+    const ordinary = this.getTrackAppearance(note, currentTimeMs, false);
+    const wifi = this.getTrackAppearance(note, currentTimeMs, true);
+    if (ordinary.alpha === 0 && wifi.alpha === 0) return;
 
-      if (mode === "tracks") {
-        const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
-        const metrics = this.getSlidePathMetrics(segments);
-        if (!metrics) return;
+    const isBreak = note.allSlideBreaks?.[pathIndex] ?? false;
+    const metrics = this.getSlidePathMetrics(segments);
+    if (!metrics) return;
 
-        // 逆序绘制以确保靠前的分段置于顶层，使接合拐点处前段的衔接箭头能自然覆盖后段起点。
-        for (let i = segments.length - 1; i >= 0; i--) {
-          const segment = segments[i];
-          const range = metrics.segmentRanges[i];
+    this.withContext(() => {
+      // 逆序绘制以确保靠前的分段置于顶层，使接合拐点处前段的衔接箭头能自然覆盖后段起点。
+      for (let i = segments.length - 1; i >= 0; i--) {
+        const segment = segments[i];
+        const alpha = segment.type === "w" ? wifi.alpha : ordinary.alpha;
+        if (alpha === 0) continue;
+        this.context.ctx.globalAlpha = alpha;
+        const range = metrics.segmentRanges[i];
 
-          let segmentProgress = 0;
-          if (progress > range.start) {
-            segmentProgress =
-              progress >= range.end ? 1 : (progress - range.start) / (range.end - range.start);
-          }
-
-          this.renderSlideSegment(
-            segment,
-            isBreak,
-            segmentProgress,
-            isSimultaneous,
-            this.context.config.normalColorBreakSlide,
-            i < segments.length - 1, // 非末段的终点为接合拐点，需补充衔接箭头
-          );
+        let segmentProgress = 0;
+        if (progress > range.start) {
+          segmentProgress =
+            progress >= range.end ? 1 : (progress - range.start) / (range.end - range.start);
         }
-      } else {
-        if (currentTimeMs >= note.timingMs) {
-          this.renderSlideStar(note, progress, segments, pathIndex, currentTimeMs, isSimultaneous);
-        }
+
+        this.renderSlideSegment(
+          segment,
+          isBreak,
+          segmentProgress,
+          isSimultaneous,
+          this.context.config.normalColorBreakSlide,
+          i < segments.length - 1, // 非末段的终点为接合拐点，需补充衔接箭头
+        );
       }
     });
+  }
+
+  /**
+   * 计算某条轨迹在当前时刻的透明度与淡入状态；Wi-Fi 与普通分段取值不同。
+   * 出现时机由 config.slideDelay 决定，与星星的移动进度无关。
+   */
+  private getTrackAppearance(note: SlideNote, currentTimeMs: number, isWifi: boolean) {
+    return getSlideTrackAppearance(
+      {
+        noteTimeMs: note.timingMs,
+        approachTimeMs: this.getNoteApproachTimeMs(note),
+        slideDelay: this.context.config.slideDelay,
+      },
+      currentTimeMs,
+      isWifi,
+    );
   }
 
   /**
@@ -546,11 +573,7 @@ export class SlideRenderer extends BaseRenderer {
     const steps = SLIDE_AREA_STEP_MAP["wifi"];
     const N = steps[steps.length - 1];
 
-    let hiddenCount = 0;
-    if (progress > 0 && steps.length >= 2) {
-      const i = Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)));
-      hiddenCount = steps[i] + 1;
-    }
+    const hiddenCount = this.getHiddenCount(segment, progress);
 
     const pivot = this.noteRenderer.getPositionOnRing(segment.startPos);
     const endPivot = this.noteRenderer.getPositionOnRing(segment.endPos);
@@ -597,21 +620,28 @@ export class SlideRenderer extends BaseRenderer {
   }
 
   /**
-   * 生成单个音符在当前时间戳下的轨迹离屏缓存状态签名。
-   * 包含淡入时间分桶及各分段已隐藏箭头数量，用于判断离屏画布是否需要重建。
+   * 生成单个音符在当前时刻的轨迹缓存状态签名，用于判断离屏画布是否需要重建。
+   * 与 renderSlidePath 共用同一套 progress→hiddenCount 推导，此处只取失效判据。
+   * 淡入中的分段按 TRACK_FADE_BUCKET_MS 分桶，透明度稳定后才把实际 alpha 写进签名。
    *
    * @param note 滑条音符数据。
    * @param currentTimeMs 当前谱面播放时间戳（毫秒）。
-   * @returns 状态签名字符串。
+   * @returns key 为状态签名；hasVisibleTrack 为 false 时该音符当帧不绘制任何轨迹，调用方可整条跳过。
    */
-  private trackStateKey(note: SlideNote, currentTimeMs: number): string {
+  private trackStateKey(
+    note: SlideNote,
+    currentTimeMs: number,
+  ): { key: string; hasVisibleTrack: boolean } {
+    const ordinary = this.getTrackAppearance(note, currentTimeMs, false);
+    const wifi = this.getTrackAppearance(note, currentTimeMs, true);
+    if (ordinary.alpha === 0 && wifi.alpha === 0) {
+      return { key: "", hasVisibleTrack: false };
+    }
+
+    const fadeBucket = `~${Math.floor(currentTimeMs / TRACK_FADE_BUCKET_MS)}`;
     const pathIndexes =
       note.isSplitSlide && note.allSlideSegments ? this.getRenderPathIndexes(note) : [0];
     let key = "";
-    // 淡入期透明度连续变化，按 25ms 离散分桶以平衡渐入平滑度与离屏缓存重建开销
-    if (currentTimeMs < note.timingMs) {
-      key += `~${Math.floor((note.timingMs - currentTimeMs) / 25)}`;
-    }
     for (const i of pathIndexes) {
       const segments = note.allSlideSegments ? note.allSlideSegments[i] : note.slideSegments;
       if (!segments || segments.length === 0) continue;
@@ -624,12 +654,15 @@ export class SlideRenderer extends BaseRenderer {
       }
       let progress = 0;
       if (currentTimeMs >= slideStart) {
-        progress = Math.min(1, (currentTimeMs - slideStart) / durationMs);
+        progress = durationMs > 0 ? Math.min(1, (currentTimeMs - slideStart) / durationMs) : 1;
       }
       key += `|${i}`;
       const metrics = this.getSlidePathMetrics(segments);
       if (!metrics) continue;
       for (let s = 0; s < segments.length; s++) {
+        const appearance = segments[s].type === "w" ? wifi : ordinary;
+        key += appearance.isFading ? `:${fadeBucket}` : `:${appearance.alpha}`;
+        if (appearance.alpha === 0) continue;
         const range = metrics.segmentRanges[s];
         let segmentProgress = 0;
         if (progress > range.start) {
@@ -639,56 +672,94 @@ export class SlideRenderer extends BaseRenderer {
         key += `,${this.getHiddenCount(segments[s], segmentProgress)}`;
       }
     }
-    return key;
+    return { key, hasVisibleTrack: true };
+  }
+
+  /** 丢弃在途重建并清空缓存层内容，重建完成前合成的是空层，不会画出上一张谱的轨迹。 */
+  invalidateTrackLayer(): void {
+    this.lastTrackRenderTimeMs = null;
+    if (this.trackLayerSignature === "" && !this.trackBuildJob) return;
+    this.trackLayerSignature = "";
+    this.trackBuildJob = null;
+    this.trackLayerBuiltAtMs = -Infinity;
+    this.clearTrackLayer();
+  }
+
+  private clearTrackLayer(): void {
+    if (!this.trackLayer || !this.trackLayerCtx) return;
+    this.trackLayerCtx.setTransform(1, 0, 0, 1, 0, 0);
+    this.trackLayerCtx.clearRect(0, 0, this.trackLayer.width, this.trackLayer.height);
   }
 
   /**
    * 批量渲染处于稳定状态的滑条轨迹。
    *
    * 采用双缓冲离屏 Canvas 机制：当所有音符的状态签名均未变更时，直接复用前台离屏画布（仅一次 drawImage 合成）；
-   * 签名变更时通过后台暂存画布分帧逐步构建，完成后交换显示。
+   * 签名变更时通过后台暂存画布分帧逐步构建，每帧最多 TRACKS_PER_BUILD_STEP 条并受
+   * TRACK_LAYER_REBUILD_INTERVAL_MS 节流，构建期间继续显示上一版完整层，完成后交换显示。
    *
    * @param entries 待渲染的稳定滑条条目列表。
    * @param currentBeat 当前节拍。
    * @param currentTimeMs 当前谱面播放时间戳（毫秒）。
+   * @param requireCompleteLayer 为 true（暂停、定格、GIF 导出）时当帧同步构建完成，保证单帧场景不依赖后续帧。
    */
   renderStableTracks(
-    entries: { note: SlideNote; index: number; isSimultaneous: boolean }[],
+    entries: StableTrackEntry[],
     currentBeat: number,
     currentTimeMs: number,
+    requireCompleteLayer: boolean,
   ): void {
     const mainCtx = this.context.ctx;
     const canvas = this.context.canvas;
+    const frameDeltaMs = currentTimeMs - (this.lastTrackRenderTimeMs ?? currentTimeMs);
+    if (frameDeltaMs < 0 || frameDeltaMs > TRACK_TIME_JUMP_MS) {
+      this.invalidateTrackLayer();
+    }
+    this.lastTrackRenderTimeMs = currentTimeMs;
     if (entries.length === 0) {
-      this.trackLayerSignature = "";
-      this.trackBuildJob = null;
+      this.invalidateTrackLayer();
       return;
     }
 
-    let signature = `${canvas.width}x${canvas.height}|${this.context.radius}|${this.context.config.mirrorMode}|${this.context.config.normalColorBreakSlide ? 1 : 0}`;
+    const { config } = this.context;
+    let signature = `${canvas.width}x${canvas.height}|${this.context.radius}|${config.mirrorMode}|${config.normalColorBreakSlide ? 1 : 0}|${config.slideDelay}|${this.getApproachTimeMs()}`;
+    const visible = this.visibleTrackEntries;
+    visible.length = 0;
     for (const entry of entries) {
-      signature += `;${entry.index}:${entry.isSimultaneous ? 1 : 0}${this.trackStateKey(entry.note, currentTimeMs)}`;
+      const state = this.trackStateKey(entry.note, currentTimeMs);
+      if (!state.hasVisibleTrack) continue;
+      signature += `;${entry.index}:${entry.isSimultaneous ? 1 : 0}${state.key}`;
+      visible.push(entry);
     }
 
     const job = this.trackBuildJob;
+    const noFrontLayer = !this.trackLayer;
     if (signature === this.trackLayerSignature) {
       this.trackBuildJob = null;
     } else if (job && job.signature === signature) {
-      this.advanceTrackBuildJob(job);
-    } else if (Math.abs(currentTimeMs - this.trackLayerBuiltAtMs) >= 33 || !this.trackLayer) {
-      const staging = this.acquireTrackStaging(canvas, mainCtx);
-      this.trackBuildJob = {
-        signature,
-        entries: entries.slice(),
-        currentBeat,
-        currentTimeMs,
-        nextIndex: 0,
-        staging,
-      };
-      // 初始无前台离屏层时同步执行直至首帧构建完成，避免画面出现空白闪烁
+      // 无前台离屏层时同步执行直至首帧构建完成，避免画面出现空白闪烁。
       do {
-        this.advanceTrackBuildJob(this.trackBuildJob);
-      } while (this.trackBuildJob && !this.trackLayer);
+        this.advanceTrackBuildJob(job);
+      } while (this.trackBuildJob && (requireCompleteLayer || noFrontLayer));
+    } else {
+      const elapsedSinceBuildMs = Math.abs(currentTimeMs - this.trackLayerBuiltAtMs);
+      if (
+        requireCompleteLayer ||
+        noFrontLayer ||
+        elapsedSinceBuildMs >= TRACK_LAYER_REBUILD_INTERVAL_MS
+      ) {
+        this.trackBuildJob = {
+          signature,
+          entries: visible.slice(),
+          currentBeat,
+          currentTimeMs,
+          nextIndex: 0,
+          staging: this.acquireTrackStaging(canvas, mainCtx),
+        };
+        do {
+          this.advanceTrackBuildJob(this.trackBuildJob);
+        } while (this.trackBuildJob && (requireCompleteLayer || noFrontLayer));
+      }
     }
 
     if (!this.trackLayer) return;
@@ -779,9 +850,11 @@ export class SlideRenderer extends BaseRenderer {
     const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos, segment.midPos);
     if (!shape) return 0;
     const steps = SLIDE_AREA_STEP_MAP[shape.shape];
-    return steps && steps.length >= 2
-      ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
-      : 0;
+    const hiddenCount =
+      steps && steps.length >= 2
+        ? steps[Math.min(steps.length - 1, Math.floor(progress * (steps.length - 1)))]
+        : 0;
+    return segment.type === "w" && progress > 0 ? hiddenCount + 1 : hiddenCount;
   }
 
   /**
@@ -1181,7 +1254,6 @@ export class SlideRenderer extends BaseRenderer {
     ctx.save();
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
-    ctx.globalAlpha = ctx.globalAlpha * 0.5;
 
     // 将整组扇形合并为单一 Path2D，统一执行阴影偏移填充与本体填充
     const fanPath = new Path2D();
