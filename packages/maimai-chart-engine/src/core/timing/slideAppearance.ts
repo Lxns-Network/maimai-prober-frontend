@@ -9,14 +9,17 @@ interface SlideTrackAppearance {
   isFading: boolean;
 }
 
+/** 轨迹提前变为完全不透明的判定补偿量（毫秒），实测值。 */
 const SLIDE_JUDGE_ADJUST_MS = 50;
-// SDGB 1.55 SlideFan._laneColor stores this alpha for ordinary, simultaneous and BREAK tracks.
+/** 淡入斜坡时长（毫秒）：透明度在此窗口内线性升至 0.5，实测值。 */
+const TRACK_FADE_RAMP_MS = 200;
+/** Wi-Fi 轨迹的默认透明度；普通、同时押与 BREAK 三种配色共用该值，实测值。 */
 const WIFI_TRACK_ALPHA = 120 / 255;
 
 /**
- * Maps slideDelay (-1 to 1 in 0.1 steps) to the arcade's 21 appearance positions.
- * The engine's approachTimeMs already spans the arcade's DefaultMsec * 2 window;
- * zero selects position index 10, slightly before half of that window has elapsed.
+ * 把 slideDelay（-1 ~ 1，步长 0.1）映射到实测的 21 档出现时机，返回轨迹开始出现的时刻（毫秒）。
+ * approachTimeMs 已覆盖完整进场窗口；slideDelay 为 0 时取第 10 档，略早于窗口中点，
+ * 且最晚一档仍比 noteTimeMs 提前 approachTimeMs / 21 —— 两者均与实测一致，不是取整误差。
  */
 export function getSlideAppearanceStartMs({
   noteTimeMs,
@@ -28,22 +31,20 @@ export function getSlideAppearanceStartMs({
 }
 
 /**
- * Ports the `num3 + 200f <= currentMsec` branch of SlideFan.UpdateAlpha (SDGB
- * 1.55 SlideFan.cs:181), where num3 is the time remaining until note time.
- * Comparing that remaining time against an absolute timestamp mixes units, but
- * the quirk is the arcade's own: it holds from a few seconds into any chart
- * onwards, which is what keeps visible Wi-Fi tracks at 0.5 instead of their
- * default alpha. Do not normalize the units without re-checking the arcade.
+ * 实测的「已出现 Wi-Fi 轨迹取半透明」判据：将剩余时长与绝对时刻直接相比。
+ * 两侧量纲并不一致，但这正是实测行为本身——谱面开头数秒之后该条件恒成立，
+ * 也正是它让已出现的 Wi-Fi 轨迹停在 0.5 而非 WIFI_TRACK_ALPHA。
+ * 未经实测复核，请勿将其「修正」为同量纲比较。
  */
 function isArcadeWifiHalfAlpha(noteTimeMs: number, currentTimeMs: number): boolean {
-  return noteTimeMs - currentTimeMs + 200 <= currentTimeMs;
+  return noteTimeMs - currentTimeMs + TRACK_FADE_RAMP_MS <= currentTimeMs;
 }
 
 /**
- * Returns track opacity in chart milliseconds, independently of star movement.
- * Short ordinary fades are clamped for Canvas, which ignores out-of-range alpha.
- * The arcade's JudgeAdjustMs makes ordinary tracks opaque 50 ms before note time;
- * visible Wi-Fi tracks restore their default alpha at the same threshold.
+ * 计算轨迹在 currentTimeMs（谱面毫秒）的透明度与淡入状态，与星星的移动进度无关。
+ * 距 noteTimeMs 不足 SLIDE_JUDGE_ADJUST_MS 时轨迹即完全不透明，已出现的 Wi-Fi 轨迹
+ * 在同一阈值恢复 WIFI_TRACK_ALPHA。淡入窗口短于 TRACK_FADE_RAMP_MS 的普通轨迹按比例
+ * 折算并钳制到 [0, 0.5]，因为 Canvas 会忽略超出 [0, 1] 的 globalAlpha。
  */
 export function getSlideTrackAppearance(
   timing: SlideAppearanceTiming,
@@ -60,7 +61,7 @@ export function getSlideTrackAppearance(
   const elapsed = currentTimeMs - appearanceStart;
   if (elapsed <= 0) return { alpha: 0, isFading: false };
 
-  if (isWifi && elapsed > 200) {
+  if (isWifi && elapsed > TRACK_FADE_RAMP_MS) {
     return {
       alpha: isArcadeWifiHalfAlpha(timing.noteTimeMs, currentTimeMs) ? 0.5 : WIFI_TRACK_ALPHA,
       isFading: false,
@@ -69,8 +70,8 @@ export function getSlideTrackAppearance(
 
   const fadeWindow = timing.noteTimeMs - appearanceStart;
   const alpha =
-    isWifi || fadeWindow >= 200
-      ? Math.min(0.5, (0.5 * elapsed) / 200)
+    isWifi || fadeWindow >= TRACK_FADE_RAMP_MS
+      ? Math.min(0.5, (0.5 * elapsed) / TRACK_FADE_RAMP_MS)
       : Math.max(0, Math.min(0.5, 0.5 * (1 - (timing.noteTimeMs - currentTimeMs) / elapsed)));
 
   return { alpha, isFading: alpha > 0 && alpha < 0.5 };
