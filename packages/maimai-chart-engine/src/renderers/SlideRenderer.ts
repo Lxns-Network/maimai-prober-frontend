@@ -49,8 +49,8 @@ const TRACKS_PER_BUILD_STEP = 12;
 const TRACK_LAYER_REBUILD_INTERVAL_MS = 33;
 // 淡入期 alpha 逐帧变化，按此粒度分桶，让签名每 25ms 才变一次。
 const TRACK_FADE_BUCKET_MS = 25;
-// 缓存层内容与当前时刻相差超过此值即视为跳转，宁可不画也不画出旧位置的轨迹。
-const TRACK_LAYER_STALE_MS = 200;
+// 相邻帧谱面时间前进超过此值时丢弃旧轨迹层，避免跳转后显示旧位置的轨迹。
+const TRACK_TIME_JUMP_MS = 200;
 
 interface StableTrackEntry {
   note: SlideNote;
@@ -81,6 +81,7 @@ export class SlideRenderer extends BaseRenderer {
   private trackLayerCtx: CanvasRenderingContext2D | null = null;
   private trackLayerSignature = "";
   private trackLayerBuiltAtMs = -Infinity;
+  private lastTrackRenderTimeMs: number | null = null;
   private trackStaging: HTMLCanvasElement | null = null;
   private trackStagingCtx: CanvasRenderingContext2D | null = null;
   private trackBuildJob: TrackBuildJob | null = null;
@@ -567,6 +568,7 @@ export class SlideRenderer extends BaseRenderer {
 
   /** 丢弃在途重建并清空缓存层内容，重建完成前合成的是空层，不会画出上一张谱的轨迹。 */
   invalidateTrackLayer(): void {
+    this.lastTrackRenderTimeMs = null;
     if (this.trackLayerSignature === "" && !this.trackBuildJob) return;
     this.trackLayerSignature = "";
     this.trackBuildJob = null;
@@ -594,6 +596,11 @@ export class SlideRenderer extends BaseRenderer {
   ): void {
     const mainCtx = this.context.ctx;
     const canvas = this.context.canvas;
+    const frameDeltaMs = currentTimeMs - (this.lastTrackRenderTimeMs ?? currentTimeMs);
+    if (frameDeltaMs < 0 || frameDeltaMs > TRACK_TIME_JUMP_MS) {
+      this.invalidateTrackLayer();
+    }
+    this.lastTrackRenderTimeMs = currentTimeMs;
     if (entries.length === 0) {
       this.invalidateTrackLayer();
       return;
@@ -619,9 +626,12 @@ export class SlideRenderer extends BaseRenderer {
         this.advanceTrackBuildJob(job);
       } while (this.trackBuildJob && (requireCompleteLayer || noFrontLayer));
     } else {
-      const drift = Math.abs(currentTimeMs - this.trackLayerBuiltAtMs);
-      if (requireCompleteLayer || noFrontLayer || drift >= TRACK_LAYER_REBUILD_INTERVAL_MS) {
-        if (drift > TRACK_LAYER_STALE_MS) this.clearTrackLayer();
+      const elapsedSinceBuildMs = Math.abs(currentTimeMs - this.trackLayerBuiltAtMs);
+      if (
+        requireCompleteLayer ||
+        noFrontLayer ||
+        elapsedSinceBuildMs >= TRACK_LAYER_REBUILD_INTERVAL_MS
+      ) {
         this.trackBuildJob = {
           signature,
           entries: visible.slice(),
