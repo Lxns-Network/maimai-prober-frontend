@@ -75,12 +75,7 @@ export class TouchRenderer extends BaseRenderer {
     super(context);
   }
 
-  /**
-   * 获取 Canvas backing store 相对逻辑坐标的缩放比例（包含设备像素比 DPR）。
-   * 精灵依据此缩放烘焙以保持设备原生分辨率。
-   *
-   * @returns 物理像素与逻辑坐标的比值。
-   */
+  /** 获取 Canvas backing store 相对逻辑坐标的缩放比例（包含设备像素比 DPR）。 */
   private getBackingScale(): number {
     return this.context.canvas.width / (this.context.centerX * 2);
   }

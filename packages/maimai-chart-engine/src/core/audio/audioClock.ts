@@ -1,13 +1,7 @@
-/**
- * 校验延迟数值是否合法。仅在数值为大于 0 的有限数时返回原值，否则返回 null。
- */
 function getFinitePositiveLatency(value: number | undefined): number | null {
   return value !== undefined && Number.isFinite(value) && value > 0 ? value : null;
 }
 
-/**
- * 将估算时间限制在 [0, currentTime] 区间内，保证时间非负且不超前于音频上下文当前时刻。
- */
 function clampContextTime(time: number, currentTime: number): number {
   return Math.max(0, Math.min(time, currentTime));
 }
