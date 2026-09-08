@@ -306,11 +306,7 @@ JSON 格式的玩家成绩：
 
 ### GET `/api/v0/maimai/player/{friend_code}/score/history`
 
-获取玩家成绩游玩历史记录。
-
-::: warning 注意
-该接口仅返回带有 `play_time` 的成绩。
-:::
+获取玩家成绩上传历史记录，按照 `upload_time` 倒序排列。返回结果包含没有 `play_time` 的成绩更新。
 
 #### 权限
 

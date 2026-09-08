@@ -60,7 +60,7 @@ const ScoreHistoryChart = ({ scores }: { scores: MaimaiScoreProps[] }) => {
             const payload = props.payload[0].payload;
             return (
               <Card p="xs" withBorder fz="sm">
-                <Text>{new Date(payload.upload_time).toLocaleDateString()}</Text>
+                <Text>{new Date(payload.upload_time).toLocaleString()}</Text>
                 <Text c="#8884d8">{payload.achievements}%</Text>
                 <Text>DX Rating: {parseInt(payload.dx_rating)}</Text>
               </Card>

@@ -15,7 +15,7 @@ MCP（Model Context Protocol，模型上下文协议）是一套开放标准，�
 本查分器提供了一个远程 MCP 服务器，你可以在支持 MCP 的客户端（如 Claude 等）中接入它，让 AI 助手代你完成以下操作：
 
 - 搜索曲目、查询单曲详情、解析曲目别名；
-- 读取你的玩家资料、谱面成绩与游玩历史；
+- 读取你的玩家资料、谱面成绩与成绩历史；
 - 导入并保存你的成绩；
 - 计算单曲的 DX Rating、Rating 与 OVER POWER。
 
@@ -95,7 +95,7 @@ claude mcp add --transport http maimai-prober https://maimai.lxns.net/mcp
 | `get_my_maimai_player`        | 获取你的舞萌 DX 玩家资料（DX Rating、名称等）。  | `read_player`  |
 | `get_my_maimai_scores`        | 获取你的全部舞萌 DX 成绩（每个谱面的最佳成绩）。 | `read_player`  |
 | `get_my_maimai_score`         | 获取你单个舞萌 DX 谱面的最佳成绩。               | `read_player`  |
-| `get_my_maimai_score_history` | 获取你单个舞萌 DX 谱面的游玩历史。               | `read_player`  |
+| `get_my_maimai_score_history` | 获取你单个舞萌 DX 谱面的成绩上传历史。           | `read_player`  |
 | `import_my_maimai_scores`     | 导入/保存你的舞萌 DX 成绩（写操作）。            | `write_player` |
 
 ### 中二节奏
@@ -109,5 +109,5 @@ claude mcp add --transport http maimai-prober https://maimai.lxns.net/mcp
 | `get_my_chunithm_player`        | 获取你的中二节奏玩家资料（Rating、名称等）。                                        | `read_player`  |
 | `get_my_chunithm_scores`        | 获取你的全部中二节奏成绩（每个谱面的最佳成绩）。                                    | `read_player`  |
 | `get_my_chunithm_score`         | 获取你单个中二节奏谱面的最佳成绩。                                                  | `read_player`  |
-| `get_my_chunithm_score_history` | 获取你单个中二节奏谱面的游玩历史。                                                  | `read_player`  |
+| `get_my_chunithm_score_history` | 获取你单个中二节奏谱面的成绩上传历史。                                              | `read_player`  |
 | `import_my_chunithm_scores`     | 导入/保存你的中二节奏成绩（写操作）。                                               | `write_player` |

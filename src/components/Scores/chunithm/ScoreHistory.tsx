@@ -64,7 +64,7 @@ const ScoreHistoryChart = ({ scores }: { scores: ChunithmScoreProps[] }) => {
             const payload = props.payload[0].payload;
             return (
               <Card p="xs" withBorder fz="sm">
-                <Text>{new Date(payload.upload_time).toLocaleDateString()}</Text>
+                <Text>{new Date(payload.upload_time).toLocaleString()}</Text>
                 <Text c="#8884d8">
                   <NumberFormatter value={payload.score || 0} thousandSeparator />
                 </Text>
