@@ -1,5 +1,5 @@
 import { useMutation, UseMutationOptions } from "@tanstack/react-query";
-import { apiMutationFn } from "@/hooks/queries/mutationFn.ts";
+import { parseAPIResponse } from "@/utils/api/response.ts";
 import {
   createAlias,
   voteAlias,
@@ -12,8 +12,8 @@ export const useCreateAlias = (
   options?: UseMutationOptions<unknown, Error, { game: string; data: object }>,
 ) => {
   return useMutation({
-    mutationFn: ({ game, data }: { game: string; data: object }) =>
-      apiMutationFn(() => createAlias(game, data)),
+    mutationFn: async ({ game, data }: { game: string; data: object }) =>
+      parseAPIResponse(await createAlias(game, data)),
     ...options,
   });
 };
@@ -22,8 +22,8 @@ export const useVoteAlias = (
   options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number; vote: boolean }>,
 ) => {
   return useMutation({
-    mutationFn: ({ game, aliasId, vote }: { game: string; aliasId: number; vote: boolean }) =>
-      apiMutationFn(() => voteAlias(game, aliasId, vote)),
+    mutationFn: async ({ game, aliasId, vote }: { game: string; aliasId: number; vote: boolean }) =>
+      parseAPIResponse(await voteAlias(game, aliasId, vote)),
     ...options,
   });
 };
@@ -32,8 +32,8 @@ export const useDeleteUserAlias = (
   options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>,
 ) => {
   return useMutation({
-    mutationFn: ({ game, aliasId }: { game: string; aliasId: number }) =>
-      apiMutationFn(() => deleteUserAlias(game, aliasId)),
+    mutationFn: async ({ game, aliasId }: { game: string; aliasId: number }) =>
+      parseAPIResponse(await deleteUserAlias(game, aliasId)),
     ...options,
   });
 };
@@ -42,8 +42,8 @@ export const useDeleteAlias = (
   options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>,
 ) => {
   return useMutation({
-    mutationFn: ({ game, aliasId }: { game: string; aliasId: number }) =>
-      apiMutationFn(() => deleteAlias(game, aliasId)),
+    mutationFn: async ({ game, aliasId }: { game: string; aliasId: number }) =>
+      parseAPIResponse(await deleteAlias(game, aliasId)),
     ...options,
   });
 };
@@ -52,8 +52,8 @@ export const useApproveAlias = (
   options?: UseMutationOptions<unknown, Error, { game: string; aliasId: number }>,
 ) => {
   return useMutation({
-    mutationFn: ({ game, aliasId }: { game: string; aliasId: number }) =>
-      apiMutationFn(() => approveAlias(game, aliasId)),
+    mutationFn: async ({ game, aliasId }: { game: string; aliasId: number }) =>
+      parseAPIResponse(await approveAlias(game, aliasId)),
     ...options,
   });
 };

@@ -1,4 +1,5 @@
 import { fetchAPI } from "./api.ts";
+import { APIError } from "@/utils/errors.ts";
 
 export async function createAlias(game: string, data: object): Promise<Response> {
   return fetchAPI(`user/${game}/alias`, { method: "POST", body: data });
@@ -28,13 +29,14 @@ interface AliasEntry {
 export class AliasList {
   game: string = "";
   aliases: AliasEntry[] = [];
-  searchMap: Record<string, number[]> = {};
+  searchMap: Record<string, number[]> = Object.create(null);
 
   constructor(game: string) {
     this.game = game;
   }
 
   private parseSearchMap() {
+    this.searchMap = Object.create(null);
     this.aliases.forEach((alias) => {
       alias.aliases.forEach((aliasText: string) => {
         this.searchMap[aliasText] = this.searchMap[aliasText] || [];
@@ -45,7 +47,8 @@ export class AliasList {
 
   async fetch() {
     const res = await fetchAPI(`${this.game}/alias/list`, { method: "GET" });
-    const data = await res?.json();
+    if (!res.ok) throw new APIError("获取曲目别名失败", { status: res.status });
+    const data = await res.json();
     this.aliases = data.aliases;
     this.parseSearchMap();
 

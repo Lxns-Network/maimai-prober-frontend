@@ -21,10 +21,6 @@ export async function getUserCrawlToken(): Promise<Response> {
   return fetchAPI("user/crawl/token", { method: "GET" });
 }
 
-export async function getCrawlStatus(): Promise<Response> {
-  return fetchAPI("user/crawl/status", { method: "GET" });
-}
-
 export async function syncHtml(game: string, html: string): Promise<Response> {
   return fetchAPI(`user/${game}/player/html`, {
     method: "POST",

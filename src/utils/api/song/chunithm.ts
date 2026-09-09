@@ -1,5 +1,4 @@
-import { fetchAPI } from "../api.ts";
-import { notifications } from "@mantine/notifications";
+import { fetchSongListData } from "./fetchSongListData.ts";
 
 export interface ChunithmDifficultyProps {
   difficulty: number;
@@ -51,45 +50,18 @@ export class ChunithmSongList {
   versions: ChunithmVersionProps[] = [];
 
   async fetch(hash?: string): Promise<ChunithmSongList["songs"]> {
-    const cachedHash = localStorage.getItem("chunithm_songs_hash");
-    const cachedData = localStorage.getItem("chunithm_songs");
-
-    if (hash && cachedHash === hash && cachedData) {
-      const parsedData = JSON.parse(cachedData) as ChunithmSongList;
-      if (parsedData.songs?.length) {
-        this.updateData(parsedData);
-        return this.songs;
-      }
-    }
-
-    const res = await fetchAPI("chunithm/song/list", { method: "GET" });
-    const data = (await res.json()) as ChunithmSongList;
-
-    if (data?.songs?.length) {
-      localStorage.setItem("chunithm_songs", JSON.stringify(data));
-      localStorage.setItem("chunithm_songs_hash", hash || "");
-      this.updateData(data);
-      notifications.show({
-        title: "已更新曲目列表",
-        message: "检测到「中二节奏」曲目列表更新，已更新本地缓存。",
-      });
-    }
-
-    return this.songs;
-  }
-
-  private updateData(data: ChunithmSongList): void {
+    const data = await fetchSongListData<Pick<ChunithmSongList, "songs" | "genres" | "versions">>(
+      "chunithm",
+      hash,
+    );
     this.songs = data.songs;
     this.genres = data.genres;
     this.versions = data.versions;
+    return this.songs;
   }
 
   find(id: number) {
-    return this.songs.find((song: ChunithmSongProps) => song.id === id);
-  }
-
-  push(...songs: ChunithmSongProps[]) {
-    this.songs.push(...songs);
+    return this.songs.find((song) => song.id === id);
   }
 
   getDifficulty(song: ChunithmSongProps, level_index: number) {

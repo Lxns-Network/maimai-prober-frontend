@@ -93,14 +93,15 @@ export const EditUserModal = ({
     });
   };
 
+  const { setValues } = form;
+
   useEffect(() => {
     if (!user) return;
 
-    form.setFieldValue(
-      "permissions",
-      permissionToList(user.permission).map((permission) => permission.toString()),
-    );
-  }, [user]);
+    setValues({
+      permissions: permissionToList(user.permission).map((permission) => permission.toString()),
+    });
+  }, [user, setValues]);
 
   return (
     <Modal opened={opened} onClose={onClose} title="编辑用户" centered>

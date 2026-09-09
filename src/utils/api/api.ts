@@ -1,9 +1,9 @@
 import {
+  getAccessToken,
   isTokenExpired,
   isTokenUndefined,
   redirectExpiredSessionToLogin,
 } from "@/utils/session.ts";
-import { queryClient } from "@/lib/queryClient.ts";
 import { APIError } from "@/utils/errors.ts";
 import { ApiResponse } from "@/types/api";
 
@@ -44,7 +44,7 @@ async function requestTokenRefresh(): Promise<RefreshTokenData> {
         method: "GET",
         credentials: "include",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${getAccessToken()}`,
           "Content-Type": "application/json",
         },
       });
@@ -90,7 +90,6 @@ async function requestTokenRefresh(): Promise<RefreshTokenData> {
       }
 
       localStorage.setItem("token", data.data.token);
-      queryClient.setQueryData(["user/refresh"], data.data);
       return data.data;
     } catch (error) {
       lastError =
@@ -128,23 +127,32 @@ async function ensureTokenValid() {
 
 export async function fetchAPI(
   endpoint: string,
-  options: { method: string; body?: unknown; headers?: Record<string, string> },
+  options: {
+    method: string;
+    body?: unknown;
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+  },
 ): Promise<Response> {
+  const { method = "GET", body, headers, signal } = options;
+  if (signal?.aborted) throw signal.reason ?? new DOMException("Aborted", "AbortError");
+
   if (endpoint !== "user/refresh") {
     await ensureTokenValid();
   }
 
-  const { method = "GET", body, headers } = options;
+  if (signal?.aborted) throw signal.reason ?? new DOMException("Aborted", "AbortError");
 
   return await fetch(`${API_URL}/${endpoint}`, {
     method,
+    signal,
     credentials: "include",
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${getAccessToken()}`,
       "Content-Type": "application/json",
       ...headers,
     },
-    body: body ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,
+    body: body !== undefined ? (typeof body === "string" ? body : JSON.stringify(body)) : undefined,
   });
 }
 
@@ -158,7 +166,7 @@ export async function uploadFile(endpoint: string, file: File): Promise<Response
     method: "POST",
     credentials: "include",
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      Authorization: `Bearer ${getAccessToken()}`,
     },
     body: formData,
   });

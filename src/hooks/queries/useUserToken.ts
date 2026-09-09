@@ -8,7 +8,7 @@ import { refreshAccessToken } from "@/utils/api/api.ts";
 export const useUserToken = () => {
   const shouldFetch = !isTokenUndefined();
 
-  const { data, error, isLoading, refetch } = useQuery<{ token: string }>({
+  const { data, error, refetch } = useQuery<{ token: string }>({
     queryKey: queryKeys.user.refresh(),
     queryFn: refreshAccessToken,
     enabled: shouldFetch,
@@ -17,24 +17,12 @@ export const useUserToken = () => {
 
   useEffect(() => {
     if (data?.token) {
-      localStorage.setItem("token", data.token);
       Sentry.setUser(getSentryUser());
     }
   }, [data?.token]);
 
-  if (!isTokenExpired()) {
-    return {
-      token: localStorage.getItem("token") || "",
-      isLoading: false,
-      error: null,
-      refetch: () => {},
-    };
-  }
-
   return {
-    token: data?.token || "",
-    isLoading,
-    error,
+    error: isTokenExpired() ? error : null,
     refetch,
   };
 };

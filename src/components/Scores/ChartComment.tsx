@@ -34,7 +34,7 @@ import { EmptyState } from "@/components/EmptyState.tsx";
 import classes from "./ChartComment.module.css";
 import { useForm } from "@mantine/form";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { useToggle } from "@mantine/hooks";
@@ -118,14 +118,16 @@ const ChartCommentForm = ({
     );
   };
 
+  const { setValues } = form;
+
   useEffect(() => {
     if (comment) {
-      form.setValues({
+      setValues({
         comment: comment.comment,
         rating: comment.rating,
       });
     }
-  }, [comment]);
+  }, [comment, setValues]);
 
   return (
     <>
@@ -326,12 +328,11 @@ export const ChartComment = ({
         }
       : undefined,
   });
-  const [sortedComments, setSortedComments] = useState<Comment[]>([]);
   const [sort, toggleSort] = useToggle(SORT_OPTIONS.map((option) => option.value));
   const [page, setPage] = useState(1);
 
-  const sortComments = (sort: string) => {
-    const sorted = [...comments].sort((a, b) => {
+  const sortedComments = useMemo(() => {
+    return [...comments].sort((a, b) => {
       const hasCommentA = !!a.comment;
       const hasCommentB = !!b.comment;
       if (hasCommentA !== hasCommentB) {
@@ -348,12 +349,6 @@ export const ChartComment = ({
 
       return 0;
     });
-
-    setSortedComments(sorted);
-  };
-
-  useEffect(() => {
-    if (comments.length !== 0) sortComments(sort);
   }, [sort, comments]);
 
   const getTotalRating = () => {

@@ -1,7 +1,8 @@
 import { Box } from "@mantine/core";
 import { Alias } from "./Alias.tsx";
 import { useSetState } from "@mantine/hooks";
-import { AliasModal, calculateNewAliasWeight } from "./AliasModal.tsx";
+import { AliasModal } from "./AliasModal.tsx";
+import { calculateNewAliasWeight } from "@/utils/alias.ts";
 import { useEffect, useState } from "react";
 import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
 import { AliasProps } from "@/types/alias";
@@ -24,12 +25,9 @@ export const AliasList = ({ aliases, onMutate }: AliasListProps) => {
 
   useEffect(() => {
     if (alias.alias_id) {
-      const newDisplayAliases = [...displayAliases];
-      const index = newDisplayAliases.findIndex((a) => a.alias_id === alias.alias_id);
-      if (index !== -1) {
-        newDisplayAliases[index] = alias;
-      }
-      setDisplayAliases(newDisplayAliases);
+      setDisplayAliases((current) =>
+        current.map((item) => (item.alias_id === alias.alias_id ? alias : item)),
+      );
     }
   }, [alias]);
 

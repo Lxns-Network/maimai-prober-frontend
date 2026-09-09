@@ -1,6 +1,6 @@
 import { MaimaiGenreProps, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActionIcon,
   Avatar,
@@ -41,6 +41,10 @@ export const SongCard = ({
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
   const { aliasList } = useAliasListStore(useShallow((state) => ({ aliasList: state[game] })));
   const [scale, setScale] = useState<number>(0);
+  const handleFrequencyChange = useCallback((frequency: Uint8Array) => {
+    const average = frequency[10] / 200;
+    setScale(average * average);
+  }, []);
   const [colors, setColors] = useState<string[]>([]);
   const isLoggedOut = !localStorage.getItem("token");
 
@@ -189,11 +193,7 @@ export const SongCard = ({
       </Card.Section>
       <AudioPlayer
         className={classes.audioPlayer}
-        onFrequencyChange={(frequency) => {
-          let average = frequency[10] / 200;
-          average = average * average;
-          setScale(average);
-        }}
+        onFrequencyChange={handleFrequencyChange}
         src={`https://assets2.lxns.net/${game}/music/${songList.getSongResourceId(song.id)}.mp3`}
         audioProps={{ preload: "none" } as HTMLMediaProps}
       />

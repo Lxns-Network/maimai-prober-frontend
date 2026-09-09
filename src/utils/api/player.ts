@@ -2,14 +2,6 @@ import { fetchAPI } from "./api.ts";
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
 import { Game } from "@/types/game";
 
-export async function getPlayerHeatmap(game: Game): Promise<Response> {
-  return fetchAPI(`user/${game}/player/heatmap`, { method: "GET" });
-}
-
-export async function getPlayerRatingTrend(game: Game, version: number): Promise<Response> {
-  return fetchAPI(`user/${game}/player/trend?version=${version}`, { method: "GET" });
-}
-
 export async function updatePlayerData(
   game: Game,
   player: Partial<MaimaiPlayerProps> | Partial<ChunithmPlayerProps>,

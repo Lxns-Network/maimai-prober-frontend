@@ -1,11 +1,8 @@
 import { Chip, Divider, Group, Modal, NumberFormatter, Stack, Table, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { MaimaiNotesProps } from "@/utils/api/song/maimai.ts";
-import {
-  DeluxeScoreStars,
-  getDeluxeScoreStars,
-  getTotalNotes,
-} from "@/components/Scores/maimai/ScoreModal.tsx";
+import { DeluxeScoreStars } from "@/components/Scores/maimai/ScoreModal.tsx";
+import { getTotalNotes, getDeluxeScoreStars } from "@/utils/deluxeScore.ts";
 import classes from "./DeluxeRatingCalculator.module.css";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 

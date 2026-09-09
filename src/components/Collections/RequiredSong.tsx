@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   ActionIcon,
@@ -105,8 +105,6 @@ export const RequiredSong = ({
   const pageSize = 20;
   const [page, setPage] = useState(1);
   const topRef = useRef<HTMLDivElement>(null);
-  const [filteredRecords, setFilteredRecords] = useState<CollectionRequiredSongProps[]>([]);
-  const [displayRecords, setDisplayRecords] = useState<CollectionRequiredSongProps[]>([]);
 
   useEffect(() => {
     setPage(1);
@@ -115,45 +113,41 @@ export const RequiredSong = ({
     }
   }, [collection]);
 
-  useEffect(() => {
-    if (difficulty === 4) {
-      setPage(1);
-    }
-    if (!collection || !collection.required) return;
+  const filteredRecords = useMemo(
+    () =>
+      records.filter((record) =>
+        collection?.required?.every(
+          (required) =>
+            !required.difficulties.includes(difficulty) ||
+            required.songs?.some(
+              (song) => song.title === record.title && song.type === record.type,
+            ),
+        ),
+      ),
+    [records, collection, difficulty],
+  );
 
-    setFilteredRecords(
-      records.filter((record) => {
-        return (
-          collection.required &&
-          collection.required.every((required) => {
-            if (required.difficulties.includes(difficulty || 0)) {
-              return (required.songs || []).some((song) => {
-                return song.title === record.title && song.type === record.type;
-              });
-            }
-            return true;
-          })
-        );
-      }),
-    );
+  useEffect(() => {
+    if (difficulty === 4) setPage(1);
   }, [difficulty]);
 
   useEffect(() => {
     if (difficulties.length === 0) return;
     // 防止动画导致 SegmentedControl 无法正常渲染
-    setTimeout(() => {
+    let frameTimer: ReturnType<typeof setTimeout>;
+    const timer = setTimeout(() => {
       setDifficulty(0);
-      setTimeout(() => {
+      frameTimer = setTimeout(() => {
         setDifficulty(difficulties[difficulties.length - 1]);
       }, 0);
     }, 250);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(frameTimer);
+    };
   }, [difficulties]);
 
-  useEffect(() => {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    setDisplayRecords(filteredRecords.slice(start, end));
-  }, [page, filteredRecords]);
+  const displayRecords = filteredRecords.slice((page - 1) * pageSize, page * pageSize);
 
   if (!collection) return null;
 

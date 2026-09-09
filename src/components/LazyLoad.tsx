@@ -7,5 +7,4 @@ const LazyLoad = (
     : (_LazyLoad as unknown as { default: typeof _LazyLoad }).default
 ) as typeof _LazyLoad;
 
-export { forceCheck, forceVisible } from "react-lazyload";
 export default LazyLoad;

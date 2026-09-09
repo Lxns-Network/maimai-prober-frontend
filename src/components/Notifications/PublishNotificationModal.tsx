@@ -117,10 +117,12 @@ export function PublishNotificationModal({
     },
   });
 
+  const { setValues, reset } = form;
+
   useEffect(() => {
     if (!opened) return;
     if (editing) {
-      form.setValues({
+      setValues({
         title: editing.title,
         level: editing.level,
         type: editing.type,
@@ -135,13 +137,13 @@ export function PublishNotificationModal({
       });
       editor?.commands.setContent(editing.content || "");
     } else {
-      form.reset();
+      reset();
       if (lockedUserIds) {
-        form.setFieldValue("audience", { type: "users", user_ids: lockedUserIds });
+        setValues({ audience: { type: "users", user_ids: lockedUserIds } });
       }
       editor?.commands.clearContent();
     }
-  }, [opened, editing, editor, lockedUserIds]);
+  }, [opened, editing, editor, lockedUserIds, setValues, reset]);
 
   const submit = (values: FormValues) => {
     if (!editor || editor.isEmpty) {

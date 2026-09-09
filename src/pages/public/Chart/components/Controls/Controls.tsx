@@ -511,9 +511,14 @@ export function PlaybackControls({
         cancelAnimationFrame(animationFrameId);
       }
     };
-    // updateExportZoomPlayhead 通过 ref 读取最新值，引用稳定，无需列入 deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exportRange, chartData, zoomWindowDurationMs, isPlaying]);
+  }, [
+    exportRange,
+    chartData,
+    zoomWindowDurationMs,
+    isPlaying,
+    getCurrentTimeInMs,
+    updateExportZoomPlayhead,
+  ]);
 
   const fullscreenPortalProps = isFullscreen && portalTarget ? { target: portalTarget } : undefined;
   // 全屏下让导出 UI 的 light-dark()（postcss-mantine 编译成 [data-mantine-color-scheme] 选择器）取深色变体

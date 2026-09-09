@@ -60,7 +60,7 @@ export const getDeluxeRatingGradient = (rating: number) => {
   return { from: "grape", to: "cyan" };
 };
 
-export const maimaiDifficultyColor = [
+const maimaiDifficultyColor = [
   ["rgb(129,217,85)", "rgb(248,183,9)", "rgb(249,126,138)", "rgb(192,69,227)", "rgb(233,233,233)"],
   [
     "rgb(34,187,91)",
@@ -80,7 +80,7 @@ export const maimaiDifficultyColor = [
   ],
 ];
 
-export const chunithmDifficultyColor = [
+const chunithmDifficultyColor = [
   ["rgb(0,171,132)", "rgb(255,125,0)", "rgb(241,41,41)", "rgb(142,26,230)", "rgb(255,40,84)"],
   [
     "rgb(0,166,129)",

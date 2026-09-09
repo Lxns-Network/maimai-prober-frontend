@@ -1,39 +1,23 @@
 import { QueryFunctionContext } from "@tanstack/react-query";
 import { fetchAPI } from "@/utils/api/api.ts";
-import { APIError } from "@/utils/errors.ts";
-import { ApiResponse } from "@/types/api";
+import { parseAPIResponse, parseJSONResponse } from "@/utils/api/response.ts";
 
-async function parseJSON<T>(res: Response): Promise<T> {
-  try {
-    return await res.json();
-  } catch {
-    throw new APIError("服务器返回了无效的响应", { status: res.status });
-  }
-}
-
-// 用于返回 { success, data } 包装格式的 API 端点（大部分 /user/* 端点）
+/** 解包 { success, data } 响应；HTTP 或业务错误会抛出 APIError。 */
 export const defaultQueryFn = async <T = unknown>({
   queryKey,
+  signal,
 }: QueryFunctionContext): Promise<T> => {
   const url = queryKey[0] as string;
-  const res = await fetchAPI(url, { method: "GET" });
-  const data = await parseJSON<ApiResponse<T>>(res);
-  if (!data.success) {
-    throw new APIError(data.message, { status: res.status, code: data.code });
-  }
-  return data.data;
+  const res = await fetchAPI(url, { method: "GET", signal });
+  return parseAPIResponse<T>(res);
 };
 
-// 用于直接返回数据的 API 端点（如公开的 /{game}/song/* 端点），通过 HTTP 状态码判断错误
+/** 读取未包装的资源响应；HTTP 错误会抛出 APIError。 */
 export const resourceQueryFn = async <T = unknown>({
   queryKey,
+  signal,
 }: QueryFunctionContext): Promise<T> => {
   const url = queryKey[0] as string;
-  const res = await fetchAPI(url, { method: "GET" });
-  const data = await parseJSON<unknown>(res);
-  if (!res.ok) {
-    const error = data as ApiResponse;
-    throw new APIError(error.message, { status: res.status, code: error.code });
-  }
-  return data as T;
+  const res = await fetchAPI(url, { method: "GET", signal });
+  return parseJSONResponse<T>(res);
 };

@@ -18,7 +18,7 @@ import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
-export function getChunithmCharacterColor(level: number) {
+function getChunithmCharacterColor(level: number) {
   if (level >= 100) {
     return "holographic";
   } else if (level >= 50) {

@@ -1,8 +1,5 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Text, Flex, Anchor, Space } from "@mantine/core";
-import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { usePrevious } from "@mantine/hooks";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { IconListDetails } from "@tabler/icons-react";
 import { Link } from "@/components/Link";
@@ -20,90 +17,29 @@ import { useSongBests } from "@/hooks/queries/useSongBests.ts";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
 
-interface State {
-  songId: number | null;
-}
-
-type Action =
-  | { type: "SET_FROM_URL"; payload: { songId: number | null } }
-  | { type: "SET_FROM_PAGE_CONTEXT"; payload: { songId: number | null } }
-  | { type: "SET_FROM_USER"; payload: { songId: number | null } }
-  | { type: "RESET_SONG_ID" };
-
-const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case "SET_FROM_URL":
-      return { ...state, songId: action.payload.songId };
-    case "SET_FROM_PAGE_CONTEXT":
-      return { ...state, songId: action.payload.songId };
-    case "SET_FROM_USER":
-      return { ...state, songId: action.payload.songId };
-    case "RESET_SONG_ID":
-      return { ...state, songId: null };
-    default:
-      return state;
-  }
-};
-
 const SongsContent = () => {
   const [game] = useGame();
-  const prevGame = usePrevious(game);
   const pageContext = usePageContext();
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
-  const getSongList = useSongListStore((state) => state.getSongList);
-
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>(() =>
-    getSongList(game),
-  );
-  const [state, dispatch] = useReducer(reducer, {
-    songId: (() => {
-      const id = searchParams.get("song_id");
-      return id && !isNaN(parseInt(id)) ? parseInt(id) : null;
-    })(),
+  const songList = useSongListStore((state) => state[game]);
+  const [selection, setSelection] = useState(() => {
+    const id = searchParams.get("song_id");
+    return { game, songId: id && !isNaN(parseInt(id)) ? parseInt(id) : null };
   });
-
-  const { songId } = state;
-  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
+  if (selection.game !== game) setSelection({ game, songId: null });
+  const songId = selection.game === game ? selection.songId : null;
+  const song = songId ? (songList.find(songId) ?? null) : null;
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
   const [songCollections, setSongCollections] = useState<SongCollectionItemProps[] | null>(null);
 
-  const switchingGame = useRef(false);
-  const isSongMatchingGame =
-    song &&
-    ((game === "maimai" && "standard" in (song.difficulties || {})) ||
-      (game === "chunithm" && !("standard" in (song.difficulties || {}))));
-  const { scores: fetchedScores } = useSongBests(game, isSongMatchingGame ? song : null);
-
-  const getSongCollectionsHandler = async (songId: number) => {
-    try {
-      const data = await getSongCollections(game, songId);
-      setSongCollections(data);
-    } catch (error) {
-      console.error("获取关联收藏品失败", error);
-      setSongCollections(null);
-    }
-  };
+  const { scores: fetchedScores } = useSongBests(game, song);
 
   useEffect(() => {
-    const newSongList = getSongList(game);
-    setSongList(newSongList);
-
-    if (prevGame !== undefined && prevGame !== game) {
-      switchingGame.current = true;
-      setSong(null);
-      setScores([]);
-      setSongCollections(null);
+    if (!songId) {
       window.history.replaceState(null, "", window.location.pathname);
-      dispatch({ type: "RESET_SONG_ID" });
-    }
-  }, [game]);
-
-  useEffect(() => {
-    if (switchingGame.current) {
-      switchingGame.current = false;
       return;
     }
-    if (!song || !songId) return;
+    if (!song) return;
     window.history.replaceState(
       null,
       "",
@@ -113,35 +49,34 @@ const SongsContent = () => {
 
   useEffect(() => {
     setScores(fetchedScores);
-  }, [fetchedScores]);
+  }, [fetchedScores, game, songId]);
 
+  const selectedSongId = song?.id;
   useEffect(() => {
-    if (!songId) {
-      setSong(null);
-      return;
-    }
-
-    const song = songList?.songs.find((song) => song.id === songId);
-    if (!song) return;
-
-    setSong(song);
-    setScores([]);
     setSongCollections(null);
-    getSongCollectionsHandler(song.id);
-  }, [songId, songList?.songs]);
+    if (!selectedSongId) return;
+    let cancelled = false;
+    getSongCollections(game, selectedSongId).then(
+      (data) => {
+        if (!cancelled) setSongCollections(data);
+      },
+      (error) => {
+        if (!cancelled) {
+          console.error("获取关联收藏品失败", error);
+          setSongCollections(null);
+        }
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSongId, game]);
 
   return (
     <div>
       <SongCombobox
         value={songId ?? undefined}
-        onOptionSubmit={(value) => {
-          if (value === 0) {
-            window.history.replaceState(null, "", window.location.pathname);
-            dispatch({ type: "RESET_SONG_ID" });
-            return;
-          }
-          dispatch({ type: "SET_FROM_USER", payload: { songId: value } });
-        }}
+        onOptionSubmit={(value) => setSelection({ game, songId: value || null })}
         radius="md"
         mb={4}
       />

@@ -1,5 +1,3 @@
-import { logoutUser } from "./api/user.ts";
-
 const isBrowser = () => typeof window !== "undefined";
 const SESSION_EXPIRED_KEY = "session_expired";
 
@@ -43,16 +41,45 @@ export const consumeSessionExpired = () => {
   }
 };
 
-const getLoginSessionPayload = () => {
+interface LoginSessionPayload {
+  id: number;
+  name: string;
+  permission: number;
+  exp: number;
+}
+
+/** 本地存储不可访问时视为未登录。 */
+export const getAccessToken = (): string | null => {
   if (!isBrowser()) return null;
-  const token = localStorage.getItem("token");
+  try {
+    return localStorage.getItem("token");
+  } catch {
+    return null;
+  }
+};
+
+const getLoginSessionPayload = (): LoginSessionPayload | null => {
+  const token = getAccessToken();
   if (!token) {
     return null;
   }
 
   try {
-    return JSON.parse(atob(token.split(".")[1]));
-  } catch (error) {
+    const encoded = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    if (
+      !payload ||
+      !Number.isSafeInteger(payload.id) ||
+      typeof payload.name !== "string" ||
+      !Number.isSafeInteger(payload.permission) ||
+      typeof payload.exp !== "number" ||
+      !Number.isFinite(payload.exp)
+    ) {
+      return null;
+    }
+    return payload;
+  } catch {
     return null;
   }
 };
@@ -67,47 +94,18 @@ export const getSentryUser = () => {
   if (!payload) return null;
   return {
     id: String(payload.id),
-    username: payload.name as string,
-    permission: payload.permission as number,
+    username: payload.name,
+    permission: payload.permission,
   };
 };
 
 export const isTokenExpired = (bufferMs = 0) => {
-  if (!isBrowser()) return true;
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return true;
-  }
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const currentTime = Date.now();
-    const expirationTime = payload.exp * 1000;
-
-    if (isNaN(expirationTime)) {
-      return true;
-    }
-
-    return currentTime + bufferMs > expirationTime;
-  } catch (error) {
-    return true;
-  }
+  const payload = getLoginSessionPayload();
+  return !payload || Date.now() + bufferMs >= payload.exp * 1000;
 };
 
 export const isTokenUndefined = () => {
-  if (!isBrowser()) return true;
-  const token = localStorage.getItem("token");
-  return !token;
-};
-
-export const isTokenValid = () => {
-  return !isTokenExpired();
-};
-
-export const logout = () => {
-  if (!isBrowser()) return;
-  localStorage.removeItem("token");
-  logoutUser();
+  return !getAccessToken();
 };
 
 export enum UserPermission {
@@ -117,18 +115,8 @@ export enum UserPermission {
 }
 
 export const checkPermission = (permission: UserPermission) => {
-  if (!isBrowser()) return false;
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return false;
-  }
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return (payload.permission & permission) !== 0;
-  } catch (error) {
-    return false;
-  }
+  const payload = getLoginSessionPayload();
+  return payload !== null && (payload.permission & permission) !== 0;
 };
 
 export const permissionToList = (permission: number) => {
@@ -155,20 +143,31 @@ export const listToPermission = (list: UserPermission[]) => {
 
 export const resolvePostLoginTarget = async (redirect?: string | null): Promise<string> => {
   const EXCLUDED = ["/login", "/register"];
-  const redirectPathname = redirect?.split(/[?#]/)[0];
-  if (
-    redirect &&
-    redirect.startsWith("/") &&
-    !redirect.startsWith("//") &&
-    redirectPathname &&
-    !EXCLUDED.includes(redirectPathname)
-  ) {
-    return redirect;
+  if (redirect?.startsWith("/") && isBrowser()) {
+    try {
+      const target = new URL(redirect, window.location.origin);
+      if (
+        target.origin === window.location.origin &&
+        !target.pathname.startsWith("//") &&
+        !EXCLUDED.includes(target.pathname.replace(/\/+$/, ""))
+      ) {
+        return target.pathname + target.search + target.hash;
+      }
+    } catch {
+      // 无效的 URL 使用默认登录后页面。
+    }
+  }
+
+  let game = "maimai";
+  try {
+    const storedGame: unknown = JSON.parse((isBrowser() && localStorage.getItem("game")) || "null");
+    if (storedGame === "maimai" || storedGame === "chunithm") game = storedGame;
+  } catch {
+    game = "maimai";
   }
 
   try {
-    const game = (isBrowser() && localStorage.getItem("game")) || "maimai";
-    const token = isBrowser() ? localStorage.getItem("token") : null;
+    const token = getAccessToken();
     const apiUrl = import.meta.env.VITE_API_URL;
     const res = await fetch(`${apiUrl}/user/${game}/player`, {
       method: "GET",
@@ -179,11 +178,11 @@ export const resolvePostLoginTarget = async (redirect?: string | null): Promise<
       credentials: "include",
     });
     const data = await res.json();
-    if (data.success && data.data) {
+    if (res.ok && data.success && data.data) {
       return "/";
     }
   } catch {
-    // 网络错误时不阻断登录流程，直接跳首页
+    // 网络错误时仍允许进入同步页面。
   }
 
   return "/user/sync";

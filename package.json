@@ -12,11 +12,13 @@
     "chart:fill": "node scripts/chart-fill-audit.mjs",
     "chart:visual": "node scripts/chart-visual-regression.mjs",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "yarn typecheck && vite build",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "test": "vitest run",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "stylelint": "stylelint ./src/**/*.css --cache",
+    "stylelint": "stylelint 'src/**/*.css' --cache",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -114,7 +116,8 @@
     "postcss-preset-mantine": "1.18.0",
     "postcss-simple-vars": "7.0.1",
     "typescript": "5.9.3",
-    "vite": "8.2.2"
+    "vite": "8.2.2",
+    "vitest": "5.0.0"
   },
   "resolutions": {
     "prosemirror-model": "1.25.11",

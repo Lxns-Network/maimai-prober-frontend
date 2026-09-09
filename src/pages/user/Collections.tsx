@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { getCollectionById, getPlayerCollectionById } from "@/utils/api/player.ts";
 import { Text, Space, Checkbox, Flex, Group, Select } from "@mantine/core";
 import { usePrevious, useToggle } from "@mantine/hooks";
@@ -102,53 +102,19 @@ const CollectionsContent = () => {
     collectionType,
   );
   const [displayCollectionType, setDisplayCollectionType] = useState<string | null>(null);
-  const [filteredCollections, setFilteredCollections] = useState<CollectionProps[]>([]);
   const [collection, setCollection] = useState<CollectionProps | null>(null);
-  const [records, setRecords] = useState<CollectionRequiredSongProps[]>([]);
   const [onlyRequired, toggleOnlyRequired] = useToggle();
   const [isCollectionLoading, setIsCollectionLoading] = useState(false);
   const isLoggedOut = !localStorage.getItem("token");
 
-  const getCollectionHandler = async (id: number) => {
-    if (!collectionType) return;
-    setIsCollectionLoading(true);
-    try {
-      const res = await getCollectionById(game, collectionType, id);
-      const data = await res.json();
-      setCollection(data);
-    } catch (error) {
-      openRetryModal("收藏品获取失败", `${error}`, () => getCollectionHandler(id));
-    } finally {
-      setIsCollectionLoading(false);
-    }
-  };
-
-  const getPlayerCollectionHandler = async (id: number) => {
-    if (!collectionType) return;
-    setIsCollectionLoading(true);
-    try {
-      const res = await getPlayerCollectionById(game, collectionType, id);
-      const data = await res.json();
-      if (!data.success) {
-        // 如果玩家数据不存在，回退到公共 API
-        if (data.code === 404) {
-          await getCollectionHandler(id);
-          return;
-        }
-        setCollection(filteredCollections.find((plate) => plate.id === id) || null);
-        throw new Error(data.message);
-      }
-      setCollection(data.data);
-    } catch (error) {
-      openRetryModal("收藏品获取失败", `${error}`, () => getPlayerCollectionHandler(id));
-    } finally {
-      setIsCollectionLoading(false);
-    }
-  };
+  const filteredCollections = useMemo(
+    () => collections.filter((item) => !onlyRequired || Boolean(item.required?.length)),
+    [collections, onlyRequired],
+  );
+  const selectedCollection = collections.find((item) => item.id === collectionId) ?? null;
 
   useEffect(() => {
     if (prevGame !== undefined && prevGame !== game) {
-      setFilteredCollections([]);
       window.history.replaceState(null, "", window.location.pathname);
       dispatch({ type: "RESET_COLLECTION_ID" });
       dispatch({
@@ -156,55 +122,75 @@ const CollectionsContent = () => {
         payload: { collectionType: game === "maimai" ? "plate" : "trophy" },
       });
     }
-  }, [game]);
+  }, [game, prevGame]);
 
   useEffect(() => {
-    if (collectionId === null) return;
+    if (collectionId === null || !collectionType || (prevGame !== undefined && prevGame !== game))
+      return;
+    let cancelled = false;
+    setCollection(selectedCollection);
 
-    // 先设置为基本信息，等待接口返回完整信息
-    setCollection(collections.find((collection) => collection.id === collectionId) || null);
-    setRecords([]);
-
-    if (!isLoggedOut) {
-      getPlayerCollectionHandler(collectionId);
-    } else {
-      getCollectionHandler(collectionId);
-    }
-  }, [collectionId]);
+    const loadCollection = async () => {
+      if (cancelled) return;
+      setIsCollectionLoading(true);
+      try {
+        let result: CollectionProps | undefined;
+        if (!isLoggedOut) {
+          const response = await getPlayerCollectionById(game, collectionType, collectionId);
+          const data = await response.json();
+          if (data.success) result = data.data;
+          else if (data.code !== 404) throw new Error(data.message);
+        }
+        // 玩家数据不存在时，仍然展示公共收藏品要求。
+        if (!result) {
+          const response = await getCollectionById(game, collectionType, collectionId);
+          result = await response.json();
+        }
+        if (!cancelled) setCollection(result ?? null);
+      } catch (error) {
+        if (!cancelled) openRetryModal("收藏品获取失败", `${error}`, loadCollection);
+      } finally {
+        if (!cancelled) setIsCollectionLoading(false);
+      }
+    };
+    void loadCollection();
+    return () => {
+      cancelled = true;
+    };
+  }, [collectionId, collectionType, game, prevGame, isLoggedOut, selectedCollection]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDisplayCollectionType(state.collectionType);
+      setDisplayCollectionType(collectionType);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [collectionType]);
 
   useEffect(() => {
-    if (!collection) {
-      setRecords([]);
+    if (
+      !collection ||
+      collection.id !== collectionId ||
+      (prevGame !== undefined && prevGame !== game)
+    )
       return;
-    }
-
     window.history.replaceState(
       null,
       "",
-      `${window.location.pathname}?game=${game}&collection_type=${collectionType || ""}&collection_id=${collection.id.toString()}`,
+      `${window.location.pathname}?game=${game}&collection_type=${collectionType || ""}&collection_id=${collection.id}`,
     );
+  }, [collection, collectionId, collectionType, game, prevGame]);
 
-    if (!collection.required) {
-      setRecords([]);
-      return;
-    }
-
+  const records = useMemo(() => {
+    if (!collection?.required) return [];
     const mergedRequiredSongs = collection.required.flatMap((required) => required.songs || []);
 
     // 去重并合并 completed_difficulties
-    const songMap = new Map();
+    const songMap = new Map<string, CollectionRequiredSongProps>();
     mergedRequiredSongs.forEach((song) => {
       const key = `${song.id}-${song.type}`;
       if (songMap.has(key)) {
-        const existing = songMap.get(key);
+        const existing = songMap.get(key)!;
         existing.completed_difficulties = [
           ...new Set([
             ...(existing.completed_difficulties || []),
@@ -216,27 +202,8 @@ const CollectionsContent = () => {
       }
     });
 
-    const convertedRecords = Array.from(songMap.values()).map((song) => {
-      if (!song.completed_difficulties) return song;
-
-      const record = { ...song };
-      song.completed_difficulties.forEach((difficulty: number) => {
-        record[`difficulty_${difficulty}`] = true;
-      });
-      return record;
-    });
-
-    setRecords(convertedRecords);
+    return Array.from(songMap.values());
   }, [collection]);
-
-  useEffect(() => {
-    setFilteredCollections(
-      collections.filter((collection) => {
-        if (onlyRequired) return collection.required && collection.required.length > 0;
-        return true;
-      }),
-    );
-  }, [collections, onlyRequired]);
 
   return (
     <div>
@@ -254,7 +221,6 @@ const CollectionsContent = () => {
               "",
               `${window.location.pathname}?game=${game}&collection_type=${value || ""}`,
             );
-            setFilteredCollections([]);
           }}
           allowDeselect={false}
           w="30%"

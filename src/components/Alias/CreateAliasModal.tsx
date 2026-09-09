@@ -32,8 +32,6 @@ import { openAlertModal, openRetryModal } from "../../utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { SongCombobox } from "../SongCombobox.tsx";
 import { PhotoView } from "react-photo-view";
-import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Game } from "@/types/game";
@@ -60,11 +58,8 @@ export const CreateAliasModal = ({
   useBackDismiss(opened, () => onClose());
 
   const [uploading, setUploading] = useState(false);
-  const [readonly, setReadonly] = useState(false);
-  const [songList, setSongList] = useState<MaimaiSongList | ChunithmSongList>();
-  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
-
-  const getSongList = useSongListStore((state) => state.getSongList);
+  const readonly = Boolean(defaultSongId);
+  const songList = useSongListStore((state) => state[game]);
   const form = useForm<FormValues>({
     initialValues: {
       song_id: null,
@@ -140,34 +135,13 @@ export const CreateAliasModal = ({
     );
   };
 
-  useEffect(() => {
-    setSongList(getSongList(game));
-  }, [game]);
+  const song = form.values.song_id ? songList.find(form.values.song_id) : null;
+  const { reset, setValues } = form;
 
   useEffect(() => {
-    if (form.values.song_id) {
-      const song = songList?.find(form.values.song_id);
-      song && setSong(song);
-    } else {
-      setSong(null);
-    }
-  }, [form.values.song_id]);
-
-  useEffect(() => {
-    if (defaultSongId) {
-      form.setValues({
-        song_id: defaultSongId,
-      });
-      setReadonly(true);
-    } else {
-      form.reset();
-      setReadonly(false);
-    }
-  }, [defaultSongId]);
-
-  useEffect(() => {
-    form.reset();
-  }, [game]);
+    reset();
+    if (defaultSongId) setValues({ song_id: defaultSongId });
+  }, [game, defaultSongId, reset, setValues]);
 
   return (
     <Modal.Root opened={opened} onClose={onClose} centered>

@@ -1,9 +1,5 @@
 import { fetchAPI } from "./api.ts";
 
-export async function getWorkers(): Promise<Response> {
-  return fetchAPI("user/admin/workers", { method: "GET" });
-}
-
 export async function createWorker(data: { name: string }): Promise<Response> {
   return fetchAPI("user/admin/worker", { method: "POST", body: data });
 }

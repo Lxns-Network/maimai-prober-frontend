@@ -14,7 +14,6 @@ import {
 import { useEffect, useState } from "react";
 import { TransformedValues, useForm } from "@mantine/form";
 import { useComputedColorScheme } from "@mantine/core";
-import { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
@@ -52,8 +51,6 @@ export const ChunithmCreateScoreModalContent = ({
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state.chunithm })));
   const { mutate: mutateCreateScores } = useCreatePlayerScores();
   const [uploading, setUploading] = useState(false);
-  const [song, setSong] = useState<ChunithmSongProps | null>(null);
-  const [difficulties, setDifficulties] = useState<ChunithmDifficultyProps[] | null>(null);
   const computedColorScheme = useComputedColorScheme("light");
 
   const form = useForm<FormValues>({
@@ -124,31 +121,13 @@ export const ChunithmCreateScoreModalContent = ({
     );
   };
 
-  useEffect(() => {
-    form.setValues({
-      id: score ? score.id : 0,
-      difficulty: null,
-    });
-  }, [score]);
+  const song = form.values.id ? songList.find(form.values.id) : null;
+  const difficulties = song?.difficulties ?? null;
+  const { setValues } = form;
 
   useEffect(() => {
-    setDifficulties(null);
-
-    if (!form.values.id) return;
-
-    const song = songList.find(form.values.id);
-    song && setSong(song);
-  }, [form.values.id]);
-
-  useEffect(() => {
-    if (!song) return;
-
-    setDifficulties(song.difficulties);
-
-    form.setValues({
-      difficulty: score ? score.level_index.toString() : null,
-    });
-  }, [song]);
+    setValues({ id: score?.id ?? 0, difficulty: score?.level_index.toString() ?? null });
+  }, [score, setValues]);
 
   return (
     <form
@@ -186,7 +165,7 @@ export const ChunithmCreateScoreModalContent = ({
           <SongCombobox
             value={form.values.id || 0}
             onOptionSubmit={(value) => {
-              form.setValues({ id: value });
+              form.setValues({ id: value, difficulty: score?.level_index.toString() ?? null });
             }}
             label="曲目"
             mb="sm"

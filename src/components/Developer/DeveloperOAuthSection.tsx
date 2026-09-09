@@ -28,7 +28,7 @@ import {
   IconPlus,
   IconTrash,
 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { OAuthAppProps } from "@/types/developer";
 import { useOAuthApps } from "@/hooks/queries/useOAuthApps.ts";
 import { useDeleteOAuthApp } from "@/hooks/mutations/useDeveloperMutations.ts";
@@ -213,15 +213,18 @@ export const DeveloperOAuthSection = () => {
     }
   };
 
-  useEffect(() => {
-    if (!opened) invalidate();
-  }, [opened]);
-
   const atLimit = apps.length >= MAX_APPS;
 
   return (
     <Card withBorder radius="md" className={pageClasses.card}>
-      <CreateOAuthClientModal app={selectedApp} opened={opened} onClose={modal.close} />
+      <CreateOAuthClientModal
+        app={selectedApp}
+        opened={opened}
+        onClose={() => {
+          modal.close();
+          invalidate();
+        }}
+      />
       <Stack gap="md">
         <Group justify="space-between" wrap="nowrap" align="center" gap="md">
           <Box>

@@ -24,10 +24,10 @@ import {
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { usePlayerCollections } from "@/hooks/queries/usePlayerCollections.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import classes from "./EditCollectionModal.module.css";
 import LazyLoad from "@/components/LazyLoad";
-import { forceCheck } from "@/components/LazyLoad";
+import { forceCheck } from "react-lazyload";
 import { IconDatabaseOff, IconHeartFilled, IconHelp, IconSearch } from "@tabler/icons-react";
 import { Icon } from "@/components/MdiIcon";
 import { mdiWebOff } from "@mdi/js";
@@ -101,7 +101,6 @@ const EditCollectionModalContent = ({
 }: EditCollectionModalContentProps) => {
   const { collections, isLoading, error } = usePlayerCollections({ game, type });
   const [collectionId, setCollectionId] = useState(defaultValue);
-  const [searchedCollections, setSearchedCollections] = useState(collections);
   const [search, setSearch] = useState("");
   const throttledSearch = useThrottledValue(search, 1000);
 
@@ -117,11 +116,11 @@ const EditCollectionModalContent = ({
     setVisibleCount(pageSize);
   }, [throttledSearch]);
 
-  useEffect(() => {
-    const lowerSearch = search.toLowerCase();
+  const searchedCollections = useMemo(() => {
+    const lowerSearch = throttledSearch.toLowerCase();
     const filtered =
-      search.trim() === ""
-        ? collections
+      throttledSearch.trim() === ""
+        ? [...collections]
         : collections.filter((collection) => collection.name.toLowerCase().includes(lowerSearch));
     const sorted = filtered.sort((a, b) => {
       if (a.id === defaultValue) return -1;
@@ -129,8 +128,8 @@ const EditCollectionModalContent = ({
       return a.id - b.id;
     });
 
-    setSearchedCollections(sorted.slice(0, visibleCount));
-  }, [throttledSearch, collections, visibleCount]);
+    return sorted.slice(0, visibleCount);
+  }, [throttledSearch, collections, visibleCount, defaultValue]);
 
   useEffect(() => {
     forceCheck();

@@ -1,18 +1,9 @@
 import { useMutation, UseMutationOptions } from "@tanstack/react-query";
 import { API_URL } from "@/utils/api/api.ts";
 import { APIError } from "@/utils/errors.ts";
+import { parseAPIResponse } from "@/utils/api/response.ts";
 
-interface LoginParams {
-  values: object;
-  captchaToken: string;
-}
-
-interface RegisterParams {
-  values: object;
-  captchaToken: string;
-}
-
-interface ForgotPasswordParams {
+interface CaptchaAuthParams {
   values: object;
   captchaToken: string;
 }
@@ -29,41 +20,32 @@ async function authMutationFn<T = unknown>(url: string, body: object): Promise<T
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  let data: Record<string, unknown>;
-  try {
-    data = await res.json();
-  } catch {
-    throw new APIError("服务器返回了无效的响应", { status: res.status });
-  }
-  if (!data.success) {
-    throw new APIError(data.message as string, { code: data.code as number, status: res.status });
-  }
-  return data.data as T;
+  return parseAPIResponse<T>(res);
 }
 
 export const useLogin = (
-  options?: UseMutationOptions<{ token: string }, APIError, LoginParams>,
+  options?: UseMutationOptions<{ token: string }, APIError, CaptchaAuthParams>,
 ) => {
   return useMutation({
-    mutationFn: ({ values, captchaToken }: LoginParams) =>
+    mutationFn: ({ values, captchaToken }: CaptchaAuthParams) =>
       authMutationFn<{ token: string }>(`${API_URL}/user/login?captcha=${captchaToken}`, values),
     ...options,
   });
 };
 
-export const useRegister = (options?: UseMutationOptions<unknown, APIError, RegisterParams>) => {
+export const useRegister = (options?: UseMutationOptions<unknown, APIError, CaptchaAuthParams>) => {
   return useMutation({
-    mutationFn: ({ values, captchaToken }: RegisterParams) =>
+    mutationFn: ({ values, captchaToken }: CaptchaAuthParams) =>
       authMutationFn(`${API_URL}/user/register?captcha=${captchaToken}`, values),
     ...options,
   });
 };
 
 export const useForgotPassword = (
-  options?: UseMutationOptions<unknown, APIError, ForgotPasswordParams>,
+  options?: UseMutationOptions<unknown, APIError, CaptchaAuthParams>,
 ) => {
   return useMutation({
-    mutationFn: ({ values, captchaToken }: ForgotPasswordParams) =>
+    mutationFn: ({ values, captchaToken }: CaptchaAuthParams) =>
       authMutationFn(`${API_URL}/user/forgot-password?captcha=${captchaToken}`, values),
     ...options,
   });

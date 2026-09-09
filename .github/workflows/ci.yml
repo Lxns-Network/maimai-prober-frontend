@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .node-version
           cache: yarn
 
       - name: Install dependencies
@@ -27,7 +34,14 @@ jobs:
       - name: Format check
         run: yarn format:check
 
+      - name: ESLint
+        run: yarn lint
+
+      - name: CSS lint
+        run: yarn stylelint
+
+      - name: Regression tests
+        run: yarn test
+
       - name: Build
         run: yarn build
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

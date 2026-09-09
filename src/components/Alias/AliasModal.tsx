@@ -11,7 +11,6 @@ import {
   ThemeIcon,
   Tooltip,
 } from "@mantine/core";
-import { useEffect, useState } from "react";
 import { useVoteAlias } from "@/hooks/mutations/useAliasMutations.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import {
@@ -26,71 +25,18 @@ import { openAlertModal, openRetryModal } from "@/utils/modal.tsx";
 import { APIError } from "@/utils/errors.ts";
 import { PhotoView } from "react-photo-view";
 import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ASSET_URL } from "@/main";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { AliasProps } from "@/types/alias";
-import { match, P } from "ts-pattern";
+import { calculateNewAliasWeight } from "@/utils/alias.ts";
 
 interface AliasModalProps {
   alias: AliasProps;
   setAlias: (alias: AliasProps) => void;
   opened: boolean;
   onClose: () => void;
-}
-
-export function calculateNewAliasWeight(
-  alias: AliasProps,
-  vote: boolean, // true: 支持, false: 反对
-): AliasProps {
-  let { up, down, total } = alias.weight;
-  const current = alias.vote?.weight ?? 0;
-  const isUpvote = vote;
-
-  if (current === 0) {
-    if (isUpvote) {
-      up++;
-      total++;
-    } else {
-      down++;
-      total++;
-    }
-  } else if (current === 1) {
-    if (isUpvote) {
-      up--;
-      total--;
-    } // 取消支持
-    else {
-      up--;
-      down++;
-    } // 改为反对
-  } else if (current === -1) {
-    if (!isUpvote) {
-      down--;
-      total--;
-    } // 取消反对
-    else {
-      down--;
-      up++;
-    } // 改为支持
-  }
-
-  const newWeight = match([current, isUpvote] as const)
-    .with([1, true], () => 0)
-    .with([-1, false], () => 0)
-    .with([P._, true], () => 1)
-    .otherwise(() => -1);
-
-  return {
-    ...alias,
-    weight: { up: Math.max(0, up), down: Math.max(0, down), total: Math.max(0, total) },
-    vote: {
-      ...alias.vote,
-      weight: newWeight,
-    },
-  };
 }
 
 const AliasModalBody = ({
@@ -100,27 +46,13 @@ const AliasModalBody = ({
   alias: AliasProps;
   setAlias: (alias: AliasProps) => void;
 }) => {
-  const [progress, setProgress] = useState(0);
-  const [weight, setWeight] = useState(0);
-  const [song, setSong] = useState<MaimaiSongProps | ChunithmSongProps | null>(null);
   const [game] = useFixedGame();
 
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
 
-  useEffect(() => {
-    setSong(songList.find(alias.song.id) || null);
-    setProgress((alias.weight.up / alias.weight.total) * 100);
-  }, []);
-
-  useEffect(() => {
-    setWeight(alias.vote?.weight ?? 0);
-
-    if (alias.weight.total === 0) {
-      setProgress(0);
-    } else {
-      setProgress((alias.weight.up / alias.weight.total) * 100);
-    }
-  }, [alias]);
+  const song = songList.find(alias.song.id);
+  const weight = alias.vote?.weight ?? 0;
+  const progress = alias.weight.total === 0 ? 0 : (alias.weight.up / alias.weight.total) * 100;
 
   const voteAliasMutation = useVoteAlias();
 

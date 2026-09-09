@@ -43,7 +43,6 @@ import "mantine-datatable/styles.css";
 import "react-photo-view/dist/react-photo-view.css";
 import "@/index.css";
 import classes from "@/App.module.css";
-import useGame from "@/hooks/useGame.ts";
 import { useThemeColor } from "@/hooks/useThemeColor.ts";
 import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 
@@ -101,11 +100,8 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const [getSongList, fetchSongList] = useSongListStore(
-    useShallow((state) => [state.getSongList, state.fetchSongList]),
-  );
+  const fetchSongList = useSongListStore((state) => state.fetchSongList);
   const [fetchAliasList] = useAliasListStore(useShallow((state) => [state.fetchAliasList]));
-  const [game] = useGame();
 
   useEffect(() => {
     const sessionExpired =
@@ -133,16 +129,14 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       (config.resource_version.chunithm || 23000).toString(),
     );
 
-    if (getSongList(game).songs.length === 0) {
-      Promise.all([fetchSongList(config.resource_hashes), fetchAliasList()]).catch((error) => {
-        notifications.show({
-          title: "获取曲目数据失败",
-          message: error.message,
-          color: "red",
-        });
+    Promise.all([fetchSongList(config.resource_hashes), fetchAliasList()]).catch((error) => {
+      notifications.show({
+        title: "获取曲目数据失败",
+        message: error.message,
+        color: "red",
       });
-    }
-  }, [game, isSiteConfigLoading]);
+    });
+  }, [config, fetchAliasList, fetchSongList, isSiteConfigLoading]);
 
   return (
     <HelmetProvider>

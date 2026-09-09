@@ -3,7 +3,6 @@ import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { usePlayer } from "./usePlayer.ts";
 import { queryKeys } from "./queryKeys.ts";
-import { useMemo } from "react";
 
 interface RankingScoreProps {
   ranking: number;
@@ -34,10 +33,7 @@ export const useScoreRanking = (
   const { player } = usePlayer(game);
   const isLoggedOut = !localStorage.getItem("token");
 
-  const params = useMemo(
-    () => (score ? buildScoreParams(game, score) : new URLSearchParams()),
-    [game, score?.id, score?.level_index, score && "type" in score ? score.type : undefined],
-  );
+  const params = score ? buildScoreParams(game, score) : new URLSearchParams();
 
   const { data, error, isLoading } = useQuery<RankingScoreProps[]>({
     queryKey: queryKeys.scores.ranking(game, params),

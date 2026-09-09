@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Group, TextInput, Button, Text, keys, Card, Badge, Popover } from "@mantine/core";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { deleteUsers, getUsers } from "@/utils/api/user.ts";
@@ -84,9 +84,7 @@ const AdminUsersContent = () => {
   const PAGE_SIZES = [10, 15, 20];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);
-  const [displayUsers, setDisplayUsers] = useState<UserProps[]>([]);
 
-  const [sortedUsers, setSortedUsers] = useState(users);
   const [sortStatus, setSortStatus] = useState<DataTableSortStatus<UserProps>>({
     columnAccessor: "id",
     direction: "asc",
@@ -96,47 +94,20 @@ const AdminUsersContent = () => {
   const [publishModalOpened, publishModal] = useDisclosure(false);
   const [selectedUsers, setSelectedUsers] = useState<UserProps[]>([]);
 
-  useEffect(() => {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    setDisplayUsers(sortedUsers.slice(start, end));
-  }, [page]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayUsers(sortedUsers.slice(0, pageSize));
-  }, [pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayUsers(sortedUsers.slice(0, pageSize));
-  }, [sortedUsers]);
-
-  useEffect(() => {
-    setSortedUsers(
+  const sortedUsers = useMemo(
+    () =>
       sortData(filterByPermission(users, permissionFilter), {
         sortBy: sortStatus.columnAccessor as keyof UserProps,
         reversed: sortStatus.direction === "desc",
         search,
       }),
-    );
-  }, [users, search, sortStatus, permissionFilter]);
+    [users, search, sortStatus, permissionFilter],
+  );
+  const displayUsers = sortedUsers.slice((page - 1) * pageSize, page * pageSize);
 
-  const getUserHandler = async () => {
-    try {
-      const res = await getUsers();
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setUsers(data.data);
-      setSortedUsers(data.data);
-    } catch (error) {
-      openRetryModal("用户列表获取失败", `${error}`, getUserHandler);
-    } finally {
-      setFetching(false);
-    }
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [pageSize, sortedUsers]);
 
   const deleteUsersHandler = async () => {
     try {
@@ -152,25 +123,30 @@ const AdminUsersContent = () => {
         message: `所选的 ${selectedUsers.length} 名用户已经被删除。`,
         color: "green",
       });
-      selectedUsers.forEach((user) => {
-        const index = users.findIndex((u) => u.id === user.id);
-        users.splice(index, 1);
-        setUsers(users);
-        setSortedUsers(
-          sortData(users, {
-            sortBy: sortStatus.columnAccessor as keyof UserProps,
-            reversed: sortStatus.direction === "desc",
-            search,
-          }),
-        );
-        setSelectedUsers([]);
-      });
+      const deletedIds = new Set(selectedUsers.map((user) => user.id));
+      setUsers((current) => current.filter((user) => !deletedIds.has(user.id)));
+      setSelectedUsers([]);
     } catch (error) {
       openRetryModal("删除失败", `${error}`, deleteUsersHandler);
     }
   };
 
   useEffect(() => {
+    const getUserHandler = async () => {
+      try {
+        const res = await getUsers();
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message);
+        }
+        setUsers(data.data);
+      } catch (error) {
+        openRetryModal("用户列表获取失败", `${error}`, getUserHandler);
+      } finally {
+        setFetching(false);
+      }
+    };
+
     getUserHandler();
   }, []);
 
@@ -182,13 +158,13 @@ const AdminUsersContent = () => {
         user={activeUser as UserProps}
         opened={editUserModalOpened}
         onClose={() => {
-          const index = users.findIndex((user) => user.id === activeUser?.id);
-          users.splice(index, 1);
-          if (activeUser?.deleted != true) {
-            users.push(activeUser as UserProps);
+          if (activeUser) {
+            setUsers((current) =>
+              current.flatMap((user) =>
+                user.id !== activeUser.id ? [user] : activeUser.deleted ? [] : [{ ...activeUser }],
+              ),
+            );
           }
-          const newUsers = users.sort((a, b) => a.id - b.id);
-          setUsers(newUsers);
 
           editUserModal.close();
         }}

@@ -1,5 +1,5 @@
 import { useMutation, UseMutationOptions, useQueryClient } from "@tanstack/react-query";
-import { apiMutationFn } from "../queries/mutationFn.ts";
+import { parseAPIResponse } from "@/utils/api/response.ts";
 import {
   publishNotification,
   updateNotification,
@@ -20,8 +20,8 @@ const invalidate = (qc: ReturnType<typeof useQueryClient>) => {
 export const usePublishNotification = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: PublishNotificationPayload) =>
-      apiMutationFn(() => publishNotification(payload)),
+    mutationFn: async (payload: PublishNotificationPayload) =>
+      parseAPIResponse(await publishNotification(payload)),
     onSuccess: () => invalidate(qc),
   });
 };
@@ -29,8 +29,8 @@ export const usePublishNotification = () => {
 export const useUpdateNotification = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: PublishNotificationPayload }) =>
-      apiMutationFn(() => updateNotification(id, payload)),
+    mutationFn: async ({ id, payload }: { id: number; payload: PublishNotificationPayload }) =>
+      parseAPIResponse(await updateNotification(id, payload)),
     onSuccess: () => invalidate(qc),
   });
 };
@@ -38,7 +38,7 @@ export const useUpdateNotification = () => {
 export const useDeleteNotification = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => apiMutationFn(() => deleteNotification(id)),
+    mutationFn: async (id: number) => parseAPIResponse(await deleteNotification(id)),
     onSuccess: () => invalidate(qc),
   });
 };
@@ -47,8 +47,8 @@ export const useUploadNotificationImage = (
   options?: UseMutationOptions<NotificationImageUploadResponse, Error, File>,
 ) => {
   return useMutation({
-    mutationFn: (file: File) =>
-      apiMutationFn<NotificationImageUploadResponse>(() => uploadNotificationImage(file)),
+    mutationFn: async (file: File) =>
+      parseAPIResponse<NotificationImageUploadResponse>(await uploadNotificationImage(file)),
     ...options,
   });
 };
