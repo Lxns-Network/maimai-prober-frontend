@@ -6,7 +6,7 @@ Operational guidelines and architectural ground truth for the **maimai-prober** 
 
 ## 1. Commands & Verification
 
-Package manager: **Yarn 4** (`yarn@4.13.0`). Use Node.js from `.node-version`. Verify behavior changes via `test`, `build`, `lint`, `format:check`, `stylelint`, and `dev`. CI runs formatting, ESLint with zero warnings, CSS lint, regression tests, and build.
+Package manager: **Yarn 4** (`yarn@4.13.0`). Use Node.js from `.node-version`. Verify behavior changes via `test`, `build`, `lint`, `format:check`, `stylelint`, and `dev`. CI runs formatting, Oxlint with zero warnings, CSS lint, regression tests, and build.
 
 ### Core Development Commands
 
@@ -14,7 +14,7 @@ Package manager: **Yarn 4** (`yarn@4.13.0`). Use Node.js from `.node-version`. V
 - `yarn build` — Runs `yarn typecheck` then `vite build`. Type errors fail build immediately. Emits client assets and `dist/client/version.json`.
 - `yarn typecheck` — Checks application, tests, and Vite/Vitest configuration types.
 - `yarn test` — Runs Vitest regression tests in `tests/` with mocked network and storage.
-- `yarn lint` — ESLint with `--max-warnings 0`. Any warning fails.
+- `yarn lint` — Oxlint checks `src/`, `packages/`, `tests/`, and Vite/Vitest configuration. Any warning or unused disable directive fails. Rules live in `.oxlintrc.json`; formatting stays in Oxfmt and CSS rules in Stylelint.
 - `yarn format` / `yarn format:check` — Formats or verifies code using `oxfmt`.
 - `yarn stylelint` — Lints CSS stylesheets (`src/**/*.css --cache`).
 - `yarn preview` — Serves production build locally via Vite preview.

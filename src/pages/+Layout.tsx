@@ -22,7 +22,7 @@ import { Fallback } from "@/pages/public/Fallback.tsx";
 import { PhotoProvider } from "react-photo-view";
 import { useFullscreenDocument } from "@mantine/hooks";
 import { useShallow } from "zustand/react/shallow";
-import Shell from "@/components/Shell/Shell.tsx";
+import Shell, { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import useAliasListStore from "@/hooks/useAliasListStore.ts";
 import { useSiteConfig } from "@/hooks/queries/useSiteConfig.ts";
@@ -44,7 +44,6 @@ import "react-photo-view/dist/react-photo-view.css";
 import "@/index.css";
 import classes from "@/App.module.css";
 import { useThemeColor } from "@/hooks/useThemeColor.ts";
-import { NAVBAR_BREAKPOINT } from "@/components/Shell/Shell.tsx";
 
 // Tag iOS so index.css can force inputs to >=16px and avoid Safari's focus-zoom.
 if (typeof document !== "undefined") {

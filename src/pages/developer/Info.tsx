@@ -15,13 +15,14 @@ import {
   Stack,
   DataList,
   Alert,
+  useComputedColorScheme,
 } from "@mantine/core";
 import { Icon } from "@/components/MdiIcon";
 import { mdiEye, mdiEyeOff, mdiWebOff, mdiQqchat } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react";
 import classes from "../Page.module.css";
-import { useComputedColorScheme } from "@mantine/core";
+
 import { Page } from "@/components/Page/Page.tsx";
 import { DeveloperOAuthSection } from "@/components/Developer/DeveloperOAuthSection.tsx";
 import { EditDeveloperModal } from "@/components/Developer/EditDeveloperModal.tsx";

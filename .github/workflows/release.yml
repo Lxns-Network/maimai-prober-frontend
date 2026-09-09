@@ -30,8 +30,8 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Check formatting and CSS
-        run: yarn format:check && yarn stylelint
+      - name: Check formatting, lint, and CSS
+        run: yarn format:check && yarn lint && yarn stylelint
 
       - name: Regression tests
         run: yarn test

@@ -148,7 +148,7 @@ export const ChunithmSongDifficulty = ({
         <Divider color={getScoreSecondaryColor("chunithm", colorIndex)} />
       )}
       <Flex mt={8} ml="0.5rem" rowGap={4} columnGap="xs" wrap="wrap">
-        {difficulty.note_designer && difficulty.note_designer != "-" && (
+        {difficulty.note_designer && difficulty.note_designer !== "-" && (
           <Group>
             <Text fz="xs">谱师</Text>
             <Text fz="sm" fw={700} mr="md">

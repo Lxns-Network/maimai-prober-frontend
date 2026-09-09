@@ -59,7 +59,7 @@ export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
         }}
       >
         <Group h={54} justify="space-between" wrap="nowrap">
-          {score.score != -1 ? (
+          {score.score !== -1 ? (
             <div>
               <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
                 <NumberFormatter value={score.score || 0} thousandSeparator />

@@ -179,7 +179,7 @@ export const MaimaiScoreModalContent = ({
           </Button>
         </Tooltip>
       </Group>
-      {score.achievements != -1 ? (
+      {score.achievements !== -1 ? (
         <>
           <Group mt="md">
             <Image src={`/assets/maimai/music_rank/${score?.rate}.webp`} w={rem(64)} />

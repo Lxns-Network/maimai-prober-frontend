@@ -2,7 +2,7 @@ import { RenderContext, getGradientColors } from "./BaseRenderer";
 import { NoteRenderer } from "./NoteRenderer";
 import { SlideRenderer } from "./SlideRenderer";
 import { HoldRenderer } from "./HoldRenderer";
-import { TouchRenderer } from "./TouchRenderer";
+import { TouchRenderer, fireworkTriggerMs } from "./TouchRenderer";
 import { TimingTimeline } from "../core/timing/TimingTimeline";
 import {
   Note,
@@ -35,7 +35,7 @@ import {
   NOTE_VISIBILITY_AFTER_MS,
   TOUCH_HOLD_CENTRE_BURST_ANGLE,
 } from "../utils/constants";
-import { fireworkTriggerMs } from "./TouchRenderer";
+
 import { HoldEffectRenderer } from "../effects/HoldEffectRenderer";
 import { TouchHitEffectRenderer } from "../effects/TouchHitEffectRenderer";
 

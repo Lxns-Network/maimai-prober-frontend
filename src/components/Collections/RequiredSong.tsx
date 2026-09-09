@@ -154,7 +154,7 @@ export const RequiredSong = ({
   const difficultyProgress = (collection.required || []).reduce(
     (acc, req) => {
       if (difficulty === undefined) return acc;
-      if (!(req.difficulties || []).includes(difficulty) && req.difficulties.length != 0)
+      if (!(req.difficulties || []).includes(difficulty) && req.difficulties.length !== 0)
         return acc;
 
       const songsTotal = (req.songs || []).length;

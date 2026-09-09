@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import { Title, Text, Group, Button, LoadingOverlay, PasswordInput, Card } from "@mantine/core";
-import { Container } from "@mantine/core";
+import {
+  Title,
+  Text,
+  Group,
+  Button,
+  LoadingOverlay,
+  PasswordInput,
+  Card,
+  Container,
+} from "@mantine/core";
+
 import { validateNewPassword } from "@/utils/validator.ts";
 import { useForm } from "@mantine/form";
 import { IconLock } from "@tabler/icons-react";

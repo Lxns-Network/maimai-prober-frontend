@@ -132,7 +132,7 @@ export const RatingHistoryModal = ({
                                 <IconArrowBigDownFilled />
                               </ThemeIcon>
                             )}
-                            {ratings[index] == Math.abs(ratings[index - 1]) && (
+                            {ratings[index] === Math.abs(ratings[index - 1]) && (
                               <ThemeIcon variant="subtle" size="xs" c="gray">
                                 <IconArrowBigRightFilled />
                               </ThemeIcon>

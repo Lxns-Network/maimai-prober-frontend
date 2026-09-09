@@ -70,7 +70,7 @@ export const DeluxeRatingCalculator = ({
         }
         if (
           !newRows.length ||
-          Math.round(newRows[newRows.length - 1].achievements * 10000) != ans
+          Math.round(newRows[newRows.length - 1].achievements * 10000) !== ans
         ) {
           newRows.push({
             levelValue: i / 10,
@@ -168,7 +168,7 @@ export const DeluxeRatingCalculator = ({
                       <Table.Tr key={index}>
                         <Table.Td>{row.achievements.toFixed(4)}%</Table.Td>
                         <Table.Td>{row.levelValue.toFixed(1)}</Table.Td>
-                        {method != "dx_rating" && rows[index + 1] ? (
+                        {method !== "dx_rating" && rows[index + 1] ? (
                           <Table.Td
                             className={classes.changeLabel}
                             fw={500}

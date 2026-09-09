@@ -44,7 +44,7 @@ yarn stylelint
 yarn format:check
 ```
 
-测试使用模拟网络与存储，不需要真实账号或后端。
+Oxlint 检查 TypeScript/JavaScript 代码，Oxfmt 检查格式，Stylelint 检查 CSS。测试使用模拟网络与存储，不需要真实账号或后端。
 
 ## 构建
 

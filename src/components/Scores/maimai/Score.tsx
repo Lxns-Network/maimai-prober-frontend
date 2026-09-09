@@ -64,7 +64,7 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
         }}
       >
         <Group h={54} justify="space-between" wrap="nowrap">
-          {score.achievements != -1 ? (
+          {score.achievements !== -1 ? (
             <div>
               <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white">
                 {parseInt(String(score.achievements))}

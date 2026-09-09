@@ -10,8 +10,9 @@ import {
   Center,
   Box,
   Card,
+  Container,
 } from "@mantine/core";
-import { Container } from "@mantine/core";
+
 import { solveCaptcha } from "@/utils/captcha";
 import { validateEmail } from "@/utils/validator.ts";
 import { Link } from "@/components/Link";

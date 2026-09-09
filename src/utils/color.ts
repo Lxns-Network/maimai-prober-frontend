@@ -1,14 +1,14 @@
 export const getTrophyColor = (color: string) => {
   color = color.toLowerCase();
-  if (color == "bronze" || color == "copper") {
+  if (color === "bronze" || color === "copper") {
     return "#F06418";
-  } else if (color == "normal") {
+  } else if (color === "normal") {
     return "#656A7E";
-  } else if (color == "gold") {
+  } else if (color === "gold") {
     return "#FFAB09";
-  } else if (color == "platina") {
+  } else if (color === "platina") {
     return "#D9D02F";
-  } else if (color == "silver") {
+  } else if (color === "silver") {
     return "#09B8FF";
   }
   return "#8931B2";
