@@ -130,7 +130,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     localStorage.setItem("maimai_version", (config.resource_version.maimai || 25500).toString());
     localStorage.setItem(
       "chunithm_version",
-      (config.resource_version.chunithm || 23000).toString(),
+      (config.resource_version.chunithm || 24000).toString(),
     );
 
     if (getSongList(game).songs.length === 0) {
