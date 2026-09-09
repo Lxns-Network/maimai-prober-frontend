@@ -115,7 +115,8 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   );
 
   const active =
-    navbarData.find((item) => new RegExp(`^${item.to}(/|$)`).test(urlPathname))?.label ?? "";
+    navbarData.find((item) => urlPathname === item.to || urlPathname.startsWith(`${item.to}/`))
+      ?.label ?? "";
 
   return (
     <nav className={classes.navbar} style={style}>
