@@ -14,7 +14,7 @@ interface RefreshTokenData {
 }
 
 const REFRESH_RETRY_DELAYS = [300, 1000];
-const TOKEN_REFRESH_BUFFER_MS = 30 * 1000;
+export const TOKEN_REFRESH_BUFFER_MS = 30 * 1000;
 
 let refreshPromise: Promise<RefreshTokenData> | null = null;
 
