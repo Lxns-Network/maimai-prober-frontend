@@ -71,5 +71,13 @@
     "image": "lianmengmeng",
     "button": "添加",
     "url": "https://bot.q.qq.com/s/btt3bvl2q?id=102091267"
+  },
+  {
+    "title": "中二查歌",
+    "tags": ["手机应用", "中二节奏"],
+    "description": "一站式中二工具，超完善的查歌功能，还有鸟率查看、各种B50生成，收藏品查询等各种工具可供使用",
+    "image": "chusearchsong",
+    "button": "了解更多",
+    "url": "https://github.com/k4641321/chusearchsong_flutter"
   }
 ]
