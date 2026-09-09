@@ -10,6 +10,7 @@ import { SongCollections } from "@/components/Songs/SongCollections.tsx";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Page } from "@/components/Page/Page.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { Game } from "@/types/game";
 import useGame from "@/hooks/useGame.ts";
 import { getSongCollections, SongCollectionItemProps } from "@/utils/api/song/song.tsx";
 import { usePageContext } from "vike-react/usePageContext";
@@ -17,16 +18,18 @@ import { useSongBests } from "@/hooks/queries/useSongBests.ts";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
 
-const SongsContent = () => {
-  const [game] = useGame();
+const SongsGameContent = ({ game }: { game: Game }) => {
   const pageContext = usePageContext();
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const songList = useSongListStore((state) => state[game]);
   const [selection, setSelection] = useState(() => {
     const id = searchParams.get("song_id");
-    return { game, songId: id && !isNaN(parseInt(id)) ? parseInt(id) : null };
+    const urlGame = searchParams.get("game");
+    return {
+      game,
+      songId: id && (!urlGame || urlGame === game) && !isNaN(parseInt(id)) ? parseInt(id) : null,
+    };
   });
-  if (selection.game !== game) setSelection({ game, songId: null });
   const songId = selection.game === game ? selection.songId : null;
   const song = songId ? (songList.find(songId) ?? null) : null;
   const [scores, setScores] = useState<(MaimaiScoreProps | ChunithmScoreProps)[]>([]);
@@ -128,6 +131,11 @@ const SongsContent = () => {
       </AnimatePresence>
     </div>
   );
+};
+
+const SongsContent = () => {
+  const [game] = useGame();
+  return <SongsGameContent key={game} game={game} />;
 };
 
 export default function Songs() {
