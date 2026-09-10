@@ -3,7 +3,6 @@ import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { queryKeys } from "./queryKeys.ts";
 import { buildScoreParams } from "./useScoreRanking.ts";
-import { useMemo } from "react";
 
 const emptyHistoryScores: (MaimaiScoreProps | ChunithmScoreProps)[] = [];
 
@@ -31,10 +30,7 @@ export const useScoreHistory = (
   const isLoggedOut = !localStorage.getItem("token");
   const isNegative = score ? hasNegativeScore(game, score) : false;
 
-  const params = useMemo(
-    () => (score ? buildScoreParams(game, score) : new URLSearchParams()),
-    [game, score?.id, score?.level_index, score && "type" in score ? score.type : undefined],
-  );
+  const params = score ? buildScoreParams(game, score) : new URLSearchParams();
 
   const { data, error, isLoading } = useQuery<(MaimaiScoreProps | ChunithmScoreProps)[]>({
     queryKey: queryKeys.scores.history(game, params),

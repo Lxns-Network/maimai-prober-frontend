@@ -1,13 +1,8 @@
-import { lazy, ReactNode, Suspense } from "react";
+import { ReactNode } from "react";
 import { Typography } from "@mantine/core";
 import { Game } from "@/types/game";
 import { NotificationAction, NotificationProps } from "@/types/notification";
-
-// Kept lazy so remark-gfm stays out of the boot graph: it ships a lookbehind regex that fails to
-// parse on Safari < 16.4, which would abort the whole module graph and block hydration.
-const NotificationMarkdown = lazy(
-  () => import("@/components/Notifications/NotificationMarkdown.tsx"),
-);
+import { NotificationContent } from "./NotificationContent.tsx";
 
 export interface NotificationDisplay {
   title: string;
@@ -78,19 +73,15 @@ const templates: Record<string, NotificationTemplate> = {
   }),
 };
 
-function renderContent(content: string): ReactNode {
-  return (
-    <Suspense fallback={null}>
-      <NotificationMarkdown content={content} />
-    </Suspense>
-  );
-}
-
 export function getNotificationDisplay(n: NotificationProps): NotificationDisplay {
   const body = (content: ReactNode) => <Typography>{content}</Typography>;
 
   if (n.category === "broadcast") {
-    return { title: n.title, body: body(renderContent(n.content)), action: n.action };
+    return {
+      title: n.title,
+      body: body(<NotificationContent content={n.content} />),
+      action: n.action,
+    };
   }
 
   const template = templates[n.type];

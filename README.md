@@ -26,12 +26,30 @@ maimai DX 查分器
 
 ## 调试
 
+使用 `.node-version` 指定的 Node.js 24 和项目固定的 Yarn 版本：
+
 ```bash
+corepack enable
+yarn install --immutable
 yarn dev
 ```
+
+## 检查
+
+```bash
+yarn typecheck
+yarn test
+yarn lint
+yarn stylelint
+yarn format:check
+```
+
+Oxlint 检查 TypeScript/JavaScript 代码，Oxfmt 检查格式，Stylelint 检查 CSS。测试使用模拟网络与存储，不需要真实账号或后端。
 
 ## 构建
 
 ```bash
 yarn build
 ```
+
+Sentry 上传由发布工作流通过 `SENTRY_UPLOAD=1` 和 `SENTRY_AUTH_TOKEN` 启用。

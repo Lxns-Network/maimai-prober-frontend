@@ -19,18 +19,14 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
-import {
-  getDifficulty,
-  ChunithmSongProps,
-  ChunithmDifficultyProps,
-} from "@/utils/api/song/chunithm.ts";
+import { getDifficulty, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { IconNumber, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
 import classes from "../ScoreModal.module.css";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "@/main";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
@@ -45,16 +41,10 @@ export const ChunithmScoreModalContent = ({
   song: ChunithmSongProps;
 }) => {
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state.chunithm })));
-  const [difficulty, setDifficulty] = useState<ChunithmDifficultyProps | null>(null);
+  const difficulty = getDifficulty(song, score.level_index);
   const [ratingHistoryOpened, setRatingHistoryOpened] = useState(false);
 
   const small = useMediaQuery("(max-width: 30rem)");
-
-  useEffect(() => {
-    if (!song) return;
-
-    setDifficulty(getDifficulty(song, score.level_index));
-  }, [song]);
 
   if (!song) return;
 

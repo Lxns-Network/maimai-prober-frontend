@@ -10,15 +10,12 @@ import {
   NumberInput,
   Select,
   Text,
+  useComputedColorScheme,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { TransformedValues, useForm } from "@mantine/form";
-import { useComputedColorScheme } from "@mantine/core";
-import {
-  MaimaiDifficultyProps,
-  MaimaiDifficultiesProps,
-  MaimaiSongProps,
-} from "@/utils/api/song/maimai.ts";
+
+import { MaimaiDifficultiesProps } from "@/utils/api/song/maimai.ts";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { DatesProvider, DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
@@ -52,8 +49,6 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state.maimai })));
   const { mutate: mutateCreateScores } = useCreatePlayerScores();
   const [uploading, setUploading] = useState(false);
-  const [song, setSong] = useState<MaimaiSongProps | null>(null);
-  const [difficulties, setDifficulties] = useState<MaimaiDifficultyProps[] | null>(null);
 
   const computedColorScheme = useComputedColorScheme("light");
   const form = useForm<FormValues>({
@@ -126,42 +121,20 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
     );
   };
 
+  const song = form.values.id ? songList.find(form.values.id) : null;
+  const difficulties =
+    song && form.values.type
+      ? song.difficulties[form.values.type as keyof MaimaiDifficultiesProps]
+      : null;
+  const { setValues, reset } = form;
+
   useEffect(() => {
     if (score) {
-      form.setValues({
-        id: score.id,
-        type: null,
-        difficulty: null,
-      });
+      setValues({ id: score.id, type: score.type, difficulty: score.level_index.toString() });
     } else {
-      setSong(null);
-      form.reset();
+      reset();
     }
-  }, [score]);
-
-  useEffect(() => {
-    setDifficulties(null);
-
-    if (!form.values.id) return;
-
-    const song = songList.find(form.values.id);
-    song && setSong(song);
-
-    form.setValues({
-      type: score ? score.type : null,
-      difficulty: null,
-    });
-  }, [form.values.id]);
-
-  useEffect(() => {
-    if (!song || !form.values.type) return;
-
-    setDifficulties(song.difficulties[form.values.type as keyof MaimaiDifficultiesProps]);
-
-    form.setValues({
-      difficulty: score ? score.level_index.toString() : null,
-    });
-  }, [song, form.values.type]);
+  }, [score, setValues, reset]);
 
   return (
     <form
@@ -199,7 +172,11 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
           <SongCombobox
             value={form.values.id || 0}
             onOptionSubmit={(value) => {
-              form.setValues({ id: value });
+              form.setValues({
+                id: value,
+                type: score?.type ?? null,
+                difficulty: score?.level_index.toString() ?? null,
+              });
             }}
             label="曲目"
             mb="sm"
@@ -207,7 +184,15 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
             error={form.errors.id}
           />
           <Input.Wrapper label="谱面类型" mb="xs" withAsterisk {...form.getInputProps("type")}>
-            <Chip.Group {...form.getInputProps("type")}>
+            <Chip.Group
+              {...form.getInputProps("type")}
+              onChange={(type) =>
+                form.setValues({
+                  type: type as string,
+                  difficulty: score?.level_index.toString() ?? null,
+                })
+              }
+            >
               <Group>
                 <Chip
                   size="xs"

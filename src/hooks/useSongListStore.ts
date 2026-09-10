@@ -1,12 +1,10 @@
 import { create } from "zustand";
 import { MaimaiSongList } from "../utils/api/song/maimai.ts";
 import { ChunithmSongList } from "../utils/api/song/chunithm.ts";
-import { Game } from "@/types/game";
 
 type SongListState = {
   maimai: MaimaiSongList;
   chunithm: ChunithmSongList;
-  getSongList: (game: Game) => MaimaiSongList | ChunithmSongList;
   fetchSongList: (hashes?: {
     [key: string]: {
       [key: string]: string;
@@ -14,19 +12,18 @@ type SongListState = {
   }) => Promise<void>;
 };
 
-const useSongListStore = create<SongListState>((set, get) => ({
+const useSongListStore = create<SongListState>((set) => ({
   maimai: new MaimaiSongList(),
   chunithm: new ChunithmSongList(),
-  getSongList: (game) => get()[game],
   fetchSongList: async (hashes) => {
+    const maimai = new MaimaiSongList();
+    const chunithm = new ChunithmSongList();
     await Promise.all([
-      get().maimai.fetch(hashes?.maimai.songs),
-      get().chunithm.fetch(hashes?.chunithm.songs),
+      maimai.fetch(hashes?.maimai?.songs),
+      chunithm.fetch(hashes?.chunithm?.songs),
     ]);
 
-    set((state) => ({
-      getSongList: (game: Game) => state[game],
-    }));
+    set({ maimai, chunithm });
   },
 }));
 

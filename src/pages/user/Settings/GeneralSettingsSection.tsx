@@ -1,4 +1,4 @@
-import { Text, Card, LoadingOverlay, Mark } from "@mantine/core";
+import { Text, Card, LoadingOverlay, Mark, Anchor } from "@mantine/core";
 import { SettingList, SettingValue } from "@/components/Settings/SettingList.tsx";
 import { Link } from "@/components/Link";
 import classes from "../../Page.module.css";
@@ -6,7 +6,7 @@ import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { useUserConfig } from "@/hooks/queries/useUserConfig.ts";
 import useGame from "@/hooks/useGame.ts";
-import { Anchor } from "@mantine/core";
+
 import { useUpdateUserConfig } from "@/hooks/mutations/useUserMutations.ts";
 import { useUnbindPlayer, useDeletePlayerScores } from "@/hooks/mutations/usePlayerMutations.ts";
 import { ConfigProps } from "@/types/user";

@@ -34,7 +34,7 @@ interface DeveloperProps {
   api_key: string;
 }
 
-export function UserButton({
+function UserButton({
   user,
   onClick,
   ...others
@@ -181,32 +181,31 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
 };
 
 const AdminDevelopersContent = () => {
-  const [displayDevelopers, setDisplayDevelopers] = useState<DeveloperProps[]>([]);
   const [developers, setDevelopers] = useState<DeveloperProps[]>([]);
   const [fetching, setFetching] = useState(true);
 
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
 
-  const getDevelopersHandler = async () => {
-    try {
-      const res = await getDevelopers();
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message);
-      }
-      setDevelopers(
-        data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
-          return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
-        }),
-      );
-      setFetching(false);
-    } catch (error) {
-      openRetryModal("开发者列表获取失败", `${error}`, getDevelopersHandler);
-    }
-  };
-
   useEffect(() => {
+    const getDevelopersHandler = async () => {
+      try {
+        const res = await getDevelopers();
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message);
+        }
+        setDevelopers(
+          data.data.sort((a: DeveloperProps, b: DeveloperProps) => {
+            return new Date(b.apply_time).getTime() - new Date(a.apply_time).getTime();
+          }),
+        );
+        setFetching(false);
+      } catch (error) {
+        openRetryModal("开发者列表获取失败", `${error}`, getDevelopersHandler);
+      }
+    };
+
     getDevelopersHandler();
   }, []);
 
@@ -215,9 +214,7 @@ const AdminDevelopersContent = () => {
   const totalPages = Math.ceil(developers.length / PAGE_SIZE);
   const topRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setDisplayDevelopers(developers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
-  }, [page, developers]);
+  const displayDevelopers = developers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);

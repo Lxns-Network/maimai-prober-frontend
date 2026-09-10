@@ -99,10 +99,9 @@ export const SongCombobox = ({
   const search = searchValue ?? internalSearch;
   const [debouncedSearch] = useDebouncedValue(search, 200);
 
-  const getSongList = useSongListStore((state) => state.getSongList);
   const getAliasList = useAliasListStore((state) => state.getAliasList);
 
-  const songList = getSongList(game);
+  const songList = useSongListStore((state) => state[game]);
   const aliases = getAliasList(game).aliases;
   const songs = songList?.songs;
   const searchIndex = useMemo(

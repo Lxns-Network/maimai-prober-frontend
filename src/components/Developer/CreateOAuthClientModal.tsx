@@ -155,25 +155,29 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
     );
   };
 
+  const { setValues, reset } = form;
+
   useEffect(() => {
     if (app) {
-      form.setFieldValue("name", app.name);
-      form.setFieldValue("description", app.description || "");
-      form.setFieldValue("website", app.website || "");
-      form.setFieldValue("logo_url", app.logo_url || "");
       const redirectUris = app.redirect_uris?.length
         ? app.redirect_uris
         : app.redirect_uri
           ? [app.redirect_uri]
           : [];
-      form.setFieldValue("redirect_uris", redirectUris);
-      form.setFieldValue("scopes", app.scope ? app.scope.split(" ") : []);
+      setValues({
+        name: app.name,
+        description: app.description || "",
+        website: app.website || "",
+        logo_url: app.logo_url || "",
+        redirect_uris: redirectUris,
+        scopes: app.scope ? app.scope.split(" ") : [],
+      });
       setOobChecked(redirectUris.length === 1 && redirectUris[0] === "urn:ietf:wg:oauth:2.0:oob");
     } else {
-      form.reset();
+      reset();
       setOobChecked(false);
     }
-  }, [app, opened]);
+  }, [app, opened, setValues, reset]);
 
   return (
     <Modal

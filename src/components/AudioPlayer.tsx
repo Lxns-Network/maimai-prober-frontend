@@ -12,7 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { useToggle } from "@mantine/hooks";
 import { useAudio } from "react-use";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { HTMLMediaProps } from "react-use/lib/factory/createHTMLMediaHook";
 
 interface AudioPlayerProps extends React.ComponentPropsWithoutRef<typeof Container> {
@@ -28,13 +28,26 @@ export const AudioPlayer = ({
   audioProps,
   ...others
 }: AudioPlayerProps) => {
-  const [audio, state, controls, ref] = useAudio({
+  const [isRepeat, toggleIsRepeat] = useToggle();
+  const audioGraph = useRef<{ context: AudioContext; analyser: AnalyserNode } | null>(null);
+  const [audio, state, controls] = useAudio({
     src,
     crossOrigin: "anonymous",
     ...audioProps,
+    loop: isRepeat,
+    onPlay: (event) => {
+      if (onFrequencyChange && !audioGraph.current) {
+        const context = new AudioContext();
+        const analyser = context.createAnalyser();
+        context.createMediaElementSource(event.currentTarget).connect(analyser);
+        analyser.connect(context.destination);
+        audioGraph.current = { context, analyser };
+      }
+      void audioGraph.current?.context.resume();
+      audioProps?.onPlay?.(event);
+    },
   });
-  const [isPlaying, toggleIsPlaying] = useToggle();
-  const [isRepeat, toggleIsRepeat] = useToggle();
+  const isPlaying = !state.paused;
 
   const parseTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -43,54 +56,25 @@ export const AudioPlayer = ({
   };
 
   useEffect(() => {
-    if (isPlaying) {
-      controls.pause();
-      toggleIsPlaying();
-    }
-  }, [src]);
+    if (!isPlaying || !onFrequencyChange || !audioGraph.current) return;
+    const { analyser } = audioGraph.current;
+    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+    let frameId = 0;
+    const renderFrame = () => {
+      analyser.getByteFrequencyData(frequencyData);
+      onFrequencyChange(frequencyData);
+      frameId = requestAnimationFrame(renderFrame);
+    };
+    frameId = requestAnimationFrame(renderFrame);
+    return () => cancelAnimationFrame(frameId);
+  }, [isPlaying, onFrequencyChange]);
 
-  useEffect(() => {
-    if (state.time === state.duration && isRepeat) {
-      controls.seek(0);
-      controls.play();
-    } else if (state.time === state.duration && isPlaying) {
-      toggleIsPlaying();
-    }
-  }, [state.time]);
-
-  useEffect(() => {
-    if (!ref.current) return;
-
-    ref.current.addEventListener(
-      "canplaythrough",
-      () => {
-        const context = new AudioContext();
-        const analyser = context.createAnalyser();
-
-        try {
-          const source = context.createMediaElementSource(ref.current!);
-          source.connect(analyser);
-        } catch {
-          return;
-        }
-
-        analyser.connect(context.destination);
-
-        const bufferLength = analyser.frequencyBinCount;
-        const frequencyData = new Uint8Array(bufferLength);
-
-        const renderFrame = () => {
-          analyser.getByteFrequencyData(frequencyData);
-          requestAnimationFrame(renderFrame);
-
-          onFrequencyChange && onFrequencyChange(frequencyData);
-        };
-
-        renderFrame();
-      },
-      { once: true },
-    );
-  }, [ref.current]);
+  useEffect(
+    () => () => {
+      void audioGraph.current?.context.close();
+    },
+    [],
+  );
 
   return (
     <Container w="100%" p="md" {...others}>
@@ -141,7 +125,6 @@ export const AudioPlayer = ({
             radius="50%"
             size="lg"
             onClick={() => {
-              toggleIsPlaying();
               if (isPlaying) {
                 controls.pause();
               } else {

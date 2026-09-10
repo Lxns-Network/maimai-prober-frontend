@@ -182,8 +182,7 @@ export const AdvancedFilter = ({
     showUnplayed,
   } = filters;
 
-  const getSongList = useSongListStore((state) => state.getSongList);
-  const songList = getSongList(game);
+  const songList = useSongListStore((state) => state[game]);
   const ratingRange = scoreRatingRanges[game];
   const currentRatingPresets = ratingPresets[game];
   const selectedRatingPreset = findRatingPreset(currentRatingPresets, endRating);

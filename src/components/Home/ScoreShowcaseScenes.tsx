@@ -21,7 +21,7 @@ import { memo, type ReactNode, useEffect, useRef, useState } from "react";
 import { AnimatedGrid } from "@/components/AnimatedGrid";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter";
 import { ScoreCard } from "@/components/Scores/ScoreList";
-import { rankData } from "@/components/Scores/ScoreHistory";
+import { rankData } from "@/data/scoreRanks.ts";
 import { MaimaiChart } from "@/components/Scores/maimai/Chart";
 import { MaimaiScoreHistory } from "@/components/Scores/maimai/ScoreHistory";
 import { MaimaiScoreModalContent } from "@/components/Scores/maimai/ScoreModal";

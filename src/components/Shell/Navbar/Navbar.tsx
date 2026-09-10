@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
+import { usePageContext } from "vike-react/usePageContext";
 import { Box, Container, Divider, ScrollArea } from "@mantine/core";
 import { NavbarButton } from "./NavbarButton";
 import { checkPermission, UserPermission } from "@/utils/session.ts";
@@ -29,7 +30,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ style, onClose }: NavbarProps) {
-  const [active, setActive] = useState("");
+  const { urlPathname } = usePageContext();
   const isLoggedOut = typeof window !== "undefined" ? !localStorage.getItem("token") : true;
   const { mutate: mutateLogout } = useLogoutUser();
   const unreadCount = useUnreadCount();
@@ -113,20 +114,9 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     [isLoggedOut],
   );
 
-  useEffect(() => {
-    const currentPath = window.location.pathname;
-
-    const activeNavItem = navbarData.find((item) => {
-      const pattern = new RegExp(`^${item.to}(/|$)`);
-      return pattern.test(currentPath);
-    });
-
-    if (activeNavItem) {
-      setActive(activeNavItem.label);
-    } else {
-      setActive("");
-    }
-  }, [window.location.pathname, navbarData]);
+  const active =
+    navbarData.find((item) => urlPathname === item.to || urlPathname.startsWith(`${item.to}/`))
+      ?.label ?? "";
 
   return (
     <nav className={classes.navbar} style={style}>

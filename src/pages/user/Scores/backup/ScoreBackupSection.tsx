@@ -94,7 +94,7 @@ export const ScoreBackupSection = () => {
 
             download("csv");
           }}
-          disabled={isLoading || !scores || scores.length == 0}
+          disabled={isLoading || !scores || scores.length === 0}
         />
         <CardButton
           icon={<IconFileImport size={64} stroke={1.5} />}

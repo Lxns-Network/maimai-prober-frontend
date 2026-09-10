@@ -13,8 +13,9 @@ import {
   Card,
   SegmentedControl,
   Center,
+  Container,
 } from "@mantine/core";
-import { Container } from "@mantine/core";
+
 import { solveCaptcha } from "@/utils/captcha";
 import { useForm } from "@mantine/form";
 import { validateEmail, validateExistingPassword, validateUserName } from "@/utils/validator.ts";

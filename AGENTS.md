@@ -6,13 +6,15 @@ Operational guidelines and architectural ground truth for the **maimai-prober** 
 
 ## 1. Commands & Verification
 
-Package manager: **Yarn 4** (`yarn@4.13.0`). No test runner is configured (no `test` script, Vitest, Jest, Mocha); verify changes via `build`, `lint`, `format:check`, `stylelint`, and `dev`.
+Package manager: **Yarn 4** (`yarn@4.13.0`). Use Node.js from `.node-version`. Verify behavior changes via `test`, `build`, `lint`, `format:check`, `stylelint`, and `dev`. CI runs formatting, Oxlint with zero warnings, CSS lint, regression tests, and build.
 
 ### Core Development Commands
 
 - `yarn dev` — Starts Vite dev server (`0.0.0.0:3000`). Reverse proxies `/api` to `API_TARGET` (default: `http://localhost:7000`).
-- `yarn build` — Runs `tsc` then `vite build`. Type errors fail build immediately. Emits client assets and `dist/client/version.json`.
-- `yarn lint` — ESLint with `--max-warnings 0`. Any warning fails.
+- `yarn build` — Runs `yarn typecheck` then `vite build`. Type errors fail build immediately. Emits client assets and `dist/client/version.json`.
+- `yarn typecheck` — Checks application, tests, and Vite/Vitest configuration types.
+- `yarn test` — Runs Vitest regression tests in `tests/` with mocked network and storage.
+- `yarn lint` — Oxlint checks `src/`, `packages/`, `tests/`, and Vite/Vitest configuration. Any warning or unused disable directive fails. Rules live in `.oxlintrc.json`; formatting stays in Oxfmt and CSS rules in Stylelint.
 - `yarn format` / `yarn format:check` — Formats or verifies code using `oxfmt`.
 - `yarn stylelint` — Lints CSS stylesheets (`src/**/*.css --cache`).
 - `yarn preview` — Serves production build locally via Vite preview.
@@ -36,6 +38,7 @@ Defined in `.env` / `.env.local` / `.env.production`:
 - `VITE_CAPTCHA_ENDPOINT` — Turnstile/Captcha verification endpoint (e.g. `https://cap.lxns.net/...`).
 - `VITE_VIDEO_DIR` — Local directory for `{song_id}.mp4` served by Vite middleware at `/__video/`.
 - `VITE_CHART_BENCH` — Set to `"1"` by benchmark scripts to enable profiling hooks in prod builds and disable Sentry sourcemaps.
+- `SENTRY_UPLOAD` — Set to `"1"` to opt into Sentry build uploads; release CI supplies this flag and `SENTRY_AUTH_TOKEN`.
 - `VITE_UMAMI_SCRIPT_URL` — Umami analytics script URL.
 - `VITE_UMAMI_WEBSITE_ID` — Umami website tracking ID.
 - `FRONTEND_VERSION` / `GITHUB_SHA` — Build metadata injected into `__BUILD_VERSION__` and `__BUILD_COMMIT__`.

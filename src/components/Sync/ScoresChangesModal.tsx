@@ -15,7 +15,7 @@ import {
 import { ScoreChangeDetailProps, ScoreChangesProps } from "@/pages/user/Sync";
 import { DataTable } from "mantine-datatable";
 import { IconArrowRight, IconDatabaseOff, IconHelp } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { Marquee } from "../Marquee.tsx";
@@ -108,20 +108,10 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
   const PAGE_SIZES = [10, 15, 20];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);
-  const [displayScores, setDisplayScores] = useState<ScoreChangesProps[]>([]);
 
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state.chunithm })));
 
-  useEffect(() => {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    setDisplayScores(scores.slice(start, end));
-  }, [page]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayScores(scores.slice(0, pageSize));
-  }, [pageSize]);
+  const displayScores = scores.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <DataTable
@@ -367,7 +357,10 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
       onPageChange={(p) => setPage(p)}
       recordsPerPageOptions={PAGE_SIZES}
       recordsPerPageLabel="每页显示"
-      onRecordsPerPageChange={setPageSize}
+      onRecordsPerPageChange={(size) => {
+        setPageSize(size);
+        setPage(1);
+      }}
     />
   );
 };

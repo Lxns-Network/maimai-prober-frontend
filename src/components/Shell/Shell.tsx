@@ -33,15 +33,15 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
   const headerRef = useRef<HTMLDivElement>(null);
 
   const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(null);
-  const [lastScrollTop, setLastScrollTop] = useState(0);
+  const lastScrollTop = useRef(0);
   const scrollState = useScroll(viewportRef as React.RefObject<HTMLElement>);
 
   useEffect(() => {
     const currentScrollTop = scrollState.y;
 
-    if (Math.abs(lastScrollTop - currentScrollTop) > 50) {
-      setScrollDirection(currentScrollTop > lastScrollTop ? "down" : "up");
-      setLastScrollTop(currentScrollTop);
+    if (Math.abs(lastScrollTop.current - currentScrollTop) > 50) {
+      setScrollDirection(currentScrollTop > lastScrollTop.current ? "down" : "up");
+      lastScrollTop.current = currentScrollTop;
     }
   }, [scrollState.y]);
 
@@ -74,7 +74,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
     if (headerRef.current) {
       setHeaderHeight(headerRef.current.clientHeight);
     }
-  }, [headerRef.current, width]);
+  }, [width]);
 
   const chromeVisible = !scrollDirection || scrollDirection === "up";
   const isHome = usePageContext().urlPathname === "/";

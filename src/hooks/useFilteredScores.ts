@@ -34,23 +34,21 @@ export function useFilteredScores(
   isDefault: boolean,
 ) {
   const [game] = useGame();
-  const getSongList = useSongListStore((state) => state.getSongList);
-  const songList = getSongList(game);
-
-  const {
-    difficulty,
-    type,
-    genre,
-    version,
-    endRating,
-    fullCombo,
-    fullSync,
-    deluxeStar,
-    uploadTime,
-    showUnplayed,
-  } = filters;
+  const songList = useSongListStore((state) => state[game]);
 
   return useMemo(() => {
+    const {
+      difficulty,
+      type,
+      genre,
+      version,
+      endRating,
+      fullCombo,
+      fullSync,
+      deluxeStar,
+      uploadTime,
+      showUnplayed,
+    } = filters;
     if (!scores) return [];
 
     let filteredData = [...scores];

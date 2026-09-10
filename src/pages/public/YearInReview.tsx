@@ -83,7 +83,7 @@ const LazyLoadSection = ({ children }: { children: React.ReactNode }) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (inViewport && !visible) {
+    if (inViewport) {
       setVisible(true);
     }
   }, [inViewport]);
@@ -320,7 +320,7 @@ export default function YearInReview() {
     if (!isSupportedYear(year)) {
       navigate("/404");
     }
-  }, [year, isLoggedOut, shareToken, navigate]);
+  }, [year, isLoggedOut, shareToken]);
 
   useEffect(() => {
     if (data) {
@@ -331,7 +331,7 @@ export default function YearInReview() {
         setShareLink(`${window.location.origin}/year-in-review/${year}/${shareToken}`);
       }
     }
-  }, [data]);
+  }, [data, year, shareToken]);
 
   const createShareLink = () => {
     const handler = async () => {

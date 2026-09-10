@@ -1,5 +1,4 @@
-import { fetchAPI } from "../api.ts";
-import { notifications } from "@mantine/notifications";
+import { fetchSongListData } from "./fetchSongListData.ts";
 
 export interface MaimaiDifficultyProps {
   type: string;
@@ -62,45 +61,18 @@ export class MaimaiSongList {
   versions: MaimaiVersionProps[] = [];
 
   async fetch(hash?: string): Promise<MaimaiSongList["songs"]> {
-    const cachedHash = localStorage.getItem("maimai_songs_hash");
-    const cachedData = localStorage.getItem("maimai_songs");
-
-    if (hash && cachedHash === hash && cachedData) {
-      const parsedData = JSON.parse(cachedData) as MaimaiSongList;
-      if (parsedData.songs?.length) {
-        this.updateData(parsedData);
-        return this.songs;
-      }
-    }
-
-    const res = await fetchAPI("maimai/song/list", { method: "GET" });
-    const data = (await res.json()) as MaimaiSongList;
-
-    if (data?.songs?.length) {
-      localStorage.setItem("maimai_songs", JSON.stringify(data));
-      localStorage.setItem("maimai_songs_hash", hash || "");
-      this.updateData(data);
-      notifications.show({
-        title: "已更新曲目列表",
-        message: "检测到「舞萌 DX」曲目列表更新，已更新本地缓存。",
-      });
-    }
-
-    return this.songs;
-  }
-
-  private updateData(data: MaimaiSongList): void {
+    const data = await fetchSongListData<Pick<MaimaiSongList, "songs" | "genres" | "versions">>(
+      "maimai",
+      hash,
+    );
     this.songs = data.songs;
     this.genres = data.genres;
     this.versions = data.versions;
+    return this.songs;
   }
 
   find(id: number) {
-    return this.songs.find((song: MaimaiSongProps) => song.id === id);
-  }
-
-  push(...songs: MaimaiSongProps[]) {
-    this.songs.push(...songs);
+    return this.songs.find((song) => song.id === id);
   }
 
   getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {

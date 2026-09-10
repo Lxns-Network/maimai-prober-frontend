@@ -1,14 +1,14 @@
 export const getTrophyColor = (color: string) => {
   color = color.toLowerCase();
-  if (color == "bronze" || color == "copper") {
+  if (color === "bronze" || color === "copper") {
     return "#F06418";
-  } else if (color == "normal") {
+  } else if (color === "normal") {
     return "#656A7E";
-  } else if (color == "gold") {
+  } else if (color === "gold") {
     return "#FFAB09";
-  } else if (color == "platina") {
+  } else if (color === "platina") {
     return "#D9D02F";
-  } else if (color == "silver") {
+  } else if (color === "silver") {
     return "#09B8FF";
   }
   return "#8931B2";
@@ -60,7 +60,7 @@ export const getDeluxeRatingGradient = (rating: number) => {
   return { from: "grape", to: "cyan" };
 };
 
-export const maimaiDifficultyColor = [
+const maimaiDifficultyColor = [
   ["rgb(129,217,85)", "rgb(248,183,9)", "rgb(249,126,138)", "rgb(192,69,227)", "rgb(233,233,233)"],
   [
     "rgb(34,187,91)",
@@ -80,7 +80,7 @@ export const maimaiDifficultyColor = [
   ],
 ];
 
-export const chunithmDifficultyColor = [
+const chunithmDifficultyColor = [
   ["rgb(0,171,132)", "rgb(255,125,0)", "rgb(241,41,41)", "rgb(142,26,230)", "rgb(255,40,84)"],
   [
     "rgb(0,166,129)",

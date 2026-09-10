@@ -1,4 +1,4 @@
-import { Children, ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Children, ReactNode, useRef, useState } from "react";
 import { Group, GroupProps } from "@mantine/core";
 import { useHoverDirty } from "react-use";
 import { useAnimationFrame } from "motion/react";
@@ -19,8 +19,7 @@ export const Marquee = ({
   children,
   ...props
 }: MarqueeProps & GroupProps) => {
-  const [isScrolling, setIsScrolling] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const scrollingRef = useRef(false);
   const [translateX, setTranslateX] = useState(0);
 
   const directionRef = useRef(1);
@@ -30,15 +29,22 @@ export const Marquee = ({
   const isHovering = useHoverDirty(ref as React.RefObject<Element>);
 
   useAnimationFrame((time) => {
-    if (!isScrolling || isPaused) return;
-
-    if (delayUntilRef.current && time < delayUntilRef.current) return;
-
     if (!ref.current) return;
+    const maxTranslateX = ref.current.scrollWidth - ref.current.clientWidth;
+    if (maxTranslateX <= 0) {
+      scrollingRef.current = false;
+      directionRef.current = 1;
+      setTranslateX(0);
+      return;
+    }
+    if (!scrollingRef.current) {
+      scrollingRef.current = true;
+      delayUntilRef.current = time + startDelay;
+    }
+    if ((pauseOnHover && isHovering) || time < delayUntilRef.current) return;
 
     setTranslateX((prev) => {
       const newTranslateX = prev - directionRef.current * speed;
-      const maxTranslateX = ref.current!.scrollWidth - ref.current!.clientWidth;
 
       if (newTranslateX <= -maxTranslateX - speed || newTranslateX >= speed) {
         directionRef.current = -directionRef.current;
@@ -48,26 +54,6 @@ export const Marquee = ({
 
       return newTranslateX;
     });
-  });
-
-  useEffect(() => {
-    if (!isScrolling) {
-      setTranslateX(0);
-    }
-  }, [isScrolling]);
-
-  useLayoutEffect(() => {
-    if (pauseOnHover) {
-      setIsPaused(isHovering);
-    }
-
-    if (ref.current && ref.current.scrollWidth > ref.current.clientWidth) {
-      setTimeout(() => {
-        setIsScrolling(true);
-      }, startDelay);
-    } else {
-      setIsScrolling(false);
-    }
   });
 
   return (

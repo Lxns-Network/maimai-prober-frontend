@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiMutationFn } from "../queries/mutationFn.ts";
+import { parseAPIResponse } from "@/utils/api/response.ts";
 import { markNotificationRead, markAllNotificationsRead } from "@/utils/api/notification.ts";
 
 const invalidateNotifications = (qc: ReturnType<typeof useQueryClient>) =>
@@ -11,8 +11,8 @@ const invalidateNotifications = (qc: ReturnType<typeof useQueryClient>) =>
 export const useMarkNotificationRead = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ category, id }: { category: string; id: number }) =>
-      apiMutationFn(() => markNotificationRead(category, id)),
+    mutationFn: async ({ category, id }: { category: string; id: number }) =>
+      parseAPIResponse(await markNotificationRead(category, id)),
     onSuccess: () => invalidateNotifications(qc),
   });
 };
@@ -20,7 +20,7 @@ export const useMarkNotificationRead = () => {
 export const useMarkAllNotificationsRead = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => apiMutationFn(() => markAllNotificationsRead()),
+    mutationFn: async () => parseAPIResponse(await markAllNotificationsRead()),
     onSuccess: () => invalidateNotifications(qc),
   });
 };

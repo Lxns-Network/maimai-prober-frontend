@@ -23,7 +23,7 @@ import {
   useTree,
 } from "@mantine/core";
 import classes from "./Docs.module.css";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
@@ -34,7 +34,6 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeRaw from "rehype-raw";
 import remarkSlug from "remark-slug";
 import remarkFlexibleContainers from "remark-flexible-containers";
-import { useListState } from "@mantine/hooks";
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -133,18 +132,7 @@ function findParentValue(node: TreeNodeData, targetValue: string): string | null
   return null;
 }
 
-const Leaf = ({
-  level,
-  node,
-  expanded,
-  hasChildren,
-  elementProps,
-  tree,
-}: RenderTreeNodePayload) => {
-  useEffect(() => {
-    if (level === 1) tree.expand(node.value);
-  }, [level]);
-
+const Leaf = ({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) => {
   return (
     <div
       className={[elementProps.className, classes.tableOfContentsLink].join(" ")}
@@ -179,14 +167,7 @@ interface HeadingData {
 }
 
 const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
-  const tree = useTree({
-    multiple: false,
-  });
-
-  const [data, setData] = useState<TreeNodeData[]>([]);
-  const [parentStack, setParentStack] = useState<TreeNodeData[]>([]);
-
-  useEffect(() => {
+  const { data, parentStack } = useMemo(() => {
     const data: TreeNodeData[] = [];
     const parentStack: TreeNodeData[] = [];
 
@@ -219,13 +200,13 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
       }
     });
 
-    setData(data);
-    setParentStack(parentStack);
+    return { data, parentStack };
   }, [headings]);
+  const tree = useTree({
+    multiple: false,
+    initialExpandedState: Object.fromEntries(data.map((node) => [node.value, true])),
+  });
 
-  /*
-   * 目录激活状态
-   */
   const [active, setActive] = useState<number>(-1);
   const handleScroll = () => {
     const nodes = Array.from(
@@ -239,10 +220,9 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
     if (active === -1) return;
 
     const nodes = Array.from(document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)"));
-    if (nodes.length === 0) return;
-    const id = nodes[active].id;
-
-    tree.select(id);
+    const id = nodes[active]?.id;
+    if (!id) return;
+    let selectedId = id;
 
     parentStack.forEach((node) => {
       if (node.value === id) return;
@@ -258,12 +238,13 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
         parentValue = findParentValue(node, parentValue);
 
         if (parentValue && tree.expandedState[parentValue]) {
-          tree.select(lastParentValue);
+          selectedId = lastParentValue;
           break;
         }
       }
     });
-  }, [active]);
+    if (!tree.selectedState.includes(selectedId)) tree.select(selectedId);
+  }, [active, parentStack, tree]);
 
   useEffect(() => {
     handleScroll();
@@ -541,10 +522,8 @@ const Content = ({ markdown }: { markdown: string }) => {
 export default function Page() {
   const data = useData<{ markdown: string; slug: string }>();
   const { markdown, slug } = data;
-  const [headings, handlers] = useListState<HeadingData>([]);
-
-  useEffect(() => {
-    if (!markdown) return;
+  const headings = useMemo(() => {
+    if (!markdown) return [];
 
     const file = remark()
       .use(remarkToc)
@@ -553,13 +532,16 @@ export default function Page() {
       .use(remarkHeadings)
       .processSync(markdown);
 
-    handlers.setState(file.data.headings as HeadingData[]);
+    return file.data.headings as HeadingData[];
+  }, [markdown]);
 
+  useEffect(() => {
     // 处理 URL hash 滚动
     if (typeof window !== "undefined" && window.location.hash) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         scrollTo(decodeURIComponent(window.location.hash.slice(1)));
       }, 100);
+      return () => clearTimeout(timer);
     }
   }, [markdown]);
 
@@ -591,7 +573,7 @@ export default function Page() {
         </CodeHighlightAdapterProvider>
       </Container>
       <Container ml={0} className={classes.tableOfContents}>
-        <TableOfContents headings={headings} />
+        <TableOfContents key={slug} headings={headings} />
       </Container>
     </Flex>
   );

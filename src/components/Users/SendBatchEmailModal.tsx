@@ -34,8 +34,8 @@ export const SendBatchEmailModal = ({
     },
 
     validate: {
-      subject: (value) => (value == "" ? "主题不能为空" : null),
-      content: (value) => (value == "" ? "正文不能为空" : null),
+      subject: (value) => (value === "" ? "主题不能为空" : null),
+      content: (value) => (value === "" ? "正文不能为空" : null),
     },
   });
 

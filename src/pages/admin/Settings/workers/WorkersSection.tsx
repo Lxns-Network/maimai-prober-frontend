@@ -170,9 +170,7 @@ export const WorkersSection = () => {
   const PAGE_SIZES = [10, 15, 20];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   const [page, setPage] = useState(1);
-  const [displayWorkers, setDisplayWorkers] = useState<WorkerProps[]>([]);
 
-  const [sortedWorkers, setSortedWorkers] = useState<WorkerProps[]>([]);
   const [sortStatus, setSortStatus] = useState<DataTableSortStatus<WorkerProps>>({
     columnAccessor: "id",
     direction: "asc",
@@ -181,30 +179,19 @@ export const WorkersSection = () => {
   const [selectedWorkers, setSelectedWorkers] = useState<WorkerProps[]>([]);
   const [expandedWorkerIds, setExpandedWorkerIds] = useState<number[]>([]);
 
-  useEffect(() => {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    setDisplayWorkers(sortedWorkers.slice(start, end));
-  }, [page]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayWorkers(sortedWorkers.slice(0, pageSize));
-  }, [pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-    setDisplayWorkers(sortedWorkers.slice(0, pageSize));
-  }, [sortedWorkers]);
-
-  useEffect(() => {
-    setSortedWorkers(
+  const sortedWorkers = useMemo(
+    () =>
       sortData(workers, {
         sortBy: sortStatus.columnAccessor as keyof WorkerProps,
         reversed: sortStatus.direction === "desc",
       }),
-    );
-  }, [workers, sortStatus]);
+    [workers, sortStatus],
+  );
+  const displayWorkers = sortedWorkers.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [pageSize, sortedWorkers]);
 
   const handleCreate = () => {
     openFormModal(

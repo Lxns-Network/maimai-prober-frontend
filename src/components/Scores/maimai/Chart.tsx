@@ -95,7 +95,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
         {keys(basic).map((type) => {
           if (key === "break" && type === "perfect") {
             const critical_perfect_bonus = break_bonus.critical_perfect / notes.break;
-            if (mode == "100-") {
+            if (mode === "100-") {
               return (
                 <Table.Td key={type}>
                   <Text size="sm" c="yellow">
@@ -108,7 +108,7 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
                 </Table.Td>
               );
             }
-            if (mode == "101-") {
+            if (mode === "101-") {
               return (
                 <Table.Td key={type}>
                   <Text size="sm" c="yellow">
@@ -139,9 +139,10 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
                 {(basic[type][key] as number[]).map((v) => {
                   let percentage = (v / total) * 100;
                   percentage += break_bonus.great / notes.break;
-                  if (mode == "100-" || mode == "101-") {
+                  if (mode === "100-" || mode === "101-") {
                     let perfect_break = (basic.perfect.break / total) * 100;
-                    if (mode == "101-") perfect_break += break_bonus.critical_perfect / notes.break;
+                    if (mode === "101-")
+                      perfect_break += break_bonus.critical_perfect / notes.break;
                     return <div key={v}>{(percentage - perfect_break).toFixed(4)}%</div>;
                   }
                   return <div key={v}>{percentage.toFixed(4)}%</div>;
@@ -151,18 +152,18 @@ const ChartNotes = ({ notes }: { notes: MaimaiNotesProps }) => {
           } else if (key !== "total") {
             let a = basic[type][key] as number;
             let b = break_bonus[type];
-            if (mode == "100-" || mode == "101-") {
+            if (mode === "100-" || mode === "101-") {
               if (type === "perfect") {
                 a = basic.miss[key];
               } else if (type === "great") {
                 a = basic.perfect[key] - +basic.great[key];
               } else if (type === "good") {
                 a = basic.perfect[key] - basic.good[key];
-                if (mode == "101-") b = break_bonus.critical_perfect - break_bonus.good;
+                if (mode === "101-") b = break_bonus.critical_perfect - break_bonus.good;
                 else b = break_bonus.miss - break_bonus.good;
               } else if (type === "miss") {
                 a = basic.perfect[key];
-                if (mode == "101-") b = break_bonus.critical_perfect;
+                if (mode === "101-") b = break_bonus.critical_perfect;
               }
             }
             let percentage = (a / total) * 100;

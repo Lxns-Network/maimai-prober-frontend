@@ -24,11 +24,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .node-version
           cache: yarn
 
       - name: Install dependencies
         run: yarn install --immutable
+
+      - name: Check formatting, lint, and CSS
+        run: yarn format:check && yarn lint && yarn stylelint
+
+      - name: Regression tests
+        run: yarn test
 
       - name: Extract version from tag
         id: version
@@ -39,6 +45,8 @@ jobs:
       - name: Build
         env:
           FRONTEND_VERSION: ${{ steps.version.outputs.VERSION }}
+          SENTRY_UPLOAD: "1"
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: yarn build
 
       - name: Verify the stamp

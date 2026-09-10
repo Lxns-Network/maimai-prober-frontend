@@ -1,5 +1,5 @@
 import { useMutation, UseMutationOptions } from "@tanstack/react-query";
-import { apiMutationFn } from "@/hooks/queries/mutationFn.ts";
+import { parseAPIResponse } from "@/utils/api/response.ts";
 import { LogoUploadResponse } from "@/types/api";
 import {
   sendDeveloperApply,
@@ -9,12 +9,11 @@ import {
   createOAuthApp,
   editOAuthApp,
   deleteOAuthApp,
-  revokeDeveloper,
 } from "@/utils/api/developer.ts";
 
 export const useSendDeveloperApply = (options?: UseMutationOptions<unknown, Error, object>) => {
   return useMutation({
-    mutationFn: (data: object) => apiMutationFn(() => sendDeveloperApply(data)),
+    mutationFn: async (data: object) => parseAPIResponse(await sendDeveloperApply(data)),
     ...options,
   });
 };
@@ -23,14 +22,14 @@ export const useResetDeveloperApiKey = (
   options?: UseMutationOptions<{ api_key: string }, Error, void>,
 ) => {
   return useMutation({
-    mutationFn: () => apiMutationFn<{ api_key: string }>(() => resetDeveloperApiKey()),
+    mutationFn: async () => parseAPIResponse<{ api_key: string }>(await resetDeveloperApiKey()),
     ...options,
   });
 };
 
 export const useUpdateDeveloperInfo = (options?: UseMutationOptions<unknown, Error, object>) => {
   return useMutation({
-    mutationFn: (data: object) => apiMutationFn(() => updateDeveloperInfo(data)),
+    mutationFn: async (data: object) => parseAPIResponse(await updateDeveloperInfo(data)),
     ...options,
   });
 };
@@ -39,14 +38,15 @@ export const useUploadOAuthAppLogo = (
   options?: UseMutationOptions<LogoUploadResponse, Error, File>,
 ) => {
   return useMutation({
-    mutationFn: (file: File) => apiMutationFn<LogoUploadResponse>(() => uploadOAuthAppLogo(file)),
+    mutationFn: async (file: File) =>
+      parseAPIResponse<LogoUploadResponse>(await uploadOAuthAppLogo(file)),
     ...options,
   });
 };
 
 export const useCreateOAuthApp = (options?: UseMutationOptions<unknown, Error, object>) => {
   return useMutation({
-    mutationFn: (data: object) => apiMutationFn(() => createOAuthApp(data)),
+    mutationFn: async (data: object) => parseAPIResponse(await createOAuthApp(data)),
     ...options,
   });
 };
@@ -55,22 +55,15 @@ export const useEditOAuthApp = (
   options?: UseMutationOptions<unknown, Error, { clientId: string; data: object }>,
 ) => {
   return useMutation({
-    mutationFn: ({ clientId, data }: { clientId: string; data: object }) =>
-      apiMutationFn(() => editOAuthApp(clientId, data)),
+    mutationFn: async ({ clientId, data }: { clientId: string; data: object }) =>
+      parseAPIResponse(await editOAuthApp(clientId, data)),
     ...options,
   });
 };
 
 export const useDeleteOAuthApp = (options?: UseMutationOptions<unknown, Error, string>) => {
   return useMutation({
-    mutationFn: (clientId: string) => apiMutationFn(() => deleteOAuthApp(clientId)),
-    ...options,
-  });
-};
-
-export const useRevokeDeveloper = (options?: UseMutationOptions<unknown, Error, object>) => {
-  return useMutation({
-    mutationFn: (data: object) => apiMutationFn(() => revokeDeveloper(data)),
+    mutationFn: async (clientId: string) => parseAPIResponse(await deleteOAuthApp(clientId)),
     ...options,
   });
 };

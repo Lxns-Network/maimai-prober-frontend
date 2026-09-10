@@ -252,8 +252,7 @@ export const ScoreListSection = () => {
   );
 
   const { openModal: openCreateScoreModal } = useCreateScoreStore();
-  const getSongList = useSongListStore((state) => state.getSongList);
-  const songList = getSongList(game);
+  const songList = useSongListStore((state) => state[game]);
   const small = useMediaQuery("(max-width: 30rem)");
 
   const topRef = useRef<HTMLDivElement>(null);

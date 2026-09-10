@@ -42,7 +42,8 @@ import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { ChartComment } from "./ChartComment.tsx";
 import { useScoreComments } from "@/hooks/queries/useScoreComments.ts";
 import { isTokenUndefined } from "@/utils/session.ts";
-import { rankData, ScoreHistory } from "./ScoreHistory.tsx";
+import { ScoreHistory } from "./ScoreHistory.tsx";
+import { rankData } from "@/data/scoreRanks.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 
 interface ScoreModalProps {
@@ -97,8 +98,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
 
-  const getSongList = useSongListStore((state) => state.getSongList);
-  const songList = getSongList(game);
+  const songList = useSongListStore((state) => state[game]);
   const small = useMediaQuery("(max-width: 30rem)");
 
   const containerRef = useRef<HTMLDivElement>(null);
