@@ -7,6 +7,7 @@ import { queryKeys } from "./queryKeys.ts";
 interface RankingScoreProps {
   ranking: number;
   player_name?: string;
+  username?: string;
   achievements?: number;
   dx_score?: number;
   score?: number;

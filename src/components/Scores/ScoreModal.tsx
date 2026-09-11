@@ -38,6 +38,7 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { Game } from "@/types/game";
 import { ScoreRanking } from "./ScoreRanking.tsx";
+import { FriendScoreRanking } from "./FriendScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { ChartComment } from "./ChartComment.tsx";
 import { useScoreComments } from "@/hooks/queries/useScoreComments.ts";
@@ -94,7 +95,7 @@ type DifficultyState =
 
 export const ScoreModal = ({ game, score, opened, onClose, readOnly = false }: ScoreModalProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { restoreView, navigateFromOverlay } = useResumableOverlay({
+  const { linkProps, restoreView, navigateFromOverlay } = useResumableOverlay({
     opened,
     onClose: () => onClose(),
     getScrollViewport: () =>
@@ -361,13 +362,19 @@ export const ScoreModal = ({ game, score, opened, onClose, readOnly = false }: S
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <ChartComment game={game} score={score} />
+                <ChartComment game={game} score={score} profileLinkProps={linkProps} />
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value="friend-ranking">
+              <Accordion.Control>好友排行</Accordion.Control>
+              <Accordion.Panel>
+                <FriendScoreRanking game={game} score={score} readOnly={readOnly} />
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="ranking">
               <Accordion.Control>排行榜</Accordion.Control>
               <Accordion.Panel>
-                <ScoreRanking game={game} score={score} />
+                <ScoreRanking game={game} score={score} profileLinkProps={linkProps} />
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>
