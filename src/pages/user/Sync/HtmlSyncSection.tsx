@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Alert,
+  Anchor,
   Badge,
   Button,
   Card,
@@ -370,6 +371,19 @@ export const HtmlSyncSection = () => {
                 仅支持从 NET 保存的完整 HTML 源码。你可以上传文件，也可以直接粘贴 HTML 文本。
               </Text>
               <Text size="sm">目前支持玩家信息、收藏品、最近游玩记录、最佳成绩等页面。</Text>
+              <div>
+                <Anchor
+                  size="xs"
+                  underline="always"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void navigate("/docs/sync#上传-html-源码同步");
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  查看 HTML 导出与上传说明 →
+                </Anchor>
+              </div>
             </Stack>
           </Alert>
           <Group>

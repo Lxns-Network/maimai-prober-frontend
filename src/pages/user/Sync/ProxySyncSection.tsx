@@ -1,6 +1,7 @@
 import {
   Accordion,
   Alert,
+  Anchor,
   Button,
   Card,
   Code,
@@ -424,6 +425,23 @@ export const ProxySyncSection = () => {
                             一键导入配置
                           </Button>
                         </Flex>
+                        <Divider my="xs" />
+                        <Group justify="space-between" align="center" wrap="wrap" gap="xs">
+                          <Text size="xs" c="dimmed">
+                            iOS、Android 与 Windows 详细配置步骤
+                          </Text>
+                          <Button
+                            variant="subtle"
+                            size="compact-xs"
+                            rightSection={<IconChevronRight size={14} />}
+                            styles={{ section: { marginInlineStart: 2 } }}
+                            onClick={() => {
+                              void navigate("/docs/sync#一配置-http-代理");
+                            }}
+                          >
+                            查看图文教程
+                          </Button>
+                        </Group>
                       </Accordion.Panel>
                     </Accordion.Item>
                   </Accordion>
@@ -487,6 +505,22 @@ export const ProxySyncSection = () => {
             <Stack gap="xs" w={containerWidth}>
               <Text fz="sm">复制微信 OAuth 链接，发送至安全的聊天中并打开</Text>
               {game && <WechatOAuthLink game={game} crawlToken={crawlToken} />}
+              <Group justify="flex-start" gap="xs">
+                <Text size="xs" c="dimmed">
+                  请勿将链接粘贴至微信搜索框打开。
+                </Text>
+                <Anchor
+                  size="xs"
+                  underline="always"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void navigate("/docs/sync#二使用微信打开-oauth-链接");
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  查看微信传分注意事项
+                </Anchor>
+              </Group>
               {!isLoggedOut && (
                 <Text>
                   <CrawlTokenAlert token={crawlToken} resetHandler={loadCrawlToken} />
