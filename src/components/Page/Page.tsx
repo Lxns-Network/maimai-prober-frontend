@@ -17,6 +17,7 @@ export interface PageProps {
     children: React.ReactNode;
   }[];
   children?: React.ReactNode;
+  actions?: React.ReactNode;
 }
 
 export const Page = (props: PageProps) => {
