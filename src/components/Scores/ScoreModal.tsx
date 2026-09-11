@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useSongDetail } from "@/hooks/queries/useSongDetail.ts";
 import {
   Accordion,
@@ -92,8 +92,6 @@ type DifficultyState =
 
 export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
   const { navigateFromOverlay } = useBackDismiss(opened, () => onClose());
-  const [songState, setSongState] = useState<SongState | null>(null);
-  const [difficultyState, setDifficultyState] = useState<DifficultyState | null>(null);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -125,54 +123,33 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
 
   const songId = score?.id ?? null;
   const { songDetail } = useSongDetail(game, songId);
+  const song = songId === null ? null : (songDetail ?? songList.find(songId));
 
-  useEffect(() => {
-    setSongState(null);
-  }, [game]);
-
-  useEffect(() => {
-    if (!songDetail) return;
+  const songState = useMemo<SongState | null>(() => {
+    if (!song) return null;
     if (game === "maimai") {
-      setSongState({ game: "maimai", song: songDetail as MaimaiSongProps });
-    } else {
-      setSongState({ game: "chunithm", song: songDetail as ChunithmSongProps });
+      return { game: "maimai", song: song as MaimaiSongProps };
     }
-  }, [songDetail, game]);
+    return { game: "chunithm", song: song as ChunithmSongProps };
+  }, [song, game]);
 
-  useEffect(() => {
-    if (!songState?.song || !songList || !score) return;
+  const difficultyState = useMemo<DifficultyState | null>(() => {
+    if (!songState?.song || !songList || !score) return null;
 
     if (songState.game === "maimai" && songList instanceof MaimaiSongList) {
       const s = score as MaimaiScoreProps;
       const difficulty = songList.getDifficulty(songState.song, s.type, s.level_index);
-      setDifficultyState({ game: "maimai", difficulty });
+      return { game: "maimai", difficulty };
     }
 
     if (songState.game === "chunithm" && songList instanceof ChunithmSongList) {
       const s = score as ChunithmScoreProps;
       const difficulty = songList.getDifficulty(songState.song, s.level_index);
-      setDifficultyState({ game: "chunithm", difficulty });
+      return { game: "chunithm", difficulty };
     }
+
+    return null;
   }, [songState, score, songList]);
-
-  useEffect(() => {
-    if (songId === null || !songList) {
-      setSongState(null);
-      return;
-    }
-
-    const song = songList.find(songId);
-    if (!song) {
-      setSongState(null);
-      return;
-    }
-
-    if (game === "maimai") {
-      setSongState({ game: "maimai", song: song as MaimaiSongProps });
-    } else if (game === "chunithm") {
-      setSongState({ game: "chunithm", song: song as ChunithmSongProps });
-    }
-  }, [songId, songList, game]);
 
   function isMaimaiScoreProps(obj: unknown): obj is MaimaiScoreProps {
     if (!obj) return false;
