@@ -12,7 +12,6 @@ import { ManagedModalsBackGuard } from "@/components/ModalProvider/ManagedModals
 import { notifications, Notifications } from "@mantine/notifications";
 import { redirectExpiredSessionToLogin } from "@/utils/session";
 import * as Sentry from "@sentry/react";
-import { usePageContext } from "vike-react/usePageContext";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -63,7 +62,6 @@ const baseTheme = {
 };
 
 function LayoutInner({ children }: { children: React.ReactNode }) {
-  const pageContext = usePageContext();
   const { config, isLoading: isSiteConfigLoading } = useSiteConfig();
   const { error: userTokenError } = useUserToken();
   const { toggle, fullscreen } = useFullscreenDocument();
@@ -112,12 +110,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       redirectExpiredSessionToLogin();
     }
   }, [userTokenError]);
-
-  useEffect(() => {
-    if (viewport.current) {
-      viewport.current.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [pageContext.urlPathname]);
 
   useEffect(() => {
     if (isSiteConfigLoading || !config) return;
