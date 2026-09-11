@@ -3,6 +3,7 @@ import { Page } from "@/components/Page/Page.tsx";
 import { Game } from "@/types/game";
 import { HtmlSyncSection } from "./Sync/HtmlSyncSection";
 import { ProxySyncSection } from "./Sync/ProxySyncSection";
+import { SyncTutorialMenu } from "@/components/Sync/SyncTutorialMenu.tsx";
 
 export interface ScoreChangeDetailProps {
   new: unknown;
@@ -41,6 +42,7 @@ export default function Sync() {
         title: "同步游戏数据",
         description: "同步你的「舞萌 DX」与「中二节奏」游戏数据",
       }}
+      actions={<SyncTutorialMenu />}
       tabs={[
         {
           id: "proxy",

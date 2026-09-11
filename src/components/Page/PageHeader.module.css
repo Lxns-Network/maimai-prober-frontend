@@ -18,6 +18,28 @@
   }
 }
 
+.headerContent {
+  @mixin smaller-than $mantine-breakpoint-md {
+    justify-content: center;
+  }
+}
+
+.titleContainer {
+  @mixin smaller-than $mantine-breakpoint-md {
+    width: 100%;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+
+  @mixin smaller-than $mantine-breakpoint-md {
+    margin-top: var(--mantine-spacing-xs);
+    justify-content: center;
+  }
+}
+
 .title {
   font-size: 32px;
   margin-bottom: 5px;

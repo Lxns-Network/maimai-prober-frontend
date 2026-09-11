@@ -1,5 +1,5 @@
 import { PageProps } from "./Page.tsx";
-import { ActionIcon, Box, Group, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Box, Flex, Group, Text, Title, Tooltip } from "@mantine/core";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { Link } from "@/components/Link";
 import classes from "./PageHeader.module.css";
@@ -18,33 +18,43 @@ export const PageHeader = ({ meta, actions, backLink }: PageProps) => {
     children: <IconArrowLeft size={20} />,
   };
 
+  const titleBlock = (
+    <Group align="flex-start" wrap="nowrap" gap="xs" className={classes.titleContainer}>
+      {backLabel && (
+        <Tooltip label={backLabel}>
+          {returnLabel ? (
+            <ActionIcon {...backIconProps} onClick={() => window.history.back()} />
+          ) : backLink ? (
+            <ActionIcon {...backIconProps} component={Link} to={backLink.to} />
+          ) : null}
+        </Tooltip>
+      )}
+      <Box style={{ flex: 1, minWidth: 0 }}>
+        <Title className={classes.title} textWrap="balance">
+          {meta.title}
+        </Title>
+        <Text className={classes.description}>{meta.description}</Text>
+      </Box>
+    </Group>
+  );
+
   return (
     <div className={classes.wrapper}>
       <Box className={classes.header}>
-        <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
-          <Group align="flex-start" wrap="nowrap" gap="xs" style={{ flex: 1, minWidth: 0 }}>
-            {backLabel && (
-              <Tooltip label={backLabel}>
-                {returnLabel ? (
-                  <ActionIcon {...backIconProps} onClick={() => window.history.back()} />
-                ) : backLink ? (
-                  <ActionIcon {...backIconProps} component={Link} to={backLink.to} />
-                ) : null}
-              </Tooltip>
-            )}
-            <Box style={{ flex: 1, minWidth: 0 }}>
-              <Title className={classes.title} textWrap="balance">
-                {meta.title}
-              </Title>
-              <Text className={classes.description}>{meta.description}</Text>
-            </Box>
-          </Group>
-          {actions && (
-            <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
-              {actions}
-            </Group>
-          )}
-        </Group>
+        {actions ? (
+          <Flex
+            className={classes.headerContent}
+            justify="space-between"
+            align="center"
+            wrap="wrap"
+            gap="sm"
+          >
+            {titleBlock}
+            <Box className={classes.actions}>{actions}</Box>
+          </Flex>
+        ) : (
+          titleBlock
+        )}
       </Box>
     </div>
   );
