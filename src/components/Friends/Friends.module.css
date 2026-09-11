@@ -49,18 +49,6 @@
   min-height: 76px;
 }
 
-.cardGameDetails {
-  flex: 1;
-  min-width: 0;
-}
-
-.cardTrophyAccent {
-  width: 2px;
-  height: 10px;
-  flex-shrink: 0;
-  border-radius: 1px;
-}
-
 .cardSyncTime {
   margin-top: auto;
   padding-top: var(--mantine-spacing-sm);
