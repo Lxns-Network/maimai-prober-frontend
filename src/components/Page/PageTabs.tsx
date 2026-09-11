@@ -7,7 +7,10 @@ import { usePageContext } from "vike-react/usePageContext";
 export const PageTabs = (props: PageProps) => {
   const pageContext = usePageContext();
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || props.tabs?.[0].id);
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(
+    props.tabs?.some((tab) => tab.id === requestedTab) ? requestedTab : props.tabs?.[0].id,
+  );
 
   return (
     <Tabs

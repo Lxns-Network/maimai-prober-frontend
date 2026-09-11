@@ -11,9 +11,12 @@ export interface PageProps {
     description: string;
   };
   maxWidth?: number;
+  backLink?: { to: string; label: string };
+  /** 页头右侧的常驻操作区，跨 tab 可用。 */
+  actions?: React.ReactNode;
   tabs?: {
     id: string;
-    name: string;
+    name: React.ReactNode;
     children: React.ReactNode;
   }[];
   children?: React.ReactNode;
