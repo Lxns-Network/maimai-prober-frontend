@@ -24,7 +24,6 @@
   "dependencies": {
     "@cap.js/widget": "0.1.57",
     "@lxns-network/maimai-chart-engine": "workspace:*",
-    "@mantine/carousel": "9.5.1",
     "@mantine/charts": "9.5.1",
     "@mantine/code-highlight": "9.5.1",
     "@mantine/core": "9.5.1",
@@ -54,7 +53,6 @@
     "clsx": "2.1.1",
     "dayjs": "1.11.23",
     "embla-carousel": "8.6.0",
-    "embla-carousel-autoplay": "8.6.0",
     "embla-carousel-react": "8.6.0",
     "gifenc": "^1.0.3",
     "hast-util-from-html-isomorphic": "2.0.0",
