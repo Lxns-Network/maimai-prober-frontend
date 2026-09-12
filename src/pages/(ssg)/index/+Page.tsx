@@ -14,7 +14,7 @@ import {
 import clsx from "clsx";
 import { HeroArtwork } from "@/components/Home/HeroArtwork";
 import { ChartPreview } from "@/components/Home/ChartPreview";
-import { ProductCarousel } from "@/components/Home/ProductCarousel";
+import { EcosystemCarousel } from "@/components/Home/EcosystemCarousel";
 import { ScoreShowcase } from "@/components/Home/ScoreShowcase";
 import { Link } from "@/components/Link";
 import { Footer } from "@/components/Shell/Footer/Footer";
@@ -250,14 +250,14 @@ export default function Page() {
             <div className={classes.sectionHeading}>
               <div>
                 <Title order={2} id="tools-title" className={classes.sectionTitle}>
-                  其他工具
+                  社区项目
                 </Title>
                 <Text className={classes.sectionDescription} mt="xs">
                   基于 maimai DX 查分器开发的第三方开发者工具。
                 </Text>
               </div>
             </div>
-            <ProductCarousel />
+            <EcosystemCarousel />
           </section>
         </Container>
       </main>

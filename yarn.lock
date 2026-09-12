@@ -769,20 +769,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@mantine/carousel@npm:9.5.1":
-  version: 9.5.1
-  resolution: "@mantine/carousel@npm:9.5.1"
-  peerDependencies:
-    "@mantine/core": 9.5.1
-    "@mantine/hooks": 9.5.1
-    embla-carousel: ">=8.0.0"
-    embla-carousel-react: ">=8.0.0"
-    react: ^19.2.0
-    react-dom: ^19.2.0
-  checksum: 10c0/7252cefbcceebcfe7381454c32016f6820b958403e6dc8fc36bdf884e998d51c59b0b1ea0373a3fa3934b1d7587c52429b1c6b2b683246060d301bce47041565
-  languageName: node
-  linkType: hard
-
 "@mantine/charts@npm:9.5.1":
   version: 9.5.1
   resolution: "@mantine/charts@npm:9.5.1"
@@ -3465,15 +3451,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"embla-carousel-autoplay@npm:8.6.0":
-  version: 8.6.0
-  resolution: "embla-carousel-autoplay@npm:8.6.0"
-  peerDependencies:
-    embla-carousel: 8.6.0
-  checksum: 10c0/d7e5cb79c1474b3d27621302e63dedf783a281ae0464b21b87183d58103f938d22be9f6a4735de4b1b19806606006da43f6151497df91c3edbbc99a4dae4a94f
-  languageName: node
-  linkType: hard
-
 "embla-carousel-react@npm:8.6.0":
   version: 8.6.0
   resolution: "embla-carousel-react@npm:8.6.0"
@@ -5055,7 +5032,6 @@ __metadata:
   dependencies:
     "@cap.js/widget": "npm:0.1.57"
     "@lxns-network/maimai-chart-engine": "workspace:*"
-    "@mantine/carousel": "npm:9.5.1"
     "@mantine/charts": "npm:9.5.1"
     "@mantine/code-highlight": "npm:9.5.1"
     "@mantine/core": "npm:9.5.1"
@@ -5092,7 +5068,6 @@ __metadata:
     clsx: "npm:2.1.1"
     dayjs: "npm:1.11.23"
     embla-carousel: "npm:8.6.0"
-    embla-carousel-autoplay: "npm:8.6.0"
     embla-carousel-react: "npm:8.6.0"
     gifenc: "npm:^1.0.3"
     hast-util-from-html-isomorphic: "npm:2.0.0"
