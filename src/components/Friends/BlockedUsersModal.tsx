@@ -6,7 +6,6 @@ import {
   Group,
   Modal,
   Pagination,
-  SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
@@ -97,53 +96,51 @@ export const BlockedUsersModal = () => {
               <LoadingBlock />
             ) : blocks.length > 0 ? (
               <Stack gap="xs">
-                <SimpleGrid cols={1} spacing="xs">
-                  {blocks.map((item) => (
-                    <Card
-                      key={item.user_id}
-                      withBorder
-                      radius="md"
-                      p="xs"
-                      className={profileClasses.card}
-                    >
-                      <Group justify="space-between" align="center" wrap="nowrap">
-                        <Group gap="sm" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
-                          <ThemeIcon variant="light" color="gray" size="md" radius="md">
-                            <IconUser size={16} />
-                          </ThemeIcon>
-                          <div style={{ minWidth: 0 }}>
-                            <Text
-                              fw={600}
-                              size="sm"
-                              lineClamp={1}
-                              style={{ wordBreak: "break-word" }}
-                            >
-                              {item.username}
-                            </Text>
-                            <Text size="xs" c="dimmed">
-                              拉黑于 {formatDateTime(item.created_time)}
-                            </Text>
-                          </div>
-                        </Group>
-
-                        <Tooltip label="解除拉黑">
-                          <Button
-                            size="compact-xs"
-                            variant="default"
-                            leftSection={<IconTrash size={12} />}
-                            loading={
-                              unblockMutation.isPending &&
-                              unblockMutation.variables?.userId === item.user_id
-                            }
-                            onClick={() => handleUnblock(item.user_id, item.username)}
+                {blocks.map((item) => (
+                  <Card
+                    key={item.user_id}
+                    withBorder
+                    radius="md"
+                    p="xs"
+                    className={profileClasses.card}
+                  >
+                    <Group justify="space-between" align="center" wrap="nowrap">
+                      <Group gap="sm" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
+                        <ThemeIcon variant="light" color="gray" size="md" radius="md">
+                          <IconUser size={16} />
+                        </ThemeIcon>
+                        <div style={{ minWidth: 0 }}>
+                          <Text
+                            fw={600}
+                            size="sm"
+                            lineClamp={1}
+                            style={{ wordBreak: "break-word" }}
                           >
-                            解除
-                          </Button>
-                        </Tooltip>
+                            {item.username}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            拉黑于 {formatDateTime(item.created_time)}
+                          </Text>
+                        </div>
                       </Group>
-                    </Card>
-                  ))}
-                </SimpleGrid>
+
+                      <Tooltip label="解除拉黑">
+                        <Button
+                          size="compact-xs"
+                          variant="default"
+                          leftSection={<IconTrash size={12} />}
+                          loading={
+                            unblockMutation.isPending &&
+                            unblockMutation.variables?.userId === item.user_id
+                          }
+                          onClick={() => handleUnblock(item.user_id, item.username)}
+                        >
+                          解除
+                        </Button>
+                      </Tooltip>
+                    </Group>
+                  </Card>
+                ))}
 
                 {totalPages > 1 && (
                   <Group justify="center" mt="xs">

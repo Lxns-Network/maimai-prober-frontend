@@ -14,11 +14,11 @@ import { ASSET_URL } from "@/main";
 import dayjs from "dayjs";
 import { isTokenUndefined } from "@/utils/session.ts";
 
-interface RankingRow extends FriendRankingScoreProps {
+interface RankingEntry extends FriendRankingScoreProps {
   isSelf: boolean;
 }
 
-const valueOf = (row: RankingRow) => row.achievements ?? row.score ?? 0;
+const valueOf = (row: RankingEntry) => row.achievements ?? row.score ?? 0;
 
 /** 曲目页对未游玩谱面传入 -1 占位成绩，这类成绩不参与排名与对比。 */
 const hasPlayed = (score: MaimaiScoreProps | ChunithmScoreProps) =>
@@ -58,8 +58,18 @@ export const FriendScoreRanking = ({
     );
   }
 
+  if (friendScores.length === 0) {
+    return (
+      <EmptyState
+        icon={<IconUsersGroup size={64} stroke={1.5} />}
+        title="暂无好友成绩"
+        description="你的好友还没有这张谱面的成绩，或未公开自己的谱面成绩"
+      />
+    );
+  }
+
   const canCompare = !readOnly && hasPlayed(score);
-  const selfRow: RankingRow = {
+  const selfRow: RankingEntry = {
     user_id: 0,
     username: "我",
     achievements: "achievements" in score ? score.achievements : undefined,
@@ -74,16 +84,6 @@ export const FriendScoreRanking = ({
     ...(canCompare ? [selfRow] : []),
   ].sort((a, b) => valueOf(b) - valueOf(a));
 
-  if (friendScores.length === 0) {
-    return (
-      <EmptyState
-        icon={<IconUsersGroup size={64} stroke={1.5} />}
-        title="暂无好友成绩"
-        description="你的好友还没有这张谱面的成绩，或未公开自己的谱面成绩"
-      />
-    );
-  }
-
   return (
     <Stack gap="xs">
       {rows.map((row, index) => {
@@ -95,26 +95,28 @@ export const FriendScoreRanking = ({
               ? `${ASSET_URL}/chunithm/character/${row.character_id}.png!webp`
               : undefined;
 
+        const clickable = canCompare && !row.isSelf;
+
         return (
           <Box key={`${row.user_id}:${row.username}`}>
             <RankingRow
               rank={rank}
               achievements={row.achievements}
               score={row.score}
-              role={row.isSelf || !canCompare ? undefined : "button"}
-              tabIndex={row.isSelf || !canCompare ? undefined : 0}
-              onClick={row.isSelf || !canCompare ? undefined : () => toggleCompare(row.user_id)}
+              role={clickable ? "button" : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onClick={clickable ? () => toggleCompare(row.user_id) : undefined}
               onKeyDown={
-                row.isSelf || !canCompare
-                  ? undefined
-                  : (event) => {
+                clickable
+                  ? (event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
                         toggleCompare(row.user_id);
                       }
                     }
+                  : undefined
               }
-              style={{ cursor: row.isSelf || !canCompare ? undefined : "pointer" }}
+              style={{ cursor: clickable ? "pointer" : undefined }}
               bg={row.isSelf ? "var(--mantine-primary-color-light)" : undefined}
               leading={
                 <Avatar src={avatarSrc} size={28} radius="sm">
@@ -132,8 +134,7 @@ export const FriendScoreRanking = ({
                 </>
               }
               trailing={
-                !row.isSelf &&
-                canCompare && (
+                clickable && (
                   <IconChevronDown
                     size={16}
                     color="gray"
