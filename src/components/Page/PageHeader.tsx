@@ -44,9 +44,10 @@ export const PageHeader = ({ meta, actions, backLink }: PageProps) => {
         {actions ? (
           <Flex
             className={classes.headerContent}
+            data-compact={backLabel ? true : undefined}
             justify="space-between"
             align="center"
-            wrap="wrap"
+            wrap={backLabel ? { base: "nowrap", md: "wrap" } : "wrap"}
             gap="sm"
           >
             {titleBlock}
