@@ -103,11 +103,11 @@ const ScoresBlockedNotice = ({ slot, gameName }: { slot: GameSlot; gameName: str
       <Group gap={8} wrap="nowrap" mb={4}>
         <IconEyeOff size={18} />
         <Text fw={600} size="sm">
-          该好友未公开{gameName}的谱面成绩
+          TA 没有公开「{gameName}」的成绩
         </Text>
       </Group>
       <Text size="xs" c="dimmed">
-        基本资料仍然可见，成绩部分由对方在账号设置中控制。
+        如果想看，可以让 TA 在「账号设置」中开启「允许好友查看谱面成绩」。
       </Text>
     </Card>
   );
