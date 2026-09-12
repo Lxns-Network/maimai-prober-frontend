@@ -106,6 +106,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   });
 
   const [minRank, setMinRank] = useState<string>("A");
+  const [chunithmCalculatorOpened, setChunithmCalculatorOpened] = useState(false);
 
   const isLoggedOut = isTokenUndefined();
   const { comments } = useScoreComments({
@@ -166,6 +167,8 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
       size="lg"
       opened={opened}
       onClose={onClose}
+      closeOnEscape={!chunithmCalculatorOpened}
+      trapFocus={!chunithmCalculatorOpened}
       fullScreen={small}
       transitionProps={{
         transition: small ? "pop" : "fade-down",
@@ -243,7 +246,11 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 <MaimaiScoreModalContent score={score} song={songState.song} />
               )}
               {songState.game === "chunithm" && isChunithmScoreProps(score) && (
-                <ChunithmScoreModalContent score={score} song={songState.song} />
+                <ChunithmScoreModalContent
+                  score={score}
+                  song={songState.song}
+                  onCalculatorOpenedChange={setChunithmCalculatorOpened}
+                />
               )}
             </Container>
           )}

@@ -20,29 +20,42 @@ import {
 } from "@mantine/core";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { getDifficulty, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
-import { IconNumber, IconPhotoOff } from "@tabler/icons-react";
+import { IconChevronRight, IconNumber, IconPhotoOff } from "@tabler/icons-react";
 import { PhotoView } from "react-photo-view";
 import { Marquee } from "../../Marquee.tsx";
 import classes from "../ScoreModal.module.css";
 import { SongDisabledIndicator } from "../../SongDisabledIndicator.tsx";
 import { ASSET_URL } from "@/main";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps } from "@/types/score";
 import { RatingHistoryModal } from "@/components/Scores/RatingHistoryModal.tsx";
+import { RatingCalculator } from "./RatingCalculator.tsx";
+import { OverPowerCalculator } from "./OverPowerCalculator.tsx";
+import { formatChunithmValue } from "@/utils/chunithm/rating.ts";
+import calculatorClasses from "./Calculator.module.css";
 
 export const ChunithmScoreModalContent = ({
   score,
   song,
+  onCalculatorOpenedChange,
 }: {
   score: ChunithmScoreProps;
   song: ChunithmSongProps;
+  onCalculatorOpenedChange: (opened: boolean) => void;
 }) => {
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state.chunithm })));
   const difficulty = getDifficulty(song, score.level_index);
   const [ratingHistoryOpened, setRatingHistoryOpened] = useState(false);
+  const [calculator, setCalculator] = useState<"rating" | "over_power" | null>(null);
+  const isWorldsEnd = song.id >= 8000;
+
+  useEffect(() => {
+    onCalculatorOpenedChange(calculator !== null);
+    return () => onCalculatorOpenedChange(false);
+  }, [calculator, onCalculatorOpenedChange]);
 
   const small = useMediaQuery("(max-width: 30rem)");
 
@@ -55,6 +68,21 @@ export const ChunithmScoreModalContent = ({
         difficulty={difficulty}
         opened={ratingHistoryOpened}
         onClose={() => setRatingHistoryOpened(false)}
+      />
+      <RatingCalculator
+        key={`rating:${song.id}:${score.level_index}`}
+        defaultScore={score.score}
+        defaultLevelValue={difficulty?.level_value}
+        opened={calculator === "rating"}
+        onClose={() => setCalculator(null)}
+      />
+      <OverPowerCalculator
+        key={`over-power:${song.id}:${score.level_index}`}
+        defaultScore={score.score}
+        defaultLevelValue={difficulty?.level_value}
+        defaultFullCombo={score.full_combo}
+        opened={calculator === "over_power"}
+        onClose={() => setCalculator(null)}
       />
       <Group wrap="nowrap">
         <SongDisabledIndicator disabled={song.disabled}>
@@ -177,24 +205,47 @@ export const ChunithmScoreModalContent = ({
             </Box>
           </Group>
           <Grid mt="md">
-            <Grid.Col span={6}>
-              <Paper className={classes.subParameters}>
-                <Text fz="xs" c="dimmed">
-                  Rating
-                </Text>
-                <Text fz="md">{song.id >= 8000 ? "-" : Math.floor(score.rating * 100) / 100}</Text>
-              </Paper>
-            </Grid.Col>
-            <Grid.Col span={6}>
-              <Paper className={classes.subParameters}>
-                <Text fz="xs" c="dimmed">
-                  Over Power
-                </Text>
-                <Text fz="md">
-                  {!score.over_power ? "-" : Math.floor(score.over_power * 100) / 100}
-                </Text>
-              </Paper>
-            </Grid.Col>
+            {(
+              [
+                { key: "rating", label: "Rating", value: score.rating },
+                { key: "over_power", label: "Over Power", value: score.over_power },
+              ] as const
+            ).map((item) => (
+              <Grid.Col span={6} key={item.key}>
+                {isWorldsEnd ? (
+                  <Paper className={classes.subParameters}>
+                    <Text fz="xs" c="dimmed">
+                      {item.label}
+                    </Text>
+                    <Text fz="md">-</Text>
+                  </Paper>
+                ) : (
+                  <Paper
+                    component="button"
+                    type="button"
+                    aria-label={`打开 ${item.label} 计算器`}
+                    className={[
+                      classes.subParameters,
+                      classes.subParametersButton,
+                      calculatorClasses.entry,
+                    ].join(" ")}
+                    onClick={() => setCalculator(item.key)}
+                  >
+                    <Group wrap="nowrap" gap="xs" justify="space-between">
+                      <div>
+                        <Text fz="xs" c="dimmed">
+                          {item.label}
+                        </Text>
+                        <Text fz="md">
+                          {Number.isFinite(item.value) ? formatChunithmValue(item.value) : "-"}
+                        </Text>
+                      </div>
+                      <IconChevronRight size={16} color="gray" />
+                    </Group>
+                  </Paper>
+                )}
+              </Grid.Col>
+            ))}
             {score.last_played_time && (
               <Grid.Col span={small ? 12 : 6}>
                 <Paper className={classes.subParameters}>
