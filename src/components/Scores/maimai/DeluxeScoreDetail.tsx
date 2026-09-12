@@ -2,7 +2,7 @@ import { Chip, Divider, Group, Modal, NumberFormatter, Stack, Table, Text } from
 import { useEffect, useState } from "react";
 import { MaimaiNotesProps } from "@/utils/api/song/maimai.ts";
 import { DeluxeScoreStars } from "@/components/Scores/maimai/ScoreModal.tsx";
-import { getTotalNotes, getDeluxeScoreStars } from "@/utils/deluxeScore.ts";
+import { getTotalNotes, getDeluxeScoreStars } from "@/utils/maimai/deluxeScore.ts";
 import classes from "./DeluxeRatingCalculator.module.css";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 

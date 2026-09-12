@@ -1,4 +1,4 @@
-import { getTotalNotes, getDeluxeScoreStars } from "@/utils/deluxeScore.ts";
+import { getTotalNotes, getDeluxeScoreStars } from "@/utils/maimai/deluxeScore.ts";
 import {
   AspectRatio,
   Avatar,

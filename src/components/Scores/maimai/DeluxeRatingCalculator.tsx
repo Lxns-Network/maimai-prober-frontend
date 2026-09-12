@@ -2,7 +2,7 @@ import { Chip, Group, Modal, NumberInput, ScrollArea, Stack, Table, Text } from 
 import { useEffect, useState } from "react";
 import classes from "./DeluxeRatingCalculator.module.css";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
-import { calculateMaimaiRating, maimaiCoefficientDict } from "@/utils/rating.ts";
+import { calculateMaimaiRating, maimaiCoefficientDict } from "@/utils/maimai/rating.ts";
 
 interface DeluxeRatingCalculatorProps {
   defaultAchievements?: number;

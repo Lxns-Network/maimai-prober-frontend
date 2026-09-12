@@ -2,7 +2,8 @@ import { Accordion, Badge, Center, Group, Image, Paper, Stack, Text } from "@man
 import { DataTable, DataTableColumn } from "mantine-datatable";
 import classes from "./RatingConstantAnalysis.module.css";
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
-import { requiredChunithmConstant, requiredMaimaiConstant } from "@/utils/rating.ts";
+import { requiredChunithmConstant } from "@/utils/chunithm/rating.ts";
+import { requiredMaimaiConstant } from "@/utils/maimai/rating.ts";
 import { getDeluxeRatingGradient, getRatingGradient } from "@/utils/color.ts";
 
 interface AnalysisRow {

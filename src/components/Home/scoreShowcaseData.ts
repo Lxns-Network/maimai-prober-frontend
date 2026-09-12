@@ -1,6 +1,6 @@
 import type { MaimaiScoreProps } from "@/types/score";
 import type { MaimaiSongProps } from "@/utils/api/song/maimai";
-import { calculateMaimaiRating } from "@/utils/rating";
+import { calculateMaimaiRating } from "@/utils/maimai/rating";
 import showcaseSongJson from "./scoreShowcaseSong.json";
 
 interface ShowcaseEntry {
