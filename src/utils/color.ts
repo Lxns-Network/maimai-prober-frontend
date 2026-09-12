@@ -6,7 +6,7 @@ export const getTrophyColor = (color: string) => {
     return "#656A7E";
   } else if (color === "gold") {
     return "#FFAB09";
-  } else if (color === "platina") {
+  } else if (color === "platina" || color === "ultima") {
     return "#D9D02F";
   } else if (color === "silver") {
     return "#09B8FF";
