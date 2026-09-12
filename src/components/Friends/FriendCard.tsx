@@ -1,11 +1,13 @@
 import {
   ActionIcon,
   Avatar,
+  Badge,
   Box,
   Card,
+  Divider,
   Group,
+  Image,
   Menu,
-  ScrollArea,
   Text,
   Tooltip,
   useComputedColorScheme,
@@ -14,10 +16,12 @@ import {
   IconDotsVertical,
   IconEdit,
   IconEye,
+  IconPhotoOff,
   IconShield,
   IconStar,
   IconStarFilled,
   IconTrash,
+  IconUser,
   IconUserOff,
 } from "@tabler/icons-react";
 import { navigate } from "vike/client/router";
@@ -25,12 +29,17 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/zh-cn";
 import { Link } from "@/components/Link";
+import { TrophyBadge } from "@/components/TrophyBadge";
 import profileClasses from "@/components/Profile/Profile.module.css";
-import { MaimaiPlayerContent } from "@/components/Profile/PlayerPanel/maimai/PlayerContent";
-import { ChunithmPlayerContent } from "@/components/Profile/PlayerPanel/chunithm/PlayerContent";
-import { FriendItem } from "@/types/friend";
+import { ChunithmProfileCard, FriendItem, MaimaiProfileCard } from "@/types/friend";
 import { Game } from "@/types/game";
+import {
+  getChunithmCharacterColor,
+  getDeluxeRatingGradient,
+  getRatingGradient,
+} from "@/utils/color";
 import { profilePath } from "@/utils/profile";
+import { ASSET_URL } from "@/main";
 import useGame from "@/hooks/useGame";
 import { GAME_NAMES } from "./gameNames";
 import { useFriendActions } from "./useFriendActions";
@@ -41,6 +50,132 @@ dayjs.extend(relativeTime);
 const usePlaceholderAvatarStyle = () => {
   const computedColorScheme = useComputedColorScheme("light");
   return { backgroundColor: computedColorScheme === "dark" ? "#1A1B1E" : "#F1F3F5" };
+};
+
+const TrophyLine = ({ trophy }: { trophy: MaimaiProfileCard["trophy"] }) => {
+  if (!trophy?.name) return null;
+  return <TrophyBadge name={trophy.name} trophyColor={trophy.color ?? "normal"} miw={0} />;
+};
+
+const MaimaiSummary = ({ profile }: { profile: MaimaiProfileCard }) => {
+  const placeholderStyle = usePlaceholderAvatarStyle();
+  const avatarSrc = profile.icon
+    ? `${ASSET_URL}/maimai/icon/${profile.icon.id}.png!webp`
+    : undefined;
+
+  return (
+    <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
+      <Avatar
+        src={avatarSrc}
+        size={64}
+        radius="md"
+        className={classes.avatar}
+        style={placeholderStyle}
+      >
+        {avatarSrc ? <IconPhotoOff size={24} /> : <IconUser size={24} />}
+      </Avatar>
+
+      <Box className={classes.cardGameDetails}>
+        <Group gap={6} wrap="nowrap">
+          <TrophyLine trophy={profile.trophy} />
+          <Badge
+            variant="gradient"
+            gradient={getDeluxeRatingGradient(profile.rating)}
+            size="sm"
+            style={{ flexShrink: 0 }}
+          >
+            DX {profile.rating}
+          </Badge>
+        </Group>
+
+        <Text size="sm" fw={500} truncate="end" title={profile.name} miw={0} mt={4}>
+          {profile.name}
+        </Text>
+        <Divider my={6} variant="dashed" />
+
+        <Group gap={4} wrap="nowrap">
+          <Image
+            src={`/assets/maimai/course_rank/${profile.course_rank || 0}.webp`}
+            alt=""
+            h={22}
+            w="auto"
+            fallbackSrc="/assets/maimai/course_rank/0.webp"
+          />
+          <Box h={22} w={44} style={{ overflow: "hidden" }}>
+            <Image
+              src={`/assets/maimai/class_rank/${profile.class_rank || 0}.webp`}
+              alt=""
+              mt={-3}
+            />
+          </Box>
+          <Group gap={1} wrap="nowrap" ml={2}>
+            <Image src="/assets/maimai/icon_star.webp" alt="" h={18} w="auto" />
+            <Text size="xs" fw={600}>
+              {profile.star}
+            </Text>
+          </Group>
+        </Group>
+      </Box>
+    </Group>
+  );
+};
+
+const ChunithmSummary = ({ profile }: { profile: ChunithmProfileCard }) => {
+  const placeholderStyle = usePlaceholderAvatarStyle();
+  const character = profile.character;
+  const avatarSrc = character
+    ? `${ASSET_URL}/chunithm/character/${character.id}.png!webp`
+    : undefined;
+
+  return (
+    <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
+      <Avatar
+        src={avatarSrc}
+        size={64}
+        radius="md"
+        className={classes.avatar}
+        style={
+          character
+            ? {
+                backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(character.level || 0)}.webp)`,
+                backgroundSize: "cover",
+                padding: 2,
+              }
+            : placeholderStyle
+        }
+      >
+        {avatarSrc ? <IconPhotoOff size={24} /> : <IconUser size={24} />}
+      </Avatar>
+
+      <Box className={classes.cardGameDetails}>
+        <Group gap={6} wrap="nowrap">
+          <TrophyLine trophy={profile.trophy} />
+          <Badge
+            variant="gradient"
+            gradient={getRatingGradient(profile.rating)}
+            size="sm"
+            style={{ flexShrink: 0 }}
+          >
+            Rating {profile.rating.toFixed(2)}
+          </Badge>
+        </Group>
+
+        <Text size="sm" fw={500} truncate="end" title={profile.name} miw={0} mt={4}>
+          {profile.name}
+        </Text>
+        <Divider my={6} variant="dashed" />
+
+        <Group gap="xs">
+          <Text size="xs" c="dimmed">
+            Lv.{profile.level} (转生 {profile.reborn_count})
+          </Text>
+          <Text size="xs" c="dimmed">
+            OP {profile.over_power.toFixed(1)}
+          </Text>
+        </Group>
+      </Box>
+    </Group>
+  );
 };
 
 const UnavailableSummary = ({ unbound, game }: { unbound: boolean; game: Game }) => {
@@ -67,22 +202,10 @@ const UnavailableSummary = ({ unbound, game }: { unbound: boolean; game: Game })
 const GameSummary = ({ friend, game }: { friend: FriendItem; game: Game }) => {
   if (game === "maimai") {
     const slot = friend.games.maimai;
-    if (slot.state === "visible" && slot.profile) {
-      return (
-        <ScrollArea>
-          <MaimaiPlayerContent player={slot.profile} editable={false} />
-        </ScrollArea>
-      );
-    }
+    if (slot.state === "visible" && slot.profile) return <MaimaiSummary profile={slot.profile} />;
   } else {
     const slot = friend.games.chunithm;
-    if (slot.state === "visible" && slot.profile) {
-      return (
-        <ScrollArea>
-          <ChunithmPlayerContent player={slot.profile} editable={false} />
-        </ScrollArea>
-      );
-    }
+    if (slot.state === "visible" && slot.profile) return <ChunithmSummary profile={slot.profile} />;
   }
   return <UnavailableSummary unbound={friend.games[game].state === "unbound"} game={game} />;
 };

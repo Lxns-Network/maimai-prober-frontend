@@ -49,6 +49,11 @@
   min-height: 76px;
 }
 
+.cardGameDetails {
+  flex: 1;
+  min-width: 0;
+}
+
 .cardSyncTime {
   margin-top: auto;
   padding-top: var(--mantine-spacing-sm);
