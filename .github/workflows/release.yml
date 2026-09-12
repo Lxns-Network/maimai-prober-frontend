@@ -16,6 +16,18 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      # Tags and branches are independent refs, so "v*" alone would release whatever
+      # commit a tag names, including one on a side branch. Merge to main first.
+      - name: Ensure the tag is on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status=$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...${GITHUB_REF_NAME}" --jq .status)
+          if [ "$status" != "identical" ] && [ "$status" != "behind" ]; then
+            echo "tag ${GITHUB_REF_NAME} is not on main (compare status: ${status})" >&2
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - name: Enable Corepack
