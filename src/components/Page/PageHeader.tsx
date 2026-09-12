@@ -3,7 +3,7 @@ import { ActionIcon, Box, Flex, Group, Text, Title, Tooltip } from "@mantine/cor
 import { IconArrowLeft } from "@tabler/icons-react";
 import { Link } from "@/components/Link";
 import classes from "./PageHeader.module.css";
-import { useOverlayNavigationStore } from "@/hooks/useOverlayNavigationStore";
+import useOverlayNavigationStore from "@/hooks/useOverlayNavigationStore";
 
 export const PageHeader = ({ meta, actions, backLink }: PageProps) => {
   const returnLabel = useOverlayNavigationStore((state) => state.returnLabel);

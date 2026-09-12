@@ -42,7 +42,7 @@ import { profilePath } from "@/utils/profile";
 import { ASSET_URL } from "@/main";
 import useGame from "@/hooks/useGame";
 import { GAME_NAMES } from "./gameNames";
-import { useFriendActions } from "./useFriendActions";
+import { useFriendActions } from "@/hooks/useFriendActions";
 import classes from "./Friends.module.css";
 
 dayjs.extend(relativeTime);

@@ -1,6 +1,6 @@
 import { createContext, type MouseEventHandler, type RefObject, useContext, useRef } from "react";
 import { useBackDismiss } from "@/hooks/useBackDismiss";
-import { useOverlayNavigationStore } from "@/hooks/useOverlayNavigationStore";
+import useOverlayNavigationStore from "@/hooks/useOverlayNavigationStore";
 
 export const ResumableOverlayContext = createContext<{
   sessionId: string;

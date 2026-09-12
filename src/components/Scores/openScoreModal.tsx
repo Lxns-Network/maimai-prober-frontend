@@ -1,4 +1,4 @@
-import { useOverlayNavigationStore } from "@/hooks/useOverlayNavigationStore";
+import useOverlayNavigationStore from "@/hooks/useOverlayNavigationStore";
 import { type Game } from "@/types/game";
 import { type ChunithmScoreProps, type MaimaiScoreProps } from "@/types/score";
 import { ScoreModal } from "./ScoreModal";

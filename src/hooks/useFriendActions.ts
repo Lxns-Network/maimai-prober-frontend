@@ -31,7 +31,7 @@ export const useFriendActions = (friend: FriendItem, options?: FriendActionOptio
       `为用户「${friend.username}」设置一个自定义备注名称`,
       {
         label: "备注名称",
-        placeholder: "例如：机厅好友、音游搭子（最多 64 字符）",
+        placeholder: "例如：机厅好友、音游搭子（最多 64 个字符）",
         defaultValue: friend.remark || "",
       },
       (newRemark) => {

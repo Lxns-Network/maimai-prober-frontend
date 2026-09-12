@@ -1,6 +1,6 @@
 import { type RefObject, useEffect } from "react";
 import { usePageContext } from "vike-react/usePageContext";
-import { useOverlayNavigationStore } from "@/hooks/useOverlayNavigationStore";
+import useOverlayNavigationStore from "@/hooks/useOverlayNavigationStore";
 import { ResumableOverlayContext } from "@/hooks/useResumableOverlay";
 
 export function OverlayNavigationProvider({

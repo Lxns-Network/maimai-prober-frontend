@@ -35,7 +35,7 @@ function currentUrl() {
 }
 
 /** 会话仅驻留内存，由 OverlayNavigationProvider 渲染；业务数据由 render 闭包持有。 */
-export const useOverlayNavigationStore = create<OverlayNavigationState>((set, get) => ({
+const useOverlayNavigationStore = create<OverlayNavigationState>((set, get) => ({
   sessions: [],
   returnLabel: null,
   navigating: false,
@@ -137,3 +137,5 @@ export const useOverlayNavigationStore = create<OverlayNavigationState>((set, ge
     }
   },
 }));
+
+export default useOverlayNavigationStore;

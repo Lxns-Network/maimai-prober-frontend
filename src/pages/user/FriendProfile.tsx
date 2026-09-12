@@ -32,7 +32,7 @@ import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSe
 import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/StatisticsSection";
 import { GAME_NAMES } from "@/components/Friends/gameNames";
 import { LoadingBlock } from "@/components/Friends/LoadingBlock";
-import { useFriendActions } from "@/components/Friends/useFriendActions";
+import { useFriendActions } from "@/hooks/useFriendActions";
 import { BestsGroup } from "@/pages/user/Scores/bests/ScoreBestsSection";
 import { useFriends } from "@/hooks/queries/useFriends";
 import { useFriendBests, useFriendRecents, useFriendScores } from "@/hooks/queries/useFriendScores";
