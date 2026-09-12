@@ -58,7 +58,7 @@ const FRIEND_ERROR_MAPPINGS: Record<string, string> = {
   "cannot add self as friend": "不能向自己发送好友申请",
   "already friends": "你们双方已经是好友了",
   "friend request already pending": "已向该用户发送过申请，请等待对方同意",
-  "friend request cooldown": "申请被拒绝，7天冷却期内无法再次向该用户发送申请",
+  "friend request cooldown": "申请被拒绝，7 天冷却期内无法再次向该用户发送申请",
   "friend request limit reached": "发出的待处理好友申请已达上限（最多 20 个）",
   "friend limit reached": "好友数量已达上限（最多 200 人）",
   "friend request not found": "好友申请不存在或已被处理",

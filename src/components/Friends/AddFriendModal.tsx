@@ -54,7 +54,7 @@ export const AddFriendModal = () => {
           notifications.show({
             title: isAccepted ? "已成为好友" : "好友申请已发送",
             message: isAccepted
-              ? `你与「${targetUsername}」已互相发送申请，已直接成为好友！`
+              ? `你与「${targetUsername}」互相发送了申请，已直接成为好友！`
               : `已向「${targetUsername}」发送好友申请，请等待对方同意`,
             color: "green",
           });
