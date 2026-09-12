@@ -5,7 +5,7 @@ import classes from "./Shell.module.css";
 import React, { useEffect, useRef, useState } from "react";
 import { useScroll, useWindowSize } from "react-use";
 import { CreateScoreModalProvider } from "../ModalProvider/CreateScoreModalProvider.tsx";
-import { ScoreModalProvider } from "../ModalProvider/ScoreModalProvider.tsx";
+import { OverlayNavigationProvider } from "../ModalProvider/OverlayNavigationProvider";
 import { CreateAliasModalProvider } from "../ModalProvider/CreateAliasModalProvider.tsx";
 import { UrgentNotificationModal } from "@/components/Notifications/UrgentNotificationModal.tsx";
 import { VersionPill } from "./VersionPill/VersionPill.tsx";
@@ -119,7 +119,7 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
         {children}
       </ScrollArea>
 
-      <ScoreModalProvider />
+      <OverlayNavigationProvider viewportRef={viewportRef} />
       <CreateScoreModalProvider />
       <CreateAliasModalProvider />
       <UrgentNotificationModal />

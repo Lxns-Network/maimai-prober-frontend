@@ -118,25 +118,45 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   );
 };
 
-export const MaimaiStatisticsSection = ({ scores }: { scores: MaimaiScoreProps[] }) => {
+/**
+ * `collapsible` 为假时完整展开，供本身篇幅有限的页面（如好友名片）直接铺开显示。
+ * `className` 透传到外层 `Card`，供需要统一卡片底色的页面覆盖表面样式。
+ */
+export const MaimaiStatisticsSection = ({
+  scores,
+  collapsible = true,
+  className,
+}: {
+  scores: MaimaiScoreProps[];
+  collapsible?: boolean;
+  className?: string;
+}) => {
   const small = useMediaQuery("(max-width: 30rem)");
   const extraSmall = useMediaQuery("(max-width: 28rem)");
 
+  const statistics = (
+    <Grid gap={small ? "md" : "xl"}>
+      <Grid.Col span={extraSmall ? 12 : 6}>
+        <RateStatistics scores={scores} />
+      </Grid.Col>
+      <Grid.Col span={extraSmall ? 12 : 6}>
+        <Flex className={classes.fullComboSyncSection} gap="md">
+          <FullComboStatistics scores={scores} />
+          <FullSyncStatistics scores={scores} />
+        </Flex>
+      </Grid.Col>
+    </Grid>
+  );
+
   return (
-    <Card withBorder radius="md">
-      <Spoiler maxHeight={120} showLabel="显示详细统计信息..." hideLabel="隐藏详细统计信息">
-        <Grid gap={small ? "md" : "xl"}>
-          <Grid.Col span={extraSmall ? 12 : 6}>
-            <RateStatistics scores={scores} />
-          </Grid.Col>
-          <Grid.Col span={extraSmall ? 12 : 6}>
-            <Flex className={classes.fullComboSyncSection} gap="md">
-              <FullComboStatistics scores={scores} />
-              <FullSyncStatistics scores={scores} />
-            </Flex>
-          </Grid.Col>
-        </Grid>
-      </Spoiler>
+    <Card className={className} withBorder radius="md">
+      {collapsible ? (
+        <Spoiler maxHeight={120} showLabel="显示详细统计信息..." hideLabel="隐藏详细统计信息">
+          {statistics}
+        </Spoiler>
+      ) : (
+        statistics
+      )}
     </Card>
   );
 };

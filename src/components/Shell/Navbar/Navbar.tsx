@@ -20,20 +20,26 @@ import {
   IconTable,
   IconTransferIn,
   IconUserCircle,
+  IconUsers,
 } from "@tabler/icons-react";
 import classes from "./Navbar.module.css";
 import { useUnreadCount } from "@/hooks/queries/useUnreadCount.ts";
+import { useFriendRequests } from "@/hooks/queries/useFriends.ts";
 
 interface NavbarProps {
   style?: React.CSSProperties;
   onClose(): void;
 }
 
+const isRouteActive = (target: string, currentPath: string) =>
+  currentPath === target || currentPath.startsWith(`${target}/`);
+
 export default function Navbar({ style, onClose }: NavbarProps) {
   const { urlPathname } = usePageContext();
   const isLoggedOut = typeof window !== "undefined" ? !localStorage.getItem("token") : true;
   const { mutate: mutateLogout } = useLogoutUser();
   const unreadCount = useUnreadCount();
+  const { total: pendingFriendRequests } = useFriendRequests("incoming", 1, 1);
 
   const navbarData = useMemo(
     () => [
@@ -55,6 +61,12 @@ export default function Navbar({ style, onClose }: NavbarProps) {
         label: "成绩管理",
         icon: <IconChartBar stroke={1.5} />,
         to: "/user/scores",
+        enabled: !isLoggedOut,
+      },
+      {
+        label: "好友",
+        icon: <IconUsers stroke={1.5} />,
+        to: "/friends",
         enabled: !isLoggedOut,
       },
       {
@@ -114,9 +126,11 @@ export default function Navbar({ style, onClose }: NavbarProps) {
     [isLoggedOut],
   );
 
+  // 只在已启用的入口里匹配，并取最长前缀：避免「开发者面板」(/developer) 抢走 /developer/apply。
   const active =
-    navbarData.find((item) => urlPathname === item.to || urlPathname.startsWith(`${item.to}/`))
-      ?.label ?? "";
+    navbarData
+      .filter((item) => item.enabled && isRouteActive(item.to, urlPathname))
+      .sort((a, b) => b.to.length - a.to.length)[0]?.label ?? "";
 
   return (
     <nav className={classes.navbar} style={style}>
@@ -130,6 +144,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
                   <NavbarButton
                     {...item}
                     count={item.label === "通知" ? unreadCount : undefined}
+                    dot={item.label === "好友" ? pendingFriendRequests > 0 : undefined}
                     active={active}
                     onClose={onClose}
                   />

@@ -1,4 +1,4 @@
-import { Button, Card, Overlay, Stack, Text, useComputedColorScheme } from "@mantine/core";
+import { Box, Button, Card, Overlay, Stack, Text, useComputedColorScheme } from "@mantine/core";
 import { PlayerPanelSkeleton } from "./PlayerPanel/Skeleton.tsx";
 import classes from "./Profile.module.css";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
@@ -12,11 +12,13 @@ export const PlayerSection = () => {
   const computedColorScheme = useComputedColorScheme("light");
 
   return (
-    <Card className={classes.card} withBorder radius="md" p={0}>
+    <>
       {isLoading ? (
-        <PlayerPanelSkeleton />
+        <Card className={classes.card} withBorder radius="md" p={0}>
+          <PlayerPanelSkeleton />
+        </Card>
       ) : (
-        <Card className={classes.card} p={0} radius={0}>
+        <Box pos="relative">
           {!player && (
             <Overlay
               color={computedColorScheme === "dark" ? "#000" : "#FFF"}
@@ -33,8 +35,8 @@ export const PlayerSection = () => {
             </Overlay>
           )}
           <PlayerPanel player={player} />
-        </Card>
+        </Box>
       )}
-    </Card>
+    </>
   );
 };

@@ -345,6 +345,28 @@ export const GeneralSettingsSection = () => {
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
+          好友可见性
+        </Text>
+        <Text fz="xs" c="dimmed" mt={3} mb="lg">
+          你的昵称、头像、称号与评分等基本资料对好友始终可见，这里只控制成绩部分
+        </Text>
+        <SettingList
+          onChange={updateUserConfigHandler}
+          value={config as SettingValue}
+          data={[
+            {
+              key: "allow_friend_fetch_scores",
+              title: "允许好友查看谱面成绩",
+              description: "关闭后，好友将无法查看你的谱面成绩，但仍可看到你的基本资料。",
+              optionType: "switch",
+              defaultValue: true,
+            },
+          ]}
+        />
+      </Card>
+      <Card withBorder radius="md" className={classes.card} mb="md">
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
+        <Text fz="lg" fw={700}>
           公开设置
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
@@ -358,6 +380,13 @@ export const GeneralSettingsSection = () => {
               key: "show_player_name_in_score_ranking",
               title: "在成绩排行榜中显示玩家名",
               description: "关闭后，你的玩家名将不会在其他用户的成绩排行榜中显示。",
+              optionType: "switch",
+              defaultValue: false,
+            },
+            {
+              key: "show_username_in_score_ranking",
+              title: "在成绩排行榜中显示查分器用户名",
+              description: "开启后，其他用户可以从成绩排行榜进入你的档案页面。",
               optionType: "switch",
               defaultValue: false,
             },

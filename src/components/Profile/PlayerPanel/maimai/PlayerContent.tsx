@@ -17,8 +17,16 @@ import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
+/** 只声明名片实际渲染的字段，好友资料卡（无 friend_code）也能直接复用这张名片。 */
+type MaimaiPlayerCardFields = Pick<
+  MaimaiPlayerProps,
+  "name" | "rating" | "course_rank" | "class_rank" | "star" | "icon"
+> & {
+  trophy?: { name: string; color?: string };
+};
+
 interface PlayerContentProps {
-  player: MaimaiPlayerProps;
+  player: MaimaiPlayerCardFields;
   onCollectionEdit?: (collectionType: Collection, defaultValue: number) => void;
   editable: boolean;
 }

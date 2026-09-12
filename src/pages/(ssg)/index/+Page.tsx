@@ -10,6 +10,7 @@ import {
   IconGavel,
   IconHelp,
   IconMusic,
+  IconUsers,
 } from "@tabler/icons-react";
 import clsx from "clsx";
 import { HeroArtwork } from "@/components/Home/HeroArtwork";
@@ -217,6 +218,34 @@ export default function Page() {
               </Card>
             </div>
           </section>
+
+          <Card
+            withBorder
+            className={classes.developer}
+            component="section"
+            aria-labelledby="friends-title"
+          >
+            <div className={classes.developerIcon} aria-hidden>
+              <IconUsers size={30} stroke={1.5} />
+            </div>
+            <div className={classes.developerCopy}>
+              <Title order={2} id="friends-title" className={classes.developerTitle}>
+                好友系统与名片
+              </Title>
+              <Text>
+                用查分器用户名添加好友，查看对方的游戏名片，管理好友申请、备注与特别关注。
+              </Text>
+            </div>
+            <Button
+              component={Link}
+              to={isLoggedIn ? "/friends" : "/login?redirect=%2Ffriends"}
+              variant="default"
+              radius="md"
+              rightSection={<IconArrowRight size={17} aria-hidden />}
+            >
+              管理好友
+            </Button>
+          </Card>
 
           <Card
             withBorder

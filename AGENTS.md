@@ -73,6 +73,13 @@ Root `src/pages/+config.ts` sets global defaults: `ssr: false`, `prerender: fals
   - Routes under `(csr)/<path>/+Page.tsx` are thin shells importing screen implementations wrapped in `<RouteGuard>` (e.g. `export default () => <RouteGuard><Scores /></RouteGuard>`).
   - **Never create `+Page.tsx` directly inside implementation directories (`src/pages/user/`, `src/pages/admin/`, etc.).**
 
+### Source File Homes & Export Style
+
+- **All hooks live under `src/hooks/`**: behavioral hooks and Zustand stores (`use*Store.ts`) at the root, TanStack Query hooks in `queries/`, mutations in `mutations/`. Never place `use*` hook files under `src/components/`; the Chart module (`src/pages/public/Chart/`) is the only sanctioned exception with its own `hooks/` and `stores/`.
+- **Zustand stores use `export default`** (match `useSongListStore`, `useScoreStore`); pages use default exports; components use named exports.
+- **Component-adjacent modules**: tightly coupled constants, JSX templates, or modal openers may sit next to their component (precedents: `notificationIcons.ts`, `notificationTemplates.tsx`, `openScoreModal.tsx`) — hooks may not.
+- **Before creating any new file, sample 2-3 existing sibling files of the same kind** and copy their placement, naming, and export style instead of inventing a new arrangement.
+
 ---
 
 ## 4. Architecture & State Management
@@ -104,6 +111,11 @@ Two query conventions in [src/hooks/queries/queryFn.ts](src/hooks/queries/queryF
 
 - Providers in `src/pages/+Layout.tsx`: `MantineProvider` (primary color dynamic via `useThemeColor`), `ModalsProvider`, `Notifications`, `PhotoProvider`, and `ErrorBoundary`. Icons from `@tabler/icons-react` and `@mdi/js`.
 - Build emits `dist/client/version.json`. In production, `useVersionChecker` ([src/hooks/useVersionChecker.tsx](src/hooks/useVersionChecker.tsx)) (default 60000ms polling, prod only, refetch on window focus) alerts users to reload.
+
+### Mantine Styling & Chinese Copy Conventions
+
+- Mantine style props (`justify`, `wrap`, `gap`, `align`, ...) are emitted as inline styles or scoped generated CSS; rules in `*.module.css` cannot override them. Control these properties through the prop itself and use the responsive object form (e.g. `wrap={{ base: "nowrap", md: "wrap" }}`) instead of writing competing CSS.
+- Chinese UI copy: keep a half-width space between CJK and Latin/digits (「最多 200 人」「7 天」), use complete measure words (「64 个字符」, not 「64 字符」), and quote in-app UI names with 「」. Before writing new copy, search the repo for existing phrasing so terminology stays consistent (e.g. 特别关注 / 黑名单 / 谱面成绩 / 查分器用户名).
 
 ---
 

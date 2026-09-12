@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Anchor,
   Avatar,
   Box,
   Button,
@@ -34,7 +35,8 @@ import { EmptyState } from "@/components/EmptyState.tsx";
 import classes from "./ChartComment.module.css";
 import { useForm } from "@mantine/form";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { type OverlayLinkProps } from "@/hooks/useResumableOverlay";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { useToggle } from "@mantine/hooks";
@@ -96,6 +98,7 @@ const ChartCommentForm = ({
   });
   const isLoggedOut = !localStorage.getItem("token");
   const { mutate: submitComment } = useCreateComment();
+  const appliedComment = useRef<Comment | undefined>(undefined);
 
   const submitCommentHandler = (values: FormValues) => {
     const comment = {
@@ -111,23 +114,29 @@ const ChartCommentForm = ({
     submitComment(
       { game, data: comment },
       {
-        onSuccess: () => onSubmit(),
+        onSuccess: () => {
+          form.resetDirty(values);
+          onSubmit();
+        },
         onError: (error) =>
           openRetryModal("评论提交失败", `${error}`, () => submitCommentHandler(values)),
       },
     );
   };
 
-  const { setValues } = form;
+  const { setValues, resetDirty, isDirty } = form;
 
   useEffect(() => {
-    if (comment) {
-      setValues({
-        comment: comment.comment,
-        rating: comment.rating,
-      });
+    if (comment && comment !== appliedComment.current && !isDirty()) {
+      const values = {
+        comment: comment.comment ?? "",
+        rating: comment.rating ?? 0,
+      };
+      setValues(values);
+      resetDirty(values);
     }
-  }, [comment, setValues]);
+    appliedComment.current = comment;
+  }, [comment, setValues, resetDirty, isDirty]);
 
   return (
     <>
@@ -176,12 +185,14 @@ const ChartCommentForm = ({
 const CommentItem = ({
   game,
   comment,
+  profileLinkProps,
   onUpdate,
   onDelete,
   onRevert,
 }: {
   game: Game;
   comment: Comment;
+  profileLinkProps: OverlayLinkProps;
   onUpdate?: (comment: Comment) => void;
   onDelete?: (comment: Comment) => void;
   onRevert?: () => void;
@@ -189,6 +200,7 @@ const CommentItem = ({
   const { mutate: removeComment } = useDeleteComment();
   const { mutate: like } = useLikeComment();
   const { mutate: unlike } = useUnlikeComment();
+  const profileUrl = `/profile/${encodeURIComponent(comment.uploader.name)}?game=${game}`;
 
   const deleteCommentHandler = () => {
     // Optimistic: remove from list immediately
@@ -231,14 +243,27 @@ const CommentItem = ({
     <Box>
       <Group>
         <Avatar
+          component="a"
+          {...profileLinkProps}
+          href={profileUrl}
+          aria-label={`查看 ${comment.uploader.name} 的档案`}
           src={`${ASSET_URL}/${game}/${game === "maimai" ? "icon" : "character"}/${comment.uploader.avatar_id || (game === "maimai" ? 1 : 0)}.png!webp`}
           radius={0}
         >
           <IconPhotoOff />
         </Avatar>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Flex columnGap="md" align="baseline" wrap="wrap">
-            <Text fz="md">{comment.uploader.name}</Text>
+            <Anchor
+              {...profileLinkProps}
+              href={profileUrl}
+              fz="md"
+              c="inherit"
+              underline="hover"
+              style={{ overflowWrap: "anywhere" }}
+            >
+              {comment.uploader.name}
+            </Anchor>
             <Text fz="xs" c="dimmed">
               {new Date(comment.upload_time).toLocaleString()}
             </Text>
@@ -313,9 +338,11 @@ const CommentItem = ({
 export const ChartComment = ({
   game,
   score,
+  profileLinkProps,
 }: {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
+  profileLinkProps: OverlayLinkProps;
 }) => {
   const isLoggedOut = !localStorage.getItem("token");
   const { comments, isLoading, setData, invalidate } = useScoreComments({
@@ -437,6 +464,7 @@ export const ChartComment = ({
                     <CommentItem
                       game={game}
                       comment={comment}
+                      profileLinkProps={profileLinkProps}
                       onUpdate={(updatedComment) => {
                         const newComments = [...comments];
                         const index = newComments.findIndex(

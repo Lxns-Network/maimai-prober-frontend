@@ -1,4 +1,4 @@
-type OverlayEntry = { id: number; close: () => void };
+type OverlayEntry = { id: number; close: () => void; historyKey?: string };
 
 const stack: OverlayEntry[] = [];
 const historyRestoreSuppressed = new Set<number>();
@@ -14,6 +14,8 @@ function handlePopState() {
     pendingProgrammaticPops -= 1;
     return;
   }
+  const current = stack[stack.length - 1];
+  if (current?.historyKey && window.history.state?.__overlayKey === current.historyKey) return;
   const top = stack.pop();
   if (top) historyRestoreSuppressed.delete(top.id);
   top?.close();
@@ -48,12 +50,16 @@ function scheduleSettle() {
   queueMicrotask(settle);
 }
 
-export function pushOverlay(close: () => void): number {
+/** historyKey 对应当前历史项的 __overlayKey 时复用该项，返回事件不会关闭刚恢复的弹窗。 */
+export function pushOverlay(close: () => void, historyKey?: string): number {
   ensureListener();
   const id = nextId++;
-  stack.push({ id, close });
-  netDepthDelta += 1;
-  scheduleSettle();
+  stack.push({ id, close, historyKey });
+  const reuseHistoryEntry = historyKey && window.history.state?.__overlayKey === historyKey;
+  if (!reuseHistoryEntry) {
+    netDepthDelta += 1;
+    scheduleSettle();
+  }
   return id;
 }
 

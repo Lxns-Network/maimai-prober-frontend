@@ -24,6 +24,23 @@
   }
 }
 
+/* 带返回按钮的详情页头在窄屏保持单行，避免标题与操作区拆成多行后过于松散。 */
+.headerContent[data-compact] {
+  @mixin smaller-than $mantine-breakpoint-md {
+    & .titleContainer {
+      width: auto;
+      flex: 1;
+      min-width: 0;
+    }
+
+    & .actions {
+      width: auto;
+      margin-top: 0;
+      flex-shrink: 0;
+    }
+  }
+}
+
 .titleContainer {
   @mixin smaller-than $mantine-breakpoint-md {
     width: 100%;
@@ -33,8 +50,10 @@
 .actions {
   display: flex;
   align-items: center;
+  gap: var(--mantine-spacing-xs);
 
   @mixin smaller-than $mantine-breakpoint-md {
+    width: 100%;
     margin-top: var(--mantine-spacing-xs);
     justify-content: center;
   }
