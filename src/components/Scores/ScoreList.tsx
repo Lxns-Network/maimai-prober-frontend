@@ -12,7 +12,7 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
-import useScoreStore from "@/hooks/useScoreStore.ts";
+import { openScoreModal } from "./openScoreModal";
 import { Game } from "@/types/game";
 
 interface ScoreProps {
@@ -81,20 +81,21 @@ interface ScoreListProps {
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
   onScoreChange?: (score: MaimaiScoreProps | ChunithmScoreProps) => void;
   cols?: SimpleGridProps["cols"];
+  /** 展示他人成绩时开启，成绩详情弹窗不提供针对当前账号的操作。 */
+  readOnly?: boolean;
 }
 
 const keyOf = (score: MaimaiScoreProps | ChunithmScoreProps) =>
   `${score.id}:${"type" in score && score.type}:${score.level_index}`;
 
-export const ScoreList = ({ scores, onScoreChange, cols }: ScoreListProps) => {
+export const ScoreList = ({ scores, onScoreChange, cols, readOnly }: ScoreListProps) => {
   const [game] = useGame();
-
-  const { openModal: openScoreModal } = useScoreStore();
 
   const handleOpenScoreModal = (score: MaimaiScoreProps | ChunithmScoreProps) => {
     openScoreModal({
       game,
       score,
+      readOnly,
       onClose: (score) => {
         score && onScoreChange && onScoreChange(score);
       },

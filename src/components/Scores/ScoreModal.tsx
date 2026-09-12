@@ -38,19 +38,22 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { Game } from "@/types/game";
 import { ScoreRanking } from "./ScoreRanking.tsx";
+import { FriendScoreRanking } from "./FriendScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { ChartComment } from "./ChartComment.tsx";
 import { useScoreComments } from "@/hooks/queries/useScoreComments.ts";
 import { isTokenUndefined } from "@/utils/session.ts";
 import { ScoreHistory } from "./ScoreHistory.tsx";
 import { rankData } from "@/data/scoreRanks.ts";
-import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
+import { useResumableOverlay } from "@/hooks/useResumableOverlay";
 
 interface ScoreModalProps {
   game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps | null;
   opened: boolean;
   onClose: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
+  /** 查看他人成绩时开启：隐藏针对当前账号的操作菜单与本人游玩历史，避免误改自己的数据。 */
+  readOnly?: boolean;
 }
 
 const difficultyLabelData = {
@@ -90,8 +93,14 @@ type DifficultyState =
   | { game: "maimai"; difficulty: MaimaiDifficultyProps | null }
   | { game: "chunithm"; difficulty: ChunithmDifficultyProps | null };
 
-export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) => {
-  const { navigateFromOverlay } = useBackDismiss(opened, () => onClose());
+export const ScoreModal = ({ game, score, opened, onClose, readOnly = false }: ScoreModalProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { linkProps, restoreView, navigateFromOverlay } = useResumableOverlay({
+    opened,
+    onClose: () => onClose(),
+    getScrollViewport: () =>
+      containerRef.current?.querySelector<HTMLElement>(".mantine-ScrollArea-viewport"),
+  });
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -99,7 +108,6 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
   const songList = useSongListStore((state) => state[game]);
   const small = useMediaQuery("(max-width: 30rem)");
 
-  const containerRef = useRef<HTMLDivElement>(null);
   const { ref, entry } = useIntersection({
     root: containerRef.current,
     threshold: 0.95,
@@ -166,6 +174,8 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
     <Modal.Root
       size="lg"
       opened={opened}
+      keepMounted
+      onEnterTransitionEnd={restoreView}
       onClose={onClose}
       closeOnEscape={!chunithmCalculatorOpened}
       trapFocus={!chunithmCalculatorOpened}
@@ -228,7 +238,7 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
           </Modal.Title>
           <Space w="xs" />
           <Group wrap="nowrap" gap="xs">
-            {score && (
+            {score && !readOnly && (
               <ScoreModalMenu
                 score={score}
                 difficulty={difficultyState?.difficulty ?? undefined}
@@ -260,57 +270,59 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
             chevronPosition="left"
             variant="filled"
             radius={0}
-            defaultValue="history"
+            defaultValue={readOnly ? "comment" : "history"}
           >
-            <Accordion.Item value="history">
-              <Center>
-                <Accordion.Control>游玩历史记录</Accordion.Control>
-                <Combobox
-                  shadow="md"
-                  position="bottom-end"
-                  width={200}
-                  store={combobox}
-                  onOptionSubmit={(val) => {
-                    setMinRank(val);
-                    combobox.closeDropdown();
-                  }}
-                  transitionProps={{ transition: "fade", duration: 100, timingFunction: "ease" }}
-                >
-                  <Combobox.Target>
-                    <ActionIcon
-                      className={classes.actionIcon}
-                      variant="subtle"
-                      mr="xs"
-                      onClick={() => combobox.toggleDropdown()}
-                    >
-                      <IconDots size={18} stroke={1.5} />
-                    </ActionIcon>
-                  </Combobox.Target>
-                  <Combobox.Dropdown>
-                    <Combobox.Group label="最低评级">
-                      <Combobox.Options>
-                        {rankData[game] &&
-                          Object.keys(rankData[game]).map((rank) => (
-                            <Combobox.Option
-                              value={rank}
-                              key={`${game}:${rank}`}
-                              active={minRank === rank}
-                            >
-                              <Group gap="sm">
-                                {minRank === rank && <CheckIcon color="gray" size={12} />}
-                                <span>{rank}</span>
-                              </Group>
-                            </Combobox.Option>
-                          ))}
-                      </Combobox.Options>
-                    </Combobox.Group>
-                  </Combobox.Dropdown>
-                </Combobox>
-              </Center>
-              <Accordion.Panel>
-                <ScoreHistory game={game} score={score} minRank={minRank} />
-              </Accordion.Panel>
-            </Accordion.Item>
+            {!readOnly && (
+              <Accordion.Item value="history">
+                <Center>
+                  <Accordion.Control>游玩历史记录</Accordion.Control>
+                  <Combobox
+                    shadow="md"
+                    position="bottom-end"
+                    width={200}
+                    store={combobox}
+                    onOptionSubmit={(val) => {
+                      setMinRank(val);
+                      combobox.closeDropdown();
+                    }}
+                    transitionProps={{ transition: "fade", duration: 100, timingFunction: "ease" }}
+                  >
+                    <Combobox.Target>
+                      <ActionIcon
+                        className={classes.actionIcon}
+                        variant="subtle"
+                        mr="xs"
+                        onClick={() => combobox.toggleDropdown()}
+                      >
+                        <IconDots size={18} stroke={1.5} />
+                      </ActionIcon>
+                    </Combobox.Target>
+                    <Combobox.Dropdown>
+                      <Combobox.Group label="最低评级">
+                        <Combobox.Options>
+                          {rankData[game] &&
+                            Object.keys(rankData[game]).map((rank) => (
+                              <Combobox.Option
+                                value={rank}
+                                key={`${game}:${rank}`}
+                                active={minRank === rank}
+                              >
+                                <Group gap="sm">
+                                  {minRank === rank && <CheckIcon color="gray" size={12} />}
+                                  <span>{rank}</span>
+                                </Group>
+                              </Combobox.Option>
+                            ))}
+                        </Combobox.Options>
+                      </Combobox.Group>
+                    </Combobox.Dropdown>
+                  </Combobox>
+                </Center>
+                <Accordion.Panel>
+                  <ScoreHistory game={game} score={score} minRank={minRank} />
+                </Accordion.Panel>
+              </Accordion.Item>
+            )}
             {difficultyState && difficultyState.difficulty && (
               <Accordion.Item value="chart">
                 <Accordion.Control>谱面详情</Accordion.Control>
@@ -334,13 +346,19 @@ export const ScoreModal = ({ game, score, opened, onClose }: ScoreModalProps) =>
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <ChartComment game={game} score={score} />
+                <ChartComment game={game} score={score} profileLinkProps={linkProps} />
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value="friend-ranking">
+              <Accordion.Control>好友排行</Accordion.Control>
+              <Accordion.Panel>
+                <FriendScoreRanking game={game} score={score} readOnly={readOnly} />
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value="ranking">
               <Accordion.Control>排行榜</Accordion.Control>
               <Accordion.Panel>
-                <ScoreRanking game={game} score={score} />
+                <ScoreRanking game={game} score={score} profileLinkProps={linkProps} />
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>

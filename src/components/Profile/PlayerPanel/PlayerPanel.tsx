@@ -1,17 +1,10 @@
-import {
-  Text,
-  DataList,
-  Divider,
-  ScrollArea,
-  UnstyledButton,
-  UnstyledButtonProps,
-} from "@mantine/core";
+import { Text, DataList } from "@mantine/core";
 import { useState } from "react";
-import { useViewportSize } from "@mantine/hooks";
-import classes from "./PlayerPanel.module.css";
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
-import { PlayerContent, PlayerModal } from "./PlayerModal.tsx";
+import { PlayerModal } from "./PlayerModal.tsx";
+import { PlayerCard } from "./PlayerCard.tsx";
 import useGame from "@/hooks/useGame.ts";
+import { formatDateTime } from "@/utils/time.ts";
 
 const examplePlayer = {
   maimai: {
@@ -57,21 +50,7 @@ const examplePlayer = {
   },
 };
 
-interface PlayerButtonProps {
-  player: MaimaiPlayerProps | ChunithmPlayerProps;
-  onClick?: () => void;
-}
-
-const PlayerButton = ({ player, onClick, ...others }: PlayerButtonProps & UnstyledButtonProps) => {
-  return (
-    <UnstyledButton className={classes.playerButton} onClick={onClick} {...others}>
-      <PlayerContent player={player} editable={false} />
-    </UnstyledButton>
-  );
-};
-
 export const PlayerPanel = ({ player }: { player?: MaimaiPlayerProps | ChunithmPlayerProps }) => {
-  const { width } = useViewportSize();
   const [game] = useGame();
   const [opened, setOpened] = useState(false);
 
@@ -80,26 +59,20 @@ export const PlayerPanel = ({ player }: { player?: MaimaiPlayerProps | ChunithmP
   return (
     <>
       <PlayerModal game={game} player={player} opened={opened} onClose={() => setOpened(false)} />
-      <ScrollArea maw={width < 768 ? width - 34 : 768}>
-        <PlayerButton player={player} onClick={() => setOpened(true)} />
-      </ScrollArea>
-      <Divider />
-      <div className={classes.section}>
-        <DataList size="xs">
-          <DataList.Item>
-            <DataList.ItemLabel>好友码</DataList.ItemLabel>
-            <DataList.ItemValue>
-              <Text fz="sm">{player.friend_code}</Text>
-            </DataList.ItemValue>
-          </DataList.Item>
-          <DataList.Item>
-            <DataList.ItemLabel>上次同步时间</DataList.ItemLabel>
-            <DataList.ItemValue>
-              <Text fz="sm">{new Date(Date.parse(player.upload_time)).toLocaleString()}</Text>
-            </DataList.ItemValue>
-          </DataList.Item>
-        </DataList>
-      </div>
+      <PlayerCard player={player} onClick={() => setOpened(true)}>
+        <DataList.Item>
+          <DataList.ItemLabel>好友码</DataList.ItemLabel>
+          <DataList.ItemValue>
+            <Text fz="sm">{player.friend_code}</Text>
+          </DataList.ItemValue>
+        </DataList.Item>
+        <DataList.Item>
+          <DataList.ItemLabel>上次同步时间</DataList.ItemLabel>
+          <DataList.ItemValue>
+            <Text fz="sm">{formatDateTime(player.upload_time)}</Text>
+          </DataList.ItemValue>
+        </DataList.Item>
+      </PlayerCard>
     </>
   );
 };
