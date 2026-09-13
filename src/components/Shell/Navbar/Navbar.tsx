@@ -154,7 +154,8 @@ export default function Navbar({ style, onClose }: NavbarProps) {
               onClose={onClose}
               onClick={() => {
                 mutateLogout(undefined, {
-                  onSuccess: () => {
+                  // 服务端登出失败也要清掉本地会话：登出不能因刷新或网络故障而失效。
+                  onSettled: () => {
                     localStorage.removeItem("token");
                     window.location.href = "/";
                   },
