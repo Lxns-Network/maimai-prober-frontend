@@ -7,13 +7,7 @@ export const PageHeader = ({ meta, actions }: PageProps) => {
     <div className={classes.wrapper}>
       <Box className={classes.header}>
         {actions ? (
-          <Flex
-            className={classes.headerContent}
-            justify="space-between"
-            align="center"
-            wrap="wrap"
-            gap="sm"
-          >
+          <Flex className={classes.headerContent} align="center" wrap="wrap" gap="sm">
             <Box className={classes.titleContainer}>
               <Title className={classes.title} textWrap="balance">
                 {meta.title}
