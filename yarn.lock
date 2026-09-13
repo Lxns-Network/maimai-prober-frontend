@@ -796,6 +796,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mantine/colors-generator@npm:9.5.1":
+  version: 9.5.1
+  resolution: "@mantine/colors-generator@npm:9.5.1"
+  peerDependencies:
+    chroma-js: ">=2.4.2"
+  checksum: 10c0/4842518fc5d7764f4dfab95963ef5e1fe55b31a2746623567806b84cf1d369f78a0b762742c33b89ed78e696a100ca483d2e216de9bcd8848a25d155fbd1f6ce
+  languageName: node
+  linkType: hard
+
 "@mantine/core@npm:9.5.1":
   version: 9.5.1
   resolution: "@mantine/core@npm:9.5.1"
@@ -2133,6 +2142,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/chroma-js@npm:^3.1.2":
+  version: 3.1.2
+  resolution: "@types/chroma-js@npm:3.1.2"
+  checksum: 10c0/d2a7d9612c5abe3733a113d339eb8158cb36aeeeb571a3c371e81e8f3a682cd70f1649cea521716fbb5d79eb96f585a539b304be44e3fa818bd56b2a05f29f73
+  languageName: node
+  linkType: hard
+
 "@types/d3-array@npm:^3.0.3":
   version: 3.2.2
   resolution: "@types/d3-array@npm:3.2.2"
@@ -3092,6 +3108,13 @@ __metadata:
   version: 3.0.0
   resolution: "chownr@npm:3.0.0"
   checksum: 10c0/43925b87700f7e3893296c8e9c56cc58f926411cce3a6e5898136daaf08f08b9a8eb76d37d3267e707d0dcc17aed2e2ebdf5848c0c3ce95cf910a919935c1b10
+  languageName: node
+  linkType: hard
+
+"chroma-js@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "chroma-js@npm:3.2.0"
+  checksum: 10c0/6ff6213d234e096ad3536291b1e1f11a506ea0fccfe163dd8eff69afa5f4f8a905b31a4a7ebc22b7eb722590887fed77073805ce89485f6d563edd1ea2d0a1db
   languageName: node
   linkType: hard
 
@@ -5034,6 +5057,7 @@ __metadata:
     "@lxns-network/maimai-chart-engine": "workspace:*"
     "@mantine/charts": "npm:9.5.1"
     "@mantine/code-highlight": "npm:9.5.1"
+    "@mantine/colors-generator": "npm:9.5.1"
     "@mantine/core": "npm:9.5.1"
     "@mantine/dates": "npm:9.5.1"
     "@mantine/form": "npm:9.5.1"
@@ -5058,6 +5082,7 @@ __metadata:
     "@tiptap/pm": "npm:3.30.2"
     "@tiptap/react": "npm:3.30.2"
     "@tiptap/starter-kit": "npm:3.30.2"
+    "@types/chroma-js": "npm:^3.1.2"
     "@types/node": "npm:24.13.3"
     "@types/react": "npm:19.2.18"
     "@types/react-dom": "npm:19.2.4"
@@ -5065,6 +5090,7 @@ __metadata:
     "@types/react-lazyload": "npm:3.2.3"
     "@vcarl/remark-headings": "npm:0.1.0"
     "@vitejs/plugin-react": "npm:6.1.0"
+    chroma-js: "npm:^3.2.0"
     clsx: "npm:2.1.1"
     dayjs: "npm:1.11.23"
     embla-carousel: "npm:8.6.0"
