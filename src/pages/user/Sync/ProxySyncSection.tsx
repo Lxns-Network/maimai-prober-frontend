@@ -44,6 +44,7 @@ import { ScoreChangesProps } from "@/pages/user/Sync";
 import { RadioCardGroup } from "@/components/RadioCardGroup.tsx";
 import { CopyButtonWithIcon } from "@/components/Sync/CopyButtonWithIcon.tsx";
 import { CrawlTokenStatus } from "@/components/Sync/CrawlTokenStatus.tsx";
+import { SyncTutorialAlert } from "@/components/Sync/SyncTutorialAlert.tsx";
 import { WechatOAuthLink } from "@/components/Sync/WechatOAuthLink.tsx";
 import { ScoresChangesModal } from "@/components/Sync/ScoresChangesModal.tsx";
 import classes from "../Sync.module.css";
@@ -337,6 +338,7 @@ export const ProxySyncSection = () => {
                   </Button>
                 )}
               </Group>
+              <SyncTutorialAlert />
               <Card withBorder radius="md" className={classes.card} mb="md" p={0} w="100%">
                 <Flex align="center" justify="space-between" m="md">
                   <Group className={classes.loaderText} wrap="nowrap">
