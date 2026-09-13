@@ -1,7 +1,6 @@
-import { MantineColor } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 
-export const themeColors: MantineColor[] = [
+export const themeColors = [
   "gray",
   "red",
   "pink",
@@ -15,12 +14,23 @@ export const themeColors: MantineColor[] = [
   "lime",
   "yellow",
   "orange",
-];
+] as const;
 
-export const DEFAULT_THEME_COLOR: MantineColor = "blue";
+export type PresetThemeColor = (typeof themeColors)[number];
+export type ThemeColor = PresetThemeColor | (string & {});
 
-export function useThemeColor(): [MantineColor, (color: MantineColor) => void] {
-  const [color, setColor] = useLocalStorage<MantineColor>({
+export const DEFAULT_THEME_COLOR: PresetThemeColor = "blue";
+
+export function isPresetThemeColor(color: string): color is PresetThemeColor {
+  return (themeColors as readonly string[]).includes(color);
+}
+
+export function isHexColor(color: string): boolean {
+  return /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(color);
+}
+
+export function useThemeColor(): [ThemeColor, (color: ThemeColor) => void] {
+  const [color, setColor] = useLocalStorage<ThemeColor>({
     key: "mantine-primary-color-value",
     defaultValue: DEFAULT_THEME_COLOR,
   });

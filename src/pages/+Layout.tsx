@@ -42,7 +42,8 @@ import "mantine-datatable/styles.css";
 import "react-photo-view/dist/react-photo-view.css";
 import "@/index.css";
 import classes from "@/App.module.css";
-import { useThemeColor } from "@/hooks/useThemeColor.ts";
+import { useThemeColor, isPresetThemeColor, DEFAULT_THEME_COLOR } from "@/hooks/useThemeColor.ts";
+import { generateColors } from "@mantine/colors-generator";
 
 // Tag iOS so index.css can force inputs to >=16px and avoid Safari's focus-zoom.
 if (typeof document !== "undefined") {
@@ -67,15 +68,33 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   const { error: userTokenError } = useUserToken();
   const { toggle, fullscreen } = useFullscreenDocument();
   const [themeColor] = useThemeColor();
-  const theme = useMemo(
-    () =>
-      createTheme({
+  const theme = useMemo(() => {
+    if (isPresetThemeColor(themeColor)) {
+      return createTheme({
         ...baseTheme,
         primaryColor: themeColor,
         activeClassName: classes.active,
-      }),
-    [themeColor],
-  );
+      });
+    }
+
+    try {
+      const customPalette = generateColors(themeColor);
+      return createTheme({
+        ...baseTheme,
+        colors: {
+          custom: customPalette,
+        },
+        primaryColor: "custom",
+        activeClassName: classes.active,
+      });
+    } catch {
+      return createTheme({
+        ...baseTheme,
+        primaryColor: DEFAULT_THEME_COLOR,
+        activeClassName: classes.active,
+      });
+    }
+  }, [themeColor]);
   const [opened, setOpened] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
 
