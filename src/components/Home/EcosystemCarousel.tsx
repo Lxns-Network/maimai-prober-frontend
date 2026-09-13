@@ -58,7 +58,6 @@ export const EcosystemCarousel = () => {
   const startXRef = useRef(0);
 
   const elapsedRef = useRef(0);
-  const progressBarRef = useRef<HTMLDivElement | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearResumeTimer = useCallback(() => {
@@ -68,28 +67,19 @@ export const EcosystemCarousel = () => {
     }
   }, []);
 
-  // 进度条宽度是每 50ms 更新一次的瞬态值，直写 DOM 避免高频重渲染
-  const setProgressWidth = useCallback((pct: number) => {
-    if (progressBarRef.current) {
-      progressBarRef.current.style.width = `${pct}%`;
-    }
-  }, []);
-
   const scheduleAutoplayResume = useCallback(() => {
     clearResumeTimer();
     resumeTimerRef.current = setTimeout(() => {
       setIsAutoPlaying(true);
       elapsedRef.current = 0;
-      setProgressWidth(0);
     }, RESUME_AUTOPLAY_DELAY_MS);
-  }, [clearResumeTimer, setProgressWidth]);
+  }, [clearResumeTimer]);
 
   const pauseAutoplay = useCallback(() => {
     clearResumeTimer();
     setIsAutoPlaying(false);
     elapsedRef.current = 0;
-    setProgressWidth(0);
-  }, [clearResumeTimer, setProgressWidth]);
+  }, [clearResumeTimer]);
 
   useEffect(() => {
     return () => clearResumeTimer();
@@ -103,7 +93,6 @@ export const EcosystemCarousel = () => {
       setActiveIndex(emblaApi.selectedScrollSnap());
       setIsSettled(false);
       elapsedRef.current = 0;
-      setProgressWidth(0);
     };
 
     const onPointerDown = () => {
@@ -115,7 +104,6 @@ export const EcosystemCarousel = () => {
     const onSettle = () => {
       setIsSettled(true);
       elapsedRef.current = 0;
-      setProgressWidth(0);
     };
 
     emblaApi.on("select", onSelect);
@@ -129,7 +117,7 @@ export const EcosystemCarousel = () => {
       emblaApi.off("pointerUp", onPointerUp);
       emblaApi.off("settle", onSettle);
     };
-  }, [emblaApi, pauseAutoplay, scheduleAutoplayResume, setProgressWidth]);
+  }, [emblaApi, pauseAutoplay, scheduleAutoplayResume]);
 
   // 自动翻页定时器：仅在翻页动画完全结束（isSettled）后才开始计时；翻页后由 select 事件复位计时
   useEffect(() => {
@@ -143,7 +131,6 @@ export const EcosystemCarousel = () => {
 
     const timer = setInterval(() => {
       elapsedRef.current += TICK_INTERVAL_MS;
-      setProgressWidth(Math.min((elapsedRef.current / ROTATION_INTERVAL_MS) * 100, 100));
 
       if (elapsedRef.current >= ROTATION_INTERVAL_MS) {
         emblaApi.scrollNext();
@@ -151,7 +138,7 @@ export const EcosystemCarousel = () => {
     }, TICK_INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [inViewport, isSettled, isHovered, isDraggingDots, isAutoPlaying, emblaApi, setProgressWidth]);
+  }, [inViewport, isSettled, isHovered, isDraggingDots, isAutoPlaying, emblaApi]);
 
   // 圆点指示器拖拽/点击交互：按最近圆点中心取目标，避免两端点击错位
   const updateIndexFromDots = (clientX: number) => {
@@ -298,11 +285,6 @@ export const EcosystemCarousel = () => {
           ))}
         </div>
       </div>
-
-      {/* 底部自动翻页倒计时细条 */}
-      {isAutoPlaying && !isHovered && !isDraggingDots && (
-        <div className={classes.progressBar} ref={progressBarRef} aria-hidden />
-      )}
     </Card>
   );
 };

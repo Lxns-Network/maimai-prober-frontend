@@ -145,16 +145,6 @@
   width: 24px;
 }
 
-.progressBar {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--mantine-primary-color-filled);
-  transition: width 100ms linear;
-  opacity: 0.85;
-}
-
 @media (max-width: 36em) {
   .card {
     min-height: 250px;
