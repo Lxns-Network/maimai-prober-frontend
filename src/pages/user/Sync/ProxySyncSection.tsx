@@ -1,7 +1,6 @@
 import {
   Accordion,
   Alert,
-  Anchor,
   Button,
   Card,
   Code,
@@ -13,7 +12,6 @@ import {
   Mark,
   Paper,
   SimpleGrid,
-  Space,
   Stack,
   Stepper,
   Text,
@@ -486,29 +484,12 @@ export const ProxySyncSection = () => {
           label="步骤 3"
           loading={proxyReady && !crawlStatus}
           description={
-            <Stack gap="xs" w={containerWidth}>
-              <Text fz="sm">
-                复制微信 OAuth 链接，发送至安全的聊天中并打开{" "}
-                <Anchor
-                  inherit
-                  underline="always"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    openAlertModal(
-                      "微信传分注意事项",
-                      "请将 OAuth 链接发送至安全的聊天（如文件传输助手）后，直接点击链接打开网页。不要将 OAuth 链接粘贴到搜索框打开，否则可能会导致 OAuth 链接失效。",
-                    );
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  注意事项
-                </Anchor>
-              </Text>
+            <Stack gap="xs" w={containerWidth} mb="lg">
+              <Text fz="sm">复制微信 OAuth 链接，发送至安全的聊天中并打开</Text>
               {game && <WechatOAuthLink game={game} crawlToken={crawlToken} />}
               {!isLoggedOut && (
                 <CrawlTokenStatus token={crawlToken} resetHandler={loadCrawlToken} />
               )}
-              <Space h="sm" />
             </Stack>
           }
         />
