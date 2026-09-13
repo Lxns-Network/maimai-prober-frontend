@@ -80,22 +80,11 @@ async function requestTokenRefresh(): Promise<RefreshTokenData> {
       continue;
     }
 
+    let data: ApiResponse<RefreshTokenData>;
     try {
-      const data = (await response.json()) as ApiResponse<RefreshTokenData>;
-      if (!data.success || !data.data?.token) {
-        throw new APIError(data.message || "服务器返回了无效的响应", {
-          code: data.code,
-          status: response.status,
-        });
-      }
-
-      localStorage.setItem("token", data.data.token);
-      return data.data;
-    } catch (error) {
-      lastError =
-        error instanceof APIError
-          ? error
-          : new APIError("服务器返回了无效的响应", { status: response.status });
+      data = (await response.json()) as ApiResponse<RefreshTokenData>;
+    } catch {
+      lastError = new APIError("服务器返回了无效的响应", { status: response.status });
 
       if (attempt < REFRESH_RETRY_DELAYS.length) {
         await delay(REFRESH_RETRY_DELAYS[attempt]);
@@ -104,6 +93,18 @@ async function requestTokenRefresh(): Promise<RefreshTokenData> {
 
       throw lastError;
     }
+
+    if (!data.success || !data.data?.token) {
+      // 业务层明确拒绝不是瞬时错误：按会话过期处理并引导重新登录，而不是留着坏 token 反复重试。
+      redirectExpiredSessionToLogin();
+      throw new APIError("登录会话已过期，请重新登录。", {
+        code: data.code,
+        status: response.status,
+      });
+    }
+
+    localStorage.setItem("token", data.data.token);
+    return data.data;
   }
 
   throw lastError || new APIError("登录状态刷新失败");
@@ -137,7 +138,8 @@ export async function fetchAPI(
   const { method = "GET", body, headers, signal } = options;
   if (signal?.aborted) throw signal.reason ?? new DOMException("Aborted", "AbortError");
 
-  if (endpoint !== "user/refresh") {
+  // 登出不做预检刷新：刷新持续失败时登出必须仍然可达，否则用户会被锁在坏会话里。
+  if (endpoint !== "user/refresh" && endpoint !== "user/logout") {
     await ensureTokenValid();
   }
 

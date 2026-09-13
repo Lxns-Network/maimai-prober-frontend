@@ -119,3 +119,34 @@ it("shares concurrent refresh requests", async () => {
   expect(fetch).toHaveBeenCalledOnce();
   expect(localStorage.getItem("token")).toBe("refreshed");
 });
+
+it("skips the proactive refresh for logout requests", async () => {
+  const claims = { id: 1, name: "test", permission: 1, exp: 1 };
+  localStorage.setItem(
+    "token",
+    `header.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.signature`,
+  );
+  await fetchAPI("user/logout", { method: "POST" });
+  expect(fetch).toHaveBeenCalledOnce();
+  expect(fetch).toHaveBeenCalledWith("https://api.example.test/user/logout", expect.anything());
+});
+
+// 会触发一次性的会话过期跳转，须保持为本文件最后一个用例。
+it("treats an explicit refresh rejection as session expiry without retrying", async () => {
+  const claims = { id: 1, name: "test", permission: 1, exp: 1 };
+  localStorage.setItem(
+    "token",
+    `header.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.signature`,
+  );
+  const location = { pathname: "/user/profile", search: "", hash: "", replace: vi.fn() };
+  vi.stubGlobal("window", { setTimeout, location });
+  vi.stubGlobal("sessionStorage", createStorage());
+  vi.mocked(fetch).mockResolvedValueOnce(Response.json({ success: false, message: "invalid" }));
+  await expect(refreshAccessToken()).rejects.toMatchObject({
+    message: "登录会话已过期，请重新登录。",
+  });
+  expect(fetch).toHaveBeenCalledOnce();
+  expect(localStorage.getItem("token")).toBeNull();
+  expect(location.replace).toHaveBeenCalledWith("/login?redirect=%2Fuser%2Fprofile");
+  expect(sessionStorage.getItem("session_expired")).toBe("1");
+});
