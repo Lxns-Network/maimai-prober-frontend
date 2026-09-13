@@ -37,6 +37,8 @@
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  /* 裁掉头像 box-shadow 越过 slide 边界的部分，否则相邻 slide 的阴影会漏进可视区右缘 */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--mantine-spacing-md);
