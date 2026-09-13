@@ -18,6 +18,11 @@ const SETTINGS_DEFAULTS: Record<string, unknown> = {
   "oauth.dynamic_client_max_count": 10000,
 };
 
+/** 值为数字的设置项：提交时 string → number，渲染时 number → string。 */
+const NUMERIC_SETTING_KEYS = new Set(
+  Object.keys(SETTINGS_DEFAULTS).filter((key) => typeof SETTINGS_DEFAULTS[key] === "number"),
+);
+
 const countNumberFormatter = new Intl.NumberFormat("en-US");
 
 const createCountOptions = (values: number[]) =>
@@ -91,13 +96,7 @@ export const SystemSettingsSection = () => {
     let parsedValue: unknown = value;
 
     // Convert string numbers to actual numbers for numeric settings
-    if (
-      key === "worker.task_timeout" ||
-      key === "worker.task_expire" ||
-      key === "worker.max_pending_tasks" ||
-      key === "oauth.dynamic_client_retention" ||
-      key === "oauth.dynamic_client_max_count"
-    ) {
+    if (NUMERIC_SETTING_KEYS.has(key)) {
       if (typeof value !== "string" || value.trim() === "") {
         return;
       }
@@ -134,13 +133,7 @@ export const SystemSettingsSection = () => {
   for (const key of Object.keys(SETTINGS_DEFAULTS)) {
     const val = key in settings ? settings[key] : SETTINGS_DEFAULTS[key];
     // Convert numeric values to strings for select components
-    if (
-      key === "worker.task_timeout" ||
-      key === "worker.task_expire" ||
-      key === "worker.max_pending_tasks" ||
-      key === "oauth.dynamic_client_retention" ||
-      key === "oauth.dynamic_client_max_count"
-    ) {
+    if (NUMERIC_SETTING_KEYS.has(key)) {
       valueMap[key] = String(val);
     } else {
       valueMap[key] = val;
