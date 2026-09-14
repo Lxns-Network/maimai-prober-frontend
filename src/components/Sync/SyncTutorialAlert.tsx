@@ -23,6 +23,7 @@ export const SyncTutorialAlert = () => {
       px="sm"
       py="xs"
       w="100%"
+      styles={{ icon: { alignSelf: "center", marginTop: 0 } }}
     >
       <Group justify="space-between" align="center" gap={6}>
         <Text size="sm" fw={500}>
