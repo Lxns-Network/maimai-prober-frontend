@@ -1,4 +1,4 @@
-import { Note, AudioConfig } from "../../types";
+import { Note, SlideNote, AudioConfig } from "../../types";
 import { ANSWER_SOUND_BASE_OFFSET_MS } from "../../utils/constants";
 import { getAudioContextOutputTime } from "./audioClock";
 
@@ -12,6 +12,23 @@ const DENSE_GAP_MS = 40;
 const MIN_TICK_TAIL_MS = 30;
 /** 触发合并的最少连续密集事件数。达到该数量时离线烘焙成单个 AudioBuffer，整段只挂一个 source。 */
 const MIN_RUN_EVENTS = 16;
+/** 单声部音效被后继同层音切断时的释音时长（毫秒）。长音效硬切会爆音。 */
+const MONOPHONIC_RELEASE_MS = 8;
+
+/** 打击音素材统一带前置静音（由 ANSWER_SOUND_BASE_OFFSET_MS 抵消），截断计时须跳过该段。 */
+const SOUND_LEAD_MS = -ANSWER_SOUND_BASE_OFFSET_MS;
+
+const ANSWER_SOUND_PATH = "/assets/maimai/chart/answer.wav";
+const TAP_SOUND_PATH = "/assets/maimai/chart/tap.wav";
+const TOUCH_SOUND_PATH = "/assets/maimai/chart/touch.wav";
+const BREAK_SOUND_PATH = "/assets/maimai/chart/break.wav";
+const SLIDE_SOUND_PATH = "/assets/maimai/chart/slide.wav";
+const CHEER_SOUND_PATH = "/assets/maimai/chart/cheer.wav";
+const EX_SOUND_PATH = "/assets/maimai/chart/ex.wav";
+const FIREWORK_SOUND_PATH = "/assets/maimai/chart/firework.wav";
+const BREAK_SLIDE_SOUND_PATH = "/assets/maimai/chart/break_slide.wav";
+const BREAK_SLIDE_CHEER_SOUND_PATH = "/assets/maimai/chart/break_slide_cheer.wav";
+const TOUCH_HOLD_SOUND_PATH = "/assets/maimai/chart/touch_hold.wav";
 
 /** 打击音调度器的配置选项。 */
 export interface AudioManagerConfig {
@@ -19,9 +36,7 @@ export interface AudioManagerConfig {
   audioContext: AudioContext;
   /** 音频图中的目标输出节点。 */
   outputNode: AudioNode;
-  /** 打击音音频文件资源路径。 */
-  answerSoundPath?: string;
-  /** 初始音量大小（0 ~ 1）。 */
+  /** 正解音层初始音量（0 ~ 1）。 */
   initialVolume?: number;
   /** 初始发声时间偏移量（毫秒）。 */
   initialTimingOffset?: number;
@@ -34,12 +49,21 @@ interface ScheduledSourceEntry {
   stopOnClear?: boolean;
 }
 
+/** 判定音层的一次发声：音频缓冲区与其最长播放时长（毫秒），Infinity 表示播完整段。 */
+interface LayerVoice {
+  buffer: AudioBuffer;
+  maxDurationMs: number;
+  /** 被截断时补的释音时长（毫秒），0 表示直接停止。 */
+  releaseMs: number;
+}
+
 /** 预先合并烘焙的密集音频段。 */
 interface DenseRun {
   key: string;
   startMs: number;
   endMs: number;
   buffer: AudioBuffer;
+  layer: "answer" | "judge";
 }
 
 /** 预处理产出的单音事件与密集音频段集合。 */
@@ -57,12 +81,63 @@ export interface PreparedAudioEvent {
   key: string;
   /** 是否包含基础打击音（如常规音符或滑键头部）。 */
   hasBaseSound: boolean;
+  /** 是否包含 Tap 系判定音。 */
+  hasTapJudgeSound: boolean;
+  /** 是否包含 Break 判定音；Break 系音符以该音替代 Tap 判定音。 */
+  hasBreakJudgeSound: boolean;
+  /** 是否包含 EX 音符判定音；非 Break 的 EX 音符以该音替代 Tap 判定音。 */
+  hasExJudgeSound: boolean;
+  /** 是否包含滑条起滑音效。 */
+  hasSlideSound: boolean;
+  /** 是否包含 Break 滑条起滑音效（与普通滑条音叠加）。 */
+  hasBreakSlideSound: boolean;
+  /** 是否包含 Break 滑条完成时刻的欢呼音效。 */
+  hasBreakSlideCheerSound: boolean;
   /** 是否包含触摸类音符打击音。 */
   hasTouchSound: boolean;
+  /** 是否包含烟花触摸判定音（替代普通触摸判定音）。 */
+  hasFireworkSound: boolean;
+  /** 是否包含 Touch Hold 按住期间的持续音。 */
+  hasTouchHoldSound: boolean;
   /** 是否包含 Hold 音符结束打击音。 */
   hasHoldEndSound: boolean;
   /** 是否包含 Touch Hold 音符结束打击音。 */
   hasTouchHoldEndSound: boolean;
+  /** 是否包含 Touch Hold 结束时刻的烟花判定音（替代结束触摸判定音）。 */
+  hasTouchHoldEndFireworkSound: boolean;
+  /** Touch Hold 持续音时长（毫秒）；同刻多个 Touch Hold 取最长，无持续音时为 0。 */
+  touchHoldDurationMs: number;
+  /** 距下一个 Break 判定音事件的时长（毫秒），无后继事件时为 Infinity。 */
+  breakGapMs: number;
+  /** 距下一个滑条起滑音事件的时长（毫秒），无后继事件时为 Infinity。 */
+  slideGapMs: number;
+  /** 距下一个 EX 判定音事件的时长（毫秒），无后继事件时为 Infinity。 */
+  exGapMs: number;
+  /** 距下一个烟花判定音事件的时长（毫秒），无后继事件时为 Infinity。 */
+  fireworkGapMs: number;
+  /** 距下一个 Break 滑条起滑音事件的时长（毫秒），无后继事件时为 Infinity。 */
+  breakSlideGapMs: number;
+  /** 距下一个 Break 滑条欢呼音事件的时长（毫秒），无后继事件时为 Infinity。 */
+  breakSlideCheerGapMs: number;
+  /** 距下一个 Touch Hold 持续音事件的时长（毫秒），无后继事件时为 Infinity。 */
+  touchHoldGapMs: number;
+}
+
+/** 取滑条各路径的起滑延迟、滑行时长与 Break 标记；延迟未标注时按一拍计。 */
+function slidePathsOf(
+  note: SlideNote,
+): readonly { delayMs: number; durationMs: number; isBreak: boolean }[] {
+  const fallbackDelay = note.delayMs ?? 60000 / note.bpm;
+  const count = Math.max(note.allDelayMs?.length ?? 0, note.allSlideBreaks?.length ?? 0, 1);
+  const paths = [];
+  for (let i = 0; i < count; i++) {
+    paths.push({
+      delayMs: note.allDelayMs?.[i] ?? fallbackDelay,
+      durationMs: note.allDurationMs?.[i] ?? note.durationMs,
+      isBreak: note.allSlideBreaks?.[i] ?? false,
+    });
+  }
+  return paths;
 }
 
 /**
@@ -75,57 +150,149 @@ export function prepareAudioEvents(notes: readonly Note[] | null): PreparedAudio
   if (!notes || notes.length === 0) return [];
 
   const eventsByKey = new Map<string, PreparedAudioEvent>();
-  for (const note of notes) {
-    const key = note.timingMs.toFixed(3);
+  const eventAt = (timeMs: number): PreparedAudioEvent => {
+    const key = timeMs.toFixed(3);
     let event = eventsByKey.get(key);
     if (!event) {
       event = {
-        timeMs: note.timingMs,
+        timeMs,
         key,
         hasBaseSound: false,
+        hasTapJudgeSound: false,
+        hasBreakJudgeSound: false,
+        hasExJudgeSound: false,
+        hasSlideSound: false,
+        hasBreakSlideSound: false,
+        hasBreakSlideCheerSound: false,
         hasTouchSound: false,
+        hasFireworkSound: false,
+        hasTouchHoldSound: false,
         hasHoldEndSound: false,
         hasTouchHoldEndSound: false,
+        hasTouchHoldEndFireworkSound: false,
+        touchHoldDurationMs: 0,
+        breakGapMs: Infinity,
+        slideGapMs: Infinity,
+        exGapMs: Infinity,
+        fireworkGapMs: Infinity,
+        breakSlideGapMs: Infinity,
+        breakSlideCheerGapMs: Infinity,
+        touchHoldGapMs: Infinity,
       };
       eventsByKey.set(key, event);
     }
+    return event;
+  };
+
+  // Break > EX > Tap：Break 音符的 EX 属性不改变其判定音。
+  const markHeadJudge = (event: PreparedAudioEvent, isBreak: boolean, isEx: boolean): void => {
+    if (isBreak) event.hasBreakJudgeSound = true;
+    else if (isEx) event.hasExJudgeSound = true;
+    else event.hasTapJudgeSound = true;
+  };
+
+  for (const note of notes) {
+    const event = eventAt(note.timingMs);
 
     switch (note.type) {
       case "slide":
-        event.hasBaseSound ||= !note.isHeadless;
+        if (!note.isHeadless) {
+          event.hasBaseSound = true;
+          markHeadJudge(event, !!note.isStartBreak, !!note.isEx);
+        }
+        for (const path of slidePathsOf(note)) {
+          const launch = eventAt(note.timingMs + path.delayMs);
+          launch.hasSlideSound = true;
+          if (path.isBreak) {
+            launch.hasBreakSlideSound = true;
+            const arrive = eventAt(note.timingMs + path.delayMs + path.durationMs);
+            arrive.hasBreakSlideCheerSound = true;
+          }
+        }
+        break;
+      case "break":
+        event.hasBaseSound = true;
+        event.hasBreakJudgeSound = true;
         break;
       case "tap":
-      case "break":
       case "simultaneous":
+        event.hasBaseSound = true;
+        markHeadJudge(event, false, !!note.isEx);
+        break;
       case "hold-start":
       case "hold-start-simultaneous":
         event.hasBaseSound = true;
+        markHeadJudge(event, !!note.isBreakHold, !!note.isEx);
         break;
       case "touch":
+        if (note.hasFirework) event.hasFireworkSound = true;
+        else event.hasTouchSound = true;
+        break;
       case "touch-hold-start":
         event.hasTouchSound = true;
+        event.hasTouchHoldSound = true;
+        event.touchHoldDurationMs = Math.max(event.touchHoldDurationMs, note.durationMs);
         break;
       case "hold-end":
       case "hold-end-simultaneous":
         event.hasHoldEndSound = true;
         break;
       case "touch-hold-end":
-        event.hasTouchHoldEndSound = true;
+        if (note.hasFirework) event.hasTouchHoldEndFireworkSound = true;
+        else event.hasTouchHoldEndSound = true;
         break;
     }
   }
 
-  return [...eventsByKey.values()].sort((a, b) => a.timeMs - b.timeMs);
+  const events = [...eventsByKey.values()].sort((a, b) => a.timeMs - b.timeMs);
+
+  // 单声部音效层各自独占一个播放器，后一声会切断前一声；反向扫描记录各自的存活时长。
+  let nextBreakMs = Infinity;
+  let nextSlideMs = Infinity;
+  let nextExMs = Infinity;
+  let nextFireworkMs = Infinity;
+  let nextBreakSlideMs = Infinity;
+  let nextBreakSlideCheerMs = Infinity;
+  let nextTouchHoldMs = Infinity;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i];
+    event.breakGapMs = nextBreakMs - event.timeMs;
+    event.slideGapMs = nextSlideMs - event.timeMs;
+    event.exGapMs = nextExMs - event.timeMs;
+    event.fireworkGapMs = nextFireworkMs - event.timeMs;
+    event.breakSlideGapMs = nextBreakSlideMs - event.timeMs;
+    event.breakSlideCheerGapMs = nextBreakSlideCheerMs - event.timeMs;
+    event.touchHoldGapMs = nextTouchHoldMs - event.timeMs;
+    if (event.hasBreakJudgeSound) nextBreakMs = event.timeMs;
+    if (event.hasSlideSound) nextSlideMs = event.timeMs;
+    if (event.hasExJudgeSound) nextExMs = event.timeMs;
+    if (event.hasFireworkSound || event.hasTouchHoldEndFireworkSound) nextFireworkMs = event.timeMs;
+    if (event.hasBreakSlideSound) nextBreakSlideMs = event.timeMs;
+    if (event.hasBreakSlideCheerSound) nextBreakSlideCheerMs = event.timeMs;
+    if (event.hasTouchHoldSound) nextTouchHoldMs = event.timeMs;
+  }
+
+  return events;
 }
 
 /**
- * 正解音（打击音）调度器：仅负责 answer 音频的加载、预处理与按谱面时刻调度播放。
+ * 打击音调度器：仅负责正解音与判定音层的加载、预处理与按谱面时刻调度播放。
  * 不持有音乐播放，也不管理 React 生命周期——音乐播放与输出时钟归 usePreviewAudio 独占。
  */
 export class AudioManager {
   private audioContext: AudioContext;
   private outputNode: AudioNode;
   private answerBuffer: AudioBuffer | null = null;
+  private tapBuffer: AudioBuffer | null = null;
+  private touchBuffer: AudioBuffer | null = null;
+  private breakBuffer: AudioBuffer | null = null;
+  private slideBuffer: AudioBuffer | null = null;
+  private cheerBuffer: AudioBuffer | null = null;
+  private exBuffer: AudioBuffer | null = null;
+  private fireworkBuffer: AudioBuffer | null = null;
+  private breakSlideBuffer: AudioBuffer | null = null;
+  private breakSlideCheerBuffer: AudioBuffer | null = null;
+  private touchHoldBuffer: AudioBuffer | null = null;
   private initialized = false;
 
   private enabled = false;
@@ -137,24 +304,27 @@ export class AudioManager {
   private handledEvents = new Set<string>();
   private scheduledSources = new Set<ScheduledSourceEntry>();
   private preprocessedCache = new WeakMap<readonly PreparedAudioEvent[], PreprocessedEvents>();
-  /** 音效开关版本号；touch/holdEnd 开关变化时自增，使预处理密集段烘焙缓存随之失效。 */
+  /** 音效开关变化时自增，使预处理密集段烘焙缓存随之失效。 */
   private toggleEpoch = 0;
 
   private lastScheduledTimeMs = -Infinity;
 
-  private answerSoundPath: string;
-  /** 全部正解音共享的主增益节点，用于统一控制播放音量，音量调整即时生效。 */
+  /** 正解音层增益节点，音量调整即时生效。 */
   private answerGainNode: GainNode;
+  /** 判定音层增益节点，固定满增益。 */
+  private judgeGainNode: GainNode;
 
   constructor(config: AudioManagerConfig) {
     this.audioContext = config.audioContext;
     this.outputNode = config.outputNode;
-    this.answerSoundPath = config.answerSoundPath ?? "/assets/maimai/chart/answer.wav";
     this.volume = config.initialVolume ?? 0.5;
     this.timingOffsetMs = config.initialTimingOffset ?? ANSWER_SOUND_BASE_OFFSET_MS;
     this.answerGainNode = this.audioContext.createGain();
     this.answerGainNode.gain.value = this.volume;
     this.answerGainNode.connect(this.outputNode);
+    this.judgeGainNode = this.audioContext.createGain();
+    this.judgeGainNode.gain.value = 1;
+    this.judgeGainNode.connect(this.outputNode);
   }
 
   /**
@@ -167,14 +337,53 @@ export class AudioManager {
     if (this.initialized) return;
 
     try {
-      const response = await fetch(this.answerSoundPath);
-      const arrayBuffer = await response.arrayBuffer();
-      this.answerBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      const [
+        answer,
+        tap,
+        touch,
+        breakSound,
+        slide,
+        cheer,
+        ex,
+        firework,
+        breakSlide,
+        breakSlideCheer,
+        touchHold,
+      ] = await Promise.all([
+        this.loadBuffer(ANSWER_SOUND_PATH),
+        this.loadBuffer(TAP_SOUND_PATH),
+        this.loadBuffer(TOUCH_SOUND_PATH),
+        this.loadBuffer(BREAK_SOUND_PATH),
+        this.loadBuffer(SLIDE_SOUND_PATH),
+        this.loadBuffer(CHEER_SOUND_PATH),
+        this.loadBuffer(EX_SOUND_PATH),
+        this.loadBuffer(FIREWORK_SOUND_PATH),
+        this.loadBuffer(BREAK_SLIDE_SOUND_PATH),
+        this.loadBuffer(BREAK_SLIDE_CHEER_SOUND_PATH),
+        this.loadBuffer(TOUCH_HOLD_SOUND_PATH),
+      ]);
+      this.answerBuffer = answer;
+      this.tapBuffer = tap;
+      this.touchBuffer = touch;
+      this.breakBuffer = breakSound;
+      this.slideBuffer = slide;
+      this.cheerBuffer = cheer;
+      this.exBuffer = ex;
+      this.fireworkBuffer = firework;
+      this.breakSlideBuffer = breakSlide;
+      this.breakSlideCheerBuffer = breakSlideCheer;
+      this.touchHoldBuffer = touchHold;
 
       this.initialized = true;
     } catch (error) {
       console.error("AudioManager: Failed to initialize", error);
     }
+  }
+
+  private async loadBuffer(path: string): Promise<AudioBuffer> {
+    const response = await fetch(path);
+    const arrayBuffer = await response.arrayBuffer();
+    return await this.audioContext.decodeAudioData(arrayBuffer);
   }
 
   /**
@@ -185,18 +394,34 @@ export class AudioManager {
   dispose(): void {
     this.clearScheduledSources(true);
     this.answerBuffer = null;
+    this.tapBuffer = null;
+    this.touchBuffer = null;
+    this.breakBuffer = null;
+    this.slideBuffer = null;
+    this.cheerBuffer = null;
+    this.exBuffer = null;
+    this.fireworkBuffer = null;
+    this.breakSlideBuffer = null;
+    this.breakSlideCheerBuffer = null;
+    this.touchHoldBuffer = null;
     this.initialized = false;
     this.handledEvents.clear();
   }
 
   /**
-   * 在指定的 AudioContext 时间点播放单个打击音。
+   * 在指定的 AudioContext 时间点经由指定输出节点播放单个音频缓冲区。
    *
    * @param when 计划播放的 AudioContext 时间戳（秒）；若为 0 或非正数则立即播放。
    * @param stopAfterMs 可选的播放截断时长（毫秒）；大于 0 时在经过该时长后强制停止。
    */
-  private playAnswerSoundAt(when: number, stopAfterMs: number = 0): void {
-    if (!this.enabled || !this.answerBuffer) return;
+  private playBufferAt(
+    buffer: AudioBuffer,
+    destination: AudioNode,
+    when: number,
+    stopAfterMs: number = 0,
+    releaseMs: number = 0,
+  ): void {
+    if (!this.enabled) return;
 
     try {
       const source = this.audioContext.createBufferSource();
@@ -205,13 +430,25 @@ export class AudioManager {
         startTime: when > 0 ? when : this.audioContext.currentTime,
       };
 
-      source.buffer = this.answerBuffer;
+      source.buffer = buffer;
 
-      source.connect(this.answerGainNode);
+      const stopDelaySec = (SOUND_LEAD_MS + stopAfterMs) / 1000;
+      const truncated = stopAfterMs > 0 && stopDelaySec < buffer.duration;
+      const releaseSec = truncated ? releaseMs / 1000 : 0;
+      let releaseNode: GainNode | null = null;
+      if (releaseSec > 0) {
+        releaseNode = this.audioContext.createGain();
+        const stopTime = entry.startTime + stopDelaySec;
+        releaseNode.gain.setValueAtTime(1, Math.max(entry.startTime, stopTime - releaseSec));
+        releaseNode.gain.linearRampToValueAtTime(0, stopTime);
+        releaseNode.connect(destination);
+      }
+
+      source.connect(releaseNode ?? destination);
       this.scheduledSources.add(entry);
       source.start(when);
       if (stopAfterMs > 0) {
-        source.stop(entry.startTime + stopAfterMs / 1000);
+        source.stop(entry.startTime + stopDelaySec);
       }
 
       source.onended = () => {
@@ -219,6 +456,7 @@ export class AudioManager {
 
         try {
           source.disconnect();
+          releaseNode?.disconnect();
         } catch {
           // 节点若已处于断开状态，Web Audio API 会抛出异常，此处静默忽略
         }
@@ -244,7 +482,10 @@ export class AudioManager {
       let j = i;
       while (j + 1 < events.length && events[j + 1].timeMs - events[j].timeMs <= DENSE_GAP_MS) j++;
       if (j - i + 1 >= MIN_RUN_EVENTS) {
-        runs.push(this.bakeRun(events, i, j));
+        const answerRun = this.bakeLayerRun("answer", events, i, j);
+        if (answerRun) runs.push(answerRun);
+        const judgeRun = this.bakeLayerRun("judge", events, i, j);
+        if (judgeRun) runs.push(judgeRun);
       } else {
         for (let k = i; k <= j; k++) singles.push(events[k]);
       }
@@ -256,26 +497,97 @@ export class AudioManager {
     return result;
   }
 
-  /** 将指定索引区间内的密集音符离线合并烘焙为单个音频缓冲区。 */
-  private bakeRun(events: readonly PreparedAudioEvent[], from: number, to: number): DenseRun {
-    const tickBuffer = this.answerBuffer!;
+  private layerVoicesOf(layer: "answer" | "judge", event: PreparedAudioEvent): LayerVoice[] {
+    if (layer === "answer") {
+      if (!this.shouldPlaySound(event)) return [];
+      return [{ buffer: this.answerBuffer!, maxDurationMs: Infinity, releaseMs: 0 }];
+    }
+    const voices: LayerVoice[] = [];
+    const mono = (buffer: AudioBuffer | null, maxDurationMs: number): void => {
+      if (buffer) voices.push({ buffer, maxDurationMs, releaseMs: MONOPHONIC_RELEASE_MS });
+    };
+
+    // 同层多个触发源（如 Tap 头部与 Hold 松手）同刻合并为一次发声，不做叠加。
+    const playTap = event.hasTapJudgeSound || (this.holdEndSoundEnabled && event.hasHoldEndSound);
+    if (this.tapBuffer && playTap) {
+      voices.push({ buffer: this.tapBuffer, maxDurationMs: Infinity, releaseMs: 0 });
+    }
+    if (event.hasExJudgeSound) mono(this.exBuffer, event.exGapMs);
+    if (event.hasBreakJudgeSound) {
+      // Break 判定音附带欢呼声；两者为相互独立的单声部，均随下一个 Break 切断。
+      mono(this.breakBuffer, event.breakGapMs);
+      mono(this.cheerBuffer, event.breakGapMs);
+    }
+    if (this.touchSoundEnabled) {
+      const playTouch =
+        event.hasTouchSound || (this.holdEndSoundEnabled && event.hasTouchHoldEndSound);
+      if (this.touchBuffer && playTouch) {
+        voices.push({ buffer: this.touchBuffer, maxDurationMs: Infinity, releaseMs: 0 });
+      }
+      const playFirework =
+        event.hasFireworkSound || (this.holdEndSoundEnabled && event.hasTouchHoldEndFireworkSound);
+      if (playFirework) mono(this.fireworkBuffer, event.fireworkGapMs);
+      if (event.hasTouchHoldSound) {
+        mono(this.touchHoldBuffer, Math.min(event.touchHoldDurationMs, event.touchHoldGapMs));
+      }
+    }
+    if (event.hasSlideSound) mono(this.slideBuffer, event.slideGapMs);
+    if (event.hasBreakSlideSound) mono(this.breakSlideBuffer, event.breakSlideGapMs);
+    if (event.hasBreakSlideCheerSound) {
+      mono(this.breakSlideCheerBuffer, event.breakSlideCheerGapMs);
+    }
+    return voices;
+  }
+
+  /** 单个发声在缓冲区内实际可用的采样数，受其最长播放时长约束。 */
+  private voiceLength(voice: LayerVoice, sampleRate: number): number {
+    if (!Number.isFinite(voice.maxDurationMs)) return voice.buffer.length;
+    const limit = Math.round(((SOUND_LEAD_MS + voice.maxDurationMs) / 1000) * sampleRate);
+    return Math.min(voice.buffer.length, Math.max(1, limit));
+  }
+
+  /** 将指定索引区间内属于某一输出层的密集音符离线合并烘焙为单个音频缓冲区；该层无发声事件时返回 null。 */
+  private bakeLayerRun(
+    layer: "answer" | "judge",
+    events: readonly PreparedAudioEvent[],
+    from: number,
+    to: number,
+  ): DenseRun | null {
     const startMs = events[from].timeMs;
     const endMs = events[to].timeMs;
-    const sampleRate = tickBuffer.sampleRate;
-    const length = Math.ceil(((endMs - startMs) / 1000) * sampleRate) + tickBuffer.length;
+    const sampleRate = this.audioContext.sampleRate;
+
+    let maxTail = 0;
+    for (let k = from; k <= to; k++) {
+      for (const voice of this.layerVoicesOf(layer, events[k])) {
+        maxTail = Math.max(maxTail, this.voiceLength(voice, sampleRate));
+      }
+    }
+    if (maxTail === 0) return null;
+
+    const length = Math.ceil(((endMs - startMs) / 1000) * sampleRate) + maxTail;
     const buffer = this.audioContext.createBuffer(1, length, sampleRate);
     const out = buffer.getChannelData(0);
-    const tick = tickBuffer.getChannelData(0);
 
     for (let k = from; k <= to; k++) {
       const event = events[k];
-      if (!this.shouldPlaySound(event)) continue;
       const offset = Math.round(((event.timeMs - startMs) / 1000) * sampleRate);
-      const limit = Math.min(tick.length, length - offset);
-      for (let s = 0; s < limit; s++) out[offset + s] += tick[s];
+      for (const voice of this.layerVoicesOf(layer, event)) {
+        const tick = voice.buffer.getChannelData(0);
+        const limit = Math.min(this.voiceLength(voice, sampleRate), length - offset);
+        const release =
+          limit < tick.length
+            ? Math.min(limit, Math.round((voice.releaseMs / 1000) * sampleRate))
+            : 0;
+        const fadeFrom = limit - release;
+        for (let s = 0; s < limit; s++) {
+          const gain = s < fadeFrom ? 1 : (limit - s) / release;
+          out[offset + s] += tick[s] * gain;
+        }
+      }
     }
 
-    return { key: `run:${startMs}:${to - from + 1}`, startMs, endMs, buffer };
+    return { key: `run:${layer}:${startMs}:${to - from + 1}`, startMs, endMs, buffer, layer };
   }
 
   /**
@@ -299,7 +611,7 @@ export class AudioManager {
         stopOnClear: true,
       };
 
-      source.connect(this.answerGainNode);
+      source.connect(run.layer === "answer" ? this.answerGainNode : this.judgeGainNode);
       this.scheduledSources.add(entry);
       source.start(when, offsetSec);
 
@@ -317,13 +629,15 @@ export class AudioManager {
     }
   }
 
-  /** 根据当前音效开关配置判断指定事件是否需要发出声音。 */
+  /** 根据当前音效开关配置判断指定事件是否需要发出正解音。 */
   private shouldPlaySound(event: PreparedAudioEvent): boolean {
     return (
       event.hasBaseSound ||
-      (this.touchSoundEnabled && event.hasTouchSound) ||
+      (this.touchSoundEnabled && (event.hasTouchSound || event.hasFireworkSound)) ||
       (this.holdEndSoundEnabled && event.hasHoldEndSound) ||
-      (this.touchSoundEnabled && this.holdEndSoundEnabled && event.hasTouchHoldEndSound)
+      (this.touchSoundEnabled &&
+        this.holdEndSoundEnabled &&
+        (event.hasTouchHoldEndSound || event.hasTouchHoldEndFireworkSound))
     );
   }
 
@@ -385,32 +699,51 @@ export class AudioManager {
       const noteTime = event.timeMs;
       if (noteTime > adjustedLookAheadTime) break;
 
-      if (!this.shouldPlaySound(event)) continue;
-
       if (this.handledEvents.has(event.key)) continue;
 
+      const playAnswer = this.shouldPlaySound(event);
+      const judgeVoices = this.layerVoicesOf("judge", event);
+      if (!playAnswer && judgeVoices.length === 0) continue;
+
       const gapMs = i + 1 < singles.length ? singles[i + 1].timeMs - noteTime : Infinity;
-      const stopAfterMs =
-        gapMs < DENSE_GAP_MS ? Math.max(gapMs * 3, MIN_TICK_TAIL_MS) / normalizedPlaybackSpeed : 0;
+      const denseLimitMs = gapMs < DENSE_GAP_MS ? Math.max(gapMs * 3, MIN_TICK_TAIL_MS) : Infinity;
+      const answerStopMs = this.toStopAfterMs(denseLimitMs, normalizedPlaybackSpeed);
+
+      const emit = (when: number) => {
+        if (playAnswer) {
+          this.playBufferAt(this.answerBuffer!, this.answerGainNode, when, answerStopMs);
+        }
+        for (const voice of judgeVoices) {
+          const stopAfterMs = this.toStopAfterMs(
+            Math.min(denseLimitMs, voice.maxDurationMs),
+            normalizedPlaybackSpeed,
+          );
+          this.playBufferAt(voice.buffer, this.judgeGainNode, when, stopAfterMs, voice.releaseMs);
+        }
+      };
 
       if (noteTime <= adjustedCurrentTime) {
         this.handledEvents.add(event.key);
-        if (noteTime > adjustedLastTime) {
-          this.playAnswerSoundAt(0, stopAfterMs);
-        }
+        if (noteTime > adjustedLastTime) emit(0);
         continue;
       }
 
       this.handledEvents.add(event.key);
-      const delayMs = noteTime - adjustedCurrentTime;
+      // 前置静音以 1 倍速播放，先把目标可听时刻（含静音时长）按倍速换算，再回退固定的静音墙钟时长。
+      const delayMs = noteTime - adjustedCurrentTime + SOUND_LEAD_MS;
       const when = Math.max(
         currentContextTime,
-        outputTime + delayMs / 1000 / normalizedPlaybackSpeed,
+        outputTime + delayMs / 1000 / normalizedPlaybackSpeed - SOUND_LEAD_MS / 1000,
       );
-      this.playAnswerSoundAt(when, stopAfterMs);
+      emit(when);
     }
 
     this.lastScheduledTimeMs = currentTimeMs;
+  }
+
+  /** 将谱面时长上限换算为播放时长；无上限时返回 0，表示由 playBufferAt 播完整段。 */
+  private toStopAfterMs(limitMs: number, playbackSpeed: number): number {
+    return Number.isFinite(limitMs) ? limitMs / playbackSpeed : 0;
   }
 
   /**
@@ -514,16 +847,16 @@ export class AudioManager {
   }
 
   /**
-   * 设置打击音音量。
+   * 设置正解音层音量，不影响判定音层。
    *
-   * 数值会被限制在 [0, 1] 区间内，并通过主增益节点即时生效于当前及后续播放的声音。
+   * 数值会被限制在 [0, 1] 区间内，即时生效于当前及后续播放的声音。
    */
   setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
     this.answerGainNode.gain.value = this.volume;
   }
 
-  /** 获取当前打击音音量（0 ~ 1）。 */
+  /** 获取当前正解音层音量（0 ~ 1）。 */
   getVolume(): number {
     return this.volume;
   }

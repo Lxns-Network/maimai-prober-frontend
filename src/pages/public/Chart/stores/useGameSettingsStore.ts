@@ -58,7 +58,7 @@ export interface GameSettingsActions {
 
 export type GameSettingsStore = GameSettingsState & GameSettingsActions;
 
-const SETTINGS_STORE_VERSION = 1;
+const SETTINGS_STORE_VERSION = 2;
 
 const initialState: GameSettingsState = {
   hiSpeed: 6,
@@ -74,7 +74,7 @@ const initialState: GameSettingsState = {
   showHitEffect: true,
   fpsLimit: 0,
   soundEnabled: false,
-  soundVolume: 0.5,
+  soundVolume: 0.6,
   soundOffset: 0,
   musicVolume: 0.8,
   musicOffset: 0,
@@ -114,10 +114,11 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
     {
       name: "maimai_chart_preview_settings",
       version: SETTINGS_STORE_VERSION,
-      migrate: (persistedState) => ({
-        ...initialState,
-        ...(persistedState as Partial<GameSettingsState>),
-      }),
+      migrate: (persistedState, version) => {
+        const persisted = { ...(persistedState as Partial<GameSettingsState>) };
+        if (version < 2) delete persisted.soundVolume;
+        return { ...initialState, ...persisted };
+      },
       partialize: (state) => ({
         hiSpeed: state.hiSpeed,
         alwaysKeepHiSpeed: state.alwaysKeepHiSpeed,
