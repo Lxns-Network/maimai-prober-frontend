@@ -154,6 +154,8 @@
   .avatar {
     width: 48px;
     height: 48px;
+    /* Avatar 根元素带 min-width: var(--avatar-size)（inline 58px），不覆盖会被撑成 58x48 */
+    min-width: 48px;
   }
 
   .title {
