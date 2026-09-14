@@ -82,6 +82,7 @@ export function ScoreShowcase() {
       className={classes.showcase}
       role="group"
       aria-label="成绩管理界面示例，使用模拟数据"
+      data-nosnippet
     >
       {scenes.map(({ title, scene }) => (
         <ScaledFrame key={title} title={title}>
