@@ -45,7 +45,7 @@ export interface AudioManagerConfig {
 interface ScheduledSourceEntry {
   source: AudioBufferSourceNode;
   startTime: number;
-  /** 任何清理调度队列操作均强制停止播放（烘焙段跨度长，残留会与重排后的段重叠）。 */
+  /** 烘焙段与持续音在重排时必须停止，否则会与恢复的音源重叠。 */
   stopOnClear?: boolean;
 }
 
@@ -71,6 +71,7 @@ interface PreprocessedEvents {
   epoch: number;
   singles: PreparedAudioEvent[];
   runs: DenseRun[];
+  touchHolds: PreparedAudioEvent[];
 }
 
 /** 经过时刻聚合预处理后的打击音事件。 */
@@ -293,6 +294,7 @@ export class AudioManager {
   private breakSlideBuffer: AudioBuffer | null = null;
   private breakSlideCheerBuffer: AudioBuffer | null = null;
   private touchHoldBuffer: AudioBuffer | null = null;
+  private touchHoldLoopStartSec = 0;
   private initialized = false;
 
   private enabled = false;
@@ -373,6 +375,21 @@ export class AudioManager {
       this.breakSlideBuffer = breakSlide;
       this.breakSlideCheerBuffer = breakSlideCheer;
       this.touchHoldBuffer = touchHold;
+      const leadFrames = Math.round((SOUND_LEAD_MS / 1000) * touchHold.sampleRate);
+      const fadeFrames = Math.min(
+        Math.round((MONOPHONIC_RELEASE_MS / 1000) * touchHold.sampleRate),
+        Math.floor((touchHold.length - leadFrames) / 2),
+      );
+      // 循环尾部与开头的有效采样交叉淡化；回环跳过前置静音及已经混入尾部的采样。
+      for (let channel = 0; channel < touchHold.numberOfChannels; channel++) {
+        const samples = touchHold.getChannelData(channel);
+        for (let i = 0; i < fadeFrames; i++) {
+          const gain = (i + 1) / fadeFrames;
+          const tail = samples.length - fadeFrames + i;
+          samples[tail] = samples[tail] * (1 - gain) + samples[leadFrames + i] * gain;
+        }
+      }
+      this.touchHoldLoopStartSec = (leadFrames + fadeFrames) / touchHold.sampleRate;
 
       this.initialized = true;
     } catch (error) {
@@ -492,7 +509,10 @@ export class AudioManager {
       i = j + 1;
     }
 
-    const result: PreprocessedEvents = { epoch: this.toggleEpoch, singles, runs };
+    const touchHolds = events.filter(
+      (event) => event.hasTouchHoldSound && event.touchHoldDurationMs > 0,
+    );
+    const result: PreprocessedEvents = { epoch: this.toggleEpoch, singles, runs, touchHolds };
     this.preprocessedCache.set(events, result);
     return result;
   }
@@ -527,9 +547,6 @@ export class AudioManager {
       const playFirework =
         event.hasFireworkSound || (this.holdEndSoundEnabled && event.hasTouchHoldEndFireworkSound);
       if (playFirework) mono(this.fireworkBuffer, event.fireworkGapMs);
-      if (event.hasTouchHoldSound) {
-        mono(this.touchHoldBuffer, Math.min(event.touchHoldDurationMs, event.touchHoldGapMs));
-      }
     }
     if (event.hasSlideSound) mono(this.slideBuffer, event.slideGapMs);
     if (event.hasBreakSlideSound) mono(this.breakSlideBuffer, event.breakSlideGapMs);
@@ -641,6 +658,72 @@ export class AudioManager {
     );
   }
 
+  private scheduleTouchHolds(
+    events: readonly PreparedAudioEvent[],
+    currentTimeMs: number,
+    playbackSpeed: number,
+    lookAheadMs: number,
+    outputTime: number,
+  ): void {
+    const buffer = this.touchHoldBuffer;
+    if (!this.touchSoundEnabled || !buffer) return;
+
+    const adjustedCurrentTime = currentTimeMs - this.timingOffsetMs;
+    const now = this.audioContext.currentTime;
+    // 按可听时刻查找：下一段在前置静音期间，前一段仍可能发声。
+    const startIndex = Math.max(
+      0,
+      this.lowerBoundEvents(events, adjustedCurrentTime - SOUND_LEAD_MS) - 1,
+    );
+    for (let i = startIndex; i < events.length; i++) {
+      const event = events[i];
+      if (event.timeMs > adjustedCurrentTime + lookAheadMs) break;
+      if (this.scheduledSources.size >= MAX_PENDING_SOURCES) break;
+      const key = `touch-hold:${event.key}`;
+      if (this.handledEvents.has(key)) continue;
+
+      const durationMs = Math.min(event.touchHoldDurationMs, event.touchHoldGapMs);
+      const audibleStart =
+        outputTime + (event.timeMs - adjustedCurrentTime + SOUND_LEAD_MS) / 1000 / playbackSpeed;
+      const stopTime = audibleStart + durationMs / 1000 / playbackSpeed;
+      if (stopTime <= now) continue;
+
+      const startTime = audibleStart - SOUND_LEAD_MS / 1000;
+      const when = Math.max(now, startTime);
+      let offsetSec = when - startTime;
+      if (offsetSec >= buffer.duration) {
+        offsetSec =
+          this.touchHoldLoopStartSec +
+          ((offsetSec - buffer.duration) % (buffer.duration - this.touchHoldLoopStartSec));
+      }
+
+      const source = this.audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      source.loopStart = this.touchHoldLoopStartSec;
+      source.loopEnd = buffer.duration;
+      const gain = this.audioContext.createGain();
+      const releaseSec = MONOPHONIC_RELEASE_MS / 1000;
+      const attackEnd = Math.min(when + releaseSec, (when + stopTime) / 2);
+      gain.gain.setValueAtTime(0, when);
+      gain.gain.linearRampToValueAtTime(1, attackEnd);
+      gain.gain.setValueAtTime(1, Math.max(attackEnd, stopTime - releaseSec));
+      gain.gain.linearRampToValueAtTime(0, stopTime);
+      source.connect(gain);
+      gain.connect(this.judgeGainNode);
+      const entry: ScheduledSourceEntry = { source, startTime: when, stopOnClear: true };
+      source.onended = () => {
+        this.scheduledSources.delete(entry);
+        source.disconnect();
+        gain.disconnect();
+      };
+      source.start(when, offsetSec);
+      source.stop(stopTime);
+      this.scheduledSources.add(entry);
+      this.handledEvents.add(key);
+    }
+  }
+
   /**
    * 执行单次音频调度，将时间窗口内待播放的打击音节点排期至 AudioContext。
    *
@@ -672,7 +755,14 @@ export class AudioManager {
     const currentContextTime = this.audioContext.currentTime;
     const outputTime = precomputedOutputTime ?? getAudioContextOutputTime(this.audioContext);
 
-    const { singles, runs } = this.getPreprocessed(events);
+    const { singles, runs, touchHolds } = this.getPreprocessed(events);
+    this.scheduleTouchHolds(
+      touchHolds,
+      currentTimeMs,
+      normalizedPlaybackSpeed,
+      lookAheadMs,
+      outputTime,
+    );
 
     for (const run of runs) {
       if (run.endMs + 500 <= adjustedCurrentTime || run.startMs > adjustedLookAheadTime) continue;
@@ -714,10 +804,7 @@ export class AudioManager {
           this.playBufferAt(this.answerBuffer!, this.answerGainNode, when, answerStopMs);
         }
         for (const voice of judgeVoices) {
-          const stopAfterMs = this.toStopAfterMs(
-            Math.min(denseLimitMs, voice.maxDurationMs),
-            normalizedPlaybackSpeed,
-          );
+          const stopAfterMs = this.toStopAfterMs(voice.maxDurationMs, normalizedPlaybackSpeed);
           this.playBufferAt(voice.buffer, this.judgeGainNode, when, stopAfterMs, voice.releaseMs);
         }
       };
@@ -769,7 +856,7 @@ export class AudioManager {
    * 重置调度状态，用于播放跳转（Seek）或停止时清理排期队列。
    *
    * @param currentTimeMs 重置后的起始调度时间戳（毫秒）；若未传入则置为 -Infinity。
-   * @param stopStartedSources 是否同时强制停止已经起播的声音节点（默认为 false，允许已发声节点自然播放完毕）。
+   * @param stopStartedSources 是否强制停止已起播的单次音效，默认为 false；密集段与持续音始终停止，由下次调度恢复。
    */
   reset(currentTimeMs?: number, stopStartedSources: boolean = false): void {
     this.clearScheduledSources(stopStartedSources);
@@ -794,8 +881,8 @@ export class AudioManager {
     return this.enabled;
   }
 
-  /** 开关变更后已烘焙 run 内容失效：停掉在途 run source 并清除其 handled 键，下次调度重烘重排。 */
-  private invalidateBakedRuns(): void {
+  /** 开关变更会使烘焙段失效，并可能关闭持续音；清除排期后按新配置恢复。 */
+  private invalidatePreparedSources(): void {
     for (const entry of this.scheduledSources) {
       if (!entry.stopOnClear) continue;
       try {
@@ -806,19 +893,19 @@ export class AudioManager {
       this.scheduledSources.delete(entry);
     }
     for (const key of this.handledEvents) {
-      if (key.startsWith("run:")) this.handledEvents.delete(key);
+      if (key.startsWith("run:") || key.startsWith("touch-hold:")) this.handledEvents.delete(key);
     }
   }
 
   /**
    * 设置 Hold 结束打击音是否启用。
    *
-   * 状态变更时会使密集段预处理缓存失效，并立即中断在途的密集段播放以便重新排期。
+   * 状态变更时会使预处理缓存失效，并中断密集段与持续音，由下次调度按新配置恢复。
    */
   setHoldEndSoundEnabled(enabled: boolean): void {
     if (enabled !== this.holdEndSoundEnabled) {
       this.toggleEpoch++;
-      this.invalidateBakedRuns();
+      this.invalidatePreparedSources();
     }
     this.holdEndSoundEnabled = enabled;
   }
@@ -831,12 +918,12 @@ export class AudioManager {
   /**
    * 设置触摸音符打击音是否启用。
    *
-   * 状态变更时会使密集段预处理缓存失效，并立即中断在途的密集段播放以便重新排期。
+   * 状态变更时会使预处理缓存失效，并中断密集段与持续音，由下次调度按新配置恢复。
    */
   setTouchSoundEnabled(enabled: boolean): void {
     if (enabled !== this.touchSoundEnabled) {
       this.toggleEpoch++;
-      this.invalidateBakedRuns();
+      this.invalidatePreparedSources();
     }
     this.touchSoundEnabled = enabled;
   }
