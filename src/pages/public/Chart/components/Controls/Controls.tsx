@@ -1039,6 +1039,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     musicVolume,
     musicOffset,
     soundOffset,
+    soundVolume,
     setHiSpeed,
     setAlwaysKeepHiSpeed,
     setSlideDelay,
@@ -1055,6 +1056,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     setMusicVolume,
     setMusicOffset,
     setSoundOffset,
+    setSoundVolume,
     fullscreenQuality,
     setFullscreenQuality,
     showVideo,
@@ -1548,6 +1550,16 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               <Text size="xs" c="dimmed" mt={4}>
                 正值: 音乐延后 | 负值: 音乐提前
               </Text>
+            </div>
+
+            <div>
+              <Group justify="space-between" mb={4}>
+                <Text size="sm">正解音音量</Text>
+                <Text size="sm" c="dimmed" ff="monospace">
+                  {Math.round(soundVolume * 100)}%
+                </Text>
+              </Group>
+              <Slider value={soundVolume} onChange={setSoundVolume} min={0} max={1} step={0.1} />
             </div>
 
             <div>
