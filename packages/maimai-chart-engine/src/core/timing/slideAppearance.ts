@@ -9,17 +9,17 @@ interface SlideTrackAppearance {
   isFading: boolean;
 }
 
-/** 轨迹提前变为完全不透明的判定补偿量（毫秒），实测值。 */
+/** 轨迹提前变完全不透明的判定补偿量（50ms），实测值。 */
 const SLIDE_JUDGE_ADJUST_MS = 50;
-/** 淡入斜坡时长（毫秒）：透明度在此窗口内线性升至 0.5，实测值。 */
+/** 淡入斜坡时长（200ms）：透明度在线性升至 0.5 的窗口，实测值。 */
 const TRACK_FADE_RAMP_MS = 200;
-/** Wi-Fi 轨迹的默认透明度；普通、同时押与 BREAK 三种配色共用该值，实测值。 */
+/** Wi-Fi 轨迹的默认透明度（120/255）；普通、同时押和 BREAK 共用，实测值。 */
 const WIFI_TRACK_ALPHA = 120 / 255;
 
 /**
- * 把 slideDelay（-1 ~ 1，步长 0.1）映射到实测的 21 档出现时机，返回轨迹开始出现的时刻（毫秒）。
- * approachTimeMs 已覆盖完整进场窗口；slideDelay 为 0 时取第 10 档，略早于窗口中点，
- * 且最晚一档仍比 noteTimeMs 提前 approachTimeMs / 21 —— 两者均与实测一致，不是取整误差。
+ * 把 slideDelay（-1 ~ 1，步长 0.1）映射到实测的 21 档出现时机，算轨迹开始出现的绝对时刻（ms）。
+ * approachTimeMs 覆盖完整进场窗口；slideDelay 为 0 时对应第 10 档，略早于中点；
+ * 最晚一档仍比 noteTimeMs 提前 approachTimeMs / 21 —— 这两处都是实测行为，别当成取整误差改掉了。
  */
 export function getSlideAppearanceStartMs({
   noteTimeMs,
@@ -31,20 +31,18 @@ export function getSlideAppearanceStartMs({
 }
 
 /**
- * 实测的「已出现 Wi-Fi 轨迹取半透明」判据：将剩余时长与绝对时刻直接相比。
- * 两侧量纲并不一致，但这正是实测行为本身——谱面开头数秒之后该条件恒成立，
- * 也正是它让已出现的 Wi-Fi 轨迹停在 0.5 而非 WIFI_TRACK_ALPHA。
- * 未经实测复核，请勿将其「修正」为同量纲比较。
+ * 实测中「已出现的 Wi-Fi 轨迹取半透明」的判定条件：直接把剩余时长与绝对时刻相比。
+ * 两边量纲根本不一致，但实测表现就是这样——谱面开头几秒后恒成立，
+ * 刚好让已出现的 Wi-Fi 轨迹停在 0.5 而不是 WIFI_TRACK_ALPHA。
+ * 没有新的实测采样前，千万别自作主张把它“修”成同量纲比较。
  */
 function isWifiTrackHalfAlpha(noteTimeMs: number, currentTimeMs: number): boolean {
   return noteTimeMs - currentTimeMs + TRACK_FADE_RAMP_MS <= currentTimeMs;
 }
 
 /**
- * 计算轨迹在 currentTimeMs（谱面毫秒）的透明度与淡入状态，与星星的移动进度无关。
- * 距 noteTimeMs 不足 SLIDE_JUDGE_ADJUST_MS 时轨迹即完全不透明，已出现的 Wi-Fi 轨迹
- * 在同一阈值恢复 WIFI_TRACK_ALPHA。淡入窗口短于 TRACK_FADE_RAMP_MS 的普通轨迹按比例
- * 折算并钳制到 [0, 0.5]，因为 Canvas 会忽略超出 [0, 1] 的 globalAlpha。
+ * 计算轨迹在当前时刻（currentTimeMs，ms）的透明度与淡入状态（只管轨迹本身，和星星走到哪无关）。
+ * 普通轨迹淡入被限制在 [0, 0.5]，因为 Canvas 会直接忽略超出 [0, 1] 的 globalAlpha。
  */
 export function getSlideTrackAppearance(
   timing: SlideAppearanceTiming,

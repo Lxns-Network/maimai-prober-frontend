@@ -8,11 +8,7 @@ import {
   DDR_DARKEN_RATIO,
 } from "../utils/constants";
 
-/**
- * 线性插值混合两个十六进制 RGB 颜色（#rrggbb）。
- *
- * @param amount 目标颜色所占权重比例（0 为起始色，1 为目标色）。
- */
+/** 插值混合两个十六进制 RGB 颜色（#rrggbb），amount 范围 0~1。 */
 export function mixHexColor(color: string, target: string, amount: number): string {
   const parse = (value: string) => Number.parseInt(value, 16);
   const r = parse(color.slice(1, 3));
@@ -27,10 +23,8 @@ export function mixHexColor(color: string, target: string, amount: number): stri
 }
 
 /**
- * 按倍率缩放 #rrggbb 的亮度，逐通道乘算并钳到 [0, 255]。
- *
- * 与 mixHexColor(color, "#ffffff" | "#000000", …) 不同：后者对亮暗两侧不对称，
- * 且会把已经饱和的通道往白里拉，不适合做"整体调亮/调暗"。
+ * 按倍率缩放 #rrggbb 的逐通道亮度并截断到 0~255。
+ * 不用 mixHexColor 混黑白是因为它对亮暗两侧不对称，还会把已饱和通道往白里拉。
  */
 export function scaleHexBrightness(color: string, factor: number): string {
   const channel = (offset: number) => {
@@ -40,13 +34,7 @@ export function scaleHexBrightness(color: string, factor: number): string {
   return `#${channel(1)}${channel(3)}${channel(5)}`;
 }
 
-/**
- * 根据音符属性获取渲染所需的渐变颜色对 [startColor, endColor]。
- *
- * 判定优先级依次为：节拍着色 > Break > 双押（同时按压） > 普通 Tap。
- *
- * @param ddrColor 节拍着色模式下的指定颜色；传入 null 时回退到常规音符渐变色。
- */
+/** 音符渐变色对 [startColor, endColor]，优先级：节拍着色 > Break > 双押 > 普通 Tap。 */
 export function getGradientColors(
   ddrColor: string | null,
   isBreak: boolean,
@@ -64,9 +52,7 @@ export function getGradientColors(
   return [COLORS.TAP_GRADIENT_START, COLORS.TAP_GRADIENT_END];
 }
 
-/**
- * 渲染上下文环境，包含目标画布、几何尺寸、流速参数及渲染配置。
- */
+/** 渲染上下文，持有 Canvas、中心半径几何参数、流速与渲染配置。 */
 export interface RenderContext {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -78,9 +64,7 @@ export interface RenderContext {
   config: RendererConfig;
 }
 
-/**
- * 渲染器抽象基类，提供坐标映射、角度计算、流速换算以及常用绘图辅助方法。
- */
+/** 渲染器基类，封装坐标与角度映射、流速计算及基础 Canvas 绘图辅助。 */
 export abstract class BaseRenderer {
   protected context: RenderContext;
 
@@ -88,12 +72,11 @@ export abstract class BaseRenderer {
     this.context = context;
   }
 
-  /** 增量更新渲染上下文中的属性。 */
   updateContext(context: Partial<RenderContext>): void {
     Object.assign(this.context, context);
   }
 
-  /** 根据当前配置的镜像模式转换按钮位置编号（1 ~ 8）。 */
+  /** 按当前镜像模式转换按钮编号 1~8。 */
   protected mirrorPosition(position: ButtonPosition): ButtonPosition {
     const mode = this.context.config.mirrorMode;
     if (mode === "none") return position;
@@ -114,11 +97,7 @@ export abstract class BaseRenderer {
     }
   }
 
-  /**
-   * 根据当前配置的镜像模式转换触摸区域传感器位置。
-   *
-   * 中心区 "C" 在镜像或旋转后位置保持不变；外圈各区域根据对称轴映射对应传感器编号。
-   */
+  /** 按当前镜像模式转换 Touch 传感器位置（C 区不变，外圈按对称轴映射）。 */
   protected mirrorTouchPosition(touchPosition: TouchPosition): TouchPosition {
     const mode = this.context.config.mirrorMode;
     if (mode === "none") return touchPosition;
@@ -161,17 +140,13 @@ export abstract class BaseRenderer {
     return `${region}${mirroredSensorNum}` as TouchPosition;
   }
 
-  /**
-   * 计算指定按钮位置在画布坐标系中的极坐标弧度角。
-   *
-   * 内部会自动应用当前的镜像模式变换。
-   */
+  /** 获取按钮在画布上的弧度角（已应用镜像变换）。 */
   protected getButtonAngle(position: ButtonPosition): number {
     const mirroredPos = this.mirrorPosition(position);
     return BASE_ANGLE + BUTTON_ANGLE_OFFSET + (mirroredPos - 1) * BUTTON_ANGLE_STEP;
   }
 
-  /** 计算指定按钮在画布判定圈上的二维绝对像素坐标。 */
+  /** 获取按钮在判定圈上的像素坐标。 */
   protected getButtonPosition(position: ButtonPosition): Point2D {
     const angle = this.getButtonAngle(position);
     return {
@@ -180,11 +155,7 @@ export abstract class BaseRenderer {
     };
   }
 
-  /**
-   * 计算全局基准进场时长（毫秒）。
-   *
-   * 当开启保持流速（alwaysKeepHiSpeed）时，根据回放倍速修正流速比例，使音符视觉移速与倍速解耦。
-   */
+  /** 全局进场时长（ms）；开启 alwaysKeepHiSpeed 时除以播放倍速，避免视觉移速随回放倍速变快。 */
   protected getApproachTimeMs(): number {
     if (this.context.config.alwaysKeepHiSpeed) {
       return (
@@ -195,40 +166,29 @@ export abstract class BaseRenderer {
     return this.context.baseApproachTimeMs / this.context.hiSpeed;
   }
 
-  /**
-   * 计算指定音符的进场时长（毫秒）。
-   *
-   * 音符自带流速倍率（simai `<HS*x>`）叠加在全局流速上；负流速时长取幅值，运动方向由 getNoteApproachDir 另行确定。
-   */
+  /** 音符进场时长（ms），叠加了音符自身流速倍率（<HS*x>）；负流速取绝对值，方向由 getNoteApproachDir 处理。 */
   protected getNoteApproachTimeMs(note: { hiSpeed?: number }): number {
     return this.getApproachTimeMs() / (Math.abs(note.hiSpeed ?? 1) || 1);
   }
 
-  /** 径向进场方向：+1 常规由内向外，-1（负流速）由判定圈外向内。 */
+  /** 进场移动方向：+1 常规从圆心向外，-1（负流速）从圈外向内。 */
   protected getNoteApproachDir(note: { hiSpeed?: number }): 1 | -1 {
     return (note.hiSpeed ?? 1) < 0 ? -1 : 1;
   }
 
-  /** 计算指定二维坐标点距画布判定中心的像素距离。 */
   protected distanceToCenter(x: number, y: number): number {
     return Math.sqrt(Math.pow(x - this.context.centerX, 2) + Math.pow(y - this.context.centerY, 2));
   }
 
-  /** 按当前判定圈基准半径等比缩放指定比例值（像素）。 */
   protected scaleByRadius(ratio: number): number {
     return ratio * this.context.radius;
   }
 
-  /** 获取音符外边框的标准描边宽度（像素）。 */
   protected getNoteStrokeWidth(): number {
     return this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
   }
 
-  /**
-   * 对当前 Canvas 路径应用指定颜色与线宽进行描边。
-   *
-   * @param width 可选的描边宽度（像素）；未指定时采用 getNoteStrokeWidth() 标准宽度。
-   */
+  /** 对当前路径描边，未指定线宽时使用音符标准线宽。 */
   protected stroke(color: string, width?: number): void {
     const ctx = this.context.ctx;
     ctx.strokeStyle = color;
@@ -236,16 +196,12 @@ export abstract class BaseRenderer {
     ctx.stroke();
   }
 
-  /** 将以拍数（beat）为单位的时长按指定 BPM 换算为毫秒（ms）时长。 */
+  /** 拍数（beat）按 BPM 换算为毫秒（ms）。 */
   protected durationToMs(duration: number, bpm: number): number {
     return (60000 * duration) / bpm;
   }
 
-  /**
-   * 根据音符所在节拍位置计算其对应的节拍着色颜色。
-   *
-   * 未开启节拍着色模式（ddrColorMode）时返回 null；开启时按分频（1/1、1/2、1/4 拍，及扩展模式下的 1/8、1/6 拍）依次匹配对应颜色，其余拍位回退为绿色。
-   */
+  /** 节拍着色（DDR 模式）颜色，按 1/1、1/2、1/4 拍分频匹配，扩展模式支持 1/8、1/6 拍，其余默认绿色；未开启返回 null。 */
   protected getDdrColor(timing: number): string | null {
     if (!this.context.config.ddrColorMode) {
       return null;
@@ -254,32 +210,32 @@ export abstract class BaseRenderer {
     const epsilon = 0.001;
     const fractional = Math.abs(timing % 1);
 
-    // 节拍（1/1）
+    // 1/1 拍
     if (fractional < epsilon || fractional > 1 - epsilon) {
       return COLORS.DDR_RED;
     }
 
-    // 半节拍（1/2）
+    // 1/2 拍
     const halfFrac = Math.abs(timing % 0.5);
     if (halfFrac < epsilon || halfFrac > 0.499) {
       return COLORS.DDR_BLUE;
     }
 
-    // 四分之一节拍（1/4）
+    // 1/4 拍
     const quarterFrac = Math.abs(timing % 0.25);
     if (quarterFrac < epsilon || quarterFrac > 0.249) {
       return COLORS.DDR_YELLOW;
     }
 
-    // 扩展模式颜色
+    // 扩展模式
     if (this.context.config.ddrColorExtended) {
-      // 八分之一节拍（1/8）
+      // 1/8 拍
       const eighthFrac = Math.abs(timing % 0.125);
       if (eighthFrac < epsilon || eighthFrac > 0.124) {
         return COLORS.DDR_ORANGE;
       }
 
-      // 六分之一节拍（1/6）
+      // 1/6 拍
       const sixthFrac = 1 / 6;
       const sixthRemainder = Math.abs(timing % sixthFrac);
       if (sixthRemainder < epsilon || sixthRemainder > sixthFrac - epsilon) {
@@ -290,11 +246,7 @@ export abstract class BaseRenderer {
     return COLORS.DDR_GREEN;
   }
 
-  /**
-   * 在独立的 Canvas 状态栈（save/restore）中执行绘图操作。
-   *
-   * 保证即使 drawFn 抛出异常也能在 finally 中可靠恢复 Canvas 上下文状态。
-   */
+  /** 在 save/restore 中执行绘图，finally 保证抛错时也能可靠恢复 Canvas 状态。 */
   protected withContext(drawFn: () => void): void {
     this.context.ctx.save();
     try {
@@ -304,27 +256,21 @@ export abstract class BaseRenderer {
     }
   }
 
-  /** 在 Canvas 上构建指定圆心与半径的圆形路径（不包含 fill 或 stroke 调用）。 */
+  /** 构建圆形路径（不含 fill/stroke）。 */
   protected drawCircle(x: number, y: number, radius: number): void {
     this.context.ctx.beginPath();
     this.context.ctx.arc(x, y, radius, 0, Math.PI * 2);
   }
 
-  /** 线性插值混合两个十六进制 RGB 颜色。 */
   protected mixHexColor(color: string, target: string, amount: number): string {
     return mixHexColor(color, target, amount);
   }
 
-  /** 按倍率缩放十六进制 RGB 颜色（#rrggbb）的各通道亮度。 */
   protected scaleHexBrightness(color: string, factor: number): string {
     return scaleHexBrightness(color, factor);
   }
 
-  /**
-   * 在 Canvas 上构建具有内外半径的圆环闭合路径（不包含 fill 或 stroke 调用）。
-   *
-   * 采用奇偶环绕规则，外圆为顺时针方向，内圆为逆时针方向。
-   */
+  /** 构建圆环闭合路径（外顺内逆，非零环绕自动镂空）。 */
   protected drawRing(x: number, y: number, innerRadius: number, outerRadius: number): void {
     this.context.ctx.beginPath();
     this.context.ctx.arc(x, y, outerRadius, 0, Math.PI * 2, false);

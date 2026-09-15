@@ -5,14 +5,7 @@ import { HIT_EFFECT_COLORS, TOUCH_RING_ALPHA_PROFILE } from "./constants";
 type Rgb = { r: number; g: number; b: number };
 type StarFrame = 0 | 1 | 2 | 3;
 
-/**
- * Touch 命中特效的粒子系统配置常量。
- *
- * 特效生命周期为 0.5s，由三层粒子层组成：
- * - 中心光环（Ring）：径向渐变展开圆环。
- * - 原地星点（Small stars）：分布于内圈圆周，原地缩放闪烁。
- * - 扩散星点（Round stars）：分布于外圈圆周，带有初始速度并在阻尼曲线下向外微移。
- */
+// 特效生命周期 0.5s，由中心扩散光环（Ring）、内圈原地闪烁星点与外圈带阻尼扩散的星点三层组成
 const JUDGE_RADIUS_UNITS = 480;
 const ROOT_SCALE = 70;
 const LIFE = 0.5;
@@ -30,7 +23,7 @@ const ROUND_SIZE = 0.6 * ROOT_SCALE;
 const ROUND_START_SPEED = 10 * ROOT_SCALE;
 const ROUND_CLAMP_SPEED = 2.0 * ROOT_SCALE;
 
-/** 星点离屏贴图尺寸基准；半边距倍率 1.4 用于留出外凸尖端与描边光晕的空间以防裁切。 */
+// 星点贴图尺寸基准；1.4 倍半宽留出尖端和光晕边距防裁剪
 const STAR_SPRITE_REF_OUTER_R = 32;
 const STAR_SPRITE_HALF_RATIO = 1.4;
 
@@ -66,10 +59,7 @@ const CLAMP_MAG_KEYS: HermiteKey[] = [
   { t: 1, v: 0, inSlope: 0, outSlope: 0 },
 ];
 
-/**
- * 对 Hermite 样条关键帧列表进行插值求值。
- * 当 t 超出关键帧范围时，返回首/末关键帧数值。
- */
+/** Hermite 样条插值，超出范围取首末值。 */
 function evalHermite(keys: HermiteKey[], t: number): number {
   if (t <= keys[0].t) return keys[0].v;
   if (t >= keys[keys.length - 1].t) return keys[keys.length - 1].v;
@@ -91,10 +81,7 @@ function evalHermite(keys: HermiteKey[], t: number): number {
   return keys[keys.length - 1].v;
 }
 
-/**
- * 对线性关键帧列表进行分段插值。
- * 当 t 超出关键帧范围时，返回首/末关键帧数值。
- */
+/** 线性关键帧分段插值，超出范围取首末值。 */
 function evalKeys(keys: Keyframe[], t: number): number {
   if (t <= keys[0].t) return keys[0].v;
   if (t >= keys[keys.length - 1].t) return keys[keys.length - 1].v;
@@ -109,26 +96,20 @@ function evalKeys(keys: Keyframe[], t: number): number {
   return keys[keys.length - 1].v;
 }
 
-/**
- * 基于整型种子生成确定性的伪随机数，返回值范围为 [0, 1)。
- */
+/** 确定性伪随机数生成，返回 0~1。 */
 function hash01(seed: number): number {
   let x = (seed | 0) * 1664525 + 1013904223;
   x = (x ^ (x >>> 16)) >>> 0;
   return x / 4294967296;
 }
 
-/**
- * 将 RGB 颜色与透明度格式化为 CSS rgba 字符串（透明度自动限制在 [0, 1] 区间）。
- */
+// 转为 rgba 字符串，alpha 自动钳到 0~1
 function rgba(color: Rgb, a: number): string {
   const aa = Math.max(0, Math.min(1, a));
   return `rgba(${Math.round(color.r * 255)},${Math.round(color.g * 255)},${Math.round(color.b * 255)},${aa})`;
 }
 
-/**
- * 按分段步长数值积分，计算在速度衰减包络约束下的粒子径向位移。
- */
+/** 数值积分计算速度衰减下的粒子径向位移。 */
 function clampedTravel(age: number, startSpeed: number, clampSpeed: number): number {
   if (age <= 0) return 0;
   const steps = Math.max(6, Math.ceil(age * 60));
@@ -144,12 +125,9 @@ function clampedTravel(age: number, startSpeed: number, clampSpeed: number): num
   return dist;
 }
 
-/**
- * Touch 命中判定特效渲染器。
- * 负责渲染 Touch Note 判定触发时的中心光环与星点扩散动效。
- */
+/** Touch 命中特效渲染器，负责中心扩散光环与星点粒子群绘制。 */
 export class TouchHitEffectRenderer extends BaseRenderer {
-  /** 预烘焙的星点离屏 Canvas 缓存；缩放比例或颜色变更时失效。 */
+  // 星点贴图缓存（4 帧），backingScale 或颜色变化时失效
   private starSprites: HTMLCanvasElement[] | null = null;
   private starSpriteBasis = "";
 
@@ -158,19 +136,10 @@ export class TouchHitEffectRenderer extends BaseRenderer {
   }
 
   /**
-   * 渲染当前时间窗口内的 Touch 命中特效。
-   *
-   * 调用约束与行为：
-   * - `touches` 必须按 `timingMs` 升序排列（内部依赖二分查找筛选时间窗口）。
-   * - 仅渲染普通 Touch Note，自动忽略 `TouchHoldStartNote`。
-   * - 判定特效窗口为 `[timingMs, timingMs + 500ms)`。
-   * - 同一传感器位置若有多个重叠特效，仅保留最新触发的特效。
-   * - 绘制副作用：使用 `"lighter"` 混合模式绘制到当前 Canvas 上下文，函数内部会自行保存与恢复绘制状态。
-   *
-   * @param touches 按时间升序排序的 Touch 音符列表
-   * @param currentTimeMs 当前播放时间（毫秒）
-   * @param getTouchPosition 根据传感器位置计算 Canvas 画布坐标的回调
-   * @param color 特效基础色彩，默认为 Perfect 判定色
+   * 渲染当前时间窗口（500ms）内的 Touch 命中特效。
+   * - touches 必须按 timingMs 升序排列（内部依赖二分查找筛选窗口）；
+   * - 只处理普通 Touch，自动跳过 Touch Hold；同传感器有多个只播最新的；
+   * - 使用 lighter 混合模式绘制，内部已通过 save/restore 隔离状态。
    */
   renderTouchHitEffects(
     touches: readonly (TouchNote | TouchHoldStartNote)[],
@@ -196,7 +165,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     for (let i = lo; i < touches.length; i++) {
       const n = touches[i];
       if (n.timingMs > currentTimeMs) break;
-      // Touch Hold 不播放击打特效，避免覆盖同一传感器上正在播放的普通 Touch
+      // Touch Hold 不播放此特效，避免盖掉同传感器上的普通 Touch
       if (n.type === "touch-hold-start") continue;
       const key = String(n.position);
       const prev = lastByPos.get(key);
@@ -257,9 +226,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /**
-   * 绘制命中位置向外扩散的中心光环。
-   */
+  /** 绘制中心向外扩散的光环。 */
   private drawCenterRing(
     ctx: CanvasRenderingContext2D,
     ox: number,
@@ -292,9 +259,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     ctx.fill();
   }
 
-  /**
-   * 绘制一组向外扩散或原地闪烁的星点粒子群。
-   */
+  /** 绘制星点粒子群（原地缩放闪烁或带阻尼向外扩散）。 */
   private drawStarBurst(
     ctx: CanvasRenderingContext2D,
     ox: number,
@@ -347,10 +312,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /**
-   * 获取指定颜色与当前画布分辨率下的星点离屏 Canvas 贴图列表（共 4 帧形态）。
-   * 内部维护缓存，仅在缩放比例或颜色变化时重新生成。
-   */
+  /** 获取或烘焙 4 帧星点贴图，backingScale 或颜色变化时重新生成。 */
   private getStarSprites(color: Rgb): HTMLCanvasElement[] {
     const cx = this.context.centerX;
     const backingScale = cx > 0 ? this.context.canvas.width / (cx * 2) : 1;
@@ -380,9 +342,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     return sprites;
   }
 
-  /**
-   * 绘制单帧星点形态（0: 软心光晕、1: 宽实心、2: 窄实心、3: 双层描边）。
-   */
+  /** 绘制单帧星点（0: 软心光晕、1: 宽实心、2: 窄实心、3: 双层描边）。 */
   private drawStarFrame(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -417,11 +377,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /**
-   * 在星形裁剪区域内填充径向渐变。
-   *
-   * @param hollow 为 true 时中心透明度较低（软心），为 false 时中心呈高亮白色。
-   */
+  /** 在星形裁剪区填充径向渐变（hollow 为 true 时中心微透做软心，false 为高亮白心）。 */
   private fillStarGradient(
     ctx: CanvasRenderingContext2D,
     tipR: number,
@@ -452,9 +408,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /**
-   * 绘制带外层发光与内层高亮边缘的双层描边星形。
-   */
+  /** 绘制外层发光 + 内层高亮边缘的双层描边星形。 */
   private strokeStar(
     ctx: CanvasRenderingContext2D,
     tipR: number,
@@ -480,9 +434,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     ctx.restore();
   }
 
-  /**
-   * 构建四角星闭合路径，四个尖端分别位于 90 度方向，两尖之间通过内凹二次贝塞尔曲线连接。
-   */
+  /** 构建四角星路径（尖端在 90° 方向，两尖之间用内凹二次贝塞尔连接）。 */
   private pathSparkle(ctx: CanvasRenderingContext2D, tipR: number, waistR: number): void {
     for (let i = 0; i < 4; i++) {
       const aTip = (i * Math.PI) / 2 - Math.PI / 2;

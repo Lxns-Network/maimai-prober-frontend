@@ -15,12 +15,7 @@ import {
   NOTE_LIGHTEN_RATIO,
 } from "../utils/constants";
 
-/**
- * 计算 Hold 按住期间本体的亮度倍率。动画相位以 HOLD_ACTIVE_CYCLE_MS 为周期循环。
- *
- * @param elapsedMs 距音符被按下的时间（毫秒）。小于 0 时表示音符尚未被按下，返回 1。
- * @returns 亮度缩放倍率。
- */
+/** 按住期间本体的呼吸亮度倍率，按 HOLD_ACTIVE_CYCLE_MS 周期循环；未按下（< 0）返回 1。 */
 function activeBodyBrightness(elapsedMs: number): number {
   if (elapsedMs < 0) return 1;
   const steps = HOLD_ACTIVE_BRIGHTNESS_CURVE.length;
@@ -35,32 +30,16 @@ function activeBodyBrightness(elapsedMs: number): number {
   );
 }
 
-/**
- * Hold 音符渲染器。
- * 负责 Hold 音符（含普通 Hold 与 EX Hold）的本体多边形、内外描边、按压发光及明暗呼吸效果的绘制。
- */
+/** 负责 Hold（含 EX Hold）的本体多边形、描边、按压发光与呼吸效果绘制。 */
 export class HoldRenderer extends BaseRenderer {
   constructor(context: RenderContext) {
     super(context);
   }
 
   /**
-   * 渲染单个 Hold 音符（包含本体多边形、内外轮廓描边、EX 边框以及按压状态下的头部发光与明暗呼吸效果）。
-   *
-   * 绘制在独立的 Canvas 状态上下文中执行。当结束端尚未进入视野（`endPosition.visible` 为 false）时，
-   * 会以音符登场起点作为临时尾端渲染。
-   *
-   * @param startPosition 起始音符渲染位置与缩放。
-   * @param endPosition 结束音符渲染位置与缩放。
-   * @param buttonPosition 音符所在的按键方位。
-   * @param color 渲染用的渐变颜色对 [主色/亮色, 暗色]。
-   * @param isEx 是否为 EX 音符（绘制专属外层边框）。
-   * @param startNote 起始音符数据，传入 null 时跳过登场展开与按压状态判定。
-   * @param endNote 结束音符数据，传入 null 时跳过按压状态判定与终点圆点渲染。
-   * @param currentTimeMs 当前谱面播放时间戳（毫秒）。
-   * @param isBreakHold 是否为 Break 属性音符。
-   * @param isSimultaneous 是否与其他音符双押。
-   * @param exScaleFactor EX 外边框的缩放系数。
+   * 渲染单个 Hold（含本体、内外描边、EX 外框、头部发光及按压呼吸）。
+   * 在独立的 Canvas 上下文中绘制。尾端未进视野时以登场起点作临时尾端；
+   * startNote/endNote 传 null 时跳过展开动画与按压判定。
    */
   renderHold(
     startPosition: NoteRenderPosition,
@@ -88,7 +67,7 @@ export class HoldRenderer extends BaseRenderer {
       endX = endPosition.x;
       endY = endPosition.y;
     } else {
-      // 终点尚未进入视野时，以音符登场起点作为临时尾端，呈现音符刚从屏幕中心延伸出的状态。
+      // 尾端未进视野时，以登场起点为临时尾端，呈现刚从圆心延伸出的效果
       const dir = startNote ? this.getNoteApproachDir(startNote) : 1;
       const approachDist = (1 + dir * -0.75) * this.context.radius;
       endX = this.context.centerX + Math.cos(angle) * approachDist;
@@ -115,7 +94,7 @@ export class HoldRenderer extends BaseRenderer {
       y: startY + Math.sin(rightAngle) * holdWidth,
     };
 
-    // 登场前半程尾端宽度从 0 展开至基准尺寸，后半程保持全宽。
+    // 登场前半程尾端宽度从 0 展开到基准尺寸，后半程保持全宽
     let endScale = 1;
     if (startNote && endNote && currentTimeMs) {
       const approachHalf = this.getNoteApproachTimeMs(startNote) / 2;
@@ -196,7 +175,7 @@ export class HoldRenderer extends BaseRenderer {
         ctx.lineTo(exStartRight.x, exStartRight.y);
         ctx.closePath();
 
-        // 内圈使用反向缠绕路径，利用 Canvas 非零环绕规则挖空内部形成镂空边框。
+        // 内圈反向缠绕，利用非零环绕规则挖出镂空边框
         ctx.moveTo(startTip.x, startTip.y);
         ctx.lineTo(startRight.x, startRight.y);
         ctx.lineTo(endBackRight.x, endBackRight.y);
@@ -222,8 +201,7 @@ export class HoldRenderer extends BaseRenderer {
 
       const strokeWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
 
-      // 先绘制加宽的黑色描边底，后续的分段色块填充会覆盖其内侧半幅，使最终显露的外边缘黑边宽度接近基准描边。
-      // EX 音符外沿已有外框，因此跳过外轮廓黑底，仅保留内轮廓。
+      // 先画 3 倍宽黑底，后续填充会盖住内侧半边，露出的外黑边刚好是标准线宽；EX 自身已有外框故只留内轮廓
       if (!isEx) {
         ctx.beginPath();
         ctx.moveTo(startTip.x, startTip.y);
@@ -302,7 +280,7 @@ export class HoldRenderer extends BaseRenderer {
         ctx.fill();
       }
 
-      // 待尾端在登场过程中完全展开后，才绘制终点中心圆点。
+      // 尾端展开完毕后才绘制终点圆点
       if (endPosition.visible && endNote && currentTimeMs) {
         const approachHalf = this.getNoteApproachTimeMs(endNote) / 2;
         const endTimeDiff = endNote.timingMs - currentTimeMs;
@@ -318,14 +296,8 @@ export class HoldRenderer extends BaseRenderer {
   }
 
   /**
-   * 绘制 Hold 处于按压状态时头部的径向渐变辉光效果。
-   *
-   * 辉光由中心向外按预设色阶阶梯径向淡出。当计算出的辉光外径小于 1 像素时不执行绘制。
-   * 辉光亮度保持恒定，不随本体明暗周期呼吸。
-   *
-   * @param x 辉光中心的 X 坐标。
-   * @param y 辉光中心的 Y 坐标。
-   * @param noteColor 音符基础颜色，用于生成渐变各色阶。
+   * 绘制 Hold 按压时的头部径向渐变辉光。
+   * 亮度保持恒定，不随本体呼吸；外径 < 1px 时跳过。
    */
   private drawActiveHeadGlow(x: number, y: number, noteColor: string): void {
     const outer = this.scaleByRadius(HOLD_ACTIVE_GLOW_RATIO);
@@ -347,15 +319,6 @@ export class HoldRenderer extends BaseRenderer {
     ctx.fill();
   }
 
-  /**
-   * 以指定中心点为基准，对二维点坐标进行缩放。
-   *
-   * @param centerX 缩放中心 X 坐标。
-   * @param centerY 缩放中心 Y 坐标。
-   * @param point 待缩放的目标点。
-   * @param scale 缩放倍率。
-   * @returns 缩放后的新坐标点。
-   */
   private scalePoint(centerX: number, centerY: number, point: Point2D, scale: number): Point2D {
     return {
       x: centerX + (point.x - centerX) * scale,

@@ -20,10 +20,7 @@ import type {
 } from "../../types";
 import { isUpperHalf } from "../../utils/slideAreaSteps";
 
-/**
- * 安全转换按钮轨道位置（将 MA2 格式的 0-7 索引映射为引擎的 1-8 轨道）。
- * 超出 0-7 范围时回退为轨道 1。
- */
+/** 把 MA2 的 0-7 键位索引转成引擎的 1-8 键位，越界回退到 1。 */
 function getButtonPosition(val: number): ButtonPosition {
   const pos = val + 1;
   if (pos >= 1 && pos <= 8) return pos as ButtonPosition;
@@ -48,10 +45,7 @@ const SIMPLE_SLIDE_MAP: Record<string, SlideSegment["type"]> = {
   SSR: "z",
 };
 
-/**
- * 根据滑键指令类型及起止位置构建滑段段落列表。
- * 若指令类型未识别则返回 null。
- */
+/** 根据滑键指令与起止键位构建 Slide 段落；不认识的指令返回 null。 */
 function createSlideSegments(
   mainType: string,
   startPos: ButtonPosition,
@@ -65,7 +59,7 @@ function createSlideSegments(
       return [{ type: isUpperHalf(startPos) ? ">" : "<", startPos, endPos }];
     case "SCL":
       return [{ type: isUpperHalf(startPos) ? "<" : ">", startPos, endPos }];
-    // grand-V（折线滑段）：单段 V，以起点沿圆周偏转 2 轨（start∓2）为中间拐点，走 L 形模板
+    // grand-V（折线）：单段 V，以起点沿圆周偏转 2 轨（start∓2）为拐点走 L 形
     case "SLL":
       return [{ type: "V", startPos, endPos, midPos: offsetButtonPosition(startPos, -2) }];
     case "SLR":
@@ -75,9 +69,7 @@ function createSlideSegments(
   }
 }
 
-/**
- * 类型守卫：校验位置标识是否为有效的触控区域（中心区 C/C1/C2 或圆周区 A/B/D/E 配合 1-8 轨道）。
- */
+/** 校验是否为有效 Touch 区域（C/C1/C2 或 A/B/D/E 加 1-8 键位）。 */
 function isTouchPosition(pos: string): pos is TouchPosition {
   if (pos === "C" || pos === "C1" || pos === "C2") return true;
   const region = pos[0];
@@ -122,12 +114,11 @@ function createSlideNote(params: {
 }
 
 /**
- * 解析 MA2 格式谱面并转换为统一的 Chart 结构。
+ * 解析 MA2 格式谱面并输出统一的 Chart 对象。
  *
- * 契约与副作用：
- * - 解析时会在谱面开头插入 1 小节（4 拍）的前奏偏移，所有音符及事件的时值均向后平移。
+ * 开头会插入 1 小节（4 拍）前奏偏移，所有音符和事件时间戳均向后推。
  *
- * @throws {Error} 当谱面文本中缺少 RESOLUTION 或 BPM_DEF 声明时抛出异常
+ * @throws {Error} 谱面缺少 RESOLUTION 或 BPM_DEF 声明时抛错。
  */
 export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Chart {
   const lines = ma2Text.split(/\r?\n/);
@@ -143,7 +134,6 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
   const bpmEvents: BpmEvent[] = [];
   const divisorEvents: DivisorEvent[] = [];
 
-  // 第一遍扫描：收集头部元数据
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (line === "" || line.startsWith("#")) continue;
@@ -153,7 +143,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
 
     const cmd = tokens[0].toUpperCase();
 
-    // 如果首项是数字，表示已进入音符/BPM/MET数据区，跳过头部解析
+    // 碰到数字说明已进入数据区，跳过头部解析
     if (/^\d+$/.test(cmd)) continue;
 
     switch (cmd) {
@@ -190,17 +180,14 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
     throw new Error("MA2 文件缺少 BPM_DEF 声明");
   }
 
-  // 临时存储 BPM 改变事件用于计算 timingMs
   interface RawBpmEvent {
     timing: number;
     bpm: number;
   }
   const rawBpmEvents: RawBpmEvent[] = [];
 
-  // 用于在解析滑道时向前匹配父滑条的辅助列表
   const slideNotesList: SlideNote[] = [];
 
-  // 第二遍扫描：解析所有音符和事件行
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (line === "" || line.startsWith("#")) continue;
@@ -358,7 +345,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
         const duration = durationTicks / (resolution / 4);
 
         if (isChain) {
-          // 接续滑段：根据终点轨道匹配及前序段到达时间（容差 0.5 拍）定位待衔接的父滑道路径
+          // 接续滑段：按终点键位匹配和前序段到达时刻（容差 0.5 拍）定位待衔接的父 Slide 路径
           let parentSlide: SlideNote | null = null;
           let parentPathIndex = -1;
           for (let idx = slideNotesList.length - 1; idx >= 0; idx--) {
@@ -401,7 +388,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
             if (isEx) parentSlide.isEx = true;
           }
         } else {
-          // 首段滑道：若存在相同时刻同轨道的滑条头部则绑定为新路径（支持同头多路径），否则降级为无头滑条
+          // 首段滑道：同轨同时间有头部就挂成新分支（支持同头多路径），否则当无头 Slide 处理
           let parentSlide: SlideNote | null = null;
           for (let idx = slideNotesList.length - 1; idx >= 0; idx--) {
             const s = slideNotesList[idx];
@@ -418,7 +405,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
             if (isFirstPath) {
               parentSlide.slideSegments = slideSegments;
               parentSlide.duration = duration;
-              parentSlide.delayMs = delay; // 阶段暂存：此时单位为节拍数（beat），后续统一步骤才换算为毫秒
+              parentSlide.delayMs = delay; // 阶段暂存：字段名叫 delayMs 但此刻存的是拍数（beat），后面才统一换算为毫秒
             }
             if (parentSlide.allSlideSegments) {
               parentSlide.allSlideSegments.push(slideSegments);
@@ -427,7 +414,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
               parentSlide.allDurations.push(duration);
             }
             if (parentSlide.allDelayMs) {
-              parentSlide.allDelayMs.push(delay); // 阶段暂存：此时单位为节拍数（beat）
+              parentSlide.allDelayMs.push(delay); // 阶段暂存：此刻存的是拍数（beat）
             }
             if (parentSlide.allCustomLengths) {
               parentSlide.allCustomLengths.push(null);
@@ -454,7 +441,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
             headlessSlide.allSlideSegments = [slideSegments];
             headlessSlide.duration = duration;
             headlessSlide.allDurations = [duration];
-            headlessSlide.delayMs = delay; // 阶段暂存：此时单位为节拍数（beat），后续统一步骤才换算为毫秒
+            headlessSlide.delayMs = delay; // 阶段暂存：字段名叫 delayMs 但此刻存的是拍数（beat），后面才统一换算为毫秒
             headlessSlide.allDelayMs = [delay];
             headlessSlide.allCustomLengths = [null];
             headlessSlide.allSlideBreaks = [isBreak];
@@ -534,7 +521,6 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
     }
   }
 
-  // 保证至少有一个默认 BPM 事件
   if (rawBpmEvents.length === 0) {
     rawBpmEvents.push({ timing: 0, bpm: initialBpm });
   }
@@ -544,19 +530,15 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
     bpmEvents.push({ timing: raw.timing, bpm: raw.bpm });
   }
 
-  // 预计算每个 BPM 事件的累积毫秒值
   const bpmCumMs: number[] = [0];
   for (let i = 1; i < bpmEvents.length; i++) {
     const prev = bpmEvents[i - 1];
     bpmCumMs[i] = bpmCumMs[i - 1] + (60000 * (bpmEvents[i].timing - prev.timing)) / prev.bpm;
   }
 
-  /**
-   * 将绝对拍数转换为绝对时间（毫秒）及该时刻生效的 BPM。
-   * 依赖 bpmEvents 已按时间升序排列且 bpmCumMs 前缀累积毫秒已计算完成。
-   */
+  /** 拍数转绝对时刻（ms）及当前 BPM；依赖 bpmEvents 已升序排列且累积毫秒已算完。 */
   function getMsFromBeat(beat: number): { ms: number; bpm: number } {
-    // 采用偏右中点向上取整，在满足 timing <= beat 时向右收敛，避免区间长度为 2 时死循环
+    // 偏右中点向上取整，满足 timing <= beat 时向右收敛，避免区间长度为 2 时死循环
     let lo = 0;
     let hi = bpmEvents.length - 1;
     while (lo < hi) {
@@ -570,7 +552,6 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
     };
   }
 
-  // 遍历 notes 计算绝对毫秒值，并把暂存的时值拍数转换为 ms 持续时间
   for (const note of notes) {
     const timingInfo = getMsFromBeat(note.timing);
     note.timingMs = timingInfo.ms;
@@ -608,7 +589,6 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
     }
   }
 
-  // 前奏偏移对齐（将音轨推后 1 小节）
   const firstBpm = bpmEvents[0]?.bpm || initialBpm;
   const leadInMs = (60000 * 4) / firstBpm;
 

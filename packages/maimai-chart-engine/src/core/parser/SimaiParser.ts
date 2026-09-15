@@ -62,10 +62,9 @@ function isMultiDigitNote(noteStr: string): boolean {
 }
 
 /**
- * 探测谱面文本中包含的可用难度。
- *
- * 检测 `&inote_1=` 至 `&inote_6=` 标签；若均未提供但非元数据行中包含音符按键字符（'1'-'8'），则按单难度谱面回退并标记难度 4 可用。
- * 不抛出异常；若无可用谱面内容则返回空对象。
+ * 探测谱面里包含哪些可用难度。
+ * 检查 `&inote_1=` 到 `&inote_6=`；如果都没写但正文里有音符按键（'1'-'8'），当单难度谱面回退并把难度 4 标为可用。
+ * 不会抛错，找不到任何可用内容就返回空对象。
  */
 export function getAvailableDifficulties(simaiText: string): AvailableDifficulties {
   const available: AvailableDifficulties = {};
@@ -92,12 +91,12 @@ export function getAvailableDifficulties(simaiText: string): AvailableDifficulti
 }
 
 /**
- * 解析 Simai 格式谱面文本并生成谱面数据对象。
+ * 解析 Simai 文本谱面并输出 Chart 对象。
  *
- * @param simaiText - 包含元数据与谱面内容的文本。必须为非空字符串且包含 `&` 元数据行。
- * @param difficulty - 目标难度。未指定时默认使用可用难度中的最高难度；无 inote 标记时回退使用难度 4。
- * @returns 解析后的谱面对象。谱面开头会自动附加 1 小节（4 拍）前奏偏移。
- * @throws {Error} 输入为空、缺少 `&` 元数据、目标难度不存在、缺少 BPM 声明或语法解析失败时抛出。
+ * 未指定难度时默认挑最高可用难度，单难度谱面回退到难度 4。
+ * 开头会自动垫 1 小节（4 拍）前奏偏移。
+ *
+ * @throws {Error} 文本为空、缺少 `&` 元数据、指定难度不存在、缺少 BPM 声明或语法解析出错时抛错。
  */
 export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty): Chart {
   if (!simaiText || typeof simaiText !== "string") {
@@ -224,7 +223,7 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
         endTiming = note.timing + note.duration;
       }
 
-      // 滑条可能包含基于毫秒定义的延迟与持续时间（## 语法），需按最晚结束时间换算拍数以防小节截断
+      // Slide 可能用 ## 语法按毫秒指定延迟和时长，得按最晚结束时间换算拍数以防小节数被提早截断
       if (note.type === "slide") {
         const slideNote = note as SlideNote;
         const delays = slideNote.allDelayMs ?? [slideNote.delayMs ?? 0];
@@ -283,7 +282,7 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
       designers: metadata.designers,
       difficulty: selectedDifficulty,
       availableDifficulties: metadata.availableDifficulties,
-      measures: maxMeasure + 2, // 预留前奏与尾奏各 1 小节缓冲
+      measures: maxMeasure + 2, // 前后各留 1 小节缓冲
       notes,
       bpmEvents,
       divisorEvents,
@@ -295,9 +294,7 @@ export function parseSimaiChart(simaiText: string, difficulty?: ChartDifficulty)
   }
 }
 
-/**
- * 解析单行元数据（`&key=value`），就地更新传入的 metadata 对象。
- */
+/** 解析单行 `&key=value` 元数据并写入 metadata。 */
 function parseMetadataLine(line: string, metadata: ChartMetadata): void {
   const eqIndex = line.indexOf("=");
   if (eqIndex === -1) return;
@@ -349,9 +346,8 @@ function parseMetadataLine(line: string, metadata: ChartMetadata): void {
 }
 
 /**
- * 遍历谱面字符流，解析所有音符及 BPM、拍数（Divisor）变化事件。
- *
- * 时间推进完全由逗号 `,` 驱动；状态标记（BPM、拍数、流速）就地生效并不消耗拍数。
+ * 解析谱面字符流里的所有音符以及 BPM、分频变化。
+ * 时间推进全靠逗号 `,`；BPM、分频、流速等标记就地生效，不消耗拍数。
  */
 function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   const notes: Note[] = [];
@@ -499,11 +495,7 @@ function parseNotes(chartBody: string, initialBpm: number): ParseNotesResult {
   };
 }
 
-/**
- * 计算 Hold 音符的持续拍数。
- *
- * 支持 `[divisor:beats]`（按分拍与拍数）和 `[#seconds]`（按绝对秒数基于 BPM 换算）两种格式。
- */
+/** 计算 Hold 持续拍数，支持 `[分频:拍数]` 和 `[#秒数]` 两种记号。 */
 function parseHoldDuration(
   divisor: string | undefined,
   beats: string | undefined,
@@ -516,11 +508,7 @@ function parseHoldDuration(
   return (parseFloat(seconds!) * bpm) / 60;
 }
 
-/**
- * 解析单个音符字符标记（Tap、Hold、Slide、Touch 等），生成对应的音符对象列表。
- *
- * 若位置超出有效按键或感应区范围，返回空数组。
- */
+/** 解析单个音符记号（Tap、Hold、Slide、Touch 等）；键位或感应区越界时返回空数组。 */
 function parseNoteString(
   noteStr: string,
   timing: number,
@@ -594,7 +582,7 @@ function parseNoteString(
     const pathStartIndex = slideNotation.search(/[-><^vpqszVw*]/i);
     const startModifiers =
       pathStartIndex >= 0 ? slideNotation.slice(0, pathStartIndex).toLowerCase() : "";
-    // 无头滑条修饰符：'?' 为引导星渐显淡入，'!' 为引导星在启动时刻直接显现
+    // 无头 Slide 标记：'?' 为引导星淡入，'!' 为启动时直接弹出
     const headlessMarker = match(startModifiers)
       .when(
         (s) => s.includes("!"),
@@ -607,7 +595,7 @@ function parseNoteString(
       .otherwise(() => null);
     const isStartBreak = startModifiers.includes("b");
     const isHeadless = headlessMarker !== null;
-    // '@' 修饰符将滑条头部由默认星形替换为普通按键外观
+    // '@' 修饰符把 Slide 头部从星星换成普通 Tap 外观
     const hasTapHead = !isHeadless && startModifiers.includes("@");
     const isEx = noteStr.toLowerCase().includes("x");
 
@@ -665,7 +653,7 @@ function parseNoteString(
 
         if (customLengthSeconds !== null) {
           durationMsValue = customLengthSeconds * 1000;
-          // '[#X]' 格式未显式指定延迟，沿用标准 1 拍延迟以对齐引导星与拍点
+          // '[#X]' 没显式写延迟，按默认 1 拍延迟对齐引导星与拍点
           delayMsValue = customDelay !== null ? customDelay * 1000 : 60000 / bpm;
         } else {
           durationMsValue =
@@ -879,13 +867,8 @@ interface SlidePathParseResult {
 }
 
 /**
- * 解析包含独立时间标记的复合滑条路径。
- *
- * 逐段解析路径类型与端点，支持 V 字折线推导及多段独立时间（如 `-4[8:5]>3[384:47]`）。
- *
- * @param startPosition - 滑条起始按键位置（1-8）。
- * @param pathNotation - 滑条路径标记字符串。
- * @param defaultBpm - 未声明局部时间时使用的基准 BPM。
+ * 解析带独立时间标记的复合 Slide 路径（如 `-4[8:5]>3[384:47]`）。
+ * 逐段解析类型和端点，包含标准 V 字折线判定。
  */
 function parseSlideSegmentsWithTiming(
   startPosition: number,
@@ -932,7 +915,7 @@ function parseSlideSegmentsWithTiming(
         const endPos = parseInt(numStr.substring(1)) as ButtonPosition;
         const start = currentPos;
 
-        // 标准 V 形状要求拐点位于起点 ±2 键位且终点位于同侧有效跨度内；不满足时退化为两条直线段
+        // 标准 V 要求拐点在起点 ±2 且终点在同侧有效跨度内；不满足则退化为两条直线段
         const leftCorner = ((start + 5) % 8) + 1;
         const rightCorner = ((start + 1) % 8) + 1;
         const d = (((endPos - start) % 8) + 8) % 8;
@@ -1031,9 +1014,7 @@ function parseSlideSegmentsWithTiming(
   };
 }
 
-/**
- * 仅提取滑条路径分段结构（使用 120 BPM 缺省值填充时间占位）。
- */
+/** 仅提取 Slide 分段结构（缺省用 120 BPM 占位）。 */
 function parseSlideSegments(startPosition: number, pathNotation: string): SlideSegment[] {
   return parseSlideSegmentsWithTiming(startPosition, pathNotation, 120).segments;
 }
