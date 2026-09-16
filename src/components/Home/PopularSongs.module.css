@@ -190,6 +190,7 @@
 @media (max-width: 54em) {
   .grid {
     grid-template-columns: 1fr;
-    gap: var(--mantine-spacing-md);
+    /* 两列堆叠成一列后，列间距与列表内 8px 行距对齐，避免第 5、6 名之间出现明显空隙 */
+    gap: 8px;
   }
 }
