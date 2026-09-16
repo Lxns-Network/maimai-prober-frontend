@@ -60,6 +60,8 @@ export const queryKeys = {
   song: {
     detail: (game: Game, id: number) => [`${game}/song/${id}`] as const,
     bests: (game: Game, songId: number) => [`user/${game}/player/bests?song_id=${songId}`] as const,
+    popular: (game: Game, range: "week" | "month") =>
+      [`${game}/song/popular?range=${range}`] as const,
   },
   comments: {
     list: (game: Game, params: URLSearchParams) =>

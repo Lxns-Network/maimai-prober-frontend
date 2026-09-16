@@ -1,4 +1,15 @@
-import { Anchor, Button, Card, Container, Group, Text, ThemeIcon, Title } from "@mantine/core";
+import {
+  Anchor,
+  Button,
+  Card,
+  Container,
+  Group,
+  SegmentedControl,
+  Text,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
+import { useState } from "react";
 import { useMounted } from "@mantine/hooks";
 import {
   IconArrowRight,
@@ -15,9 +26,16 @@ import clsx from "clsx";
 import { HeroArtwork } from "@/components/Home/HeroArtwork";
 import { ChartPreview } from "@/components/Home/ChartPreview";
 import { EcosystemCarousel } from "@/components/Home/EcosystemCarousel";
+import { PopularSongs } from "@/components/Home/PopularSongs";
+import {
+  popularRangeOptions,
+  usePopularSongs,
+  type PopularRangeKey,
+} from "@/hooks/queries/usePopularSongs";
 import { ScoreShowcase } from "@/components/Home/ScoreShowcase";
 import { Link } from "@/components/Link";
 import { Footer } from "@/components/Shell/Footer/Footer";
+import useGame from "@/hooks/useGame";
 import { isTokenUndefined } from "@/utils/session";
 import classes from "./Home.module.css";
 
@@ -50,6 +68,11 @@ const shortcuts = [
 
 export default function Page() {
   const mounted = useMounted();
+  const [game] = useGame();
+  const [popularRange, setPopularRange] = useState<PopularRangeKey>("week");
+  const { popular, isPending: isPopularPending } = usePopularSongs(game, popularRange);
+  // 首页是展示页：榜单加载中先占位，取不到数据（异常或空榜）时整个区块隐藏。
+  const showPopularSongs = isPopularPending || (popular?.songs.length ?? 0) > 0;
   const isLoggedIn = mounted && !isTokenUndefined();
 
   return (
@@ -245,6 +268,32 @@ export default function Page() {
               开发者文档
             </Button>
           </Card>
+
+          {showPopularSongs && (
+            <section className={classes.section} aria-labelledby="popular-title">
+              <div className={clsx(classes.sectionHeading, classes.popularHeading)}>
+                <div>
+                  <Title order={2} id="popular-title" className={classes.sectionTitle}>
+                    热门曲目
+                  </Title>
+                  <Text className={classes.sectionDescription} mt="xs">
+                    {game === "maimai"
+                      ? "近期全站玩家游玩最多的舞萌 DX 曲目。"
+                      : "近期全站玩家游玩最多的中二节奏曲目。"}
+                  </Text>
+                </div>
+                <SegmentedControl
+                  size="xs"
+                  radius="md"
+                  value={popularRange}
+                  onChange={(value) => setPopularRange(value as PopularRangeKey)}
+                  data={popularRangeOptions}
+                  aria-label="热门曲目时间范围"
+                />
+              </div>
+              <PopularSongs game={game} popular={popular} isPending={isPopularPending} />
+            </section>
+          )}
 
           <section className={classes.section} aria-labelledby="tools-title">
             <div className={classes.sectionHeading}>
