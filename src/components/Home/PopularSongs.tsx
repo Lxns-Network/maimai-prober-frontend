@@ -103,7 +103,13 @@ function SongRow({ game, song }: { game: Game; song: PopularSong }) {
       >
         <Center>
           {rank === 1 ? (
-            <ThemeIcon size={24} radius="md" variant="gradient" gradient={GOLD_GRADIENT} aria-hidden>
+            <ThemeIcon
+              size={24}
+              radius="md"
+              variant="gradient"
+              gradient={GOLD_GRADIENT}
+              aria-hidden
+            >
               <IconCrown size={13} stroke={2.5} />
             </ThemeIcon>
           ) : isMedal ? (
