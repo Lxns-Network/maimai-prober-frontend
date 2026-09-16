@@ -1,9 +1,5 @@
 .tabs {
   position: relative;
-
-  @mixin larger-than $mantine-breakpoint-xs {
-    display: none !important;
-  }
 }
 
 .tab {

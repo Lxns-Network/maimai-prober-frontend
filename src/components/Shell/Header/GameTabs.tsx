@@ -19,7 +19,14 @@ export const GameTabs = ({ tabs, activeTab, onTabChange, style }: GameTabsProps)
   };
 
   return (
-    <SimpleGrid className={classes.tabs} cols={2} spacing={0} ref={setRootRef} style={style}>
+    <SimpleGrid
+      className={classes.tabs}
+      hiddenFrom="xs"
+      cols={2}
+      spacing={0}
+      ref={setRootRef}
+      style={style}
+    >
       {tabs.map((item) => (
         <UnstyledButton
           key={item.id}

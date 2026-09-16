@@ -11,7 +11,10 @@
   right: 6px;
   z-index: 2;
   backdrop-filter: blur(4px);
-  background-color: light-dark(rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0.4));
+  background-color: light-dark(
+    alpha(var(--mantine-color-white), 0.6),
+    alpha(var(--mantine-color-black), 0.4)
+  );
 }
 
 .row {
@@ -31,13 +34,14 @@
   background-color: var(--mantine-color-default-hover);
 }
 
+/* 深色端高亮为金色 gold（非 Mantine 调色板色），勿替换为 yellow token */
 .rowActive {
-  background-color: light-dark(rgba(250, 176, 5, 0.14), rgba(255, 215, 0, 0.16));
+  background-color: light-dark(alpha(var(--mantine-color-yellow-6), 0.14), rgba(255, 215, 0, 0.16));
   border-left-color: var(--mantine-color-yellow-5);
 }
 
 .rowActive:hover {
-  background-color: light-dark(rgba(250, 176, 5, 0.2), rgba(255, 215, 0, 0.22));
+  background-color: light-dark(alpha(var(--mantine-color-yellow-6), 0.2), rgba(255, 215, 0, 0.22));
 }
 
 .rowMarker {
@@ -47,7 +51,10 @@
 }
 
 .rowMarker.rowActive {
-  background-color: light-dark(rgb(134 142 150 / 0.12), rgb(173 181 189 / 0.12));
+  background-color: light-dark(
+    alpha(var(--mantine-color-gray-6), 0.12),
+    alpha(var(--mantine-color-gray-5), 0.12)
+  );
   border-left-color: var(--mantine-color-gray-5);
 }
 
@@ -80,7 +87,7 @@
   left: 0;
   opacity: 0;
   border-radius: 3px;
-  background-color: light-dark(rgba(250, 176, 5, 0.55), rgba(255, 215, 0, 0.55));
+  background-color: light-dark(alpha(var(--mantine-color-yellow-6), 0.55), rgba(255, 215, 0, 0.55));
   pointer-events: none;
   will-change: transform, width;
   transition:
@@ -130,7 +137,7 @@
 }
 
 .chunkActive {
-  color: #000;
+  color: var(--mantine-color-black);
 }
 
 .chunkActive:hover {
