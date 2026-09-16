@@ -1,4 +1,14 @@
-import { Avatar, Skeleton, VisuallyHidden } from "@mantine/core";
+import {
+  Avatar,
+  Badge,
+  Center,
+  Group,
+  Skeleton,
+  Stack,
+  Text,
+  ThemeIcon,
+  VisuallyHidden,
+} from "@mantine/core";
 import { IconCrown, IconPhotoOff, IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 import clsx from "clsx";
 import { Link } from "@/components/Link";
@@ -8,8 +18,11 @@ import { Game } from "@/types/game";
 import { getScoreCardBackgroundColor, getTrophyColor } from "@/utils/color";
 import classes from "./PopularSongs.module.css";
 
+// 第 1 名用金色渐变（基于站内金称号色加亮）；改这批颜色时需同步
+// PopularSongs.module.css 里 rank1/rank2/rank3 行底色的 rgb 常量。
+const GOLD_GRADIENT = { from: "#ffbe26", to: "#f59e0b", deg: 135 };
+
 const MEDAL_COLORS: Record<number, string> = {
-  1: getTrophyColor("gold"),
   2: getTrophyColor("silver"),
   // 站内铜称号色 #F06418 与金色 #FFAB09 色相过近，小徽章上 1、3 名难以区分，这里改用更深的古铜色
   3: "#b87333",
@@ -25,20 +38,17 @@ const DIFFICULTY_NAMES: Record<Game, string[]> = {
 const jacketUrl = (game: Game, songId: number) =>
   `${ASSET_URL}/${game}/jacket/${game === "maimai" ? songId % 10000 : songId}.png!webp`;
 
-function Trend({ delta, className }: { delta: number | "new"; className?: string }) {
+function Trend({ delta }: { delta: number | "new" }) {
   if (delta === "new") {
     return (
-      <span className={clsx(classes.trend, classes.trendNew, className)} aria-label="新上榜">
+      <span className={clsx(classes.trend, classes.trendNew)} aria-label="新上榜">
         NEW
       </span>
     );
   }
   if (delta === 0) {
     return (
-      <span
-        className={clsx(classes.trend, classes.trendFlat, className)}
-        aria-label="排名较上一周期持平"
-      >
+      <span className={clsx(classes.trend, classes.trendFlat)} aria-label="排名较上一周期持平">
         —
       </span>
     );
@@ -46,7 +56,7 @@ function Trend({ delta, className }: { delta: number | "new"; className?: string
   const up = delta > 0;
   return (
     <span
-      className={clsx(classes.trend, up ? classes.trendUp : classes.trendDown, className)}
+      className={clsx(classes.trend, up ? classes.trendUp : classes.trendDown)}
       aria-label={`排名较上一周期${up ? "上升" : "下降"} ${Math.abs(delta)} 位`}
     >
       {up ? <IconTrendingUp size={13} aria-hidden /> : <IconTrendingDown size={13} aria-hidden />}
@@ -62,13 +72,15 @@ function SongDifficultyBadge({ game, song }: { game: Game; song: PopularSong }) 
     : (DIFFICULTY_NAMES[game][song.level_index] ?? "MASTER");
   // 宴会场谱面的 level_index 为 0，但调色板下标 5 才是宴会场专用色。
   return (
-    <span
-      className={classes.badge}
-      style={{ backgroundColor: getScoreCardBackgroundColor(game, isUtage ? 5 : song.level_index) }}
+    <Badge
+      variant="filled"
+      size="sm"
+      radius="sm"
+      color={getScoreCardBackgroundColor(game, isUtage ? 5 : song.level_index)}
     >
       <VisuallyHidden>{difficultyName} 难度 </VisuallyHidden>
       {song.level}
-    </span>
+    </Badge>
   );
 }
 
@@ -89,44 +101,38 @@ function SongRow({ game, song }: { game: Game; song: PopularSong }) {
           rank === 3 && classes.rank3,
         )}
       >
-        <div className={classes.rankCol}>
+        <Center>
           {rank === 1 ? (
-            <span className={clsx(classes.rankBadge, classes.rankBadgeGold)} aria-hidden>
+            <ThemeIcon size={24} radius="md" variant="gradient" gradient={GOLD_GRADIENT} aria-hidden>
               <IconCrown size={13} stroke={2.5} />
-            </span>
+            </ThemeIcon>
           ) : isMedal ? (
-            <span className={classes.rankBadge} style={{ backgroundColor: medalColor }} aria-hidden>
+            <ThemeIcon size={24} radius="md" color={medalColor} fz="xs" fw={800} aria-hidden>
               {rank}
-            </span>
+            </ThemeIcon>
           ) : (
             <span className={classes.rankNumber}>{rank}</span>
           )}
           <VisuallyHidden>第 {rank} 名 </VisuallyHidden>
-        </div>
+        </Center>
 
-        <Avatar
-          src={jacketUrl(game, song.id)}
-          size={46}
-          radius="md"
-          alt=""
-          className={classes.jacket}
-        >
+        <Avatar src={jacketUrl(game, song.id)} size={46} radius="md" alt="">
           <IconPhotoOff size={18} />
         </Avatar>
 
-        <div className={classes.info}>
-          <span className={classes.songTitle} title={song.title}>
+        <Stack gap={2} miw={0}>
+          <Text span truncate size="sm" fw={600} lh={1.35} title={song.title}>
             {song.title}
-          </span>
-          <span className={classes.meta}>
+          </Text>
+          <Group gap={6} wrap="nowrap" miw={0}>
             <SongDifficultyBadge game={game} song={song} />
-            <span className={classes.artist} title={song.artist}>
+            <Text span truncate flex={1} miw={0} size="xs" c="var(--pop-muted)" title={song.artist}>
               {song.artist}
-            </span>
-          </span>
-        </div>
+            </Text>
+          </Group>
+        </Stack>
 
-        <Trend delta={delta} className={classes.trendBadge} />
+        <Trend delta={delta} />
       </Link>
     </li>
   );
@@ -134,13 +140,11 @@ function SongRow({ game, song }: { game: Game; song: PopularSong }) {
 
 function SkeletonColumn() {
   return (
-    <div className={classes.column}>
-      <div className={classes.list} aria-hidden>
-        {Array.from({ length: 5 }, (_, index) => (
-          <Skeleton key={index} height={68} radius="md" />
-        ))}
-      </div>
-    </div>
+    <Stack gap={8} miw={0} aria-hidden>
+      {Array.from({ length: 5 }, (_, index) => (
+        <Skeleton key={index} height={68} radius="md" />
+      ))}
+    </Stack>
   );
 }
 
@@ -170,22 +174,18 @@ export function PopularSongs({
 
   return (
     <div className={classes.grid}>
-      <div className={classes.column}>
-        <ol className={classes.list} aria-label="热门曲目 1 至 5 名">
-          {leftColumn.map((song) => (
+      <ol className={classes.list} aria-label="热门曲目 1 至 5 名">
+        {leftColumn.map((song) => (
+          <SongRow key={song.id} game={game} song={song} />
+        ))}
+      </ol>
+
+      {rightColumn.length > 0 && (
+        <ol className={classes.list} aria-label="热门曲目 6 至 10 名">
+          {rightColumn.map((song) => (
             <SongRow key={song.id} game={game} song={song} />
           ))}
         </ol>
-      </div>
-
-      {rightColumn.length > 0 && (
-        <div className={classes.column}>
-          <ol className={classes.list} aria-label="热门曲目 6 至 10 名">
-            {rightColumn.map((song) => (
-              <SongRow key={song.id} game={game} song={song} />
-            ))}
-          </ol>
-        </div>
       )}
     </div>
   );

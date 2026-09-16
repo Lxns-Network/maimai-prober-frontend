@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, Card, Text, Title } from "@mantine/core";
+import { Avatar, Badge, Button, Card, Group, Text, Title } from "@mantine/core";
 import { useInViewport } from "@mantine/hooks";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -27,13 +27,13 @@ const slides = products.map((item) => (
         <Title order={3} className={classes.title}>
           {item.title}
         </Title>
-        <div className={classes.tags}>
+        <Group gap={6}>
           {item.tags.map((tag) => (
-            <Badge key={tag} variant="default" size="sm">
+            <Badge key={tag} variant="default" size="sm" radius="md">
               {tag}
             </Badge>
           ))}
-        </div>
+        </Group>
       </div>
     </div>
 

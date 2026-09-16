@@ -9,17 +9,11 @@
   gap: var(--mantine-spacing-md) var(--mantine-spacing-xl);
 }
 
-.column {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
 .list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -33,7 +27,7 @@
 .itemLink {
   display: grid;
   grid-template-columns: 26px 46px minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: var(--mantine-spacing-sm);
   align-items: center;
   flex: 1;
   padding: 10px 14px;
@@ -48,6 +42,7 @@
   background: var(--pop-hover);
 }
 
+/* rank1/2/3 的 rgb 常量与 PopularSongs.tsx 的奖牌配色同源（金 #FFAB09、银 #09B8FF、铜 #B87333），改动需两侧同步 */
 .rank1 {
   border-color: light-dark(rgb(255 171 9 / 35%), rgb(255 171 9 / 24%));
   background: light-dark(rgb(255 171 9 / 4%), rgb(255 171 9 / 3%));
@@ -75,88 +70,11 @@
   background: light-dark(rgb(184 115 51 / 10%), rgb(184 115 51 / 8%));
 }
 
-.rankCol {
-  display: grid;
-  place-items: center;
-  flex: none;
-}
-
-.rankBadge {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  color: var(--mantine-color-white);
-  font-size: 12px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.rankBadgeGold {
-  background: linear-gradient(135deg, #ffbe26, #f59e0b);
-}
-
 .rankNumber {
   color: var(--pop-muted);
-  font-size: 14px;
+  font-size: var(--mantine-font-size-sm);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-
-.jacket {
-  flex: none;
-}
-
-.info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.songTitle {
-  display: block;
-  overflow: hidden;
-  font-size: var(--mantine-font-size-sm);
-  font-weight: 600;
-  line-height: 1.35;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.badge {
-  flex: none;
-  padding: 0 5px;
-  border-radius: 4px;
-  color: var(--mantine-color-white);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 16px;
-}
-
-.artist {
-  display: block;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--pop-muted);
-  font-size: var(--mantine-font-size-xs);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.trendBadge {
-  flex: none;
 }
 
 .trend {
