@@ -94,11 +94,7 @@ function SongRow({ game, song }: { game: Game; song: PopularSong }) {
               <IconCrown size={13} stroke={2.5} />
             </span>
           ) : isMedal ? (
-            <span
-              className={clsx(classes.rankBadge, classes.rankBadgeMedal)}
-              style={{ backgroundColor: medalColor }}
-              aria-hidden
-            >
+            <span className={classes.rankBadge} style={{ backgroundColor: medalColor }} aria-hidden>
               {rank}
             </span>
           ) : (

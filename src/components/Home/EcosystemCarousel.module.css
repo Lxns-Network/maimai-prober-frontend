@@ -37,8 +37,6 @@
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  /* 裁掉头像 box-shadow 越过 slide 边界的部分，否则相邻 slide 的阴影会漏进可视区右缘 */
-  overflow: hidden;
   /* 在 Windows 等非整数缩放下，embla 的 translate 与 viewport 的 overflow 裁剪各自取整，
      相邻 slide 最左一列会以 1 设备像素宽的竖线漏进可视区右缘。
      padding 把头像让出最左 1px，clip-path 跟随 slide 自身光栅化，确保该列永远不绘制任何内容 */
@@ -58,7 +56,6 @@
 .avatar {
   flex-shrink: 0;
   border-radius: var(--mantine-radius-md);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .meta {
