@@ -11,7 +11,8 @@ import classes from "./PopularSongs.module.css";
 const MEDAL_COLORS: Record<number, string> = {
   1: getTrophyColor("gold"),
   2: getTrophyColor("silver"),
-  3: getTrophyColor("bronze"),
+  // 站内铜称号色 #F06418 与金色 #FFAB09 色相过近，小徽章上 1、3 名难以区分，这里改用更深的古铜色
+  3: "#b87333",
 };
 
 const DIFFICULTY_NAMES: Record<Game, string[]> = {

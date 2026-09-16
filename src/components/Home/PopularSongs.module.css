@@ -67,12 +67,12 @@
 }
 
 .rank3 {
-  border-color: light-dark(rgb(240 100 24 / 32%), rgb(240 100 24 / 22%));
-  background: light-dark(rgb(240 100 24 / 4%), rgb(240 100 24 / 3%));
+  border-color: light-dark(rgb(184 115 51 / 38%), rgb(184 115 51 / 26%));
+  background: light-dark(rgb(184 115 51 / 4%), rgb(184 115 51 / 3%));
 }
 
 .rank3:hover {
-  background: light-dark(rgb(240 100 24 / 10%), rgb(240 100 24 / 8%));
+  background: light-dark(rgb(184 115 51 / 10%), rgb(184 115 51 / 8%));
 }
 
 .rankCol {
