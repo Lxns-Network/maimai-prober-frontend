@@ -98,7 +98,7 @@ export const ChunithmScoreModalContent = ({
             </Avatar>
           </PhotoView>
         </SongDisabledIndicator>
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <Group gap={8}>
             <Badge variant="light" color="gray" size="sm" leftSection={<IconNumber size={18} />}>
               {song.id}
@@ -126,7 +126,7 @@ export const ChunithmScoreModalContent = ({
               />
             </AspectRatio>
           </Flex>
-        </div>
+        </Box>
         {difficulty?.star ? (
           <Card
             w={60}
@@ -199,7 +199,7 @@ export const ChunithmScoreModalContent = ({
               <Text fz="xs" c="dimmed">
                 成绩
               </Text>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
+              <Text fz={rem(24)} lh={rem(24)}>
                 <NumberFormatter value={score.score || 0} thousandSeparator />
               </Text>
             </Box>

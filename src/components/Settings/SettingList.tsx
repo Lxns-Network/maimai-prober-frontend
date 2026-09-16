@@ -76,7 +76,7 @@ const Setting = ({
         component="div"
       >
         <Flex justify="space-between" align="center" columnGap="md" rowGap="xs" wrap="wrap">
-          <Box style={{ flex: 1 }}>
+          <Box flex={1}>
             <Text>{data.title}</Text>
             <Text size="xs" c="dimmed">
               {data.description}

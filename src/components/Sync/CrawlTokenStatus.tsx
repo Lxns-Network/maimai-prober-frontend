@@ -43,7 +43,7 @@ export const CrawlTokenStatus = ({ token, resetHandler }: CrawlTokenStatusProps)
   if (isTokenExpired) {
     return (
       <Group justify="space-between" align="center" gap={6} wrap="nowrap">
-        <Group gap={6} c="red" wrap="nowrap" style={{ minWidth: 0, flexShrink: 1 }}>
+        <Group gap={6} c="red" wrap="nowrap" miw={0} style={{ flexShrink: 1 }}>
           <IconAlertCircle size={16} style={{ flexShrink: 0 }} />
           <Text size="sm" fw={500} truncate>
             链接已失效，请刷新
@@ -70,7 +70,8 @@ export const CrawlTokenStatus = ({ token, resetHandler }: CrawlTokenStatusProps)
         gap={6}
         c="var(--mantine-primary-color-light-color)"
         wrap="nowrap"
-        style={{ minWidth: 0, flexShrink: 1 }}
+        miw={0}
+        style={{ flexShrink: 1 }}
       >
         <IconClock size={16} style={{ flexShrink: 0 }} />
         <Text

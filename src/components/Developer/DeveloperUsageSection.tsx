@@ -42,14 +42,14 @@ const StatCard = ({
   <Card withBorder radius="md" className={classes.card} p="md">
     <Group gap="sm" wrap="nowrap" h="100%">
       <Box c={color}>{icon}</Box>
-      <div style={{ minWidth: 0 }}>
+      <Box miw={0}>
         <Text fz="xs" c="dimmed">
           {label}
         </Text>
         <Text fz="lg" fw={700}>
           {value}
         </Text>
-      </div>
+      </Box>
     </Group>
   </Card>
 );
@@ -188,7 +188,7 @@ export const DeveloperUsageSection = () => {
                     value={(r.count / maxCount) * 100}
                     size="sm"
                     color={theme.primaryColor}
-                    style={{ flex: 1 }}
+                    flex={1}
                   />
                   <Text fz="sm" w={56} ta="right">
                     {r.count.toLocaleString()}

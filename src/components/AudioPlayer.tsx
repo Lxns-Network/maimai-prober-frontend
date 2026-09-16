@@ -88,7 +88,7 @@ export const AudioPlayer = ({
           min={0}
           max={state.duration}
           value={state.time}
-          style={{ flex: 1 }}
+          flex={1}
           onChange={(value) => controls.seek(value)}
         />
         <Text size="sm">{parseTime(state.duration)}</Text>
@@ -160,7 +160,7 @@ export const AudioPlayer = ({
             min={0}
             max={100}
             value={Math.round(state.volume * 100)}
-            style={{ flex: 1 }}
+            flex={1}
             onChange={(value) => controls.volume(value / 100)}
           />
         </Group>

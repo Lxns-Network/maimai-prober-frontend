@@ -110,7 +110,7 @@ const SongsContent = () => {
               />
               <SongDifficultyList song={song} scores={scores} setScores={setScores} />
               {songCollections && songCollections.length > 0 && (
-                <SongCollections collections={songCollections} style={{ marginTop: "1rem" }} />
+                <SongCollections collections={songCollections} mt="md" />
               )}
             </motion.div>
           ))

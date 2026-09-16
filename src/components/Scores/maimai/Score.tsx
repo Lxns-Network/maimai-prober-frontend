@@ -32,7 +32,7 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
           backgroundColor: getTransparentColor(getScoreSecondaryColor("maimai", levelIndex), 0.95),
         }}
       >
-        <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">
+        <Text size="sm" fw={500} truncate flex={1} c="white">
           {score.song_name}
         </Text>
         {score.type === "standard" && (
@@ -66,11 +66,11 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
         <Group h={54} justify="space-between" wrap="nowrap">
           {score.achievements !== -1 ? (
             <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white">
+              <Text fz={rem(24)} lh={rem(24)} c="white">
                 {parseInt(String(score.achievements))}
-                <span style={{ fontSize: rem(16) }}>
+                <Text span inherit fz={rem(16)}>
                   .{(String(score.achievements).split(".")[1] || "0").padEnd(4, "0")}%
-                </span>
+                </Text>
               </Text>
               <Text size="xs" c="white">
                 DX Rating: {deluxeRating}
@@ -78,7 +78,7 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
             </div>
           ) : (
             <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+              <Text fz={rem(24)} lh={rem(24)} c="white" mb={4}>
                 未游玩
               </Text>
               <Text size="xs" c="white">

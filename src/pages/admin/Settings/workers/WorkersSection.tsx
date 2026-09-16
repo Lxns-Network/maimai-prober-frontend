@@ -103,7 +103,7 @@ const TokenDisplay = ({ token }: { token: string }) => {
         此 Token 用于工作节点连接时的身份验证，请妥善保存；后续也可在节点详情中查看。
       </Text>
       <Group gap="xs" wrap="nowrap">
-        <Code block style={{ flex: 1, wordBreak: "break-all" }}>
+        <Code block flex={1} style={{ wordBreak: "break-all" }}>
           {token}
         </Code>
         <CopyButton value={token} timeout={2000}>
@@ -298,7 +298,7 @@ export const WorkersSection = () => {
   const { width } = useViewportSize();
 
   return (
-    <div style={{ position: "relative" }}>
+    <Box pos="relative">
       <SimpleGrid cols={{ base: 2, sm: 3 }} mb="md">
         <StatCard
           icon={<IconServer size={24} stroke={1.5} />}
@@ -508,6 +508,6 @@ export const WorkersSection = () => {
           fetching={isLoading}
         />
       </Card>
-    </div>
+    </Box>
   );
 };

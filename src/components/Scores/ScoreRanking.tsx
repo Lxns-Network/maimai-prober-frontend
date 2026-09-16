@@ -91,17 +91,17 @@ export const ScoreRanking = ({
                 <Badge variant="light" color={badgeColor} circle={rankingScore.ranking < 100}>
                   {rankingScore.ranking}
                 </Badge>
-                <Text style={{ flex: 1 }}>{rankingScore.player_name || "[已隐藏]"}</Text>
+                <Text flex={1}>{rankingScore.player_name || "[已隐藏]"}</Text>
                 {"achievements" in rankingScore && (
-                  <Text fz={rem(18)} style={{ lineHeight: rem(18) }}>
+                  <Text fz={rem(18)} lh={rem(18)}>
                     {parseInt(String(rankingScore.achievements))}
-                    <span style={{ fontSize: rem(14) }}>
+                    <Text span inherit fz={rem(14)}>
                       .{(String(rankingScore.achievements).split(".")[1] || "0").padEnd(4, "0")}%
-                    </span>
+                    </Text>
                   </Text>
                 )}
                 {"score" in rankingScore && (
-                  <Text fz={rem(18)} style={{ lineHeight: rem(18) }}>
+                  <Text fz={rem(18)} lh={rem(18)}>
                     <NumberFormatter value={rankingScore.score || 0} thousandSeparator />
                   </Text>
                 )}

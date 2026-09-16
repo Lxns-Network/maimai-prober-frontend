@@ -1,4 +1,5 @@
 import {
+  Box,
   Avatar,
   Button,
   Chip,
@@ -162,7 +163,7 @@ export const ChunithmCreateScoreModalContent = ({
             </Text>
           </Avatar>
         </SongDisabledIndicator>
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <SongCombobox
             value={form.values.id || 0}
             onOptionSubmit={(value) => {
@@ -194,7 +195,7 @@ export const ChunithmCreateScoreModalContent = ({
             }}
             {...form.getInputProps("difficulty")}
           />
-        </div>
+        </Box>
       </Flex>
       <Grid mb="xs">
         <Grid.Col span={6}>

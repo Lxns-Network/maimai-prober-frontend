@@ -242,7 +242,7 @@ const CollectionsContent = () => {
             dispatch({ type: "SET_FROM_USER", payload: { collectionType, collectionId: value } });
           }}
           radius="md"
-          style={{ flex: 1 }}
+          flex={1}
         />
       </Group>
       <Checkbox

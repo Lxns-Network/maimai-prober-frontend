@@ -294,9 +294,12 @@ export function VirtualizedCombobox<T>({
                   <ScrollArea
                     type="scroll"
                     viewportRef={setScrollParent}
-                    style={{ position: "relative", zIndex: 1, flex: 1, minHeight: 0 }}
+                    pos="relative"
+                    flex={1}
+                    mih={0}
+                    style={{ zIndex: 1 }}
                   >
-                    <Combobox.Options style={{ padding: 2 }}>
+                    <Combobox.Options p={2}>
                       {options.length === 0 ? (
                         <Combobox.Empty>{emptyText}</Combobox.Empty>
                       ) : (

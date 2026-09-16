@@ -31,7 +31,7 @@ export function AliasButton({
   return (
     <UnstyledButton className={classes.alias} onClick={onClick} {...others}>
       <Flex align="center" columnGap={8}>
-        <Text fz="sm" c="dimmed" style={{ flex: 1 }} truncate>
+        <Text fz="sm" c="dimmed" flex={1} truncate>
           {alias.song.name || "未知"}
         </Text>
         {game === "maimai" && alias.song.id >= 100000 && (
@@ -65,7 +65,7 @@ export function AliasButton({
         )}
       </Flex>
       <Group>
-        <Text fz="xl" fw={700} truncate style={{ flex: 1 }}>
+        <Text fz="xl" fw={700} truncate flex={1}>
           {alias.alias}
         </Text>
         <IconChevronRight size={16} />

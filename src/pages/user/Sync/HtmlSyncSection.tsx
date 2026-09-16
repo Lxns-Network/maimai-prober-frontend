@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Box,
   Alert,
   Anchor,
   Badge,
@@ -435,7 +436,7 @@ export const HtmlSyncSection = () => {
                   {uploadItems.map((item) => (
                     <Paper key={item.id} withBorder p="sm" radius="md">
                       <Group justify="space-between" align="flex-start" wrap="nowrap">
-                        <div style={{ minWidth: 0, flex: 1 }}>
+                        <Box miw={0} flex={1}>
                           <Group gap="xs" mb={4}>
                             <Text fw={500} truncate>
                               {item.name}
@@ -458,7 +459,7 @@ export const HtmlSyncSection = () => {
                               {item.error}
                             </Text>
                           )}
-                        </div>
+                        </Box>
                         <Button
                           variant="subtle"
                           color="red"

@@ -11,6 +11,7 @@ import {
 import { useShallow } from "zustand/react/shallow";
 import { notifications } from "@mantine/notifications";
 import {
+  Box,
   ActionIcon,
   Button,
   Card,
@@ -583,12 +584,12 @@ export function PlaybackControls({
                   className={classes.exportZoomDensityTimeline}
                 />
               )}
-              <div className={classes.exportZoomLabel} style={{ left: 0 }}>
+              <Box className={classes.exportZoomLabel} left={0}>
                 {formatDuration(zoomStartMs, "s")}
-              </div>
-              <div className={classes.exportZoomLabel} style={{ right: 0 }}>
+              </Box>
+              <Box className={classes.exportZoomLabel} right={0}>
                 {formatDuration(zoomEndMs, "s")}
-              </div>
+              </Box>
               <div
                 ref={exportZoomPlayheadRef}
                 className={classes.exportZoomPlayhead}

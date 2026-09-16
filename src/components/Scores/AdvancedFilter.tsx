@@ -330,7 +330,7 @@ export const AdvancedFilter = ({
             <Select
               variant="filled"
               size="xs"
-              style={{ flex: 1 }}
+              flex={1}
               maw={75}
               data={currentRatingPresets.map(({ value, label }) => ({ value, label }))}
               placeholder={selectedRatingPreset ? "快捷等级" : "自定义"}

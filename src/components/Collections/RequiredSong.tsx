@@ -187,7 +187,7 @@ export const RequiredSong = ({
       style={{ ...style, scrollMarginTop: 16 }}
     >
       <Flex>
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <Text fz="lg" fw={700}>
             要求曲目
           </Text>
@@ -292,7 +292,7 @@ export const RequiredSong = ({
                 </Grid.Col>
               )}
           </Grid>
-        </div>
+        </Box>
         <Box h={height}>
           <RequiredSongRingProgress collection={collection} />
         </Box>

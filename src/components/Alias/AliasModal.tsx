@@ -1,4 +1,5 @@
 import {
+  Box,
   ActionIcon,
   Avatar,
   Badge,
@@ -99,7 +100,7 @@ const AliasModalBody = ({
             </Avatar>
           </PhotoView>
         )}
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <div>
             <Text fz="xs" c="dimmed">
               曲名
@@ -127,7 +128,7 @@ const AliasModalBody = ({
               {alias.alias}
             </Text>
           </div>
-        </div>
+        </Box>
         <Flex direction="column" gap="xs">
           {new Date(alias.upload_time).getTime() > new Date().getTime() - 86400000 && (
             <Tooltip label="新提交" withinPortal>

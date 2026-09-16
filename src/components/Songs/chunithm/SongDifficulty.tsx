@@ -70,14 +70,14 @@ export const ChunithmSongDifficulty = ({
     >
       <Flex align="center" ml="0.5rem" mr="0.5rem" mb={5}>
         {isWorldsEnd ? (
-          <Text fz="sm" fw={500} style={{ flex: 1 }}>
+          <Text fz="sm" fw={500} flex={1}>
             WORLD'S END
             <Title component="span" order={3} fw={500} ml="xs">
               {difficulty.kanji}
             </Title>
           </Text>
         ) : (
-          <Text fz="sm" fw={500} style={{ flex: 1 }}>
+          <Text fz="sm" fw={500} flex={1}>
             {["BASIC", "ADVANCED", "EXPERT", "MASTER", "ULTIMA"][difficulty.difficulty]}
             <Title component="span" order={3} fw={500} ml="xs">
               {difficulty.level_value.toFixed(1)}
@@ -116,7 +116,7 @@ export const ChunithmSongDifficulty = ({
               <Text fz="xs" c="dimmed">
                 成绩
               </Text>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
+              <Text fz={rem(24)} lh={rem(24)}>
                 <NumberFormatter value={score.score || 0} thousandSeparator />
               </Text>
             </Box>

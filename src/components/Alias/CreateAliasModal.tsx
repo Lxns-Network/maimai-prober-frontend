@@ -171,7 +171,7 @@ export const CreateAliasModal = ({
                   </Text>
                 </Avatar>
               )}
-              <div style={{ flex: 1 }}>
+              <Box flex={1}>
                 <Flex align="center" gap="xs">
                   <SongCombobox
                     value={form.values.song_id || 0}
@@ -183,7 +183,7 @@ export const CreateAliasModal = ({
                     mb="sm"
                     withAsterisk
                     error={form.errors.song_id}
-                    style={{ flex: 1 }}
+                    flex={1}
                   />
                   <Tooltip label="随机一首曲目" withinPortal>
                     <ActionIcon
@@ -213,7 +213,7 @@ export const CreateAliasModal = ({
                     form.errors.alias || (exists ? "别名已存在，请输入其它曲目别名" : undefined)
                   }
                 />
-              </div>
+              </Box>
             </Flex>
             <Space h="md" />
             {Boolean(form.values.song_id) &&

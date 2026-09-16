@@ -75,12 +75,7 @@ export function AnimatedGrid<T>({
 }: AnimatedGridProps<T>) {
   const itemProps = useFlipList(items, getKey);
   return (
-    <SimpleGrid
-      type="container"
-      cols={cols}
-      spacing={spacing}
-      style={{ position: "relative", width: "100%" }}
-    >
+    <SimpleGrid type="container" cols={cols} spacing={spacing} pos="relative" w="100%">
       {items.map((item) => (
         <motion.div key={getKey(item)} {...itemProps(item)}>
           {renderItem(item)}
@@ -98,7 +93,7 @@ interface AnimatedStackProps<T> extends AnimatedListProps<T> {
 export function AnimatedStack<T>({ items, getKey, renderItem, gap }: AnimatedStackProps<T>) {
   const itemProps = useFlipList(items, getKey);
   return (
-    <Stack gap={gap} style={{ position: "relative", width: "100%" }}>
+    <Stack gap={gap} pos="relative" w="100%">
       {items.map((item) => (
         <motion.div key={getKey(item)} {...itemProps(item)}>
           {renderItem(item)}

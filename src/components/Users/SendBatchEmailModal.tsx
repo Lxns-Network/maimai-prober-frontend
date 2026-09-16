@@ -191,7 +191,7 @@ export const SendBatchEmailModal = ({
             </RichTextEditor.ControlsGroup>
           </RichTextEditor.Toolbar>
 
-          <ScrollArea style={{ height: 300 }}>
+          <ScrollArea h={300}>
             <RichTextEditor.Content />
           </ScrollArea>
         </RichTextEditor>

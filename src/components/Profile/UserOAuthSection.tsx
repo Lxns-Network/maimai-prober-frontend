@@ -149,12 +149,12 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
 
   return (
     <Card className={classes.oauthCard} withBorder radius="md" p={0}>
-      <Group align="center" gap="md" style={{ flex: 1 }} m="xs">
+      <Group align="center" gap="md" flex={1} m="xs">
         <Avatar src={app.logo_url} radius="sm">
           {app.name.charAt(0).toUpperCase()}
         </Avatar>
 
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <Group gap={4} align="center">
             <Text fw={500} size="md">
               {app.name}
@@ -184,7 +184,7 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
               </Group>
             )}
           </Group>
-        </div>
+        </Box>
 
         <Tooltip label="撤销授权" position="left">
           <ActionIcon

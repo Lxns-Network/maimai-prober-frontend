@@ -115,7 +115,7 @@ export const MaimaiScoreModalContent = ({
             </Avatar>
           </PhotoView>
         </SongDisabledIndicator>
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <Group gap={8}>
             {score.type === "standard" && (
               <Badge variant="filled" color="blue" size="sm">
@@ -152,7 +152,7 @@ export const MaimaiScoreModalContent = ({
               <Image src={`/assets/maimai/music_icon/${score.fs || "blank"}.webp`} w={rem(30)} />
             </AspectRatio>
           </Group>
-        </div>
+        </Box>
         <Tooltip label="查看谱面历史定数">
           <Button
             w={54}
@@ -187,11 +187,11 @@ export const MaimaiScoreModalContent = ({
               <Text fz="xs" c="dimmed">
                 达成率
               </Text>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }}>
+              <Text fz={rem(24)} lh={rem(24)}>
                 {parseInt(String(score.achievements))}
-                <span style={{ fontSize: rem(16) }}>
+                <Text span inherit fz={rem(16)}>
                   .{(String(score?.achievements).split(".")[1] || "0").padEnd(4, "0")}%
-                </span>
+                </Text>
               </Text>
             </Box>
           </Group>
@@ -200,12 +200,12 @@ export const MaimaiScoreModalContent = ({
               {score.type === "utage" ? (
                 <Paper className={classes.subParameters}>
                   <Group>
-                    <div style={{ flex: 1 }}>
+                    <Box flex={1}>
                       <Text fz="xs" c="dimmed">
                         DX Rating
                       </Text>
                       <Text>-</Text>
-                    </div>
+                    </Box>
                   </Group>
                 </Paper>
               ) : (
@@ -214,12 +214,12 @@ export const MaimaiScoreModalContent = ({
                   onClick={() => setCalculatorOpened(true)}
                 >
                   <Group>
-                    <div style={{ flex: 1 }}>
+                    <Box flex={1}>
                       <Text fz="xs" c="dimmed">
                         DX Rating
                       </Text>
                       <Text>{parseInt(String(score.dx_rating))}</Text>
-                    </div>
+                    </Box>
 
                     <IconChevronRight size={16} color="gray" />
                   </Group>
@@ -232,7 +232,7 @@ export const MaimaiScoreModalContent = ({
                 onClick={() => setDeluxeScoreOpened(true)}
               >
                 <Group>
-                  <div style={{ flex: 1 }}>
+                  <Box flex={1}>
                     <Group wrap="nowrap" gap="xs">
                       <Text fz="xs" c="dimmed">
                         DX 分数
@@ -246,16 +246,16 @@ export const MaimaiScoreModalContent = ({
                     <Text>
                       <NumberFormatter value={score.dx_score} thousandSeparator />
                       {difficulty && difficulty.notes && (
-                        <span style={{ fontSize: 12, marginLeft: 4 }}>
+                        <Text span inherit fz={12} ml={4}>
                           /{" "}
                           <NumberFormatter
                             value={getTotalNotes(difficulty.notes) * 3}
                             thousandSeparator
                           />
-                        </span>
+                        </Text>
                       )}
                     </Text>
-                  </div>
+                  </Box>
 
                   <IconChevronRight size={16} color="gray" />
                 </Group>

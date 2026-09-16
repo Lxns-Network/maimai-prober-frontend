@@ -55,7 +55,7 @@ export const WechatOAuthLink = ({
         label="复制微信 OAuth 链接"
         content={authLink}
         onCopy={openWechatNoticeModal}
-        style={{ flex: 1 }}
+        flex={1}
       />
       {isMicroMessenger && (
         <Button leftSection={<IconExternalLink size={18} />} onClick={() => window.open(authLink)}>

@@ -41,12 +41,12 @@ const RateStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
         return (
           <Group key={r.id} mb="xs" h={30} wrap="nowrap">
             <Image src={`/assets/chunithm/music_rank/${r.id}_s.webp`} h={18} w="auto" />
-            <Divider style={{ flex: 1 }} variant="dashed" />
-            <Text fz={20} style={{ lineHeight: rem(20) }}>
+            <Divider flex={1} variant="dashed" />
+            <Text fz={20} lh={rem(20)}>
               <NumberFormatter value={count} thousandSeparator />
-              <span style={{ fontSize: 16, marginLeft: 4 }}>
+              <Text span inherit fz={16} ml={4}>
                 / <NumberFormatter value={scores.length} thousandSeparator />
-              </span>
+              </Text>
             </Text>
           </Group>
         );
@@ -63,8 +63,8 @@ const FullComboStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
       {full_combo.map((r, index) => (
         <Group key={r} mb="xs" h={30} wrap="nowrap">
           <Image src={`/assets/chunithm/music_icon/${r}_s.webp`} h={18} w="auto" />
-          <Divider style={{ flex: 1 }} variant="dashed" />
-          <Text fz={20} style={{ lineHeight: rem(20) }}>
+          <Divider flex={1} variant="dashed" />
+          <Text fz={20} lh={rem(20)}>
             <NumberFormatter
               value={
                 scores.filter((score) => {
@@ -73,9 +73,9 @@ const FullComboStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
               }
               thousandSeparator
             />
-            <span style={{ fontSize: 16, marginLeft: 4 }}>
+            <Text span inherit fz={16} ml={4}>
               / <NumberFormatter value={scores.length} thousandSeparator />
-            </span>
+            </Text>
           </Text>
         </Group>
       ))}

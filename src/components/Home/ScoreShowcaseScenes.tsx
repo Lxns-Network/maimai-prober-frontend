@@ -58,11 +58,7 @@ export function ScoreListScene() {
   return (
     <div className={classes.scene}>
       <Flex gap="xs" align="center" wrap="nowrap" mb="sm">
-        <TextInput
-          placeholder="搜索曲名、别名或曲目 ID"
-          readOnly
-          style={{ flex: 1, minWidth: 0 }}
-        />
+        <TextInput placeholder="搜索曲名、别名或曲目 ID" readOnly flex={1} miw={0} />
         <Indicator size={8} disabled withBorder>
           <ActionIcon variant="default" size="input-sm" aria-label="排序方式">
             <IconArrowsSort size={20} />

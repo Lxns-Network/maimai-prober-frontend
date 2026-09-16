@@ -708,12 +708,12 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         </Card>
 
         <Stack className={classes.sidebar}>
-          <Card radius="lg" withBorder padding="md" style={{ flex: 1, minHeight: 0 }}>
-            <Stack gap="md" style={{ height: "100%" }}>
+          <Card radius="lg" withBorder padding="md" flex={1} mih={0}>
+            <Stack gap="md" h="100%">
               <Text size="sm" fw={600}>
                 Note 类型
               </Text>
-              <ScrollArea style={{ flex: 1 }} offsetScrollbars type="auto" h={360}>
+              <ScrollArea flex={1} offsetScrollbars type="auto" h={360}>
                 <Radio.Group value={fxKind} onChange={(v) => setFxKind(v as FxKind)}>
                   <Stack gap="md">
                     {groups.map(([group, opts]) => (

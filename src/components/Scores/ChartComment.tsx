@@ -236,7 +236,7 @@ const CommentItem = ({
         >
           <IconPhotoOff />
         </Avatar>
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <Flex columnGap="md" align="baseline" wrap="wrap">
             <Text fz="md">{comment.uploader.name}</Text>
             <Text fz="xs" c="dimmed">
@@ -256,7 +256,7 @@ const CommentItem = ({
               </Group>
             )}
           </Group>
-        </div>
+        </Box>
         <Group gap="xs">
           <ActionIcon
             variant="subtle"
@@ -364,7 +364,7 @@ export const ChartComment = ({
         <ThemeIcon variant="subtle" color="gray">
           <IconMessage style={{ width: "100%", height: "100%" }} stroke={1.5} />
         </ThemeIcon>
-        <Stack gap={2} style={{ flex: 1 }}>
+        <Stack gap={2} flex={1}>
           <Text size="lg">评论</Text>
           <Text size="xs" c="dimmed">
             {comments.length} 条评论
