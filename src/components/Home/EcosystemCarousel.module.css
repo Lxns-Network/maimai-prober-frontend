@@ -78,9 +78,6 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  font-size: var(--mantine-font-size-xs);
-  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-2));
-  font-weight: 500;
 }
 
 .description {
