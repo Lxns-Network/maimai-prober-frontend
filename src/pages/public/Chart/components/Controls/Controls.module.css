@@ -22,7 +22,10 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  background-color: light-dark(rgb(255 255 255 / 0.62), rgb(0 0 0 / 0.5));
+  background-color: light-dark(
+    alpha(var(--mantine-color-white), 0.62),
+    alpha(var(--mantine-color-black), 0.5)
+  );
 }
 
 .exportOverviewSelection {
@@ -31,7 +34,8 @@
   bottom: 0;
   border: 1px solid light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-3));
   border-radius: var(--mantine-radius-xs);
-  background-color: light-dark(rgb(34 139 230 / 0.16), rgb(34 211 238 / 0.2));
+  /* 深色端为非调色板特调色，勿替换为 cyan token（cyan-3 等色值不同，会改变渲染） */
+  background-color: light-dark(alpha(var(--mantine-color-blue-6), 0.16), rgb(34 211 238 / 0.2));
 }
 
 /* 概览播放头：画在 overlay 最上层（NoteCountGraph 自带的 playhead 被遮罩盖住，且受 container-type 堆叠上下文限制无法上浮） */
@@ -42,8 +46,9 @@
   width: 2px;
   transform: translateX(-1px);
   border-radius: 2px;
-  background-color: light-dark(var(--mantine-color-dark-7), white);
-  box-shadow: 0 0 6px light-dark(rgb(0 0 0 / 0.45), rgb(255 255 255 / 0.7));
+  background-color: light-dark(var(--mantine-color-dark-7), var(--mantine-color-white));
+  box-shadow: 0 0 6px
+    light-dark(alpha(var(--mantine-color-black), 0.45), alpha(var(--mantine-color-white), 0.7));
   pointer-events: none;
 }
 
@@ -99,8 +104,9 @@
   width: 2px;
   transform: translateX(-1px);
   border-radius: 2px;
-  background-color: light-dark(var(--mantine-color-dark-7), white);
-  box-shadow: 0 0 8px light-dark(rgb(0 0 0 / 0.45), rgb(255 255 255 / 0.7));
+  background-color: light-dark(var(--mantine-color-dark-7), var(--mantine-color-white));
+  box-shadow: 0 0 8px
+    light-dark(alpha(var(--mantine-color-black), 0.45), alpha(var(--mantine-color-white), 0.7));
   pointer-events: none;
 }
 
