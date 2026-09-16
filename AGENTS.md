@@ -2,6 +2,8 @@
 
 Operational guidelines and architectural ground truth for the **maimai-prober** frontend: Vike (`vike-react`), React 19, TypeScript, Mantine v9, TanStack Query v5, Zustand v4.
 
+**Styling ground rule: build UI from Mantine's own components and props first; hand-written CSS is the exception, not the default. See §4 Styling Policy.**
+
 ---
 
 ## 1. Commands & Verification
@@ -104,6 +106,14 @@ Two query conventions in [src/hooks/queries/queryFn.ts](src/hooks/queries/queryF
 
 - Providers in `src/pages/+Layout.tsx`: `MantineProvider` (primary color dynamic via `useThemeColor`), `ModalsProvider`, `Notifications`, `PhotoProvider`, and `ErrorBoundary`. Icons from `@tabler/icons-react` and `@mdi/js`.
 - Build emits `dist/client/version.json`. In production, `useVersionChecker` ([src/hooks/useVersionChecker.tsx](src/hooks/useVersionChecker.tsx)) (default 60000ms polling, prod only, refetch on window focus) alerts users to reload.
+
+### Styling Policy (Critical)
+
+Maintainer ground rule: **prefer Mantine's own components and props over hand-written CSS.** Unprompted custom CSS is the exact failure mode this rule exists to prevent.
+
+- Compose layout and typography from Mantine components (`Group`, `Stack`, `Flex`, `SimpleGrid`, `Text`, `Paper`, ...) using their props: style props (`mt`, `px`, `c`, `fw`, `fz`, `w`, `maw`, ...), component props (`variant`, `size`, `radius`, `color`, `gap`, `justify`, ...), responsive prop values (`{ base: ..., sm: ... }`), and `hiddenFrom`/`visibleFrom`.
+- Reach for a CSS module only when Mantine props cannot express the result (pseudo-elements or states beyond the component API, keyframes, complex grid areas, container queries). No inline `style` where a style prop exists; no Tailwind or any other styling system.
+- When CSS is unavoidable, keep it in the component's `*.module.css` and compose from Mantine tokens (`var(--mantine-spacing-*)`, `var(--mantine-color-*)`, `var(--mantine-radius-*)`, `light-dark(...)`) instead of hardcoded values.
 
 ---
 
