@@ -465,8 +465,10 @@ export interface AudioConfig {
   holdEndSoundEnabled: boolean;
   /** 是否启用 Touch 击打音效 */
   touchSoundEnabled: boolean;
-  /** 音量（0 ~ 1） */
+  /** 正解音层音量（0 ~ 1） */
   volume: number;
+  /** 判定音层音量（0 ~ 1） */
+  judgeVolume: number;
   /** 音效播放时间偏移（ms，正数延迟，负数提前） */
   timingOffsetMs: number;
 }
