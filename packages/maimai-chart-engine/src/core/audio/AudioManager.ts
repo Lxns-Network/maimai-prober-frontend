@@ -301,6 +301,7 @@ export class AudioManager {
   private holdEndSoundEnabled = true;
   private touchSoundEnabled = true;
   private volume = 0.5;
+  private judgeVolume = 1;
   private timingOffsetMs = ANSWER_SOUND_BASE_OFFSET_MS;
 
   private handledEvents = new Set<string>();
@@ -313,7 +314,7 @@ export class AudioManager {
 
   /** 正解音层增益节点，音量调整即时生效。 */
   private answerGainNode: GainNode;
-  /** 判定音层增益节点，固定满增益。 */
+  /** 判定音层增益节点，音量调整即时生效。 */
   private judgeGainNode: GainNode;
 
   constructor(config: AudioManagerConfig) {
@@ -325,7 +326,7 @@ export class AudioManager {
     this.answerGainNode.gain.value = this.volume;
     this.answerGainNode.connect(this.outputNode);
     this.judgeGainNode = this.audioContext.createGain();
-    this.judgeGainNode.gain.value = 1;
+    this.judgeGainNode.gain.value = this.judgeVolume;
     this.judgeGainNode.connect(this.outputNode);
   }
 
@@ -949,9 +950,24 @@ export class AudioManager {
   }
 
   /**
+   * 设置判定音层音量，不影响正解音层。
+   *
+   * 数值会被限制在 [0, 1] 区间内，即时生效于当前及后续播放的声音。
+   */
+  setJudgeVolume(volume: number): void {
+    this.judgeVolume = Math.max(0, Math.min(1, volume));
+    this.judgeGainNode.gain.value = this.judgeVolume;
+  }
+
+  /** 获取当前判定音层音量（0 ~ 1）。 */
+  getJudgeVolume(): number {
+    return this.judgeVolume;
+  }
+
+  /**
    * 设置打击音播放的时间偏移量。
    *
-   * 正值使打击音相对谱面时刻提前发声，负值使发声延后。
+   * 正值使打击音相对谱面时刻延后发声，负值使发声提前。
    */
   setTimingOffset(offsetMs: number): void {
     this.timingOffsetMs = offsetMs;
@@ -969,6 +985,7 @@ export class AudioManager {
       holdEndSoundEnabled: this.holdEndSoundEnabled,
       touchSoundEnabled: this.touchSoundEnabled,
       volume: this.volume,
+      judgeVolume: this.judgeVolume,
       timingOffsetMs: this.timingOffsetMs,
     };
   }

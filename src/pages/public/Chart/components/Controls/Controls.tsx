@@ -42,8 +42,6 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconVolume,
-  IconVolumeOff,
   IconMusic,
   IconMovie,
   IconChevronDown,
@@ -263,13 +261,6 @@ export function PlaybackControls({
   const exportOriginalBeatsRef = useRef<number | null>(null);
   const exportZoomPlayheadRef = useRef<HTMLDivElement>(null);
   const canShareGif = useMemo(canShareGifFile, []);
-
-  const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
-    useShallow((state) => ({
-      soundEnabled: state.soundEnabled,
-      setSoundEnabled: state.setSoundEnabled,
-    })),
-  );
 
   const restoreExportPosition = useCallback(() => {
     if (exportOriginalBeatsRef.current !== null) {
@@ -730,20 +721,6 @@ export function PlaybackControls({
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip
-            label={soundEnabled ? "关闭正解音" : "开启正解音"}
-            portalProps={fullscreenPortalProps}
-          >
-            <ActionIcon
-              variant="subtle"
-              color={isFullscreen ? "white" : "gray"}
-              size="lg"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-            >
-              {soundEnabled ? <IconVolume size={20} /> : <IconVolumeOff size={20} />}
-            </ActionIcon>
-          </Tooltip>
-
           <Menu
             shadow="md"
             width={160}
@@ -1041,6 +1018,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     musicOffset,
     soundOffset,
     soundVolume,
+    judgeVolume,
     setHiSpeed,
     setAlwaysKeepHiSpeed,
     setSlideDelay,
@@ -1058,6 +1036,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     setMusicOffset,
     setSoundOffset,
     setSoundVolume,
+    setJudgeVolume,
     fullscreenQuality,
     setFullscreenQuality,
     showVideo,
@@ -1202,7 +1181,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               min={3}
               max={9}
               step={0.25}
-              marks={[{ value: 3 }, { value: 6 }, { value: 9 }]}
+              marks={[{ value: 6 }]}
             />
             <Group justify="space-between">
               <Text size="xs" c="dimmed" ff="monospace">
@@ -1232,7 +1211,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               min={0.1}
               max={1.0}
               step={0.05}
-              marks={[{ value: 0.1 }, { value: 0.5 }, { value: 1.0 }]}
+              marks={[{ value: 0.5 }]}
             />
             <Group justify="space-between">
               <Text size="xs" c="dimmed" ff="monospace">
@@ -1261,7 +1240,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               max={1}
               step={0.1}
               label={(value) => value.toFixed(1)}
-              marks={[{ value: -1 }, { value: 0 }, { value: 1 }]}
+              marks={[{ value: 0 }]}
+              startPointValue={0}
               onKeyDown={(event) => {
                 if (event.key.startsWith("Arrow") || event.key === "Home" || event.key === "End") {
                   event.stopPropagation();
@@ -1508,7 +1488,48 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                   {Math.round(musicVolume * 100)}%
                 </Text>
               </Group>
-              <Slider value={musicVolume} onChange={setMusicVolume} min={0} max={1} step={0.1} />
+              <Slider
+                value={musicVolume}
+                onChange={setMusicVolume}
+                min={0}
+                max={1}
+                step={0.1}
+                label={null}
+              />
+            </div>
+
+            <div>
+              <Group justify="space-between" mb={4}>
+                <Text size="sm">正解音音量</Text>
+                <Text size="sm" c="dimmed" ff="monospace">
+                  {Math.round(soundVolume * 100)}%
+                </Text>
+              </Group>
+              <Slider
+                value={soundVolume}
+                onChange={setSoundVolume}
+                min={0}
+                max={1}
+                step={0.1}
+                label={null}
+              />
+            </div>
+
+            <div>
+              <Group justify="space-between" mb={4}>
+                <Text size="sm">打击音效音量</Text>
+                <Text size="sm" c="dimmed" ff="monospace">
+                  {Math.round(judgeVolume * 100)}%
+                </Text>
+              </Group>
+              <Slider
+                value={judgeVolume}
+                onChange={setJudgeVolume}
+                min={0}
+                max={1}
+                step={0.2}
+                label={null}
+              />
             </div>
 
             <div>
@@ -1535,7 +1556,9 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={-2000}
                 max={2000}
                 step={10}
-                marks={[{ value: -2000 }, { value: 0 }, { value: 2000 }]}
+                label={null}
+                marks={[{ value: 0 }]}
+                startPointValue={0}
               />
               <Group justify="space-between">
                 <Text size="xs" c="dimmed" ff="monospace">
@@ -1555,17 +1578,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
 
             <div>
               <Group justify="space-between" mb={4}>
-                <Text size="sm">正解音音量</Text>
-                <Text size="sm" c="dimmed" ff="monospace">
-                  {Math.round(soundVolume * 100)}%
-                </Text>
-              </Group>
-              <Slider value={soundVolume} onChange={setSoundVolume} min={0} max={1} step={0.1} />
-            </div>
-
-            <div>
-              <Group justify="space-between" mb={4}>
-                <Text size="sm">正解音偏移</Text>
+                <Text size="sm">音效偏移</Text>
                 <Group gap={4}>
                   <Text size="sm" c="dimmed" ff="monospace">
                     {soundOffset}ms
@@ -1574,7 +1587,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                     variant="subtle"
                     color="gray"
                     size="sm"
-                    aria-label="重置正解音偏移"
+                    aria-label="重置音效偏移"
                     onClick={() => setSoundOffset(0)}
                   >
                     <IconRefresh size={14} />
@@ -1587,7 +1600,9 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={-200}
                 max={200}
                 step={5}
-                marks={[{ value: -200 }, { value: 0 }, { value: 200 }]}
+                label={null}
+                marks={[{ value: 0 }]}
+                startPointValue={0}
               />
               <Group justify="space-between">
                 <Text size="xs" c="dimmed" ff="monospace">
@@ -1601,7 +1616,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 </Text>
               </Group>
               <Text size="xs" c="dimmed" mt={4}>
-                正值: 正解音延后 | 负值: 正解音提前
+                正值: 音效延后 | 负值: 音效提前
               </Text>
             </div>
           </Stack>
