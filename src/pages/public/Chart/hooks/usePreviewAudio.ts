@@ -16,6 +16,7 @@ import { PlaybackClock } from "../utils/playbackClock";
 const SEEK_THROTTLE_MS = 50;
 const SOURCE_FADE_TIME_S = 0.015;
 const SOURCE_START_LEAD_TIME_S = 0.05;
+const STARTUP_SCHEDULE_OFFSET_MS = SOURCE_START_LEAD_TIME_S * 1000;
 const SCHEDULE_LOOKAHEAD_MS = 1500;
 // 距音频末尾多近视为"已播完"；须大于重启定位用的 0.01s clamp。
 const MUSIC_END_EPSILON_S = 0.05;
@@ -31,7 +32,7 @@ interface AudioState {
   playbackClock: PlaybackClock;
   /** 音乐源是否正在 AudioContext 上调度发声（已过 start 时刻、未 onended）。 */
   isSourcePlaying: boolean;
-  /** 音乐源自然播完（非 stopSource 停止）；置位后不再重启源，seek 或新源启动时清除。 */
+  /** 音乐源自然播完或已到达末尾；置位后不再重启源，seek 或新源启动时清除。 */
   musicEnded: boolean;
   /** rAF 外推锚点：上一帧的 timestamp 与对应的 chart-ms，用于无音频时钟时线性外推播放头。 */
   rafAnchorTimestamp: number;
@@ -155,6 +156,14 @@ export function usePreviewAudio(): PreviewAudioController {
       return playbackSpeedRef.current;
     }
     return state.playbackClock.schedulingSpeed(playbackSpeedRef.current);
+  }, []);
+
+  /** 音乐源尚未可听时，正解音要跟随即将发生的起播延迟排期。 */
+  const getStartupScheduleOffsetMs = useCallback((): number => {
+    const state = audioStateRef.current;
+    if (!state.audioBuffer || state.isSourcePlaying || state.musicEnded) return 0;
+
+    return STARTUP_SCHEDULE_OFFSET_MS;
   }, []);
 
   const stopSource = useCallback((immediate: boolean = false) => {
@@ -294,15 +303,23 @@ export function usePreviewAudio(): PreviewAudioController {
         return;
       }
 
+      const schedulingSpeed = getSchedulingSpeed();
+      const startupOffsetMs = getStartupScheduleOffsetMs() * schedulingSpeed;
+
       manager.schedule(
         events,
-        currentTimeMs,
-        getSchedulingSpeed(),
+        currentTimeMs - startupOffsetMs,
+        schedulingSpeed,
         SCHEDULE_LOOKAHEAD_MS,
         precomputedOutputTime,
       );
     },
-    [ensureAnswerManager, ensureAnswerManagerInitialized, getSchedulingSpeed],
+    [
+      ensureAnswerManager,
+      ensureAnswerManagerInitialized,
+      getSchedulingSpeed,
+      getStartupScheduleOffsetMs,
+    ],
   );
 
   const resetAnswerSounds = useCallback(
@@ -721,6 +738,7 @@ export function usePreviewAudio(): PreviewAudioController {
           state.pendingSeek = false;
           state.isStartingPlayback = false;
           state.pendingStartChartMs = null;
+          state.musicEnded = true;
           state.startRequestId += 1;
         } else {
           const targetTime = clamp(musicTime, 0, duration - 0.01);
