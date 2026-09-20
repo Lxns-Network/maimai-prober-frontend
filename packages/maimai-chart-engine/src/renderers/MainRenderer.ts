@@ -43,6 +43,7 @@ import {
 } from "../utils/constants";
 
 import { HoldEffectRenderer } from "../effects/HoldEffectRenderer";
+import { TapHitEffectRenderer } from "../effects/TapHitEffectRenderer";
 import { TouchHitEffectRenderer } from "../effects/TouchHitEffectRenderer";
 import { TouchFireworkRenderer, fireworkTriggerMs } from "../effects/TouchFireworkRenderer";
 
@@ -288,6 +289,7 @@ export class MainRenderer {
   private holdEffectRenderer!: HoldEffectRenderer;
   private touchHitEffectRenderer!: TouchHitEffectRenderer;
   private touchFireworkRenderer!: TouchFireworkRenderer;
+  private tapHitEffectRenderer!: TapHitEffectRenderer;
 
   private sensorImage: HTMLImageElement | null = null;
   private sensorImagePath: string;
@@ -376,6 +378,7 @@ export class MainRenderer {
     this.holdEffectRenderer = new HoldEffectRenderer(context);
     this.touchHitEffectRenderer = new TouchHitEffectRenderer(context);
     this.touchFireworkRenderer = new TouchFireworkRenderer(context);
+    this.tapHitEffectRenderer = new TapHitEffectRenderer(context);
   }
 
   private createRenderContext(): RenderContext {
@@ -400,6 +403,7 @@ export class MainRenderer {
     this.holdEffectRenderer.updateContext(context);
     this.touchHitEffectRenderer.updateContext(context);
     this.touchFireworkRenderer.updateContext(context);
+    this.tapHitEffectRenderer.updateContext(context);
   }
 
   private loadAssets(): void {
@@ -1739,7 +1743,7 @@ export class MainRenderer {
         note.position === "C"
           ? TOUCH_HOLD_CENTRE_BURST_ANGLE
           : Math.atan2(this.centerY - origin.y, this.centerX - origin.x);
-      this.noteRenderer.renderHitEffectAt(
+      this.tapHitEffectRenderer.renderHitEffectAt(
         origin.x,
         origin.y,
         angle,
@@ -1778,10 +1782,10 @@ export class MainRenderer {
       const latest = lastHitTimingByPos.get(note.position as ButtonPosition);
       if (latest !== undefined && latest > note.timingMs) continue;
 
-      const pos = this.noteRenderer.calculateHitEffectPosition(note, currentTimeMs);
+      const pos = this.tapHitEffectRenderer.calculateHitEffectPosition(note, currentTimeMs);
       if (!(0 <= pos.progress && pos.progress <= 1)) continue;
 
-      this.noteRenderer.renderTapHitEffect(
+      this.tapHitEffectRenderer.renderTapHitEffect(
         pos.x,
         pos.y,
         note.position as ButtonPosition,

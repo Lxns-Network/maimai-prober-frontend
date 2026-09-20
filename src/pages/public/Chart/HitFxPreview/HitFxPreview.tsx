@@ -28,6 +28,7 @@ import {
   TOUCH_HOLD_CENTRE_BURST_ANGLE,
   NoteRenderer,
   SlideRenderer,
+  TapHitEffectRenderer,
   TouchFireworkRenderer,
   TouchHitEffectRenderer,
   TouchRenderer,
@@ -284,6 +285,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
   const mainRef = useRef<MainRenderer | null>(null);
   const touchFxRef = useRef<TouchHitEffectRenderer | null>(null);
   const fireworkRef = useRef<TouchFireworkRenderer | null>(null);
+  const tapFxRef = useRef<TapHitEffectRenderer | null>(null);
   const holdFxRef = useRef<HoldEffectRenderer | null>(null);
   const noteFxRef = useRef<NoteRenderer | null>(null);
   const touchNoteRef = useRef<TouchRenderer | null>(null);
@@ -360,6 +362,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
     const noteFx = new NoteRenderer(ctx);
     touchFxRef.current = new TouchHitEffectRenderer(ctx);
     fireworkRef.current = new TouchFireworkRenderer(ctx);
+    tapFxRef.current = new TapHitEffectRenderer(ctx);
     holdFxRef.current = new HoldEffectRenderer(ctx);
     noteFxRef.current = noteFx;
     touchNoteRef.current = new TouchRenderer(ctx);
@@ -371,6 +374,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
       const next = main.getRenderContext();
       touchFxRef.current?.updateContext(next);
       fireworkRef.current?.updateContext(next);
+      tapFxRef.current?.updateContext(next);
       holdFxRef.current?.updateContext(next);
       noteFxRef.current?.updateContext(next);
       touchNoteRef.current?.updateContext(next);
@@ -396,6 +400,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
       const main = mainRef.current;
       const touchFx = touchFxRef.current;
       const firework = fireworkRef.current;
+      const tapFx = tapFxRef.current;
       const holdFx = holdFxRef.current;
       const noteFx = noteFxRef.current;
       const touchNote = touchNoteRef.current;
@@ -405,6 +410,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         !main ||
         !touchFx ||
         !firework ||
+        !tapFx ||
         !holdFx ||
         !noteFx ||
         !touchNote ||
@@ -463,7 +469,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         if (t < from || t >= from + NOTE_HIT_EFFECT_DURATION_MS) return;
         const p = (t - from) / NOTE_HIT_EFFECT_DURATION_MS;
         const origin = ringPos();
-        noteFx.renderTapHitEffect(origin.x, origin.y, btn, COLORS.HIT_EFFECT_GOLD, p, shape);
+        tapFx.renderTapHitEffect(origin.x, origin.y, btn, COLORS.HIT_EFFECT_GOLD, p, shape);
       };
       const drawTapHit = (shape: "hexagon" | "star") => drawTapHitAt(hitAt, shape);
 
@@ -611,7 +617,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
             s.touchPos === "C"
               ? TOUCH_HOLD_CENTRE_BURST_ANGLE
               : Math.atan2(centerY - origin.y, centerX - origin.x);
-          noteFx.renderHitEffectAt(
+          tapFx.renderHitEffectAt(
             origin.x,
             origin.y,
             angle,
