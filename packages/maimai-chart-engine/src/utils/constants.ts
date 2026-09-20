@@ -19,6 +19,9 @@ export const BUTTON_ANGLE_OFFSET = Math.PI / 8;
 /** 顶部 12 点钟基准角度（-90° = -π/2） */
 export const BASE_ANGLE = -Math.PI / 2;
 
+/** 判定圈基准半径，context.radius 像素值对应的基准单位数，各渲染层共用。 */
+export const PANEL_RADIUS_UNITS = 480;
+
 /** Note 半径占判定圈半径的比例 */
 export const NOTE_SIZE_RATIO = 1 / 12.5;
 
@@ -141,13 +144,13 @@ export const TOUCH_PETAL_CLOSED_RATIO = 1 / 12.5;
  */
 export const TOUCH_HOLD_CENTRE_BURST_ANGLE = -Math.PI / 6;
 
-/** 各触摸传感器区域到圆心的归一化半径（占面板半径比例） */
+/** Touch 中心到圆心的距离，以判定圈基准半径归一化。 */
 export const TOUCH_SENSOR_RADII: Record<string, number> = {
-  A: 0.854,
-  B: 0.479,
+  A: 400 / PANEL_RADIUS_UNITS,
+  B: 220 / PANEL_RADIUS_UNITS,
   C: 0,
-  D: 0.854,
-  E: 0.625,
+  D: 410 / PANEL_RADIUS_UNITS,
+  E: 310 / PANEL_RADIUS_UNITS,
 };
 
 /** 默认流速 */
@@ -185,11 +188,10 @@ export const COLORS = {
 
   TOUCH_CYAN: "#00FFFF",
   TOUCH_BLUE: "#0080FF",
-  TOUCH_SIMULTANEOUS: "#FFD700",
-  TOUCH_HOLD_RED: "#FF6B6B",
-  TOUCH_HOLD_YELLOW: "#FFE66D",
-  TOUCH_HOLD_GREEN: "#2ECC71",
-  TOUCH_HOLD_BLUE: "#3498DB",
+  TOUCH_HOLD_RED: "#F74601",
+  TOUCH_HOLD_YELLOW: "#F6ED00",
+  TOUCH_HOLD_GREEN: "#12A86A",
+  TOUCH_HOLD_BLUE: "#0097F6",
 
   EX_OVERLAY_BREAK: "rgba(255, 200, 120, 0.8)",
   EX_OVERLAY_SIMULTANEOUS: "rgba(255, 245, 150, 0.8)",

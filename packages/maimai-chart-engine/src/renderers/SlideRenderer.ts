@@ -20,6 +20,7 @@ import {
   COLORS,
   APPROACH_START_SCALE,
   NOTE_VISIBILITY_AFTER_MS,
+  PANEL_RADIUS_UNITS,
 } from "../utils/constants";
 import { detectSlideShape, SLIDE_AREA_STEP_MAP } from "../utils/slideAreaSteps";
 import { SLIDE_BARS } from "../utils/slideBars";
@@ -1499,9 +1500,8 @@ export class SlideRenderer extends BaseRenderer {
       totalLengthPixels += this.getSegmentLength(seg);
     }
 
-    // 按基准按键环半径 480 归一化尺寸
-    const gameRingRadius = 480;
-    const normalizedLength = totalLengthPixels * (gameRingRadius / this.context.radius);
+    // 按判定圈基准半径归一化尺寸
+    const normalizedLength = totalLengthPixels * (PANEL_RADIUS_UNITS / this.context.radius);
 
     const rotationSpeedDegPerMs = (normalizedLength / Math.PI / durationMs) * 15 * 0.06;
     const MAX_ROTATION_DEG_PER_MS = 1.08;

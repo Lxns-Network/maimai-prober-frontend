@@ -1,4 +1,5 @@
-import { BaseRenderer, RenderContext } from "./BaseRenderer";
+import { flushTouchDrawCommands, type TouchDrawCommand, type TouchPart } from "./touchDrawOrder";
+import { BaseRenderer, mixHexColor, RenderContext } from "./BaseRenderer";
 import { TouchNote, TouchHoldStartNote, Point2D, TouchPosition } from "../types";
 import {
   TOUCH_SENSOR_RADII,
@@ -6,6 +7,7 @@ import {
   TOUCH_CENTER_DOT_RATIO,
   TOUCH_PETAL_OPEN_RATIO,
   TOUCH_PETAL_CLOSED_RATIO,
+  PANEL_RADIUS_UNITS,
   NOTE_SIZE_RATIO,
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
@@ -22,6 +24,23 @@ const FIREWORK_SCALE_PEAK = 5.0;
 const FIREWORK_SPRITE_MIN_SCALE = 2.5;
 const FIREWORK_HOLE_START_SEC = 0.6;
 const FIREWORK_END_SEC = 1.1;
+// Touch Hold 花瓣纵向渐变色阶与进度环四象限基色。
+const TOUCH_HOLD_PETAL_PALETTES = [
+  ["#FF5511", COLORS.TOUCH_HOLD_RED, "#E74201", "#FFF6F2"],
+  ["#F8DE00", COLORS.TOUCH_HOLD_YELLOW, "#ECF402", "#FFFBEF"],
+  ["#1EB476", COLORS.TOUCH_HOLD_GREEN, "#0AA062", "#ECFFF8"],
+  ["#00AAF8", COLORS.TOUCH_HOLD_BLUE, "#0289F4", "#EFFCFF"],
+] as const;
+const TOUCH_HOLD_PROGRESS_COLORS = ["#E95513", "#FAED00", "#0DAC67", "#2CA6E0"];
+
+// Touch Hold 进度环实测采样几何尺寸（基准单位，以 alpha>=128 轮廓测量）。
+const TOUCH_HOLD_PROGRESS_GEOMETRY = {
+  canvasHalf: 99.75,
+  innerAxis: 64,
+  innerDiagonal: 50.5,
+  outerAxis: 97.75,
+  outerDiagonal: 82.75,
+} as const;
 
 /** 计算烟花触发时刻（Touch 为 timingMs，Touch Hold 为 timingMs + durationMs）。 */
 export function fireworkTriggerMs(note: TouchNote | TouchHoldStartNote): number {
@@ -59,6 +78,8 @@ export class TouchRenderer extends BaseRenderer {
   // Touch 花瓣贴图缓存（键: "图层|变体|花瓣索引"）
   private touchPetalSprites = new Map<string, HTMLCanvasElement>();
   private touchSpriteBasis = "";
+  private touchHoldProgressSprite: HTMLCanvasElement | null = null;
+  private touchHoldProgressBasis = "";
 
   constructor(context: RenderContext) {
     super(context);
@@ -371,12 +392,6 @@ export class TouchRenderer extends BaseRenderer {
     const cornerRadius = this.scaleByRadius(8 / 300);
     const innerCornerRadius = cornerRadius * 0.4;
     const strokeWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
-    const petalColors = [
-      COLORS.TOUCH_HOLD_RED,
-      COLORS.TOUCH_HOLD_YELLOW,
-      COLORS.TOUCH_HOLD_GREEN,
-      COLORS.TOUCH_HOLD_BLUE,
-    ];
 
     const mainCtx = this.context.ctx;
     this.context.ctx = sctx;
@@ -413,7 +428,14 @@ export class TouchRenderer extends BaseRenderer {
       } else if (layer === "f") {
         let fillStyle: string | CanvasGradient;
         if (kind === "h") {
-          fillStyle = petalColors[i];
+          fillStyle = this.createTouchHoldPetalGradient(
+            sctx,
+            TOUCH_HOLD_PETAL_PALETTES[i],
+            0,
+            0,
+            tipX,
+            tipY,
+          );
         } else {
           const gradient = sctx.createLinearGradient(0, 0, tipX, tipY);
           gradient.addColorStop(0, kind === "s" ? "#FFFF00" : "#00FFFF");
@@ -458,6 +480,96 @@ export class TouchRenderer extends BaseRenderer {
     return sprite;
   }
 
+  private createTouchHoldPetalGradient(
+    ctx: CanvasRenderingContext2D,
+    colors: readonly [string, string, string, string],
+    baseX: number,
+    baseY: number,
+    tipX: number,
+    tipY: number,
+  ): CanvasGradient {
+    const gradient = ctx.createLinearGradient(baseX, baseY, tipX, tipY);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.35, colors[1]);
+    gradient.addColorStop(0.72, colors[2]);
+    gradient.addColorStop(1, colors[3]);
+    return gradient;
+  }
+
+  private getTouchHoldProgressHalf(): number {
+    // 进度环几何常量以判定圈基准半径归一化映射。
+    return (this.context.radius / PANEL_RADIUS_UNITS) * TOUCH_HOLD_PROGRESS_GEOMETRY.canvasHalf;
+  }
+
+  private getTouchHoldProgressSprite(): HTMLCanvasElement {
+    const backingScale = this.getBackingScale();
+    const basis = `${this.context.radius}|${backingScale}`;
+    if (this.touchHoldProgressSprite && this.touchHoldProgressBasis === basis) {
+      return this.touchHoldProgressSprite;
+    }
+
+    const half = this.getTouchHoldProgressHalf();
+    const unit = this.context.radius / PANEL_RADIUS_UNITS;
+    const sprite = document.createElement("canvas");
+    const sizePx = Math.max(2, Math.ceil(half * 2 * backingScale));
+    sprite.width = sizePx;
+    sprite.height = sizePx;
+    const ctx = sprite.getContext("2d")!;
+    const scale = sizePx / (half * 2);
+    ctx.setTransform(scale, 0, 0, scale, sizePx / 2, sizePx / 2);
+
+    const roundedDiamond = (axisRadius: number, diagonalRadius: number) => {
+      const radius = diagonalRadius * Math.SQRT2 * unit;
+      // 二次曲线的轴向极值为 radius-offset/2，对角直边距离为 radius/sqrt(2)。
+      const offset = 2 * (radius - axisRadius * unit);
+      const path = new Path2D();
+      path.moveTo(-offset, -radius + offset);
+      path.quadraticCurveTo(0, -radius, offset, -radius + offset);
+      path.lineTo(radius - offset, -offset);
+      path.quadraticCurveTo(radius, 0, radius - offset, offset);
+      path.lineTo(offset, radius - offset);
+      path.quadraticCurveTo(0, radius, -offset, radius - offset);
+      path.lineTo(-radius + offset, offset);
+      path.quadraticCurveTo(-radius, 0, -radius + offset, -offset);
+      path.closePath();
+      return path;
+    };
+    // 外缘按相邻主体的相切间距校准；内孔保持与闭合花瓣衔接。
+    const ring = roundedDiamond(
+      TOUCH_HOLD_PROGRESS_GEOMETRY.outerAxis,
+      TOUCH_HOLD_PROGRESS_GEOMETRY.outerDiagonal,
+    );
+    ring.addPath(
+      roundedDiamond(
+        TOUCH_HOLD_PROGRESS_GEOMETRY.innerAxis,
+        TOUCH_HOLD_PROGRESS_GEOMETRY.innerDiagonal,
+      ),
+    );
+    ctx.clip(ring, "evenodd");
+    for (let i = 0; i < 4; i++) {
+      const angle = -Math.PI / 4 + (i * Math.PI) / 2;
+      const dx = Math.cos(angle);
+      const dy = Math.sin(angle);
+      const gradient = ctx.createLinearGradient(
+        dx * TOUCH_HOLD_PROGRESS_GEOMETRY.innerDiagonal * unit,
+        dy * TOUCH_HOLD_PROGRESS_GEOMETRY.innerDiagonal * unit,
+        dx * TOUCH_HOLD_PROGRESS_GEOMETRY.outerDiagonal * unit,
+        dy * TOUCH_HOLD_PROGRESS_GEOMETRY.outerDiagonal * unit,
+      );
+      const color = TOUCH_HOLD_PROGRESS_COLORS[i];
+      gradient.addColorStop(0, mixHexColor(color, COLORS.BLACK, 0.28));
+      gradient.addColorStop(0.35, color);
+      gradient.addColorStop(0.72, mixHexColor(color, COLORS.WHITE, 0.32));
+      gradient.addColorStop(1, mixHexColor(color, COLORS.WHITE, 0.08));
+      ctx.fillStyle = gradient;
+      ctx.fillRect(dx > 0 ? 0 : -half, dy > 0 ? 0 : -half, half, half);
+    }
+
+    this.touchHoldProgressSprite = sprite;
+    this.touchHoldProgressBasis = basis;
+    return sprite;
+  }
+
   /** 计算 Touch 传感器在画布上的绝对像素坐标（自动处理水平镜像，"C" 对应圆心）。 */
   getTouchPosition(touchPosition: TouchPosition): Point2D {
     const mirroredPosition = this.mirrorTouchPosition(touchPosition);
@@ -471,7 +583,7 @@ export class TouchRenderer extends BaseRenderer {
       return { x: this.context.centerX, y: this.context.centerY };
     }
 
-    // D/E 与按键对齐；A/B 偏移半个按键
+    // A/B 与按键对齐；D/E 位于相邻按键之间。
     const angle =
       region === "D" || region === "E"
         ? BASE_ANGLE + (sensorNum - 1) * BUTTON_ANGLE_STEP
@@ -483,16 +595,23 @@ export class TouchRenderer extends BaseRenderer {
     };
   }
 
-  /** 渲染单个 Touch 或 Touch Hold 音符（含收拢动画、Hold 环形进度、花瓣轮廓填充与中心圆点）。 */
+  getTouchApproachTimeMs(note: { hiSpeed?: number }): number {
+    return this.getNoteApproachTimeMs(note) * TOUCH_APPROACH_MULTIPLIER;
+  }
+
+  /** 渲染单个 Touch 或 Touch Hold 音符；同帧所有音符须共享 queue 并在收集完后 flush 才能定出覆盖顺序。 */
   renderTouch(
     note: TouchNote | TouchHoldStartNote,
     _currentBeat: number,
     currentTimeMs: number,
     isSimultaneous: boolean,
+    queue?: TouchDrawCommand[],
+    // 未提供时按入队位置兜底：sourceIndex 撞车会让 flush 丢掉整颗音符。
+    sourceIndex = queue?.length ?? 0,
   ): void {
     const isHold = note.type === "touch-hold-start";
     const timeDiff = note.timingMs - currentTimeMs;
-    const approachTime = this.getNoteApproachTimeMs(note) * TOUCH_APPROACH_MULTIPLIER;
+    const approachTime = this.getTouchApproachTimeMs(note);
 
     let visibilityWindow = 50;
     if (isHold && "durationMs" in note && note.durationMs !== undefined) {
@@ -535,12 +654,6 @@ export class TouchRenderer extends BaseRenderer {
     const ddrColor = this.getDdrColor(note.timing);
     const petalBaseAngles = [-Math.PI / 4, Math.PI / 4, (3 * Math.PI) / 4, (-3 * Math.PI) / 4];
     const angleOffset = isHold ? 0 : -Math.PI / 4;
-    const petalColors = [
-      COLORS.TOUCH_HOLD_RED,
-      COLORS.TOUCH_HOLD_YELLOW,
-      COLORS.TOUCH_HOLD_GREEN,
-      COLORS.TOUCH_HOLD_BLUE,
-    ];
     const combinedAlpha = alpha * petalAlpha;
 
     interface PetalGeometry {
@@ -594,234 +707,192 @@ export class TouchRenderer extends BaseRenderer {
       petals.push(petal);
     }
 
-    ctx.save();
-    ctx.globalAlpha = alpha;
-
-    if (isHoldActive && "durationMs" in note && note.durationMs !== undefined) {
-      const elapsed = -timeDiff;
-      const progress = Math.min(elapsed / note.durationMs, 1);
-
-      const progressScale = 1.35;
-      // 花瓣外黑边宽度，进度框/弧同步外扩保持间距；跟随 strokeWidth 缩放
-      const progressBandPad = strokeWidth;
-      const progressRadius = closedDist * progressScale * 1.8 + progressBandPad;
-      const squareSize = closedDist * progressScale * 1.5 + progressBandPad;
-      const r = Math.min(this.scaleByRadius(25 / 300), squareSize * 0.707); // 0.707 = sqrt(2)/2
-      const endAngle = -Math.PI / 2 + progress * Math.PI * 2;
-
+    const drawPart = (part: TouchPart) => {
       ctx.save();
+      ctx.globalAlpha = alpha;
 
-      // 圆角菱形 clip（上 → 右 → 下 → 左，每角用二次贝塞尔）
-      const offset = r * 0.707;
-      ctx.beginPath();
-      ctx.moveTo(position.x - offset, position.y - squareSize + offset);
-      ctx.quadraticCurveTo(
-        position.x,
-        position.y - squareSize,
-        position.x + offset,
-        position.y - squareSize + offset,
-      );
-      ctx.lineTo(position.x + squareSize - offset, position.y - offset);
-      ctx.quadraticCurveTo(
-        position.x + squareSize,
-        position.y,
-        position.x + squareSize - offset,
-        position.y + offset,
-      );
-      ctx.lineTo(position.x + offset, position.y + squareSize - offset);
-      ctx.quadraticCurveTo(
-        position.x,
-        position.y + squareSize,
-        position.x - offset,
-        position.y + squareSize - offset,
-      );
-      ctx.lineTo(position.x - squareSize + offset, position.y + offset);
-      ctx.quadraticCurveTo(
-        position.x - squareSize,
-        position.y,
-        position.x - squareSize + offset,
-        position.y - offset,
-      );
-      ctx.closePath();
-      ctx.clip();
+      if (
+        part === "gauge" &&
+        isHoldActive &&
+        "durationMs" in note &&
+        note.durationMs !== undefined
+      ) {
+        const elapsed = -timeDiff;
+        const progress = Math.min(elapsed / note.durationMs, 1);
 
-      // 进度弧 clip：从顶部顺时针扇形
-      ctx.beginPath();
-      ctx.moveTo(position.x, position.y);
-      ctx.arc(position.x, position.y, progressRadius, -Math.PI / 2, endAngle, false);
-      ctx.closePath();
-      ctx.clip();
-
-      // 放大花瓣：scale 后径向外推 progressBandPad，贴合裁剪边界
-      const px = position.x,
-        py = position.y;
-      const scaleOut = (vx: number, vy: number) => {
-        const sx = (vx - px) * progressScale;
-        const sy = (vy - py) * progressScale;
-        const len = Math.hypot(sx, sy);
-        if (len === 0) return { x: px, y: py };
-        const k = (len + progressBandPad) / len;
-        return { x: px + sx * k, y: py + sy * k };
-      };
-      for (let i = 0; i < 4; i++) {
-        const p = petals[i];
-        const tip = scaleOut(p.tipX, p.tipY);
-        const lf = scaleOut(p.leftX, p.leftY);
-        const rt = scaleOut(p.rightX, p.rightY);
+        const half = this.getTouchHoldProgressHalf();
+        const endAngle = -Math.PI / 2 + progress * Math.PI * 2;
+        ctx.save();
         ctx.beginPath();
-        ctx.moveTo(tip.x, tip.y);
-        ctx.lineTo(lf.x, lf.y);
-        ctx.lineTo(rt.x, rt.y);
+        ctx.moveTo(position.x, position.y);
+        ctx.arc(position.x, position.y, half, -Math.PI / 2, endAngle, false);
         ctx.closePath();
-        ctx.fillStyle = petalColors[i];
+        ctx.clip();
+        ctx.drawImage(
+          this.getTouchHoldProgressSprite(),
+          position.x - half,
+          position.y - half,
+          half * 2,
+          half * 2,
+        );
+
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = combinedAlpha;
+      if (part.startsWith("petal-")) {
+        const petalIndex = Number(part.slice(-1));
+        const p = petals[petalIndex];
+
+        if (ddrColor) {
+          // DDR 动态节拍着色模式走矢量路径
+          ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+          ctx.shadowBlur = this.scaleByRadius(8 / 300);
+          ctx.shadowOffsetX = this.scaleByRadius(2 / 300);
+          ctx.shadowOffsetY = this.scaleByRadius(2 / 300);
+          ctx.fillStyle = "rgba(0, 0, 0, 0.01)"; // 填充微小透明度触发阴影渲染
+
+          ctx.beginPath();
+          this.drawRoundedTriangle(
+            p.tipX,
+            p.tipY,
+            p.leftX,
+            p.leftY,
+            p.rightX,
+            p.rightY,
+            cornerRadius,
+          );
+          ctx.fill();
+
+          ctx.shadowColor = "transparent";
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+
+          // 外三角与内孔各画加宽黑轮廓，再用填充色覆盖内侧光晕
+          ctx.beginPath();
+          this.drawRoundedTriangle(
+            p.tipX,
+            p.tipY,
+            p.leftX,
+            p.leftY,
+            p.rightX,
+            p.rightY,
+            cornerRadius,
+          );
+          this.stroke(COLORS.BLACK, strokeWidth * 3);
+          if (!isHold) {
+            ctx.beginPath();
+            this.drawRoundedTriangle(
+              p.innerTipX!,
+              p.innerTipY!,
+              p.innerLeftX!,
+              p.innerLeftY!,
+              p.innerRightX!,
+              p.innerRightY!,
+              innerCornerRadius,
+            );
+            this.stroke(COLORS.BLACK, strokeWidth * 3);
+          }
+
+          ctx.beginPath();
+          this.drawRoundedTriangle(
+            p.tipX,
+            p.tipY,
+            p.leftX,
+            p.leftY,
+            p.rightX,
+            p.rightY,
+            cornerRadius,
+          );
+          if (!isHold) {
+            this.drawRoundedTriangle(
+              p.innerTipX!,
+              p.innerTipY!,
+              p.innerRightX!,
+              p.innerRightY!,
+              p.innerLeftX!,
+              p.innerLeftY!,
+              innerCornerRadius,
+            );
+          }
+          ctx.fillStyle = isHold
+            ? this.createTouchHoldPetalGradient(
+                ctx,
+                [
+                  mixHexColor(ddrColor, COLORS.WHITE, 0.24),
+                  ddrColor,
+                  mixHexColor(ddrColor, COLORS.BLACK, 0.22),
+                  mixHexColor(ddrColor, COLORS.WHITE, 0.5),
+                ],
+                p.petalX,
+                p.petalY,
+                p.tipX,
+                p.tipY,
+              )
+            : ddrColor;
+          ctx.fill();
+
+          ctx.beginPath();
+          this.drawRoundedTriangle(
+            p.tipX,
+            p.tipY,
+            p.leftX,
+            p.leftY,
+            p.rightX,
+            p.rightY,
+            cornerRadius,
+          );
+          if (!isHold) {
+            this.drawRoundedTriangle(
+              p.innerTipX!,
+              p.innerTipY!,
+              p.innerLeftX!,
+              p.innerLeftY!,
+              p.innerRightX!,
+              p.innerRightY!,
+              innerCornerRadius,
+            );
+          }
+          this.stroke(COLORS.WHITE, strokeWidth);
+        } else {
+          // 分层贴图绘制：按阴影黑边、填充、白边次序绘制
+          const spriteKind = isHold ? "h" : isSimultaneous ? "s" : "n";
+          const spriteHalf = this.getTouchSpriteHalf();
+          for (const layer of ["sb", "f", "w"] as const) {
+            ctx.drawImage(
+              this.getTouchPetalSprite(layer, spriteKind, petalIndex),
+              p.petalX - spriteHalf,
+              p.petalY - spriteHalf,
+              spriteHalf * 2,
+              spriteHalf * 2,
+            );
+          }
+        }
+      }
+
+      if (part === "center") {
+        ctx.globalAlpha = alpha;
+        const centerSize = this.scaleByRadius(TOUCH_CENTER_DOT_RATIO) * 0.8;
+        ctx.beginPath();
+        ctx.arc(position.x, position.y, centerSize, 0, Math.PI * 2);
+        this.stroke(COLORS.BLACK, strokeWidth * 3);
+        ctx.fillStyle = isSimultaneous ? "#FFFF00" : "#00BFFF";
         ctx.fill();
+        this.stroke(COLORS.WHITE, strokeWidth);
       }
 
       ctx.restore();
-    }
-
-    ctx.globalAlpha = combinedAlpha;
-    if (ddrColor) {
-      // DDR 动态节拍着色模式走矢量路径
-      ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-      ctx.shadowBlur = this.scaleByRadius(8 / 300);
-      ctx.shadowOffsetX = this.scaleByRadius(2 / 300);
-      ctx.shadowOffsetY = this.scaleByRadius(2 / 300);
-      ctx.fillStyle = "rgba(0, 0, 0, 0.01)"; // 填充微小透明度触发阴影渲染
-
-      ctx.beginPath();
-      for (let i = 0; i < 4; i++) {
-        const p = petals[i];
-        this.drawRoundedTriangle(
-          p.tipX,
-          p.tipY,
-          p.leftX,
-          p.leftY,
-          p.rightX,
-          p.rightY,
-          cornerRadius,
-        );
-      }
-      ctx.fill();
-
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-
-      // 外三角与内孔各画加宽黑轮廓，再用填充色覆盖内侧光晕
-      ctx.beginPath();
-      for (let i = 0; i < 4; i++) {
-        const p = petals[i];
-        this.drawRoundedTriangle(
-          p.tipX,
-          p.tipY,
-          p.leftX,
-          p.leftY,
-          p.rightX,
-          p.rightY,
-          cornerRadius,
-        );
-      }
-      this.stroke(COLORS.BLACK, strokeWidth * 3);
-      if (!isHold) {
-        ctx.beginPath();
-        for (let i = 0; i < 4; i++) {
-          const p = petals[i];
-          this.drawRoundedTriangle(
-            p.innerTipX!,
-            p.innerTipY!,
-            p.innerLeftX!,
-            p.innerLeftY!,
-            p.innerRightX!,
-            p.innerRightY!,
-            innerCornerRadius,
-          );
-        }
-        this.stroke(COLORS.BLACK, strokeWidth * 3);
-      }
-
-      for (let i = 0; i < 4; i++) {
-        const p = petals[i];
-        ctx.beginPath();
-        this.drawRoundedTriangle(
-          p.tipX,
-          p.tipY,
-          p.leftX,
-          p.leftY,
-          p.rightX,
-          p.rightY,
-          cornerRadius,
-        );
-        if (!isHold) {
-          this.drawRoundedTriangle(
-            p.innerTipX!,
-            p.innerTipY!,
-            p.innerRightX!,
-            p.innerRightY!,
-            p.innerLeftX!,
-            p.innerLeftY!,
-            innerCornerRadius,
-          );
-        }
-        ctx.fillStyle = ddrColor;
-        ctx.fill();
-      }
-
-      ctx.beginPath();
-      for (let i = 0; i < 4; i++) {
-        const p = petals[i];
-        this.drawRoundedTriangle(
-          p.tipX,
-          p.tipY,
-          p.leftX,
-          p.leftY,
-          p.rightX,
-          p.rightY,
-          cornerRadius,
-        );
-        if (!isHold) {
-          this.drawRoundedTriangle(
-            p.innerTipX!,
-            p.innerTipY!,
-            p.innerLeftX!,
-            p.innerLeftY!,
-            p.innerRightX!,
-            p.innerRightY!,
-            innerCornerRadius,
-          );
-        }
-      }
-      this.stroke(COLORS.WHITE, strokeWidth);
-    } else {
-      // 分层贴图绘制：按阴影黑边、填充、白边次序绘制
-      const spriteKind = isHold ? "h" : isSimultaneous ? "s" : "n";
-      const spriteHalf = this.getTouchSpriteHalf();
-      for (const layer of ["sb", "f", "w"] as const) {
-        for (let i = 0; i < 4; i++) {
-          const sprite = this.getTouchPetalSprite(layer, spriteKind, i);
-          const p = petals[i];
-          ctx.drawImage(
-            sprite,
-            p.petalX - spriteHalf,
-            p.petalY - spriteHalf,
-            spriteHalf * 2,
-            spriteHalf * 2,
-          );
-        }
-      }
-    }
-
-    ctx.globalAlpha = alpha;
-    const centerSize = this.scaleByRadius(TOUCH_CENTER_DOT_RATIO) * 0.8;
-    ctx.beginPath();
-    ctx.arc(position.x, position.y, centerSize, 0, Math.PI * 2);
-    this.stroke(COLORS.BLACK, strokeWidth * 3);
-    ctx.fillStyle = isSimultaneous ? "#FFFF00" : "#00BFFF";
-    ctx.fill();
-    this.stroke(COLORS.WHITE, strokeWidth);
-
-    ctx.restore();
+    };
+    const commands = queue ?? [];
+    commands.push({
+      sourceIndex,
+      isHold,
+      draw: drawPart,
+      position: this.mirrorTouchPosition(note.position),
+      registeredAtMs: note.timingMs - approachTime,
+    });
+    if (!queue) flushTouchDrawCommands(commands);
   }
 
   /**

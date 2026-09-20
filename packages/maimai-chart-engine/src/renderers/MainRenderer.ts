@@ -1,3 +1,5 @@
+import { prepareTouchSourceIndices } from "./touchSourceIndices";
+import { flushTouchDrawCommands, TouchDrawOrder, type TouchDrawCommand } from "./touchDrawOrder";
 import { RenderContext, getGradientColors } from "./BaseRenderer";
 import { NoteRenderer } from "./NoteRenderer";
 import { SlideRenderer } from "./SlideRenderer";
@@ -208,6 +210,7 @@ interface RenderNoteMeta {
   simultaneousNonTouchCount: number;
   simultaneousTouchCount: number;
   noExBreakIndex?: number;
+  sourceNoteIndex?: number;
 }
 
 const EMPTY_RENDER_NOTE_META: RenderNoteMeta = {
@@ -276,6 +279,7 @@ export class MainRenderer {
   private slideRenderer!: SlideRenderer;
   private holdRenderer!: HoldRenderer;
   private touchRenderer!: TouchRenderer;
+  private touchDrawOrder = new TouchDrawOrder();
   private holdEffectRenderer!: HoldEffectRenderer;
   private touchHitEffectRenderer!: TouchHitEffectRenderer;
 
@@ -770,14 +774,18 @@ export class MainRenderer {
     const [touchLo, touchHi] = windowRange(prepared.touchIndex, nowMs, lookAheadMs);
     this.renderTouchBorders(touches, touchLo, touchHi, noteMeta, timing.currentTimeMs);
 
+    const touchCommands: TouchDrawCommand[] = [];
     for (let i = touchHi - 1; i >= touchLo; i--) {
       this.touchRenderer.renderTouch(
         touches[i],
         timing.currentBeat,
         timing.currentTimeMs,
         this.getNoteMeta(noteMeta, touches[i]).simultaneousNoteCount >= 2,
+        touchCommands,
+        this.getNoteMeta(noteMeta, touches[i]).sourceNoteIndex,
       );
     }
+    flushTouchDrawCommands(touchCommands, this.touchDrawOrder);
     this.profileMark("touches");
 
     // 特效层统一盖在最上层：先画 Hold / Touch Hold 持续按压波纹，再叠命中/释放特效
@@ -1011,6 +1019,10 @@ export class MainRenderer {
       } else if (isTapNote(note) && !isHoldEndNote(note)) {
         taps.push(note);
       }
+    }
+
+    for (const [note, sourceNoteIndex] of prepareTouchSourceIndices(notes)) {
+      this.getOrCreateNoteMeta(noteMeta, note).sourceNoteIndex = sourceNoteIndex;
     }
 
     this.calculateSimultaneousCounts(notes, noteMeta);

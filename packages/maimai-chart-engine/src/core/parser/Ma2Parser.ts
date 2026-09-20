@@ -20,6 +20,27 @@ import type {
 } from "../../types";
 import { isUpperHalf } from "../../utils/slideAreaSteps";
 
+const SLIDE_COMMANDS = new Set([
+  "SI_",
+  "SCR",
+  "SCL",
+  "SXR",
+  "SXL",
+  "SUL",
+  "SUR",
+  "SV_",
+  "SVP",
+  "SF_",
+  "SWF",
+  "SSL",
+  "SSR",
+  "SLL",
+  "SLR",
+]);
+
+/** 占用一个原始记录序号的指令；漏掉其一会让 sourceNoteIndex 与文件记录号错位。 */
+const RECORD_COMMANDS = new Set(["TAP", "HLD", "STR", "TTP", "THO", ...SLIDE_COMMANDS]);
+
 /** 把 MA2 的 0-7 键位索引转成引擎的 1-8 键位，越界回退到 1。 */
 function getButtonPosition(val: number): ButtonPosition {
   const pos = val + 1;
@@ -134,6 +155,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
   const bpmEvents: BpmEvent[] = [];
   const divisorEvents: DivisorEvent[] = [];
 
+  let sourceNoteIndex = 0;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (line === "" || line.startsWith("#")) continue;
@@ -231,6 +253,8 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
     const isEx = cmd.startsWith("EX") || cmd.startsWith("BX");
 
     const mainType = cmd.substring(2);
+    const recordIndex = sourceNoteIndex;
+    if (RECORD_COMMANDS.has(mainType)) sourceNoteIndex++;
 
     if (mainType === "TAP") {
       const rawPos = Number.parseInt(tokens[3], 10);
@@ -247,6 +271,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
           bpm: initialBpm,
           isEx,
         };
+        tapNote.sourceNoteIndex = recordIndex;
         notes.push(tapNote);
       }
     } else if (mainType === "HLD") {
@@ -270,6 +295,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
           isEx,
           isBreakHold: isBreak,
         };
+        holdStart.sourceNoteIndex = recordIndex;
         notes.push(holdStart);
 
         const endTiming = timing + duration;
@@ -306,26 +332,11 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
           isStartBreak: isBreak,
           isEx,
         });
+        slideNote.sourceNoteIndex = recordIndex;
         notes.push(slideNote);
         slideNotesList.push(slideNote);
       }
-    } else if (
-      mainType === "SI_" ||
-      mainType === "SCR" ||
-      mainType === "SCL" ||
-      mainType === "SXR" ||
-      mainType === "SXL" ||
-      mainType === "SUL" ||
-      mainType === "SUR" ||
-      mainType === "SV_" ||
-      mainType === "SVP" ||
-      mainType === "SF_" ||
-      mainType === "SWF" ||
-      mainType === "SSL" ||
-      mainType === "SSR" ||
-      mainType === "SLL" ||
-      mainType === "SLR"
-    ) {
+    } else if (SLIDE_COMMANDS.has(mainType)) {
       const rawStartPos = Number.parseInt(tokens[3], 10);
       const delayTicks = Number.parseInt(tokens[4], 10);
       const durationTicks = Number.parseInt(tokens[5], 10);
@@ -445,6 +456,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
             headlessSlide.allDelayMs = [delay];
             headlessSlide.allCustomLengths = [null];
             headlessSlide.allSlideBreaks = [isBreak];
+            headlessSlide.sourceNoteIndex = recordIndex;
             notes.push(headlessSlide);
             slideNotesList.push(headlessSlide);
           }
@@ -468,6 +480,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
             bpm: initialBpm,
             hasFirework,
           };
+          touchNote.sourceNoteIndex = recordIndex;
           notes.push(touchNote);
         }
       }
@@ -495,6 +508,7 @@ export function parseMa2Chart(ma2Text: string, difficulty: ChartDifficulty): Cha
             hasFirework,
             isHoldStart: true,
           };
+          touchHoldStart.sourceNoteIndex = recordIndex;
           notes.push(touchHoldStart);
 
           const endTiming = timing + duration;
