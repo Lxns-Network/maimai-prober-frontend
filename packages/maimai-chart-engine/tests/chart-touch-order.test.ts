@@ -3,14 +3,14 @@ import { MainRenderer } from "../src/renderers/MainRenderer";
 import { TouchRenderer } from "../src/renderers/TouchRenderer";
 import type { RenderContext } from "../src/renderers/BaseRenderer";
 import { parseMa2Chart } from "../src/core/parser/Ma2Parser";
-import { prepareTouchSourceIndices } from "../src/renderers/touchSourceIndices";
+import { prepareTouchSourceIndices } from "../src/utils/touchSourceIndices";
 import { parseSimaiChart } from "../src/core/parser/SimaiParser";
 import {
   TouchDrawOrder,
   type TouchSortNote,
   flushTouchDrawCommands,
   type TouchDrawCommand,
-} from "../src/renderers/touchDrawOrder";
+} from "../src/utils/touchDrawOrder";
 import fixtures from "./fixtures/touch-sorting-native.json";
 
 describe("Touch component stacking", () => {

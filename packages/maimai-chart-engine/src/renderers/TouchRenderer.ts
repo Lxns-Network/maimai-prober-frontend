@@ -1,4 +1,8 @@
-import { flushTouchDrawCommands, type TouchDrawCommand, type TouchPart } from "./touchDrawOrder";
+import {
+  flushTouchDrawCommands,
+  type TouchDrawCommand,
+  type TouchPart,
+} from "../utils/touchDrawOrder";
 import { BaseRenderer, mixHexColor, RenderContext } from "./BaseRenderer";
 import { TouchNote, TouchHoldStartNote, Point2D, TouchPosition } from "../types";
 import {

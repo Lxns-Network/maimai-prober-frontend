@@ -1,5 +1,9 @@
-import { prepareTouchSourceIndices } from "./touchSourceIndices";
-import { flushTouchDrawCommands, TouchDrawOrder, type TouchDrawCommand } from "./touchDrawOrder";
+import { prepareTouchSourceIndices } from "../utils/touchSourceIndices";
+import {
+  flushTouchDrawCommands,
+  TouchDrawOrder,
+  type TouchDrawCommand,
+} from "../utils/touchDrawOrder";
 import { RenderContext, getGradientColors } from "./BaseRenderer";
 import { NoteRenderer } from "./NoteRenderer";
 import { SlideRenderer } from "./SlideRenderer";

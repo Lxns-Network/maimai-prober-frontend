@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { drawGroupKey, sortDrawGroup } from "../src/renderers/drawGroupSort";
+import { drawGroupKey, sortDrawGroup } from "../src/utils/drawGroupSort";
 import fixtures from "./fixtures/touch-sorting-native.json";
 
 describe("Draw group sort permutations", () => {
