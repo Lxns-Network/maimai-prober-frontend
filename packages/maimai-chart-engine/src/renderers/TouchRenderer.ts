@@ -15,6 +15,12 @@ import {
   NOTE_STROKE_WIDTH_RATIO,
   COLORS,
 } from "../utils/constants";
+
+// 花瓣绘制比例，分母 300 为判定圈参考半径像素。圆角与阴影模糊取值相同但互不相干。
+const PETAL_CORNER_RATIO = 8 / 300;
+const PETAL_SHADOW_BLUR_RATIO = 8 / 300;
+const PETAL_SHADOW_OFFSET_RATIO = 2 / 300;
+
 // Touch Hold 花瓣纵向渐变色阶与进度环四象限基色。
 const TOUCH_HOLD_PETAL_PALETTES = [
   ["#FF5511", COLORS.TOUCH_HOLD_RED, "#E74201", "#FFF6F2"],
@@ -50,8 +56,8 @@ export class TouchRenderer extends BaseRenderer {
     return (
       this.scaleByRadius(TOUCH_PETAL_CLOSED_RATIO) * 1.3 +
       this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO) * 3 +
-      this.scaleByRadius(8 / 300) +
-      this.scaleByRadius(2 / 300)
+      this.scaleByRadius(PETAL_SHADOW_BLUR_RATIO) +
+      this.scaleByRadius(PETAL_SHADOW_OFFSET_RATIO)
     );
   }
 
@@ -108,7 +114,7 @@ export class TouchRenderer extends BaseRenderer {
     const innerLeftY = cy + (leftY - cy) * innerRatio;
     const innerRightX = cx + (rightX - cx) * innerRatio;
     const innerRightY = cy + (rightY - cy) * innerRatio;
-    const cornerRadius = this.scaleByRadius(8 / 300);
+    const cornerRadius = this.scaleByRadius(PETAL_CORNER_RATIO);
     const innerCornerRadius = cornerRadius * 0.4;
     const strokeWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
 
@@ -117,9 +123,9 @@ export class TouchRenderer extends BaseRenderer {
     try {
       if (layer === "sb") {
         sctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-        sctx.shadowBlur = this.scaleByRadius(8 / 300);
-        sctx.shadowOffsetX = this.scaleByRadius(2 / 300);
-        sctx.shadowOffsetY = this.scaleByRadius(2 / 300);
+        sctx.shadowBlur = this.scaleByRadius(PETAL_SHADOW_BLUR_RATIO);
+        sctx.shadowOffsetX = this.scaleByRadius(PETAL_SHADOW_OFFSET_RATIO);
+        sctx.shadowOffsetY = this.scaleByRadius(PETAL_SHADOW_OFFSET_RATIO);
         sctx.fillStyle = "rgba(0, 0, 0, 0.01)"; // 填充微小透明度触发阴影渲染
         sctx.beginPath();
         this.drawRoundedTriangle(tipX, tipY, leftX, leftY, rightX, rightY, cornerRadius);
@@ -157,8 +163,9 @@ export class TouchRenderer extends BaseRenderer {
           );
         } else {
           const gradient = sctx.createLinearGradient(0, 0, tipX, tipY);
-          gradient.addColorStop(0, kind === "s" ? "#FFFF00" : "#00FFFF");
-          gradient.addColorStop(1, kind === "s" ? "#FFD700" : "#0080FF");
+          const isEach = kind === "s";
+          gradient.addColorStop(0, isEach ? COLORS.TOUCH_SIMULTANEOUS_YELLOW : COLORS.TOUCH_CYAN);
+          gradient.addColorStop(1, isEach ? COLORS.SIMULTANEOUS_GOLD : COLORS.TOUCH_BLUE);
           fillStyle = gradient;
         }
         sctx.beginPath();
@@ -342,7 +349,7 @@ export class TouchRenderer extends BaseRenderer {
     const isHoldActive = isHold && timeDiff < 0;
     const ctx = this.context.ctx;
 
-    const cornerRadius = this.scaleByRadius(8 / 300);
+    const cornerRadius = this.scaleByRadius(PETAL_CORNER_RATIO);
     const innerCornerRadius = cornerRadius * 0.4;
     const strokeWidth = this.scaleByRadius(NOTE_STROKE_WIDTH_RATIO);
     const ddrColor = this.getDdrColor(note.timing);
@@ -441,9 +448,9 @@ export class TouchRenderer extends BaseRenderer {
         if (ddrColor) {
           // DDR 动态节拍着色模式走矢量路径
           ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-          ctx.shadowBlur = this.scaleByRadius(8 / 300);
-          ctx.shadowOffsetX = this.scaleByRadius(2 / 300);
-          ctx.shadowOffsetY = this.scaleByRadius(2 / 300);
+          ctx.shadowBlur = this.scaleByRadius(PETAL_SHADOW_BLUR_RATIO);
+          ctx.shadowOffsetX = this.scaleByRadius(PETAL_SHADOW_OFFSET_RATIO);
+          ctx.shadowOffsetY = this.scaleByRadius(PETAL_SHADOW_OFFSET_RATIO);
           ctx.fillStyle = "rgba(0, 0, 0, 0.01)"; // 填充微小透明度触发阴影渲染
 
           ctx.beginPath();

@@ -183,11 +183,10 @@ export const COLORS = {
   SLIDE_PINK: "#ff69b4",
   SLIDE_SIMULTANEOUS: "#FFED24",
 
-  HOLD_PINK: "#ff69b4",
-  HOLD_BREAK: "#FF8C00",
-
   TOUCH_CYAN: "#00FFFF",
   TOUCH_BLUE: "#0080FF",
+  /** 双押 Touch 花瓣渐变起点；与 DDR_YELLOW 同值但用途无关，不可互换。 */
+  TOUCH_SIMULTANEOUS_YELLOW: "#FFFF00",
   TOUCH_HOLD_RED: "#F74601",
   TOUCH_HOLD_YELLOW: "#F6ED00",
   TOUCH_HOLD_GREEN: "#12A86A",
@@ -198,7 +197,6 @@ export const COLORS = {
   EX_OVERLAY_NORMAL: "rgba(255, 180, 210, 0.8)",
 
   WHITE: "#ffffff",
-  CONNECTOR_GOLD: "#FFD700",
 
   HIT_EFFECT_GOLD: "#F5EA72",
 
