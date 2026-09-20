@@ -8,7 +8,7 @@ import { RenderContext, getGradientColors } from "./BaseRenderer";
 import { NoteRenderer } from "./NoteRenderer";
 import { SlideRenderer } from "./SlideRenderer";
 import { HoldRenderer } from "./HoldRenderer";
-import { TouchRenderer, fireworkTriggerMs } from "./TouchRenderer";
+import { TouchRenderer } from "./TouchRenderer";
 import { TimingTimeline } from "../core/timing/TimingTimeline";
 import {
   Note,
@@ -44,6 +44,7 @@ import {
 
 import { HoldEffectRenderer } from "../effects/HoldEffectRenderer";
 import { TouchHitEffectRenderer } from "../effects/TouchHitEffectRenderer";
+import { TouchFireworkRenderer, fireworkTriggerMs } from "../effects/TouchFireworkRenderer";
 
 const MAX_DPR = 2;
 const FULLSCREEN_MIN_DPR = 1;
@@ -286,6 +287,7 @@ export class MainRenderer {
   private touchDrawOrder = new TouchDrawOrder();
   private holdEffectRenderer!: HoldEffectRenderer;
   private touchHitEffectRenderer!: TouchHitEffectRenderer;
+  private touchFireworkRenderer!: TouchFireworkRenderer;
 
   private sensorImage: HTMLImageElement | null = null;
   private sensorImagePath: string;
@@ -373,6 +375,7 @@ export class MainRenderer {
     this.touchRenderer = new TouchRenderer(context);
     this.holdEffectRenderer = new HoldEffectRenderer(context);
     this.touchHitEffectRenderer = new TouchHitEffectRenderer(context);
+    this.touchFireworkRenderer = new TouchFireworkRenderer(context);
   }
 
   private createRenderContext(): RenderContext {
@@ -396,6 +399,7 @@ export class MainRenderer {
     this.touchRenderer.updateContext(context);
     this.holdEffectRenderer.updateContext(context);
     this.touchHitEffectRenderer.updateContext(context);
+    this.touchFireworkRenderer.updateContext(context);
   }
 
   private loadAssets(): void {
@@ -692,12 +696,12 @@ export class MainRenderer {
     if (!this.config.showFireworks) return;
     if (touches.length === 0) return;
 
-    this.touchRenderer.warmFireworkResources();
+    this.touchFireworkRenderer.warmFireworkResources();
     this.ctx.save();
     this.ctx.beginPath();
     this.ctx.arc(this.centerX, this.centerY, this.logicalSize / 2, 0, Math.PI * 2);
     this.ctx.clip();
-    this.touchRenderer.renderTouchFireworks(touches, timing.currentTimeMs);
+    this.touchFireworkRenderer.renderTouchFireworks(touches, timing.currentTimeMs);
     this.ctx.restore();
   }
 
@@ -817,9 +821,7 @@ export class MainRenderer {
         touchHoldLo,
         touchHoldHi,
       );
-      this.touchHitEffectRenderer.renderTouchHitEffects(touches, timing.currentTimeMs, (pos) =>
-        this.touchRenderer.getTouchPosition(pos),
-      );
+      this.touchHitEffectRenderer.renderTouchHitEffects(touches, timing.currentTimeMs);
       this.renderTapHitEffect(hitEffectNotes, timing.currentTimeMs);
     }
     this.profileMark("effects");

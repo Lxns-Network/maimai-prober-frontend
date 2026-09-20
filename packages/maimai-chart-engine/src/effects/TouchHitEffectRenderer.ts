@@ -144,7 +144,6 @@ export class TouchHitEffectRenderer extends BaseRenderer {
   renderTouchHitEffects(
     touches: readonly (TouchNote | TouchHoldStartNote)[],
     currentTimeMs: number,
-    getTouchPosition: (position: TouchPosition) => { x: number; y: number },
     color: Rgb = HIT_EFFECT_COLORS.perfect,
   ): void {
     if (!touches.length) return;
@@ -186,7 +185,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
       const age = (currentTimeMs - note.timingMs) / 1000;
       if (age < 0 || age >= LIFE) continue;
 
-      const origin = getTouchPosition(note.position as TouchPosition);
+      const origin = this.getTouchPosition(note.position as TouchPosition);
       let seed = Math.round(note.timingMs * 1000);
       for (let c = 0; c < note.position.length; c++) {
         seed = (seed ^ (note.position.charCodeAt(c) * (c + 1) * 73856093)) | 0;

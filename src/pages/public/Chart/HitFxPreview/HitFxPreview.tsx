@@ -28,6 +28,7 @@ import {
   TOUCH_HOLD_CENTRE_BURST_ANGLE,
   NoteRenderer,
   SlideRenderer,
+  TouchFireworkRenderer,
   TouchHitEffectRenderer,
   TouchRenderer,
   type ButtonPosition,
@@ -282,6 +283,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<MainRenderer | null>(null);
   const touchFxRef = useRef<TouchHitEffectRenderer | null>(null);
+  const fireworkRef = useRef<TouchFireworkRenderer | null>(null);
   const holdFxRef = useRef<HoldEffectRenderer | null>(null);
   const noteFxRef = useRef<NoteRenderer | null>(null);
   const touchNoteRef = useRef<TouchRenderer | null>(null);
@@ -357,6 +359,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
     const ctx = main.getRenderContext();
     const noteFx = new NoteRenderer(ctx);
     touchFxRef.current = new TouchHitEffectRenderer(ctx);
+    fireworkRef.current = new TouchFireworkRenderer(ctx);
     holdFxRef.current = new HoldEffectRenderer(ctx);
     noteFxRef.current = noteFx;
     touchNoteRef.current = new TouchRenderer(ctx);
@@ -367,6 +370,7 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
       main.resize(false);
       const next = main.getRenderContext();
       touchFxRef.current?.updateContext(next);
+      fireworkRef.current?.updateContext(next);
       holdFxRef.current?.updateContext(next);
       noteFxRef.current?.updateContext(next);
       touchNoteRef.current?.updateContext(next);
@@ -391,12 +395,22 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
       if (!alive) return;
       const main = mainRef.current;
       const touchFx = touchFxRef.current;
+      const firework = fireworkRef.current;
       const holdFx = holdFxRef.current;
       const noteFx = noteFxRef.current;
       const touchNote = touchNoteRef.current;
       const holdNote = holdNoteRef.current;
       const slide = slideRef.current;
-      if (!main || !touchFx || !holdFx || !noteFx || !touchNote || !holdNote || !slide) {
+      if (
+        !main ||
+        !touchFx ||
+        !firework ||
+        !holdFx ||
+        !noteFx ||
+        !touchNote ||
+        !holdNote ||
+        !slide
+      ) {
         rafRef.current = requestAnimationFrame(frame);
         return;
       }
@@ -565,17 +579,17 @@ export function HitFxPreview({ onClose }: HitFxPreviewProps) {
         // 与引擎一致：烟花内切圆裁剪、画在最底层（note 之下）。
         if (kind === "touch-firework" && t >= hitAt) {
           const ctx = context.ctx;
-          touchNote.warmFireworkResources();
+          firework.warmFireworkResources();
           ctx.save();
           ctx.beginPath();
           ctx.arc(centerX, centerY, centerX, 0, Math.PI * 2);
           ctx.clip();
-          touchNote.renderTouchFireworks([note], t);
+          firework.renderTouchFireworks([note], t);
           ctx.restore();
         }
         touchNote.renderTouch(note, 0, t, each);
         if (t >= hitAt) {
-          touchFx.renderTouchHitEffects([note], t, (pos) => touchNote.getTouchPosition(pos), color);
+          touchFx.renderTouchHitEffects([note], t, color);
         }
       }
 
