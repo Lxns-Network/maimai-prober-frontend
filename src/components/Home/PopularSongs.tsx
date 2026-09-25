@@ -1,13 +1,4 @@
-import {
-  Avatar,
-  Badge,
-  Center,
-  Group,
-  Skeleton,
-  Stack,
-  Text,
-  ThemeIcon,
-} from "@mantine/core";
+import { Avatar, Badge, Center, Group, Skeleton, Stack, Text, ThemeIcon } from "@mantine/core";
 import { IconCrown, IconPhotoOff, IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 import clsx from "clsx";
 import { Link } from "@/components/Link";
@@ -21,18 +12,10 @@ import { useShallow } from "zustand/react/shallow";
 
 function Trend({ delta }: { delta: number | "new" }) {
   if (delta === "new") {
-    return (
-      <span className={clsx(classes.trend, classes.trendNew)}>
-        NEW
-      </span>
-    );
+    return <span className={clsx(classes.trend, classes.trendNew)}>NEW</span>;
   }
   if (delta === 0) {
-    return (
-      <span className={clsx(classes.trend, classes.trendFlat)}>
-        —
-      </span>
-    );
+    return <span className={clsx(classes.trend, classes.trendFlat)}>—</span>;
   }
   const up = delta > 0;
 

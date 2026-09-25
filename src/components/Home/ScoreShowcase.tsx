@@ -47,9 +47,7 @@ function Scene({ children }: { children: ReactNode }) {
     <ErrorBoundary
       fallback={
         <Center h="100%">
-          <Text c="dimmed">
-            预览暂时不可用
-          </Text>
+          <Text c="dimmed">预览暂时不可用</Text>
         </Center>
       }
     >

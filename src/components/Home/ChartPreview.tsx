@@ -21,9 +21,7 @@ export function ChartPreview() {
             <ErrorBoundary
               fallback={
                 <Center h="100%">
-                  <Text c="gray.4">
-                    预览暂时不可用
-                  </Text>
+                  <Text c="gray.4">预览暂时不可用</Text>
                 </Center>
               }
             >

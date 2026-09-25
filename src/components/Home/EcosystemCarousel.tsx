@@ -23,9 +23,7 @@ const slides = products.map((item) => (
         className={classes.avatar}
       />
       <div className={classes.meta}>
-        <Text className={classes.title}>
-          {item.title}
-        </Text>
+        <Text className={classes.title}>{item.title}</Text>
         <Group gap={6}>
           {item.tags.map((tag) => (
             <Badge key={tag} variant="default" radius="md">
