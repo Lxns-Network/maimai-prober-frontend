@@ -79,5 +79,13 @@
     "image": "chusearchsong",
     "button": "了解更多",
     "url": "https://github.com/k4641321/chusearchsong_flutter"
-  }
+  },
+  {
+    "title": "ChiffonMai",
+    "tags": ["手机应用", "舞萌DX"],
+    "description": "一款专为舞萌DX玩家打造的一站式移动端工具类应用，聚合了曲库查询、成绩统计、Rating计算、曲目推荐等多种实用功能，助力玩家提升游玩体验",
+    "image": "ChiffonMai",
+    "button": "了解更多",
+    "url": "https://github.com/ChiffonOwO/ChiffonMai"
+  },
 ]
