@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, Card, Group, Text, Title } from "@mantine/core";
+import { Avatar, Badge, Button, Card, Group, Text } from "@mantine/core";
 import { useInViewport } from "@mantine/hooks";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -12,7 +12,6 @@ const ROTATION_INTERVAL_MS = 3000;
 const TICK_INTERVAL_MS = 50;
 const RESUME_AUTOPLAY_DELAY_MS = 3000;
 
-// 卡片内容全部来自静态 JSON，提升到模块级复用同一批元素，避免每次渲染重建
 const slides = products.map((item) => (
   <div className={classes.slide} key={item.title}>
     <div className={classes.header}>
@@ -24,12 +23,12 @@ const slides = products.map((item) => (
         className={classes.avatar}
       />
       <div className={classes.meta}>
-        <Title order={3} className={classes.title}>
+        <Text className={classes.title}>
           {item.title}
-        </Title>
+        </Text>
         <Group gap={6}>
           {item.tags.map((tag) => (
-            <Badge key={tag} variant="default" size="sm" radius="md">
+            <Badge key={tag} variant="default" radius="md">
               {tag}
             </Badge>
           ))}
@@ -55,7 +54,6 @@ export const EcosystemCarousel = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // 圆点条拖拽状态
   const [isDraggingDots, setIsDraggingDots] = useState(false);
   const isPointerDownRef = useRef(false);
   const dragMovedRef = useRef(false);
@@ -89,7 +87,6 @@ export const EcosystemCarousel = () => {
     return () => clearResumeTimer();
   }, [clearResumeTimer]);
 
-  // 监听 Embla 选定页与拖拽交互
   useEffect(() => {
     if (!emblaApi) return;
 
@@ -123,7 +120,6 @@ export const EcosystemCarousel = () => {
     };
   }, [emblaApi, pauseAutoplay, scheduleAutoplayResume]);
 
-  // 自动翻页定时器：仅在翻页动画完全结束（isSettled）后才开始计时；翻页后由 select 事件复位计时
   useEffect(() => {
     if (!inViewport || !isSettled || isHovered || isDraggingDots || !isAutoPlaying || !emblaApi) {
       return;
@@ -144,7 +140,6 @@ export const EcosystemCarousel = () => {
     return () => clearInterval(timer);
   }, [inViewport, isSettled, isHovered, isDraggingDots, isAutoPlaying, emblaApi]);
 
-  // 圆点指示器拖拽/点击交互：按最近圆点中心取目标，避免两端点击错位
   const updateIndexFromDots = (clientX: number) => {
     if (!emblaApi) return;
     const el = dotsRef.current;
@@ -243,7 +238,6 @@ export const EcosystemCarousel = () => {
       }}
       data-nosnippet
     >
-      {/* Embla 原生横向平滑滑动视口 */}
       <div className={classes.viewport} ref={emblaRef}>
         <div className={classes.container}>{slides}</div>
       </div>
@@ -261,18 +255,12 @@ export const EcosystemCarousel = () => {
           {current.button}
         </Button>
 
-        {/* 保持原样视觉、支持按住拖动滑动的圆点指示器条 */}
         <div
           className={classes.dots}
           ref={dotsRef}
           data-dragging={isDraggingDots || undefined}
           role="slider"
           tabIndex={0}
-          aria-label="拖动或点击切换项目"
-          aria-valuemin={1}
-          aria-valuemax={products.length}
-          aria-valuenow={activeIndex + 1}
-          aria-valuetext={current.title}
           onPointerDown={handleDotsPointerDown}
           onPointerMove={handleDotsPointerMove}
           onPointerUp={handleDotsPointerEnd}

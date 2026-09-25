@@ -277,9 +277,7 @@ export default function Page() {
                     热门曲目
                   </Title>
                   <Text className={classes.sectionDescription} mt="xs">
-                    {game === "maimai"
-                      ? "近期全站玩家游玩最多的舞萌 DX 曲目。"
-                      : "近期全站玩家游玩最多的中二节奏曲目。"}
+                    近期全站玩家游玩最多的「{game === "maimai" ? "舞萌 DX" : "中二节奏"}」曲目。
                   </Text>
                 </div>
                 <SegmentedControl
@@ -288,7 +286,6 @@ export default function Page() {
                   value={popularRange}
                   onChange={(value) => setPopularRange(value as PopularRangeKey)}
                   data={popularRangeOptions}
-                  aria-label="热门曲目时间范围"
                 />
               </div>
               <PopularSongs game={game} popular={popular} isPending={isPopularPending} />

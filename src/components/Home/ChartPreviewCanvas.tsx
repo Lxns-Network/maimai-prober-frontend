@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { MainRenderer, parseSimaiChart, TimingTimeline } from "@lxns-network/maimai-chart-engine";
-import chartSource from "./chart-preview.txt?raw";
+import chartSource from "@/data/chart-preview.txt?raw";
 import classes from "./ChartPreview.module.css";
 
 interface PreviewScene {

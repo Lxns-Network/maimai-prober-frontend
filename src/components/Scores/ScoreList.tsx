@@ -24,7 +24,6 @@ interface ScoreCardProps extends ScoreProps {
   game: Game;
 }
 
-/** 单张成绩卡片，游戏由调用方指定，供成绩列表与首页展示复用。 */
 export const ScoreCard = ({ game, score, onClick }: ScoreCardProps) => {
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
 

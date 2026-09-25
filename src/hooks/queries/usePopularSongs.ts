@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Game } from "@/types/game";
 import { queryKeys } from "./queryKeys.ts";
+import { POPULAR_SONGS_MOCK } from "./popularSongsMock.ts";
+
+// 临时：开发环境用线上快照代替接口，并延迟返回以便观察骨架屏。排查完删除。
+const MOCK_DELAY_MS = 3000;
 
 export type PopularRangeKey = "week" | "month";
 
@@ -36,6 +40,12 @@ export const usePopularSongs = (game: Game, range: PopularRangeKey) => {
   const { data, isPending } = useQuery<PopularSongsData>({
     queryKey: queryKeys.song.popular(game, range),
     staleTime: 5 * 60 * 1000,
+    ...(import.meta.env.DEV && {
+      queryFn: () =>
+        new Promise<PopularSongsData>((resolve) =>
+          setTimeout(() => resolve(POPULAR_SONGS_MOCK[range]), MOCK_DELAY_MS),
+        ),
+    }),
   });
 
   return {

@@ -1,7 +1,7 @@
 import type { MaimaiScoreProps } from "@/types/score";
 import type { MaimaiSongProps } from "@/utils/api/song/maimai";
 import { calculateMaimaiRating } from "@/utils/maimai/rating";
-import showcaseSongJson from "./scoreShowcaseSong.json";
+import showcaseSongJson from "@/data/showcaseSong.json";
 
 interface ShowcaseEntry {
   id: number;
@@ -15,7 +15,6 @@ interface ShowcaseEntry {
   fs: string;
 }
 
-// 条数要够铺满自适应高度的场景，否则列表下方会留空
 const showcaseEntries: ShowcaseEntry[] = [
   {
     id: 834,

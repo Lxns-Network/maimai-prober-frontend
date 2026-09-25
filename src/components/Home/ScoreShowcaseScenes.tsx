@@ -35,7 +35,7 @@ import {
   showcaseHistory,
   showcaseScores,
   showcaseSong,
-} from "./scoreShowcaseData";
+} from "../../data/showcaseData";
 
 const ratingRange = scoreRatingRanges.maimai;
 
