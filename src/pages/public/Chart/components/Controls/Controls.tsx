@@ -82,6 +82,9 @@ import { clamp } from "../../utils/math";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import { openConfirmModal } from "@/utils/modal";
 import classes from "./Controls.module.css";
+import { usePageContext } from "vike-react/usePageContext";
+import { useSongDetail } from "@/hooks/queries/useSongDetail";
+import type { MaimaiSongProps } from "@/utils/api/song/maimai";
 
 const DevHitFxPreview = import.meta.env.DEV
   ? lazy(() => import("../../HitFxPreview/HitFxPreview"))
@@ -824,6 +827,12 @@ export function PlaybackControls({
 }
 
 export function Controls({ isUtage }: { isUtage?: boolean }) {
+  const chartId = Number(usePageContext().urlParsed.search.chart_id);
+  const songId =
+    Number.isInteger(chartId) && chartId > 0 && chartId < 100000 ? chartId % 10000 : null;
+  const { songDetail } = useSongDetail("maimai", songId);
+  const song = songDetail as MaimaiSongProps | null;
+  const difficulties = chartId >= 10000 ? song?.difficulties.dx : song?.difficulties.standard;
   const playbackSpeed = useGameStore((s) => s.playbackSpeed);
   const rawSimaiText = useGameStore((s) => s.rawSimaiText);
   const selectedDifficulty = useGameStore((s) => s.selectedDifficulty);
@@ -1288,7 +1297,19 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
             if (!isAvailable) return null;
 
             const isSelected = selectedDifficulty === diff;
-            const level = chartData?.level?.[`lv_${diff}` as keyof typeof chartData.level];
+            const difficulty = difficulties?.find(
+              (difficulty) => difficulty.difficulty === diff - 2,
+            );
+            const level =
+              difficulty?.level || chartData?.level?.[`lv_${diff}` as keyof typeof chartData.level];
+            const levelValue = difficulty?.level_value;
+            const constantLabel =
+              !isUtage &&
+              typeof levelValue === "number" &&
+              Number.isFinite(levelValue) &&
+              levelValue > 0
+                ? `定数：${levelValue.toFixed(1)}`
+                : null;
             const isLightColor = !isUtage && diff === 6;
             const color = isUtage ? UTAGE_COLOR : DIFFICULTY_COLORS[diff];
             const textColor = getDifficultyTextColor(isSelected, isLightColor, color);
@@ -1297,18 +1318,19 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               level && isUtage ? (level.endsWith("?") ? level : `${level}?`) : level;
 
             return (
-              <UnstyledButton
-                key={diff}
-                onClick={() => handleDifficultyChange(diff)}
-                className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
-                style={{
-                  backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
-                  color: textColor,
-                }}
-              >
-                <span className={classes.difficultyName}>{name}</span>
-                {displayLevel && <span className={classes.difficultyLevel}>{displayLevel}</span>}
-              </UnstyledButton>
+              <Tooltip key={diff} label={constantLabel} disabled={!constantLabel}>
+                <UnstyledButton
+                  onClick={() => handleDifficultyChange(diff)}
+                  className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
+                  style={{
+                    backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
+                    color: textColor,
+                  }}
+                >
+                  <span className={classes.difficultyName}>{name}</span>
+                  {displayLevel && <span className={classes.difficultyLevel}>{displayLevel}</span>}
+                </UnstyledButton>
+              </Tooltip>
             );
           })}
         </Group>
@@ -1494,7 +1516,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={0}
                 max={1}
                 step={0.1}
-                label={null}
+                label={(value) => `${Math.round(value * 100)}%`}
               />
             </div>
 
@@ -1511,7 +1533,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={0}
                 max={1}
                 step={0.1}
-                label={null}
+                label={(value) => `${Math.round(value * 100)}%`}
               />
             </div>
 
@@ -1528,7 +1550,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={0}
                 max={1}
                 step={0.2}
-                label={null}
+                label={(value) => `${Math.round(value * 100)}%`}
               />
             </div>
 
@@ -1556,7 +1578,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={-2000}
                 max={2000}
                 step={10}
-                label={null}
+                label={(value) => `${value}ms`}
                 marks={[{ value: 0 }]}
                 startPointValue={0}
               />
@@ -1600,7 +1622,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={-200}
                 max={200}
                 step={5}
-                label={null}
+                label={(value) => `${value}ms`}
                 marks={[{ value: 0 }]}
                 startPointValue={0}
               />
