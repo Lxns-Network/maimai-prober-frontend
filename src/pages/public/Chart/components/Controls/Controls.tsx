@@ -84,7 +84,6 @@ import { openConfirmModal } from "@/utils/modal";
 import classes from "./Controls.module.css";
 import { usePageContext } from "vike-react/usePageContext";
 import { useSongDetail } from "@/hooks/queries/useSongDetail";
-import type { MaimaiSongProps } from "@/utils/api/song/maimai";
 
 const DevHitFxPreview = import.meta.env.DEV
   ? lazy(() => import("../../HitFxPreview/HitFxPreview"))
@@ -830,8 +829,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
   const chartId = Number(usePageContext().urlParsed.search.chart_id);
   const songId =
     Number.isInteger(chartId) && chartId > 0 && chartId < 100000 ? chartId % 10000 : null;
-  const { songDetail } = useSongDetail("maimai", songId);
-  const song = songDetail as MaimaiSongProps | null;
+  const { songDetail: song } = useSongDetail("maimai", songId);
   const difficulties = chartId >= 10000 ? song?.difficulties.dx : song?.difficulties.standard;
   const playbackSpeed = useGameStore((s) => s.playbackSpeed);
   const rawSimaiText = useGameStore((s) => s.rawSimaiText);
