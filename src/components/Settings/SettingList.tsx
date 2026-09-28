@@ -76,7 +76,7 @@ const Setting = ({
         component="div"
       >
         <Flex justify="space-between" align="center" columnGap="md" rowGap="xs" wrap="wrap">
-          <Box style={{ flex: 1 }}>
+          <Box flex={1}>
             <Text>{data.title}</Text>
             <Text size="xs" c="dimmed">
               {data.description}
@@ -110,6 +110,8 @@ const Setting = ({
                     variant="filled"
                     data={data.options || []}
                     renderOption={data.renderOption}
+                    // 设置项没有"未选择"状态：禁止点击已选项反选出 null。
+                    allowDeselect={false}
                     value={
                       value && data.key in value
                         ? (value[data.key] as string)

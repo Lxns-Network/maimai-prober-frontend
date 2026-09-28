@@ -1,4 +1,5 @@
 import {
+  Box,
   Avatar,
   Button,
   Chip,
@@ -168,7 +169,7 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
             </Text>
           </Avatar>
         </SongDisabledIndicator>
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <SongCombobox
             value={form.values.id || 0}
             onOptionSubmit={(value) => {
@@ -217,7 +218,7 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
               </Group>
             </Chip.Group>
           </Input.Wrapper>
-        </div>
+        </Box>
       </Flex>
       <Grid mb="xs">
         <Grid.Col span={6}>

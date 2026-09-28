@@ -11,6 +11,7 @@ import {
 import { useShallow } from "zustand/react/shallow";
 import { notifications } from "@mantine/notifications";
 import {
+  Box,
   ActionIcon,
   Button,
   Card,
@@ -41,8 +42,6 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconVolume,
-  IconVolumeOff,
   IconMusic,
   IconMovie,
   IconChevronDown,
@@ -83,6 +82,8 @@ import { clamp } from "../../utils/math";
 import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import { openConfirmModal } from "@/utils/modal";
 import classes from "./Controls.module.css";
+import { usePageContext } from "vike-react/usePageContext";
+import { useSongDetail } from "@/hooks/queries/useSongDetail";
 
 const DevHitFxPreview = import.meta.env.DEV
   ? lazy(() => import("../../HitFxPreview/HitFxPreview"))
@@ -262,13 +263,6 @@ export function PlaybackControls({
   const exportOriginalBeatsRef = useRef<number | null>(null);
   const exportZoomPlayheadRef = useRef<HTMLDivElement>(null);
   const canShareGif = useMemo(canShareGifFile, []);
-
-  const { soundEnabled, setSoundEnabled } = useGameSettingsStore(
-    useShallow((state) => ({
-      soundEnabled: state.soundEnabled,
-      setSoundEnabled: state.setSoundEnabled,
-    })),
-  );
 
   const restoreExportPosition = useCallback(() => {
     if (exportOriginalBeatsRef.current !== null) {
@@ -583,12 +577,12 @@ export function PlaybackControls({
                   className={classes.exportZoomDensityTimeline}
                 />
               )}
-              <div className={classes.exportZoomLabel} style={{ left: 0 }}>
+              <Box className={classes.exportZoomLabel} left={0}>
                 {formatDuration(zoomStartMs, "s")}
-              </div>
-              <div className={classes.exportZoomLabel} style={{ right: 0 }}>
+              </Box>
+              <Box className={classes.exportZoomLabel} right={0}>
                 {formatDuration(zoomEndMs, "s")}
-              </div>
+              </Box>
               <div
                 ref={exportZoomPlayheadRef}
                 className={classes.exportZoomPlayhead}
@@ -729,20 +723,6 @@ export function PlaybackControls({
             </ActionIcon>
           </Tooltip>
 
-          <Tooltip
-            label={soundEnabled ? "关闭正解音" : "开启正解音"}
-            portalProps={fullscreenPortalProps}
-          >
-            <ActionIcon
-              variant="subtle"
-              color={isFullscreen ? "white" : "gray"}
-              size="lg"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-            >
-              {soundEnabled ? <IconVolume size={20} /> : <IconVolumeOff size={20} />}
-            </ActionIcon>
-          </Tooltip>
-
           <Menu
             shadow="md"
             width={160}
@@ -846,6 +826,11 @@ export function PlaybackControls({
 }
 
 export function Controls({ isUtage }: { isUtage?: boolean }) {
+  const chartId = Number(usePageContext().urlParsed.search.chart_id);
+  const songId =
+    Number.isInteger(chartId) && chartId > 0 && chartId < 100000 ? chartId % 10000 : null;
+  const { songDetail: song } = useSongDetail("maimai", songId);
+  const difficulties = chartId >= 10000 ? song?.difficulties.dx : song?.difficulties.standard;
   const playbackSpeed = useGameStore((s) => s.playbackSpeed);
   const rawSimaiText = useGameStore((s) => s.rawSimaiText);
   const selectedDifficulty = useGameStore((s) => s.selectedDifficulty);
@@ -1039,6 +1024,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     musicVolume,
     musicOffset,
     soundOffset,
+    soundVolume,
+    judgeVolume,
     setHiSpeed,
     setAlwaysKeepHiSpeed,
     setSlideDelay,
@@ -1055,6 +1042,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
     setMusicVolume,
     setMusicOffset,
     setSoundOffset,
+    setSoundVolume,
+    setJudgeVolume,
     fullscreenQuality,
     setFullscreenQuality,
     showVideo,
@@ -1199,7 +1188,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               min={3}
               max={9}
               step={0.25}
-              marks={[{ value: 3 }, { value: 6 }, { value: 9 }]}
+              marks={[{ value: 6 }]}
             />
             <Group justify="space-between">
               <Text size="xs" c="dimmed" ff="monospace">
@@ -1229,7 +1218,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               min={0.1}
               max={1.0}
               step={0.05}
-              marks={[{ value: 0.1 }, { value: 0.5 }, { value: 1.0 }]}
+              marks={[{ value: 0.5 }]}
             />
             <Group justify="space-between">
               <Text size="xs" c="dimmed" ff="monospace">
@@ -1258,7 +1247,8 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               max={1}
               step={0.1}
               label={(value) => value.toFixed(1)}
-              marks={[{ value: -1 }, { value: 0 }, { value: 1 }]}
+              marks={[{ value: 0 }]}
+              startPointValue={0}
               onKeyDown={(event) => {
                 if (event.key.startsWith("Arrow") || event.key === "Home" || event.key === "End") {
                   event.stopPropagation();
@@ -1305,7 +1295,19 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
             if (!isAvailable) return null;
 
             const isSelected = selectedDifficulty === diff;
-            const level = chartData?.level?.[`lv_${diff}` as keyof typeof chartData.level];
+            const difficulty = difficulties?.find(
+              (difficulty) => difficulty.difficulty === diff - 2,
+            );
+            const level =
+              difficulty?.level || chartData?.level?.[`lv_${diff}` as keyof typeof chartData.level];
+            const levelValue = difficulty?.level_value;
+            const constantLabel =
+              !isUtage &&
+              typeof levelValue === "number" &&
+              Number.isFinite(levelValue) &&
+              levelValue > 0
+                ? `定数：${levelValue.toFixed(1)}`
+                : null;
             const isLightColor = !isUtage && diff === 6;
             const color = isUtage ? UTAGE_COLOR : DIFFICULTY_COLORS[diff];
             const textColor = getDifficultyTextColor(isSelected, isLightColor, color);
@@ -1314,18 +1316,19 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
               level && isUtage ? (level.endsWith("?") ? level : `${level}?`) : level;
 
             return (
-              <UnstyledButton
-                key={diff}
-                onClick={() => handleDifficultyChange(diff)}
-                className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
-                style={{
-                  backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
-                  color: textColor,
-                }}
-              >
-                <span className={classes.difficultyName}>{name}</span>
-                {displayLevel && <span className={classes.difficultyLevel}>{displayLevel}</span>}
-              </UnstyledButton>
+              <Tooltip key={diff} label={constantLabel} disabled={!constantLabel}>
+                <UnstyledButton
+                  onClick={() => handleDifficultyChange(diff)}
+                  className={`${classes.difficultyButton} ${isSelected ? classes.difficultyButtonSelected : ""}`}
+                  style={{
+                    backgroundColor: isSelected ? color : isLightColor ? "#c4b5fd30" : `${color}20`,
+                    color: textColor,
+                  }}
+                >
+                  <span className={classes.difficultyName}>{name}</span>
+                  {displayLevel && <span className={classes.difficultyLevel}>{displayLevel}</span>}
+                </UnstyledButton>
+              </Tooltip>
             );
           })}
         </Group>
@@ -1505,7 +1508,48 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                   {Math.round(musicVolume * 100)}%
                 </Text>
               </Group>
-              <Slider value={musicVolume} onChange={setMusicVolume} min={0} max={1} step={0.1} />
+              <Slider
+                value={musicVolume}
+                onChange={setMusicVolume}
+                min={0}
+                max={1}
+                step={0.1}
+                label={(value) => `${Math.round(value * 100)}%`}
+              />
+            </div>
+
+            <div>
+              <Group justify="space-between" mb={4}>
+                <Text size="sm">正解音音量</Text>
+                <Text size="sm" c="dimmed" ff="monospace">
+                  {Math.round(soundVolume * 100)}%
+                </Text>
+              </Group>
+              <Slider
+                value={soundVolume}
+                onChange={setSoundVolume}
+                min={0}
+                max={1}
+                step={0.1}
+                label={(value) => `${Math.round(value * 100)}%`}
+              />
+            </div>
+
+            <div>
+              <Group justify="space-between" mb={4}>
+                <Text size="sm">打击音效音量</Text>
+                <Text size="sm" c="dimmed" ff="monospace">
+                  {Math.round(judgeVolume * 100)}%
+                </Text>
+              </Group>
+              <Slider
+                value={judgeVolume}
+                onChange={setJudgeVolume}
+                min={0}
+                max={1}
+                step={0.2}
+                label={(value) => `${Math.round(value * 100)}%`}
+              />
             </div>
 
             <div>
@@ -1532,7 +1576,9 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={-2000}
                 max={2000}
                 step={10}
-                marks={[{ value: -2000 }, { value: 0 }, { value: 2000 }]}
+                label={(value) => `${value}ms`}
+                marks={[{ value: 0 }]}
+                startPointValue={0}
               />
               <Group justify="space-between">
                 <Text size="xs" c="dimmed" ff="monospace">
@@ -1552,7 +1598,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
 
             <div>
               <Group justify="space-between" mb={4}>
-                <Text size="sm">正解音偏移</Text>
+                <Text size="sm">音效偏移</Text>
                 <Group gap={4}>
                   <Text size="sm" c="dimmed" ff="monospace">
                     {soundOffset}ms
@@ -1561,7 +1607,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                     variant="subtle"
                     color="gray"
                     size="sm"
-                    aria-label="重置正解音偏移"
+                    aria-label="重置音效偏移"
                     onClick={() => setSoundOffset(0)}
                   >
                     <IconRefresh size={14} />
@@ -1574,7 +1620,9 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 min={-200}
                 max={200}
                 step={5}
-                marks={[{ value: -200 }, { value: 0 }, { value: 200 }]}
+                label={(value) => `${value}ms`}
+                marks={[{ value: 0 }]}
+                startPointValue={0}
               />
               <Group justify="space-between">
                 <Text size="xs" c="dimmed" ff="monospace">
@@ -1588,7 +1636,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 </Text>
               </Group>
               <Text size="xs" c="dimmed" mt={4}>
-                正值: 正解音延后 | 负值: 正解音提前
+                正值: 音效延后 | 负值: 音效提前
               </Text>
             </div>
           </Stack>

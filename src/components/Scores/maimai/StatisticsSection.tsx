@@ -48,12 +48,12 @@ const RateStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
         return (
           <Group key={r.id} mb="xs" wrap="nowrap">
             <Image src={`/assets/maimai/music_rank/${r.id}.webp`} h={30} w="auto" />
-            <Divider style={{ flex: 1 }} variant="dashed" />
-            <Text fz={20} style={{ lineHeight: rem(20) }}>
+            <Divider flex={1} variant="dashed" />
+            <Text fz={20} lh={rem(20)}>
               <NumberFormatter value={count} thousandSeparator />
-              <span style={{ fontSize: 16, marginLeft: 4 }}>
+              <Text span inherit fz={16} ml={4}>
                 / <NumberFormatter value={scores.length} thousandSeparator />
-              </span>
+              </Text>
             </Text>
           </Group>
         );
@@ -70,8 +70,8 @@ const FullComboStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
       {fc.map((r, index) => (
         <Group key={r} mb="xs" h={30} wrap="nowrap">
           <Image src={`/assets/maimai/music_icon/${r}.webp`} h={30} w="auto" />
-          <Divider style={{ flex: 1 }} variant="dashed" />
-          <Text fz={20} style={{ lineHeight: rem(20) }}>
+          <Divider flex={1} variant="dashed" />
+          <Text fz={20} lh={rem(20)}>
             <NumberFormatter
               value={
                 scores.filter((score) => {
@@ -80,9 +80,9 @@ const FullComboStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
               }
               thousandSeparator
             />
-            <span style={{ fontSize: 16, marginLeft: 4 }}>
+            <Text span inherit fz={16} ml={4}>
               / <NumberFormatter value={scores.length} thousandSeparator />
-            </span>
+            </Text>
           </Text>
         </Group>
       ))}
@@ -98,8 +98,8 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
       {fs.map((r, index) => (
         <Group key={r} mb="xs" h={30} wrap="nowrap">
           <Image src={`/assets/maimai/music_icon/${r}.webp`} h={30} w="auto" />
-          <Divider style={{ flex: 1 }} variant="dashed" />
-          <Text fz={20} style={{ lineHeight: rem(20) }}>
+          <Divider flex={1} variant="dashed" />
+          <Text fz={20} lh={rem(20)}>
             <NumberFormatter
               value={
                 scores.filter((score) => {
@@ -108,9 +108,9 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
               }
               thousandSeparator
             />
-            <span style={{ fontSize: 16, marginLeft: 4 }}>
+            <Text span inherit fz={16} ml={4}>
               / <NumberFormatter value={scores.length} thousandSeparator />
-            </span>
+            </Text>
           </Text>
         </Group>
       ))}

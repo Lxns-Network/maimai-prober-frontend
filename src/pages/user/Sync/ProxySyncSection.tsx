@@ -1,7 +1,6 @@
 import {
   Accordion,
   Alert,
-  Anchor,
   Button,
   Card,
   Code,
@@ -13,7 +12,6 @@ import {
   Mark,
   Paper,
   SimpleGrid,
-  Space,
   Stack,
   Stepper,
   Text,
@@ -43,7 +41,8 @@ import { Game } from "@/types/game";
 import { ScoreChangesProps } from "@/pages/user/Sync";
 import { RadioCardGroup } from "@/components/RadioCardGroup.tsx";
 import { CopyButtonWithIcon } from "@/components/Sync/CopyButtonWithIcon.tsx";
-import { CrawlTokenAlert } from "@/components/Sync/CrawlTokenAlert.tsx";
+import { CrawlTokenStatus } from "@/components/Sync/CrawlTokenStatus.tsx";
+import { SyncTutorialAlert } from "@/components/Sync/SyncTutorialAlert.tsx";
 import { WechatOAuthLink } from "@/components/Sync/WechatOAuthLink.tsx";
 import { ScoresChangesModal } from "@/components/Sync/ScoresChangesModal.tsx";
 import classes from "../Sync.module.css";
@@ -337,6 +336,7 @@ export const ProxySyncSection = () => {
                   </Button>
                 )}
               </Group>
+              <SyncTutorialAlert />
               <Card withBorder radius="md" className={classes.card} mb="md" p={0} w="100%">
                 <Flex align="center" justify="space-between" m="md">
                   <Group className={classes.loaderText} wrap="nowrap">
@@ -407,13 +407,12 @@ export const ProxySyncSection = () => {
                         />
                         <CopyButtonWithIcon label="复制端口" description="端口" content="8080" />
                         <Divider my="xs" label="或使用 Clash 代理" labelPosition="center" />
-                        <Flex>
+                        <Flex direction={small ? "column" : "row"} gap="xs">
                           <CopyButtonWithIcon
                             label="复制 Clash 订阅链接"
                             content="https://maimai.lxns.net/api/v0/proxy-config/clash"
-                            style={{ flex: 1 }}
+                            style={small ? undefined : { flex: 1 }}
                           />
-                          <Space w="xs" />
                           <Button
                             variant="light"
                             rightSection={<IconDownload size={20} />}
@@ -425,23 +424,6 @@ export const ProxySyncSection = () => {
                             一键导入配置
                           </Button>
                         </Flex>
-                        <Divider my="xs" />
-                        <Group justify="space-between" align="center" wrap="wrap" gap="xs">
-                          <Text size="xs" c="dimmed">
-                            iOS、Android 与 Windows 详细配置步骤
-                          </Text>
-                          <Button
-                            variant="subtle"
-                            size="compact-xs"
-                            rightSection={<IconChevronRight size={14} />}
-                            styles={{ section: { marginInlineStart: 2 } }}
-                            onClick={() => {
-                              void navigate("/docs/sync#一配置-http-代理");
-                            }}
-                          >
-                            查看图文教程
-                          </Button>
-                        </Group>
                       </Accordion.Panel>
                     </Accordion.Item>
                   </Accordion>
@@ -502,31 +484,12 @@ export const ProxySyncSection = () => {
           label="步骤 3"
           loading={proxyReady && !crawlStatus}
           description={
-            <Stack gap="xs" w={containerWidth}>
+            <Stack gap="xs" w={containerWidth} mb="lg">
               <Text fz="sm">复制微信 OAuth 链接，发送至安全的聊天中并打开</Text>
               {game && <WechatOAuthLink game={game} crawlToken={crawlToken} />}
-              <Group justify="flex-start" gap="xs">
-                <Text size="xs" c="dimmed">
-                  请勿将链接粘贴至微信搜索框打开。
-                </Text>
-                <Anchor
-                  size="xs"
-                  underline="always"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    void navigate("/docs/sync#二使用微信打开-oauth-链接");
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  查看微信传分注意事项
-                </Anchor>
-              </Group>
               {!isLoggedOut && (
-                <Text>
-                  <CrawlTokenAlert token={crawlToken} resetHandler={loadCrawlToken} />
-                </Text>
+                <CrawlTokenStatus token={crawlToken} resetHandler={loadCrawlToken} />
               )}
-              <Space h="sm" />
             </Stack>
           }
         />

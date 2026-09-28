@@ -202,7 +202,7 @@ export const PasskeyManagement = () => {
             {passkeys.map((passkey) => (
               <Card key={passkey.id} withBorder padding="sm">
                 <Flex justify="space-between" align="center" wrap="wrap" gap="xs">
-                  <Box style={{ flex: 1, minWidth: 200 }}>
+                  <Box flex={1} miw={200}>
                     <Group gap="xs">
                       {(() => {
                         const { icon } = getPasskeyInfo(passkey.aaguid);

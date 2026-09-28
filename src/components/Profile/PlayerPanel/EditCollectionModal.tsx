@@ -155,9 +155,9 @@ const EditCollectionModalContent = ({
     >
       <Group wrap="nowrap" align="flex-start">
         <Radio.Indicator />
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <Flex align="center" columnGap={8}>
-            <Box style={{ flex: 1 }}>
+            <Box flex={1}>
               <Marquee>
                 <Text className={classes.label}>{collection.name}</Text>
               </Marquee>
@@ -190,7 +190,7 @@ const EditCollectionModalContent = ({
               </LazyLoad>
             </Box>
           )}
-        </div>
+        </Box>
       </Group>
     </Radio.Card>
   ));
@@ -221,10 +221,7 @@ const EditCollectionModalContent = ({
           </Text>
         </Alert>
       ) : (
-        <ScrollArea.Autosize
-          onScrollPositionChange={onScrollPositionChange}
-          style={{ flex: 1, minHeight: 0 }}
-        >
+        <ScrollArea.Autosize onScrollPositionChange={onScrollPositionChange} flex={1} mih={0}>
           <Radio.Group
             value={collectionId.toString()}
             onChange={(value) => setCollectionId(parseInt(value))}
@@ -249,7 +246,7 @@ const EditCollectionModalContent = ({
           </Radio.Group>
         </ScrollArea.Autosize>
       )}
-      <Box style={{ flex: "0 0 auto" }}>
+      <Box flex="0 0 auto">
         {game === "maimai" ? (
           <Text size="xs" mt="sm" mb="sm" c="gray">
             ※ 编辑收藏的{metadata.title}请前往 NET 操作，重新同步后生效。

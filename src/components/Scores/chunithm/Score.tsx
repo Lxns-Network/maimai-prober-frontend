@@ -37,7 +37,7 @@ export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
           ),
         }}
       >
-        <Text size="sm" fw={500} truncate style={{ flex: 1 }} c="white">
+        <Text size="sm" fw={500} truncate flex={1} c="white">
           {score.song_name}
         </Text>
         {score.id >= 8000 && difficulty && (
@@ -61,7 +61,7 @@ export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
         <Group h={54} justify="space-between" wrap="nowrap">
           {score.score !== -1 ? (
             <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+              <Text fz={rem(24)} lh={rem(24)} c="white" mb={4}>
                 <NumberFormatter value={score.score || 0} thousandSeparator />
               </Text>
               <Text size="xs" c="white">
@@ -70,7 +70,7 @@ export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
             </div>
           ) : (
             <div>
-              <Text fz={rem(24)} style={{ lineHeight: rem(24) }} c="white" mb={4}>
+              <Text fz={rem(24)} lh={rem(24)} c="white" mb={4}>
                 未游玩
               </Text>
               <Text size="xs" c="white">

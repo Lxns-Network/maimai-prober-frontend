@@ -1,5 +1,5 @@
 import { CSSProperties, useRef, useState } from "react";
-import { Group, Pagination, PaginationProps, Text } from "@mantine/core";
+import { Box, Group, Pagination, PaginationProps, Text } from "@mantine/core";
 import { useElementSize, useIsomorphicEffect } from "@mantine/hooks";
 
 // 统一分页：尺寸按「是否放得下」实测决定，宽页数放不下降 md，md 放不下降 sm，最后塌缩为居中的「‹ 当前/总数 ›」。
@@ -71,10 +71,7 @@ export function ResponsivePagination({
   );
 
   return (
-    <div
-      ref={wrapRef}
-      style={{ position: "relative", width: "100%", minWidth: 0, overflow: "hidden" }}
-    >
+    <Box ref={wrapRef} pos="relative" w="100%" miw={0} style={{ overflow: "hidden" }}>
       <div ref={widestRef} style={HIDDEN_STYLE}>
         {renderFull("md", widestSiblings)}
       </div>
@@ -105,6 +102,6 @@ export function ResponsivePagination({
           )
         )}
       </Group>
-    </div>
+    </Box>
   );
 }

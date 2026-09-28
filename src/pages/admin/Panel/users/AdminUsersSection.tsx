@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Group, TextInput, Button, Text, keys, Card, Badge, Popover } from "@mantine/core";
+import { Box, Group, TextInput, Button, Text, keys, Card, Badge, Popover } from "@mantine/core";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { deleteUsers, getUsers } from "@/utils/api/user.ts";
 import { useDisclosure, useViewportSize } from "@mantine/hooks";
@@ -153,7 +153,7 @@ const AdminUsersContent = () => {
   const { width } = useViewportSize();
 
   return (
-    <div style={{ position: "relative" }}>
+    <Box pos="relative">
       <EditUserModal
         user={activeUser as UserProps}
         opened={editUserModalOpened}
@@ -183,7 +183,7 @@ const AdminUsersContent = () => {
       />
       <Group mb="md" gap="xs" wrap="nowrap" align="flex-end">
         <TextInput
-          style={{ flex: 1 }}
+          flex={1}
           placeholder="搜索用户"
           radius="md"
           leftSection={<IconSearch size={18} />}
@@ -379,7 +379,7 @@ const AdminUsersContent = () => {
           fetching={fetching}
         />
       </Card>
-    </div>
+    </Box>
   );
 };
 

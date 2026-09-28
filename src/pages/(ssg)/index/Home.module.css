@@ -538,3 +538,18 @@
     font-size: var(--mantine-font-size-lg);
   }
 }
+
+.popularHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-direction: row;
+}
+
+@media (max-width: 48em) {
+  .popularHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--mantine-spacing-sm);
+  }
+}

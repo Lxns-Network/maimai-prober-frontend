@@ -21,16 +21,14 @@ export function ChartPreview() {
             <ErrorBoundary
               fallback={
                 <Center h="100%">
-                  <Text size="xs" c="gray.4">
-                    预览暂时不可用
-                  </Text>
+                  <Text c="gray.4">预览暂时不可用</Text>
                 </Center>
               }
             >
               <Suspense
                 fallback={
                   <Center h="100%">
-                    <Loader size="sm" color="violet" />
+                    <Loader size="sm" color="white" />
                   </Center>
                 }
               >
@@ -44,7 +42,6 @@ export function ChartPreview() {
           variant="default"
           radius="xl"
           size="md"
-          aria-label={playing ? "暂停谱面预览" : "播放谱面预览"}
           onClick={() => setPlayPreference(!playing)}
         >
           {playing ? <IconPlayerPause size={15} /> : <IconPlayerPlay size={15} />}

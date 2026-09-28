@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  Box,
   Card,
   Text,
   Group,
@@ -42,7 +43,7 @@ function UserButton({
   return (
     <UnstyledButton className={classes.user} onClick={onClick} {...others}>
       <Group>
-        <div style={{ flex: 1 }}>
+        <Box flex={1}>
           <Flex align="center">
             <Text size="sm" fw={500} mr="xs">
               {user.name}
@@ -59,7 +60,7 @@ function UserButton({
           <Text c="dimmed" size="xs">
             {user.email}
           </Text>
-        </div>
+        </Box>
 
         <IconChevronRight size={16} color="gray" />
       </Group>

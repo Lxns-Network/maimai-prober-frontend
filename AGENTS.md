@@ -2,6 +2,8 @@
 
 Operational guidelines and architectural ground truth for the **maimai-prober** frontend: Vike (`vike-react`), React 19, TypeScript, Mantine v9, TanStack Query v5, Zustand v4.
 
+**Styling ground rule: build UI from Mantine's own components and props first; hand-written CSS is the exception, not the default. See §4 Styling Policy.**
+
 ---
 
 ## 1. Commands & Verification
@@ -112,10 +114,18 @@ Two query conventions in [src/hooks/queries/queryFn.ts](src/hooks/queries/queryF
 - Providers in `src/pages/+Layout.tsx`: `MantineProvider` (primary color dynamic via `useThemeColor`), `ModalsProvider`, `Notifications`, `PhotoProvider`, and `ErrorBoundary`. Icons from `@tabler/icons-react` and `@mdi/js`.
 - Build emits `dist/client/version.json`. In production, `useVersionChecker` ([src/hooks/useVersionChecker.tsx](src/hooks/useVersionChecker.tsx)) (default 60000ms polling, prod only, refetch on window focus) alerts users to reload.
 
-### Mantine Styling & Chinese Copy Conventions
+### Styling Policy (Critical)
 
-- Mantine style props (`justify`, `wrap`, `gap`, `align`, ...) are emitted as inline styles or scoped generated CSS; rules in `*.module.css` cannot override them. Control these properties through the prop itself and use the responsive object form (e.g. `wrap={{ base: "nowrap", md: "wrap" }}`) instead of writing competing CSS.
-- Chinese UI copy: keep a half-width space between CJK and Latin/digits (「最多 200 人」「7 天」), use complete measure words (「64 个字符」, not 「64 字符」), and quote in-app UI names with 「」. Before writing new copy, search the repo for existing phrasing so terminology stays consistent (e.g. 特别关注 / 黑名单 / 谱面成绩 / 查分器用户名).
+Maintainer ground rule: **prefer Mantine's own components and props over hand-written CSS.** Unprompted custom CSS is the exact failure mode this rule exists to prevent.
+
+- Compose layout and typography from Mantine components (`Group`, `Stack`, `Flex`, `SimpleGrid`, `Text`, `Paper`, ...) using their props: style props (`mt`, `px`, `c`, `fw`, `fz`, `w`, `maw`, ...), component props (`variant`, `size`, `radius`, `color`, `gap`, `justify`, ...), responsive prop values (`{ base: ..., sm: ... }`), and `hiddenFrom`/`visibleFrom`.
+- Reach for a CSS module only when Mantine props cannot express the result (pseudo-elements or states beyond the component API, keyframes, complex grid areas, container queries). No inline `style` where a style prop exists; no Tailwind or any other styling system.
+- When CSS is unavoidable, keep it in the component's `*.module.css` and compose from Mantine tokens (`var(--mantine-spacing-*)`, `var(--mantine-color-*)`, `var(--mantine-radius-*)`, `light-dark(...)`) instead of hardcoded values.
+- Mantine style props are emitted as inline styles or scoped generated CSS, so `*.module.css` rules cannot override them. Control a property through the prop itself, using the responsive object form (e.g. `wrap={{ base: "nowrap", md: "wrap" }}`), or keep it entirely in the module; never split one property across both.
+
+### Chinese Copy Conventions
+
+- Keep a half-width space between CJK and Latin/digits (「最多 200 人」「7 天」), use complete measure words (「64 个字符」, not 「64 字符」), and quote in-app UI names with 「」. Before writing new copy, search the repo for existing phrasing so terminology stays consistent (e.g. 特别关注 / 黑名单 / 谱面成绩 / 查分器用户名).
 
 ---
 

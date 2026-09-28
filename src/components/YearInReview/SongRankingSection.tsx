@@ -145,9 +145,9 @@ export const SongRankingSection = ({ data }: { data: YearInReviewProps }) => {
                     <Badge variant="light" size="xl" circle>
                       {index + 4}
                     </Badge>
-                    <div style={{ flex: 1 }}>
+                    <Box flex={1}>
                       {value === 0 ? (
-                        <Text fz="xl" style={{ flex: 1 }}>
+                        <Text fz="xl" flex={1}>
                           虚位以待
                         </Text>
                       ) : (
@@ -158,8 +158,8 @@ export const SongRankingSection = ({ data }: { data: YearInReviewProps }) => {
                           <Text c="dimmed">{song ? song.artist : "未知艺术家"}</Text>
                         </>
                       )}
-                    </div>
-                    <Text fz={rem(18)} style={{ lineHeight: rem(18) }}>
+                    </Box>
+                    <Text fz={rem(18)} lh={rem(18)}>
                       <NumberFormatter value={value} thousandSeparator />
                     </Text>
                   </Group>

@@ -236,7 +236,8 @@ const AliasVoteContent = () => {
             setPage(1);
           }}
           placeholder="搜索曲名、别名或曲目 ID"
-          style={{ flex: 1, minWidth: 0 }}
+          flex={1}
+          miw={0}
         />
         {sortMenu}
         {filterMenu}

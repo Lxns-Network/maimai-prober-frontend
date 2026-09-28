@@ -55,7 +55,7 @@ export default function Header({
             onClick={onNavbarToggle}
             size="sm"
           />
-          <Group style={{ flex: 1 }} gap="sm">
+          <Group flex={1} gap="sm">
             <Logo />
             <Menu width={180} withinPortal={false}>
               <Menu.Target>

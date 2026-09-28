@@ -90,12 +90,12 @@ const OAuthAppCard = ({
           {app.name.charAt(0).toUpperCase()}
         </Avatar>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <Box flex={1} miw={0}>
           <Text fw={500} size="md" truncate>
             {app.name}
           </Text>
           <Group gap="md" mt={2} wrap="nowrap">
-            <Group gap={4} wrap="nowrap" style={{ minWidth: 0 }}>
+            <Group gap={4} wrap="nowrap" miw={0}>
               <IconLink size={12} style={{ color: "var(--mantine-color-dimmed)", flexShrink: 0 }} />
               <Text size="xs" c="dimmed" truncate>
                 {redirectUris[0] || "未配置回调地址"}
@@ -111,7 +111,7 @@ const OAuthAppCard = ({
               </Group>
             )}
           </Group>
-        </div>
+        </Box>
 
         <Group gap={2} wrap="nowrap">
           <Tooltip label="编辑" position="top" withArrow>

@@ -351,7 +351,7 @@ export function PublishNotificationModal({
               </RichTextEditor.Control>
             </RichTextEditor.ControlsGroup>
           </RichTextEditor.Toolbar>
-          <ScrollArea style={{ height: 240 }}>
+          <ScrollArea h={240}>
             <RichTextEditor.Content />
           </ScrollArea>
         </RichTextEditor>

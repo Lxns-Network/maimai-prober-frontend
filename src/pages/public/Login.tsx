@@ -12,7 +12,6 @@ import {
   useComputedColorScheme,
   Card,
   SegmentedControl,
-  Center,
   Container,
 } from "@mantine/core";
 
@@ -152,19 +151,19 @@ export default function Login() {
         data={[
           {
             label: (
-              <Center style={{ gap: 10 }}>
+              <Group gap={10} justify="center" wrap="nowrap">
                 <IconUser size={16} />
                 <span>用户名登录</span>
-              </Center>
+              </Group>
             ),
             value: "name",
           },
           {
             label: (
-              <Center style={{ gap: 10 }}>
+              <Group gap={10} justify="center" wrap="nowrap">
                 <IconMail size={16} />
                 <span>邮箱登录</span>
-              </Center>
+              </Group>
             ),
             value: "email",
           },

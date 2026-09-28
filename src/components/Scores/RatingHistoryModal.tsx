@@ -146,12 +146,12 @@ export const RatingHistoryModal = ({
                       <AspectRatio ratio={ratio}>
                         <Image
                           w={100}
-                          style={{ opacity: 0.3 }}
+                          opacity={0.3}
                           src={`/assets/${game}/version/${version}.webp`}
                         />
                       </AspectRatio>
                       <Divider />
-                      <Text style={{ opacity: 0.3 }} ta="center">
+                      <Text opacity={0.3} ta="center">
                         /
                       </Text>
                     </>

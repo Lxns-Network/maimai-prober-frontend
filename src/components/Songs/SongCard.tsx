@@ -89,7 +89,7 @@ export const SongCard = ({
               </PhotoView>
             </SongDisabledIndicator>
           </Box>
-          <Stack gap={3} style={{ flex: 1 }}>
+          <Stack gap={3} flex={1}>
             <Group gap={8} mb={3}>
               <Badge variant="light" color="gray" size="sm" leftSection={<IconNumber size={18} />}>
                 {song.id}

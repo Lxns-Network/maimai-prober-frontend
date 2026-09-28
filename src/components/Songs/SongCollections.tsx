@@ -3,6 +3,7 @@ import {
   AspectRatio,
   Box,
   Card,
+  CardProps,
   Center,
   Group,
   Image,
@@ -16,14 +17,13 @@ import {
 import { IconAward } from "@tabler/icons-react";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import { TrophyBadge } from "@/components/TrophyBadge.tsx";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import classes from "@/pages/Page.module.css";
 import scoreClasses from "@/components/Scores/ScoreModal.module.css";
 import { navigate } from "vike/client/router";
 
-interface SongCollectionsComponentProps {
+interface SongCollectionsComponentProps extends CardProps {
   collections: SongCollectionItemProps[] | null;
-  style?: React.CSSProperties;
 }
 
 const collectionTypeLabelMap: Record<string, string> = {
@@ -97,7 +97,7 @@ const CollectionItem = ({ collection }: { collection: SongCollectionItemProps })
   };
 
   return (
-    <UnstyledButton onClick={handleClick} style={{ width: "100%" }}>
+    <UnstyledButton onClick={handleClick} w="100%">
       <Paper
         className={[scoreClasses.subParameters, scoreClasses.subParametersButton].join(" ")}
         p="sm"
@@ -136,7 +136,7 @@ const CollectionSection = ({
   );
 };
 
-export const SongCollections = ({ collections, style }: SongCollectionsComponentProps) => {
+export const SongCollections = ({ collections, ...others }: SongCollectionsComponentProps) => {
   const [game] = useFixedGame();
 
   const groupedCollections = useMemo(() => {
@@ -160,7 +160,7 @@ export const SongCollections = ({ collections, style }: SongCollectionsComponent
       : ["plate", "character", "icon", "trophy"];
 
   return (
-    <Card radius="md" p="md" withBorder className={classes.card} style={style}>
+    <Card radius="md" p="md" withBorder className={classes.card} {...others}>
       <Group gap="xs" mb="md">
         <IconAward size={20} />
         <Title order={5}>关联收藏品</Title>

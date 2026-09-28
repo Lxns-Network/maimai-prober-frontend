@@ -4,13 +4,18 @@ import { Game } from "@/types/game";
 import { usePlayer } from "./usePlayer.ts";
 import { queryKeys } from "./queryKeys.ts";
 
-const emptyScores: (MaimaiScoreProps | ChunithmScoreProps)[] = [];
+type ScoreByGame = {
+  maimai: MaimaiScoreProps;
+  chunithm: ChunithmScoreProps;
+};
 
-export const useScores = (game: Game) => {
+const emptyScores: never[] = [];
+
+export const useScores = <G extends Game>(game: G) => {
   const { player } = usePlayer(game);
   const queryClient = useQueryClient();
 
-  const { data, error, isLoading } = useQuery<(MaimaiScoreProps | ChunithmScoreProps)[]>({
+  const { data, error, isLoading } = useQuery<ScoreByGame[G][]>({
     queryKey: queryKeys.player.scores(game),
     enabled: !!player,
   });

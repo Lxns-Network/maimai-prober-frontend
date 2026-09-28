@@ -280,7 +280,7 @@ export const RecalculateSection = () => {
             return (
               <Box key={game} className={settingClasses.item}>
                 <Flex justify="space-between" align="center" columnGap="md" rowGap="xs" wrap="wrap">
-                  <Box style={{ flex: 1 }}>
+                  <Box flex={1}>
                     <Text>{GAME_LABELS[game]}</Text>
                     <Text size="xs" c="dimmed">
                       重新计算所有玩家的「{GAME_LABELS[game]}」成绩。
@@ -301,7 +301,7 @@ export const RecalculateSection = () => {
                         已完成 {progress?.current ?? 0} / {progress?.total ?? "?"} 首曲目
                       </Text>
                       {progress?.title && (
-                        <Text size="xs" c="dimmed" truncate style={{ flex: 1, textAlign: "right" }}>
+                        <Text size="xs" c="dimmed" truncate flex={1} ta="right">
                           {progress.title}
                         </Text>
                       )}
@@ -331,7 +331,7 @@ export const RecalculateSection = () => {
           style={{ cursor: "pointer" }}
         >
           <Flex justify="space-between" align="center" columnGap="md" rowGap="xs" wrap="wrap">
-            <Box style={{ flex: 1 }}>
+            <Box flex={1}>
               <Group gap="xs" align="center" wrap="nowrap">
                 <Text>成绩重算</Text>
                 {anyRunning && (

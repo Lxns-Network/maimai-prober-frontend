@@ -108,10 +108,10 @@ export const DifficultyGenreSection = ({ data }: { data: YearInReviewProps }) =>
                 </Title>
               </div>
               <Group align="center" h="100%" wrap="nowrap">
-                <Center style={{ flex: "0 0 auto" }}>
+                <Center flex="0 0 auto">
                   <DonutChart data={genreData} withTooltip h={200} />
                 </Center>
-                <Stack gap="xs" style={{ flex: 1 }} justify="center">
+                <Stack gap="xs" flex={1} justify="center">
                   {genreData.map((genre, index) => (
                     <Group key={index} gap="xs">
                       <Box
@@ -123,7 +123,7 @@ export const DifficultyGenreSection = ({ data }: { data: YearInReviewProps }) =>
                           flexShrink: 0,
                         }}
                       />
-                      <Text size="sm" style={{ flex: 1 }}>
+                      <Text size="sm" flex={1}>
                         {genreTranslations[genre.name] || genre.name}
                       </Text>
                       <Text size="sm" c="dimmed">

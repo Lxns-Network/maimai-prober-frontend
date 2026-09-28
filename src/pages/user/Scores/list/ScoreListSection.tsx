@@ -555,14 +555,15 @@ export const ScoreListSection = () => {
           onSearchChange={handleSearchChange}
           onSongsChange={setFilteredSongs}
           placeholder="搜索曲名、别名或曲目 ID"
-          style={{ flex: 1, minWidth: 0 }}
+          flex={1}
+          miw={0}
         />
         {sortMenu}
         {filterTrigger}
         {createButton}
       </Flex>
       <Flex gap="md" align="flex-start">
-        <Box style={{ flex: 1, minWidth: 0 }}>
+        <Box flex={1} miw={0}>
           <AnimatePresence mode="wait" initial={false}>
             {match({ hasResults: totalPages > 0, isLoading })
               .with({ hasResults: true }, () => (

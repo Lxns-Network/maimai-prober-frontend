@@ -338,17 +338,23 @@ export default function YearInReview() {
       let url;
 
       if (!shareToken) {
-        const res = await fetchAPI(`user/${game}/player/year-in-review/${year}/share`, {
-          method: "POST",
-          body: {
-            public: true,
-          },
-        });
-        const resData = await res.json();
-        if (!resData.success) {
+        // fetchAPI 在登录状态刷新失败时会直接抛错，这里必须兜底，否则按钮会静默失效。
+        let resData;
+        try {
+          const res = await fetchAPI(`user/${game}/player/year-in-review/${year}/share`, {
+            method: "POST",
+            body: {
+              public: true,
+            },
+          });
+          resData = await res.json();
+          if (!resData.success) {
+            throw new Error(resData.message);
+          }
+        } catch (error) {
           notifications.show({
             title: "分享链接生成失败",
-            message: resData.message,
+            message: `${error instanceof Error ? error.message : error}`,
             autoClose: 5000,
           });
           return;

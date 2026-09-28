@@ -113,13 +113,17 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
 
   const displayScores = scores.slice((page - 1) * pageSize, page * pageSize);
 
+  const isEmpty = scores.length === 0;
+
   return (
     <DataTable
       highlightOnHover
       pinFirstColumn
       horizontalSpacing="md"
-      mih={scores.length === 0 ? 150 : 0}
-      miw={700}
+      // DataTable 的 mih/miw 仅透传内层 table，需用 minHeight 撑开根容器以防空状态覆盖层被 overflow: hidden 裁切
+      minHeight={isEmpty ? 220 : undefined}
+      miw={isEmpty ? undefined : 700}
+      noHeader={isEmpty}
       emptyState={<EmptyState icon={<IconDatabaseOff size={48} stroke={1.5} />} title="没有记录" />}
       rowBackgroundColor={(score, i) => {
         if (!containsOld(score)) {

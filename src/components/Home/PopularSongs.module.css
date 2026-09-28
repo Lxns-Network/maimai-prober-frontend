@@ -1,0 +1,114 @@
+.grid {
+  --pop-border: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  --pop-muted: light-dark(var(--mantine-color-gray-6), var(--mantine-color-dark-1));
+  --pop-hover: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  --pop-item-bg: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mantine-spacing-md) var(--mantine-spacing-xl);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  min-width: 0;
+}
+
+.itemLink {
+  display: grid;
+  grid-template-columns: 26px 46px minmax(0, 1fr) auto;
+  gap: var(--mantine-spacing-sm);
+  align-items: center;
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--pop-border);
+  border-radius: var(--mantine-radius-md);
+  background: var(--pop-item-bg);
+  color: inherit;
+  text-decoration: none;
+}
+
+.itemLink:hover {
+  background: var(--pop-hover);
+}
+
+/* rank1/2/3 的 rgb 常量与 PopularSongs.tsx 的奖牌配色同源（金 #FFAB09、银 #09B8FF、铜 #B87333），改动需两侧同步 */
+.rank1 {
+  border-color: light-dark(rgb(255 171 9 / 35%), rgb(255 171 9 / 24%));
+  background: light-dark(rgb(255 171 9 / 4%), rgb(255 171 9 / 3%));
+}
+
+.rank1:hover {
+  background: light-dark(rgb(255 171 9 / 10%), rgb(255 171 9 / 8%));
+}
+
+.rank2 {
+  border-color: light-dark(rgb(9 184 255 / 32%), rgb(9 184 255 / 22%));
+  background: light-dark(rgb(9 184 255 / 4%), rgb(9 184 255 / 3%));
+}
+
+.rank2:hover {
+  background: light-dark(rgb(9 184 255 / 10%), rgb(9 184 255 / 8%));
+}
+
+.rank3 {
+  border-color: light-dark(rgb(184 115 51 / 38%), rgb(184 115 51 / 26%));
+  background: light-dark(rgb(184 115 51 / 4%), rgb(184 115 51 / 3%));
+}
+
+.rank3:hover {
+  background: light-dark(rgb(184 115 51 / 10%), rgb(184 115 51 / 8%));
+}
+
+.rankNumber {
+  color: var(--home-muted);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 14px;
+  color: var(--pop-muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.trendUp {
+  color: light-dark(var(--mantine-color-teal-7), var(--mantine-color-teal-5));
+}
+
+.trendDown {
+  color: light-dark(var(--mantine-color-red-7), var(--mantine-color-red-5));
+}
+
+.trendFlat {
+  color: var(--pop-muted);
+}
+
+.trendNew {
+  color: var(--mantine-primary-color-light-color);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 54em) {
+  .grid {
+    grid-template-columns: 1fr;
+    /* 两列堆叠成一列后，列间距与列表内 8px 行距对齐，避免第 5、6 名之间出现明显空隙 */
+    gap: 8px;
+  }
+}

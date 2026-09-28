@@ -19,6 +19,8 @@
 }
 
 .headerContent {
+  justify-content: space-between;
+
   @mixin smaller-than $mantine-breakpoint-md {
     justify-content: center;
   }

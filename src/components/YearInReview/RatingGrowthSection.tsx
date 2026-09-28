@@ -103,7 +103,7 @@ export const RatingGrowthSection = ({ data }: { data: YearInReviewProps }) => {
     <Card shadow="md" withBorder radius="md" p="xl">
       <Stack gap="lg">
         <div>
-          <Text style={{ opacity: 0.7, fontWeight: 700, textTransform: "uppercase" }}>
+          <Text opacity={0.7} fw={700} tt="uppercase">
             能力成长轨迹
           </Text>
           <Title
@@ -194,14 +194,14 @@ export const RatingGrowthSection = ({ data }: { data: YearInReviewProps }) => {
             {data.game === "maimai" ? growth.diff.toFixed(0) : growth.diff.toFixed(2)}
           </Badge>
 
-          <div style={{ textAlign: "right" }}>
+          <Box ta="right">
             <Text size="sm" c="dimmed">
               年末 Rating
             </Text>
             <Text size="xl" fw={700}>
               {growth.new}
             </Text>
-          </div>
+          </Box>
         </Group>
 
         <div>

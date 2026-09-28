@@ -766,22 +766,10 @@ __metadata:
   resolution: "@lxns-network/maimai-chart-engine@workspace:packages/maimai-chart-engine"
   dependencies:
     ts-pattern: "npm:5.9.0"
+    vite: "npm:8.2.2"
+    vitest: "npm:5.0.0"
   languageName: unknown
   linkType: soft
-
-"@mantine/carousel@npm:9.5.1":
-  version: 9.5.1
-  resolution: "@mantine/carousel@npm:9.5.1"
-  peerDependencies:
-    "@mantine/core": 9.5.1
-    "@mantine/hooks": 9.5.1
-    embla-carousel: ">=8.0.0"
-    embla-carousel-react: ">=8.0.0"
-    react: ^19.2.0
-    react-dom: ^19.2.0
-  checksum: 10c0/7252cefbcceebcfe7381454c32016f6820b958403e6dc8fc36bdf884e998d51c59b0b1ea0373a3fa3934b1d7587c52429b1c6b2b683246060d301bce47041565
-  languageName: node
-  linkType: hard
 
 "@mantine/charts@npm:9.5.1":
   version: 9.5.1
@@ -807,6 +795,15 @@ __metadata:
     react: ^19.2.0
     react-dom: ^19.2.0
   checksum: 10c0/c4bad434c2e44ede01dbba1c5e2c4b6cd6e4e3baed3b9b473fa21125c3c0f8b1ee224be1d635f8332012daf9ffa12c11dd1804463e7df51384e2989c2320e6e4
+  languageName: node
+  linkType: hard
+
+"@mantine/colors-generator@npm:9.5.1":
+  version: 9.5.1
+  resolution: "@mantine/colors-generator@npm:9.5.1"
+  peerDependencies:
+    chroma-js: ">=2.4.2"
+  checksum: 10c0/4842518fc5d7764f4dfab95963ef5e1fe55b31a2746623567806b84cf1d369f78a0b762742c33b89ed78e696a100ca483d2e216de9bcd8848a25d155fbd1f6ce
   languageName: node
   linkType: hard
 
@@ -2147,6 +2144,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/chroma-js@npm:^3.1.2":
+  version: 3.1.2
+  resolution: "@types/chroma-js@npm:3.1.2"
+  checksum: 10c0/d2a7d9612c5abe3733a113d339eb8158cb36aeeeb571a3c371e81e8f3a682cd70f1649cea521716fbb5d79eb96f585a539b304be44e3fa818bd56b2a05f29f73
+  languageName: node
+  linkType: hard
+
 "@types/d3-array@npm:^3.0.3":
   version: 3.2.2
   resolution: "@types/d3-array@npm:3.2.2"
@@ -3109,6 +3113,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"chroma-js@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "chroma-js@npm:3.2.0"
+  checksum: 10c0/6ff6213d234e096ad3536291b1e1f11a506ea0fccfe163dd8eff69afa5f4f8a905b31a4a7ebc22b7eb722590887fed77073805ce89485f6d563edd1ea2d0a1db
+  languageName: node
+  linkType: hard
+
 "clsx@npm:2.1.1, clsx@npm:^2.1.1":
   version: 2.1.1
   resolution: "clsx@npm:2.1.1"
@@ -3462,15 +3473,6 @@ __metadata:
   version: 1.5.334
   resolution: "electron-to-chromium@npm:1.5.334"
   checksum: 10c0/4fa700f920d6f6a52f1a777f9cbbaf95ed7247fd6d89d9ff5d26255779c2c0297be5162e56e8e9a7ec40ff42d656d5e1b06ee6e7cf60dd8baec2e0d8f0f1bc77
-  languageName: node
-  linkType: hard
-
-"embla-carousel-autoplay@npm:8.6.0":
-  version: 8.6.0
-  resolution: "embla-carousel-autoplay@npm:8.6.0"
-  peerDependencies:
-    embla-carousel: 8.6.0
-  checksum: 10c0/d7e5cb79c1474b3d27621302e63dedf783a281ae0464b21b87183d58103f938d22be9f6a4735de4b1b19806606006da43f6151497df91c3edbbc99a4dae4a94f
   languageName: node
   linkType: hard
 
@@ -5055,9 +5057,9 @@ __metadata:
   dependencies:
     "@cap.js/widget": "npm:0.1.57"
     "@lxns-network/maimai-chart-engine": "workspace:*"
-    "@mantine/carousel": "npm:9.5.1"
     "@mantine/charts": "npm:9.5.1"
     "@mantine/code-highlight": "npm:9.5.1"
+    "@mantine/colors-generator": "npm:9.5.1"
     "@mantine/core": "npm:9.5.1"
     "@mantine/dates": "npm:9.5.1"
     "@mantine/form": "npm:9.5.1"
@@ -5082,6 +5084,7 @@ __metadata:
     "@tiptap/pm": "npm:3.30.2"
     "@tiptap/react": "npm:3.30.2"
     "@tiptap/starter-kit": "npm:3.30.2"
+    "@types/chroma-js": "npm:^3.1.2"
     "@types/node": "npm:24.13.3"
     "@types/react": "npm:19.2.18"
     "@types/react-dom": "npm:19.2.4"
@@ -5089,10 +5092,10 @@ __metadata:
     "@types/react-lazyload": "npm:3.2.3"
     "@vcarl/remark-headings": "npm:0.1.0"
     "@vitejs/plugin-react": "npm:6.1.0"
+    chroma-js: "npm:^3.2.0"
     clsx: "npm:2.1.1"
     dayjs: "npm:1.11.23"
     embla-carousel: "npm:8.6.0"
-    embla-carousel-autoplay: "npm:8.6.0"
     embla-carousel-react: "npm:8.6.0"
     gifenc: "npm:^1.0.3"
     hast-util-from-html-isomorphic: "npm:2.0.0"

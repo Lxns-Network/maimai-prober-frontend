@@ -62,7 +62,6 @@ export const PageHeader = ({ meta, badge, actions, backLink }: PageProps) => {
           <Flex
             className={classes.headerContent}
             data-compact={backLabel ? true : undefined}
-            justify="space-between"
             align="center"
             wrap={backLabel ? { base: "nowrap", md: "wrap" } : "wrap"}
             gap="sm"
