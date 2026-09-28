@@ -76,7 +76,7 @@ Root `src/pages/+config.ts` sets global defaults: `ssr: false`, `prerender: fals
 ### Source File Homes & Export Style
 
 - **All hooks live under `src/hooks/`**: behavioral hooks and Zustand stores (`use*Store.ts`) at the root, TanStack Query hooks in `queries/`, mutations in `mutations/`. Never place `use*` hook files under `src/components/`; the Chart module (`src/pages/public/Chart/`) is the only sanctioned exception with its own `hooks/` and `stores/`.
-- **Zustand stores use `export default`** (match `useSongListStore`, `useScoreStore`); pages use default exports; components use named exports.
+- **Zustand stores use `export default`** (match `useSongListStore`, `useFriendStore`); pages use default exports; components use named exports.
 - **Component-adjacent modules**: tightly coupled constants, JSX templates, or modal openers may sit next to their component (precedents: `notificationIcons.ts`, `notificationTemplates.tsx`, `openScoreModal.tsx`) — hooks may not.
 - **Before creating any new file, sample 2-3 existing sibling files of the same kind** and copy their placement, naming, and export style instead of inventing a new arrangement.
 

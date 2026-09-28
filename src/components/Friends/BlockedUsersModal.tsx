@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Badge,
   Button,
@@ -32,7 +32,13 @@ export const BlockedUsersModal = () => {
 
   useBackDismiss(blocksOpened, closeBlocks);
 
-  const { blocks, total, pageSize, isLoading } = useBlockedUsers(page, 20);
+  const { data, blocks, total, pageSize, isLoading } = useBlockedUsers(page, 20);
+
+  // 解除末页的全部拉黑后退回仍有数据的末页，否则会停在空页且分页控件被隐藏。
+  useEffect(() => {
+    if (!data) return;
+    setPage((current) => Math.min(current, Math.max(1, Math.ceil(total / pageSize))));
+  }, [data, total, pageSize]);
   const unblockMutation = useUnblockUser();
 
   const handleUnblock = (userId: number, username: string) => {

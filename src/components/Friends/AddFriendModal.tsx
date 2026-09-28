@@ -2,12 +2,10 @@ import { Button, Group, Modal, Stack, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconUserPlus } from "@tabler/icons-react";
 import { useMediaQuery } from "@mantine/hooks";
-import { notifications } from "@mantine/notifications";
-import { useCreateFriendRequest } from "@/hooks/mutations/useFriendMutations";
 import { useUser } from "@/hooks/queries/useUser";
 import { useBackDismiss } from "@/hooks/useBackDismiss";
 import useFriendStore from "@/hooks/useFriendStore";
-import { getFriendErrorMessage } from "@/utils/api/friend";
+import { useSendFriendRequest } from "@/hooks/useSendFriendRequest";
 import { validateUserName } from "@/utils/validator";
 import { UsernameCopy } from "./UsernameCopy";
 
@@ -19,7 +17,7 @@ export const AddFriendModal = () => {
   const { addOpened, closeAdd } = useFriendStore();
   const { user } = useUser();
   const small = useMediaQuery("(max-width: 30rem)");
-  const createRequestMutation = useCreateFriendRequest();
+  const { send, isPending } = useSendFriendRequest();
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -45,32 +43,10 @@ export const AddFriendModal = () => {
   useBackDismiss(addOpened, handleClose);
 
   const handleSubmit = (values: FormValues) => {
-    const targetUsername = values.username.trim();
-    createRequestMutation.mutate(
-      { username: targetUsername },
-      {
-        onSuccess: (data) => {
-          const isAccepted = data?.status === "accepted";
-          notifications.show({
-            title: isAccepted ? "已成为好友" : "好友申请已发送",
-            message: isAccepted
-              ? `你与「${targetUsername}」互相发送了申请，已直接成为好友！`
-              : `已向「${targetUsername}」发送好友申请，请等待对方同意`,
-            color: "green",
-          });
-          handleClose();
-        },
-        onError: (err) => {
-          const errorMsg = getFriendErrorMessage(err, "发送好友申请失败");
-          notifications.show({
-            title: "申请失败",
-            message: errorMsg,
-            color: "red",
-          });
-          form.setFieldError("username", errorMsg);
-        },
-      },
-    );
+    send(values.username.trim(), {
+      onSuccess: handleClose,
+      onError: (message) => form.setFieldError("username", message),
+    });
   };
 
   return (
@@ -90,25 +66,17 @@ export const AddFriendModal = () => {
                 placeholder="查分器用户名，非游戏内 15 位好友码"
                 required
                 data-autofocus
-                disabled={createRequestMutation.isPending}
+                disabled={isPending}
                 {...form.getInputProps("username")}
               />
 
               {user?.name && <UsernameCopy username={user.name} size="xs" />}
 
               <Group justify="flex-end" mt="md">
-                <Button
-                  variant="default"
-                  onClick={handleClose}
-                  disabled={createRequestMutation.isPending}
-                >
+                <Button variant="default" onClick={handleClose} disabled={isPending}>
                   取消
                 </Button>
-                <Button
-                  type="submit"
-                  leftSection={<IconUserPlus size={16} />}
-                  loading={createRequestMutation.isPending}
-                >
+                <Button type="submit" leftSection={<IconUserPlus size={16} />} loading={isPending}>
                   发送申请
                 </Button>
               </Group>

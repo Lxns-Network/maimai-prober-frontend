@@ -18,9 +18,11 @@ import {
   IconStar,
   IconStarFilled,
   IconTrash,
+  IconUser,
   IconUserOff,
   IconUserPlus,
 } from "@tabler/icons-react";
+import { useState } from "react";
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import { Page } from "@/components/Page/Page";
@@ -33,6 +35,8 @@ import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/Statisti
 import { GAME_NAMES } from "@/components/Friends/gameNames";
 import { LoadingBlock } from "@/components/Friends/LoadingBlock";
 import { useFriendActions } from "@/hooks/useFriendActions";
+import { useSendFriendRequest } from "@/hooks/useSendFriendRequest";
+import { useUser } from "@/hooks/queries/useUser";
 import { BestsGroup } from "@/pages/user/Scores/bests/ScoreBestsSection";
 import { useFriends } from "@/hooks/queries/useFriends";
 import { useFriendBests, useFriendRecents, useFriendScores } from "@/hooks/queries/useFriendScores";
@@ -287,6 +291,56 @@ const FriendActions = ({ friend }: { friend: FriendItem }) => {
   );
 };
 
+/**
+ * 从排行榜或评论进入非好友（或自己）的档案时的落地状态：
+ * 自己的档案引导到「我的名片」，他人提供直接发送好友申请的入口。
+ */
+const NotFriendState = ({ username }: { username: string }) => {
+  const { user } = useUser();
+  const { send, isPending } = useSendFriendRequest();
+  const [sent, setSent] = useState(false);
+
+  if (user?.name && user.name.toLowerCase() === username.toLowerCase()) {
+    return (
+      <EmptyState
+        icon={<IconUser size={64} stroke={1.5} />}
+        title="这是你自己的档案"
+        description="好友看到的你的资料可以在「我的名片」中查看"
+      >
+        <Button mt="md" onClick={() => navigate("/friends?tab=profile")}>
+          查看我的名片
+        </Button>
+      </EmptyState>
+    );
+  }
+
+  return (
+    <EmptyState
+      icon={<IconUserPlus size={64} stroke={1.5} />}
+      title="你们还不是好友"
+      description={
+        sent
+          ? `已向「${username}」发送好友申请，对方同意后即可查看资料`
+          : `无法查看「${username}」的资料，可以先向对方发送好友申请`
+      }
+    >
+      <Group mt="md" gap="xs" justify="center">
+        <Button variant="default" onClick={() => navigate("/friends")}>
+          返回好友列表
+        </Button>
+        <Button
+          leftSection={<IconUserPlus size={16} />}
+          loading={isPending}
+          disabled={sent || !username}
+          onClick={() => send(username, { onSuccess: (accepted) => setSent(!accepted) })}
+        >
+          {sent ? "已发送申请" : "发送好友申请"}
+        </Button>
+      </Group>
+    </EmptyState>
+  );
+};
+
 export default function FriendProfile() {
   const pageContext = usePageContext();
   const username = String(pageContext.routeParams?.username ?? "") || getUsernameFromPathname();
@@ -314,15 +368,7 @@ export default function FriendProfile() {
       {friend ? undefined : isLoading ? (
         <LoadingBlock />
       ) : (
-        <EmptyState
-          icon={<IconUserPlus size={64} stroke={1.5} />}
-          title="你们还不是好友"
-          description={`无法查看「${username}」的资料，可以先向对方发送好友申请`}
-        >
-          <Button mt="md" onClick={() => navigate("/friends")}>
-            返回好友列表
-          </Button>
-        </EmptyState>
+        <NotFriendState key={username} username={username} />
       )}
     </Page>
   );
