@@ -33,12 +33,6 @@ export const BlockedUsersModal = () => {
   useBackDismiss(blocksOpened, closeBlocks);
 
   const { data, blocks, total, pageSize, isLoading } = useBlockedUsers(page, 20);
-
-  // 解除末页的全部拉黑后退回仍有数据的末页，否则会停在空页且分页控件被隐藏。
-  useEffect(() => {
-    if (!data) return;
-    setPage((current) => Math.min(current, Math.max(1, Math.ceil(total / pageSize))));
-  }, [data, total, pageSize]);
   const unblockMutation = useUnblockUser();
 
   const handleUnblock = (userId: number, username: string) => {
@@ -74,6 +68,11 @@ export const BlockedUsersModal = () => {
 
   const totalPages = Math.ceil(total / pageSize);
   const currentPage = Math.min(page, Math.max(1, totalPages));
+
+  // 解除末页的全部拉黑后退回仍有数据的末页，否则会停在空页且分页控件被隐藏。
+  useEffect(() => {
+    if (data && page > currentPage) setPage(currentPage);
+  }, [data, page, currentPage]);
 
   return (
     <Modal.Root size="md" opened={blocksOpened} onClose={closeBlocks} fullScreen={small} centered>

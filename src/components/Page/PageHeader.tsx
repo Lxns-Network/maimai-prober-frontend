@@ -18,6 +18,12 @@ export const PageHeader = ({ meta, badge, actions, backLink }: PageProps) => {
     children: <IconArrowLeft size={20} />,
   };
 
+  const title = (
+    <Title className={classes.title} textWrap="balance" mb={badge ? 0 : undefined}>
+      {meta.title}
+    </Title>
+  );
+
   const titleBlock = (
     <Group align="flex-start" wrap="nowrap" gap="xs" className={classes.titleContainer}>
       {backLabel && (
@@ -38,15 +44,11 @@ export const PageHeader = ({ meta, badge, actions, backLink }: PageProps) => {
             gap="xs"
             mb={5}
           >
-            <Title className={classes.title} textWrap="balance" mb={0}>
-              {meta.title}
-            </Title>
+            {title}
             {badge}
           </Flex>
         ) : (
-          <Title className={classes.title} textWrap="balance">
-            {meta.title}
-          </Title>
+          title
         )}
         <Text className={classes.description}>{meta.description}</Text>
       </Box>

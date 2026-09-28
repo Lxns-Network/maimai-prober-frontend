@@ -79,19 +79,6 @@ export const FriendRequests = () => {
   const incomingQuery = useFriendRequests("incoming", incomingPage, 20);
   const outgoingQuery = useFriendRequests("outgoing", outgoingPage, 20);
 
-  // 处理掉末页的全部申请后退回仍有数据的末页，否则会停在空页且分页控件被隐藏。
-  useEffect(() => {
-    if (!incomingQuery.data) return;
-    const lastPage = Math.max(1, Math.ceil(incomingQuery.total / incomingQuery.pageSize));
-    setIncomingPage((current) => Math.min(current, lastPage));
-  }, [incomingQuery.data, incomingQuery.total, incomingQuery.pageSize]);
-
-  useEffect(() => {
-    if (!outgoingQuery.data) return;
-    const lastPage = Math.max(1, Math.ceil(outgoingQuery.total / outgoingQuery.pageSize));
-    setOutgoingPage((current) => Math.min(current, lastPage));
-  }, [outgoingQuery.data, outgoingQuery.total, outgoingQuery.pageSize]);
-
   const currentQuery = direction === "incoming" ? incomingQuery : outgoingQuery;
   const page = direction === "incoming" ? incomingPage : outgoingPage;
   const setPage = direction === "incoming" ? setIncomingPage : setOutgoingPage;
@@ -168,6 +155,12 @@ export const FriendRequests = () => {
 
   const totalPages = Math.ceil(currentQuery.total / currentQuery.pageSize);
   const currentPage = Math.min(page, Math.max(1, totalPages));
+
+  // 处理掉末页的全部申请后退回仍有数据的末页，否则会停在空页且分页控件被隐藏。
+  useEffect(() => {
+    if (currentQuery.data && page > currentPage) setPage(currentPage);
+  }, [currentQuery.data, page, currentPage, setPage]);
+
   const showInitialLoading = currentQuery.isLoading && !currentQuery.data;
 
   const blockButton = small ? (

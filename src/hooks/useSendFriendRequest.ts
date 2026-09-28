@@ -5,7 +5,7 @@ import { getFriendErrorMessage } from "@/utils/api/friend";
 interface SendFriendRequestCallbacks {
   /** `accepted` 为真表示对方此前也向你发过申请，双方已直接成为好友。 */
   onSuccess?: (accepted: boolean) => void;
-  /** 收到已本地化的错误文案，便于调用方回填到表单字段。 */
+  /** 参数为已本地化的错误文案，可直接回填到表单字段。 */
   onError?: (message: string) => void;
 }
 

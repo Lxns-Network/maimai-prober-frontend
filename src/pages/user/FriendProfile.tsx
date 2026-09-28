@@ -332,7 +332,13 @@ const NotFriendState = ({ username }: { username: string }) => {
           leftSection={<IconUserPlus size={16} />}
           loading={isPending}
           disabled={sent || !username}
-          onClick={() => send(username, { onSuccess: (accepted) => setSent(!accepted) })}
+          onClick={() =>
+            send(username, {
+              onSuccess: (accepted) => {
+                if (!accepted) setSent(true);
+              },
+            })
+          }
         >
           {sent ? "已发送申请" : "发送好友申请"}
         </Button>
