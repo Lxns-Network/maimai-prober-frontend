@@ -1,29 +1,5 @@
-import {
-  ActionIcon,
-  Avatar,
-  Badge,
-  Box,
-  Card,
-  Divider,
-  Group,
-  Image,
-  Menu,
-  Text,
-  Tooltip,
-} from "@mantine/core";
-import {
-  IconDotsVertical,
-  IconEdit,
-  IconEye,
-  IconPhotoOff,
-  IconShield,
-  IconStar,
-  IconStarFilled,
-  IconTrash,
-  IconUser,
-  IconUserOff,
-} from "@tabler/icons-react";
-import { navigate } from "vike/client/router";
+import { Avatar, Badge, Box, Card, Divider, Group, Image, Text } from "@mantine/core";
+import { IconPhotoOff, IconUser, IconUserOff } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/zh-cn";
@@ -41,7 +17,7 @@ import { profilePath } from "@/utils/profile";
 import { ASSET_URL } from "@/main";
 import useGame from "@/hooks/useGame";
 import { GAME_NAMES } from "./gameNames";
-import { useFriendActions } from "@/hooks/useFriendActions";
+import { FriendActionButtons } from "./FriendActionButtons";
 import classes from "./Friends.module.css";
 
 dayjs.extend(relativeTime);
@@ -197,67 +173,16 @@ interface FriendCardProps {
 
 export const FriendCard = ({ friend }: FriendCardProps) => {
   const [game] = useGame();
-  const { editRemark, toggleFavorite, remove, block } = useFriendActions(friend);
 
   const slot = friend.games[game];
   const displayName = friend.remark || friend.username;
-  const favoriteLabel = friend.is_favorite ? "取消特别关注" : "设为特别关注";
   const detailPath = profilePath(friend.username);
   const uploadTime = slot.profile?.upload_time;
 
   return (
     <Card withBorder radius="md" p="md" className={[profileClasses.card, classes.card].join(" ")}>
       <Group gap={2} wrap="nowrap" className={classes.cardActions}>
-        <Tooltip label={favoriteLabel}>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="sm"
-            onClick={toggleFavorite}
-            aria-label={favoriteLabel}
-          >
-            {friend.is_favorite ? (
-              <IconStarFilled size={16} style={{ color: "var(--mantine-color-yellow-6)" }} />
-            ) : (
-              <IconStar size={16} />
-            )}
-          </ActionIcon>
-        </Tooltip>
-
-        <Menu position="bottom-end" shadow="md" withinPortal>
-          <Menu.Target>
-            <ActionIcon variant="subtle" color="gray" size="sm" aria-label="更多操作">
-              <IconDotsVertical size={16} />
-            </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item leftSection={<IconEye size={15} />} onClick={() => navigate(detailPath)}>
-              查看详情
-            </Menu.Item>
-            <Menu.Item leftSection={<IconEdit size={15} />} onClick={editRemark}>
-              修改备注
-            </Menu.Item>
-            <Menu.Item
-              leftSection={
-                friend.is_favorite ? (
-                  <IconStarFilled size={15} style={{ color: "var(--mantine-color-yellow-6)" }} />
-                ) : (
-                  <IconStar size={15} />
-                )
-              }
-              onClick={toggleFavorite}
-            >
-              {favoriteLabel}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item color="gray" leftSection={<IconShield size={15} />} onClick={block}>
-              加入黑名单
-            </Menu.Item>
-            <Menu.Item color="red" leftSection={<IconTrash size={15} />} onClick={remove}>
-              删除好友
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
+        <FriendActionButtons friend={friend} compact />
       </Group>
 
       <Box

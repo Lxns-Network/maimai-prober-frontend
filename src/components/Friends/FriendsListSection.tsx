@@ -34,13 +34,7 @@ import { LoadingBlock } from "./LoadingBlock";
 
 const PAGE_SIZE = 20;
 
-type SortOption =
-  | "default"
-  | "rating_desc"
-  | "rating_asc"
-  | "recent_sync"
-  | "friends_since_desc"
-  | "username_asc";
+type SortOption = "default" | "rating_desc" | "rating_asc" | "recent_sync" | "username_asc";
 
 const getSortItems = (game: Game): { key: SortOption; name: string; icon: ReactNode }[] => [
   { key: "default", name: "默认排序", icon: <IconArrowsSort size={16} /> },
@@ -55,7 +49,6 @@ const getSortItems = (game: Game): { key: SortOption; name: string; icon: ReactN
     icon: <IconSortAscending size={16} />,
   },
   { key: "recent_sync", name: "最近同步时间", icon: <IconArrowsSort size={16} /> },
-  { key: "friends_since_desc", name: "成为好友时间", icon: <IconArrowsSort size={16} /> },
   { key: "username_asc", name: "名称排序 (A-Z)", icon: <IconSortAscending size={16} /> },
 ];
 

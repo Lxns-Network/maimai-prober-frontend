@@ -1,23 +1,7 @@
-import {
-  ActionIcon,
-  Button,
-  Card,
-  DataList,
-  Group,
-  Menu,
-  Stack,
-  Text,
-  Tooltip,
-} from "@mantine/core";
+import { Button, Card, DataList, Group, Stack, Text } from "@mantine/core";
 import {
   IconDatabaseOff,
-  IconDotsVertical,
-  IconEdit,
   IconEyeOff,
-  IconShield,
-  IconStar,
-  IconStarFilled,
-  IconTrash,
   IconUser,
   IconUserOff,
   IconUserPlus,
@@ -34,7 +18,7 @@ import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSe
 import { ChunithmStatisticsSection } from "@/components/Scores/chunithm/StatisticsSection";
 import { GAME_NAMES } from "@/components/Friends/gameNames";
 import { LoadingBlock } from "@/components/Friends/LoadingBlock";
-import { useFriendActions } from "@/hooks/useFriendActions";
+import { FriendActionButtons } from "@/components/Friends/FriendActionButtons";
 import { useSendFriendRequest } from "@/hooks/useSendFriendRequest";
 import { useUser } from "@/hooks/queries/useUser";
 import { BestsGroup } from "@/pages/user/Scores/bests/ScoreBestsSection";
@@ -236,53 +220,6 @@ const getUsernameFromPathname = () => {
   }
 };
 
-const FriendActions = ({ friend }: { friend: FriendItem }) => {
-  const { editRemark, toggleFavorite, remove, block } = useFriendActions(friend, {
-    onRemoved: () => navigate("/friends"),
-  });
-  const favoriteLabel = friend.is_favorite ? "取消特别关注" : "设为特别关注";
-
-  return (
-    <>
-      <Tooltip label={favoriteLabel}>
-        <ActionIcon
-          variant="default"
-          color="gray"
-          size="input-sm"
-          onClick={toggleFavorite}
-          aria-label={favoriteLabel}
-        >
-          {friend.is_favorite ? (
-            <IconStarFilled size={18} style={{ color: "var(--mantine-color-yellow-6)" }} />
-          ) : (
-            <IconStar size={18} />
-          )}
-        </ActionIcon>
-      </Tooltip>
-
-      <Menu shadow="md" position="bottom-end">
-        <Menu.Target>
-          <ActionIcon variant="default" size="input-sm" aria-label="好友操作">
-            <IconDotsVertical size={18} />
-          </ActionIcon>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Item leftSection={<IconEdit size={16} />} onClick={editRemark}>
-            修改备注
-          </Menu.Item>
-          <Menu.Divider />
-          <Menu.Item leftSection={<IconShield size={16} />} onClick={block}>
-            加入黑名单
-          </Menu.Item>
-          <Menu.Item color="red" leftSection={<IconTrash size={16} />} onClick={remove}>
-            删除好友
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
-    </>
-  );
-};
-
 /**
  * 从排行榜或评论进入非好友（或自己）的档案时的落地状态：
  * 自己的档案引导到「我的名片」，他人提供直接发送好友申请的入口。
@@ -352,7 +289,11 @@ export default function FriendProfile() {
     <Page
       meta={{ title: isLoading ? "好友资料" : displayName, description }}
       backLink={{ to: "/friends?tab=friends", label: "返回好友列表" }}
-      actions={friend ? <FriendActions friend={friend} /> : undefined}
+      actions={
+        friend ? (
+          <FriendActionButtons friend={friend} onRemoved={() => navigate("/friends")} />
+        ) : undefined
+      }
       tabs={
         friend
           ? [
