@@ -5,7 +5,7 @@ import { Link } from "@/components/Link";
 import classes from "./PageHeader.module.css";
 import useOverlayNavigationStore from "@/hooks/useOverlayNavigationStore";
 
-export const PageHeader = ({ meta, actions, backLink }: PageProps) => {
+export const PageHeader = ({ meta, badge, actions, backLink }: PageProps) => {
   const returnLabel = useOverlayNavigationStore((state) => state.returnLabel);
   const backLabel = returnLabel ?? backLink?.label;
   const backIconProps = {
@@ -30,9 +30,24 @@ export const PageHeader = ({ meta, actions, backLink }: PageProps) => {
         </Tooltip>
       )}
       <Box style={{ flex: 1, minWidth: 0 }}>
-        <Title className={classes.title} textWrap="balance">
-          {meta.title}
-        </Title>
+        {badge ? (
+          <Flex
+            align="center"
+            justify={{ base: "center", md: "flex-start" }}
+            wrap="wrap"
+            gap="xs"
+            mb={5}
+          >
+            <Title className={classes.title} textWrap="balance" mb={0}>
+              {meta.title}
+            </Title>
+            {badge}
+          </Flex>
+        ) : (
+          <Title className={classes.title} textWrap="balance">
+            {meta.title}
+          </Title>
+        )}
         <Text className={classes.description}>{meta.description}</Text>
       </Box>
     </Group>

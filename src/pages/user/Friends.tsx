@@ -29,6 +29,7 @@ export default function Friends() {
           title: "好友",
           description: "查看好友列表，管理你的「舞萌 DX」与「中二节奏」游戏好友",
         }}
+        badge={<Badge variant="light">测试版</Badge>}
         tabs={[
           {
             id: "friends",
