@@ -14,25 +14,10 @@ const useFriendStore = create<FriendUIStore>((set) => ({
   addOpened: false,
   blocksOpened: false,
 
-  openAdd: () =>
-    set({
-      addOpened: true,
-    }),
-
-  closeAdd: () =>
-    set({
-      addOpened: false,
-    }),
-
-  openBlocks: () =>
-    set({
-      blocksOpened: true,
-    }),
-
-  closeBlocks: () =>
-    set({
-      blocksOpened: false,
-    }),
+  openAdd: () => set({ addOpened: true }),
+  closeAdd: () => set({ addOpened: false }),
+  openBlocks: () => set({ blocksOpened: true }),
+  closeBlocks: () => set({ blocksOpened: false }),
 }));
 
 export default useFriendStore;

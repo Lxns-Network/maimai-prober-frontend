@@ -87,71 +87,49 @@ export const FriendRequests = () => {
   const rejectMutation = useRejectFriendRequest();
   const withdrawMutation = useWithdrawFriendRequest();
 
-  const handleAccept = (requestId: number, username: string) => {
-    acceptMutation.mutate(
+  const runRequestAction = (
+    mutation: typeof acceptMutation | typeof rejectMutation | typeof withdrawMutation,
+    requestId: number,
+    success: { title: string; message: string },
+    failure: string,
+  ) => {
+    mutation.mutate(
       { requestId },
       {
-        onSuccess: () => {
-          notifications.show({
-            title: "已同意好友申请",
-            message: `你已与「${username}」成为好友！`,
-            color: "green",
-          });
-        },
-        onError: (err) => {
+        onSuccess: () => notifications.show({ ...success, color: "green" }),
+        onError: (err) =>
           notifications.show({
             title: "操作失败",
-            message: getFriendErrorMessage(err, "同意好友申请失败"),
+            message: getFriendErrorMessage(err, failure),
             color: "red",
-          });
-        },
+          }),
       },
     );
   };
 
-  const handleReject = (requestId: number, username: string) => {
-    rejectMutation.mutate(
-      { requestId },
-      {
-        onSuccess: () => {
-          notifications.show({
-            title: "已拒绝申请",
-            message: `已拒绝来自「${username}」的好友申请`,
-            color: "green",
-          });
-        },
-        onError: (err) => {
-          notifications.show({
-            title: "操作失败",
-            message: getFriendErrorMessage(err, "拒绝好友申请失败"),
-            color: "red",
-          });
-        },
-      },
+  const handleAccept = (requestId: number, username: string) =>
+    runRequestAction(
+      acceptMutation,
+      requestId,
+      { title: "已同意好友申请", message: `你已与「${username}」成为好友！` },
+      "同意好友申请失败",
     );
-  };
 
-  const handleWithdraw = (requestId: number, username: string) => {
-    withdrawMutation.mutate(
-      { requestId },
-      {
-        onSuccess: () => {
-          notifications.show({
-            title: "已撤回申请",
-            message: `已撤回发给「${username}」的好友申请`,
-            color: "green",
-          });
-        },
-        onError: (err) => {
-          notifications.show({
-            title: "操作失败",
-            message: getFriendErrorMessage(err, "撤回好友申请失败"),
-            color: "red",
-          });
-        },
-      },
+  const handleReject = (requestId: number, username: string) =>
+    runRequestAction(
+      rejectMutation,
+      requestId,
+      { title: "已拒绝申请", message: `已拒绝来自「${username}」的好友申请` },
+      "拒绝好友申请失败",
     );
-  };
+
+  const handleWithdraw = (requestId: number, username: string) =>
+    runRequestAction(
+      withdrawMutation,
+      requestId,
+      { title: "已撤回申请", message: `已撤回发给「${username}」的好友申请` },
+      "撤回好友申请失败",
+    );
 
   const totalPages = Math.ceil(currentQuery.total / currentQuery.pageSize);
   const currentPage = Math.min(page, Math.max(1, totalPages));

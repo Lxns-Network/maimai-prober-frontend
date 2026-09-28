@@ -37,6 +37,7 @@ import { useForm } from "@mantine/form";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type OverlayLinkProps } from "@/hooks/useResumableOverlay";
+import { profilePath } from "@/utils/profile.ts";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { checkPermission, getLoginUserId, UserPermission } from "@/utils/session.ts";
 import { useToggle } from "@mantine/hooks";
@@ -200,7 +201,7 @@ const CommentItem = ({
   const { mutate: removeComment } = useDeleteComment();
   const { mutate: like } = useLikeComment();
   const { mutate: unlike } = useUnlikeComment();
-  const profileUrl = `/profile/${encodeURIComponent(comment.uploader.name)}?game=${game}`;
+  const profileUrl = profilePath(comment.uploader.name, game);
 
   const deleteCommentHandler = () => {
     // Optimistic: remove from list immediately

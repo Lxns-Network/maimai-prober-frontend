@@ -26,7 +26,6 @@ export const NavbarButton = ({
   onClose,
   onClick,
 }: NavbarButtonProps) => {
-  // `count` 优先于 `dot`：有条数就显示数字角标，否则只按 `dot` 显示红点。
   const indicatorProps =
     count === undefined
       ? { size: 8, disabled: !dot }

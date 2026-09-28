@@ -13,6 +13,9 @@ interface FriendActionOptions {
   onRemoved?: () => void;
 }
 
+const notifyError = (title: string, fallback: string) => (err: unknown) =>
+  notifications.show({ title, message: getFriendErrorMessage(err, fallback), color: "red" });
+
 /**
  * 好友卡片与好友详情共用的四个操作：备注、特别关注、删除、拉黑。
  * 每个 handler 自带确认弹窗与结果通知，不接收事件参数。
@@ -46,13 +49,7 @@ export const useFriendActions = (friend: FriendItem, options?: FriendActionOptio
                 color: "green",
               });
             },
-            onError: (err) => {
-              notifications.show({
-                title: "修改失败",
-                message: getFriendErrorMessage(err, "修改备注失败"),
-                color: "red",
-              });
-            },
+            onError: notifyError("修改失败", "修改备注失败"),
           },
         );
       },
@@ -73,13 +70,7 @@ export const useFriendActions = (friend: FriendItem, options?: FriendActionOptio
             color: "green",
           });
         },
-        onError: (err) => {
-          notifications.show({
-            title: "操作失败",
-            message: getFriendErrorMessage(err, "更新特别关注状态失败"),
-            color: "red",
-          });
-        },
+        onError: notifyError("操作失败", "更新特别关注状态失败"),
       },
     );
   };
@@ -100,13 +91,7 @@ export const useFriendActions = (friend: FriendItem, options?: FriendActionOptio
               });
               options?.onRemoved?.();
             },
-            onError: (err) => {
-              notifications.show({
-                title: "删除失败",
-                message: getFriendErrorMessage(err, "删除好友失败"),
-                color: "red",
-              });
-            },
+            onError: notifyError("删除失败", "删除好友失败"),
           },
         );
       },
@@ -133,13 +118,7 @@ export const useFriendActions = (friend: FriendItem, options?: FriendActionOptio
               });
               options?.onRemoved?.();
             },
-            onError: (err) => {
-              notifications.show({
-                title: "拉黑失败",
-                message: getFriendErrorMessage(err, "拉黑用户失败"),
-                color: "red",
-              });
-            },
+            onError: notifyError("拉黑失败", "拉黑用户失败"),
           },
         );
       },

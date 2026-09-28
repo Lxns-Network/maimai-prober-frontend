@@ -68,13 +68,10 @@ export const FriendsListSection = () => {
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [page, setPage] = useState(1);
   const topRef = useRef<HTMLDivElement>(null);
-  const previousGameRef = useRef(game);
   const small = useMediaQuery("(max-width: 30rem)");
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (previousGameRef.current === game) return;
-    previousGameRef.current = game;
     setPage(1);
   }, [game]);
 

@@ -12,21 +12,13 @@ import {
 } from "@/utils/api/friend.ts";
 import { FriendRequestItem } from "@/types/friend";
 
-/** 好友列表与所有好友维度的 bests/recents/scores/ranking 缓存共用 `user/friends` 前缀，一起失效。 */
-const invalidateFriends = (qc: ReturnType<typeof useQueryClient>) =>
+/**
+ * 按查询键前缀批量失效。好友列表与所有好友维度的 bests/recents/scores/ranking 缓存
+ * 共用 `user/friends` 前缀；`user/friend-requests` 不以它开头，需单独失效。
+ */
+const invalidatePrefix = (qc: ReturnType<typeof useQueryClient>, prefix: string) =>
   qc.invalidateQueries({
-    predicate: (q) => typeof q.queryKey[0] === "string" && q.queryKey[0].startsWith("user/friends"),
-  });
-
-const invalidateFriendRequests = (qc: ReturnType<typeof useQueryClient>) =>
-  qc.invalidateQueries({
-    predicate: (q) =>
-      typeof q.queryKey[0] === "string" && q.queryKey[0].startsWith("user/friend-requests"),
-  });
-
-const invalidateBlocks = (qc: ReturnType<typeof useQueryClient>) =>
-  qc.invalidateQueries({
-    predicate: (q) => typeof q.queryKey[0] === "string" && q.queryKey[0].startsWith("user/blocks"),
+    predicate: (q) => typeof q.queryKey[0] === "string" && q.queryKey[0].startsWith(prefix),
   });
 
 export const useUpdateFriendPreference = () => {
@@ -42,7 +34,7 @@ export const useUpdateFriendPreference = () => {
       is_favorite?: boolean;
     }) => parseAPIResponse(await updateFriendPreference(userId, { remark, is_favorite })),
     onSuccess: () => {
-      invalidateFriends(qc);
+      invalidatePrefix(qc, "user/friends");
     },
   });
 };
@@ -53,7 +45,7 @@ export const useDeleteFriend = () => {
     mutationFn: async ({ userId }: { userId: number }) =>
       parseAPIResponse(await deleteFriend(userId)),
     onSuccess: () => {
-      invalidateFriends(qc);
+      invalidatePrefix(qc, "user/friends");
     },
   });
 };
@@ -64,8 +56,8 @@ export const useCreateFriendRequest = () => {
     mutationFn: async ({ username }: { username: string }) =>
       parseAPIResponse<FriendRequestItem>(await createFriendRequest(username)),
     onSuccess: () => {
-      invalidateFriends(qc);
-      invalidateFriendRequests(qc);
+      invalidatePrefix(qc, "user/friends");
+      invalidatePrefix(qc, "user/friend-requests");
     },
   });
 };
@@ -76,8 +68,8 @@ export const useAcceptFriendRequest = () => {
     mutationFn: async ({ requestId }: { requestId: number }) =>
       parseAPIResponse<FriendRequestItem>(await acceptFriendRequest(requestId)),
     onSuccess: () => {
-      invalidateFriends(qc);
-      invalidateFriendRequests(qc);
+      invalidatePrefix(qc, "user/friends");
+      invalidatePrefix(qc, "user/friend-requests");
     },
   });
 };
@@ -88,7 +80,7 @@ export const useRejectFriendRequest = () => {
     mutationFn: async ({ requestId }: { requestId: number }) =>
       parseAPIResponse(await rejectFriendRequest(requestId)),
     onSuccess: () => {
-      invalidateFriendRequests(qc);
+      invalidatePrefix(qc, "user/friend-requests");
     },
   });
 };
@@ -99,7 +91,7 @@ export const useWithdrawFriendRequest = () => {
     mutationFn: async ({ requestId }: { requestId: number }) =>
       parseAPIResponse(await withdrawFriendRequest(requestId)),
     onSuccess: () => {
-      invalidateFriendRequests(qc);
+      invalidatePrefix(qc, "user/friend-requests");
     },
   });
 };
@@ -109,9 +101,9 @@ export const useBlockUser = () => {
   return useMutation({
     mutationFn: async ({ userId }: { userId: number }) => parseAPIResponse(await blockUser(userId)),
     onSuccess: () => {
-      invalidateFriends(qc);
-      invalidateBlocks(qc);
-      invalidateFriendRequests(qc);
+      invalidatePrefix(qc, "user/friends");
+      invalidatePrefix(qc, "user/blocks");
+      invalidatePrefix(qc, "user/friend-requests");
     },
   });
 };
@@ -122,7 +114,7 @@ export const useUnblockUser = () => {
     mutationFn: async ({ userId }: { userId: number }) =>
       parseAPIResponse(await unblockUser(userId)),
     onSuccess: () => {
-      invalidateBlocks(qc);
+      invalidatePrefix(qc, "user/blocks");
     },
   });
 };

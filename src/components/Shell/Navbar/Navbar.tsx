@@ -31,9 +31,6 @@ interface NavbarProps {
   onClose(): void;
 }
 
-const isRouteActive = (target: string, currentPath: string) =>
-  currentPath === target || currentPath.startsWith(`${target}/`);
-
 export default function Navbar({ style, onClose }: NavbarProps) {
   const { urlPathname } = usePageContext();
   const isLoggedOut = typeof window !== "undefined" ? !localStorage.getItem("token") : true;
@@ -129,7 +126,10 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   // 只在已启用的入口里匹配，并取最长前缀：避免「开发者面板」(/developer) 抢走 /developer/apply。
   const active =
     navbarData
-      .filter((item) => item.enabled && isRouteActive(item.to, urlPathname))
+      .filter(
+        (item) =>
+          item.enabled && (urlPathname === item.to || urlPathname.startsWith(`${item.to}/`)),
+      )
       .sort((a, b) => b.to.length - a.to.length)[0]?.label ?? "";
 
   return (

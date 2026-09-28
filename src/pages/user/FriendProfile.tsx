@@ -209,22 +209,14 @@ const StatisticsTab = ({ friend }: { friend: FriendItem }) => {
   );
 };
 
-/**
- * 名片和成绩分布同属「这个人是谁」，合成一个 tab 竖向排布。
- * 游戏槽位不可用时只有一个空态，不再往下拼统计。
- */
 const ProfileTab = ({ friend }: { friend: FriendItem }) => {
   const [game] = useGame();
   const slot = friend.games[game];
 
-  if (slot.state !== "visible" || !slot.profile) {
-    return <GameCard slot={slot} game={game} friend={friend} />;
-  }
-
   return (
     <Stack gap="md">
       <GameCard slot={slot} game={game} friend={friend} />
-      <StatisticsTab friend={friend} />
+      {slot.state === "visible" && slot.profile && <StatisticsTab friend={friend} />}
     </Stack>
   );
 };

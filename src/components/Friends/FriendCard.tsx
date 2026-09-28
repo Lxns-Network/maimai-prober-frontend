@@ -10,7 +10,6 @@ import {
   Menu,
   Text,
   Tooltip,
-  useComputedColorScheme,
 } from "@mantine/core";
 import {
   IconDotsVertical,
@@ -47,31 +46,19 @@ import classes from "./Friends.module.css";
 
 dayjs.extend(relativeTime);
 
-const usePlaceholderAvatarStyle = () => {
-  const computedColorScheme = useComputedColorScheme("light");
-  return { backgroundColor: computedColorScheme === "dark" ? "#1A1B1E" : "#F1F3F5" };
-};
-
 const TrophyLine = ({ trophy }: { trophy: MaimaiProfileCard["trophy"] }) => {
   if (!trophy?.name) return null;
   return <TrophyBadge name={trophy.name} trophyColor={trophy.color ?? "normal"} miw={0} />;
 };
 
 const MaimaiSummary = ({ profile }: { profile: MaimaiProfileCard }) => {
-  const placeholderStyle = usePlaceholderAvatarStyle();
   const avatarSrc = profile.icon
     ? `${ASSET_URL}/maimai/icon/${profile.icon.id}.png!webp`
     : undefined;
 
   return (
     <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
-      <Avatar
-        src={avatarSrc}
-        size={64}
-        radius="md"
-        className={classes.avatar}
-        style={placeholderStyle}
-      >
+      <Avatar src={avatarSrc} size={64} radius="md" className={classes.avatar}>
         {avatarSrc ? <IconPhotoOff size={24} /> : <IconUser size={24} />}
       </Avatar>
 
@@ -121,7 +108,6 @@ const MaimaiSummary = ({ profile }: { profile: MaimaiProfileCard }) => {
 };
 
 const ChunithmSummary = ({ profile }: { profile: ChunithmProfileCard }) => {
-  const placeholderStyle = usePlaceholderAvatarStyle();
   const character = profile.character;
   const avatarSrc = character
     ? `${ASSET_URL}/chunithm/character/${character.id}.png!webp`
@@ -135,13 +121,10 @@ const ChunithmSummary = ({ profile }: { profile: ChunithmProfileCard }) => {
         radius="md"
         className={classes.avatar}
         style={
-          character
-            ? {
-                backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(character.level || 0)}.webp)`,
-                backgroundSize: "cover",
-                padding: 2,
-              }
-            : placeholderStyle
+          character && {
+            background: `url(/assets/chunithm/character/${getChunithmCharacterColor(character.level || 0)}.webp) 0 0 / cover`,
+            padding: 2,
+          }
         }
       >
         {avatarSrc ? <IconPhotoOff size={24} /> : <IconUser size={24} />}
@@ -179,11 +162,9 @@ const ChunithmSummary = ({ profile }: { profile: ChunithmProfileCard }) => {
 };
 
 const UnavailableSummary = ({ unbound, game }: { unbound: boolean; game: Game }) => {
-  const placeholderStyle = usePlaceholderAvatarStyle();
-
   return (
     <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
-      <Avatar size={64} radius="md" className={classes.avatar} style={placeholderStyle}>
+      <Avatar size={64} radius="md" className={classes.avatar}>
         <IconUserOff size={24} color="gray" />
       </Avatar>
 

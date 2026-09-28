@@ -13,6 +13,7 @@
 
 .avatar {
   flex-shrink: 0;
+  background-color: light-dark(#f1f3f5, #1a1b1e);
 }
 
 .cardDetailsTrigger {

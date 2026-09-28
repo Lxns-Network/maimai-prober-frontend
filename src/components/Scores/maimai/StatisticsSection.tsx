@@ -118,10 +118,7 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   );
 };
 
-/**
- * `collapsible` 为假时完整展开，供本身篇幅有限的页面（如好友名片）直接铺开显示。
- * `className` 透传到外层 `Card`，供需要统一卡片底色的页面覆盖表面样式。
- */
+/** `collapsible` 为假时不折叠，统计内容完整展开。 */
 export const MaimaiStatisticsSection = ({
   scores,
   collapsible = true,

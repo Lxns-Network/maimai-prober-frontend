@@ -28,7 +28,6 @@ const ScoreValueText = ({ value, size = 18 }: { value?: number; size?: number })
 interface RankingRowProps
   extends PaperProps, Omit<ComponentPropsWithoutRef<"div">, keyof PaperProps | "children"> {
   rank: number;
-  /** 名字槽位；由调用方决定是纯文本还是可跳转的档案链接。 */
   name: ReactNode;
   achievements?: number;
   score?: number;

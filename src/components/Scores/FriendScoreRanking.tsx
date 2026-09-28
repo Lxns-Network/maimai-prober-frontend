@@ -74,7 +74,6 @@ export const FriendScoreRanking = ({
     username: "我",
     achievements: "achievements" in score ? score.achievements : undefined,
     score: "score" in score ? score.score : undefined,
-    fc: "fc" in score ? score.fc : undefined,
     upload_time: score.upload_time,
     isSelf: true,
   };
@@ -126,7 +125,7 @@ export const FriendScoreRanking = ({
               name={
                 <>
                   <Text fz="sm" lineClamp={1} style={{ wordBreak: "break-word" }}>
-                    {row.isSelf ? "我" : row.remark || row.username}
+                    {row.remark || row.username}
                   </Text>
                   <Text fz="xs" c="dimmed">
                     {dayjs(row.upload_time).format("YYYY-MM-DD")}
