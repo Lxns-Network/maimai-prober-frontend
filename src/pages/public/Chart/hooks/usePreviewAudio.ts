@@ -86,6 +86,7 @@ export function usePreviewAudio(): PreviewAudioController {
     startRequestId: 0,
     clockSource: "raf",
   });
+  const syncFrameRef = useRef<PreviewAudioController["syncFrame"] | null>(null);
   const lastUrlRef = useRef("");
   const lastSeekRef = useRef(0);
   const playbackSpeedRef = useRef(1);
@@ -123,13 +124,24 @@ export function usePreviewAudio(): PreviewAudioController {
     })),
   );
 
+  const abLoop = useGameStore((s) => s.abLoop);
+  const abLoopEnabled = useGameStore((s) => s.abLoopEnabled);
   const musicVolumeRef = useRef(musicVolume);
   const bpm = chartData?.bpm ?? 120;
   const bpmEvents = chartData?.bpmEvents ?? null;
 
   useEffect(() => {
-    answerEventsRef.current = prepareAudioEvents(chartData?.notes ?? null);
-  }, [chartData?.notes]);
+    const events = prepareAudioEvents(chartData?.notes ?? null);
+    const endMs =
+      chartData && abLoopEnabled && abLoop?.end != null
+        ? beatsToMs(abLoop.end, chartData.bpmEvents, chartData.bpm)
+        : Infinity;
+    answerEventsRef.current = events.filter((event) => event.timeMs < endMs);
+    const currentMs = chartData
+      ? beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm)
+      : undefined;
+    audioStateRef.current.answerManager?.reset(currentMs, true);
+  }, [chartData, abLoop, abLoopEnabled]);
 
   useEffect(() => {
     playbackSpeedRef.current = playbackSpeed;
@@ -642,6 +654,10 @@ export function usePreviewAudio(): PreviewAudioController {
     const intervalId = window.setInterval(() => {
       const gameState = useGameStore.getState();
       if (!gameState.isPlaying) return;
+      if (gameState.abLoopEnabled && document.visibilityState === "hidden") {
+        syncFrameRef.current?.(performance.now());
+        return;
+      }
 
       const currentMs = getPlaybackMsIndependent();
       if (currentMs === null) return;
@@ -818,6 +834,19 @@ export function usePreviewAudio(): PreviewAudioController {
         totalDurationMs = beatsToMs(totalBeats, chart.bpmEvents, chart.bpm);
         totalDurationCacheRef.current = { chartNotes: chart.notes, totalDurationMs };
       }
+      if (
+        gameState.abLoopEnabled &&
+        gameState.abLoop?.start != null &&
+        gameState.abLoop.end != null &&
+        (currentMs < beatsToMs(gameState.abLoop.start, chart.bpmEvents, chart.bpm) - 0.001 ||
+          currentMs >= beatsToMs(gameState.abLoop.end, chart.bpmEvents, chart.bpm))
+      ) {
+        state.startRequestId += 1;
+        stopSource(true);
+        resetAnswerSounds(beatsToMs(gameState.abLoop.start, chart.bpmEvents, chart.bpm), true);
+        gameState.setPreciseTime(gameState.abLoop.start, true);
+        return { currentBeats: gameState.abLoop.start };
+      }
       if (currentMs >= totalDurationMs + 500) {
         gameState.setPreciseTime(totalBeats);
         gameState.pause();
@@ -843,6 +872,10 @@ export function usePreviewAudio(): PreviewAudioController {
       stopSource,
     ],
   );
+
+  useEffect(() => {
+    syncFrameRef.current = syncFrame;
+  }, [syncFrame]);
 
   const previewAudio = useMemo<PreviewAudioController>(
     () => ({

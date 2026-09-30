@@ -34,6 +34,8 @@ interface GameState {
   /** 跳转计数器：用户每次 seek（拖动/跳转）时自增，消费者比对该值以重新定位音频与动画 */
   seekVersion: number;
   isFullscreen: boolean;
+  abLoop: { start: number | null; end: number | null } | null;
+  abLoopEnabled: boolean;
 }
 
 interface GameActions {
@@ -60,6 +62,10 @@ interface GameActions {
   reset: () => void;
   setIsFullscreen: (isFullscreen: boolean) => void;
   toggleFullscreen: () => void;
+  markLoopPoint: () => void;
+  setLoopRange: (start: number, end: number) => void;
+  clearLoopRange: () => void;
+  toggleABLoop: () => void;
 }
 
 export type GameStore = GameState & GameActions;
@@ -87,6 +93,8 @@ const initialState: GameState = {
   pendingPlay: false,
   seekVersion: 0,
   isFullscreen: false,
+  abLoop: null,
+  abLoopEnabled: false,
 };
 
 // 步进时的最大分拍（避免 1/384 等过细分拍导致步进过小）
@@ -131,6 +139,17 @@ export const useGameStore = create<GameStore>()(
         return;
       }
 
+      if (
+        state.abLoopEnabled &&
+        state.abLoop?.start != null &&
+        state.abLoop.end != null &&
+        (state.timeline.preciseTime < state.abLoop.start ||
+          state.timeline.preciseTime >= state.abLoop.end)
+      ) {
+        state.setPreciseTime(state.abLoop.start, true);
+        set({ isPlaying: true });
+        return;
+      }
       const { timeline } = state;
       const totalBeats = timeline.totalMeasures * timeline.beatsPerMeasure;
       const isAtEnd = timeline.preciseTime >= totalBeats - 0.01;
@@ -297,6 +316,8 @@ export const useGameStore = create<GameStore>()(
 
       set((state) => ({
         chartData: chart,
+        abLoop: null,
+        abLoopEnabled: false,
         isPlaying: false,
         pendingPlay: false,
         timeline: {
@@ -308,6 +329,57 @@ export const useGameStore = create<GameStore>()(
         },
         seekVersion: state.seekVersion + 1,
       }));
+    },
+
+    markLoopPoint: () => {
+      const state = get();
+      if (!state.chartData || state.abLoop?.end != null) return;
+      const time = state.isPlaying ? playbackTimeRef.current : state.timeline.preciseTime;
+      const totalBeats = state.timeline.totalMeasures * state.timeline.beatsPerMeasure;
+      if (!Number.isFinite(time) || time < 0 || time > totalBeats) return;
+      if (state.abLoop?.start != null && state.abLoop.end == null) {
+        state.setLoopRange(state.abLoop.start, time);
+      } else {
+        set({ abLoop: { start: time, end: null }, abLoopEnabled: false });
+      }
+    },
+
+    setLoopRange: (first, second) => {
+      const state = get();
+      const start = Math.min(first, second);
+      const end = Math.max(first, second);
+      const totalBeats = state.timeline.totalMeasures * state.timeline.beatsPerMeasure;
+      if (
+        !state.chartData ||
+        !Number.isFinite(start) ||
+        !Number.isFinite(end) ||
+        start < 0 ||
+        end > totalBeats ||
+        start === end
+      )
+        return;
+      set({ abLoop: { start, end }, abLoopEnabled: true });
+      if (state.isPlaying && (playbackTimeRef.current < start || playbackTimeRef.current >= end)) {
+        get().setPreciseTime(start, true);
+      }
+    },
+
+    clearLoopRange: () => set({ abLoop: null, abLoopEnabled: false }),
+
+    toggleABLoop: () => {
+      const state = get();
+      const range = state.abLoop;
+      const enabled = range?.start != null && range.end != null && !state.abLoopEnabled;
+      set({ abLoopEnabled: enabled });
+      if (
+        enabled &&
+        range?.start != null &&
+        range.end != null &&
+        state.isPlaying &&
+        (playbackTimeRef.current < range.start || playbackTimeRef.current >= range.end)
+      ) {
+        get().setPreciseTime(range.start, true);
+      }
     },
 
     setRawSimaiText: (text: string) => set({ rawSimaiText: text }),
