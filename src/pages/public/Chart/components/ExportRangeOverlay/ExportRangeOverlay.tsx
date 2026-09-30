@@ -10,6 +10,8 @@ type DragMode = "start" | "end" | "selection" | "viewport";
 type ExportRangeOverlayProps = {
   range: ChartExportRange;
   totalDurationMs: number;
+  minDurationMs?: number;
+  maxDurationMs?: number;
   onChange: (range: ChartExportRange) => void;
   onPreview?: (ms: number) => void;
   /** 非空时启用空白区域拖拽视口；选区和手柄仍用于调整导出范围。 */
@@ -22,6 +24,8 @@ export function ExportRangeOverlay({
   onChange,
   onPreview,
   onViewportPan,
+  minDurationMs = MIN_EXPORT_DURATION_MS,
+  maxDurationMs = MAX_EXPORT_DURATION_MS,
 }: ExportRangeOverlayProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const rootWidthRef = useRef(0);
@@ -44,63 +48,66 @@ export function ExportRangeOverlay({
   const endPercent = totalDurationMs > 0 ? (range.endMs / totalDurationMs) * 100 : 0;
   const durationMs = Math.max(0, range.endMs - range.startMs);
 
-  const updateDragging = useCallback((clientX: number) => {
-    const rect = rootRef.current?.getBoundingClientRect();
-    const width = rootWidthRef.current;
-    const durationMs = totalDurationMsRef.current;
-    if (!rect || width <= 0 || durationMs <= 0) return;
+  const updateDragging = useCallback(
+    (clientX: number) => {
+      const rect = rootRef.current?.getBoundingClientRect();
+      const width = rootWidthRef.current;
+      const durationMs = totalDurationMsRef.current;
+      if (!rect || width <= 0 || durationMs <= 0) return;
 
-    const x = clamp(clientX - rect.left, 0, width);
-    const pointerMs = (x / width) * durationMs;
+      const x = clamp(clientX - rect.left, 0, width);
+      const pointerMs = (x / width) * durationMs;
 
-    const mode = draggingModeRef.current;
-    if (!mode) return;
+      const mode = draggingModeRef.current;
+      if (!mode) return;
 
-    if (mode === "viewport") {
-      const deltaX = clientX - viewportDragClientXRef.current;
-      viewportDragClientXRef.current = clientX;
-      onViewportPanRef.current?.(-(deltaX / width) * durationMs);
-      return;
-    }
+      if (mode === "viewport") {
+        const deltaX = clientX - viewportDragClientXRef.current;
+        viewportDragClientXRef.current = clientX;
+        onViewportPanRef.current?.(-(deltaX / width) * durationMs);
+        return;
+      }
 
-    const currentRange = rangeRef.current;
-    const targetMs =
-      mode === "start" || mode === "end" ? pointerMs - handleDragOffsetMsRef.current : pointerMs;
-    let newRange: ChartExportRange;
+      const currentRange = rangeRef.current;
+      const targetMs =
+        mode === "start" || mode === "end" ? pointerMs - handleDragOffsetMsRef.current : pointerMs;
+      let newRange: ChartExportRange;
 
-    if (mode === "start") {
-      newRange = {
-        startMs: Math.max(
-          currentRange.endMs - MAX_EXPORT_DURATION_MS,
-          Math.min(targetMs, currentRange.endMs - MIN_EXPORT_DURATION_MS),
-        ),
-        endMs: currentRange.endMs,
-      };
-    } else if (mode === "selection") {
-      const rangeDurationMs = currentRange.endMs - currentRange.startMs;
-      const startMs = clamp(
-        targetMs - selectionDragOffsetMsRef.current,
-        0,
-        durationMs - rangeDurationMs,
-      );
+      if (mode === "start") {
+        newRange = {
+          startMs: Math.max(
+            currentRange.endMs - maxDurationMs,
+            Math.min(targetMs, currentRange.endMs - minDurationMs),
+          ),
+          endMs: currentRange.endMs,
+        };
+      } else if (mode === "selection") {
+        const rangeDurationMs = currentRange.endMs - currentRange.startMs;
+        const startMs = clamp(
+          targetMs - selectionDragOffsetMsRef.current,
+          0,
+          durationMs - rangeDurationMs,
+        );
 
-      newRange = {
-        startMs,
-        endMs: startMs + rangeDurationMs,
-      };
-    } else {
-      newRange = {
-        startMs: currentRange.startMs,
-        endMs: Math.min(
-          currentRange.startMs + MAX_EXPORT_DURATION_MS,
-          Math.max(targetMs, currentRange.startMs + MIN_EXPORT_DURATION_MS),
-        ),
-      };
-    }
+        newRange = {
+          startMs,
+          endMs: startMs + rangeDurationMs,
+        };
+      } else {
+        newRange = {
+          startMs: currentRange.startMs,
+          endMs: Math.min(
+            currentRange.startMs + maxDurationMs,
+            Math.max(targetMs, currentRange.startMs + minDurationMs),
+          ),
+        };
+      }
 
-    onChangeRef.current(newRange);
-    onPreviewRef.current?.(mode === "end" ? newRange.endMs : newRange.startMs);
-  }, []);
+      onChangeRef.current(newRange);
+      onPreviewRef.current?.(mode === "end" ? newRange.endMs : newRange.startMs);
+    },
+    [minDurationMs, maxDurationMs],
+  );
 
   const startDragging = (mode: DragMode, clientX: number) => {
     rootWidthRef.current = rootRef.current?.getBoundingClientRect().width ?? 0;

@@ -38,6 +38,7 @@ import {
   IconPlayerPlay,
   IconPlayerPause,
   IconRefresh,
+  IconRepeat,
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
@@ -180,6 +181,12 @@ export function PlaybackControls({
   // timeline / 音频状态更新都重渲染整棵控件树，是 trace 里 60–95ms 长任务的来源。
   const isPlaying = useGameStore((s) => s.isPlaying);
   const pendingPlay = useGameStore((s) => s.pendingPlay);
+  const abLoop = useGameStore((s) => s.abLoop);
+  const abLoopEnabled = useGameStore((s) => s.abLoopEnabled);
+  const markLoopPoint = useGameStore((s) => s.markLoopPoint);
+  const setLoopRange = useGameStore((s) => s.setLoopRange);
+  const clearLoopRange = useGameStore((s) => s.clearLoopRange);
+  const toggleABLoop = useGameStore((s) => s.toggleABLoop);
   const chartData = useGameStore((s) => s.chartData);
   const preciseTime = useGameStore((s) => s.timeline.preciseTime);
   const currentMeasure = useGameStore((s) => s.timeline.currentMeasure);
@@ -529,6 +536,31 @@ export function PlaybackControls({
       <Stack gap="sm">
         <div className={classes.timelineExportHost}>
           <NoteCountGraph fullscreen={isFullscreen} />
+          {!exportRange &&
+            abLoop?.start != null &&
+            abLoop.end != null &&
+            chartData &&
+            totalDurationMs > 0 && (
+              <ExportRangeOverlay
+                range={{
+                  startMs: beatsToMs(abLoop.start, chartData.bpmEvents, chartData.bpm),
+                  endMs: beatsToMs(abLoop.end, chartData.bpmEvents, chartData.bpm),
+                }}
+                totalDurationMs={totalDurationMs}
+                minDurationMs={1}
+                maxDurationMs={totalDurationMs}
+                onChange={({ startMs, endMs }) =>
+                  setLoopRange(
+                    msToBeats(
+                      clamp(startMs, 0, totalDurationMs),
+                      chartData.bpmEvents,
+                      chartData.bpm,
+                    ),
+                    msToBeats(clamp(endMs, 0, totalDurationMs), chartData.bpmEvents, chartData.bpm),
+                  )
+                }
+              />
+            )}
           {exportRange && totalDurationMs > 0 && (
             <div className={classes.exportOverviewOverlay} {...exportSchemeProps}>
               <div
@@ -722,6 +754,53 @@ export function PlaybackControls({
               <IconRefresh size={20} />
             </ActionIcon>
           </Tooltip>
+
+          <Menu shadow="md" width={220} position="top" portalProps={fullscreenPortalProps}>
+            <Menu.Target>
+              <Tooltip label="区间循环" portalProps={fullscreenPortalProps}>
+                <ActionIcon
+                  variant={abLoopEnabled ? "light" : "subtle"}
+                  color={abLoopEnabled ? undefined : isFullscreen ? "white" : "gray"}
+                  size="lg"
+                  aria-label="区间循环"
+                  disabled={!chartData}
+                >
+                  <IconRepeat size={20} />
+                </ActionIcon>
+              </Tooltip>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>区间循环</Menu.Label>
+              <Menu.Item onClick={abLoop?.end != null ? clearLoopRange : markLoopPoint}>
+                {abLoop?.start == null
+                  ? "设当前为起点"
+                  : abLoop.end == null
+                    ? "设当前为终点"
+                    : "清除选区"}
+              </Menu.Item>
+              {abLoop?.start != null && chartData && (
+                <Menu.Label>
+                  {abLoop.end == null ? "起点 " : ""}
+                  {formatDuration(beatsToMs(abLoop.start, chartData.bpmEvents, chartData.bpm), "s")}
+                  {abLoop.end == null
+                    ? " · 待设终点"
+                    : " — " +
+                      formatDuration(
+                        beatsToMs(abLoop.end, chartData.bpmEvents, chartData.bpm),
+                        "s",
+                      )}
+                </Menu.Label>
+              )}
+              <Menu.Divider />
+              <Menu.Item
+                disabled={abLoop?.end == null}
+                onClick={toggleABLoop}
+                closeMenuOnClick={false}
+              >
+                {abLoopEnabled ? "关闭循环" : "开启循环"}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
 
           <Menu
             shadow="md"
