@@ -1,12 +1,4 @@
-import {
-  CSSProperties,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useState,
-} from "react";
+import { ReactNode, useCallback, useEffect, useId, useLayoutEffect, useState } from "react";
 import {
   ActionIcon,
   Box,
@@ -18,6 +10,7 @@ import {
   Modal,
   ScrollArea,
   useVirtualizedCombobox,
+  extractStyleProps,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -179,9 +172,11 @@ export function VirtualizedCombobox<T>({
   );
 
   if (isMobile) {
+    const { styleProps, rest } = extractStyleProps(others);
+    const { style, ...inputProps } = rest;
     const triggerInput = (
       <InputBase
-        {...others}
+        {...inputProps}
         placeholder={placeholder}
         leftSection={<IconSearch size={18} />}
         rightSection={rightSection}
@@ -200,14 +195,17 @@ export function VirtualizedCombobox<T>({
 
     return (
       <>
-        <motion.div
+        <Box
+          component={motion.div}
+          {...styleProps}
+          miw={styleProps.miw ?? 0}
           layoutId={layoutId}
           layout
           transition={HERO_TRANSITION}
-          style={typeof others.style === "function" ? undefined : (others.style as CSSProperties)}
+          style={style}
         >
           {triggerInput}
-        </motion.div>
+        </Box>
         <Combobox store={combobox} resetSelectionOnOptionHover={false} keepMounted>
           <Modal
             opened={mounted}
