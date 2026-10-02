@@ -34,6 +34,8 @@ export interface ConfigProps {
   allow_third_party_fetch_player?: boolean;
   allow_third_party_fetch_scores?: boolean;
   allow_third_party_write_data?: boolean;
+  allow_friend_fetch_scores?: boolean;
+  show_username_in_score_ranking?: boolean;
 }
 
 export interface PasskeyRegisterData {

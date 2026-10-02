@@ -8,6 +8,7 @@ interface NavbarButtonProps {
   icon: React.ReactNode;
   is_new?: boolean;
   count?: number;
+  dot?: boolean;
   to?: string;
   active?: string;
   onClose(): void;
@@ -19,11 +20,17 @@ export const NavbarButton = ({
   icon,
   is_new,
   count,
+  dot,
   to,
   active,
   onClose,
   onClick,
 }: NavbarButtonProps) => {
+  const indicatorProps =
+    count === undefined
+      ? { size: 8, disabled: !dot }
+      : { size: 16, disabled: !count, label: count > 99 ? "99+" : count };
+
   return (
     <a
       href={to}
@@ -38,12 +45,7 @@ export const NavbarButton = ({
       }}
     >
       <Group>
-        <Indicator
-          color="red"
-          size={16}
-          disabled={!count}
-          label={(count ?? 0) > 99 ? "99+" : count}
-        >
+        <Indicator color="red" {...indicatorProps}>
           <div className={classes.navbarLinkIcon}>{icon}</div>
         </Indicator>
         <Text size="sm">{label}</Text>

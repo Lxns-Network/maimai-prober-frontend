@@ -7,14 +7,16 @@ import { RatingConstantAnalysis } from "@/components/Scores/RatingConstantAnalys
 import useGame from "@/hooks/useGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
-function BestsGroup({
+export function BestsGroup({
   title,
   subtitle,
   scores,
+  readOnly,
 }: {
   title: string;
   subtitle: string;
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
+  readOnly?: boolean;
 }) {
   return (
     <Box>
@@ -23,7 +25,7 @@ function BestsGroup({
         {subtitle}
       </Text>
       {scores.length > 0 ? (
-        <ScoreList scores={scores} />
+        <ScoreList scores={scores} readOnly={readOnly} />
       ) : (
         <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title="暂无成绩" />
       )}

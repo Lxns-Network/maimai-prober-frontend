@@ -10,14 +10,18 @@ export interface PageProps {
     title: string;
     description: string;
   };
+  /** 紧跟标题的状态标记，例如「测试版」；不会写入文档标题。 */
+  badge?: React.ReactNode;
   maxWidth?: number;
+  backLink?: { to: string; label: string };
+  /** 页头右侧的常驻操作区，跨 tab 可用。 */
+  actions?: React.ReactNode;
   tabs?: {
     id: string;
-    name: string;
+    name: React.ReactNode;
     children: React.ReactNode;
   }[];
   children?: React.ReactNode;
-  actions?: React.ReactNode;
 }
 
 export const Page = (props: PageProps) => {
