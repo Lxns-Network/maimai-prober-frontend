@@ -32,6 +32,13 @@ export async function getDevelopers(): Promise<Response> {
   return fetchAPI("user/admin/developers", { method: "GET" });
 }
 
-export async function revokeDeveloper(data: object): Promise<Response> {
+export async function revokeDeveloper(data: { id: number }): Promise<Response> {
   return fetchAPI("user/admin/developer", { method: "DELETE", body: data });
+}
+
+export async function rejectDeveloperApplication(id: number, reason: string): Promise<Response> {
+  return fetchAPI("user/admin/developer", {
+    method: "DELETE",
+    body: { id, rejection_reason: reason },
+  });
 }

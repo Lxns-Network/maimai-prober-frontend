@@ -24,6 +24,7 @@ import { AnimatedStack } from "@/components/AnimatedGrid.tsx";
 import { motion } from "motion/react";
 import { UserProps } from "@/types/user";
 import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
+import { RejectDeveloperModal } from "./RejectDeveloperModal.tsx";
 
 interface DeveloperProps {
   id: number;
@@ -71,12 +72,14 @@ function UserButton({
 interface DeveloperCardProps {
   developer: DeveloperProps;
   userOnClick?: () => void;
+  onRejected(): void;
 }
 
-const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps) => {
+const DeveloperCard = ({ developer, userOnClick, onRejected, ...others }: DeveloperCardProps) => {
+  const [rejectOpened, rejectHandlers] = useDisclosure(false);
   const revokeDeveloperHandler = async () => {
     try {
-      const res = await revokeDeveloper(developer);
+      const res = await revokeDeveloper({ id: developer.id });
       const data = await res.json();
       if (!data.success) {
         throw new Error(data.message);
@@ -89,6 +92,16 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
 
   return (
     <Card className={classes.card} withBorder radius="md" w="100%" {...others}>
+      {rejectOpened && (
+        <RejectDeveloperModal
+          developer={developer}
+          onClose={rejectHandlers.close}
+          onRejected={() => {
+            rejectHandlers.close();
+            onRejected();
+          }}
+        />
+      )}
       <Card.Section className={classes.section} p={0}>
         <UserButton user={developer.user} onClick={userOnClick} />
       </Card.Section>
@@ -161,16 +174,7 @@ const DeveloperCard = ({ developer, userOnClick, ...others }: DeveloperCardProps
               size="sm"
               color="red"
               leftSection={<IconArrowBackUp size={20} />}
-              onClick={() =>
-                openConfirmModal(
-                  "撤销开发者申请",
-                  "确定要撤销这个开发者申请吗？",
-                  revokeDeveloperHandler,
-                  {
-                    confirmProps: { color: "red" },
-                  },
-                )
-              }
+              onClick={rejectHandlers.open}
             >
               撤销开发者申请
             </Button>
@@ -247,6 +251,12 @@ const AdminDevelopersContent = () => {
           renderItem={(developer) => (
             <DeveloperCard
               developer={developer}
+              onRejected={() => {
+                setDevelopers((current) => current.filter((item) => item.id !== developer.id));
+                setPage((current) =>
+                  Math.max(1, Math.min(current, Math.ceil((developers.length - 1) / PAGE_SIZE))),
+                );
+              }}
               userOnClick={() => {
                 setActiveUser(developer.user);
                 open();
