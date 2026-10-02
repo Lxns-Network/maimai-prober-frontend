@@ -72,11 +72,10 @@ function UserButton({
 interface DeveloperCardProps {
   developer: DeveloperProps;
   userOnClick?: () => void;
-  onRejected(): void;
+  onReject(): void;
 }
 
-const DeveloperCard = ({ developer, userOnClick, onRejected, ...others }: DeveloperCardProps) => {
-  const [rejectOpened, rejectHandlers] = useDisclosure(false);
+const DeveloperCard = ({ developer, userOnClick, onReject, ...others }: DeveloperCardProps) => {
   const revokeDeveloperHandler = async () => {
     try {
       const res = await revokeDeveloper({ id: developer.id });
@@ -92,16 +91,6 @@ const DeveloperCard = ({ developer, userOnClick, onRejected, ...others }: Develo
 
   return (
     <Card className={classes.card} withBorder radius="md" w="100%" {...others}>
-      {rejectOpened && (
-        <RejectDeveloperModal
-          developer={developer}
-          onClose={rejectHandlers.close}
-          onRejected={() => {
-            rejectHandlers.close();
-            onRejected();
-          }}
-        />
-      )}
       <Card.Section className={classes.section} p={0}>
         <UserButton user={developer.user} onClick={userOnClick} />
       </Card.Section>
@@ -174,7 +163,7 @@ const DeveloperCard = ({ developer, userOnClick, onRejected, ...others }: Develo
               size="sm"
               color="red"
               leftSection={<IconArrowBackUp size={20} />}
-              onClick={rejectHandlers.open}
+              onClick={onReject}
             >
               撤销开发者申请
             </Button>
@@ -191,6 +180,8 @@ const AdminDevelopersContent = () => {
 
   const [opened, { open, close }] = useDisclosure(false);
   const [activeUser, setActiveUser] = useState<UserProps | null>(null);
+  const [rejectOpened, rejectHandlers] = useDisclosure(false);
+  const [activeDeveloper, setActiveDeveloper] = useState<DeveloperProps | null>(null);
 
   useEffect(() => {
     const getDevelopersHandler = async () => {
@@ -229,6 +220,18 @@ const AdminDevelopersContent = () => {
   return (
     <div ref={topRef} style={{ scrollMarginTop: 16 }}>
       <EditUserModal user={activeUser as UserProps} opened={opened} onClose={() => close()} />
+      <RejectDeveloperModal
+        developer={activeDeveloper}
+        opened={rejectOpened}
+        onClose={rejectHandlers.close}
+        onRejected={() => {
+          rejectHandlers.close();
+          setDevelopers((current) => current.filter((item) => item.id !== activeDeveloper?.id));
+          setPage((current) =>
+            Math.max(1, Math.min(current, Math.ceil((developers.length - 1) / PAGE_SIZE))),
+          );
+        }}
+      />
       <Stack align="center">
         {totalPages > 1 && (
           <motion.div
@@ -251,11 +254,9 @@ const AdminDevelopersContent = () => {
           renderItem={(developer) => (
             <DeveloperCard
               developer={developer}
-              onRejected={() => {
-                setDevelopers((current) => current.filter((item) => item.id !== developer.id));
-                setPage((current) =>
-                  Math.max(1, Math.min(current, Math.ceil((developers.length - 1) / PAGE_SIZE))),
-                );
+              onReject={() => {
+                setActiveDeveloper(developer);
+                rejectHandlers.open();
               }}
               userOnClick={() => {
                 setActiveUser(developer.user);

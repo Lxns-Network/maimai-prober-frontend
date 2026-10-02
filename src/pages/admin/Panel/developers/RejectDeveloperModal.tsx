@@ -28,10 +28,12 @@ function getRejectionReason(values: { selection: string[]; other: string }) {
 
 export function RejectDeveloperModal({
   developer,
+  opened,
   onClose,
   onRejected,
 }: {
-  developer: { id: number };
+  developer: { id: number } | null;
+  opened: boolean;
   onClose(): void;
   onRejected(): void;
 }) {
@@ -54,10 +56,10 @@ export function RejectDeveloperModal({
   const close = () => {
     if (!submitting) onClose();
   };
-  useBackDismiss(true, close);
+  useBackDismiss(opened, close);
 
   const submit = async ({ reason }: { reason: string }) => {
-    if (submitting) return;
+    if (!opened || !developer || submitting) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -88,8 +90,12 @@ export function RejectDeveloperModal({
 
   return (
     <Modal
-      opened
+      opened={opened}
       onClose={close}
+      onExitTransitionEnd={() => {
+        form.reset();
+        setError(null);
+      }}
       title="撤销开发者申请"
       centered
       closeOnClickOutside={!submitting}
@@ -98,12 +104,7 @@ export function RejectDeveloperModal({
     >
       <form onSubmit={form.onSubmit(submit)}>
         <Stack>
-          <Checkbox.Group
-            label="拒绝理由"
-            description="可多选"
-            withAsterisk
-            {...form.getInputProps("selection")}
-          >
+          <Checkbox.Group label="拒绝理由" withAsterisk {...form.getInputProps("selection")}>
             <Stack gap="sm" mt="xs">
               {rejectionReasons.map((reason) => (
                 <Checkbox key={reason.value} {...reason} disabled={submitting} />
