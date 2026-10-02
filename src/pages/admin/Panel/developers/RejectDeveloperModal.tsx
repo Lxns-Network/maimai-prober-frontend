@@ -65,24 +65,23 @@ export function RejectDeveloperModal({
     try {
       const response = await rejectDeveloperApplication(developer.id, reason.trim());
       const result = await response.json();
-      if (!response.ok || !result.success)
-        throw new Error(result.message || "撤销失败，请稍后重试");
+      if (!response.ok || !result.success) throw new Error(result.message || "撤销失败");
       const emailQueued = result.data?.email_queued === true;
       const notificationCreated = result.data?.notification_created === true;
       notifications.show({
-        title: "开发者申请已撤销",
+        title: "撤销成功",
         message: notificationCreated
           ? emailQueued
-            ? "已发送站内通知，拒绝理由也将通过邮件发送给申请人。"
-            : "站内通知已发送，但邮件发送失败。"
+            ? "开发者申请已撤销。"
+            : "开发者申请已撤销，但邮件发送失败。"
           : emailQueued
-            ? "拒绝理由将通过邮件发送，站内通知发送失败。"
-            : "站内通知和邮件均发送失败，请手动联系申请人。",
+            ? "开发者申请已撤销，但站内通知发送失败。"
+            : "开发者申请已撤销，但站内通知和邮件发送失败。",
         color: emailQueued && notificationCreated ? "green" : "orange",
       });
       onRejected();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "撤销失败，请稍后重试");
+      setError(err instanceof Error ? err.message : "撤销失败");
     } finally {
       setSubmitting(false);
     }
@@ -131,7 +130,7 @@ export function RejectDeveloperModal({
               取消
             </Button>
             <Button type="submit" color="red" loading={submitting}>
-              撤销并通知
+              确定
             </Button>
           </Group>
         </Stack>
