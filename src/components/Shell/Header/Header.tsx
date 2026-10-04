@@ -2,7 +2,6 @@ import { Group, Burger, Menu, UnstyledButton, Text, Stack, Transition } from "@m
 import Logo from "./Logo";
 import { IconChevronDown } from "@tabler/icons-react";
 import classes from "./Header.module.css";
-import React from "react";
 import { ColorSchemeToggle } from "./ColorSchemeToggle.tsx";
 import { GameTabs } from "./GameTabs.tsx";
 import { Game } from "@/types/game";
@@ -12,7 +11,6 @@ interface HeaderProps {
   navbarOpened: boolean;
   onNavbarToggle(): void;
   gameTabsVisible: boolean;
-  headerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const games = [
@@ -33,12 +31,7 @@ const translateY = {
   transitionProperty: "opacity, bottom, max-height",
 };
 
-export default function Header({
-  navbarOpened,
-  onNavbarToggle,
-  gameTabsVisible,
-  headerRef,
-}: HeaderProps) {
+export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible }: HeaderProps) {
   const [game, setGame] = useGame();
 
   function handleGameChange(game: Game) {
@@ -46,7 +39,7 @@ export default function Header({
   }
 
   return (
-    <div className={classes.header} ref={headerRef}>
+    <div className={classes.header}>
       <Stack gap={0}>
         <Group wrap="nowrap" mt={12} mb={12}>
           <Burger

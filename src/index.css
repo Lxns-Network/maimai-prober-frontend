@@ -10,12 +10,13 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 
+  --header-bar-height: 56px;
   --header-height: 88px;
 }
 
 @media (min-width: 36em) {
   :root {
-    --header-height: 56px;
+    --header-height: var(--header-bar-height);
   }
 }
 

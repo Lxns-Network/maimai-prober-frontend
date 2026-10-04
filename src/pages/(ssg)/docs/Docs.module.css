@@ -101,13 +101,13 @@
   margin-top: var(--mantine-spacing-xs) !important;
 }
 
+.heading1,
 .heading2,
 .heading3,
 .heading4,
 .heading5,
 .heading6 {
-  margin-top: -3.1rem !important;
-  padding-top: 4.6rem;
+  scroll-margin-top: var(--mantine-spacing-lg);
 }
 
 .list {

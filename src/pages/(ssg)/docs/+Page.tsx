@@ -23,7 +23,8 @@ import {
   useTree,
 } from "@mantine/core";
 import classes from "./Docs.module.css";
-import React, { useEffect, useMemo, useState } from "react";
+import { useShellViewportRef } from "@/components/Shell/ShellViewportContext.ts";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
@@ -69,36 +70,30 @@ async function loadShiki() {
 
 const shikiAdapter = createShikiAdapter(loadShiki);
 
-const scrollTo = (id: string) => {
+const scrollTo = (id: string, updateHistory = true) => {
   if (!id) return;
 
-  if (typeof window !== "undefined" && window.location.hash !== `#${encodeURIComponent(id)}`) {
-    window.history.pushState(null, "", `${window.location.pathname}#${encodeURIComponent(id)}`);
-  }
-
   const target = document.getElementById(id);
-  const scrollArea = document.querySelector(
-    "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
-  );
-
-  if (target && scrollArea) {
-    const offsetTop = target.offsetTop - parseInt(window.getComputedStyle(target).marginTop, 10);
-
-    scrollArea.scrollTo({
-      top: offsetTop,
+  if (target) {
+    target.scrollIntoView({
       behavior: "smooth",
+      block: "start",
     });
+
+    if (updateHistory && window.location.hash !== `#${encodeURIComponent(id)}`) {
+      window.history.pushState(null, "", `${window.location.pathname}#${encodeURIComponent(id)}`);
+    }
   }
 };
 
-const getActiveElement = (rects: DOMRect[]) => {
+const getActiveElement = (rects: DOMRect[], offset: number) => {
   if (rects.length === 0) {
     return -1;
   }
 
   const closest = rects.reduce(
     (acc, item, index) => {
-      if (Math.abs(acc.position) < Math.abs(item.y)) {
+      if (Math.abs(acc.position - offset) < Math.abs(item.y - offset)) {
         return acc;
       }
 
@@ -167,6 +162,7 @@ interface HeadingData {
 }
 
 const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
+  const viewportRef = useShellViewportRef();
   const { data, parentStack } = useMemo(() => {
     const data: TreeNodeData[] = [];
     const parentStack: TreeNodeData[] = [];
@@ -208,13 +204,24 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
   });
 
   const [active, setActive] = useState<number>(-1);
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const nodes = Array.from(
       document.querySelectorAll("#content :is(h1,h2,h3,h4,h5,h6)") as NodeListOf<HTMLElement>,
     );
-    if (nodes.length === 0) return;
-    setActive(getActiveElement(nodes.map((node) => node.getBoundingClientRect())));
-  };
+    const scrollArea = viewportRef.current;
+    if (nodes.length === 0 || !scrollArea) return;
+    // 以锚点的实际停靠线为基准计算高亮标题
+    const anchorLine =
+      scrollArea.getBoundingClientRect().top +
+      parseFloat(window.getComputedStyle(scrollArea).scrollPaddingTop) +
+      parseFloat(window.getComputedStyle(nodes[0]).scrollMarginTop);
+    setActive(
+      getActiveElement(
+        nodes.map((node) => node.getBoundingClientRect()),
+        anchorLine,
+      ),
+    );
+  }, [viewportRef]);
 
   useEffect(() => {
     if (active === -1) return;
@@ -248,12 +255,10 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
 
   useEffect(() => {
     handleScroll();
-  }, [data]);
+  }, [data, handleScroll]);
 
   useEffect(() => {
-    const scrollArea = document.querySelector(
-      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
-    );
+    const scrollArea = viewportRef.current;
 
     if (!scrollArea) return;
 
@@ -262,7 +267,7 @@ const TableOfContents = ({ headings }: { headings: HeadingData[] }) => {
     return () => {
       scrollArea.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [handleScroll, viewportRef]);
 
   return (
     <ScrollArea h="100%" type="never">
@@ -510,7 +515,7 @@ const Content = ({ markdown }: { markdown: string }) => {
           return <span className={classes.code}>{children}</span>;
         },
         blockquote({ children }) {
-          return <Text className={classes.blockQuote}>{children}</Text>;
+          return <blockquote className={classes.blockQuote}>{children}</blockquote>;
         },
       }}
     >
@@ -536,13 +541,19 @@ export default function Page() {
   }, [markdown]);
 
   useEffect(() => {
-    // 处理 URL hash 滚动
-    if (typeof window !== "undefined" && window.location.hash) {
-      const timer = setTimeout(() => {
-        scrollTo(decodeURIComponent(window.location.hash.slice(1)));
-      }, 100);
-      return () => clearTimeout(timer);
-    }
+    // hydration 后将 hash 重新定位到 Shell 的 ScrollArea
+    const scrollToHash = () => {
+      if (window.location.hash) {
+        scrollTo(decodeURIComponent(window.location.hash.slice(1)), false);
+      }
+    };
+
+    const frameId = requestAnimationFrame(scrollToHash);
+    window.addEventListener("hashchange", scrollToHash);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("hashchange", scrollToHash);
+    };
   }, [markdown]);
 
   if (!markdown) {

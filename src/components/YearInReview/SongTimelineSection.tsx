@@ -10,6 +10,7 @@ import LazyLoad from "@/components/LazyLoad";
 import { forceCheck } from "react-lazyload";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
+import { useShellViewportRef } from "@/components/Shell/ShellViewportContext.ts";
 
 const SongImage = ({ game, id }: { game: Game; id: number }) => {
   const [colors, setColors] = useState<string[]>([]);
@@ -37,11 +38,10 @@ const SongImage = ({ game, id }: { game: Game; id: number }) => {
 
 export const SongTimelineSection = ({ data }: { data: YearInReviewProps }) => {
   const { songList } = useSongListStore(useShallow((state) => ({ songList: state[data.game] })));
+  const viewportRef = useShellViewportRef();
 
   useEffect(() => {
-    const scrollArea = document.querySelector(
-      "#shell-root>.mantine-ScrollArea-root>.mantine-ScrollArea-viewport",
-    );
+    const scrollArea = viewportRef.current;
 
     if (!scrollArea) return;
 
@@ -52,7 +52,7 @@ export const SongTimelineSection = ({ data }: { data: YearInReviewProps }) => {
     return () => {
       scrollArea.removeEventListener("scroll", forceCheck);
     };
-  }, []);
+  }, [viewportRef]);
 
   return (
     <div className={classes.timeline}>
