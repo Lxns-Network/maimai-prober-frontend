@@ -79,5 +79,13 @@
     "image": "chusearchsong",
     "button": "了解更多",
     "url": "https://github.com/k4641321/chusearchsong_flutter"
+  },
+  {
+    "title": "AWMC QueryBot",
+    "tags": ["QQ 机器人", "舞萌 DX"],
+    "description": "AWMC 团队开发的舞萌 DX 查分机器人，支持成绩上传、B50 生成与 PC 数据查询，自带免绑定的 AWMC NET. 成绩库，并提供排卡、猜歌等群互动功能。",
+    "image": "awmc",
+    "button": "添加",
+    "url": "https://wiki.awmc.team/guide/bot/intro"
   }
 ]
