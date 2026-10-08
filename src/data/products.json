@@ -79,5 +79,13 @@
     "image": "chusearchsong",
     "button": "了解更多",
     "url": "https://github.com/k4641321/chusearchsong_flutter"
+  },
+  {
+    "title": "maimai chart preview",
+    "tags": ["VS Code 插件", "舞萌 DX"],
+    "description": "在 Visual Studio Code 中预览 maimai DX 的 Simai 与 MA2 谱面，支持语法高亮、播放控制、打击音效与编辑器光标同步。",
+    "image": "maimaichartpreview",
+    "button": "安装",
+    "url": "https://marketplace.visualstudio.com/items?itemName=amatsuka.maimai-chart-preview"
   }
 ]
