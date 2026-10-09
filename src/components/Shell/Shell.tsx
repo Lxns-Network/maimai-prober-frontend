@@ -10,6 +10,7 @@ import { CreateAliasModalProvider } from "../ModalProvider/CreateAliasModalProvi
 import { UrgentNotificationModal } from "@/components/Notifications/UrgentNotificationModal.tsx";
 import { VersionPill } from "./VersionPill/VersionPill.tsx";
 import { usePageContext } from "vike-react/usePageContext";
+import { ShellViewportProvider, type ShellViewportRef } from "./ShellViewportContext.ts";
 
 export const NAVBAR_BREAKPOINT = 992;
 
@@ -23,14 +24,12 @@ const popCenter = {
 interface ShellProps {
   navbarOpened: boolean;
   onNavbarToggle(): void;
-  viewportRef: React.RefObject<HTMLDivElement>;
+  viewportRef: ShellViewportRef;
   children: React.ReactNode;
 }
 
 export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, children }: ShellProps) {
   const { width } = useWindowSize();
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const headerRef = useRef<HTMLDivElement>(null);
 
   const [scrollDirection, setScrollDirection] = useState<"up" | "down" | null>(null);
   const lastScrollTop = useRef(0);
@@ -45,93 +44,68 @@ export default function Shell({ navbarOpened, onNavbarToggle, viewportRef, child
     }
   }, [scrollState.y]);
 
-  useEffect(() => {
-    if (!scrollDirection) return;
-
-    let frameRequest = 0;
-    let start: number | undefined = undefined;
-
-    const updateHeight = (timestamp: number) => {
-      if (start === undefined) start = timestamp;
-      const elapsed = timestamp - start;
-
-      const currentHeight = headerRef.current?.clientHeight || 56;
-      setHeaderHeight((prevHeight) => (prevHeight !== currentHeight ? currentHeight : prevHeight));
-
-      if (elapsed < 300) {
-        frameRequest = requestAnimationFrame(updateHeight);
-      }
-    };
-
-    frameRequest = requestAnimationFrame(updateHeight);
-
-    return () => {
-      if (frameRequest) cancelAnimationFrame(frameRequest);
-    };
-  }, [scrollDirection]);
-
-  useEffect(() => {
-    if (headerRef.current) {
-      setHeaderHeight(headerRef.current.clientHeight);
-    }
-  }, [width]);
-
   const chromeVisible = !scrollDirection || scrollDirection === "up";
+  const mobileNavbarOpened = navbarOpened && width <= NAVBAR_BREAKPOINT;
   const isHome = usePageContext().urlPathname === "/";
 
   return (
-    <div
-      id="shell-root"
-      style={
-        {
-          "--navbar-width": "300px",
-          "--header-height": headerHeight ? `${headerHeight}px` : undefined,
-        } as React.CSSProperties
-      }
-    >
-      <Transition
-        mounted={navbarOpened}
-        transition="slide-right"
-        duration={300}
-        timingFunction="ease"
+    <ShellViewportProvider value={viewportRef}>
+      <div
+        id="shell-root"
+        style={
+          {
+            "--navbar-width": "300px",
+          } as React.CSSProperties
+        }
       >
-        {(styles) => <Navbar style={styles} onClose={onNavbarToggle} />}
-      </Transition>
-
-      <Header
-        navbarOpened={navbarOpened}
-        onNavbarToggle={onNavbarToggle}
-        gameTabsVisible={chromeVisible}
-        headerRef={headerRef}
-      />
-
-      <ScrollArea className={classes.routesWrapper} type="scroll" viewportRef={viewportRef}>
         <Transition
-          mounted={navbarOpened && width <= NAVBAR_BREAKPOINT}
-          transition="fade"
+          mounted={navbarOpened}
+          transition="slide-right"
           duration={300}
           timingFunction="ease"
         >
-          {(styles) => (
-            <Overlay color="#000" style={styles} onClick={onNavbarToggle} zIndex={100} />
-          )}
+          {(styles) => <Navbar style={styles} onClose={onNavbarToggle} />}
         </Transition>
-        {children}
-      </ScrollArea>
 
-      <ScoreModalProvider />
-      <CreateScoreModalProvider />
-      <CreateAliasModalProvider />
-      <UrgentNotificationModal />
+        <Header
+          navbarOpened={navbarOpened}
+          onNavbarToggle={onNavbarToggle}
+          gameTabsVisible={chromeVisible || mobileNavbarOpened}
+        />
 
-      <Transition
-        mounted={isHome && chromeVisible}
-        transition={popCenter}
-        duration={300}
-        timingFunction="ease"
-      >
-        {(styles) => <VersionPill style={styles} />}
-      </Transition>
-    </div>
+        <ScrollArea
+          className={classes.routesWrapper}
+          classNames={{ viewport: classes.viewport }}
+          type="scroll"
+          viewportRef={viewportRef}
+        >
+          <Transition
+            mounted={mobileNavbarOpened}
+            transition="fade"
+            duration={300}
+            timingFunction="ease"
+          >
+            {(styles) => (
+              <Overlay color="#000" style={styles} onClick={onNavbarToggle} zIndex={100} />
+            )}
+          </Transition>
+          {children}
+        </ScrollArea>
+
+        <ScoreModalProvider />
+        <CreateScoreModalProvider />
+        <CreateAliasModalProvider />
+        <UrgentNotificationModal />
+
+        <Transition
+          mounted={isHome && chromeVisible}
+          transition={popCenter}
+          duration={300}
+          timingFunction="ease"
+        >
+          {(styles) => <VersionPill style={styles} />}
+        </Transition>
+      </div>
+    </ShellViewportProvider>
   );
 }

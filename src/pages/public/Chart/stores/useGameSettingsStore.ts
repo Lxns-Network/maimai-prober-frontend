@@ -23,9 +23,9 @@ export interface GameSettingsState {
   showFireworks: boolean;
   showHitEffect: boolean;
   fpsLimit: number;
-  soundEnabled: boolean;
   soundVolume: number;
   soundOffset: number;
+  judgeVolume: number;
   musicVolume: number;
   musicOffset: number;
   fullscreenQuality: FullscreenQuality;
@@ -46,9 +46,9 @@ export interface GameSettingsActions {
   setShowFireworks: (enabled: boolean) => void;
   setShowHitEffect: (enabled: boolean) => void;
   setFpsLimit: (limit: number) => void;
-  setSoundEnabled: (enabled: boolean) => void;
   setSoundVolume: (volume: number) => void;
   setSoundOffset: (offset: number) => void;
+  setJudgeVolume: (volume: number) => void;
   setMusicVolume: (volume: number) => void;
   setMusicOffset: (offset: number) => void;
   setFullscreenQuality: (quality: FullscreenQuality) => void;
@@ -58,7 +58,7 @@ export interface GameSettingsActions {
 
 export type GameSettingsStore = GameSettingsState & GameSettingsActions;
 
-const SETTINGS_STORE_VERSION = 2;
+const SETTINGS_STORE_VERSION = 3;
 
 const initialState: GameSettingsState = {
   hiSpeed: 6,
@@ -73,9 +73,9 @@ const initialState: GameSettingsState = {
   showFireworks: true,
   showHitEffect: true,
   fpsLimit: 0,
-  soundEnabled: false,
   soundVolume: 0.6,
   soundOffset: 0,
+  judgeVolume: 1,
   musicVolume: 0.8,
   musicOffset: 0,
   fullscreenQuality: "balanced",
@@ -102,9 +102,9 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       setShowFireworks: (enabled: boolean) => set({ showFireworks: enabled }),
       setShowHitEffect: (enabled: boolean) => set({ showHitEffect: enabled }),
       setFpsLimit: (limit: number) => set({ fpsLimit: limit }),
-      setSoundEnabled: (enabled: boolean) => set({ soundEnabled: enabled }),
       setSoundVolume: (volume: number) => set({ soundVolume: Math.max(0, Math.min(1, volume)) }),
       setSoundOffset: (offset: number) => set({ soundOffset: offset }),
+      setJudgeVolume: (volume: number) => set({ judgeVolume: Math.max(0, Math.min(1, volume)) }),
       setMusicVolume: (volume: number) => set({ musicVolume: Math.max(0, Math.min(1, volume)) }),
       setMusicOffset: (offset: number) => set({ musicOffset: offset }),
       setFullscreenQuality: (quality: FullscreenQuality) => set({ fullscreenQuality: quality }),
@@ -115,8 +115,15 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
       name: "maimai_chart_preview_settings",
       version: SETTINGS_STORE_VERSION,
       migrate: (persistedState, version) => {
-        const persisted = { ...(persistedState as Partial<GameSettingsState>) };
+        const persisted = {
+          ...(persistedState as Partial<GameSettingsState> & { soundEnabled?: boolean }),
+        };
         if (version < 2) delete persisted.soundVolume;
+        // v3 移除正解音开关：原先关闭的用户改用音量 0 表达，保持既有听感。
+        if (version < 3) {
+          if (persisted.soundEnabled === false) persisted.soundVolume = 0;
+          delete persisted.soundEnabled;
+        }
         return { ...initialState, ...persisted };
       },
       partialize: (state) => ({
@@ -132,9 +139,9 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
         showFireworks: state.showFireworks,
         showHitEffect: state.showHitEffect,
         fpsLimit: state.fpsLimit,
-        soundEnabled: state.soundEnabled,
         soundVolume: state.soundVolume,
         soundOffset: state.soundOffset,
+        judgeVolume: state.judgeVolume,
         musicVolume: state.musicVolume,
         musicOffset: state.musicOffset,
         fullscreenQuality: state.fullscreenQuality,

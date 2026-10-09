@@ -146,7 +146,7 @@ s
 Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩。
 :::
 
-### GET `/api/v0/chunithm/player/{friend_code}/bests`
+### GET `/api/v0/chunithm/player/{friend_code}/bests?song_id={song_id}`
 
 获取玩家缓存单曲所有谱面的成绩。
 
@@ -721,7 +721,6 @@ Recent 10 均为 Best #1 曲目，`rating` 字段的最终结果为理论不推�
 | ------------------------ | ----------------------------- | -------------------------- |
 | `id`                     | `int`                         | 曲目 ID                    |
 | `title`                  | `string`                      | 曲名                       |
-| `type`                   | [`SongType`](#songtype)       | 谱面类型                   |
 | `completed`              | `bool`                        | 值可空，要求的曲目是否完成 |
 | `completed_difficulties` | [`LevelIndex[]`](#levelindex) | 值可空，已完成的难度       |
 

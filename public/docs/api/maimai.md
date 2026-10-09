@@ -155,7 +155,7 @@
 
 同 [Best 50](#get-apiv0maimaiplayerfriend_codebests)。
 
-### GET `/api/v0/maimai/player/{friend_code}/bests`
+### GET `/api/v0/maimai/player/{friend_code}/bests?song_id={song_id}`
 
 获取玩家缓存单曲所有谱面的成绩。
 

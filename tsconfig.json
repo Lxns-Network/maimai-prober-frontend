@@ -25,6 +25,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "packages/*/src", "tests"],
+  "include": ["src", "packages/*/src", "packages/*/tests", "tests"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

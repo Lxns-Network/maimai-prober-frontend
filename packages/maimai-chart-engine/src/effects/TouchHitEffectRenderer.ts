@@ -1,12 +1,12 @@
 import { BaseRenderer, RenderContext } from "../renderers/BaseRenderer";
 import { TouchHoldStartNote, TouchNote, TouchPosition } from "../types";
 import { HIT_EFFECT_COLORS, TOUCH_RING_ALPHA_PROFILE } from "./constants";
+import { PANEL_RADIUS_UNITS } from "../utils/constants";
 
 type Rgb = { r: number; g: number; b: number };
 type StarFrame = 0 | 1 | 2 | 3;
 
 // 特效生命周期 0.5s，由中心扩散光环（Ring）、内圈原地闪烁星点与外圈带阻尼扩散的星点三层组成
-const JUDGE_RADIUS_UNITS = 480;
 const ROOT_SCALE = 70;
 const LIFE = 0.5;
 
@@ -144,12 +144,11 @@ export class TouchHitEffectRenderer extends BaseRenderer {
   renderTouchHitEffects(
     touches: readonly (TouchNote | TouchHoldStartNote)[],
     currentTimeMs: number,
-    getTouchPosition: (position: TouchPosition) => { x: number; y: number },
     color: Rgb = HIT_EFFECT_COLORS.perfect,
   ): void {
     if (!touches.length) return;
 
-    const unitPx = this.context.radius / JUDGE_RADIUS_UNITS;
+    const unitPx = this.context.radius / PANEL_RADIUS_UNITS;
     if (unitPx <= 0) return;
 
     const windowStart = currentTimeMs - LIFE * 1000;
@@ -186,7 +185,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
       const age = (currentTimeMs - note.timingMs) / 1000;
       if (age < 0 || age >= LIFE) continue;
 
-      const origin = getTouchPosition(note.position as TouchPosition);
+      const origin = this.getTouchPosition(note.position as TouchPosition);
       let seed = Math.round(note.timingMs * 1000);
       for (let c = 0; c < note.position.length; c++) {
         seed = (seed ^ (note.position.charCodeAt(c) * (c + 1) * 73856093)) | 0;

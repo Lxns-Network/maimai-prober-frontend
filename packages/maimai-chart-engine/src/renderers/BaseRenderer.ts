@@ -7,6 +7,7 @@ import {
   COLORS,
   DDR_DARKEN_RATIO,
 } from "../utils/constants";
+import { mirrorTouchSensor, touchSensorPoint } from "../utils/touchGeometry";
 
 /** 插值混合两个十六进制 RGB 颜色（#rrggbb），amount 范围 0~1。 */
 export function mixHexColor(color: string, target: string, amount: number): string {
@@ -99,45 +100,23 @@ export abstract class BaseRenderer {
 
   /** 按当前镜像模式转换 Touch 传感器位置（C 区不变，外圈按对称轴映射）。 */
   protected mirrorTouchPosition(touchPosition: TouchPosition): TouchPosition {
-    const mode = this.context.config.mirrorMode;
-    if (mode === "none") return touchPosition;
+    return mirrorTouchSensor(touchPosition, this.context.config.mirrorMode);
+  }
 
-    const region = touchPosition[0];
-    const sensorNum = touchPosition.length > 1 ? parseInt(touchPosition[1]) : 0;
+  /** Touch 传感器在画布上的像素坐标（已应用镜像变换，"C" 对应圆心）。 */
+  getTouchPosition(touchPosition: TouchPosition): Point2D {
+    const { centerX, centerY, radius, config } = this.context;
+    return touchSensorPoint(touchPosition, {
+      centerX,
+      centerY,
+      radius,
+      mirrorMode: config.mirrorMode,
+    });
+  }
 
-    if (region === "C") {
-      return touchPosition;
-    }
-
-    const mirrorMaps: Record<string, Record<string, number[]>> = {
-      horizontal: {
-        AB: [0, 8, 7, 6, 5, 4, 3, 2, 1],
-        DE: [0, 1, 8, 7, 6, 5, 4, 3, 2],
-      },
-      vertical: {
-        AB: [0, 4, 3, 2, 1, 8, 7, 6, 5],
-        DE: [0, 5, 4, 3, 2, 1, 8, 7, 6],
-      },
-      rotate180: {
-        ABDE: [0, 5, 6, 7, 8, 1, 2, 3, 4],
-      },
-    };
-
-    const map = mirrorMaps[mode];
-    if (!map) return touchPosition;
-
-    let key: string;
-    if (mode === "rotate180") {
-      key = "ABDE";
-    } else {
-      key = region === "A" || region === "B" ? "AB" : "DE";
-    }
-
-    const mapping = map[key];
-    if (!mapping) return touchPosition;
-
-    const mirroredSensorNum = mapping[sensorNum];
-    return `${region}${mirroredSensorNum}` as TouchPosition;
+  /** backing store 相对逻辑坐标的缩放（含 DPR）。 */
+  protected getBackingScale(): number {
+    return this.context.canvas.width / (this.context.centerX * 2);
   }
 
   /** 获取按钮在画布上的弧度角（已应用镜像变换）。 */

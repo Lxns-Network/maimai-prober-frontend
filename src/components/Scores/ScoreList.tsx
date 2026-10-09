@@ -2,8 +2,6 @@ import { BackgroundImage, Card, SimpleGridProps, useComputedColorScheme } from "
 import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
 import { MaimaiScoreContent } from "./maimai/Score.tsx";
 import { ChunithmScoreContent } from "./chunithm/Score.tsx";
-import { MaimaiSongProps } from "@/utils/api/song/maimai.ts";
-import { ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import classes from "./Scores.module.css";
 import { getScoreSecondaryColor } from "@/utils/color.ts";
@@ -13,29 +11,30 @@ import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
 import useScoreStore from "@/hooks/useScoreStore.ts";
-import { Game } from "@/types/game";
 
 interface ScoreProps {
   score: MaimaiScoreProps | ChunithmScoreProps;
   onClick?: () => void;
 }
 
-interface ScoreCardProps extends ScoreProps {
-  game: Game;
-}
+type ScoreCardProps = (
+  | { game: "maimai"; score: MaimaiScoreProps }
+  | { game: "chunithm"; score: ChunithmScoreProps }
+) & { onClick?: () => void };
 
-/** 单张成绩卡片，游戏由调用方指定，供成绩列表与首页展示复用。 */
 export const ScoreCard = ({ game, score, onClick }: ScoreCardProps) => {
-  const { songList } = useSongListStore(useShallow((state) => ({ songList: state[game] })));
+  const { maimai, chunithm } = useSongListStore(
+    useShallow((state) => ({ maimai: state.maimai, chunithm: state.chunithm })),
+  );
+  const songList = game === "maimai" ? maimai : chunithm;
 
   const computedColorScheme = useComputedColorScheme("light");
-  const song = songList.find(score.id);
 
   let borderSize = 2;
   let levelIndex = score.level_index;
   const classNameList = [classes.card, classes.scoreCard];
 
-  if (game === "maimai" && "type" in score && score.type === "utage") {
+  if (game === "maimai" && score.type === "utage") {
     levelIndex = 5;
   } else if (game === "chunithm" && score.id >= 8000) {
     borderSize = 0;
@@ -56,16 +55,11 @@ export const ScoreCard = ({ game, score, onClick }: ScoreCardProps) => {
       onClick={() => onClick && onClick()}
     >
       <BackgroundImage
-        src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song ? song.id : score.id)}.png!webp`}
+        src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(score.id)}.png!webp`}
       >
-        {game === "maimai" && (
-          <MaimaiScoreContent score={score as MaimaiScoreProps} song={song as MaimaiSongProps} />
-        )}
+        {game === "maimai" && <MaimaiScoreContent score={score} song={maimai.find(score.id)} />}
         {game === "chunithm" && (
-          <ChunithmScoreContent
-            score={score as ChunithmScoreProps}
-            song={song as ChunithmSongProps}
-          />
+          <ChunithmScoreContent score={score} song={chunithm.find(score.id)} />
         )}
       </BackgroundImage>
     </Card>
@@ -74,7 +68,13 @@ export const ScoreCard = ({ game, score, onClick }: ScoreCardProps) => {
 
 const Score = ({ score, onClick }: ScoreProps) => {
   const [game] = useFixedGame();
-  return <ScoreCard game={game} score={score} onClick={onClick} />;
+  if (game === "maimai" && "type" in score) {
+    return <ScoreCard game="maimai" score={score} onClick={onClick} />;
+  }
+  if (game === "chunithm" && !("type" in score)) {
+    return <ScoreCard game="chunithm" score={score} onClick={onClick} />;
+  }
+  return null;
 };
 
 interface ScoreListProps {

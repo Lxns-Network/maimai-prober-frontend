@@ -1,6 +1,7 @@
 .navbar {
   position: fixed;
   z-index: var(--mantine-z-index-modal);
+  top: var(--header-height);
   height: calc(100vh - var(--header-height));
   width: var(--navbar-width);
   background-color: var(--mantine-color-body);

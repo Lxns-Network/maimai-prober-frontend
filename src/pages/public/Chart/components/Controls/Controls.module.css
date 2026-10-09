@@ -23,8 +23,8 @@
   top: 0;
   bottom: 0;
   background-color: light-dark(
-    alpha(var(--mantine-color-white), 0.62),
-    alpha(var(--mantine-color-black), 0.5)
+    alpha(var(--mantine-color-white), 0.35),
+    alpha(var(--mantine-color-black), 0.3)
   );
 }
 
@@ -32,10 +32,9 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  border: 1px solid light-dark(var(--mantine-color-blue-6), var(--mantine-color-cyan-3));
+  border: 1px solid var(--mantine-primary-color-filled);
   border-radius: var(--mantine-radius-xs);
-  /* 深色端为非调色板特调色，勿替换为 cyan token（cyan-3 等色值不同，会改变渲染） */
-  background-color: light-dark(alpha(var(--mantine-color-blue-6), 0.16), rgb(34 211 238 / 0.2));
+  background-color: alpha(var(--mantine-primary-color-filled), 0.12);
 }
 
 /* 概览播放头：画在 overlay 最上层（NoteCountGraph 自带的 playhead 被遮罩盖住，且受 container-type 堆叠上下文限制无法上浮） */

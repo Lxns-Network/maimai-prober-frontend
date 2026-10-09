@@ -81,11 +81,19 @@
     "url": "https://github.com/k4641321/chusearchsong_flutter"
   },
   {
+    "title": "maimai chart preview",
+    "tags": ["VS Code 插件", "舞萌 DX"],
+    "description": "在 Visual Studio Code 中预览 maimai DX 的 Simai 与 MA2 谱面，支持语法高亮、播放控制、打击音效与编辑器光标同步。",
+    "image": "maimaichartpreview",
+    "button": "安装",
+    "url": "https://marketplace.visualstudio.com/items?itemName=amatsuka.maimai-chart-preview"
+  },
+  {
     "title": "ChiffonMai",
     "tags": ["手机应用", "舞萌DX"],
     "description": "一款专为舞萌DX玩家打造的一站式移动端工具类应用，聚合了曲库查询、成绩统计、Rating计算、曲目推荐等多种实用功能，助力玩家提升游玩体验",
     "image": "ChiffonMai",
     "button": "了解更多",
     "url": "https://github.com/ChiffonOwO/ChiffonMai"
-  },
+  }
 ]

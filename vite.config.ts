@@ -128,7 +128,7 @@ export default defineConfig({
     cssCodeSplit: true,
   },
   server: {
-    host: "0.0.0.0",
+    host: true,
     port: 3000,
     proxy: {
       "/api": {

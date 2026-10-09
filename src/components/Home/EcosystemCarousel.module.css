@@ -37,9 +37,6 @@
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  /* 在 Windows 等非整数缩放下，embla 的 translate 与 viewport 的 overflow 裁剪各自取整，
-     相邻 slide 最左一列会以 1 设备像素宽的竖线漏进可视区右缘。
-     padding 把头像让出最左 1px，clip-path 跟随 slide 自身光栅化，确保该列永远不绘制任何内容 */
   padding-left: 1px;
   clip-path: inset(0 0 0 1px);
   display: flex;
@@ -61,7 +58,7 @@
 .meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -95,7 +92,6 @@
   border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
 }
 
-/* 底部圆点指示器条：默认全部为点状，真正拖动时激活项展开为宽状胶囊 */
 .dots {
   position: relative;
   display: flex;
@@ -132,7 +128,6 @@
   }
 }
 
-/* 只有真正拖动的时候变成宽状胶囊 */
 .dots[data-dragging] .dot[data-active] {
   width: 24px;
 }
@@ -146,7 +141,6 @@
   .avatar {
     width: 48px;
     height: 48px;
-    /* Avatar 根元素带 min-width: var(--avatar-size)（inline 58px），不覆盖会被撑成 58x48 */
     min-width: 48px;
   }
 

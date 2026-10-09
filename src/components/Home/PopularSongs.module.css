@@ -71,7 +71,7 @@
 }
 
 .rankNumber {
-  color: var(--pop-muted);
+  color: var(--home-muted);
   font-size: var(--mantine-font-size-sm);
   font-weight: 700;
   font-variant-numeric: tabular-nums;

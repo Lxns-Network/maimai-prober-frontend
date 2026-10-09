@@ -132,7 +132,8 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
   }, [userTokenError]);
 
   useEffect(() => {
-    if (viewport.current) {
+    // 有 hash 时保留文档滚动位置，避免与锚点定位竞争
+    if (viewport.current && !window.location.hash) {
       viewport.current.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [pageContext.urlPathname]);

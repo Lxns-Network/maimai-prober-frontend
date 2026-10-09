@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { Fragment, ReactNode } from "react";
 import { Typography } from "@mantine/core";
 import { Game } from "@/types/game";
 import { NotificationAction, NotificationProps } from "@/types/notification";
@@ -18,6 +18,27 @@ type NotificationTemplate = (data: TemplateData) => {
 };
 
 const templates: Record<string, NotificationTemplate> = {
+  developer_rejected: (data) => ({
+    title: "开发者申请未通过",
+    body: (
+      <>
+        <p>你好，{String(data.name ?? "")}：</p>
+        <p>很抱歉，你的开发者申请未通过审核，理由如下：</p>
+        <blockquote>
+          {String(data.reason ?? "")
+            .split("\n")
+            .map((line, index) => (
+              <Fragment key={index}>
+                {index > 0 && <br />}
+                {line}
+              </Fragment>
+            ))}
+        </blockquote>
+        <p>你可以根据上述理由调整申请信息后，前往开发者面板重新提交申请。</p>
+      </>
+    ),
+    action: { type: "link", url: "/developer" },
+  }),
   developer_approved: (data) => ({
     title: "开发者申请已通过",
     body: (
@@ -26,9 +47,7 @@ const templates: Record<string, NotificationTemplate> = {
         <p>你已成功成为查分器的开发者！欢迎加入。</p>
         <p>
           请访问
-          <a href="https://maimai.lxns.net/docs#%E5%BC%80%E5%8F%91%E8%80%85%E6%96%87%E6%A1%A3">
-            开发者文档
-          </a>
+          <a href="/docs#%E5%BC%80%E5%8F%91%E8%80%85%E6%96%87%E6%A1%A3">开发者文档</a>
           ，了解如何对接查分器。
         </p>
         <p>

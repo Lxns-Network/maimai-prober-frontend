@@ -150,6 +150,8 @@ export interface SlideSegment {
  * 所有 Note 的基础字段。
  */
 export interface BaseNote {
+  /** 原始谱面音符记录序号；合成的 Hold 尾不占用序号。 */
+  sourceNoteIndex?: number;
   /** 按键方位（1~8）或触摸传感器区域 */
   position: ButtonPosition | TouchPosition;
   /** 判定时刻（拍） */
@@ -465,8 +467,10 @@ export interface AudioConfig {
   holdEndSoundEnabled: boolean;
   /** 是否启用 Touch 击打音效 */
   touchSoundEnabled: boolean;
-  /** 音量（0 ~ 1） */
+  /** 正解音层音量（0 ~ 1） */
   volume: number;
+  /** 判定音层音量（0 ~ 1） */
+  judgeVolume: number;
   /** 音效播放时间偏移（ms，正数延迟，负数提前） */
   timingOffsetMs: number;
 }

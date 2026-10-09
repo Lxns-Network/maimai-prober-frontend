@@ -16,6 +16,7 @@ import { PlaybackClock } from "../utils/playbackClock";
 const SEEK_THROTTLE_MS = 50;
 const SOURCE_FADE_TIME_S = 0.015;
 const SOURCE_START_LEAD_TIME_S = 0.05;
+const STARTUP_SCHEDULE_OFFSET_MS = SOURCE_START_LEAD_TIME_S * 1000;
 const SCHEDULE_LOOKAHEAD_MS = 1500;
 // 距音频末尾多近视为"已播完"；须大于重启定位用的 0.01s clamp。
 const MUSIC_END_EPSILON_S = 0.05;
@@ -31,7 +32,7 @@ interface AudioState {
   playbackClock: PlaybackClock;
   /** 音乐源是否正在 AudioContext 上调度发声（已过 start 时刻、未 onended）。 */
   isSourcePlaying: boolean;
-  /** 音乐源自然播完（非 stopSource 停止）；置位后不再重启源，seek 或新源启动时清除。 */
+  /** 音乐源自然播完或已到达末尾；置位后不再重启源，seek 或新源启动时清除。 */
   musicEnded: boolean;
   /** rAF 外推锚点：上一帧的 timestamp 与对应的 chart-ms，用于无音频时钟时线性外推播放头。 */
   rafAnchorTimestamp: number;
@@ -85,6 +86,7 @@ export function usePreviewAudio(): PreviewAudioController {
     startRequestId: 0,
     clockSource: "raf",
   });
+  const syncFrameRef = useRef<PreviewAudioController["syncFrame"] | null>(null);
   const lastUrlRef = useRef("");
   const lastSeekRef = useRef(0);
   const playbackSpeedRef = useRef(1);
@@ -112,23 +114,34 @@ export function usePreviewAudio(): PreviewAudioController {
       })),
     );
 
-  const { musicVolume, musicOffset, soundEnabled, soundVolume, soundOffset } = useGameSettingsStore(
+  const { musicVolume, musicOffset, soundVolume, soundOffset, judgeVolume } = useGameSettingsStore(
     useShallow((s) => ({
       musicVolume: s.musicVolume,
       musicOffset: s.musicOffset,
-      soundEnabled: s.soundEnabled,
       soundVolume: s.soundVolume,
       soundOffset: s.soundOffset,
+      judgeVolume: s.judgeVolume,
     })),
   );
 
+  const abLoop = useGameStore((s) => s.abLoop);
+  const abLoopEnabled = useGameStore((s) => s.abLoopEnabled);
   const musicVolumeRef = useRef(musicVolume);
   const bpm = chartData?.bpm ?? 120;
   const bpmEvents = chartData?.bpmEvents ?? null;
 
   useEffect(() => {
-    answerEventsRef.current = prepareAudioEvents(chartData?.notes ?? null);
-  }, [chartData?.notes]);
+    const events = prepareAudioEvents(chartData?.notes ?? null);
+    const endMs =
+      chartData && abLoopEnabled && abLoop?.end != null
+        ? beatsToMs(abLoop.end, chartData.bpmEvents, chartData.bpm)
+        : Infinity;
+    answerEventsRef.current = events.filter((event) => event.timeMs < endMs);
+    const currentMs = chartData
+      ? beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm)
+      : undefined;
+    audioStateRef.current.answerManager?.reset(currentMs, true);
+  }, [chartData, abLoop, abLoopEnabled]);
 
   useEffect(() => {
     playbackSpeedRef.current = playbackSpeed;
@@ -155,6 +168,14 @@ export function usePreviewAudio(): PreviewAudioController {
       return playbackSpeedRef.current;
     }
     return state.playbackClock.schedulingSpeed(playbackSpeedRef.current);
+  }, []);
+
+  /** 音乐源尚未可听时，正解音要跟随即将发生的起播延迟排期。 */
+  const getStartupScheduleOffsetMs = useCallback((): number => {
+    const state = audioStateRef.current;
+    if (!state.audioBuffer || state.isSourcePlaying || state.musicEnded) return 0;
+
+    return STARTUP_SCHEDULE_OFFSET_MS;
   }, []);
 
   const stopSource = useCallback((immediate: boolean = false) => {
@@ -229,8 +250,9 @@ export function usePreviewAudio(): PreviewAudioController {
 
   const configureAnswerManager = useCallback((manager: AudioManager) => {
     const settings = useGameSettingsStore.getState();
-    manager.setEnabled(settings.soundEnabled);
+    manager.setEnabled(true);
     manager.setVolume(settings.soundVolume);
+    manager.setJudgeVolume(settings.judgeVolume);
     manager.setTimingOffset(ANSWER_SOUND_BASE_OFFSET_MS + settings.soundOffset);
   }, []);
 
@@ -284,9 +306,8 @@ export function usePreviewAudio(): PreviewAudioController {
 
   const scheduleAnswerSounds = useCallback(
     (currentTimeMs: number, precomputedOutputTime?: number) => {
-      const settings = useGameSettingsStore.getState();
       const events = answerEventsRef.current;
-      if (events.length === 0 || !settings.soundEnabled) return;
+      if (events.length === 0) return;
 
       const manager = ensureAnswerManager();
       if (!manager.isInitialized()) {
@@ -294,15 +315,23 @@ export function usePreviewAudio(): PreviewAudioController {
         return;
       }
 
+      const schedulingSpeed = getSchedulingSpeed();
+      const startupOffsetMs = getStartupScheduleOffsetMs() * schedulingSpeed;
+
       manager.schedule(
         events,
-        currentTimeMs,
-        getSchedulingSpeed(),
+        currentTimeMs - startupOffsetMs,
+        schedulingSpeed,
         SCHEDULE_LOOKAHEAD_MS,
         precomputedOutputTime,
       );
     },
-    [ensureAnswerManager, ensureAnswerManagerInitialized, getSchedulingSpeed],
+    [
+      ensureAnswerManager,
+      ensureAnswerManagerInitialized,
+      getSchedulingSpeed,
+      getStartupScheduleOffsetMs,
+    ],
   );
 
   const resetAnswerSounds = useCallback(
@@ -314,12 +343,11 @@ export function usePreviewAudio(): PreviewAudioController {
 
   // stopStartedSources: 时间映射类变更（倍速切换）需传 true 停掉已发声的旧调度音，
   // 避免 reset 清空 handledEvents 后这些音继续响并触发重复播放；参数类变更
-  // （soundEnabled/soundOffset）保持 false，让正在响的音自然结束。
+  // （soundOffset）保持 false，让正在响的音自然结束。
   const resyncAnswerSounds = useCallback(
     (currentTimeMs: number, stopStartedSources: boolean = false) => {
       const chart = useGameStore.getState().chartData;
-      const settings = useGameSettingsStore.getState();
-      if (!chart || !settings.soundEnabled) return;
+      if (!chart) return;
 
       resetAnswerSounds(currentTimeMs, stopStartedSources);
       scheduleAnswerSounds(currentTimeMs);
@@ -541,44 +569,28 @@ export function usePreviewAudio(): PreviewAudioController {
   }, [playbackSpeed, isPlaying, chartData, resyncAnswerSounds]);
 
   useEffect(() => {
-    const manager = audioStateRef.current.answerManager;
-    if (!manager) {
-      if (chartData && isPlaying && soundEnabled) {
-        const currentMs = beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm);
-        resyncAnswerSounds(currentMs);
-      }
-      return;
-    }
-
-    manager.setEnabled(soundEnabled);
-
-    if (!chartData || !isPlaying) return;
-
-    const currentMs = beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm);
-    resyncAnswerSounds(currentMs);
-  }, [soundEnabled, chartData, isPlaying, resyncAnswerSounds]);
-
-  useEffect(() => {
     audioStateRef.current.answerManager?.setVolume(soundVolume);
   }, [soundVolume]);
+
+  useEffect(() => {
+    audioStateRef.current.answerManager?.setJudgeVolume(judgeVolume);
+  }, [judgeVolume]);
 
   useEffect(() => {
     const manager = audioStateRef.current.answerManager;
     manager?.setTimingOffset(ANSWER_SOUND_BASE_OFFSET_MS + soundOffset);
 
-    if (!chartData || !isPlaying || !soundEnabled) return;
+    if (!chartData || !isPlaying) return;
 
     const currentMs = beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm);
     resyncAnswerSounds(currentMs);
-  }, [soundOffset, chartData, isPlaying, soundEnabled, resyncAnswerSounds]);
+  }, [soundOffset, chartData, isPlaying, resyncAnswerSounds]);
 
   useEffect(() => {
     if (!isPlaying) return;
     void ensureAudioContextReady();
-    if (soundEnabled) {
-      void ensureAnswerManagerInitialized();
-    }
-  }, [isPlaying, soundEnabled, ensureAudioContextReady, ensureAnswerManagerInitialized]);
+    void ensureAnswerManagerInitialized();
+  }, [isPlaying, ensureAudioContextReady, ensureAnswerManagerInitialized]);
 
   useEffect(() => {
     if (isPlaying) return;
@@ -637,12 +649,15 @@ export function usePreviewAudio(): PreviewAudioController {
   // 正解音就会断。这里用独立 interval（不依赖 rAF）继续推进调度窗口；音乐在跑时
   // 直接用 AudioContext 时钟反推 currentMs，所以后台也能准确预约即将到来的 note。
   useEffect(() => {
-    if (!isPlaying || !soundEnabled) return;
+    if (!isPlaying) return;
 
     const intervalId = window.setInterval(() => {
       const gameState = useGameStore.getState();
-      const settingsState = useGameSettingsStore.getState();
-      if (!gameState.isPlaying || !settingsState.soundEnabled) return;
+      if (!gameState.isPlaying) return;
+      if (gameState.abLoopEnabled && document.visibilityState === "hidden") {
+        syncFrameRef.current?.(performance.now());
+        return;
+      }
 
       const currentMs = getPlaybackMsIndependent();
       if (currentMs === null) return;
@@ -653,7 +668,7 @@ export function usePreviewAudio(): PreviewAudioController {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [isPlaying, soundEnabled, getPlaybackMsIndependent, scheduleAnswerSounds]);
+  }, [isPlaying, getPlaybackMsIndependent, scheduleAnswerSounds]);
 
   // 切回前台时消除爆音：后台期间 syncFrame 停摆，AudioManager 的
   // lastScheduledTimeMs 冻结在离开前的值，回前台第一帧调度窗口会覆盖一大段
@@ -663,7 +678,6 @@ export function usePreviewAudio(): PreviewAudioController {
     const handleVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
       if (!useGameStore.getState().isPlaying) return;
-      if (!useGameSettingsStore.getState().soundEnabled) return;
 
       const currentMs = getPlaybackMsIndependent();
       if (currentMs === null) return;
@@ -740,6 +754,7 @@ export function usePreviewAudio(): PreviewAudioController {
           state.pendingSeek = false;
           state.isStartingPlayback = false;
           state.pendingStartChartMs = null;
+          state.musicEnded = true;
           state.startRequestId += 1;
         } else {
           const targetTime = clamp(musicTime, 0, duration - 0.01);
@@ -819,6 +834,19 @@ export function usePreviewAudio(): PreviewAudioController {
         totalDurationMs = beatsToMs(totalBeats, chart.bpmEvents, chart.bpm);
         totalDurationCacheRef.current = { chartNotes: chart.notes, totalDurationMs };
       }
+      if (
+        gameState.abLoopEnabled &&
+        gameState.abLoop?.start != null &&
+        gameState.abLoop.end != null &&
+        (currentMs < beatsToMs(gameState.abLoop.start, chart.bpmEvents, chart.bpm) - 0.001 ||
+          currentMs >= beatsToMs(gameState.abLoop.end, chart.bpmEvents, chart.bpm))
+      ) {
+        state.startRequestId += 1;
+        stopSource(true);
+        resetAnswerSounds(beatsToMs(gameState.abLoop.start, chart.bpmEvents, chart.bpm), true);
+        gameState.setPreciseTime(gameState.abLoop.start, true);
+        return { currentBeats: gameState.abLoop.start };
+      }
       if (currentMs >= totalDurationMs + 500) {
         gameState.setPreciseTime(totalBeats);
         gameState.pause();
@@ -844,6 +872,10 @@ export function usePreviewAudio(): PreviewAudioController {
       stopSource,
     ],
   );
+
+  useEffect(() => {
+    syncFrameRef.current = syncFrame;
+  }, [syncFrame]);
 
   const previewAudio = useMemo<PreviewAudioController>(
     () => ({
