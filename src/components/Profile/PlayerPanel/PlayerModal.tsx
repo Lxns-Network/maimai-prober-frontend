@@ -301,10 +301,13 @@ export const PlayerModal = ({ game, player, opened, onClose }: ModalProps) => {
                 ) : (
                   <>
                     {game === "maimai" && (
-                      <MaimaiRatingTrend trend={trend as MaimaiRatingTrendProps[]} />
+                      <MaimaiRatingTrend key={version} trend={trend as MaimaiRatingTrendProps[]} />
                     )}
                     {game === "chunithm" && (
-                      <ChunithmRatingTrend trend={trend as ChunithmRatingTrendProps[]} />
+                      <ChunithmRatingTrend
+                        key={version}
+                        trend={trend as ChunithmRatingTrendProps[]}
+                      />
                     )}
                   </>
                 )}
