@@ -2,6 +2,11 @@
 
 ---
 
+## 2026/10/19
+
+- 修复离线同步时未按账号的爬取设置同步的问题（[#112](https://github.com/Lxns-Network/maimai-prober-frontend/issues/112)）
+- 修复舞萌 DX 装备中的头像、姓名框、背景的收藏状态未同步的问题
+
 ## 2026/10/10
 
 - 玩家 Rating 趋势图支持时间区间选择：
