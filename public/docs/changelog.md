@@ -6,6 +6,7 @@
 
 - 修复离线同步时未按账号的爬取设置同步的问题（[#112](https://github.com/Lxns-Network/maimai-prober-frontend/issues/112)）
 - 修复舞萌 DX 装备中的头像、姓名框、背景的收藏状态未同步的问题
+- 修复部分曲目在成绩列表、导出文件与曲目详情中曲名不一致的问题（[#70](https://github.com/Lxns-Network/maimai-prober-frontend/issues/70)）
 
 ## 2026/10/10
 
