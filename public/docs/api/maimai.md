@@ -114,7 +114,7 @@
 
 ### GET `/api/v0/maimai/player/{friend_code}/bests`
 
-获取玩家缓存的 Best 50。
+获取玩家缓存的 Best 50；指定曲目时，获取玩家缓存单曲所有谱面的成绩。
 
 #### 权限
 
@@ -126,7 +126,21 @@
 | ------------- | ----- | ------ |
 | `friend_code` | `int` | 好友码 |
 
+#### 查询参数
+
+| 参数名      | 类型                    | 说明                                                          |
+| ----------- | ----------------------- | ------------------------------------------------------------- |
+| `song_id`   | `int`                   | 值可空，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
+| `song_name` | `string`                | 值可空，曲名                                                  |
+| `song_type` | [`SongType`](#songtype) | 指定曲目时必填，谱面类型                                      |
+
+::: info 提示
+`song_id` 与 `song_name` 均未传入时，返回 Best 50；传入其中之一时，返回该曲目在指定谱面类型下所有难度的成绩。
+:::
+
 #### 响应体
+
+未指定曲目时：
 
 | 字段名                | 类型                | 说明                         |
 | --------------------- | ------------------- | ---------------------------- |
@@ -136,6 +150,8 @@
 | `dx`                  | [`Score[]`](#score) | 现版本谱面 Best 15 列表      |
 | `standard_selections` | [`Score[]`](#score) | 旧版本谱面 Selection 10 列表 |
 | `dx_selections`       | [`Score[]`](#score) | 现版本谱面 Selection 10 列表 |
+
+指定曲目时：[Score[]](#score)
 
 ### GET `/api/v0/maimai/player/{friend_code}/bests/ap`
 
@@ -154,32 +170,6 @@
 #### 响应体
 
 同 [Best 50](#get-apiv0maimaiplayerfriend_codebests)。
-
-### GET `/api/v0/maimai/player/{friend_code}/bests?song_id={song_id}`
-
-获取玩家缓存单曲所有谱面的成绩。
-
-#### 权限
-
-- `allow_third_party_fetch_scores`
-
-#### URL 参数
-
-| 参数名        | 类型  | 说明   |
-| ------------- | ----- | ------ |
-| `friend_code` | `int` | 好友码 |
-
-#### 查询参数
-
-| 参数名      | 类型                    | 说明                                                              |
-| ----------- | ----------------------- | ----------------------------------------------------------------- |
-| `song_id`   | `int`                   | 二选一必填，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
-| `song_name` | `string`                | 二选一必填，曲名                                                  |
-| `song_type` | [`SongType`](#songtype) | 必填，谱面类型                                                    |
-
-#### 响应体
-
-[Score[]](#score)
 
 ### POST `/api/v0/maimai/player/{friend_code}/scores`
 

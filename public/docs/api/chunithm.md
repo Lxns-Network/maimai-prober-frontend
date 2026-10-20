@@ -121,33 +121,7 @@
 
 ### GET `/api/v0/chunithm/player/{friend_code}/bests`
 
-获取玩家的 Rating 构成（即 Best 30、Selection 10 和 New 20 列表）。
-
-#### 权限
-
-- `allow_third_party_fetch_scores`
-
-#### URL 参数
-
-| 参数名        | 类型  | 说明   |
-| ------------- | ----- | ------ |
-| `friend_code` | `int` | 好友码 |
-
-#### 响应体
-
-| 字段名       | 类型                | 说明                                               |
-| ------------ | ------------------- | -------------------------------------------------- |
-| `bests`      | [`Score[]`](#score) | 旧版本 Best 30 列表，即评分对象曲（最高）          |
-| `selections` | [`Score[]`](#score) | 旧版本 Selection 10 列表，即候选评分对象曲（最高） |
-| `new_bests`  | [`Score[]`](#score) | 当前版本 Best 20 列表，即评分对象曲（新曲）        |
-
-::: info 提示
-Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩。
-:::
-
-### GET `/api/v0/chunithm/player/{friend_code}/bests?song_id={song_id}`
-
-获取玩家缓存单曲所有谱面的成绩。
+获取玩家的 Rating 构成（即 Best 30、Selection 10 和 New 20 列表）。传入 `song_id` 或 `song_name` 时，改为获取玩家缓存单曲所有谱面的成绩。
 
 #### 权限
 
@@ -161,14 +135,26 @@ Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩�
 
 #### 查询参数
 
-| 参数名      | 类型     | 说明                                                              |
-| ----------- | -------- | ----------------------------------------------------------------- |
-| `song_id`   | `int`    | 二选一必填，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
-| `song_name` | `string` | 二选一必填，曲名，与 `song_id` 同时传入时以 `song_name` 为准      |
+| 参数名      | 类型     | 说明                                                                              |
+| ----------- | -------- | --------------------------------------------------------------------------------- |
+| `song_id`   | `int`    | 值可空，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准；传入后返回单曲成绩 |
+| `song_name` | `string` | 值可空，曲名，与 `song_id` 同时传入时以 `song_name` 为准；传入后返回单曲成绩      |
 
 #### 响应体
 
-[Score[]](#score)，按难度顺序排列，仅包含玩家已有成绩的谱面。
+未传入 `song_id` 和 `song_name` 时：
+
+| 字段名       | 类型                | 说明                                               |
+| ------------ | ------------------- | -------------------------------------------------- |
+| `bests`      | [`Score[]`](#score) | 旧版本 Best 30 列表，即评分对象曲（最高）          |
+| `selections` | [`Score[]`](#score) | 旧版本 Selection 10 列表，即候选评分对象曲（最高） |
+| `new_bests`  | [`Score[]`](#score) | 当前版本 Best 20 列表，即评分对象曲（新曲）        |
+
+::: info 提示
+Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩。
+:::
+
+传入 `song_id` 或 `song_name` 时，响应体为该曲目的 [Score[]](#score)，按难度顺序排列，仅包含玩家已有成绩的谱面。
 
 ### POST `/api/v0/chunithm/player/{friend_code}/scores`
 
