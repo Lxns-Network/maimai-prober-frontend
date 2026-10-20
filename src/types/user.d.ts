@@ -33,6 +33,7 @@ export interface ConfigProps {
   crawl_scores_difficulty?: string[];
   allow_third_party_fetch_player?: boolean;
   allow_third_party_fetch_scores?: boolean;
+  allow_third_party_fetch_history?: boolean;
   allow_third_party_write_data?: boolean;
 }
 

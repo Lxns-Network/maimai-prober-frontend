@@ -29,6 +29,7 @@
   "name": "ωγαｐ×",
   "level": 1,
   "rating": 0.18,
+  "rating_possession": "normal",
   "friend_code": 123456789000000,
   "class_emblem": {
     "base": 0,
@@ -108,11 +109,11 @@
 
 #### 查询参数
 
-| 参数名        | 类型                        | 说明                         |
-| ------------- | --------------------------- | ---------------------------- |
-| `song_id`     | `int`                       | 曲目 ID，与 `song_name` 冲突 |
-| `song_name`   | `string`                    | 曲名，与 `song_id` 冲突      |
-| `level_index` | [`LevelIndex`](#levelindex) | 难度                         |
+| 参数名        | 类型                        | 说明                                                              |
+| ------------- | --------------------------- | ----------------------------------------------------------------- |
+| `song_id`     | `int`                       | 二选一必填，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
+| `song_name`   | `string`                    | 二选一必填，曲名，与 `song_id` 同时传入时以 `song_name` 为准      |
+| `level_index` | [`LevelIndex`](#levelindex) | 必填，难度                                                        |
 
 #### 响应体
 
@@ -123,8 +124,6 @@
 获取玩家的 Rating 构成（即 Best 30、Selection 10 和 New 20 列表）。
 
 #### 权限
-
-s
 
 - `allow_third_party_fetch_scores`
 
@@ -162,10 +161,14 @@ Selection 10 显示 Best 30 以外理论 Rating 能够进入 Best 30 的成绩�
 
 #### 查询参数
 
-| 参数名      | 类型     | 说明                         |
-| ----------- | -------- | ---------------------------- |
-| `song_id`   | `int`    | 曲目 ID，与 `song_name` 冲突 |
-| `song_name` | `string` | 曲名，与 `song_id` 冲突      |
+| 参数名      | 类型     | 说明                                                              |
+| ----------- | -------- | ----------------------------------------------------------------- |
+| `song_id`   | `int`    | 二选一必填，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
+| `song_name` | `string` | 二选一必填，曲名，与 `song_id` 同时传入时以 `song_name` 为准      |
+
+#### 响应体
+
+[Score[]](#score)，按难度顺序排列，仅包含玩家已有成绩的谱面。
 
 ### POST `/api/v0/chunithm/player/{friend_code}/scores`
 
@@ -200,12 +203,19 @@ JSON 格式的玩家成绩：
       "score": 1010000,
       "clear": "clear",
       "full_combo": "alljusticecritical",
-      "full_chain": null,
-      "play_time": "2024-01-09T16:00:00Z"
+      "full_chain": null
     }
   ]
 }
 ```
+
+#### 响应体
+
+[ScoreChanges[]](#scorechanges)，仅包含本次上传后发生变化（含新增）的谱面，无变化时为空数组。
+
+::: info 提示
+`scores` 中曲目或难度不存在的成绩会被跳过，不会返回错误。
+:::
 
 ### GET `/api/v0/chunithm/player/{friend_code}/recents`
 
@@ -306,10 +316,11 @@ JSON 格式的玩家成绩：
 
 #### 查询参数
 
-| 参数名        | 类型                        | 说明    |
-| ------------- | --------------------------- | ------- |
-| `song_id`     | `int`                       | 曲目 ID |
-| `level_index` | [`LevelIndex`](#levelindex) | 难度    |
+| 参数名        | 类型                        | 说明                                                              |
+| ------------- | --------------------------- | ----------------------------------------------------------------- |
+| `song_id`     | `int`                       | 二选一必填，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
+| `song_name`   | `string`                    | 二选一必填，曲名，与 `song_id` 同时传入时以 `song_name` 为准      |
+| `level_index` | [`LevelIndex`](#levelindex) | 必填，难度                                                        |
 
 #### 响应体
 
@@ -366,6 +377,10 @@ JSON 格式的玩家成绩：
 ::: warning 注意
 不支持流式传输，上传的 HTML 源代码应当完整。
 :::
+
+#### 响应体
+
+上传成绩页面（最近游玩记录、最佳成绩）时，返回 [ScoreChanges[]](#scorechanges)，仅包含本次上传后发生变化（含新增）的谱面；上传玩家信息、收藏品页面时不返回 `data`。
 
 ## 个人 API
 
@@ -523,25 +538,25 @@ WORLD'S END 难度的 `song_id` 为 [SongDifficulty](#songdifficulty) 中 `origi
 
 玩家
 
-| 字段名                | 类型                          | 说明                                                                               |
-| --------------------- | ----------------------------- | ---------------------------------------------------------------------------------- |
-| `name`                | `string`                      | 游戏内名称                                                                         |
-| `level`               | `int`                         | 玩家等级，最大值为 99                                                              |
-| `rating`              | `float`                       | 玩家 Rating                                                                        |
-| `rating_possession`   | `string`                      | 玩家 Rating 领域颜色                                                               |
-| `friend_code`         | `int`                         | 好友码                                                                             |
-| `class_emblem`        | [`ClassEmblem`](#classemblem) | CLASS 勋章                                                                         |
-| `reborn_count`        | `int`                         | 玩家等级突破次数                                                                   |
-| `over_power`          | `float`                       | 总 OVER POWER                                                                      |
-| `over_power_progress` | `float`                       | OVER POWER 总进度                                                                  |
-| `currency`            | `int`                         | 当前金币数                                                                         |
-| `total_currency`      | `int`                         | 总金币数                                                                           |
-| `total_play_count`    | `int`                         | 总游玩次数                                                                         |
-| `trophy`              | [`Trophy`](#collection)       | 仅上传时可空，称号                                                                 |
-| `character`           | [`Character`](#collection)    | 值可空，角色                                                                       |
-| `name_plate`          | [`NamePlate`](#collection)    | 值可空，名牌版                                                                     |
-| `map_icon`            | [`MapIcon`](#collection)      | 值可空，地图头像                                                                   |
-| `upload_time`         | `string`                      | 仅[获取玩家信息](#get-apiv0chunithmplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
+| 字段名                | 类型                                    | 说明                                                                               |
+| --------------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
+| `name`                | `string`                                | 游戏内名称                                                                         |
+| `level`               | `int`                                   | 玩家等级，最大值为 99                                                              |
+| `rating`              | `float`                                 | 玩家 Rating                                                                        |
+| `rating_possession`   | [`RatingPossession`](#ratingpossession) | 玩家 Rating 领域颜色                                                               |
+| `friend_code`         | `int`                                   | 好友码                                                                             |
+| `class_emblem`        | [`ClassEmblem`](#classemblem)           | CLASS 勋章                                                                         |
+| `reborn_count`        | `int`                                   | 玩家等级突破次数                                                                   |
+| `over_power`          | `float`                                 | 总 OVER POWER                                                                      |
+| `over_power_progress` | `float`                                 | OVER POWER 总进度                                                                  |
+| `currency`            | `int`                                   | 当前金币数                                                                         |
+| `total_currency`      | `int`                                   | 总金币数                                                                           |
+| `total_play_count`    | `int`                                   | 总游玩次数                                                                         |
+| `trophy`              | [`Trophy`](#collection)                 | 仅上传时可空，称号                                                                 |
+| `character`           | [`Character`](#collection)              | 值可空，角色                                                                       |
+| `name_plate`          | [`NamePlate`](#collection)              | 值可空，名牌版                                                                     |
+| `map_icon`            | [`MapIcon`](#collection)                | 值可空，地图头像                                                                   |
+| `upload_time`         | `string`                                | 仅[获取玩家信息](#get-apiv0chunithmplayerfriend_code)返回，玩家被同步时的 UTC 时间 |
 
 ### ClassEmblem
 
@@ -587,6 +602,36 @@ CLASS 勋章
 | `full_combo`  | [`FullComboType`](#fullcombotype) | 值可空，FULL COMBO 类型 |
 | `full_chain`  | [`FullChainType`](#fullchaintype) | 值可空，FULL CHAIN 类型 |
 | `rank`        | [`RankType`](#ranktype)           | 评级类型                |
+
+### ScoreChanges
+
+成绩变化
+
+| 字段名        | 类型                                      | 说明                |
+| ------------- | ----------------------------------------- | ------------------- |
+| `id`          | `int`                                     | 曲目 ID             |
+| `song_name`   | `string`                                  | 曲名                |
+| `level`       | `string`                                  | 难度标级，如 `14+`  |
+| `level_index` | [`LevelIndex`](#levelindex)               | 难度                |
+| `score`       | [`ScoreChangeDetail`](#scorechangedetail) | 分数变化            |
+| `rating`      | [`ScoreChangeDetail`](#scorechangedetail) | Rating 变化         |
+| `over_power`  | [`ScoreChangeDetail`](#scorechangedetail) | OVER POWER 变化     |
+| `clear`       | [`ScoreChangeDetail`](#scorechangedetail) | CLEAR 类型变化      |
+| `full_combo`  | [`ScoreChangeDetail`](#scorechangedetail) | FULL COMBO 类型变化 |
+| `full_chain`  | [`ScoreChangeDetail`](#scorechangedetail) | FULL CHAIN 类型变化 |
+
+### ScoreChangeDetail
+
+字段变化
+
+| 字段名 | 类型  | 说明                                                 |
+| ------ | ----- | ---------------------------------------------------- |
+| `new`  | `any` | 值可空，更新后的值；仅该字段有变化或为新增成绩时返回 |
+| `old`  | `any` | 值可空，更新前的值；新增成绩时不返回                 |
+
+::: info 提示
+`new` 与 `old` 的类型与对应的 [Score](#score) 字段一致。
+:::
 
 ### RatingTrend
 
@@ -792,15 +837,28 @@ FULL CHAIN 类型
 | `c`    | `string` | C    |
 | `d`    | `string` | D    |
 
+### RatingPossession
+
+玩家 Rating 领域颜色
+
+| 值        | 类型     | 说明 |
+| --------- | -------- | ---- |
+| `normal`  | `string` | 普通 |
+| `copper`  | `string` | 铜   |
+| `silver`  | `string` | 银   |
+| `gold`    | `string` | 金   |
+| `platina` | `string` | 铂金 |
+| `rainbow` | `string` | 虹   |
+
 ### TrophyColor
 
-| 值         | 类型     | 说明                     |
-| ---------- | -------- | ------------------------ |
-| `normal`   | `string` | 普通                     |
-| `copper`   | `string` | 铜（已弃用，仅作保留）   |
-| `silver`   | `string` | 银                       |
-| `gold`     | `string` | 金                       |
-| `ultima`   | `string` | 究极                     |
-| `platinum` | `string` | 铂金                     |
-| `rainbow`  | `string` | 虹                       |
-| `image`    | `string` | 图片，目前仅版本制霸称号 |
+| 值        | 类型     | 说明                     |
+| --------- | -------- | ------------------------ |
+| `normal`  | `string` | 普通                     |
+| `copper`  | `string` | 铜（已弃用，仅作保留）   |
+| `silver`  | `string` | 银                       |
+| `gold`    | `string` | 金                       |
+| `ultima`  | `string` | 究极                     |
+| `platina` | `string` | 铂金                     |
+| `rainbow` | `string` | 虹                       |
+| `image`   | `string` | 图片，目前仅版本制霸称号 |

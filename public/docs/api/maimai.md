@@ -101,12 +101,12 @@
 
 #### 查询参数
 
-| 参数名        | 类型                        | 说明                         |
-| ------------- | --------------------------- | ---------------------------- |
-| `song_id`     | `int`                       | 曲目 ID，与 `song_name` 冲突 |
-| `song_name`   | `string`                    | 曲名，与 `song_id` 冲突      |
-| `level_index` | [`LevelIndex`](#levelindex) | 难度                         |
-| `song_type`   | [`SongType`](#songtype)     | 谱面类型                     |
+| 参数名        | 类型                        | 说明                                                              |
+| ------------- | --------------------------- | ----------------------------------------------------------------- |
+| `song_id`     | `int`                       | 二选一必填，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
+| `song_name`   | `string`                    | 二选一必填，曲名                                                  |
+| `level_index` | [`LevelIndex`](#levelindex) | 必填，难度                                                        |
+| `song_type`   | [`SongType`](#songtype)     | 必填，谱面类型                                                    |
 
 #### 响应体
 
@@ -171,11 +171,11 @@
 
 #### 查询参数
 
-| 参数名      | 类型                    | 说明                         |
-| ----------- | ----------------------- | ---------------------------- |
-| `song_id`   | `int`                   | 曲目 ID，与 `song_name` 冲突 |
-| `song_name` | `string`                | 曲名，与 `song_id` 冲突      |
-| `song_type` | [`SongType`](#songtype) | 谱面类型                     |
+| 参数名      | 类型                    | 说明                                                              |
+| ----------- | ----------------------- | ----------------------------------------------------------------- |
+| `song_id`   | `int`                   | 二选一必填，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
+| `song_name` | `string`                | 二选一必填，曲名                                                  |
+| `song_type` | [`SongType`](#songtype) | 必填，谱面类型                                                    |
 
 #### 响应体
 
@@ -215,12 +215,19 @@ JSON 格式的玩家成绩：
       "achievements": 101,
       "fc": "app",
       "fs": null,
-      "dx_score": 0,
-      "play_time": "2023-12-31T16:00:00Z"
+      "dx_score": 0
     }
   ]
 }
 ```
+
+#### 响应体
+
+[ScoreChanges[]](#scorechanges)，仅包含本次上传后发生变化的成绩；没有变化时为空数组。
+
+::: info 提示
+`scores` 中曲目或难度不存在的成绩会被直接跳过，不会返回错误。
+:::
 
 ### GET `/api/v0/maimai/player/{friend_code}/recents`
 
@@ -321,11 +328,12 @@ JSON 格式的玩家成绩：
 
 #### 查询参数
 
-| 参数名        | 类型                        | 说明     |
-| ------------- | --------------------------- | -------- |
-| `song_id`     | `int`                       | 曲目 ID  |
-| `song_type`   | [`SongType`](#songtype)     | 谱面类型 |
-| `level_index` | [`LevelIndex`](#levelindex) | 难度     |
+| 参数名        | 类型                        | 说明                                                              |
+| ------------- | --------------------------- | ----------------------------------------------------------------- |
+| `song_id`     | `int`                       | 二选一必填，曲目 ID，与 `song_name` 同时传入时以 `song_name` 为准 |
+| `song_name`   | `string`                    | 二选一必填，曲名                                                  |
+| `song_type`   | [`SongType`](#songtype)     | 必填，谱面类型                                                    |
+| `level_index` | [`LevelIndex`](#levelindex) | 必填，难度                                                        |
 
 #### 响应体
 
@@ -362,6 +370,10 @@ JSON 格式的玩家成绩：
 #### 请求体
 
 文本格式的 HTML 源代码。
+
+#### 响应体
+
+上传最近游玩记录、最佳成绩页面时，返回 [ScoreChanges[]](#scorechanges)，仅包含本次上传后发生变化的成绩；上传玩家信息、收藏品页面时不返回数据。
 
 ::: info 提示
 目前仅支持以下页面的 HTML 源代码：
@@ -472,10 +484,10 @@ JSON 格式的玩家成绩：
 
 #### 查询参数
 
-| 参数名     | 类型   | 说明                                       |
-| ---------- | ------ | ------------------------------------------ |
-| `version`  | `int`  | 值可空，游戏版本，默认值为 `25500`         |
-| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `false` |
+| 参数名     | 类型   | 说明                                                                           |
+| ---------- | ------ | ------------------------------------------------------------------------------ |
+| `version`  | `int`  | 值可空，游戏版本，默认值为 `25500`                                             |
+| `required` | `bool` | 值可空，是否包含曲目需求，默认值为 `true`；为 `false` 时不返回需求中的曲目列表 |
 
 #### URL 参数
 
@@ -589,6 +601,10 @@ JSON 格式的玩家成绩：
 若玩家设置的是随机分类的收藏品（头像、姓名框、背景），则开发者每次请求玩家信息时，收藏品都会在随机范围内随机变化。
 :::
 
+::: info 提示
+`trophy`、`icon`、`name_plate`、`frame` 仅返回 `id`、`name`、`genre` 字段，其中 `trophy` 额外返回 `color` 字段；不包含 [Collection](#collection) 中的 `description`、`required` 字段。
+:::
+
 ### Score
 
 游玩成绩
@@ -626,16 +642,42 @@ JSON 格式的玩家成绩：
 | `rate`        | [`RateType`](#ratetype)     | 评级类型                |
 | `type`        | [`SongType`](#songtype)     | 谱面类型                |
 
+### ScoreChanges
+
+成绩变化
+
+| 字段名         | 类型                                      | 说明                |
+| -------------- | ----------------------------------------- | ------------------- |
+| `id`           | `int`                                     | 曲目 ID             |
+| `song_name`    | `string`                                  | 曲名                |
+| `level`        | `string`                                  | 难度标级，如 `14+`  |
+| `level_index`  | [`LevelIndex`](#levelindex)               | 难度                |
+| `type`         | [`SongType`](#songtype)                   | 谱面类型            |
+| `achievements` | [`ScoreChangeDetail`](#scorechangedetail) | 达成率变化          |
+| `fc`           | [`ScoreChangeDetail`](#scorechangedetail) | FULL COMBO 类型变化 |
+| `fs`           | [`ScoreChangeDetail`](#scorechangedetail) | FULL SYNC 类型变化  |
+| `dx_score`     | [`ScoreChangeDetail`](#scorechangedetail) | DX 分数变化         |
+| `dx_rating`    | [`ScoreChangeDetail`](#scorechangedetail) | DX Rating 变化      |
+
+### ScoreChangeDetail
+
+字段变化
+
+| 字段名 | 类型  | 说明                                                 |
+| ------ | ----- | ---------------------------------------------------- |
+| `new`  | `any` | 值可空，更新后的值；仅该字段有变化或为新增成绩时返回 |
+| `old`  | `any` | 值可空，更新前的值；新增成绩时不返回                 |
+
 ### RatingTrend
 
 DX Rating 趋势
 
-| 字段名     | 类型     | 说明                   |
-| ---------- | -------- | ---------------------- |
-| `total`    | `int`    | 总 DX Rating           |
-| `standard` | `int`    | 旧版本谱面总 DX Rating |
-| `dx`       | `int`    | 现版本谱面总 DX Rating |
-| `date`     | `string` | 日期                   |
+| 字段名           | 类型     | 说明                   |
+| ---------------- | -------- | ---------------------- |
+| `total`          | `int`    | 总 DX Rating           |
+| `standard_total` | `int`    | 旧版本谱面总 DX Rating |
+| `dx_total`       | `int`    | 现版本谱面总 DX Rating |
+| `date`           | `string` | 日期                   |
 
 ### Song
 
@@ -885,8 +927,8 @@ FULL SYNC 类型
 
 | 值        | 类型     | 说明 |
 | --------- | -------- | ---- |
-| `normal`  | `string` | 普通 |
-| `bronze`  | `string` | 铜   |
-| `silver`  | `string` | 银   |
-| `gold`    | `string` | 金   |
-| `rainbow` | `string` | 虹   |
+| `Normal`  | `string` | 普通 |
+| `Bronze`  | `string` | 铜   |
+| `Silver`  | `string` | 银   |
+| `Gold`    | `string` | 金   |
+| `Rainbow` | `string` | 虹   |

@@ -102,6 +102,17 @@ https://maimai.lxns.net/api/v0/
 Authorization: 9sKKK47Ewi20OroB8mhr_0zOiHO3n7jwTaU9atcf2dc=
 ```
 
+#### 玩家授权
+
+开发者 API 读取或写入玩家数据时，受玩家在查分器设置中的第三方授权控制。玩家关闭对应选项后，相关接口会返回 `403`，`message` 形如 `allow third party fetch scores is disabled`。各接口所需的权限已在 API 文档的「权限」中列出。
+
+| 权限                              | 玩家设置         | 控制范围                           |
+| --------------------------------- | ---------------- | ---------------------------------- |
+| `allow_third_party_fetch_player`  | 允许读取玩家信息 | 获取玩家信息                       |
+| `allow_third_party_fetch_scores`  | 允许读取谱面成绩 | 获取谱面成绩、Best 50 等           |
+| `allow_third_party_fetch_history` | 允许读取历史成绩 | 获取 Rating 趋势、成绩上传历史记录 |
+| `allow_third_party_write_data`    | 允许写入任何数据 | 上传玩家信息、成绩                 |
+
 ### 个人 API
 
 该 API 适合有需求使用查分器前端的玩家 API 访问自己或授权玩家的游戏数据。
@@ -129,6 +140,12 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 | `message` | `string`         | 值可空，请求失败理由      |
 | `data`    | `dict` 或 `list` | 值可空，请求结果          |
 
+曲目、别名、收藏品等公共资源接口（见各游戏 API 文档的「公共 API」）在请求成功时直接返回数据本身，不包含上述外层结构；请求失败时仍使用上述结构。
+
+## 速率限制
+
+所有 API 均按客户端 IP 限流：每秒最多 5 个请求，允许最多 20 个请求的突发。超出限制时返回 `429`，请在客户端实现退避重试。
+
 ## 错误码说明
 
 当请求失败时，API 会返回 HTTP 状态码，并在响应体中给出错误信息。
@@ -141,8 +158,10 @@ X-User-Token: KVV1nwdHG5LWl6Gm-5TNqhFukwjVCz4YxzBqgYiUkCM=
 | 401    | Unauthorized          | 鉴权失败，可能是密钥错误或过期     |
 | 403    | Forbidden             | 权限不足，可能是访问了未授权的资源 |
 | 404    | Not Found             | 请求的资源不存在                   |
+| 405    | Method Not Allowed    | 该接口不支持当前请求方法           |
 | 429    | Too Many Requests     | 请求过于频繁，触发了速率限制       |
 | 500    | Internal Server Error | 服务器内部错误，请稍后重试         |
+| 501    | Not Implemented       | 接口不支持当前游戏或上传的页面类型 |
 
 ### 错误响应示例
 
