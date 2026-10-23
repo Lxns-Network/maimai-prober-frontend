@@ -20,8 +20,29 @@
   }
 }
 
+.scrollerContainer {
+  padding-bottom: 20px;
+  margin-bottom: -20px;
+}
+
 .scrollerControl {
-  bottom: 1px;
+  --page-tabs-line-color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-6));
+
+  &[data-position="start"] {
+    background:
+      linear-gradient(to right, var(--page-tabs-line-color) 40%, transparent) bottom / 100% 1px
+        no-repeat,
+      linear-gradient(to right, var(--scroller-background-color) 40%, transparent) top / 100%
+        calc(100% - 1px) no-repeat;
+  }
+
+  &[data-position="end"] {
+    background:
+      linear-gradient(to left, var(--page-tabs-line-color) 40%, transparent) bottom / 100% 1px
+        no-repeat,
+      linear-gradient(to left, var(--scroller-background-color) 40%, transparent) top / 100%
+        calc(100% - 1px) no-repeat;
+  }
 }
 
 .tab {
