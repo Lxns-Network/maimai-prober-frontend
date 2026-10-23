@@ -1592,7 +1592,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 onChange={setMusicVolume}
                 min={0}
                 max={1}
-                step={0.1}
+                step={0.01}
                 label={(value) => `${Math.round(value * 100)}%`}
               />
             </div>
@@ -1609,7 +1609,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 onChange={setSoundVolume}
                 min={0}
                 max={1}
-                step={0.1}
+                step={0.01}
                 label={(value) => `${Math.round(value * 100)}%`}
               />
             </div>
@@ -1626,7 +1626,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
                 onChange={setJudgeVolume}
                 min={0}
                 max={1}
-                step={0.2}
+                step={0.01}
                 label={(value) => `${Math.round(value * 100)}%`}
               />
             </div>
