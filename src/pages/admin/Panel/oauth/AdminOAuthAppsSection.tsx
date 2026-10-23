@@ -4,6 +4,7 @@ import {
   Avatar,
   Box,
   Card,
+  Flex,
   Group,
   Loader,
   Stack,
@@ -11,12 +12,12 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import { IconSearch, IconTool } from "@tabler/icons-react";
+import { IconSearch, IconTool, IconWorld } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { AnimatedStack } from "@/components/AnimatedGrid.tsx";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
-import { VerifiedBadge } from "@/components/VerifiedBadge.tsx";
+import { OAuthAppName } from "@/components/OAuthAppName.tsx";
 import { useAdminOAuthApps } from "@/hooks/queries/useAdminOAuthApps.ts";
 import { useVerifyOAuthApp } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { OAuthAppProps } from "@/types/developer";
@@ -26,19 +27,14 @@ import { filterOAuthApps } from "@/utils/oauthAppSearch.ts";
 const PAGE_SIZE = 10;
 
 const OAuthAppRow = ({ app, onToggle }: { app: OAuthAppProps; onToggle: () => void }) => (
-  <Card withBorder radius="md" w="100%" p="sm">
+  <Card withBorder radius="md" w="100%" p="xs">
     <Group wrap="nowrap" gap="md">
       <Avatar src={app.logo_url} radius="sm">
         {app.name.charAt(0).toUpperCase()}
       </Avatar>
       <Box flex={1} miw={0}>
-        <Group gap={4} wrap="nowrap">
-          <Text fw={500} size="md" truncate>
-            {app.name}
-          </Text>
-          {app.is_verified && <VerifiedBadge />}
-        </Group>
-        <Group gap="md" mt={2}>
+        <OAuthAppName name={app.name} verified={app.is_verified} />
+        <Flex wrap="wrap" columnGap="md" rowGap={2} mt={2}>
           <Group gap={4} wrap="nowrap">
             <IconTool size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
             <Text size="xs" c="dimmed">
@@ -46,11 +42,17 @@ const OAuthAppRow = ({ app, onToggle }: { app: OAuthAppProps; onToggle: () => vo
             </Text>
           </Group>
           {app.website && (
-            <Anchor size="xs" href={app.website} target="_blank" rel="noreferrer" truncate>
-              {app.website.replace(/(^\w+:|^)\/\//, "")}
-            </Anchor>
+            <Group gap={4} wrap="nowrap" miw={0}>
+              <IconWorld
+                size={12}
+                style={{ color: "var(--mantine-color-dimmed)", flexShrink: 0 }}
+              />
+              <Anchor size="xs" href={app.website} target="_blank" rel="noreferrer" truncate>
+                {app.website.replace(/(^\w+:|^)\/\//, "")}
+              </Anchor>
+            </Group>
           )}
-        </Group>
+        </Flex>
       </Box>
       <Switch
         checked={!!app.is_verified}

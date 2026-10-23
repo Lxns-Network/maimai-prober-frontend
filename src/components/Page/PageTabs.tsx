@@ -33,7 +33,10 @@ export const PageTabs = (props: PageProps) => {
     >
       <div ref={wrapperRef} className={classes.tabsWrapper}>
         <Tabs.List>
-          <Scroller edgeGradientColor="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))">
+          <Scroller
+            classNames={{ control: classes.scrollerControl }}
+            edgeGradientColor="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))"
+          >
             {props.tabs?.map((tab) => (
               <Tabs.Tab key={tab.id} value={tab.id}>
                 {tab.name}

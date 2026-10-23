@@ -20,6 +20,10 @@
   }
 }
 
+.scrollerControl {
+  bottom: 1px;
+}
+
 .tab {
   font-size: var(--mantine-font-size-md);
   font-weight: 500;

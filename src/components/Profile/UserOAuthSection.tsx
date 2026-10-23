@@ -26,7 +26,7 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { EmptyState } from "@/components/EmptyState.tsx";
-import { VerifiedBadge } from "@/components/VerifiedBadge.tsx";
+import { OAuthAppName } from "@/components/OAuthAppName.tsx";
 import { OAuthAppProps } from "@/types/developer";
 import { scopeData } from "@/data/scopeData.tsx";
 import { useUserOAuthApps } from "@/hooks/queries/useUserOAuthApps.ts";
@@ -149,10 +149,6 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
     }
   };
 
-  const nameChars = Array.from(app.name);
-  const nameTail = nameChars.pop();
-  const nameHead = nameChars.join("");
-
   return (
     <Card className={classes.oauthCard} withBorder radius="md" p={0}>
       <Group align="center" gap="md" flex={1} m="xs">
@@ -160,31 +156,18 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
           {app.name.charAt(0).toUpperCase()}
         </Avatar>
 
-        <Box flex={1}>
-          <Group gap={4} align="flex-start" wrap="nowrap">
-            <Text fw={500} size="md">
-              {app.is_verified ? (
-                <>
-                  {nameHead}
-                  <Flex component="span" display="inline-flex" align="center" gap={4}>
-                    {nameTail}
-                    <VerifiedBadge />
-                  </Flex>
-                </>
-              ) : (
-                app.name
-              )}
-            </Text>
+        <Box flex={1} miw={0}>
+          <OAuthAppName name={app.name} verified={app.is_verified}>
             {app.website && (
               <ActionIcon variant="subtle" size="sm" onClick={handleVisitWebsite}>
                 <IconExternalLink size={14} />
               </ActionIcon>
             )}
-          </Group>
+          </OAuthAppName>
 
-          <Group gap="md">
+          <Flex wrap="wrap" columnGap="md" rowGap={2} mt={2}>
             {app.developer && (
-              <Group gap={4}>
+              <Group gap={4} wrap="nowrap">
                 <IconTool size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
                 <Text size="xs" c="dimmed">
                   {app.developer.name}
@@ -192,14 +175,14 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
               </Group>
             )}
             {app.user_authorize_time && (
-              <Group gap={4}>
+              <Group gap={4} wrap="nowrap">
                 <IconCalendar size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
                 <Text size="xs" c="dimmed">
                   授权于 {formatDate(app.user_authorize_time)}
                 </Text>
               </Group>
             )}
-          </Group>
+          </Flex>
         </Box>
 
         <Tooltip label="撤销授权" position="left">

@@ -8,6 +8,7 @@ import {
   Collapse,
   CopyButton,
   Divider,
+  Flex,
   Grid,
   Group,
   Loader,
@@ -35,7 +36,7 @@ import { useDeleteOAuthApp } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { useDisclosure } from "@mantine/hooks";
 import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { CreateOAuthClientModal } from "@/components/Developer/CreateOAuthClientModal.tsx";
-import { VerifiedBadge } from "@/components/VerifiedBadge.tsx";
+import { OAuthAppName } from "@/components/OAuthAppName.tsx";
 import pageClasses from "@/pages/Page.module.css";
 import classes from "./DeveloperOAuthSection.module.css";
 
@@ -92,13 +93,8 @@ const OAuthAppCard = ({
         </Avatar>
 
         <Box flex={1} miw={0}>
-          <Group gap={4} wrap="nowrap">
-            <Text fw={500} size="md" truncate>
-              {app.name}
-            </Text>
-            {app.is_verified && <VerifiedBadge />}
-          </Group>
-          <Group gap="md" mt={2} wrap="nowrap">
+          <OAuthAppName name={app.name} verified={app.is_verified} />
+          <Flex wrap="wrap" columnGap="md" rowGap={2} mt={2}>
             <Group gap={4} wrap="nowrap" miw={0}>
               <IconLink size={12} style={{ color: "var(--mantine-color-dimmed)", flexShrink: 0 }} />
               <Text size="xs" c="dimmed" truncate>
@@ -107,14 +103,14 @@ const OAuthAppCard = ({
               </Text>
             </Group>
             {app.create_time && (
-              <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+              <Group gap={4} wrap="nowrap">
                 <IconCalendar size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
                 <Text size="xs" c="dimmed">
                   创建于 {new Date(app.create_time).toLocaleDateString()}
                 </Text>
               </Group>
             )}
-          </Group>
+          </Flex>
         </Box>
 
         <Group gap={2} wrap="nowrap">
