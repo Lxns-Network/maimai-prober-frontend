@@ -694,6 +694,10 @@ DX Rating 趋势
 
 ::: info 提示
 `disabled` 为 `true` 时，该曲目不会出现在 Best 50 中。
+
+`release_date` 为各谱面中最早的配信日期；任一谱面日期未知时不返回。配信时间按 UTC+8 当日 07:00 计算，未配信的曲目或谱面不参与 Best 50、All Perfect 50 和理论值计算。日期缺失时不限制计算。
+
+资源接口仍会返回未配信的曲目、谱面和收藏品。
 :::
 
 ### SongDifficulties
@@ -725,6 +729,10 @@ DX Rating 趋势
 | `release_date`  | `string`                    | 可选，谱面配信日期，格式为 YYYY-MM-DD，未知时省略 |
 | `locked`        | `bool`                      | 可选，谱面是否需要解锁，默认值为 `false`          |
 | `notes`         | [`Notes`](#notes)           | 值可空，谱面物量                                  |
+
+::: info 提示
+各谱面的 `release_date`、`locked` 独立判断，标准谱面与 DX 谱面可能不同。`locked` 表示需要解锁，不代表未配信或禁用。
+:::
 
 ### SongDifficultyUtage
 

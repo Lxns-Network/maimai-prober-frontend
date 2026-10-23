@@ -2,6 +2,11 @@
 
 ---
 
+## 2026/10/24
+
+- 舞萌 DX 曲目、谱面和收藏品接口新增配信日期 `release_date`，谱面新增解锁状态 `locked`
+- Best 50、All Perfect 50 和理论值计算现在排除尚未配信的曲目和谱面，配信当日 07:00（UTC+8）起生效
+
 ## 2026/10/19
 
 - 修复离线同步时未按账号的爬取设置同步的问题（[#112](https://github.com/Lxns-Network/maimai-prober-frontend/issues/112)）
