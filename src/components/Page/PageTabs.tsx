@@ -1,6 +1,6 @@
 import { PageProps } from "./Page.tsx";
-import { Tabs } from "@mantine/core";
-import { useState } from "react";
+import { Scroller, Tabs } from "@mantine/core";
+import { useEffect, useRef, useState } from "react";
 import classes from "./PageTabs.module.css";
 import { usePageContext } from "vike-react/usePageContext";
 
@@ -8,6 +8,13 @@ export const PageTabs = (props: PageProps) => {
   const pageContext = usePageContext();
   const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || props.tabs?.[0].id);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    wrapperRef.current
+      ?.querySelector<HTMLElement>('[role="tab"][data-active]')
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeTab]);
 
   return (
     <Tabs
@@ -24,13 +31,15 @@ export const PageTabs = (props: PageProps) => {
         setActiveTab(tab);
       }}
     >
-      <div className={classes.tabsWrapper}>
+      <div ref={wrapperRef} className={classes.tabsWrapper}>
         <Tabs.List>
-          {props.tabs?.map((tab) => (
-            <Tabs.Tab key={tab.id} value={tab.id}>
-              {tab.name}
-            </Tabs.Tab>
-          ))}
+          <Scroller edgeGradientColor="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))">
+            {props.tabs?.map((tab) => (
+              <Tabs.Tab key={tab.id} value={tab.id}>
+                {tab.name}
+              </Tabs.Tab>
+            ))}
+          </Scroller>
         </Tabs.List>
       </div>
 

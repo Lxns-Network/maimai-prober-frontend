@@ -197,6 +197,11 @@ export const CreateOAuthClientModal = ({ app, opened, onClose }: CreateOAuthClie
           }
         })}
       >
+        {app?.is_verified && (
+          <Alert variant="light" color="yellow" icon={<IconAlertCircle />} mb="md">
+            修改应用名称、Logo、网站或回调地址后，该应用的验证状态将被取消。
+          </Alert>
+        )}
         <Box mb="xs">
           <Text size="sm">应用图标</Text>
           <EditAvatarButton onClick={fileDialog.open}>

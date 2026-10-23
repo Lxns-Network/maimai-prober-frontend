@@ -38,6 +38,7 @@ export const queryKeys = {
     authorizeInfo: (params: URLSearchParams) =>
       [`user/oauth/authorize/info?${params.toString()}`] as const,
     authorizeList: () => ["user/oauth/authorize/list"] as const,
+    adminApps: () => ["user/admin/oauth/apps"] as const,
   },
   alias: {
     list: (game: Game, params: URLSearchParams) =>

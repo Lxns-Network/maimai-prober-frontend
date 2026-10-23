@@ -11,6 +11,7 @@ import {
   Collapse,
   ThemeIcon,
   Divider,
+  Flex,
   Loader,
 } from "@mantine/core";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { EmptyState } from "@/components/EmptyState.tsx";
+import { VerifiedBadge } from "@/components/VerifiedBadge.tsx";
 import { OAuthAppProps } from "@/types/developer";
 import { scopeData } from "@/data/scopeData.tsx";
 import { useUserOAuthApps } from "@/hooks/queries/useUserOAuthApps.ts";
@@ -147,6 +149,10 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
     }
   };
 
+  const nameChars = Array.from(app.name);
+  const nameTail = nameChars.pop();
+  const nameHead = nameChars.join("");
+
   return (
     <Card className={classes.oauthCard} withBorder radius="md" p={0}>
       <Group align="center" gap="md" flex={1} m="xs">
@@ -155,9 +161,19 @@ const OAuthAppCard = ({ app, onRevoke }: { app: OAuthAppProps; onRevoke: () => v
         </Avatar>
 
         <Box flex={1}>
-          <Group gap={4} align="center">
+          <Group gap={4} align="flex-start" wrap="nowrap">
             <Text fw={500} size="md">
-              {app.name}
+              {app.is_verified ? (
+                <>
+                  {nameHead}
+                  <Flex component="span" display="inline-flex" align="center" gap={4}>
+                    {nameTail}
+                    <VerifiedBadge />
+                  </Flex>
+                </>
+              ) : (
+                app.name
+              )}
             </Text>
             {app.website && (
               <ActionIcon variant="subtle" size="sm" onClick={handleVisitWebsite}>

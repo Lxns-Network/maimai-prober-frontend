@@ -9,6 +9,7 @@ import {
   createOAuthApp,
   editOAuthApp,
   deleteOAuthApp,
+  verifyOAuthApp,
 } from "@/utils/api/developer.ts";
 
 export const useSendDeveloperApply = (options?: UseMutationOptions<unknown, Error, object>) => {
@@ -64,6 +65,16 @@ export const useEditOAuthApp = (
 export const useDeleteOAuthApp = (options?: UseMutationOptions<unknown, Error, string>) => {
   return useMutation({
     mutationFn: async (clientId: string) => parseAPIResponse(await deleteOAuthApp(clientId)),
+    ...options,
+  });
+};
+
+export const useVerifyOAuthApp = (
+  options?: UseMutationOptions<unknown, Error, { clientId: string; verified: boolean }>,
+) => {
+  return useMutation({
+    mutationFn: async ({ clientId, verified }: { clientId: string; verified: boolean }) =>
+      parseAPIResponse(await verifyOAuthApp(clientId, verified)),
     ...options,
   });
 };

@@ -26,6 +26,7 @@ import {
   IconLink,
 } from "@tabler/icons-react";
 import { openRetryModal } from "@/utils/modal.tsx";
+import { VerifiedBadge } from "@/components/VerifiedBadge.tsx";
 import classes from "./Authorize.module.css";
 import { useOAuthApp } from "@/hooks/queries/useOAuthApp.ts";
 import { useConfirmOAuthAuthorize } from "@/hooks/mutations/useUserMutations.ts";
@@ -225,9 +226,12 @@ export default function Authorize() {
         </ThemeIcon>
         <Avatar src="/favicon_oauth.webp" w={72} h={72} radius="md" />
       </Group>
-      <Title order={2} size="h2" fw={700} ta="center">
-        授权 {app.name}
-      </Title>
+      <Group justify="center" gap={6} wrap="nowrap">
+        <Title order={2} size="h2" fw={700} ta="center">
+          授权 {app.name}
+        </Title>
+        {app.is_verified && <VerifiedBadge size={22} />}
+      </Group>
       {app.is_dynamic ? (
         <Alert
           variant="light"

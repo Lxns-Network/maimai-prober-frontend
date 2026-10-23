@@ -1,6 +1,7 @@
 import { Page } from "@/components/Page/Page.tsx";
 import { AdminUsersSection } from "@/pages/admin/Panel/users/AdminUsersSection.tsx";
 import { AdminDevelopersSection } from "@/pages/admin/Panel/developers/AdminDevelopersSection.tsx";
+import { AdminOAuthAppsSection } from "@/pages/admin/Panel/oauth/AdminOAuthAppsSection.tsx";
 import { AdminNotificationsSection } from "@/pages/admin/Panel/notifications/AdminNotificationsSection.tsx";
 
 export function Panel() {
@@ -13,6 +14,7 @@ export function Panel() {
       tabs={[
         { id: "users", name: "用户列表", children: <AdminUsersSection /> },
         { id: "developers", name: "开发者列表", children: <AdminDevelopersSection /> },
+        { id: "oauth", name: "OAuth 应用", children: <AdminOAuthAppsSection /> },
         { id: "notifications", name: "通知管理", children: <AdminNotificationsSection /> },
       ]}
     />

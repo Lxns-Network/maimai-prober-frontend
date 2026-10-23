@@ -42,3 +42,10 @@ export async function rejectDeveloperApplication(id: number, reason: string): Pr
     body: { id, rejection_reason: reason },
   });
 }
+
+export async function verifyOAuthApp(clientId: string, verified: boolean): Promise<Response> {
+  return fetchAPI(`user/admin/oauth/app/${clientId}/verify`, {
+    method: "POST",
+    body: { verified },
+  });
+}
