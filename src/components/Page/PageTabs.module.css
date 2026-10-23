@@ -9,6 +9,7 @@
   margin-right: auto;
   margin-bottom: -1px;
   padding: 0 16px;
+  isolation: isolate;
 
   @mixin smaller-than $mantine-breakpoint-xs {
     max-width: 100%;
@@ -27,6 +28,8 @@
 
 .scrollerControl {
   --page-tabs-line-color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-6));
+
+  z-index: 2;
 
   &[data-position="start"] {
     background:
