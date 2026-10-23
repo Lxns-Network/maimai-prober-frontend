@@ -423,6 +423,8 @@ JSON 格式的玩家成绩：
 
 获取曲目列表。
 
+资源包含尚未配信的曲目和谱面。Best 50、AP Best 50 及理论值计算会在配信日期北京时间（UTC+8）07:00 起纳入对应谱面；日期未知时不限制。
+
 #### 查询参数
 
 | 参数名    | 类型   | 说明                                       |
@@ -471,6 +473,8 @@ JSON 格式的玩家成绩：
 ### GET `/api/v0/maimai/{collection_type}/list`
 
 获取收藏品列表。
+
+资源包含尚未配信的收藏品。
 
 #### 查询参数
 
@@ -673,19 +677,20 @@ DX Rating 趋势
 
 曲目
 
-| 字段名         | 类型                                    | 说明                                   |
-| -------------- | --------------------------------------- | -------------------------------------- |
-| `id`           | `int`                                   | 曲目 ID                                |
-| `title`        | `string`                                | 曲名                                   |
-| `artist`       | `string`                                | 艺术家                                 |
-| `genre`        | `string`                                | 曲目分类                               |
-| `bpm`          | `int`                                   | 曲目 BPM                               |
-| `map`          | `string`                                | 值可空，曲目所属区域                   |
-| `version`      | `int`                                   | 曲目首次出现版本                       |
-| `rights`       | `string`                                | 值可空，曲目版权信息                   |
-| `locked`       | `bool`                                  | 值可空，是否需要解锁，默认值为 `false` |
-| `disabled`     | `bool`                                  | 值可空，是否被禁用，默认值为 `false`   |
-| `difficulties` | [`SongDifficulties`](#songdifficulties) | 谱面难度                               |
+| 字段名         | 类型                                    | 说明                                                    |
+| -------------- | --------------------------------------- | ------------------------------------------------------- |
+| `id`           | `int`                                   | 曲目 ID                                                 |
+| `title`        | `string`                                | 曲名                                                    |
+| `artist`       | `string`                                | 艺术家                                                  |
+| `genre`        | `string`                                | 曲目分类                                                |
+| `bpm`          | `int`                                   | 曲目 BPM                                                |
+| `map`          | `string`                                | 值可空，曲目所属区域                                    |
+| `version`      | `int`                                   | 曲目首次出现版本                                        |
+| `release_date` | `string`                                | 可选，最早谱面的配信日期，格式为 YYYY-MM-DD，未知时省略 |
+| `rights`       | `string`                                | 值可空，曲目版权信息                                    |
+| `locked`       | `bool`                                  | 值可空，所有谱面是否均需解锁，默认值为 `false`          |
+| `disabled`     | `bool`                                  | 值可空，是否被禁用，默认值为 `false`                    |
+| `difficulties` | [`SongDifficulties`](#songdifficulties) | 谱面难度                                                |
 
 ::: info 提示
 `disabled` 为 `true` 时，该曲目不会出现在 Best 50 中。
@@ -709,15 +714,17 @@ DX Rating 趋势
 
 谱面难度
 
-| 字段名          | 类型                        | 说明             |
-| --------------- | --------------------------- | ---------------- |
-| `type`          | [`SongType`](#songtype)     | 谱面类型         |
-| `difficulty`    | [`LevelIndex`](#levelindex) | 难度             |
-| `level`         | `string`                    | 难度标级         |
-| `level_value`   | `float`                     | 谱面定数         |
-| `note_designer` | `string`                    | 谱师             |
-| `version`       | `int`                       | 谱面首次出现版本 |
-| `notes`         | [`Notes`](#notes)           | 值可空，谱面物量 |
+| 字段名          | 类型                        | 说明                                              |
+| --------------- | --------------------------- | ------------------------------------------------- |
+| `type`          | [`SongType`](#songtype)     | 谱面类型                                          |
+| `difficulty`    | [`LevelIndex`](#levelindex) | 难度                                              |
+| `level`         | `string`                    | 难度标级                                          |
+| `level_value`   | `float`                     | 谱面定数                                          |
+| `note_designer` | `string`                    | 谱师                                              |
+| `version`       | `int`                       | 谱面首次出现版本                                  |
+| `release_date`  | `string`                    | 可选，谱面配信日期，格式为 YYYY-MM-DD，未知时省略 |
+| `locked`        | `bool`                      | 可选，谱面是否需要解锁，默认值为 `false`          |
+| `notes`         | [`Notes`](#notes)           | 值可空，谱面物量                                  |
 
 ### SongDifficultyUtage
 
@@ -793,14 +800,15 @@ DX Rating 趋势
 
 收藏品
 
-| 字段名        | 类型                                          | 说明                                   |
-| ------------- | --------------------------------------------- | -------------------------------------- |
-| `id`          | `int`                                         | 收藏品 ID                              |
-| `name`        | `string`                                      | 收藏品名称                             |
-| `color`       | [`TrophyColor`](#trophycolor)                 | 值可空，仅玩家称号，称号颜色           |
-| `description` | `string`                                      | 值可空，收藏品说明                     |
-| `genre`       | `string`                                      | 值可空，除玩家称号，收藏品分类（日文） |
-| `required`    | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求                     |
+| 字段名         | 类型                                          | 说明                                                |
+| -------------- | --------------------------------------------- | --------------------------------------------------- |
+| `id`           | `int`                                         | 收藏品 ID                                           |
+| `name`         | `string`                                      | 收藏品名称                                          |
+| `color`        | [`TrophyColor`](#trophycolor)                 | 值可空，仅玩家称号，称号颜色                        |
+| `description`  | `string`                                      | 值可空，收藏品说明                                  |
+| `release_date` | `string`                                      | 可选，收藏品配信日期，格式为 YYYY-MM-DD，未知时省略 |
+| `genre`        | `string`                                      | 值可空，除玩家称号，收藏品分类（日文）              |
+| `required`     | [`CollectionRequired[]`](#collectionrequired) | 值可空，收藏品要求                                  |
 
 ### CollectionRequired
 

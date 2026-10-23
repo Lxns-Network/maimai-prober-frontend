@@ -7,6 +7,8 @@ export interface MaimaiDifficultyProps {
   level_value: number;
   note_designer: string;
   version: number;
+  release_date?: string;
+  locked?: boolean;
   kanji: string;
   description: string;
   is_buddy: boolean;
@@ -39,6 +41,8 @@ export interface MaimaiSongProps {
   bpm: number;
   map?: string;
   version: number;
+  release_date?: string;
+  locked?: boolean;
   disabled?: boolean;
   difficulties: MaimaiDifficultiesProps;
 }

@@ -71,5 +71,6 @@ interface CollectionProps {
 
   // 仅收藏品列表
   description?: string;
+  release_date?: string;
   required?: CollectionRequiredProps[];
 }
