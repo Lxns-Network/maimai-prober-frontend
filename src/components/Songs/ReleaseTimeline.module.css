@@ -1,0 +1,62 @@
+.item {
+  &:not(:first-of-type) {
+    margin-top: var(--mantine-spacing-lg);
+  }
+
+  &::before {
+    bottom: calc(var(--mantine-spacing-lg) * -1);
+  }
+}
+
+.header {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  width: 100%;
+  text-align: start;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -4px -8px;
+    z-index: -1;
+    border-radius: var(--mantine-radius-md);
+  }
+
+  @mixin hover {
+    &::before {
+      background-color: var(--mantine-color-default-hover);
+    }
+  }
+
+  &[data-expanded] .chevron {
+    transform: rotate(180deg);
+  }
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--mantine-color-dimmed);
+  transition: transform 200ms ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  min-width: 0;
+  padding: 6px;
+  border-radius: var(--mantine-radius-md);
+  color: var(--mantine-color-text);
+  text-decoration: none;
+
+  @mixin hover {
+    background-color: var(--mantine-color-default-hover);
+  }
+}

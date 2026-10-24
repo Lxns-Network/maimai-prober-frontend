@@ -14,6 +14,8 @@ import useGame from "@/hooks/useGame.ts";
 import { getSongCollections, SongCollectionItemProps } from "@/utils/api/song/song.tsx";
 import { usePageContext } from "vike-react/usePageContext";
 import { useSongBests } from "@/hooks/queries/useSongBests.ts";
+import { useShellViewportRef } from "@/components/Shell/ShellViewportContext.ts";
+import { ReleaseTimeline } from "@/components/Songs/ReleaseTimeline.tsx";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
 
@@ -135,13 +137,25 @@ const SongsContent = () => {
 };
 
 export default function Songs() {
+  const { urlOriginal } = usePageContext();
+  const viewportRef = useShellViewportRef();
+
+  // 同页导航只改查询参数，按 URL 重新挂载以重读 tab 与 song_id，并回到顶部。
+  useEffect(() => {
+    viewportRef.current?.scrollTo({ top: 0 });
+  }, [urlOriginal, viewportRef]);
+
   return (
     <Page
+      key={urlOriginal}
       meta={{
         title: "曲目查询",
         description: "查询「舞萌 DX」与「中二节奏」的曲目详情",
       }}
-      children={<SongsContent />}
+      tabs={[
+        { id: "details", name: "曲目详情", children: <SongsContent /> },
+        { id: "calendar", name: "更新日历", children: <ReleaseTimeline /> },
+      ]}
     />
   );
 }

@@ -4,11 +4,10 @@ import { navigate } from "vike/client/router";
 interface LinkProps extends Omit<ComponentPropsWithoutRef<"a">, "href"> {
   to: string;
   replace?: boolean;
-  state?: unknown;
 }
 
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
-  ({ to, replace = false, state, onClick, children, ...props }, ref) => {
+  ({ to, replace = false, onClick, children, ...props }, ref) => {
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
       if (
         e.ctrlKey ||
@@ -27,14 +26,18 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
       e.preventDefault();
       onClick?.(e);
 
-      if (replace) {
-        window.history.replaceState(state, "", to);
-      }
-      navigate(to);
+      navigate(to, { overwriteLastHistoryEntry: replace });
     };
 
     return (
-      <a ref={ref} href={to} onClick={handleClick} {...props}>
+      // Vike 会拦截所有 <a> 的点击并新增历史记录；replace 时需让它跳过，只保留这里的覆盖跳转。
+      <a
+        ref={ref}
+        href={to}
+        onClick={handleClick}
+        data-vike={replace ? "false" : undefined}
+        {...props}
+      >
         {children}
       </a>
     );
