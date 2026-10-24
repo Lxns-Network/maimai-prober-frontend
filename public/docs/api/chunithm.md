@@ -640,39 +640,45 @@ Recent 10 均为 Best #1 曲目，`rating` 字段的最终结果为理论不推�
 
 曲目
 
-| 字段名         | 类型                                  | 说明                                   |
-| -------------- | ------------------------------------- | -------------------------------------- |
-| `id`           | `int`                                 | 曲目 ID                                |
-| `title`        | `string`                              | 曲名                                   |
-| `artist`       | `string`                              | 艺术家                                 |
-| `genre`        | `string`                              | 曲目分类                               |
-| `bpm`          | `int`                                 | 曲目 BPM                               |
-| `map`          | `string`                              | 值可空，曲目所属地图                   |
-| `version`      | `int`                                 | 曲目首次出现版本                       |
-| `rights`       | `string`                              | 值可空，曲目版权信息                   |
-| `locked`       | `bool`                                | 值可空，是否需要解锁，默认值为 `false` |
-| `disabled`     | `bool`                                | 值可空，是否被禁用，默认值为 `false`   |
-| `difficulties` | [`SongDifficulty[]`](#songdifficulty) | 谱面难度                               |
+| 字段名         | 类型                                  | 说明                                          |
+| -------------- | ------------------------------------- | --------------------------------------------- |
+| `id`           | `int`                                 | 曲目 ID                                       |
+| `title`        | `string`                              | 曲名                                          |
+| `artist`       | `string`                              | 艺术家                                        |
+| `genre`        | `string`                              | 曲目分类                                      |
+| `bpm`          | `int`                                 | 曲目 BPM                                      |
+| `map`          | `string`                              | 值可空，曲目所属地图                          |
+| `version`      | `int`                                 | 曲目首次出现版本                              |
+| `release_date` | `string`                              | 值可空，国服首次配信日期，格式为 `YYYY-MM-DD` |
+| `rights`       | `string`                              | 值可空，曲目版权信息                          |
+| `locked`       | `bool`                                | 值可空，是否需要解锁，默认值为 `false`        |
+| `disabled`     | `bool`                                | 值可空，是否被禁用，默认值为 `false`          |
+| `difficulties` | [`SongDifficulty[]`](#songdifficulty) | 谱面难度                                      |
 
 ::: info 提示
 `disabled` 为 `true` 时，该曲目不会出现在 Rating 构成中。
+
+`release_date` 为已知的首次可游玩日期，包含开放后需要解锁的曲目；后续常驻或重新开放不会覆盖首次日期，也不表示玩家已解锁。部分联动等曲目缺少单独的开放记录时，采用同批次曲目一致的配信日期；仍无法确定时不返回该字段。
+
+曲目列表和详情保留尚未配信的曲目与谱面。Best 30、Selection 10、New 20、理论值及理论 Over Power 计算按曲目和谱面的配信日期过滤，配信当日 07:00（UTC+8）起生效；日期缺失或无法解析时不限制计算。旧曲新增 ULTIMA 不影响已配信的普通谱面。
 :::
 
 ### SongDifficulty
 
 谱面难度
 
-| 字段名          | 类型                        | 说明                          |
-| --------------- | --------------------------- | ----------------------------- |
-| `difficulty`    | [`LevelIndex`](#levelindex) | 难度                          |
-| `level`         | `string`                    | 难度标级                      |
-| `level_value`   | `float`                     | 谱面定数                      |
-| `note_designer` | `string`                    | 谱师                          |
-| `version`       | `int`                       | 谱面首次出现版本              |
-| `notes`         | [`Notes`](#notes)           | 值可空，谱面物量              |
-| `origin_id`     | `int`                       | 仅 WORLD'S END 难度，原曲 ID  |
-| `kanji`         | `string`                    | 仅 WORLD'S END 难度，谱面属性 |
-| `star`          | `int`                       | 仅 WORLD'S END 难度，谱面星级 |
+| 字段名          | 类型                        | 说明                                                                          |
+| --------------- | --------------------------- | ----------------------------------------------------------------------------- |
+| `difficulty`    | [`LevelIndex`](#levelindex) | 难度                                                                          |
+| `level`         | `string`                    | 难度标级                                                                      |
+| `level_value`   | `float`                     | 谱面定数                                                                      |
+| `note_designer` | `string`                    | 谱师                                                                          |
+| `version`       | `int`                       | 谱面首次出现版本                                                              |
+| `release_date`  | `string`                    | 值可空，国服首次配信日期，格式为 `YYYY-MM-DD`；ULTIMA 和 WORLD'S END 独立记录 |
+| `notes`         | [`Notes`](#notes)           | 值可空，谱面物量                                                              |
+| `origin_id`     | `int`                       | 仅 WORLD'S END 难度，原曲 ID                                                  |
+| `kanji`         | `string`                    | 仅 WORLD'S END 难度，谱面属性                                                 |
+| `star`          | `int`                       | 仅 WORLD'S END 难度，谱面星级                                                 |
 
 ### Notes
 

@@ -9,6 +9,7 @@ export interface ChunithmDifficultyProps {
   kanji: string;
   star: number;
   version: number;
+  release_date?: string;
   notes: ChunithmNotesProps;
 }
 
@@ -29,6 +30,7 @@ export interface ChunithmSongProps {
   bpm: number;
   map?: string;
   version: number;
+  release_date?: string;
   disabled?: boolean;
   difficulties: ChunithmDifficultyProps[];
 }

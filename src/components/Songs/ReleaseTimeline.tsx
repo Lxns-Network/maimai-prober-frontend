@@ -27,6 +27,8 @@ import { Link } from "@/components/Link";
 import { ASSET_URL } from "@/main";
 import useGame from "@/hooks/useGame.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
+import type { Game } from "@/types/game";
+import type { ChunithmSongList } from "@/utils/api/song/chunithm.ts";
 import type { MaimaiSongList } from "@/utils/api/song/maimai.ts";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import {
@@ -40,13 +42,27 @@ import {
 } from "@/utils/releaseTimeline.ts";
 import classes from "./ReleaseTimeline.module.css";
 
-const TYPE_BADGES: Record<ReleaseChartType, { label: string; color: string }> = {
+type SongList = MaimaiSongList | ChunithmSongList;
+
+const TYPE_BADGES: Partial<Record<ReleaseChartType, { label: string; color: string }>> = {
   standard: { label: "标准", color: "blue" },
   dx: { label: "DX", color: "orange" },
   utage: { label: "宴", color: "pink" },
+  worldsend: { label: "WORLD'S END", color: "gray" },
 };
 
 const ROWS_PER_PAGE = 50;
+
+const chartColor = (chart: ReleaseChart) => {
+  if (chart.type === "utage") return getScoreCardBackgroundColor("maimai", 5);
+  const game = chart.type === "chunithm" || chart.type === "worldsend" ? "chunithm" : "maimai";
+  return getScoreCardBackgroundColor(game, chart.difficulty.difficulty);
+};
+
+const chartLabel = (chart: ReleaseChart) =>
+  chart.type === "worldsend"
+    ? `${chart.difficulty.kanji}★${chart.difficulty.star}`
+    : chart.difficulty.level;
 
 const ChartBadges = ({ charts }: { charts: ReleaseChart[] }) => {
   const groups: { type: ReleaseChartType; charts: ReleaseChart[] }[] = [];
@@ -58,39 +74,51 @@ const ChartBadges = ({ charts }: { charts: ReleaseChart[] }) => {
 
   return (
     <Group gap={6} wrap="wrap">
-      {groups.map((group) => (
-        <Group key={group.type} gap={2} wrap="nowrap">
-          <Badge size="xs" radius="sm" variant="light" color={TYPE_BADGES[group.type].color}>
-            {TYPE_BADGES[group.type].label}
-          </Badge>
-          {group.charts.map(({ type, difficulty }) => (
-            <Badge
-              key={difficulty.difficulty}
-              size="xs"
-              radius="sm"
-              px={5}
-              color={getScoreCardBackgroundColor(
-                "maimai",
-                type === "utage" ? 5 : difficulty.difficulty,
-              )}
-            >
-              {difficulty.level}
-            </Badge>
-          ))}
-        </Group>
-      ))}
+      {groups.map((group) => {
+        const typeBadge = TYPE_BADGES[group.type];
+        return (
+          <Group key={group.type} gap={2} wrap="nowrap">
+            {typeBadge && (
+              <Badge size="xs" radius="sm" variant="light" color={typeBadge.color}>
+                {typeBadge.label}
+              </Badge>
+            )}
+            {group.charts.map((chart) => (
+              <Badge
+                key={chart.difficulty.difficulty}
+                size="xs"
+                radius="sm"
+                px={5}
+                color={chartColor(chart)}
+              >
+                {chartLabel(chart)}
+              </Badge>
+            ))}
+          </Group>
+        );
+      })}
     </Group>
   );
 };
 
-const EntryRow = ({ entry, songList }: { entry: ReleaseEntry; songList: MaimaiSongList }) => {
+const EntryRow = ({
+  entry,
+  game,
+  songList,
+}: {
+  entry: ReleaseEntry;
+  game: Game;
+  songList: SongList;
+}) => {
   const { song, charts } = entry;
-  const locked = charts.length > 0 && charts.every(({ difficulty }) => difficulty.locked);
+  const locked =
+    charts.length > 0 &&
+    charts.every(({ difficulty }) => "locked" in difficulty && difficulty.locked === true);
 
   return (
-    <Link to={`/songs?game=maimai&song_id=${song.id}`} replace className={classes.row}>
+    <Link to={`/songs?game=${game}&song_id=${song.id}`} replace className={classes.row}>
       <Avatar
-        src={`${ASSET_URL}/maimai/jacket/${songList.getSongResourceId(song.id)}.png!webp`}
+        src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(song.id)}.png!webp`}
         size={56}
         radius="md"
         imageProps={{ loading: "lazy" }}
@@ -122,11 +150,13 @@ const EntryRow = ({ entry, songList }: { entry: ReleaseEntry; songList: MaimaiSo
 const EntryGrid = ({
   label,
   entries,
+  game,
   songList,
 }: {
   label?: string;
   entries: ReleaseEntry[];
-  songList: MaimaiSongList;
+  game: Game;
+  songList: SongList;
 }) => {
   const [limit, setLimit] = useState(ROWS_PER_PAGE);
   const remaining = entries.length - limit;
@@ -140,7 +170,7 @@ const EntryGrid = ({
       )}
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs" verticalSpacing={0} mx={-6}>
         {entries.slice(0, limit).map((entry) => (
-          <EntryRow key={entry.song.id} entry={entry} songList={songList} />
+          <EntryRow key={entry.song.id} entry={entry} game={game} songList={songList} />
         ))}
       </SimpleGrid>
       {remaining > 0 && (
@@ -162,12 +192,14 @@ const DayItem = ({
   day,
   now,
   defaultOpened,
+  game,
   songList,
 }: {
   day: ReleaseDay;
   now: Date;
   defaultOpened: boolean;
-  songList: MaimaiSongList;
+  game: Game;
+  songList: SongList;
 }) => {
   const [opened, setOpened] = useState(defaultOpened);
   const newCharts = day.charts.reduce((count, entry) => count + entry.charts.length, 0);
@@ -213,6 +245,7 @@ const DayItem = ({
             <EntryGrid
               label={labelled ? "新曲" : undefined}
               entries={day.songs}
+              game={game}
               songList={songList}
             />
           )}
@@ -220,6 +253,7 @@ const DayItem = ({
             <EntryGrid
               label={labelled ? "新谱面" : undefined}
               entries={day.charts}
+              game={game}
               songList={songList}
             />
           )}
@@ -238,11 +272,10 @@ const EmptyHint = ({ text }: { text: string }) => (
 
 export const ReleaseTimeline = () => {
   const [game] = useGame();
-  const songList = useSongListStore((state) => state.maimai);
+  const songList = useSongListStore((state) => state[game]);
   const now = useMemo(() => new Date(), []);
   const days = useMemo(() => buildReleaseTimeline(songList.songs, now), [songList, now]);
 
-  if (game !== "maimai") return <EmptyHint text="中二节奏暂无配信日期数据" />;
   if (songList.songs.length === 0) {
     return (
       <Center my="xl">
@@ -257,6 +290,7 @@ export const ReleaseTimeline = () => {
 
   return (
     <Timeline
+      key={game}
       active={released.length - 1}
       reverseActive
       bulletSize={24}
@@ -273,6 +307,7 @@ export const ReleaseTimeline = () => {
             day={day}
             now={now}
             defaultOpened={day.upcoming || day.date === latestReleased}
+            game={game}
             songList={songList}
           />
         </Timeline.Item>

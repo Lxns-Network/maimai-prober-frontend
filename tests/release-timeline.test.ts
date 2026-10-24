@@ -3,7 +3,9 @@ import {
   buildReleaseTimeline,
   formatReleaseDate,
   formatReleaseOffset,
+  type ReleaseEntry,
 } from "@/utils/releaseTimeline.ts";
+import type { ChunithmDifficultyProps, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import type {
   MaimaiDifficultiesProps,
   MaimaiDifficultyProps,
@@ -50,6 +52,39 @@ const song = (
   ...extra,
 });
 
+const chunithmChart = (
+  difficulty: number,
+  release_date: string,
+  extra: Partial<ChunithmDifficultyProps> = {},
+): ChunithmDifficultyProps => ({
+  difficulty,
+  level: "13",
+  level_value: 13,
+  note_designer: "",
+  origin_id: 0,
+  kanji: "",
+  star: 0,
+  version: 24000,
+  release_date,
+  notes: { total: 0, tap: 0, hold: 0, slide: 0, air: 0, flick: 0 },
+  ...extra,
+});
+
+const chunithmSong = (
+  id: number,
+  release_date: string,
+  difficulties: ChunithmDifficultyProps[],
+): ChunithmSongProps => ({
+  id,
+  title: `Song ${id}`,
+  artist: "Artist",
+  genre: "",
+  bpm: 120,
+  version: 24000,
+  release_date,
+  difficulties,
+});
+
 // 2026-10-24 11:00 (UTC+8)
 const NOW = new Date("2026-10-24T03:00:00Z");
 
@@ -61,7 +96,7 @@ const summary = (days: ReturnType<typeof buildReleaseTimeline>) =>
     charts: day.charts.map((entry) => entry.song.id),
   }));
 
-const chartKeys = (entry: { charts: { type: string; difficulty: MaimaiDifficultyProps }[] }) =>
+const chartKeys = (entry: ReleaseEntry) =>
   entry.charts.map(({ type, difficulty }) => `${type}:${difficulty.difficulty}`);
 
 describe("buildReleaseTimeline", () => {
@@ -139,6 +174,34 @@ describe("buildReleaseTimeline", () => {
       { date: "2026-10-29", upcoming: true, songs: [100001], charts: [] },
     ]);
     expect(chartKeys(days[0].songs[0])).toEqual(["utage:0"]);
+  });
+
+  it("lists a later CHUNITHM ULTIMA and WORLD'S END charts on their own release day", () => {
+    const days = buildReleaseTimeline(
+      [
+        chunithmSong(76, "2022-09-08", [
+          chunithmChart(4, "2026-09-10"),
+          ...[3, 2, 1, 0].map((difficulty) => chunithmChart(difficulty, "2022-09-08")),
+        ]),
+        chunithmSong(8307, "2026-09-10", [
+          chunithmChart(5, "2026-09-10", { kanji: "翔", star: 3 }),
+        ]),
+      ],
+      NOW,
+    );
+
+    expect(summary(days)).toEqual([
+      { date: "2026-09-10", upcoming: false, songs: [8307], charts: [76] },
+      { date: "2022-09-08", upcoming: false, songs: [76], charts: [] },
+    ]);
+    expect(chartKeys(days[0].songs[0])).toEqual(["worldsend:5"]);
+    expect(chartKeys(days[0].charts[0])).toEqual(["chunithm:4"]);
+    expect(chartKeys(days[1].songs[0])).toEqual([
+      "chunithm:0",
+      "chunithm:1",
+      "chunithm:2",
+      "chunithm:3",
+    ]);
   });
 
   it("skips disabled songs and songs without a release date", () => {
