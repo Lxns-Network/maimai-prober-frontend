@@ -4,13 +4,10 @@
 
 ## 2026/10/25
 
-- 曲目和谱面接口新增配信日期 `release_date`：
-  - 舞萌 DX 收藏品接口同样新增 `release_date`，谱面新增解锁状态 `locked`
-  - 中二节奏的 ULTIMA 与 WORLD'S END 谱面独立记录配信日期
-- 以下计算现在排除尚未配信的曲目和谱面，配信当日 07:00（UTC+8）起生效：
-  - 舞萌 DX：Best 50、All Perfect 50 和理论值
-  - 中二节奏：Rating 构成、理论值及理论 Over Power
-- 曲目查询新增「更新日历」，按配信日期列出每次更新的新曲与新谱面（含即将配信），支持舞萌 DX 与中二节奏
+- 曲目查询新增「更新日历」，可按配信日期查看舞萌 DX 与中二节奏每次更新的新曲与新谱面（含即将配信）
+- 舞萌 DX `Song`、`SongDifficulty`、`Collection` 结构体中新增 `release_date` 字段，用于获取配信日期
+- 舞萌 DX `SongDifficulty` 结构体中新增 `locked` 字段，用于获取谱面是否需要解锁
+- 中二节奏 `Song`、`SongDifficulty` 结构体中新增 `release_date` 字段，用于获取配信日期，ULTIMA 与 WORLD'S END 谱面独立记录
 
 ## 2026/10/19
 
