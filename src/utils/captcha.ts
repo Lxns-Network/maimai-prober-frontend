@@ -2,6 +2,7 @@ import type { Cap as CapType } from "@cap.js/widget";
 import { CAPTCHA_ENDPOINT } from "@/main";
 
 const CAP_WIDGET_URL = "https://cap.lxns.net/assets/widget.js";
+const CAP_WASM_URL = "https://cap.lxns.net/assets/cap_wasm_bg.wasm";
 const CAP_SOLVE_TIMEOUT = 60000;
 
 let scriptPromise: Promise<void> | null = null;
@@ -13,6 +14,8 @@ function loadCapScript(): Promise<void> {
       resolve();
       return;
     }
+    // The widget prefetches its wasm as soon as it runs and otherwise defaults to jsDelivr.
+    window.CAP_CUSTOM_WASM_URL = CAP_WASM_URL;
     const script = document.createElement("script");
     script.src = CAP_WIDGET_URL;
     script.onload = () => resolve();
