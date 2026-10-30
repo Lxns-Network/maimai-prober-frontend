@@ -75,6 +75,13 @@ Root `src/pages/+config.ts` sets global defaults: `ssr: false`, `prerender: fals
   - Routes under `(csr)/<path>/+Page.tsx` are thin shells importing screen implementations wrapped in `<RouteGuard>` (e.g. `export default () => <RouteGuard><Scores /></RouteGuard>`).
   - **Never create `+Page.tsx` directly inside implementation directories (`src/pages/user/`, `src/pages/admin/`, etc.).**
 
+### Source File Homes & Export Style
+
+- **All hooks live under `src/hooks/`**: behavioral hooks and Zustand stores (`use*Store.ts`) at the root, TanStack Query hooks in `queries/`, mutations in `mutations/`. Never place `use*` hook files under `src/components/`; the Chart module (`src/pages/public/Chart/`) is the only sanctioned exception with its own `hooks/` and `stores/`.
+- **Zustand stores use `export default`** (match `useSongListStore`, `useFriendStore`); pages use default exports; components use named exports.
+- **Component-adjacent modules**: tightly coupled constants, JSX templates, or modal openers may sit next to their component (precedents: `notificationIcons.ts`, `notificationTemplates.tsx`, `openScoreModal.tsx`) — hooks may not.
+- **Before creating any new file, sample 2-3 existing sibling files of the same kind** and copy their placement, naming, and export style instead of inventing a new arrangement.
+
 ---
 
 ## 4. Architecture & State Management
@@ -114,6 +121,11 @@ Maintainer ground rule: **prefer Mantine's own components and props over hand-wr
 - Compose layout and typography from Mantine components (`Group`, `Stack`, `Flex`, `SimpleGrid`, `Text`, `Paper`, ...) using their props: style props (`mt`, `px`, `c`, `fw`, `fz`, `w`, `maw`, ...), component props (`variant`, `size`, `radius`, `color`, `gap`, `justify`, ...), responsive prop values (`{ base: ..., sm: ... }`), and `hiddenFrom`/`visibleFrom`.
 - Reach for a CSS module only when Mantine props cannot express the result (pseudo-elements or states beyond the component API, keyframes, complex grid areas, container queries). No inline `style` where a style prop exists; no Tailwind or any other styling system.
 - When CSS is unavoidable, keep it in the component's `*.module.css` and compose from Mantine tokens (`var(--mantine-spacing-*)`, `var(--mantine-color-*)`, `var(--mantine-radius-*)`, `light-dark(...)`) instead of hardcoded values.
+- Mantine style props are emitted as inline styles or scoped generated CSS, so `*.module.css` rules cannot override them. Control a property through the prop itself, using the responsive object form (e.g. `wrap={{ base: "nowrap", md: "wrap" }}`), or keep it entirely in the module; never split one property across both.
+
+### Chinese Copy Conventions
+
+- Keep a half-width space between CJK and Latin/digits (「最多 200 人」「7 天」), use complete measure words (「64 个字符」, not 「64 字符」), and quote in-app UI names with 「」. Before writing new copy, search the repo for existing phrasing so terminology stays consistent (e.g. 特别关注 / 黑名单 / 谱面成绩 / 查分器用户名).
 
 ---
 

@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { Box, Group, Loader, Space, Stack, Text, Title } from "@mantine/core";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
@@ -7,14 +8,18 @@ import { RatingConstantAnalysis } from "@/components/Scores/RatingConstantAnalys
 import useGame from "@/hooks/useGame.ts";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
-function BestsGroup({
+export function BestsGroup({
   title,
   subtitle,
   scores,
+  readOnly,
+  renderFooter,
 }: {
   title: string;
   subtitle: string;
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
+  readOnly?: boolean;
+  renderFooter?: (score: MaimaiScoreProps | ChunithmScoreProps) => ReactNode;
 }) {
   return (
     <Box>
@@ -23,7 +28,7 @@ function BestsGroup({
         {subtitle}
       </Text>
       {scores.length > 0 ? (
-        <ScoreList scores={scores} />
+        <ScoreList scores={scores} readOnly={readOnly} renderFooter={renderFooter} />
       ) : (
         <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title="暂无成绩" />
       )}
