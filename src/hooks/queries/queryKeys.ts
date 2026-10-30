@@ -76,4 +76,17 @@ export const queryKeys = {
       list: () => ["user/admin/notifications"] as const,
     },
   },
+  friends: {
+    list: () => ["user/friends"] as const,
+    relationship: (username: string) =>
+      [`user/friends/relationship?${new URLSearchParams({ username }).toString()}`] as const,
+    bests: (userId: number, game: Game) => [`user/friends/${userId}/${game}/bests`] as const,
+    recents: (userId: number, game: Game) => [`user/friends/${userId}/${game}/recents`] as const,
+    scores: (userId: number, game: Game) => [`user/friends/${userId}/${game}/scores`] as const,
+    ranking: (game: Game, params: URLSearchParams) =>
+      [`user/friends/${game}/score/ranking?${params.toString()}`] as const,
+    requestCounts: () => ["user/friend-requests/count"] as const,
+    requests: (params: URLSearchParams) => [`user/friend-requests?${params.toString()}`] as const,
+    blocks: (params: URLSearchParams) => [`user/blocks?${params.toString()}`] as const,
+  },
 } as const;

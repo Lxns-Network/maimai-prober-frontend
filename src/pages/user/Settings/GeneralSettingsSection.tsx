@@ -301,7 +301,7 @@ export const GeneralSettingsSection = () => {
       <Card withBorder radius="md" className={classes.card} mb="md">
         <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
         <Text fz="lg" fw={700}>
-          隐私设置
+          第三方访问
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
           将影响第三方开发者通过查分器 API 访问你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}
@@ -348,12 +348,20 @@ export const GeneralSettingsSection = () => {
           公开设置
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          控制是否公开展示你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」数据
+          控制是否公开展示你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}
+          」数据。好友始终可以查看你的基本资料和谱面成绩。
         </Text>
         <SettingList
           onChange={updateUserConfigHandler}
           value={config as SettingValue}
           data={[
+            {
+              key: "allow_public_profile",
+              title: "允许非好友查看基本资料",
+              description: "允许已登录的非好友查看你的游戏名片（不含谱面成绩）。",
+              optionType: "switch",
+              defaultValue: false,
+            },
             {
               key: "show_player_name_in_score_ranking",
               title: "在成绩排行榜中显示玩家名",

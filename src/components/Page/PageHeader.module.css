@@ -26,6 +26,32 @@
   }
 }
 
+/* 头像居中的页头里，返回箭头不占标题的位置。 */
+.header[data-centered] {
+  position: relative;
+}
+
+.backButton {
+  position: absolute;
+  top: var(--mantine-spacing-md);
+  left: 16px;
+}
+
+/* 带返回按钮的详情页头尽量保持单行；标题区放不下时操作区才换行，避免长名字把标题挤成窄条。 */
+.headerContent[data-compact] {
+  & .titleContainer {
+    width: auto;
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  & .actions {
+    width: auto;
+    margin-top: 0;
+    flex-shrink: 0;
+  }
+}
+
 .titleContainer {
   @mixin smaller-than $mantine-breakpoint-md {
     width: 100%;
@@ -35,8 +61,10 @@
 .actions {
   display: flex;
   align-items: center;
+  gap: var(--mantine-spacing-xs);
 
   @mixin smaller-than $mantine-breakpoint-md {
+    width: 100%;
     margin-top: var(--mantine-spacing-xs);
     justify-content: center;
   }
@@ -47,6 +75,7 @@
   margin-bottom: 5px;
   font-weight: 900;
   color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
+  overflow-wrap: anywhere;
 
   @mixin smaller-than $mantine-breakpoint-xs {
     font-size: 28px;

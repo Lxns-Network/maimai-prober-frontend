@@ -121,3 +121,18 @@ export const getScoreCardBackgroundColor = (game: string, level_index: number) =
 export const getTransparentColor = (color: string, opacity = 0.95) => {
   return color.replace(")", `, ${opacity})`).replace("rgb(", "rgba(");
 };
+
+/** 中二节奏角色框底图名，按角色等级分档。 */
+export const getChunithmCharacterColor = (level: number) => {
+  if (level >= 100) return "holographic";
+  if (level >= 50) return "rainbow";
+  if (level >= 25) return "platina";
+  if (level >= 15) return "gold";
+  if (level >= 10) return "silver";
+  if (level >= 5) return "copper";
+  return "normal";
+};
+
+/** 排行名次徽章颜色：前三名为金、银、铜，其余沿用默认主题色。 */
+export const getRankMedalColor = (rank: number) =>
+  rank === 1 ? "yellow" : rank === 2 ? "gray" : rank === 3 ? "orange" : undefined;
