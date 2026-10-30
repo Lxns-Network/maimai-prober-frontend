@@ -57,7 +57,7 @@ const GenerateTokenPaper = () => (
       <List.Item>
         该密钥对你查分器账号绑定的游戏数据拥有<Mark>完全访问权限</Mark>
       </List.Item>
-      <List.Item>该密钥无视查分器账号的隐私设置</List.Item>
+      <List.Item>该密钥不受「第三方访问」设置限制</List.Item>
       <List.Item>不要分享该密钥给不信任的第三方</List.Item>
       <List.Item>如果该密钥被泄露，请及时重新生成密钥</List.Item>
     </List>

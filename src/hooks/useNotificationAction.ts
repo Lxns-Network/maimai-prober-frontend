@@ -1,6 +1,6 @@
 import { navigate } from "vike/client/router";
 import useGame from "@/hooks/useGame.ts";
-import useScoreStore from "@/hooks/useScoreStore.ts";
+import { openScoreModal } from "@/components/Scores/openScoreModal";
 import { fetchAPI } from "@/utils/api/api.ts";
 import { openAlertModal } from "@/utils/modal.tsx";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
@@ -8,7 +8,6 @@ import { NotificationAction } from "@/types/notification";
 
 export function useNotificationAction() {
   const [, setGame] = useGame();
-  const openScoreModal = useScoreStore((state) => state.openModal);
 
   return async (action?: NotificationAction): Promise<void> => {
     if (!action) return;

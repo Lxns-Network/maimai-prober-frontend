@@ -7,6 +7,8 @@ import { queryKeys } from "./queryKeys.ts";
 interface RankingScoreProps {
   ranking: number;
   player_name?: string;
+  /** 只在当前用户自己的那一行出现。 */
+  is_self?: boolean;
   achievements?: number;
   dx_score?: number;
   score?: number;

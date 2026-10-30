@@ -14,7 +14,7 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame.ts";
-import useScoreStore from "@/hooks/useScoreStore.ts";
+import { openScoreModal } from "@/components/Scores/openScoreModal";
 
 interface SongDifficultyProps {
   song: MaimaiSongProps | ChunithmSongProps;
@@ -108,8 +108,6 @@ const maimaiDifficultyTypeData = [
 export const SongDifficultyList = ({ song, scores, setScores, style }: SongDifficultiesProps) => {
   const [game] = useGame();
   const [difficultyType, setDifficultyType] = useState<"standard" | "dx" | "utage">();
-
-  const { openModal: openScoreModal } = useScoreStore();
 
   const { difficulties, effectiveType } = useMemo<{
     difficulties: (MaimaiDifficultyProps | ChunithmDifficultyProps)[];

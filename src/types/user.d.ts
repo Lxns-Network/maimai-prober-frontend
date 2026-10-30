@@ -35,6 +35,7 @@ export interface ConfigProps {
   allow_third_party_fetch_scores?: boolean;
   allow_third_party_fetch_history?: boolean;
   allow_third_party_write_data?: boolean;
+  allow_public_profile?: boolean;
 }
 
 export interface PasskeyRegisterData {
