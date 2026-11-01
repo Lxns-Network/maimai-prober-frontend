@@ -3,6 +3,8 @@ import { Box, Card, Text } from "@mantine/core";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { IconDatabaseOff } from "@tabler/icons-react";
 import { RatingTrendControls, TrendQuickPreset } from "../RatingTrendControls.tsx";
+import dayjs from "dayjs";
+import { getTrendDateTicks, getTrendValueTicks, parseTrendDate } from "../ratingTrendScale.ts";
 import {
   Area,
   CartesianGrid,
@@ -23,19 +25,16 @@ export interface ChunithmRatingTrendProps {
   date: string | number;
 }
 
-const formatDateString = (dateVal: number | string | Date): string => {
-  const d = new Date(dateVal);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
+const CHART_HEIGHT = 260;
+
+const formatDateString = (dateVal: number | string | Date): string =>
+  dayjs(dateVal).format("YYYY-MM-DD");
 
 const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
   const formattedTrend = useMemo(() => {
     return trend.map((item) => ({
       ...item,
-      date: new Date(item.date).getTime(),
+      date: parseTrendDate(item.date),
     }));
   }, [trend]);
 
@@ -76,15 +75,15 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
     const start = new Date(end);
     start.setDate(start.getDate() - days + 1);
     setRangeLeft(start.setHours(0, 0, 0, 0));
-    setRangeRight(end.setHours(23, 59, 59, 999));
+    setRangeRight(end.setHours(0, 0, 0, 0));
     setPreset(nextPreset);
   };
 
   const handleDateRangeChange = (range: [string | null, string | null]) => {
     const [start, end] = range;
     if (start && end) {
-      const startTime = new Date(start).setHours(0, 0, 0, 0);
-      const endTime = new Date(end).setHours(23, 59, 59, 999);
+      const startTime = dayjs(start).startOf("day").valueOf();
+      const endTime = dayjs(end).startOf("day").valueOf();
       setRangeLeft(startTime);
       setRangeRight(endTime);
       setPreset("custom");
@@ -110,6 +109,24 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
       count: visibleData.length,
     };
   }, [visibleData]);
+
+  const xDomain = useMemo<[number, number]>(
+    () => [
+      rangeLeft === "dataMin" ? formattedTrend[0].date : rangeLeft,
+      rangeRight === "dataMax" ? formattedTrend[formattedTrend.length - 1].date : rangeRight,
+    ],
+    [formattedTrend, rangeLeft, rangeRight],
+  );
+  const xTicks = useMemo(() => getTrendDateTicks(...xDomain), [xDomain]);
+  const yTicks = useMemo(
+    () =>
+      getTrendValueTicks(
+        formattedTrend.map((item) => ({ date: item.date, value: item.rating })),
+        ...xDomain,
+        true,
+      ),
+    [formattedTrend, xDomain],
+  );
 
   const isZoomed = rangeLeft !== "dataMin" || rangeRight !== "dataMax";
 
@@ -158,7 +175,7 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
           isChunithm={true}
         />
       )}
-      <ResponsiveContainer width="100%" height={260}>
+      <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
         <ComposedChart
           data={formattedTrend}
           onMouseDown={(e) => {
@@ -174,7 +191,14 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
           onMouseUp={handleZoom}
         >
           <defs>
-            <linearGradient id="rating" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient
+              id="rating"
+              gradientUnits="userSpaceOnUse"
+              x1={0}
+              y1={0}
+              x2={0}
+              y2={CHART_HEIGHT}
+            >
               <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
               <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
             </linearGradient>
@@ -182,7 +206,8 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
           <XAxis
             dataKey="date"
             type="number"
-            domain={[rangeLeft, rangeRight]}
+            domain={xDomain}
+            ticks={xTicks}
             allowDataOverflow
             tickFormatter={(value) =>
               new Date(value).toLocaleDateString("zh-CN", {
@@ -194,11 +219,8 @@ const RatingTrendChart = ({ trend }: { trend: ChunithmRatingTrendProps[] }) => {
           />
           <YAxis
             width={40}
-            domain={([dataMin, dataMax]) => {
-              dataMin -= 0.01;
-              dataMax += 0.01;
-              return [Math.round(dataMin * 100) / 100, Math.round(dataMax * 100) / 100];
-            }}
+            domain={yTicks ? [yTicks[0], yTicks[yTicks.length - 1]] : ["auto", "auto"]}
+            ticks={yTicks}
             allowDataOverflow
             fontSize={14}
           />
