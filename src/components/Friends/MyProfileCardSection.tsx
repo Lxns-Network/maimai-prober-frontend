@@ -16,6 +16,7 @@ import { GAME_NAMES } from "./gameNames";
 import { UsernameCopy } from "./UsernameCopy";
 import { UserAvatar } from "./UserAvatar";
 import { useFileDialog } from "@mantine/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteUserAvatar, useUploadUserAvatar } from "@/hooks/mutations/useUserMutations";
 import { openAlertModal, openConfirmModal } from "@/utils/modal";
 import { getFriendErrorMessage } from "@/utils/api/friend";
@@ -35,13 +36,10 @@ const InviteCard = ({ username }: { username: string }) => (
   </Card>
 );
 
-/**
- * 好友视角下的自己：与好友详情共用同一张游戏内名片，
- * 下方补上这张名片说明不了的概览数据与成绩统计。
- */
 export const MyProfileCardSection = () => {
   const [game] = useGame();
   const { user, setData: setUser } = useUser();
+  const queryClient = useQueryClient();
   const { player, isLoading } = usePlayer(game);
   const { scores } = useScores(game);
 
@@ -49,6 +47,12 @@ export const MyProfileCardSection = () => {
   const invite = user?.name ? <InviteCard username={user.name} /> : null;
   const uploadAvatar = useUploadUserAvatar();
   const deleteAvatar = useDeleteUserAvatar();
+  const invalidateComments = () =>
+    void queryClient.invalidateQueries({
+      predicate: (query) =>
+        typeof query.queryKey[0] === "string" &&
+        /^user\/(maimai|chunithm)\/comment\/list\?/.test(query.queryKey[0]),
+    });
   const avatarDialog = useFileDialog({
     multiple: false,
     accept: "image/jpeg,image/png,image/webp",
@@ -58,6 +62,7 @@ export const MyProfileCardSection = () => {
       uploadAvatar.mutate(file, {
         onSuccess: (data) => {
           if (user) setUser({ ...user, avatar_url: data.avatar_url });
+          invalidateComments();
         },
         onError: (error) => openAlertModal("头像上传失败", getFriendErrorMessage(error)),
       });
@@ -70,6 +75,7 @@ export const MyProfileCardSection = () => {
       deleteAvatar.mutate(undefined, {
         onSuccess: () => {
           if (user) setUser({ ...user, avatar_url: undefined });
+          invalidateComments();
         },
         onError: (error) => openAlertModal("删除头像失败", getFriendErrorMessage(error)),
       }),

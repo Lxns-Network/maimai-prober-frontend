@@ -7,7 +7,6 @@ import { AddFriendModal } from "@/components/Friends/AddFriendModal";
 import { BlockedUsersModal } from "@/components/Friends/BlockedUsersModal";
 import { useFriendRequestCounts } from "@/hooks/queries/useFriends";
 
-/** 待处理申请是需要动作的信号，角标沿用侧栏未读通知的红色；好友总数不加角标。 */
 const PendingRequestsTabLabel = ({ count }: { count: number }) => (
   <Group gap="xs" wrap="nowrap">
     <span>好友申请</span>

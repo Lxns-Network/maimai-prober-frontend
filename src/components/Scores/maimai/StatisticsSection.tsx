@@ -118,7 +118,6 @@ const FullSyncStatistics = ({ scores }: { scores: MaimaiScoreProps[] }) => {
   );
 };
 
-/** `collapsible` 为假时不折叠，统计内容完整展开。 */
 export const MaimaiStatisticsSection = ({
   scores,
   collapsible = true,

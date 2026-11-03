@@ -9,7 +9,6 @@ interface SendFriendRequestCallbacks {
   onError?: (message: string) => void;
 }
 
-/** 按查分器用户名发送好友申请，成功时自带结果通知，失败时默认弹出通知。 */
 export const useSendFriendRequest = () => {
   const mutation = useCreateFriendRequest();
 

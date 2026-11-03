@@ -3,7 +3,6 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 
 type AnyScore = MaimaiScoreProps | ChunithmScoreProps;
 
-/** 同一张谱面的键；舞萌 DX 的标准谱与 DX 谱是不同谱面。 */
 export const chartKey = (score: AnyScore) =>
   `${score.id}:${"type" in score ? score.type : ""}:${score.level_index}`;
 
@@ -27,7 +26,6 @@ export const formatScoreValue = (score: AnyScore) =>
     ? `${score.achievements.toFixed(4)}%`
     : score.score.toLocaleString("en-US");
 
-/** 带正负号的差值；0 返回空字符串。 */
 export const formatScoreGap = (game: Game, gap: number) => {
   if (gap === 0) return "";
   const sign = gap > 0 ? "+" : "-";
@@ -47,17 +45,13 @@ export interface ScorePair<T extends AnyScore = AnyScore> {
 }
 
 export interface ScoreComparison<T extends AnyScore = AnyScore> {
-  /** 差距从大到小。 */
   ahead: ScorePair<T>[];
-  /** 落后最多的在前。 */
   behind: ScorePair<T>[];
   tied: ScorePair<T>[];
-  /** 对方玩过、当前账号未游玩的谱面，按单曲 Rating 从高到低。 */
   onlyTheirs: T[];
   onlyMineCount: number;
 }
 
-/** 按谱面配对双方成绩；忽略未游玩的占位成绩。 */
 export function compareScores<T extends AnyScore>(mine: T[], theirs: T[]): ScoreComparison<T> {
   const played = (score: T) => scoreValue(score) >= 0;
   const myIndex = indexByChart(mine.filter(played));

@@ -20,10 +20,6 @@ const notifyError = (fallback: string) => (err: unknown) =>
 
 const notifySuccess = (notice: Notice) => () => notifications.show({ ...notice, color: "green" });
 
-/**
- * 处理好友申请与黑名单的操作，好友申请列表、非好友档案页与黑名单弹窗共用。
- * 每个操作自带确认弹窗（如需要）与结果通知；`pending*` 为正在处理的申请或用户 ID。
- */
 export const useFriendRelationActions = () => {
   const acceptMutation = useAcceptFriendRequest();
   const rejectMutation = useRejectFriendRequest();

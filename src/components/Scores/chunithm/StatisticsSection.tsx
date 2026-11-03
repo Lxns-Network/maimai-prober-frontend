@@ -83,7 +83,6 @@ const FullComboStatistics = ({ scores }: { scores: ChunithmScoreProps[] }) => {
   );
 };
 
-/** `collapsible` 为假时不折叠，统计内容完整展开。 */
 export const ChunithmStatisticsSection = ({
   scores,
   collapsible = true,

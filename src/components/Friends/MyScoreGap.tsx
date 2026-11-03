@@ -3,7 +3,6 @@ import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { formatScoreGap, formatScoreValue, scoreGap } from "@/utils/scoreCompare";
 
-/** 好友成绩卡片下方的一行：本人在同一谱面的成绩与差距，正数表示本人领先。 */
 export const MyScoreGap = ({
   game,
   mine,

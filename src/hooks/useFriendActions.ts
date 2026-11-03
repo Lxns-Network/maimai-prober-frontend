@@ -16,10 +16,6 @@ interface FriendActionOptions {
 const notifyError = (title: string, fallback: string) => (err: unknown) =>
   notifications.show({ title, message: getFriendErrorMessage(err, fallback), color: "red" });
 
-/**
- * 好友卡片与好友详情共用的四个操作：备注、特别关注、删除、拉黑。
- * 每个 handler 自带确认弹窗与结果通知，不接收事件参数。
- */
 export const useFriendActions = (
   friend: Pick<FriendItem, "user_id" | "username" | "remark" | "is_favorite">,
   options?: FriendActionOptions,

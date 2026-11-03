@@ -18,14 +18,12 @@ import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
-/** 只声明名片实际渲染的字段，好友资料卡（无 friend_code / currency）也能直接复用这张名片。 */
 type ChunithmPlayerCardFields = Pick<
   ChunithmPlayerProps,
   "name" | "rating" | "level" | "reborn_count" | "character" | "over_power" | "over_power_progress"
 > & {
   trophy?: { name: string; color?: string };
   class_emblem?: { base: number; medal: number };
-  /** 金币只在本人资料里下发，好友资料没有这两项，缺省时不渲染。 */
   currency?: number;
   total_currency?: number;
 };

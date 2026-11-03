@@ -12,12 +12,10 @@ import { FriendItem } from "@/types/friend";
 
 interface FriendActionButtonsProps {
   friend: Pick<FriendItem, "user_id" | "username" | "remark" | "is_favorite">;
-  /** 好友卡片角落用的小号浅色按钮；默认是与输入框等高的描边按钮。 */
   compact?: boolean;
   onRemoved?: () => void;
 }
 
-/** 特别关注开关与好友操作菜单，好友卡片与好友资料页共用。 */
 export const FriendActionButtons = ({
   friend,
   compact = false,

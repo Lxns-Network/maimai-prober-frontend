@@ -100,7 +100,6 @@ export type FriendRelationshipStatus =
 
 export interface FriendRelationship {
   user_id: number;
-  /** 大小写以账号实际用户名为准。 */
   username: string;
   status: FriendRelationshipStatus;
   /** 仅 `outgoing` 与 `incoming` 携带，可直接用于撤回、同意或拒绝。 */

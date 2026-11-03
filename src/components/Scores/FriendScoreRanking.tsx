@@ -52,7 +52,6 @@ const valueOf = (row: RankingEntry) => row.achievements ?? row.score ?? 0;
 const hasPlayed = (score: AnyScore) =>
   ("achievements" in score ? score.achievements : score.score) >= 0;
 
-/** 单谱面的好友排行：把本人成绩并入好友成绩一起排序。 */
 export const FriendScoreRanking = ({
   game,
   score,

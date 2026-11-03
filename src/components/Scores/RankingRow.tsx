@@ -15,7 +15,6 @@ import { getRankMedalColor } from "@/utils/color.ts";
 const highlightBackground =
   "linear-gradient(var(--mantine-primary-color-light), var(--mantine-primary-color-light)), var(--mantine-color-body)";
 
-/** 达成率固定显示 4 位小数，整数部分放大；`value` 为空时不渲染。 */
 const AchievementsText = ({ value, size = 18 }: { value?: number; size?: number }) => {
   if (value === undefined) return null;
   const [integer, fraction = "0"] = String(value).split(".");
@@ -44,15 +43,11 @@ interface RankingRowProps
   name: ReactNode;
   achievements?: number;
   score?: number;
-  /** 名字之前的内容（如头像）。 */
   leading?: ReactNode;
-  /** 数值之后的内容（如展开箭头）。 */
   trailing?: ReactNode;
-  /** 以主题色底标出当前用户自己的一行。 */
   highlighted?: boolean;
 }
 
-/** 排行榜的一行：名次徽章 + 名字 + 达成率/分数，好友排行与全服排行共用同一视觉。 */
 export const RankingRow = ({
   rank,
   name,

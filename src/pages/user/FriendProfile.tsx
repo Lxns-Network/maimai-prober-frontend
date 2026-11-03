@@ -92,7 +92,6 @@ const SlotEmptyState = ({
   </EmptyState>
 );
 
-/** 名片本身与账号详情页共用，下方信息行补充这张名片表达不了的好友维度数据。 */
 const GameCard = ({ slot, friend }: { slot: ProfileSlot; friend: FriendRelationship }) => {
   const [game, setGame] = useGame();
   const gameName = GAME_NAMES[game];
@@ -167,7 +166,6 @@ const BestsGroups = ({
   ));
 };
 
-/** 只在开启对比后才加载本人的全部成绩。 */
 const ComparedBestsGroups = ({ bests }: { bests: FriendBests }) => {
   const [game] = useGame();
   const { scores: myScores } = useScores(game);
@@ -405,7 +403,6 @@ export default function FriendProfile() {
   const [game] = useGame();
   const accessible =
     !!profile && !error && profile.status !== "self" && profile.status !== "blocked";
-  // 当前游戏没有可见资料时只保留资料页说明原因，其余标签页没有内容可展示。
   const showFriendTabs = profile?.status === "friend" && profile.games[game].state === "visible";
   const profileContent = profile && <ProfileTab friend={profile} />;
 

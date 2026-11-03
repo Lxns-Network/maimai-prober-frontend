@@ -11,7 +11,6 @@ interface CompareRow {
   label: string;
   mine: React.ReactNode;
   theirs: React.ReactNode;
-  /** 差值文案，只在双方都有值且存在差异时给出。 */
   diff?: string;
 }
 
@@ -28,10 +27,6 @@ const musicIconOrDash = (game: Game, value?: string) =>
     </Text>
   );
 
-/**
- * 单谱面的双人对比：数据全部来自双方已有的这张谱面成绩，
- * 不额外请求，也不做任何胜负判定之外的推断。
- */
 export const FriendScoreCompare = ({
   game,
   mine,

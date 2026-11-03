@@ -10,7 +10,6 @@ interface QueryErrorStateProps {
   iconSize?: number;
 }
 
-/** 加载失败时代替空状态展示，避免把请求失败误显示成「暂无数据」。 */
 export function QueryErrorState({
   title = "加载失败",
   description,

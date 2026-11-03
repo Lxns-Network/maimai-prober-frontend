@@ -7,7 +7,6 @@ interface UsernameCopyProps {
   size?: "xs" | "sm";
 }
 
-/** 展示自己的用户名，并可复制用户名或好友链接；对方打开好友链接即可直接发送申请。 */
 export const UsernameCopy = ({ username, size = "sm" }: UsernameCopyProps) => (
   <Group gap={6} wrap="nowrap">
     <Text size={size} c="dimmed" style={{ flexShrink: 0 }}>

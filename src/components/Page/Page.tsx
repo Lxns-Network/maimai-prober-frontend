@@ -10,13 +10,10 @@ export interface PageProps {
     title: string;
     description: string;
   };
-  /** 紧跟标题的状态标记，例如「测试版」；不会写入文档标题。 */
   badge?: React.ReactNode;
   maxWidth?: number;
   backLink?: { to: string; label: string };
-  /** 页头右侧的常驻操作区，跨 tab 可用。 */
   actions?: React.ReactNode;
-  /** 身份图像。传入后页头改为头像、标题、操作区自上而下居中。 */
   avatar?: React.ReactNode;
   tabs?: {
     id: string;

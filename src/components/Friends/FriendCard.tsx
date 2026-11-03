@@ -36,7 +36,6 @@ import classes from "./Friends.module.css";
 
 dayjs.extend(relativeTime);
 
-/** 好友名片 DTO 与本人玩家资料共有的字段，本人卡片可以直接传入玩家资料。 */
 type MaimaiSummaryProfile = Pick<
   MaimaiProfileCard,
   "name" | "rating" | "course_rank" | "class_rank" | "star"
@@ -52,7 +51,6 @@ const TrophyLine = ({ trophy }: { trophy?: { name: string; color?: string } }) =
   return <TrophyBadge name={trophy.name} trophyColor={trophy.color ?? "normal"} miw={0} />;
 };
 
-/** 舞萌 DX 取头像，中二节奏取带等级底框的角色；没有资料时显示占位图标。 */
 export const GameAvatar = ({
   game,
   profile,
@@ -232,7 +230,6 @@ const RankBadge = ({ rank, filled = false }: { rank: number; filled?: boolean })
   </Badge>
 );
 
-/** 名字与用户名同行展示。备注可以很长，优先截断备注，保证用户名仍然可读。 */
 const CardIdentity = ({
   rank,
   rankFilled,
@@ -259,7 +256,6 @@ const CardIdentity = ({
 
 interface FriendCardProps {
   friend: FriendItem;
-  /** 按评分排序时的名次，1 起；未参与排名时省略。 */
   rank?: number;
 }
 
@@ -269,7 +265,6 @@ export const FriendCard = ({ friend, rank }: FriendCardProps) => {
   const slot = friend.games[game];
   const displayName = friend.remark || friend.username;
   const otherGame = otherGameOf(game);
-  // 当前游戏没有资料而另一个游戏有时，直接带着另一个游戏进入资料页。
   const detailPath =
     slot.state !== "visible" && friend.games[otherGame].state === "visible"
       ? profilePath(friend.username, otherGame)
@@ -301,7 +296,6 @@ export const FriendCard = ({ friend, rank }: FriendCardProps) => {
   );
 };
 
-/** 按评分排序时插入好友列表的本人卡片，不可点击。 */
 export const SelfRankCard = ({
   game,
   player,

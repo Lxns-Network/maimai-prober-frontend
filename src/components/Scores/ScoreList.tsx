@@ -88,9 +88,7 @@ interface ScoreListProps {
   scores: (MaimaiScoreProps | ChunithmScoreProps)[];
   onScoreChange?: (score: MaimaiScoreProps | ChunithmScoreProps) => void;
   cols?: SimpleGridProps["cols"];
-  /** 展示他人成绩时开启，成绩详情弹窗不提供针对当前账号的操作。 */
   readOnly?: boolean;
-  /** 渲染在每张成绩卡片下方的附加内容，例如与本人成绩的对比。 */
   renderFooter?: (score: MaimaiScoreProps | ChunithmScoreProps) => ReactNode;
 }
 

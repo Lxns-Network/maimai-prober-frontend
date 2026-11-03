@@ -1,12 +1,10 @@
 import { Game } from "@/types/game";
 
-/** 用户名会被 URL 编码；传入 `game` 时以 `?game=` 指定档案页初始展示的游戏，省略则沿用当前游戏。 */
 export const profilePath = (username: string, game?: Game) =>
   `/profile/${encodeURIComponent(username)}${game ? `?game=${game}` : ""}`;
 
 export const myProfilePath = (game: Game) => `/friends?tab=profile&game=${game}`;
 
-/** 可直接分享的完整好友链接，对方打开后能在档案页向该用户发送好友申请。 */
 export const profileUrl = (username: string) => `${window.location.origin}${profilePath(username)}`;
 
 /**

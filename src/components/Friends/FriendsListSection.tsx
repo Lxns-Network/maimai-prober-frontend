@@ -69,7 +69,6 @@ const getSortItems = (game: Game): { key: SortOption; name: string; icon: ReactN
   { key: "username_asc", name: "名称（A-Z）", icon: <IconSortAZ size={16} /> },
 ];
 
-/** 写进 URL 的列表状态，从资料页返回或刷新后据此恢复。 */
 const LIST_PARAMS = ["search", "favorite", "sort", "page"];
 
 interface ListState {
@@ -295,7 +294,6 @@ export const FriendsListSection = () => {
 
     return (
       <>
-        {/* 手机上首屏空间有限，只保留列表底部的分页。 */}
         {!small && (
           <ResponsivePagination
             total={totalPages}

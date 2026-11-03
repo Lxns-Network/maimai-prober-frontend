@@ -242,7 +242,6 @@ export const FriendRequests = () => {
         <Stack gap="sm">
           {currentQuery.requests.map((req) => (
             <Card key={req.id} withBorder radius="md" p="sm" className={profileClasses.card}>
-              {/* 收到的申请有三个操作，窄屏上并排会挤掉用户名，改为上下排列。 */}
               <Flex
                 direction={direction === "incoming" ? { base: "column", xs: "row" } : "row"}
                 align={direction === "incoming" ? { base: "stretch", xs: "center" } : "center"}
@@ -302,7 +301,6 @@ export const FriendRequests = () => {
         </Box>
       </Group>
 
-      {/* 列表有内容时用户名不是当前任务，发出的申请这一行还要显示待处理数量。 */}
       {(direction === "outgoing" ||
         (!currentQuery.isLoading && currentQuery.requests.length === 0)) && (
         <Group justify="space-between" gap="xs">
