@@ -31,13 +31,14 @@ import {
 } from "@/hooks/queries/useFriendScoreRanking.ts";
 import { useFriends } from "@/hooks/queries/useFriends.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
+import { useUser } from "@/hooks/queries/useUser.ts";
 import { useSongBests } from "@/hooks/queries/useSongBests.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { type OverlayLinkProps } from "@/hooks/useResumableOverlay";
 import { ASSET_URL } from "@/main";
 import { getFriendLoadErrorMessage } from "@/utils/api/friend.ts";
 import { chartKey } from "@/utils/scoreCompare.ts";
-import { myProfilePath, profilePath } from "@/utils/profile.ts";
+import { profilePath } from "@/utils/profile.ts";
 import { isTokenUndefined } from "@/utils/session.ts";
 
 interface RankingEntry extends FriendRankingScoreProps {
@@ -67,6 +68,7 @@ export const FriendScoreRanking = ({
   const { friends, isLoading: friendsLoading } = useFriends();
   const { friendScores, isLoading, error, refetch } = useFriendScoreRanking(game, score);
   const { player } = usePlayer(game);
+  const { user } = useUser();
   const songList = useSongListStore((state) => state[game]);
   const song = readOnly && score ? (songList.find(score.id) ?? null) : null;
   const { scores: mySongScores } = useSongBests(game, song);
@@ -170,7 +172,7 @@ export const FriendScoreRanking = ({
 
         const canCompare = !!myScore && !row.isSelf;
         const displayName = row.remark || row.username;
-        const profileUrl = row.isSelf ? myProfilePath(game) : profilePath(row.username, game);
+        const profileUrl = profilePath(row.isSelf ? (user?.name ?? "") : row.username, game);
 
         return (
           <Box key={`${row.user_id}:${row.username}`}>
@@ -184,7 +186,7 @@ export const FriendScoreRanking = ({
                   component="a"
                   {...profileLinkProps}
                   href={profileUrl}
-                  aria-label={row.isSelf ? "查看我的账号详情" : `查看 ${displayName} 的档案`}
+                  aria-label={row.isSelf ? "查看我的档案" : `查看 ${displayName} 的档案`}
                   src={avatarSrc}
                   size={28}
                   radius="sm"

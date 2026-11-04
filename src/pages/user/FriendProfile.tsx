@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import { Alert, Button, Card, DataList, Group, Skeleton, Stack, Switch, Text } from "@mantine/core";
 import {
   IconArrowBackUp,
@@ -7,6 +7,7 @@ import {
   IconEyeOff,
   IconInbox,
   IconInfoCircle,
+  IconPencil,
   IconSend,
   IconShieldOff,
   IconUserOff,
@@ -38,7 +39,6 @@ import { useScores } from "@/hooks/queries/useScores";
 import { BestsGroup } from "@/pages/user/Scores/bests/ScoreBestsSection";
 import { useFriendRelationship } from "@/hooks/queries/useFriends";
 import { useFriendBests, useFriendRecents, useFriendScores } from "@/hooks/queries/useFriendScores";
-import { myProfilePath } from "@/utils/profile";
 import { formatDateTime } from "@/utils/time";
 import { getFriendLoadErrorMessage } from "@/utils/api/friend";
 import { APIError } from "@/utils/errors";
@@ -203,14 +203,18 @@ const BestsTab = ({ friend }: { friend: FriendRelationship }) => {
 
   return (
     <Stack gap="lg">
-      {player && (
+      {player && friend.status !== "self" && (
         <Switch
           label="在每张谱面下显示我的成绩"
           checked={compare}
           onChange={(event) => setCompare(event.currentTarget.checked)}
         />
       )}
-      {compare && player ? <ComparedBestsGroups bests={bests} /> : <BestsGroups bests={bests} />}
+      {compare && player && friend.status !== "self" ? (
+        <ComparedBestsGroups bests={bests} />
+      ) : (
+        <BestsGroups bests={bests} />
+      )}
     </Stack>
   );
 };
@@ -310,9 +314,9 @@ const ProfileTab = ({ friend }: { friend: FriendRelationship }) => {
         </Alert>
       )}
       <GameCard slot={slot} friend={friend} />
-      {friend.status === "friend" && slot.state === "visible" && slot.profile && (
-        <StatisticsTab friend={friend} />
-      )}
+      {(friend.status === "friend" || friend.status === "self") &&
+        slot.state === "visible" &&
+        slot.profile && <StatisticsTab friend={friend} />}
     </Stack>
   );
 };
@@ -338,7 +342,17 @@ const ProfileActions = ({ profile }: { profile: FriendRelationship }) => {
   const { username, request_id: requestId } = profile;
 
   if (profile.status === "friend") return <FriendActionButtons friend={profile} />;
-  if (profile.status === "self") return null;
+  if (profile.status === "self") {
+    return (
+      <Button
+        variant="default"
+        leftSection={<IconPencil size={16} />}
+        onClick={() => void navigate("/user/profile")}
+      >
+        编辑资料
+      </Button>
+    );
+  }
   if (profile.status === "incoming" && requestId) {
     return (
       <Group gap="xs">
@@ -401,16 +415,11 @@ export default function FriendProfile() {
   const { relationship: profile, isLoading, error, refetch } = useFriendRelationship(username);
   const listSearch = useFriendStore((state) => state.listSearch);
   const [game] = useGame();
-  const accessible =
-    !!profile && !error && profile.status !== "self" && profile.status !== "blocked";
-  const showFriendTabs = profile?.status === "friend" && profile.games[game].state === "visible";
+  const isSelf = profile?.status === "self";
+  const accessible = !!profile && !error && profile.status !== "blocked";
+  const showFriendTabs =
+    (profile?.status === "friend" || isSelf) && profile?.games[game].state === "visible";
   const profileContent = profile && <ProfileTab friend={profile} />;
-
-  useEffect(() => {
-    if (!error && profile?.status === "self") {
-      void navigate(myProfilePath(game), { overwriteLastHistoryEntry: true });
-    }
-  }, [profile?.status, error, game]);
 
   const fallback = () => {
     if (!username) return <EmptyState title="链接中缺少用户名" />;
@@ -425,7 +434,6 @@ export default function FriendProfile() {
           onRetry={() => void refetch()}
         />
       );
-    if (profile.status === "self") return <LoadingBlock />;
     return (
       <EmptyState
         icon={<IconEyeOff size={64} stroke={1.5} />}
@@ -441,13 +449,17 @@ export default function FriendProfile() {
         title: isLoading ? "用户档案" : profile?.remark || profile?.username || username,
         description: profile?.remark ? `@${profile.username}` : "用户档案",
       }}
-      backLink={{
-        to: `/friends${listSearch || "?tab=friends"}`,
-        label:
-          new URLSearchParams(listSearch).get("tab") === "requests"
-            ? "返回好友申请"
-            : "返回好友列表",
-      }}
+      backLink={
+        isSelf
+          ? undefined
+          : {
+              to: `/friends${listSearch || "?tab=friends"}`,
+              label:
+                new URLSearchParams(listSearch).get("tab") === "requests"
+                  ? "返回好友申请"
+                  : "返回好友列表",
+            }
+      }
       actions={profile && !error ? <ProfileActions profile={profile} /> : undefined}
       avatar={
         isLoading ? (
@@ -470,11 +482,15 @@ export default function FriendProfile() {
                 name: "最近游玩",
                 children: <RecentsTab key={game} friend={profile} />,
               },
-              {
-                id: "compare",
-                name: "好友 VS",
-                children: <CompareTab key={game} friend={profile} />,
-              },
+              ...(isSelf
+                ? []
+                : [
+                    {
+                      id: "compare",
+                      name: "好友 VS",
+                      children: <CompareTab key={game} friend={profile} />,
+                    },
+                  ]),
             ]
           : undefined
       }
