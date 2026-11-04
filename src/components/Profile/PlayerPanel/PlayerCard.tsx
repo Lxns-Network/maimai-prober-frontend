@@ -14,7 +14,7 @@ export const PlayerCard = ({
 }: {
   player: PlayerCardFields;
   onClick?: () => void;
-  children: ReactNode;
+  children?: ReactNode;
 }) => {
   const { width } = useViewportSize();
   const content = <PlayerContent player={player} editable={false} />;
@@ -33,10 +33,14 @@ export const PlayerCard = ({
           <div className={classes.playerButton}>{content}</div>
         )}
       </ScrollArea>
-      <Divider />
-      <div className={classes.section}>
-        <DataList size="xs">{children}</DataList>
-      </div>
+      {children && (
+        <>
+          <Divider />
+          <div className={classes.section}>
+            <DataList size="xs">{children}</DataList>
+          </div>
+        </>
+      )}
     </Card>
   );
 };

@@ -1,5 +1,5 @@
-import { Box, Button, Card, DataList, Group, Stack, Text } from "@mantine/core";
-import { IconLink, IconPhoto, IconTrash, IconUserOff } from "@tabler/icons-react";
+import { Box, Button, Card, Group, Stack, Text } from "@mantine/core";
+import { IconPhoto, IconTrash, IconUserOff } from "@tabler/icons-react";
 import { PlayerCard } from "@/components/Profile/PlayerPanel/PlayerCard";
 import { PlayerPanelSkeleton } from "@/components/Profile/PlayerPanel/Skeleton";
 import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSection";
@@ -11,30 +11,13 @@ import { useScores } from "@/hooks/queries/useScores";
 import { useUser } from "@/hooks/queries/useUser";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useGame from "@/hooks/useGame";
-import { formatDateTime } from "@/utils/time";
 import { GAME_NAMES } from "./gameNames";
-import { UsernameCopy } from "./UsernameCopy";
 import { UserAvatar } from "./UserAvatar";
 import { useFileDialog } from "@mantine/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteUserAvatar, useUploadUserAvatar } from "@/hooks/mutations/useUserMutations";
 import { openAlertModal, openConfirmModal } from "@/utils/modal";
 import { getFriendErrorMessage } from "@/utils/api/friend";
-
-const InviteCard = ({ username }: { username: string }) => (
-  <Card className={profileClasses.card} withBorder radius="md" p="md">
-    <Group gap={8} wrap="nowrap" mb={4}>
-      <IconLink size={18} />
-      <Text fw={600} size="sm">
-        邀请好友
-      </Text>
-    </Group>
-    <Text size="xs" c="dimmed" mb="sm">
-      分享好友链接，对方登录后打开即可向你发送申请。
-    </Text>
-    <UsernameCopy username={username} />
-  </Card>
-);
 
 export const MyProfileCardSection = () => {
   const [game] = useGame();
@@ -44,7 +27,6 @@ export const MyProfileCardSection = () => {
   const { scores } = useScores(game);
 
   const gameName = GAME_NAMES[game];
-  const invite = user?.name ? <InviteCard username={user.name} /> : null;
   const uploadAvatar = useUploadUserAvatar();
   const deleteAvatar = useDeleteUserAvatar();
   const invalidateComments = () =>
@@ -140,7 +122,6 @@ export const MyProfileCardSection = () => {
             description="绑定并同步游戏数据后即可展示名片"
           />
         </Card>
-        {invite}
       </Stack>
     );
   }
@@ -148,14 +129,7 @@ export const MyProfileCardSection = () => {
   return (
     <Stack gap="md">
       {avatarCard}
-      <PlayerCard player={player}>
-        <DataList.Item>
-          <DataList.ItemLabel>上次同步时间</DataList.ItemLabel>
-          <DataList.ItemValue>
-            <Text fz="sm">{formatDateTime(player.upload_time)}</Text>
-          </DataList.ItemValue>
-        </DataList.Item>
-      </PlayerCard>
+      <PlayerCard player={player} />
 
       {scores.length > 0 &&
         (game === "maimai" ? (
@@ -171,8 +145,6 @@ export const MyProfileCardSection = () => {
             className={profileClasses.card}
           />
         ))}
-
-      {invite}
     </Stack>
   );
 };
