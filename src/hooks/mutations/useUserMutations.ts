@@ -15,6 +15,8 @@ import {
   deleteUser,
   sendEmailVerification,
   confirmEmailVerification,
+  uploadUserAvatar,
+  deleteUserAvatar,
 } from "@/utils/api/user.ts";
 import type { EmailVerificationSendResponse } from "@/types/user";
 
@@ -44,6 +46,21 @@ export const useUpdateUserProfile = (options?: UseMutationOptions<unknown, Error
     ...options,
   });
 };
+
+export const useUploadUserAvatar = (
+  options?: UseMutationOptions<{ avatar_url: string }, Error, File>,
+) =>
+  useMutation({
+    mutationFn: async (file: File) =>
+      parseAPIResponse<{ avatar_url: string }>(await uploadUserAvatar(file)),
+    ...options,
+  });
+
+export const useDeleteUserAvatar = (options?: UseMutationOptions<unknown, Error, void>) =>
+  useMutation({
+    mutationFn: async () => parseAPIResponse(await deleteUserAvatar()),
+    ...options,
+  });
 
 export const useUpdateUserBind = (options?: UseMutationOptions<unknown, Error, object>) => {
   return useMutation({

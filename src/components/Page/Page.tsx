@@ -10,14 +10,17 @@ export interface PageProps {
     title: string;
     description: string;
   };
+  badge?: React.ReactNode;
   maxWidth?: number;
+  backLink?: { to: string; label: string };
+  actions?: React.ReactNode;
+  avatar?: React.ReactNode;
   tabs?: {
     id: string;
-    name: string;
+    name: React.ReactNode;
     children: React.ReactNode;
   }[];
   children?: React.ReactNode;
-  actions?: React.ReactNode;
 }
 
 export const Page = (props: PageProps) => {

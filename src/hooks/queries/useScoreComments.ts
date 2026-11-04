@@ -13,6 +13,7 @@ export interface Comment {
     id: number;
     name: string;
     avatar_id?: number;
+    avatar_url?: string;
   };
 }
 

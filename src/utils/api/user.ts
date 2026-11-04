@@ -1,4 +1,4 @@
-import { fetchAPI } from "./api.ts";
+import { fetchAPI, uploadFile } from "./api.ts";
 import type {
   PasskeyRegisterData,
   PasskeyAuthenticateData,
@@ -53,6 +53,14 @@ export async function editUserPassword(data: object): Promise<Response> {
 
 export async function deleteSelfUser(): Promise<Response> {
   return fetchAPI("user", { method: "DELETE" });
+}
+
+export async function uploadUserAvatar(file: File): Promise<Response> {
+  return uploadFile("user/avatar", file);
+}
+
+export async function deleteUserAvatar(): Promise<Response> {
+  return fetchAPI("user/avatar", { method: "DELETE" });
 }
 
 export async function getUsers(): Promise<Response> {

@@ -6,6 +6,8 @@ import {
   IconHeart,
   IconRocket,
   IconTool,
+  IconUserCheck,
+  IconUserPlus,
 } from "@tabler/icons-react";
 
 const TYPE_ICONS: Record<string, typeof IconBell> = {
@@ -19,6 +21,8 @@ const TYPE_ICONS: Record<string, typeof IconBell> = {
   developer_rejected: IconCode,
   alias_approved: IconGavel,
   comment_liked: IconHeart,
+  friend_request_accepted: IconUserCheck,
+  friend_request_received: IconUserPlus,
 };
 
 export function getNotificationTypeIcon(type: string) {

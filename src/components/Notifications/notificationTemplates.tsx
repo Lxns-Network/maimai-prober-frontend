@@ -2,6 +2,7 @@ import { Fragment, ReactNode } from "react";
 import { Typography } from "@mantine/core";
 import { Game } from "@/types/game";
 import { NotificationAction, NotificationProps } from "@/types/notification";
+import { profilePath } from "@/utils/profile.ts";
 import { NotificationContent } from "./NotificationContent.tsx";
 
 export interface NotificationDisplay {
@@ -89,6 +90,27 @@ const templates: Record<string, NotificationTemplate> = {
         : data.song_id != null
           ? { type: "song", game: data.game as Game, song_id: Number(data.song_id) }
           : undefined,
+  }),
+  friend_request_accepted: (data) => {
+    const username = String(data.username ?? "");
+    return {
+      title: "好友申请已通过",
+      body: (
+        <p>
+          <strong>{username}</strong> 同意了你的好友申请，现在可以查看 TA 的档案了。
+        </p>
+      ),
+      action: username ? { type: "link", url: profilePath(username) } : undefined,
+    };
+  },
+  friend_request_received: (data) => ({
+    title: "收到好友申请",
+    body: (
+      <p>
+        <strong>{String(data.username ?? "")}</strong> 向你发送了好友申请。
+      </p>
+    ),
+    action: { type: "link", url: "/friends?tab=requests" },
   }),
 };
 

@@ -17,8 +17,15 @@ import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
+type MaimaiPlayerCardFields = Pick<
+  MaimaiPlayerProps,
+  "name" | "rating" | "course_rank" | "class_rank" | "star" | "icon"
+> & {
+  trophy?: { name: string; color?: string };
+};
+
 interface PlayerContentProps {
-  player: MaimaiPlayerProps;
+  player: MaimaiPlayerCardFields;
   onCollectionEdit?: (collectionType: Collection, defaultValue: number) => void;
   editable: boolean;
 }

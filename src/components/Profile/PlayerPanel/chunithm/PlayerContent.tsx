@@ -12,32 +12,24 @@ import {
   Box,
 } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
-import { getRatingGradient } from "@/utils/color.ts";
+import { getChunithmCharacterColor, getRatingGradient } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main";
 import { TrophyBadge } from "@/components/TrophyBadge.tsx";
 import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
-function getChunithmCharacterColor(level: number) {
-  if (level >= 100) {
-    return "holographic";
-  } else if (level >= 50) {
-    return "rainbow";
-  } else if (level >= 25) {
-    return "platina";
-  } else if (level >= 15) {
-    return "gold";
-  } else if (level >= 10) {
-    return "silver";
-  } else if (level >= 5) {
-    return "copper";
-  } else {
-    return "normal";
-  }
-}
+type ChunithmPlayerCardFields = Pick<
+  ChunithmPlayerProps,
+  "name" | "rating" | "level" | "reborn_count" | "character" | "over_power" | "over_power_progress"
+> & {
+  trophy?: { name: string; color?: string };
+  class_emblem?: { base: number; medal: number };
+  currency?: number;
+  total_currency?: number;
+};
 
 interface PlayerContentProps {
-  player: ChunithmPlayerProps;
+  player: ChunithmPlayerCardFields;
   onCollectionEdit?: (collectionType: Collection, defaultValue: number) => void;
   editable: boolean;
 }
@@ -71,7 +63,7 @@ export const ChunithmPlayerContent = ({
       <Box pr="md">
         <Flex gap="xs" mb={8}>
           {player.trophy && (
-            <TrophyBadge name={player.trophy.name} trophyColor={player.trophy.color} />
+            <TrophyBadge name={player.trophy.name} trophyColor={player.trophy.color || "normal"} />
           )}
           <Badge
             variant="gradient"
@@ -110,7 +102,7 @@ export const ChunithmPlayerContent = ({
               {player.level}
             </Text>
           </Text>
-          {player.class_emblem.base + player.class_emblem.medal !== 0 && (
+          {player.class_emblem && player.class_emblem.base + player.class_emblem.medal !== 0 && (
             <Flex
               align="center"
               justify="center"
@@ -148,22 +140,26 @@ export const ChunithmPlayerContent = ({
               </Text>
             </Text>
           </div>
-          <div>
-            <Text fz="xs" c="dimmed" lineClamp={1}>
-              所持金币
-            </Text>
-            <Text fz="sm">
-              <NumberFormatter value={player.currency || 0} thousandSeparator />
-            </Text>
-          </div>
-          <div>
-            <Text fz="xs" c="dimmed" lineClamp={1}>
-              全部金币
-            </Text>
-            <Text fz="sm">
-              <NumberFormatter value={player.total_currency || 0} thousandSeparator />
-            </Text>
-          </div>
+          {player.currency !== undefined && (
+            <div>
+              <Text fz="xs" c="dimmed" lineClamp={1}>
+                所持金币
+              </Text>
+              <Text fz="sm">
+                <NumberFormatter value={player.currency} thousandSeparator />
+              </Text>
+            </div>
+          )}
+          {player.total_currency !== undefined && (
+            <div>
+              <Text fz="xs" c="dimmed" lineClamp={1}>
+                全部金币
+              </Text>
+              <Text fz="sm">
+                <NumberFormatter value={player.total_currency} thousandSeparator />
+              </Text>
+            </div>
+          )}
         </Group>
       </Box>
     </Group>
