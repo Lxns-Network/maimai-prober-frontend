@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { Box, Container, Divider, ScrollArea } from "@mantine/core";
 import { NavbarButton } from "./NavbarButton";
+import { NavbarUserMenu } from "./NavbarUserMenu";
 import { checkPermission, UserPermission } from "@/utils/session.ts";
-import { useLogoutUser } from "@/hooks/mutations/useUserMutations.ts";
 import {
   IconAward,
   IconBell,
@@ -14,12 +14,10 @@ import {
   IconGavel,
   IconHelp,
   IconHome,
-  IconLogout,
   IconMusic,
   IconSettings2,
   IconTable,
   IconTransferIn,
-  IconUserCircle,
   IconUsers,
 } from "@tabler/icons-react";
 import classes from "./Navbar.module.css";
@@ -34,7 +32,6 @@ interface NavbarProps {
 export default function Navbar({ style, onClose }: NavbarProps) {
   const { urlPathname } = usePageContext();
   const isLoggedOut = typeof window !== "undefined" ? !localStorage.getItem("token") : true;
-  const { mutate: mutateLogout } = useLogoutUser();
   const unreadCount = useUnreadCount();
   const { incoming: pendingFriendRequests } = useFriendRequestCounts();
 
@@ -49,12 +46,6 @@ export default function Navbar({ style, onClose }: NavbarProps) {
         enabled: !isLoggedOut,
       },
       {
-        label: "账号详情",
-        icon: <IconUserCircle stroke={1.5} />,
-        to: "/user/profile",
-        enabled: !isLoggedOut,
-      },
-      {
         label: "成绩管理",
         icon: <IconChartBar stroke={1.5} />,
         to: "/user/scores",
@@ -64,12 +55,6 @@ export default function Navbar({ style, onClose }: NavbarProps) {
         label: "好友",
         icon: <IconUsers stroke={1.5} />,
         to: "/friends",
-        enabled: !isLoggedOut,
-      },
-      {
-        label: "账号设置",
-        icon: <IconSettings2 stroke={1.5} />,
-        to: "/user/settings",
         enabled: !isLoggedOut,
       },
       { label: "曲目查询", icon: <IconMusic stroke={1.5} />, to: "/songs", enabled: true },
@@ -167,20 +152,9 @@ export default function Navbar({ style, onClose }: NavbarProps) {
             onClose={onClose}
           />
           {!isLoggedOut && (
-            <NavbarButton
-              label="登出"
-              icon={<IconLogout stroke={1.5} />}
-              to="/"
+            <NavbarUserMenu
+              active={urlPathname === "/user/profile" || urlPathname.startsWith("/user/settings")}
               onClose={onClose}
-              onClick={() => {
-                mutateLogout(undefined, {
-                  // 服务端登出失败也要清掉本地会话：登出不能因刷新或网络故障而失效。
-                  onSettled: () => {
-                    localStorage.removeItem("token");
-                    window.location.href = "/";
-                  },
-                });
-              }}
             />
           )}
         </Container>
