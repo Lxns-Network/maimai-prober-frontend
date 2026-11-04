@@ -15,12 +15,14 @@ import {
 } from "@mantine/core";
 import {
   IconArrowBackUp,
+  IconCalendar,
   IconCheck,
   IconDotsVertical,
   IconInbox,
   IconMailForward,
   IconSend,
   IconShield,
+  IconUser,
   IconX,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
@@ -79,30 +81,42 @@ const RequestIdentity = ({ request }: { request: FriendRequestItem }) => {
   const username = request.user.username;
 
   return (
-    <Group gap="sm" wrap="nowrap" flex={1} miw={0}>
-      <GameAvatar game={game} profile={profile} size={44} />
-      <Box miw={0}>
+    <Group gap="md" wrap="nowrap" flex={1} miw={0}>
+      <GameAvatar game={game} profile={profile} size={40} radius="sm" />
+      <Box flex={1} miw={0}>
         <Group gap={6} wrap="nowrap">
           <Anchor
             component={Link}
             to={profilePath(username, game)}
             onClick={() => setListSearch("?tab=requests")}
-            fw={600}
-            size="sm"
+            fw={500}
+            size="md"
             c="inherit"
             underline="hover"
             truncate="end"
-            title={username}
+            title={profile?.name ?? username}
             miw={0}
           >
-            {username}
+            {profile?.name ?? username}
           </Anchor>
           {profile && <RatingBadge game={game} rating={profile.rating} />}
         </Group>
-        <Text size="xs" c="dimmed" truncate="end">
-          {profile ? `${profile.name} · ` : ""}
-          <span title={time.format("YYYY-MM-DD HH:mm")}>{time.locale("zh-cn").fromNow()}</span>
-        </Text>
+        <Flex wrap="wrap" columnGap="md" rowGap={2} mt={2}>
+          {profile && (
+            <Group gap={4} wrap="nowrap" miw={0}>
+              <IconUser size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
+              <Text size="xs" c="dimmed" truncate="end">
+                {username}
+              </Text>
+            </Group>
+          )}
+          <Group gap={4} wrap="nowrap">
+            <IconCalendar size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
+            <Text size="xs" c="dimmed" title={time.format("YYYY-MM-DD HH:mm")}>
+              {time.locale("zh-cn").fromNow()}
+            </Text>
+          </Group>
+        </Flex>
       </Box>
     </Group>
   );
@@ -241,7 +255,7 @@ export const FriendRequests = () => {
       <Stack gap="xs">
         <Stack gap="sm">
           {currentQuery.requests.map((req) => (
-            <Card key={req.id} withBorder radius="md" p="sm" className={profileClasses.card}>
+            <Card key={req.id} withBorder radius="md" p="xs" className={profileClasses.card}>
               <Flex
                 direction={direction === "incoming" ? { base: "column", xs: "row" } : "row"}
                 align={direction === "incoming" ? { base: "stretch", xs: "center" } : "center"}

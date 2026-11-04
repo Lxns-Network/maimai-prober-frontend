@@ -24,7 +24,7 @@ import {
   IconSortDescending,
   IconStar,
   IconStarFilled,
-  IconUsersGroup,
+  IconAddressBookOff,
 } from "@tabler/icons-react";
 import { useMediaQuery, useReducedMotion } from "@mantine/hooks";
 import { EmptyState } from "@/components/EmptyState";
@@ -277,9 +277,8 @@ export const FriendsListSection = () => {
     if (entries.length === 0) {
       return (
         <EmptyState
-          icon={<IconUsersGroup size={64} stroke={1.5} />}
+          icon={<IconAddressBookOff size={64} stroke={1.5} />}
           title={filtering ? "没有找到匹配的好友" : "暂无好友"}
-          description={filtering ? undefined : "添加好友后即可互看名片与对比成绩"}
         >
           {filtering ? (
             <Group mt="md">
