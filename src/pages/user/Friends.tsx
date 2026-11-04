@@ -1,7 +1,6 @@
 import { Badge, Group } from "@mantine/core";
 import { Page } from "@/components/Page/Page";
 import { FriendsListSection } from "@/components/Friends/FriendsListSection";
-import { MyProfileCardSection } from "@/components/Friends/MyProfileCardSection";
 import { FriendRequests } from "@/components/Friends/FriendRequests";
 import { AddFriendModal } from "@/components/Friends/AddFriendModal";
 import { BlockedUsersModal } from "@/components/Friends/BlockedUsersModal";
@@ -34,11 +33,6 @@ export default function Friends() {
             id: "friends",
             name: "我的好友",
             children: <FriendsListSection />,
-          },
-          {
-            id: "profile",
-            name: "我的名片",
-            children: <MyProfileCardSection />,
           },
           {
             id: "requests",

@@ -1,26 +1,35 @@
-import { Alert, Badge, Button, Card, Group, Switch, Text, TextInput } from "@mantine/core";
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  Group,
+  LoadingOverlay,
+  Switch,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { Icon } from "@/components/MdiIcon";
-import { mdiEye, mdiEyeOff, mdiWebOff } from "@mdi/js";
+import { mdiEye, mdiEyeOff } from "@mdi/js";
 import { useDisclosure } from "@mantine/hooks";
 import { TransformedValues, useForm } from "@mantine/form";
-import { validateEmail, validateUserName } from "@/utils/validator";
-import { useUpdateUserProfile } from "@/hooks/mutations/useUserMutations.ts";
-import classes from "./Profile.module.css";
-import { openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
+import { validateEmail } from "@/utils/validator";
+import { useUpdateUserProfile } from "@/hooks/mutations/useUserMutations.ts";
+import { openRetryModal } from "@/utils/modal.tsx";
 import { useUser } from "@/hooks/queries/useUser.ts";
 import { useEmailVerificationFlow } from "@/hooks/useEmailVerificationFlow.ts";
+import classes from "./Settings.module.css";
 
 interface FormValues {
-  name: string;
   email: string;
 }
 
-export const UserSection = () => {
-  const { user, invalidate } = useUser();
+export const EmailSettings = () => {
+  const { user, isLoading, invalidate } = useUser();
   const [visible, visibleHandler] = useDisclosure(false);
 
-  const { mutate: mutateUpdateProfile } = useUpdateUserProfile();
+  const { mutate: mutateUpdateProfile, isPending } = useUpdateUserProfile();
   const {
     verificationSent,
     sendVerification: sendEmailVerificationHandler,
@@ -37,95 +46,74 @@ export const UserSection = () => {
 
   const form = useForm<FormValues>({
     initialValues: {
-      name: "",
       email: "",
     },
 
     validate: {
-      name: (value) => validateUserName(value, { allowEmpty: true }),
-      email: (value) => validateEmail(value, { allowEmpty: true }),
+      email: (value) => validateEmail(value, { allowEmpty: false }),
     },
   });
 
-  if (!user) {
-    return (
-      <Alert
-        radius="md"
-        icon={<Icon path={mdiWebOff} />}
-        title="没有获取到查分器账号数据"
-        color="red"
-      >
-        <Text size="sm">可能是网络连接已断开，请检查你的网络连接是否正常。</Text>
-      </Alert>
-    );
-  }
-
-  const updateUserProfileHandler = (values: TransformedValues<typeof form>) => {
+  const updateEmailHandler = (values: TransformedValues<typeof form>) => {
     mutateUpdateProfile(values, {
       onSuccess: () => {
         notifications.show({
-          title: "保存成功",
-          message: "你的账号详情保存成功。",
+          title: "修改成功",
+          message: "你的邮箱已更新。",
           color: "green",
         });
-        // 只有真的换绑了邮箱才作废"验证邮件已发送"状态；只改用户名不该打断等待中的验证。
-        if (values.email) {
-          resetVerificationSent();
-        }
+        resetVerificationSent();
+        form.reset();
         void invalidate();
       },
       onError: (error) => {
-        openRetryModal("保存失败", `${error}`, () => updateUserProfileHandler(values));
-      },
-      onSettled: () => {
-        form.reset();
+        openRetryModal("修改失败", `${error}`, () => updateEmailHandler(values));
       },
     });
   };
 
+  const email = user?.email ?? "";
+
   return (
-    <Card withBorder radius="md" className={classes.card}>
+    <Card withBorder radius="md" className={classes.card} mb="md">
+      <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} zIndex={1} />
       <Group justify="space-between" wrap="nowrap" gap="xl" align="center" mb="md">
-        <div>
+        <Box>
           <Text fz="lg" fw={700}>
-            我的账号详情
+            邮箱管理
           </Text>
           <Text fz="xs" c="dimmed" mt={3}>
-            查看你的查分器账号的详情
+            修改或验证你的查分器账号邮箱
           </Text>
-        </div>
+        </Box>
         <Switch
           size="lg"
-          value={visible ? "visible" : "hidden"}
-          onClick={visibleHandler.toggle}
+          aria-label={visible ? "隐藏邮箱" : "显示邮箱"}
+          checked={visible}
+          onChange={visibleHandler.toggle}
           onLabel={<Icon path={mdiEye} size={0.8} />}
           offLabel={<Icon path={mdiEyeOff} size={0.8} />}
         />
       </Group>
-      <form onSubmit={form.onSubmit(updateUserProfileHandler)}>
-        <TextInput
-          label="用户名"
-          variant="filled"
-          mb={5}
-          placeholder={visible ? user.name : user.name.replace(/./g, "•")}
-          {...form.getInputProps("name")}
-        />
+      <form onSubmit={form.onSubmit(updateEmailHandler)}>
         <TextInput
           label={
             <Group gap={6}>
               <Text component="span" size="sm" fw={500}>
                 邮箱
               </Text>
-              <Badge color={user.email_verified ? "green" : "gray"} variant="light" size="xs">
-                {user.email_verified ? "已验证" : "未验证"}
-              </Badge>
+              {user && (
+                <Badge color={user.email_verified ? "green" : "gray"} variant="light" size="xs">
+                  {user.email_verified ? "已验证" : "未验证"}
+                </Badge>
+              )}
             </Group>
           }
           variant="filled"
-          placeholder={visible ? user.email : user.email.replace(/./g, "•")}
+          placeholder={visible ? email : email.replace(/./g, "•")}
           {...form.getInputProps("email")}
         />
-        {!user.email_verified && (
+        {user && !user.email_verified && (
           <Group gap={0} mt={4}>
             <Text size="xs" c="dimmed">
               {form.values.email
@@ -163,7 +151,7 @@ export const UserSection = () => {
           </Group>
         )}
         <Group justify="flex-end" mt="md">
-          <Button type="submit" disabled={!form.isDirty()}>
+          <Button type="submit" loading={isPending} disabled={!form.isDirty()}>
             保存
           </Button>
         </Group>

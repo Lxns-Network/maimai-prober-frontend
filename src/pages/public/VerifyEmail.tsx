@@ -23,14 +23,14 @@ export default function VerifyEmail() {
   } | null>(null);
   const [state, setState] = useState<VerificationState>(token ? "verifying" : "error");
   const [errorMessage, setErrorMessage] = useState(
-    token ? "" : "验证链接缺少必要参数，请返回账号详情重新发送验证邮件。",
+    token ? "" : "验证链接缺少必要参数，请前往「账号安全」重新发送验证邮件。",
   );
   const { mutateAsync: confirmEmailVerification } = useConfirmEmailVerification();
 
   useEffect(() => {
     if (!token) {
       verificationAttempt.current = null;
-      setErrorMessage("验证链接缺少必要参数，请返回账号详情重新发送验证邮件。");
+      setErrorMessage("验证链接缺少必要参数，请前往「账号安全」重新发送验证邮件。");
       setState("error");
       return;
     }
@@ -55,7 +55,7 @@ export default function VerifyEmail() {
       },
       () => {
         if (!active || !Object.is(verificationAttempt.current, attempt)) return;
-        setErrorMessage("验证链接无效或已过期，请返回账号详情重新发送验证邮件。");
+        setErrorMessage("验证链接无效或已过期，请前往「账号安全」重新发送验证邮件。");
         setState("error");
       },
     );
@@ -93,8 +93,8 @@ export default function VerifyEmail() {
             <Text c="dimmed" size="sm" mt="xs">
               当前邮箱地址已完成验证。
             </Text>
-            <Button fullWidth mt="xl" onClick={() => navigate("/user/profile")}>
-              返回账号详情
+            <Button fullWidth mt="xl" onClick={() => navigate("/user/settings?tab=security")}>
+              返回账号安全
             </Button>
           </>
         ) : (
@@ -110,8 +110,13 @@ export default function VerifyEmail() {
             <Text c="dimmed" size="sm" mt="xs">
               {errorMessage}
             </Text>
-            <Button fullWidth variant="default" mt="xl" onClick={() => navigate("/user/profile")}>
-              返回账号详情
+            <Button
+              fullWidth
+              variant="default"
+              mt="xl"
+              onClick={() => navigate("/user/settings?tab=security")}
+            >
+              返回账号安全
             </Button>
           </>
         )}

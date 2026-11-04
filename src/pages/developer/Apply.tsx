@@ -153,9 +153,9 @@ export default function DeveloperApply() {
                 size="sm"
                 variant="default"
                 color="gray"
-                onClick={() => navigate("/user/profile")}
+                onClick={() => navigate("/user/settings?tab=security")}
               >
-                账号详情
+                账号安全
               </Button>
               <Button
                 size="sm"

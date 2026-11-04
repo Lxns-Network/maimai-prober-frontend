@@ -16,7 +16,7 @@ interface EmailVerificationFlowOptions {
 
 /**
  * 邮箱验证的完整流程：发送验证邮件 → 轮询等待验证 → 验证成功通知。
- * 账号详情与开发者申请共用，避免两份状态机各自漂移。
+ * 账号安全设置与开发者申请共用，避免两份状态机各自漂移。
  */
 export function useEmailVerificationFlow({
   verified,

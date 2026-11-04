@@ -1,6 +1,7 @@
 import { Text, Card } from "@mantine/core";
 import { SettingList } from "@/components/Settings/SettingList.tsx";
 import { PasskeyManagement } from "@/components/Settings/PasskeyManagement.tsx";
+import { EmailSettings } from "@/components/Settings/EmailSettings.tsx";
 import { EditPasswordModal } from "@/components/Settings/EditPasswordModal.tsx";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "../../Page.module.css";
@@ -27,6 +28,8 @@ export const SecuritySettingsSection = () => {
   return (
     <div>
       <EditPasswordModal opened={editPasswordModalOpened} close={() => editPasswordModal.close()} />
+
+      <EmailSettings />
 
       <PasskeyManagement />
 

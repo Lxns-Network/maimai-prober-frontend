@@ -184,7 +184,7 @@ export const FriendScoreRanking = ({
                   component="a"
                   {...profileLinkProps}
                   href={profileUrl}
-                  aria-label={row.isSelf ? "查看我的名片" : `查看 ${displayName} 的档案`}
+                  aria-label={row.isSelf ? "查看我的账号详情" : `查看 ${displayName} 的档案`}
                   src={avatarSrc}
                   size={28}
                   radius="sm"
