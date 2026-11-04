@@ -32,7 +32,7 @@ export const PageHeader = ({ meta, badge, actions, backLink, avatar }: PageProps
     <Title
       className={classes.title}
       textWrap={clampTitle ? undefined : "balance"}
-      mb={badge ? 0 : undefined}
+      mb={badge || !meta.description ? 0 : undefined}
       lineClamp={clampTitle ? 2 : undefined}
       title={clampTitle ? meta.title : undefined}
     >
@@ -47,10 +47,21 @@ export const PageHeader = ({ meta, badge, actions, backLink, avatar }: PageProps
           {backButton && <Box className={classes.backButton}>{backButton}</Box>}
           {avatar}
           <Box w="100%" ta="center">
-            {title}
-            <Text className={classes.description} truncate="end" title={meta.description}>
-              {meta.description}
-            </Text>
+            {badge ? (
+              <Box pos="relative" display="inline-flex" maw="100%" style={{ alignItems: "center" }}>
+                {title}
+                <Box pos="absolute" left="100%" ml={4} style={{ display: "flex" }}>
+                  {badge}
+                </Box>
+              </Box>
+            ) : (
+              title
+            )}
+            {meta.description && (
+              <Text className={classes.description} truncate="end" title={meta.description}>
+                {meta.description}
+              </Text>
+            )}
           </Box>
           {actions && (
             <Group gap="xs" justify="center">
@@ -80,7 +91,7 @@ export const PageHeader = ({ meta, badge, actions, backLink, avatar }: PageProps
         ) : (
           title
         )}
-        <Text className={classes.description}>{meta.description}</Text>
+        {meta.description && <Text className={classes.description}>{meta.description}</Text>}
       </Box>
     </Group>
   );

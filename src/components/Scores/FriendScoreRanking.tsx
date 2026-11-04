@@ -17,7 +17,6 @@ import {
   IconUserPlus,
 } from "@tabler/icons-react";
 import { useState } from "react";
-import dayjs from "dayjs";
 import { FriendScoreCompare } from "./FriendScoreCompare.tsx";
 import { RankingRow } from "./RankingRow.tsx";
 import { EmptyState } from "@/components/EmptyState.tsx";
@@ -40,6 +39,7 @@ import { getFriendLoadErrorMessage } from "@/utils/api/friend.ts";
 import { chartKey } from "@/utils/scoreCompare.ts";
 import { profilePath } from "@/utils/profile.ts";
 import { isTokenUndefined } from "@/utils/session.ts";
+import { formatDateTime } from "@/utils/time.ts";
 
 interface RankingEntry extends FriendRankingScoreProps {
   isSelf: boolean;
@@ -198,7 +198,7 @@ export const FriendScoreRanking = ({
                     </Anchor>
                   </Text>
                   <Text fz="xs" c="dimmed">
-                    {dayjs(row.upload_time).format("YYYY-MM-DD")}
+                    {formatDateTime(row.upload_time)}
                   </Text>
                 </>
               }

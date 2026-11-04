@@ -8,7 +8,7 @@ import { Helmet } from "react-helmet-async";
 export interface PageProps {
   meta: {
     title: string;
-    description: string;
+    description?: string;
   };
   badge?: React.ReactNode;
   maxWidth?: number;

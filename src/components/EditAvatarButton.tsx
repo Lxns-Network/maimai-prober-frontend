@@ -1,15 +1,21 @@
 import { IconEdit } from "@tabler/icons-react";
 import { useHover } from "@mantine/hooks";
 import React from "react";
-import { LoadingOverlay, UnstyledButton } from "@mantine/core";
+import { LoadingOverlay, MantineRadius, UnstyledButton } from "@mantine/core";
 
 interface EditAvatarButtonProps {
   children: React.ReactNode;
   onClick: () => void;
   disabled?: boolean;
+  radius?: MantineRadius | number;
 }
 
-export const EditAvatarButton = ({ children, onClick, disabled }: EditAvatarButtonProps) => {
+export const EditAvatarButton = ({
+  children,
+  onClick,
+  disabled,
+  radius = 6,
+}: EditAvatarButtonProps) => {
   const { hovered, ref } = useHover();
 
   return (
@@ -25,9 +31,9 @@ export const EditAvatarButton = ({ children, onClick, disabled }: EditAvatarButt
         loaderProps={{
           children: <IconEdit />,
         }}
-        overlayProps={{ radius: "sm" }}
+        overlayProps={{ radius }}
         styles={{
-          overlay: { borderRadius: 6 },
+          overlay: { borderRadius: radius },
           loader: { height: 24 },
         }}
       />

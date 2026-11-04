@@ -25,9 +25,6 @@ import {
   IconUser,
   IconX,
 } from "@tabler/icons-react";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import "dayjs/locale/zh-cn";
 import { EmptyState } from "@/components/EmptyState";
 import { Link } from "@/components/Link";
 import { QueryErrorState } from "@/components/QueryErrorState";
@@ -41,12 +38,11 @@ import useGame from "@/hooks/useGame";
 import { FriendRequestItem } from "@/types/friend";
 import { getFriendLoadErrorMessage, MAX_OUTGOING_FRIEND_REQUESTS } from "@/utils/api/friend";
 import { profilePath } from "@/utils/profile";
+import { formatDateTime } from "@/utils/time";
 import { AddFriendButton } from "./AddFriendButton";
 import { GameAvatar, RatingBadge } from "./FriendCard";
 import { LoadingBlock } from "./LoadingBlock";
 import { UsernameCopy } from "./UsernameCopy";
-
-dayjs.extend(relativeTime);
 
 type Direction = "incoming" | "outgoing";
 
@@ -77,7 +73,6 @@ const RequestIdentity = ({ request }: { request: FriendRequestItem }) => {
   const setListSearch = useFriendStore((state) => state.setListSearch);
   const slot = request.games?.[game];
   const profile = slot?.state === "visible" ? slot.profile : undefined;
-  const time = dayjs(request.create_time);
   const username = request.user.username;
 
   return (
@@ -112,8 +107,8 @@ const RequestIdentity = ({ request }: { request: FriendRequestItem }) => {
           )}
           <Group gap={4} wrap="nowrap">
             <IconCalendar size={12} style={{ color: "var(--mantine-color-dimmed)" }} />
-            <Text size="xs" c="dimmed" title={time.format("YYYY-MM-DD HH:mm")}>
-              {time.locale("zh-cn").fromNow()}
+            <Text size="xs" c="dimmed">
+              {formatDateTime(request.create_time)}
             </Text>
           </Group>
         </Flex>

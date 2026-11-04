@@ -1,24 +1,41 @@
-import { ReactNode, useMemo } from "react";
-import { Button, Card, DataList, Group, Skeleton, Stack, Switch, Text } from "@mantine/core";
+import { ReactNode, useMemo, useState } from "react";
+import {
+  ActionIcon,
+  Button,
+  Card,
+  DataList,
+  Group,
+  Modal,
+  Skeleton,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import {
   IconArrowBackUp,
   IconCheck,
   IconDatabaseOff,
+  IconEdit,
   IconEyeOff,
-  IconPencil,
   IconShieldOff,
   IconUserOff,
   IconUserPlus,
   IconUserSearch,
   IconX,
 } from "@tabler/icons-react";
-import { useLocalStorage } from "@mantine/hooks";
+import { useDisclosure, useFileDialog, useLocalStorage } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
+import { useQueryClient } from "@tanstack/react-query";
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import { Page } from "@/components/Page/Page";
+import { EditAvatarButton } from "@/components/EditAvatarButton";
 import { EmptyState } from "@/components/EmptyState";
 import { QueryErrorState } from "@/components/QueryErrorState";
 import { ScoreList } from "@/components/Scores/ScoreList";
+import { AvatarCropModal } from "@/components/Profile/AvatarCropModal";
 import { PlayerCard, type PlayerCardFields } from "@/components/Profile/PlayerPanel/PlayerCard";
 import profileClasses from "@/components/Profile/Profile.module.css";
 import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSection";
@@ -31,15 +48,21 @@ import { MyScoreGap } from "@/components/Friends/MyScoreGap";
 import { useSendFriendRequest } from "@/hooks/useSendFriendRequest";
 import { useFriendRelationActions } from "@/hooks/useFriendRelationActions";
 import useFriendStore from "@/hooks/useFriendStore";
+import { useUpdateUserProfile, useUploadUserAvatar } from "@/hooks/mutations/useUserMutations";
+import { queryKeys } from "@/hooks/queries/queryKeys";
 import { usePlayer } from "@/hooks/queries/usePlayer";
 import { useScores } from "@/hooks/queries/useScores";
+import { useUser } from "@/hooks/queries/useUser";
 import { BestsGroup } from "@/pages/user/Scores/bests/ScoreBestsSection";
 import { useFriendRelationship } from "@/hooks/queries/useFriends";
 import { useFriendBests, useFriendRecents, useFriendScores } from "@/hooks/queries/useFriendScores";
 import { formatDateTime } from "@/utils/time";
-import { getFriendLoadErrorMessage } from "@/utils/api/friend";
+import { getFriendErrorMessage, getFriendLoadErrorMessage } from "@/utils/api/friend";
 import { APIError } from "@/utils/errors";
+import { openAlertModal, openRetryModal } from "@/utils/modal";
+import { profilePath } from "@/utils/profile";
 import { chartKey, indexByChart } from "@/utils/scoreCompare";
+import { validateUserName } from "@/utils/validator";
 import { FriendRelationship, ProfileSlot } from "@/types/friend";
 import { Game } from "@/types/game";
 import {
@@ -313,17 +336,7 @@ const ProfileActions = ({ profile }: { profile: FriendRelationship }) => {
   const { username, request_id: requestId } = profile;
 
   if (profile.status === "friend") return <FriendActionButtons friend={profile} />;
-  if (profile.status === "self") {
-    return (
-      <Button
-        variant="default"
-        leftSection={<IconPencil size={16} />}
-        onClick={() => void navigate("/user/profile")}
-      >
-        编辑资料
-      </Button>
-    );
-  }
+  if (profile.status === "self") return null;
   if (profile.status === "incoming" && requestId) {
     return (
       <Group gap="xs">
@@ -384,13 +397,103 @@ export default function FriendProfile() {
   const pageContext = usePageContext();
   const username = String(pageContext.routeParams?.username ?? "") || getUsernameFromPathname();
   const { relationship: profile, isLoading, error, refetch } = useFriendRelationship(username);
+  const { setData: setUser, invalidate: invalidateUser } = useUser();
+  const queryClient = useQueryClient();
+  const uploadAvatar = useUploadUserAvatar();
+  const updateProfile = useUpdateUserProfile();
   const listSearch = useFriendStore((state) => state.listSearch);
   const [game] = useGame();
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [cropOpened, cropModal] = useDisclosure(false);
+  const [editNameOpened, editNameModal] = useDisclosure(false);
   const isSelf = profile?.status === "self";
   const accessible = !!profile && !error && profile.status !== "blocked";
   const showFriendTabs =
     (profile?.status === "friend" || isSelf) && profile?.games[game].state === "visible";
   const profileContent = profile && <ProfileTab friend={profile} />;
+
+  const nameForm = useForm({
+    initialValues: { name: "" },
+    validate: {
+      name: (value) => validateUserName(value, { allowEmpty: false }),
+    },
+  });
+
+  const invalidateComments = () =>
+    void queryClient.invalidateQueries({
+      predicate: (query) =>
+        typeof query.queryKey[0] === "string" &&
+        /^user\/(maimai|chunithm)\/comment\/list\?/.test(query.queryKey[0]),
+    });
+
+  const syncSelfAvatar = (avatarUrl: string | undefined) => {
+    setUser((prev) => prev && { ...prev, avatar_url: avatarUrl });
+    queryClient.setQueryData<FriendRelationship>(
+      queryKeys.friends.relationship(username),
+      (old) => old && { ...old, avatar_url: avatarUrl },
+    );
+    invalidateComments();
+  };
+
+  const avatarDialog = useFileDialog({
+    multiple: false,
+    accept: "image/jpeg,image/png,image/webp",
+    onChange: (files) => {
+      const file = files?.[0];
+      if (!file) return;
+      setCropImage(URL.createObjectURL(file));
+      cropModal.open();
+      avatarDialog.reset();
+    },
+  });
+
+  const uploadCroppedAvatar = (file: File) => {
+    uploadAvatar.mutate(file, {
+      onSuccess: (data) => {
+        syncSelfAvatar(data.avatar_url);
+        cropModal.close();
+      },
+      onError: (err) => openAlertModal("头像上传失败", getFriendErrorMessage(err)),
+    });
+  };
+
+  const releaseCropImage = () => {
+    if (cropImage) URL.revokeObjectURL(cropImage);
+    setCropImage(null);
+  };
+
+  const openEditName = () => {
+    const currentName = profile?.username ?? username;
+    nameForm.setInitialValues({ name: currentName });
+    nameForm.setValues({ name: currentName });
+    editNameModal.open();
+  };
+
+  const saveName = ({ name }: { name: string }) => {
+    updateProfile.mutate(
+      { name },
+      {
+        onSuccess: () => {
+          setUser((prev) => prev && { ...prev, name });
+          if (profile) {
+            queryClient.setQueryData<FriendRelationship>(queryKeys.friends.relationship(name), {
+              ...profile,
+              username: name,
+            });
+            queryClient.removeQueries({ queryKey: queryKeys.friends.relationship(username) });
+          }
+          invalidateComments();
+          void invalidateUser();
+          editNameModal.close();
+          notifications.show({ title: "修改成功", message: "你的用户名已更新。", color: "green" });
+          void navigate(`${profilePath(name)}${window.location.search}`, {
+            overwriteLastHistoryEntry: true,
+          });
+        },
+        onError: (err) => openRetryModal("修改失败", `${err}`, () => saveName({ name })),
+      },
+    );
+  };
 
   const fallback = () => {
     if (!username) return <EmptyState title="链接中缺少用户名" />;
@@ -409,58 +512,131 @@ export default function FriendProfile() {
   };
 
   return (
-    <Page
-      meta={{
-        title: isLoading ? "用户档案" : profile?.remark || profile?.username || username,
-        description: profile?.remark ? `@${profile.username}` : "用户档案",
-      }}
-      backLink={
-        isSelf
-          ? undefined
-          : {
-              to: `/friends${listSearch || "?tab=friends"}`,
-              label:
-                new URLSearchParams(listSearch).get("tab") === "requests"
-                  ? "返回好友申请"
-                  : "返回好友列表",
-            }
-      }
-      actions={profile && !error ? <ProfileActions profile={profile} /> : undefined}
-      avatar={
-        isLoading ? (
-          <Skeleton circle h={96} w={96} />
-        ) : (
-          <UserAvatar
-            username={profile?.username ?? username}
-            avatarUrl={accessible ? profile?.avatar_url : undefined}
-            size={96}
+    <>
+      {isSelf && (
+        <>
+          <AvatarCropModal
+            opened={cropOpened}
+            image={cropImage}
+            uploading={uploadAvatar.isPending}
+            onClose={cropModal.close}
+            onExited={releaseCropImage}
+            onConfirm={uploadCroppedAvatar}
           />
-        )
-      }
-      tabs={
-        accessible && showFriendTabs
-          ? [
-              { id: "profile", name: "资料", children: profileContent },
-              { id: "bests", name: "最佳成绩", children: <BestsTab key={game} friend={profile} /> },
-              {
-                id: "recents",
-                name: "最近游玩",
-                children: <RecentsTab key={game} friend={profile} />,
-              },
-              ...(isSelf
-                ? []
-                : [
-                    {
-                      id: "compare",
-                      name: "好友 VS",
-                      children: <CompareTab key={game} friend={profile} />,
-                    },
-                  ]),
-            ]
-          : undefined
-      }
-    >
-      {!accessible ? fallback() : showFriendTabs ? undefined : profileContent}
-    </Page>
+          <Modal opened={editNameOpened} onClose={editNameModal.close} title="修改用户名" centered>
+            <form onSubmit={nameForm.onSubmit(saveName)}>
+              <Stack gap="sm">
+                <TextInput
+                  label="用户名"
+                  placeholder="4 到 16 个字母、数字或下划线"
+                  description="修改后，已分享的好友链接将失效"
+                  required
+                  data-autofocus
+                  disabled={updateProfile.isPending}
+                  {...nameForm.getInputProps("name")}
+                />
+                <Group justify="flex-end" mt="md">
+                  <Button
+                    variant="default"
+                    onClick={editNameModal.close}
+                    disabled={updateProfile.isPending}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={updateProfile.isPending}
+                    disabled={!nameForm.isDirty()}
+                  >
+                    保存
+                  </Button>
+                </Group>
+              </Stack>
+            </form>
+          </Modal>
+        </>
+      )}
+      <Page
+        meta={{
+          title: profile?.remark || profile?.username || username,
+          description: profile?.remark ? `@${profile.username}` : undefined,
+        }}
+        badge={
+          isSelf ? (
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              aria-label="修改用户名"
+              onClick={openEditName}
+            >
+              <IconEdit size={18} />
+            </ActionIcon>
+          ) : undefined
+        }
+        backLink={
+          isSelf
+            ? undefined
+            : {
+                to: `/friends${listSearch || "?tab=friends"}`,
+                label:
+                  new URLSearchParams(listSearch).get("tab") === "requests"
+                    ? "返回好友申请"
+                    : "返回好友列表",
+              }
+        }
+        actions={profile && !error && !isSelf ? <ProfileActions profile={profile} /> : undefined}
+        avatar={
+          isLoading ? (
+            <Skeleton circle h={96} w={96} />
+          ) : isSelf ? (
+            <EditAvatarButton
+              radius="100%"
+              onClick={avatarDialog.open}
+              disabled={uploadAvatar.isPending}
+            >
+              <UserAvatar
+                username={profile?.username ?? username}
+                avatarUrl={profile?.avatar_url}
+                size={96}
+              />
+            </EditAvatarButton>
+          ) : (
+            <UserAvatar
+              username={profile?.username ?? username}
+              avatarUrl={accessible ? profile?.avatar_url : undefined}
+              size={96}
+            />
+          )
+        }
+        tabs={
+          accessible && showFriendTabs
+            ? [
+                { id: "profile", name: "资料", children: profileContent },
+                {
+                  id: "bests",
+                  name: "最佳成绩",
+                  children: <BestsTab key={game} friend={profile} />,
+                },
+                {
+                  id: "recents",
+                  name: "最近游玩",
+                  children: <RecentsTab key={game} friend={profile} />,
+                },
+                ...(isSelf
+                  ? []
+                  : [
+                      {
+                        id: "compare",
+                        name: "好友 VS",
+                        children: <CompareTab key={game} friend={profile} />,
+                      },
+                    ]),
+              ]
+            : undefined
+        }
+      >
+        {!accessible ? fallback() : showFriendTabs ? undefined : profileContent}
+      </Page>
+    </>
   );
 }
