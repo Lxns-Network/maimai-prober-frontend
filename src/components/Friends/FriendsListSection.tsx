@@ -136,7 +136,7 @@ export const FriendsListSection = () => {
         previous && previous.rating === item.rating ? ranks.get(previous.id)! : index + 1,
       );
     });
-    return { ranks, total: rated.length };
+    return ranks;
   }, [friends, game, player]);
 
   const filteredFriends = useMemo(
@@ -182,12 +182,12 @@ export const FriendsListSection = () => {
     [friends, game, term, onlyFavorite, sortBy, isRatingSort],
   );
 
-  const selfRank = ranking.ranks.get("self");
+  const selfRank = ranking.get("self");
   const entries = useMemo(() => {
     const list: ListEntry[] = filteredFriends.map((friend) => ({
       kind: "friend",
       friend,
-      rank: isRatingSort ? ranking.ranks.get(friend.user_id) : undefined,
+      rank: isRatingSort ? ranking.get(friend.user_id) : undefined,
     }));
     if (isRatingSort && player && selfRank !== undefined && !term) {
       const index = list.findIndex((entry) => {
@@ -225,8 +225,7 @@ export const FriendsListSection = () => {
   }, [search, onlyFavorite, sortBy, pageForUrl, setListSearch]);
 
   const filtering = !!term || onlyFavorite;
-  const showRank = isRatingSort && !filtering && selfRank !== undefined;
-  const atLimit = !filtering && !showRank && friends.length >= MAX_FRIENDS;
+  const atLimit = !filtering && friends.length >= MAX_FRIENDS;
 
   const resetFilters = () => {
     setSearch("");
@@ -247,11 +246,7 @@ export const FriendsListSection = () => {
 
   const summary = filtering
     ? `筛选出 ${filteredFriends.length} / ${friends.length} 位好友`
-    : showRank
-      ? `你在 ${ranking.total} 人中排第 ${selfRank}`
-      : atLimit
-        ? `好友数量已达上限（${MAX_FRIENDS} 人）`
-        : `共 ${friends.length} 位好友，上限 ${MAX_FRIENDS} 人`;
+    : `共 ${friends.length} / ${MAX_FRIENDS} 位好友`;
 
   const renderContent = () => {
     if (isLoading && friends.length === 0) {
@@ -408,7 +403,7 @@ export const FriendsListSection = () => {
         <AddFriendButton />
       </Flex>
 
-      <Group gap="xs" px={4} justify="space-between">
+      <Group gap="xs" justify="space-between">
         {friends.length > 0 && (
           <Text size="xs" c={atLimit ? "orange" : "dimmed"}>
             {summary}

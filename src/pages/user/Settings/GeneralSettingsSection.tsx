@@ -348,8 +348,7 @@ export const GeneralSettingsSection = () => {
           公开设置
         </Text>
         <Text fz="xs" c="dimmed" mt={3} mb="lg">
-          控制是否公开展示你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}
-          」数据。好友始终可以查看你的基本资料和谱面成绩。
+          控制是否公开展示你的「{game === "chunithm" ? "中二节奏" : "舞萌 DX"}」数据
         </Text>
         <SettingList
           onChange={updateUserConfigHandler}
@@ -358,7 +357,7 @@ export const GeneralSettingsSection = () => {
             {
               key: "allow_public_profile",
               title: "允许非好友查看基本资料",
-              description: "允许已登录的非好友查看你的游戏名片（不含谱面成绩）。",
+              description: "关闭后，非好友将无法查看你的游戏名片。",
               optionType: "switch",
               defaultValue: false,
             },

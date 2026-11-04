@@ -30,10 +30,10 @@ export const useFriendActions = (
   const editRemark = () => {
     openFormModal(
       "修改备注",
-      `为「${friend.username}」设置备注`,
+      "",
       {
-        label: "备注名称",
-        placeholder: "最多 64 个字符，留空则恢复原用户名",
+        label: "备注",
+        placeholder: "最多 64 个字符，留空则清除备注",
         defaultValue: friend.remark || "",
       },
       (newRemark) => {
@@ -44,7 +44,7 @@ export const useFriendActions = (
             onSuccess: () => {
               notifications.show({
                 title: "修改成功",
-                message: `已将备注更新为「${trimmed || friend.username}」`,
+                message: trimmed ? `已将备注更新为「${trimmed}」` : "已清除备注",
                 color: "green",
               });
             },
@@ -60,15 +60,6 @@ export const useFriendActions = (
     updatePreferenceMutation.mutate(
       { userId: friend.user_id, is_favorite: nextFavorite },
       {
-        onSuccess: () => {
-          notifications.show({
-            title: nextFavorite ? "已设为特别关注" : "已取消特别关注",
-            message: nextFavorite
-              ? `已将「${displayName}」设为特别关注`
-              : `已取消「${displayName}」的特别关注`,
-            color: "green",
-          });
-        },
         onError: notifyError("操作失败", "更新特别关注状态失败"),
       },
     );
@@ -77,7 +68,7 @@ export const useFriendActions = (
   const remove = () => {
     openConfirmModal(
       "删除好友",
-      `确定要删除好友「${fullName}」吗？删除后双方无法再互看谱面成绩。`,
+      `确定要删除好友「${fullName}」吗？`,
       () => {
         deleteFriendMutation.mutate(
           { userId: friend.user_id },
@@ -85,7 +76,7 @@ export const useFriendActions = (
             onSuccess: () => {
               notifications.show({
                 title: "已删除好友",
-                message: `已移除好友「${friend.username}」`,
+                message: `已移除好友「${displayName}」`,
                 color: "red",
               });
               options?.onRemoved?.();
@@ -104,7 +95,7 @@ export const useFriendActions = (
   const block = () => {
     openConfirmModal(
       "加入黑名单",
-      `确定要拉黑「${fullName}」吗？将同时解除好友关系，对方无法再向你发送申请。`,
+      `确定要将「${fullName}」加入黑名单吗？`,
       () => {
         blockUserMutation.mutate(
           { userId: friend.user_id },
@@ -112,7 +103,7 @@ export const useFriendActions = (
             onSuccess: () => {
               notifications.show({
                 title: "已加入黑名单",
-                message: `已拉黑用户「${friend.username}」`,
+                message: `已拉黑「${displayName}」`,
                 color: "green",
               });
               options?.onRemoved?.();

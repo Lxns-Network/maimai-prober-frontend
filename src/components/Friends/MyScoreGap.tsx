@@ -15,7 +15,7 @@ export const MyScoreGap = ({
   const gap = mine ? scoreGap(mine, theirs) : undefined;
 
   return (
-    <Group justify="space-between" wrap="nowrap" gap="xs" px={4}>
+    <Group justify="space-between" wrap="nowrap" gap="xs">
       <Text fz="xs" c="dimmed" truncate="end">
         我：{mine ? formatScoreValue(mine) : "未游玩"}
       </Text>

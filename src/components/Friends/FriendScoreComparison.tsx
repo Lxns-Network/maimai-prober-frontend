@@ -21,12 +21,6 @@ const PAGE_SIZE = 30;
 
 type View = "behind" | "ahead" | "only_theirs";
 
-const VIEW_HINTS: Record<View, string> = {
-  behind: "按分差从大到小排序",
-  ahead: "按分差从大到小排序",
-  only_theirs: "按对方单曲评分从高到低排序",
-};
-
 const VIEW_EMPTY: Record<View, string> = {
   behind: "没有落后于 TA 的谱面",
   ahead: "没有领先于 TA 的谱面",
@@ -74,7 +68,6 @@ export const FriendScoreComparison = ({
       <EmptyState
         icon={<IconUserOff size={64} stroke={1.5} />}
         title={`你尚未绑定「${gameName}」`}
-        description="绑定并同步游戏数据后，即可与好友逐谱面对比成绩"
       />
     );
   }
@@ -113,7 +106,7 @@ export const FriendScoreComparison = ({
           )}
         </Group>
 
-        {common > 0 ? (
+        {common > 0 && (
           <>
             <Progress.Root size="lg" radius="xl">
               <Tooltip label={`你领先 ${ahead.length} 张`}>
@@ -138,13 +131,9 @@ export const FriendScoreComparison = ({
               </Text>
             </Group>
           </>
-        ) : (
-          <Text size="xs" c="dimmed">
-            你们还没有都玩过的谱面
-          </Text>
         )}
 
-        <Text size="xs" c="dimmed" mt="xs">
+        <Text size="xs" c="dimmed" mt={common > 0 ? "xs" : 0}>
           仅 TA 玩过 {onlyTheirs.length} 张 · 仅我玩过 {onlyMineCount} 张
         </Text>
       </Card>
@@ -162,9 +151,6 @@ export const FriendScoreComparison = ({
           { value: "only_theirs", label: `未游玩 ${onlyTheirs.length}` },
         ]}
       />
-      <Text size="xs" c="dimmed" mt={-8}>
-        {VIEW_HINTS[view]}
-      </Text>
 
       {items.length === 0 ? (
         <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title={VIEW_EMPTY[view]} />

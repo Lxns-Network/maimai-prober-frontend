@@ -1,4 +1,4 @@
-import { Anchor, Badge, Box, Divider, Group, Image, Paper, Text } from "@mantine/core";
+import { Anchor, Badge, Box, Divider, Group, Image, Paper, Stack, Text } from "@mantine/core";
 import { type OverlayLinkProps } from "@/hooks/useResumableOverlay";
 import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
@@ -114,10 +114,10 @@ export const FriendScoreCompare = ({
     mainGap === undefined
       ? "对方成绩数据不完整"
       : mainGap === 0
-        ? "双方成绩完全一致"
+        ? "持平"
         : mainGap > 0
-          ? `你领先 ${game === "maimai" ? `${mainGap.toFixed(4)}%` : mainGap.toLocaleString()}`
-          : `你落后 ${game === "maimai" ? `${Math.abs(mainGap).toFixed(4)}%` : Math.abs(mainGap).toLocaleString()}`;
+          ? `领先 ${game === "maimai" ? `${mainGap.toFixed(4)}%` : mainGap.toLocaleString()}`
+          : `落后 ${game === "maimai" ? `${Math.abs(mainGap).toFixed(4)}%` : Math.abs(mainGap).toLocaleString()}`;
 
   return (
     <Paper radius="md" withBorder p="sm" mt={6}>
@@ -144,33 +144,35 @@ export const FriendScoreCompare = ({
 
       <Divider my="xs" variant="dashed" />
 
-      {rows.map((row) => (
-        <Group key={row.label} justify="space-between" wrap="nowrap" gap="xs" mb={6}>
-          <Text fz="xs" c="dimmed" style={{ flexShrink: 0 }}>
-            {row.label}
-          </Text>
-          <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
-            <Box miw={72} ta="right">
-              <Text fz="sm" component="div">
-                {row.mine}
-              </Text>
-            </Box>
-            <Text fz="xs" c="dimmed">
-              /
+      <Stack gap={6}>
+        {rows.map((row) => (
+          <Group key={row.label} justify="space-between" wrap="nowrap" gap="xs">
+            <Text fz="xs" c="dimmed" style={{ flexShrink: 0 }}>
+              {row.label}
             </Text>
-            <Box miw={72}>
-              <Text fz="sm" component="div">
-                {row.theirs}
+            <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
+              <Box miw={72} ta="right">
+                <Text fz="sm" component="div">
+                  {row.mine}
+                </Text>
+              </Box>
+              <Text fz="xs" c="dimmed">
+                /
               </Text>
-            </Box>
-            {row.diff && (
-              <Badge size="xs" variant="light" color={row.diff.startsWith("+") ? "teal" : "red"}>
-                {row.diff}
-              </Badge>
-            )}
+              <Box miw={72}>
+                <Text fz="sm" component="div">
+                  {row.theirs}
+                </Text>
+              </Box>
+              {row.diff && (
+                <Badge size="xs" variant="light" color={row.diff.startsWith("+") ? "teal" : "red"}>
+                  {row.diff}
+                </Badge>
+              )}
+            </Group>
           </Group>
-        </Group>
-      ))}
+        ))}
+      </Stack>
     </Paper>
   );
 };

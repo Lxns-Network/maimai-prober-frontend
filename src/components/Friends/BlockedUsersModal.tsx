@@ -104,7 +104,7 @@ export const BlockedUsersModal = () => {
           <Modal.Title>
             <Group gap="xs">
               <IconShield size={18} />
-              <Text fw={700}>黑名单管理</Text>
+              <Text fw={700}>黑名单</Text>
               <Badge size="xs" variant="light" color="gray">
                 {total}
               </Badge>
@@ -115,10 +115,6 @@ export const BlockedUsersModal = () => {
 
         <Modal.Body>
           <Stack gap="sm">
-            <Text size="xs" c="dimmed">
-              拉黑后对方无法向你发送好友申请，也无法查看你的档案。
-            </Text>
-
             {renderList()}
 
             <Group justify="flex-end" mt="md">

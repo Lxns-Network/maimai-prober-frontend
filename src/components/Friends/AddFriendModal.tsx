@@ -1,4 +1,4 @@
-import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
+import { Button, Group, Modal, Stack, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconUserPlus } from "@tabler/icons-react";
 import { useUser } from "@/hooks/queries/useUser";
@@ -63,16 +63,13 @@ export const AddFriendModal = () => {
             <Stack gap="sm">
               <TextInput
                 label="查分器用户名或好友链接"
-                placeholder="输入用户名或粘贴链接（非 15 位好友码）"
+                placeholder="输入用户名或粘贴好友链接"
                 required
                 data-autofocus
                 disabled={isPending}
                 {...form.getInputProps("username")}
               />
 
-              <Text size="xs" c="dimmed">
-                申请期间对方可查看你的基本资料，通过后可互看谱面成绩。
-              </Text>
               {user?.name && <UsernameCopy username={user.name} size="xs" />}
 
               <Group justify="flex-end" mt="md">

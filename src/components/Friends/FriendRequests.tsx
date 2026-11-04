@@ -158,21 +158,17 @@ export const FriendRequests = () => {
   const renderActions = (req: FriendRequestItem) => {
     if (direction === "outgoing") {
       return (
-        <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
-          <Badge size="xs" variant="light" color="gray" visibleFrom="xs">
-            等待对方同意
-          </Badge>
-          <Button
-            size="xs"
-            color="gray"
-            variant="subtle"
-            leftSection={<IconArrowBackUp size={14} />}
-            loading={actions.pendingWithdrawId === req.id}
-            onClick={() => actions.withdraw(req.id, req.user.username)}
-          >
-            撤回
-          </Button>
-        </Group>
+        <Button
+          size="xs"
+          color="gray"
+          variant="subtle"
+          leftSection={<IconArrowBackUp size={14} />}
+          loading={actions.pendingWithdrawId === req.id}
+          onClick={() => actions.withdraw(req.id, req.user.username)}
+          style={{ flexShrink: 0 }}
+        >
+          撤回
+        </Button>
       );
     }
 
@@ -246,13 +242,12 @@ export const FriendRequests = () => {
             )
           }
           title={direction === "incoming" ? "暂无收到的申请" : "暂无发出的申请"}
-          description={direction === "incoming" ? "分享下方好友链接即可邀请好友" : undefined}
         />
       );
     }
 
     return (
-      <Stack gap="xs">
+      <>
         <Stack gap="sm">
           {currentQuery.requests.map((req) => (
             <Card key={req.id} withBorder radius="md" p="xs" className={profileClasses.card}>
@@ -274,9 +269,8 @@ export const FriendRequests = () => {
           value={currentPage}
           onChange={setPage}
           hideWithOnePage
-          mt="md"
         />
-      </Stack>
+      </>
     );
   };
 
@@ -315,20 +309,14 @@ export const FriendRequests = () => {
         </Box>
       </Group>
 
-      {(direction === "outgoing" ||
-        (!currentQuery.isLoading && currentQuery.requests.length === 0)) && (
-        <Group justify="space-between" gap="xs">
-          {user?.name && <UsernameCopy username={user.name} size="xs" />}
-          {direction === "outgoing" && (
-            <Text
-              size="xs"
-              c={counts.outgoing >= MAX_OUTGOING_FRIEND_REQUESTS ? "orange" : "dimmed"}
-            >
-              待处理 {counts.outgoing} / {MAX_OUTGOING_FRIEND_REQUESTS} 个
-            </Text>
-          )}
-        </Group>
-      )}
+      <Group justify="space-between" gap="xs">
+        {user?.name && <UsernameCopy username={user.name} size="xs" />}
+        {direction === "outgoing" && counts.outgoing > 0 && (
+          <Text size="xs" c={counts.outgoing >= MAX_OUTGOING_FRIEND_REQUESTS ? "orange" : "dimmed"}>
+            共 {counts.outgoing} / {MAX_OUTGOING_FRIEND_REQUESTS} 个申请
+          </Text>
+        )}
+      </Group>
 
       {renderList()}
     </Stack>

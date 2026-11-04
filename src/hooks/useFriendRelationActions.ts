@@ -32,8 +32,8 @@ export const useFriendRelationActions = () => {
       { requestId },
       {
         onSuccess: notifySuccess({
-          title: "已同意好友申请",
-          message: `你已与「${username}」成为好友！`,
+          title: "已同意申请",
+          message: `你已与「${username}」成为好友`,
         }),
         onError: notifyError("同意好友申请失败"),
       },
@@ -76,7 +76,7 @@ export const useFriendRelationActions = () => {
   const rejectAndBlock = (userId: number, username: string) =>
     openConfirmModal(
       "拒绝并加入黑名单",
-      `确定要拒绝「${username}」并加入黑名单吗？拉黑后对方无法再向你发送申请。`,
+      `确定要拒绝「${username}」并加入黑名单吗？`,
       () =>
         blockMutation.mutate(
           { userId },

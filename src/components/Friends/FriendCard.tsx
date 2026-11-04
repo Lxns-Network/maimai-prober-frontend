@@ -185,13 +185,11 @@ const UnavailableSummary = ({
       <Text size="sm" fw={500}>
         {unbound ? `未绑定「${GAME_NAMES[game]}」` : "暂无游戏数据"}
       </Text>
-      <Text size="xs" c="dimmed" mt={4}>
-        {otherGameVisible
-          ? `点击查看「${GAME_NAMES[otherGameOf(game)]}」资料`
-          : unbound
-            ? "尚未在查分器绑定该游戏"
-            : "尚未同步过该游戏数据"}
-      </Text>
+      {otherGameVisible && (
+        <Text size="xs" c="dimmed" mt={4}>
+          点击查看「{GAME_NAMES[otherGameOf(game)]}」资料
+        </Text>
+      )}
     </Box>
   </Group>
 );
@@ -271,7 +269,7 @@ export const FriendCard = ({ friend, rank }: FriendCardProps) => {
       : profilePath(friend.username);
 
   return (
-    <Card withBorder radius="md" p="md" className={[profileClasses.card, classes.card].join(" ")}>
+    <Card withBorder radius="md" p={0} className={[profileClasses.card, classes.card].join(" ")}>
       <Group gap={2} wrap="nowrap" className={classes.cardActions}>
         <FriendActionButtons friend={friend} compact />
       </Group>
@@ -279,6 +277,7 @@ export const FriendCard = ({ friend, rank }: FriendCardProps) => {
       <Box
         component={Link}
         to={detailPath}
+        p="md"
         className={classes.cardDetailsTrigger}
         aria-label={`查看${displayName}的好友详情`}
       >

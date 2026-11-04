@@ -123,10 +123,18 @@ Maintainer ground rule: **prefer Mantine's own components and props over hand-wr
 - When CSS is unavoidable, keep it in the component's `*.module.css` and compose from Mantine tokens (`var(--mantine-spacing-*)`, `var(--mantine-color-*)`, `var(--mantine-radius-*)`, `light-dark(...)`) instead of hardcoded values.
 - Mantine style props are emitted as inline styles or scoped generated CSS, so `*.module.css` rules cannot override them. Control a property through the prop itself, using the responsive object form (e.g. `wrap={{ base: "nowrap", md: "wrap" }}`), or keep it entirely in the module; never split one property across both.
 - Action buttons that wrap onto their own line on narrow screens stay right-aligned, never at the left edge: give the button or its group `ml="auto"` inside a wrapping row, or `justify="flex-end"` when the row is theirs alone.
+- Keep sibling rows in a `Stack` flush with the same left/right edges: never add ad-hoc micro-offsets like `px={4}` to a status bar or card footer. Drive vertical spacing from the parent `Stack`'s `gap` rather than per-item `mb` (which leaves trailing margin on the last item) or redundant nested `Stack`s.
+- When a `Card` is clickable as a whole via an internal `Link`, set `p={0}` on `Card` and place `p="md"` on the `Link` container so the hit area covers the entire card border-to-border (float secondary action buttons above with `position: absolute; z-index: 1`). Do not invent custom hover border/shadow effects on cards unless requested.
+- Reuse established `EmptyState` icons within the same domain (e.g. `IconDatabaseOff` for missing score/chart data, `IconAddressBookOff` for empty friend states) instead of picking a different synonym icon per component.
 
 ### Chinese Copy Conventions
 
 - Keep a half-width space between CJK and Latin/digits (「最多 200 人」「7 天」), use complete measure words (「64 个字符」, not 「64 字符」), and quote in-app UI names with 「」. Before writing new copy, search the repo for existing phrasing so terminology stays consistent (e.g. 特别关注 / 黑名单 / 谱面成绩 / 查分器用户名).
+- Omit "manual-style" filler copy:
+  - `EmptyState` defaults to `title` only; do not add a `description` that restates the title or lectures the user on how the feature works.
+  - When state or affordance is already clear from header action buttons, tab context, or standard icons (e.g. chevron expand buttons, segmented controls, outgoing request lists), do not add explanatory `<Alert>` banners, per-row status badges, or "※ 点击展开 / 按分差排序" footnotes.
+  - Keep confirm modals to the core question (`确定要删除好友「xxx」吗？`) without tacking on policy explanations; omit success toasts for controls that already provide immediate visual feedback in place (such as favorite stars or switches).
+  - Format counts with a cap as `共 X / Y <单位>` (e.g. `共 1 / 200 位好友`, `共 1 / 20 个申请`) instead of verbose multi-clause phrasing.
 
 ---
 

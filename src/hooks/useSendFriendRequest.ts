@@ -19,10 +19,8 @@ export const useSendFriendRequest = () => {
         onSuccess: (data) => {
           const accepted = data?.status === "accepted";
           notifications.show({
-            title: accepted ? "已成为好友" : "好友申请已发送",
-            message: accepted
-              ? `对方也向你发送过申请，你们已成为好友！`
-              : `已向「${username}」发送好友申请`,
+            title: accepted ? "已成为好友" : "申请已发送",
+            message: accepted ? `你已与「${username}」成为好友` : `已向「${username}」发送好友申请`,
             color: "green",
           });
           callbacks?.onSuccess?.(accepted);

@@ -97,7 +97,7 @@ const templates: Record<string, NotificationTemplate> = {
       title: "好友申请已通过",
       body: (
         <p>
-          <strong>{username}</strong> 同意了你的好友申请，现在可以查看 TA 的档案了。
+          <strong>{username}</strong> 同意了你的好友申请。
         </p>
       ),
       action: username ? { type: "link", url: profilePath(username) } : undefined,

@@ -10,11 +10,11 @@ import {
   Text,
 } from "@mantine/core";
 import {
+  IconAddressBookOff,
   IconChevronDown,
   IconDatabaseOff,
   IconUser,
   IconUserPlus,
-  IconUsersGroup,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import dayjs from "dayjs";
@@ -93,11 +93,7 @@ export const FriendScoreRanking = ({
 
   if (friends.length === 0) {
     return (
-      <EmptyState
-        icon={<IconUsersGroup size={64} stroke={1.5} />}
-        title="还没有好友"
-        description="添加好友后即可对比同谱面成绩"
-      >
+      <EmptyState icon={<IconAddressBookOff size={64} stroke={1.5} />} title="暂无好友">
         <Button
           component="a"
           href="/friends"
@@ -107,7 +103,7 @@ export const FriendScoreRanking = ({
           variant="light"
           leftSection={<IconUserPlus size={14} />}
         >
-          去添加好友
+          添加好友
         </Button>
       </EmptyState>
     );
@@ -124,13 +120,7 @@ export const FriendScoreRanking = ({
   }
 
   if (friendScores.length === 0) {
-    return (
-      <EmptyState
-        icon={<IconUsersGroup size={64} stroke={1.5} />}
-        title="暂无好友成绩"
-        description="你的好友还没有这张谱面的成绩"
-      />
-    );
+    return <EmptyState icon={<IconAddressBookOff size={64} stroke={1.5} />} title="暂无好友成绩" />;
   }
 
   const target = chartKey(score);
@@ -245,11 +235,6 @@ export const FriendScoreRanking = ({
           </Box>
         );
       })}
-      {myScore && (
-        <Text fz="xs" c="dimmed">
-          ※ 点击右侧箭头可展开成绩对比。
-        </Text>
-      )}
     </Stack>
   );
 };

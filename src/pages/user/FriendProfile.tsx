@@ -1,14 +1,11 @@
 import { ReactNode, useMemo } from "react";
-import { Alert, Button, Card, DataList, Group, Skeleton, Stack, Switch, Text } from "@mantine/core";
+import { Button, Card, DataList, Group, Skeleton, Stack, Switch, Text } from "@mantine/core";
 import {
   IconArrowBackUp,
   IconCheck,
   IconDatabaseOff,
   IconEyeOff,
-  IconInbox,
-  IconInfoCircle,
   IconPencil,
-  IconSend,
   IconShieldOff,
   IconUserOff,
   IconUserPlus,
@@ -79,13 +76,6 @@ const SlotEmptyState = ({
         : state === "unbound"
           ? `尚未绑定「${gameName}」`
           : `「${gameName}」暂无游戏数据`
-    }
-    description={
-      state === "private"
-        ? `成为好友后可查看「${gameName}」资料与成绩`
-        : state === "unbound"
-          ? "尚未在查分器绑定该游戏"
-          : "尚未同步过该游戏数据"
     }
   >
     {children}
@@ -205,7 +195,7 @@ const BestsTab = ({ friend }: { friend: FriendRelationship }) => {
     <Stack gap="lg">
       {player && friend.status !== "self" && (
         <Switch
-          label="在每张谱面下显示我的成绩"
+          label="显示我的成绩"
           checked={compare}
           onChange={(event) => setCompare(event.currentTarget.checked)}
         />
@@ -230,11 +220,7 @@ const RecentsTab = ({ friend }: { friend: FriendRelationship }) => {
 
   if (recents.length === 0) {
     return (
-      <EmptyState
-        icon={<IconDatabaseOff size={64} stroke={1.5} />}
-        title="暂无最近游玩记录"
-        description="仅「同步游戏数据」抓取的成绩包含游玩时间"
-      />
+      <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title="暂无最近游玩记录" />
     );
   }
 
@@ -298,21 +284,6 @@ const ProfileTab = ({ friend }: { friend: FriendRelationship }) => {
 
   return (
     <Stack gap="md">
-      {friend.status === "incoming" && (
-        <Alert variant="light" radius="md" icon={<IconInbox />}>
-          对方发来了好友申请，同意后可互看谱面成绩。
-        </Alert>
-      )}
-      {friend.status === "outgoing" && (
-        <Alert variant="light" radius="md" icon={<IconSend />}>
-          已发送好友申请，待处理期间对方可查看你的基本资料。
-        </Alert>
-      )}
-      {friend.status === "none" && (
-        <Alert variant="light" radius="md" icon={<IconInfoCircle />}>
-          发送申请后对方可查看你的基本资料，通过后可互看谱面成绩。
-        </Alert>
-      )}
       <GameCard slot={slot} friend={friend} />
       {(friend.status === "friend" || friend.status === "self") &&
         slot.state === "visible" &&
@@ -434,13 +405,7 @@ export default function FriendProfile() {
           onRetry={() => void refetch()}
         />
       );
-    return (
-      <EmptyState
-        icon={<IconEyeOff size={64} stroke={1.5} />}
-        title="TA 在你的黑名单中"
-        description="解除拉黑后可查看公开资料或发送好友申请"
-      />
-    );
+    return <EmptyState icon={<IconEyeOff size={64} stroke={1.5} />} title="TA 在你的黑名单中" />;
   };
 
   return (
