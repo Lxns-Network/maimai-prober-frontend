@@ -5114,6 +5114,7 @@ __metadata:
     react: "npm:19.2.8"
     react-color-extractor: "npm:1.1.2"
     react-dom: "npm:19.2.8"
+    react-easy-crop: "npm:6.2.4"
     react-error-boundary: "npm:4.1.2"
     react-fast-marquee: "npm:1.6.5"
     react-helmet-async: "npm:3.0.0"
@@ -6113,6 +6114,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"normalize-wheel@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "normalize-wheel@npm:1.0.1"
+  checksum: 10c0/5daf4c97e39f36658a5263a6499bbc148676ae2bd85f12c8d03c46ffe7bc3c68d44564c00413d88d0457ac0d94450559bb1c24c2ce7ae0c107031f82d093ac06
+  languageName: node
+  linkType: hard
+
 "object-assign@npm:^4.1.1":
   version: 4.1.1
   resolution: "object-assign@npm:4.1.1"
@@ -6948,6 +6956,18 @@ __metadata:
   peerDependencies:
     react: ^19.2.8
   checksum: 10c0/41ba2247b76f687fcfe5bbc99f514d6b851d8c8041c2f5ded36ed05bd7fdc5208cacbac9de51e3e6633e77f96f44cec9f0d4a5a55184dba4e00738f224439134
+  languageName: node
+  linkType: hard
+
+"react-easy-crop@npm:6.2.4":
+  version: 6.2.4
+  resolution: "react-easy-crop@npm:6.2.4"
+  dependencies:
+    normalize-wheel: "npm:^1.0.1"
+  peerDependencies:
+    react: ">=16.4.0"
+    react-dom: ">=16.4.0"
+  checksum: 10c0/13e600c9285520399a7efbc4de18fad050d2f2b448ca626bce9e3d61580d38b3cef5caa334e26a323fb34396b8a3a5d2545f5325ad92438f3d3a036e361f669c
   languageName: node
   linkType: hard
 

@@ -21,6 +21,7 @@ export const EditAvatarButton = ({ children, onClick, disabled }: EditAvatarButt
     >
       <LoadingOverlay
         visible={hovered && !disabled}
+        zIndex={1}
         loaderProps={{
           children: <IconEdit />,
         }}

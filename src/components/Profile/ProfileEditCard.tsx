@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Box, Button, Card, Group, Text, TextInput } from "@mantine/core";
 import { IconPencil, IconTrash } from "@tabler/icons-react";
-import { useFileDialog } from "@mantine/hooks";
+import { useDisclosure, useFileDialog } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ import {
 import { openAlertModal, openConfirmModal, openRetryModal } from "@/utils/modal";
 import { getFriendErrorMessage } from "@/utils/api/friend";
 import { validateUserName } from "@/utils/validator";
+import { AvatarCropModal } from "./AvatarCropModal";
 import classes from "./Profile.module.css";
 
 export const ProfileEditCard = () => {
@@ -25,6 +26,8 @@ export const ProfileEditCard = () => {
   const deleteAvatar = useDeleteUserAvatar();
   const updateProfile = useUpdateUserProfile();
   const [editingName, setEditingName] = useState(false);
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [cropOpened, cropModal] = useDisclosure(false);
 
   const nameForm = useForm({
     initialValues: { name: "" },
@@ -45,16 +48,28 @@ export const ProfileEditCard = () => {
     accept: "image/jpeg,image/png,image/webp",
     onChange: (files) => {
       const file = files?.[0];
-      if (!file || !user) return;
-      uploadAvatar.mutate(file, {
-        onSuccess: (data) => {
-          setUser((prev) => prev && { ...prev, avatar_url: data.avatar_url });
-          invalidateComments();
-        },
-        onError: (error) => openAlertModal("头像上传失败", getFriendErrorMessage(error)),
-      });
+      if (!file) return;
+      setCropImage(URL.createObjectURL(file));
+      cropModal.open();
+      avatarDialog.reset();
     },
   });
+
+  const uploadCroppedAvatar = (file: File) => {
+    uploadAvatar.mutate(file, {
+      onSuccess: (data) => {
+        setUser((prev) => prev && { ...prev, avatar_url: data.avatar_url });
+        invalidateComments();
+        cropModal.close();
+      },
+      onError: (error) => openAlertModal("头像上传失败", getFriendErrorMessage(error)),
+    });
+  };
+
+  const releaseCropImage = () => {
+    if (cropImage) URL.revokeObjectURL(cropImage);
+    setCropImage(null);
+  };
 
   const clearAvatar = () => {
     if (!user?.avatar_url) return;
@@ -94,6 +109,14 @@ export const ProfileEditCard = () => {
 
   return (
     <Card className={classes.card} withBorder radius="md">
+      <AvatarCropModal
+        opened={cropOpened}
+        image={cropImage}
+        uploading={uploadAvatar.isPending}
+        onClose={cropModal.close}
+        onExited={releaseCropImage}
+        onConfirm={uploadCroppedAvatar}
+      />
       <Box mb="md">
         <Text fz="lg" fw={700}>
           个人资料

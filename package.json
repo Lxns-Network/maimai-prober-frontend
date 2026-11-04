@@ -67,6 +67,7 @@
     "react": "19.2.8",
     "react-color-extractor": "1.1.2",
     "react-dom": "19.2.8",
+    "react-easy-crop": "6.2.4",
     "react-error-boundary": "4.1.2",
     "react-fast-marquee": "1.6.5",
     "react-helmet-async": "3.0.0",
