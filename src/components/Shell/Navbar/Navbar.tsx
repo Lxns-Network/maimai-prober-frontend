@@ -6,7 +6,6 @@ import { NavbarUserMenu } from "./NavbarUserMenu";
 import { checkPermission, UserPermission } from "@/utils/session.ts";
 import {
   IconAward,
-  IconBell,
   IconChartBar,
   IconCloudUpload,
   IconCode,
@@ -18,10 +17,10 @@ import {
   IconSettings2,
   IconTable,
   IconTransferIn,
+  IconUserCircle,
   IconUsers,
 } from "@tabler/icons-react";
 import classes from "./Navbar.module.css";
-import { useUnreadCount } from "@/hooks/queries/useUnreadCount.ts";
 import { useFriendRequestCounts } from "@/hooks/queries/useFriends.ts";
 
 interface NavbarProps {
@@ -32,7 +31,6 @@ interface NavbarProps {
 export default function Navbar({ style, onClose }: NavbarProps) {
   const { urlPathname } = usePageContext();
   const isLoggedOut = typeof window !== "undefined" ? !localStorage.getItem("token") : true;
-  const unreadCount = useUnreadCount();
   const { incoming: pendingFriendRequests } = useFriendRequestCounts();
 
   const navbarData = useMemo(
@@ -40,9 +38,9 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       { label: "首页", icon: <IconHome stroke={1.5} />, to: "/", enabled: true },
       { label: "同步游戏数据", icon: <IconCloudUpload stroke={1.5} />, to: "/sync", enabled: true },
       {
-        label: "通知",
-        icon: <IconBell stroke={1.5} />,
-        to: "/notifications",
+        label: "账号详情",
+        icon: <IconUserCircle stroke={1.5} />,
+        to: "/user/profile",
         enabled: !isLoggedOut,
       },
       {
@@ -128,13 +126,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
                   {item.divider && <Divider className={classes.divider} mt={10} mb={10} />}
                   <NavbarButton
                     {...item}
-                    count={
-                      item.label === "通知"
-                        ? unreadCount
-                        : item.label === "好友"
-                          ? pendingFriendRequests
-                          : undefined
-                    }
+                    count={item.label === "好友" ? pendingFriendRequests : undefined}
                     active={active}
                     onClose={onClose}
                   />
@@ -151,12 +143,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
             to="/docs"
             onClose={onClose}
           />
-          {!isLoggedOut && (
-            <NavbarUserMenu
-              active={urlPathname === "/user/profile" || urlPathname.startsWith("/user/settings")}
-              onClose={onClose}
-            />
-          )}
+          {!isLoggedOut && <NavbarUserMenu onClose={onClose} />}
         </Container>
       </div>
     </nav>

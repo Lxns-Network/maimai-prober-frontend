@@ -1,18 +1,28 @@
-import { Group, Menu, Text, UnstyledButton } from "@mantine/core";
-import { IconLogout, IconSelector, IconSettings2, IconUserCircle } from "@tabler/icons-react";
+import { Badge, Group, Indicator, Menu, Text, UnstyledButton } from "@mantine/core";
+import {
+  IconBell,
+  IconLogout,
+  IconSelector,
+  IconSettings2,
+  IconUserCircle,
+} from "@tabler/icons-react";
 import { navigate } from "vike/client/router";
 import { UserAvatar } from "@/components/Friends/UserAvatar";
 import { useUser } from "@/hooks/queries/useUser.ts";
+import { useUnreadCount } from "@/hooks/queries/useUnreadCount.ts";
 import { useLogoutUser } from "@/hooks/mutations/useUserMutations.ts";
+import useGame from "@/hooks/useGame.ts";
+import { profilePath } from "@/utils/profile.ts";
 import classes from "./Navbar.module.css";
 
 interface NavbarUserMenuProps {
-  active: boolean;
   onClose(): void;
 }
 
-export const NavbarUserMenu = ({ active, onClose }: NavbarUserMenuProps) => {
+export const NavbarUserMenu = ({ onClose }: NavbarUserMenuProps) => {
   const { user } = useUser();
+  const [game] = useGame();
+  const unreadCount = useUnreadCount();
   const { mutate: mutateLogout } = useLogoutUser();
 
   const go = (to: string) => {
@@ -31,13 +41,19 @@ export const NavbarUserMenu = ({ active, onClose }: NavbarUserMenuProps) => {
   };
 
   return (
-    <Menu position="top-start" width="target" offset={4} radius="md">
+    <Menu position="top-start" width="target" offset={4} radius="md" shadow="md">
       <Menu.Target>
-        <UnstyledButton w="100%" className={classes.navbarLink} data-active={active || undefined}>
+        <UnstyledButton w="100%" className={classes.navbarLink}>
           <Group wrap="nowrap" w="100%">
-            <div className={classes.navbarLinkIcon}>
-              <UserAvatar username={user?.name || "用户"} avatarUrl={user?.avatar_url} size={24} />
-            </div>
+            <Indicator color="red" size={8} offset={2} disabled={!unreadCount}>
+              <div className={classes.navbarLinkIcon}>
+                <UserAvatar
+                  username={user?.name || "用户"}
+                  avatarUrl={user?.avatar_url}
+                  size={24}
+                />
+              </div>
+            </Indicator>
             <Text size="sm" fw={500} truncate flex={1}>
               {user?.name}
             </Text>
@@ -48,9 +64,23 @@ export const NavbarUserMenu = ({ active, onClose }: NavbarUserMenuProps) => {
       <Menu.Dropdown>
         <Menu.Item
           leftSection={<IconUserCircle size={18} stroke={1.5} />}
-          onClick={() => go("/user/profile")}
+          disabled={!user}
+          onClick={() => user && go(profilePath(user.name, game))}
         >
           资料
+        </Menu.Item>
+        <Menu.Item
+          leftSection={<IconBell size={18} stroke={1.5} />}
+          rightSection={
+            !!unreadCount && (
+              <Badge size="sm" circle color="red">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </Badge>
+            )
+          }
+          onClick={() => go("/notifications")}
+        >
+          通知
         </Menu.Item>
         <Menu.Item
           leftSection={<IconSettings2 size={18} stroke={1.5} />}
