@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
-import { compareScores, formatScoreGap, scoreGap } from "@/utils/scoreCompare.ts";
+import { compareScores, formatScoreGap, ratingGap, scoreGap } from "@/utils/scoreCompare.ts";
 
 const maimai = (
   id: number,
@@ -85,6 +85,15 @@ describe("compareScores", () => {
     expect(result.onlyTheirs.map((score) => score.id)).toEqual([1]);
     expect(result.onlyMineCount).toBe(0);
   });
+
+  it("classifies by DX score when that metric is selected", () => {
+    const mine = { ...maimai(1, "dx", 100.5), dx_score: 1_000 };
+    const theirs = { ...maimai(1, "dx", 100.1), dx_score: 1_020 };
+
+    expect(compareScores([mine], [theirs]).ahead).toHaveLength(1);
+    const result = compareScores([mine], [theirs], "dx_score");
+    expect(result.behind.map((pair) => pair.gap)).toEqual([-20]);
+  });
 });
 
 describe("score gap formatting", () => {
@@ -93,5 +102,19 @@ describe("score gap formatting", () => {
     expect(formatScoreGap("maimai", -0.75)).toBe("-0.7500%");
     expect(formatScoreGap("chunithm", 12_345)).toBe("+12,345");
     expect(formatScoreGap("chunithm", 0)).toBe("");
+    expect(formatScoreGap("maimai", 1_234, "dx_score")).toBe("+1,234");
+  });
+});
+
+describe("ratingGap", () => {
+  it("measures how much rating the current player would gain by matching the friend", () => {
+    expect(ratingGap(maimai(1, "dx", 99.5, 280), maimai(1, "dx", 100.5, 300))).toBe(-20);
+    expect(ratingGap(undefined, maimai(1, "dx", 100.5, 300))).toBe(-300);
+  });
+
+  it("rounds CHUNITHM rating noise", () => {
+    const mine = { ...chunithm(1, 1_000_000), rating: 16.1 };
+    const theirs = { ...chunithm(1, 1_005_000), rating: 16.3 };
+    expect(ratingGap(mine, theirs)).toBe(-0.2);
   });
 });
