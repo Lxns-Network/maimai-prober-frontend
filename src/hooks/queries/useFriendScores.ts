@@ -24,14 +24,26 @@ export const useFriendBests = (userId: number | undefined, game: Game) => {
   return { bests: data, isLoading, error, refetch };
 };
 
-export const useFriendRecents = (userId: number | undefined, game: Game) => {
-  const { data, error, isLoading, refetch } = useQuery<(MaimaiScoreProps | ChunithmScoreProps)[]>({
-    queryKey: queryKeys.friends.recents(userId ?? 0, game),
+/** 按北京时间日期（YYYY-MM-DD）统计的上传条数。 */
+export const useFriendHeatmap = (userId: number | undefined, game: Game) => {
+  const { data, error, isLoading, refetch } = useQuery<Record<string, number>>({
+    queryKey: queryKeys.friends.heatmap(userId ?? 0, game),
     enabled: !!userId,
     staleTime: 60 * 1000,
   });
 
-  return { recents: data ?? emptyScores, isLoading, error, refetch };
+  return { heatmap: data, isLoading, error, refetch };
+};
+
+/** 某个北京时间日期上传的全部成绩记录，按上传时间倒序。 */
+export const useFriendUploads = (userId: number | undefined, game: Game, date: string) => {
+  const { data, error, isLoading, refetch } = useQuery<(MaimaiScoreProps | ChunithmScoreProps)[]>({
+    queryKey: queryKeys.friends.uploads(userId ?? 0, game, date),
+    enabled: !!userId,
+    staleTime: 60 * 1000,
+  });
+
+  return { uploads: data ?? emptyScores, isLoading, error, refetch };
 };
 
 export const useFriendScores = (userId: number | undefined, game: Game) => {

@@ -2,7 +2,6 @@ import { ReactNode, useMemo, useState } from "react";
 import {
   ActionIcon,
   Button,
-  Card,
   DataList,
   Group,
   Modal,
@@ -34,8 +33,8 @@ import { Page } from "@/components/Page/Page";
 import { EditAvatarButton } from "@/components/EditAvatarButton";
 import { EmptyState } from "@/components/EmptyState";
 import { QueryErrorState } from "@/components/QueryErrorState";
-import { ScoreList } from "@/components/Scores/ScoreList";
 import { AvatarCropModal } from "@/components/Profile/AvatarCropModal";
+import { ScoreHeatmapCard } from "@/components/Profile/PlayerHeatmapSection";
 import { PlayerCard, type PlayerCardFields } from "@/components/Profile/PlayerPanel/PlayerCard";
 import profileClasses from "@/components/Profile/Profile.module.css";
 import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSection";
@@ -45,6 +44,7 @@ import { LoadingBlock } from "@/components/Friends/LoadingBlock";
 import { FriendActionButtons } from "@/components/Friends/FriendActionButtons";
 import { FriendScoreComparison } from "@/components/Friends/FriendScoreComparison";
 import { MyScoreGap } from "@/components/Friends/MyScoreGap";
+import { UploadTimeline } from "@/components/Friends/UploadTimeline";
 import { useSendFriendRequest } from "@/hooks/useSendFriendRequest";
 import { useFriendRelationActions } from "@/hooks/useFriendRelationActions";
 import useFriendStore from "@/hooks/useFriendStore";
@@ -55,7 +55,7 @@ import { useScores } from "@/hooks/queries/useScores";
 import { useUser } from "@/hooks/queries/useUser";
 import { BestsGroup } from "@/pages/user/Scores/bests/ScoreBestsSection";
 import { useFriendRelationship } from "@/hooks/queries/useFriends";
-import { useFriendBests, useFriendRecents, useFriendScores } from "@/hooks/queries/useFriendScores";
+import { useFriendBests, useFriendHeatmap, useFriendScores } from "@/hooks/queries/useFriendScores";
 import { formatDateTime } from "@/utils/time";
 import { getFriendErrorMessage, getFriendLoadErrorMessage } from "@/utils/api/friend";
 import { APIError } from "@/utils/errors";
@@ -113,15 +113,13 @@ const GameCard = ({ slot, friend }: { slot: ProfileSlot; friend: FriendRelations
 
   if (!visible) {
     return (
-      <Card className={profileClasses.card} withBorder radius="md" p="md">
-        <SlotEmptyState state={slot.state} gameName={gameName}>
-          {friend.games[otherGame].state === "visible" && (
-            <Button variant="light" size="xs" mt="xs" onClick={() => setGame(otherGame)}>
-              切换到「{GAME_NAMES[otherGame]}」查看
-            </Button>
-          )}
-        </SlotEmptyState>
-      </Card>
+      <SlotEmptyState state={slot.state} gameName={gameName}>
+        {friend.games[otherGame].state === "visible" && (
+          <Button variant="light" size="xs" mt="xs" onClick={() => setGame(otherGame)}>
+            切换到「{GAME_NAMES[otherGame]}」查看
+          </Button>
+        )}
+      </SlotEmptyState>
     );
   }
 
@@ -232,24 +230,6 @@ const BestsTab = ({ friend }: { friend: FriendRelationship }) => {
   );
 };
 
-const RecentsTab = ({ friend }: { friend: FriendRelationship }) => {
-  const [game] = useGame();
-  const { recents, isLoading, error, refetch } = useFriendRecents(friend.user_id, game);
-
-  if (isLoading) return <LoadingBlock />;
-  if (error) {
-    return <ScoresLoadError error={error} onRetry={() => void refetch()} />;
-  }
-
-  if (recents.length === 0) {
-    return (
-      <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title="暂无最近游玩记录" />
-    );
-  }
-
-  return <ScoreList scores={recents} readOnly />;
-};
-
 /** 统计与对比共用对方的全部成绩；两者都挂载时 TanStack Query 只请求一次。 */
 const FriendScoresGate = ({
   friend,
@@ -301,16 +281,25 @@ const CompareTab = ({ friend }: { friend: FriendRelationship }) => (
   </FriendScoresGate>
 );
 
+const HeatmapSection = ({ friend }: { friend: FriendRelationship }) => {
+  const [game] = useGame();
+  const { heatmap, isLoading } = useFriendHeatmap(friend.user_id, game);
+  return <ScoreHeatmapCard heatmap={heatmap} isLoading={isLoading} />;
+};
+
 const ProfileTab = ({ friend }: { friend: FriendRelationship }) => {
   const [game] = useGame();
   const slot = friend.games[game];
+  const scoresVisible =
+    (friend.status === "friend" || friend.status === "self") &&
+    slot.state === "visible" &&
+    !!slot.profile;
 
   return (
     <Stack gap="md">
       <GameCard slot={slot} friend={friend} />
-      {(friend.status === "friend" || friend.status === "self") &&
-        slot.state === "visible" &&
-        slot.profile && <StatisticsTab friend={friend} />}
+      {scoresVisible && <HeatmapSection friend={friend} />}
+      {scoresVisible && <StatisticsTab friend={friend} />}
     </Stack>
   );
 };
@@ -618,9 +607,9 @@ export default function FriendProfile() {
                   children: <BestsTab key={game} friend={profile} />,
                 },
                 {
-                  id: "recents",
-                  name: "最近游玩",
-                  children: <RecentsTab key={game} friend={profile} />,
+                  id: "uploads",
+                  name: "上传历史",
+                  children: <UploadTimeline key={game} userId={profile.user_id} />,
                 },
                 ...(isSelf
                   ? []

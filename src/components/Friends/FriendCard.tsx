@@ -101,7 +101,7 @@ export const RatingBadge = ({ game, rating }: { game: Game; rating: number }) =>
   </Badge>
 );
 
-const MaimaiSummary = ({ profile }: { profile: MaimaiSummaryProfile }) => (
+export const MaimaiSummary = ({ profile }: { profile: MaimaiSummaryProfile }) => (
   <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
     <GameAvatar game="maimai" profile={profile} />
 
@@ -138,7 +138,7 @@ const MaimaiSummary = ({ profile }: { profile: MaimaiSummaryProfile }) => (
   </Group>
 );
 
-const ChunithmSummary = ({ profile }: { profile: ChunithmSummaryProfile }) => (
+export const ChunithmSummary = ({ profile }: { profile: ChunithmSummaryProfile }) => (
   <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
     <GameAvatar game="chunithm" profile={profile} />
 
@@ -165,17 +165,7 @@ const ChunithmSummary = ({ profile }: { profile: ChunithmSummaryProfile }) => (
   </Group>
 );
 
-const otherGameOf = (game: Game): Game => (game === "maimai" ? "chunithm" : "maimai");
-
-const UnavailableSummary = ({
-  unbound,
-  game,
-  otherGameVisible,
-}: {
-  unbound: boolean;
-  game: Game;
-  otherGameVisible: boolean;
-}) => (
+const UnavailableSummary = ({ unbound, game }: { unbound: boolean; game: Game }) => (
   <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
     <Avatar size={64} radius="md" className={classes.avatar}>
       <IconUserOff size={24} color="gray" />
@@ -185,11 +175,6 @@ const UnavailableSummary = ({
       <Text size="sm" fw={500}>
         {unbound ? `未绑定「${GAME_NAMES[game]}」` : "暂无游戏数据"}
       </Text>
-      {otherGameVisible && (
-        <Text size="xs" c="dimmed" mt={4}>
-          点击查看「{GAME_NAMES[otherGameOf(game)]}」资料
-        </Text>
-      )}
     </Box>
   </Group>
 );
@@ -202,13 +187,7 @@ const GameSummary = ({ friend, game }: { friend: FriendItem; game: Game }) => {
     const slot = friend.games.chunithm;
     if (slot.state === "visible" && slot.profile) return <ChunithmSummary profile={slot.profile} />;
   }
-  return (
-    <UnavailableSummary
-      unbound={friend.games[game].state === "unbound"}
-      game={game}
-      otherGameVisible={friend.games[otherGameOf(game)].state === "visible"}
-    />
-  );
+  return <UnavailableSummary unbound={friend.games[game].state === "unbound"} game={game} />;
 };
 
 const SyncTime = ({ uploadTime }: { uploadTime?: string }) => (
@@ -262,11 +241,6 @@ export const FriendCard = ({ friend, rank }: FriendCardProps) => {
 
   const slot = friend.games[game];
   const displayName = friend.remark || friend.username;
-  const otherGame = otherGameOf(game);
-  const detailPath =
-    slot.state !== "visible" && friend.games[otherGame].state === "visible"
-      ? profilePath(friend.username, otherGame)
-      : profilePath(friend.username);
 
   return (
     <Card withBorder radius="md" p={0} className={[profileClasses.card, classes.card].join(" ")}>
@@ -276,7 +250,7 @@ export const FriendCard = ({ friend, rank }: FriendCardProps) => {
 
       <Box
         component={Link}
-        to={detailPath}
+        to={profilePath(friend.username)}
         p="md"
         className={classes.cardDetailsTrigger}
         aria-label={`查看${displayName}的好友详情`}

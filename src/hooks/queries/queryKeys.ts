@@ -81,7 +81,11 @@ export const queryKeys = {
     relationship: (username: string) =>
       [`user/friends/relationship?${new URLSearchParams({ username }).toString()}`] as const,
     bests: (userId: number, game: Game) => [`user/friends/${userId}/${game}/bests`] as const,
-    recents: (userId: number, game: Game) => [`user/friends/${userId}/${game}/recents`] as const,
+    heatmap: (userId: number, game: Game) => [`user/friends/${userId}/${game}/heatmap`] as const,
+    uploads: (userId: number, game: Game, date: string) =>
+      [
+        `user/friends/${userId}/${game}/uploads?${new URLSearchParams({ date }).toString()}`,
+      ] as const,
     scores: (userId: number, game: Game) => [`user/friends/${userId}/${game}/scores`] as const,
     ranking: (game: Game, params: URLSearchParams) =>
       [`user/friends/${game}/score/ranking?${params.toString()}`] as const,

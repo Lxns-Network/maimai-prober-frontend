@@ -17,12 +17,20 @@ const generateRandomHeatmap = (start: Date, end: Date): Record<string, number> =
   return data;
 };
 
-export const PlayerHeatmapSection = () => {
-  const [game] = useGame();
+/**
+ * 按日期展示上传成绩数量的热力图（对数缩放）。
+ * 传入 `placeholder` 时以随机示例数据铺底并在其上显示该提示，用于尚无数据的状态。
+ */
+export const ScoreHeatmapCard = ({
+  heatmap,
+  isLoading,
+  placeholder,
+}: {
+  heatmap?: Record<string, number>;
+  isLoading: boolean;
+  placeholder?: string;
+}) => {
   const computedColorScheme = useComputedColorScheme("light");
-
-  const { player, isLoading: isPlayerLoading } = usePlayer(game);
-  const { heatmap, isLoading } = usePlayerHeatmap(game);
 
   const today = new Date();
   const endDate = today.toISOString().split("T")[0];
@@ -31,7 +39,7 @@ export const PlayerHeatmapSection = () => {
     .split("T")[0];
 
   const scaledHeatmap = useMemo(() => {
-    if (!player) {
+    if (placeholder) {
       const end = new Date();
       const start = new Date(end.getFullYear() - 1, end.getMonth(), end.getDate());
       return generateRandomHeatmap(start, end);
@@ -40,21 +48,21 @@ export const PlayerHeatmapSection = () => {
     return Object.fromEntries(
       Object.entries(heatmap).map(([date, value]) => [date, Math.log(value + 1)]),
     );
-  }, [player, heatmap]);
+  }, [placeholder, heatmap]);
 
   return (
     <Card className={classes.card} withBorder radius="md" p={0}>
-      {!isPlayerLoading && !player && (
+      {!isLoading && placeholder && (
         <Overlay
           color={computedColorScheme === "dark" ? "#000" : "#FFF"}
           blur={5}
           center
           zIndex={1}
         >
-          <Text>同步游戏数据后查看热力图</Text>
+          <Text>{placeholder}</Text>
         </Overlay>
       )}
-      {(isLoading || isPlayerLoading) && (
+      {isLoading && (
         <Overlay
           color={computedColorScheme === "dark" ? "#000" : "#FFF"}
           blur={5}
@@ -97,5 +105,19 @@ export const PlayerHeatmapSection = () => {
         />
       </ScrollArea>
     </Card>
+  );
+};
+
+export const PlayerHeatmapSection = () => {
+  const [game] = useGame();
+  const { player, isLoading: isPlayerLoading } = usePlayer(game);
+  const { heatmap, isLoading } = usePlayerHeatmap(game);
+
+  return (
+    <ScoreHeatmapCard
+      heatmap={heatmap}
+      isLoading={isLoading || isPlayerLoading}
+      placeholder={!isPlayerLoading && !player ? "同步游戏数据后查看热力图" : undefined}
+    />
   );
 };

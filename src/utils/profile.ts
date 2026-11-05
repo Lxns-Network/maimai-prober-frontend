@@ -1,7 +1,4 @@
-import { Game } from "@/types/game";
-
-export const profilePath = (username: string, game?: Game) =>
-  `/profile/${encodeURIComponent(username)}${game ? `?game=${game}` : ""}`;
+export const profilePath = (username: string) => `/profile/${encodeURIComponent(username)}`;
 
 export const profileUrl = (username: string) => `${window.location.origin}${profilePath(username)}`;
 
