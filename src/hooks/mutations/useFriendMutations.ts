@@ -15,7 +15,7 @@ import { FriendRankingScoreProps } from "@/hooks/queries/useFriendScoreRanking";
 import { queryKeys } from "@/hooks/queries/queryKeys";
 
 /**
- * 按查询键前缀批量失效。好友列表、关系查询与所有好友维度的 bests/recents/scores/ranking 缓存
+ * 按查询键前缀批量失效。好友列表、关系查询与所有好友维度的 bests/heatmap/uploads/scores/ranking 缓存
  * 共用 `user/friends` 前缀；`user/friend-requests` 不以它开头，需单独失效。
  */
 const invalidatePrefix = (qc: ReturnType<typeof useQueryClient>, prefix: string) =>
