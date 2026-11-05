@@ -1,40 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MaimaiSongList, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useScores } from "@/hooks/queries/useScores.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
-import {
-  IconArrowsSort,
-  IconDatabaseOff,
-  IconFilter,
-  IconPlus,
-  IconRestore,
-  IconSortAscending,
-  IconSortDescending,
-} from "@tabler/icons-react";
-import {
-  ActionIcon,
-  Badge,
-  Box,
-  Button,
-  Card,
-  Drawer,
-  Flex,
-  Group,
-  Indicator,
-  Loader,
-  Menu,
-  ScrollArea,
-  Space,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { IconDatabaseOff, IconPlus } from "@tabler/icons-react";
+import { ActionIcon, Box, Button, Card, Flex, Group, Loader, Space } from "@mantine/core";
 import classes from "./ScoreListSection.module.css";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter.tsx";
+import {
+  ScoreFilterButton,
+  ScoreFilterDrawer,
+  ScoreFilterTitle,
+} from "@/components/Scores/ScoreFilterDrawer.tsx";
+import { ScoreSortMenu } from "@/components/Scores/ScoreSortMenu.tsx";
 import { SongCombobox } from "@/components/SongCombobox.tsx";
 import { ScoreList } from "@/components/Scores/ScoreList.tsx";
 import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSection.tsx";
@@ -44,7 +26,6 @@ import useGame from "@/hooks/useGame.ts";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { ScoreFilters, useScoreFilters } from "@/hooks/useScoreFilters.ts";
-import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
 import { ResponsivePagination } from "@/components/ResponsivePagination.tsx";
 import {
   countActiveFilters,
@@ -232,7 +213,6 @@ export const ScoreListSection = () => {
 
   const [page, setPage] = useState(initialUrlState.page);
   const [filterOpened, { open: openFilter, close: closeFilter }] = useDisclosure(false);
-  useBackDismiss(filterOpened, closeFilter);
 
   const defaultFilters = useMemo(
     () => ({
@@ -348,7 +328,6 @@ export const ScoreListSection = () => {
     setPage(totalPages);
   }
   const displayScores = sortedScores.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const currentSortKey = sortKeys[game].find((item) => item.key === sortBy);
 
   useEffect(() => {
     writeScoreListUrlState(
@@ -378,13 +357,9 @@ export const ScoreListSection = () => {
     setPage(1);
   };
 
-  const handleSort = (key: string) => {
-    if (sortBy === key) {
-      setReverseSortDirection(!reverseSortDirection);
-    } else {
-      setSortBy(key);
-      setReverseSortDirection(false);
-    }
+  const handleSortChange = (key: string | null, reverse: boolean) => {
+    setSortBy(key);
+    setReverseSortDirection(reverse);
     setPage(1);
   };
 
@@ -402,122 +377,6 @@ export const ScoreListSection = () => {
     });
   };
 
-  // 底部抽屉下滑关闭手势
-  const sheetDrag = useRef<{ startY: number; content: HTMLElement } | null>(null);
-
-  const handleSheetPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    const content = event.currentTarget.closest(".mantine-Drawer-content") as HTMLElement | null;
-    if (!content) return;
-    sheetDrag.current = { startY: event.clientY, content };
-    content.style.transition = "none";
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handleSheetPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = sheetDrag.current;
-    if (!drag) return;
-    const offsetY = Math.max(0, event.clientY - drag.startY);
-    drag.content.style.transform = `translateY(${offsetY}px)`;
-  };
-
-  const handleSheetPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = sheetDrag.current;
-    if (!drag) return;
-    sheetDrag.current = null;
-    const offsetY = Math.max(0, event.clientY - drag.startY);
-    drag.content.style.transition = "transform 200ms ease";
-    if (event.type !== "pointercancel" && offsetY > 72) {
-      drag.content.style.transform = "translateY(100%)";
-      const overlay = document.querySelector<HTMLElement>(".mantine-Drawer-overlay");
-      if (overlay) {
-        overlay.style.transition = "opacity 200ms ease";
-        overlay.style.opacity = "0";
-      }
-      window.setTimeout(closeFilter, 200);
-    } else {
-      drag.content.style.transform = "";
-    }
-  };
-
-  const renderSortDirectionIcon = (size: number) =>
-    reverseSortDirection ? <IconSortAscending size={size} /> : <IconSortDescending size={size} />;
-
-  const sortMenu = (
-    <Menu shadow="md" position="bottom-end" width={200} closeOnItemClick={false}>
-      <Menu.Target>
-        {small ? (
-          <Indicator size={8} disabled={!sortBy} withBorder>
-            <ActionIcon variant="default" size="input-sm" aria-label="排序方式">
-              <IconArrowsSort size={20} />
-            </ActionIcon>
-          </Indicator>
-        ) : (
-          <Button
-            variant="default"
-            leftSection={sortBy ? renderSortDirectionIcon(20) : <IconArrowsSort size={20} />}
-          >
-            {currentSortKey ? currentSortKey.name : "排序"}
-          </Button>
-        )}
-      </Menu.Target>
-      <Menu.Dropdown>
-        <Menu.Label>排序方式</Menu.Label>
-        {sortKeys[game].map((item) => (
-          <Menu.Item
-            key={item.key}
-            fw={sortBy === item.key ? 500 : undefined}
-            rightSection={sortBy === item.key ? renderSortDirectionIcon(16) : null}
-            onClick={() => handleSort(item.key)}
-          >
-            {item.name}
-          </Menu.Item>
-        ))}
-        <Menu.Divider />
-        <Menu.Item
-          leftSection={<IconRestore size={16} />}
-          disabled={!sortBy}
-          onClick={() => {
-            setSortBy(null);
-            setReverseSortDirection(false);
-            setPage(1);
-          }}
-        >
-          恢复默认排序
-        </Menu.Item>
-      </Menu.Dropdown>
-    </Menu>
-  );
-
-  const filterTrigger = small ? (
-    <Indicator
-      label={activeFilterCount}
-      size={16}
-      disabled={activeFilterCount === 0}
-      withBorder
-      hiddenFrom={FILTER_PANEL_BREAKPOINT}
-    >
-      <ActionIcon variant="default" size="input-sm" aria-label="筛选成绩" onClick={openFilter}>
-        <IconFilter size={20} />
-      </ActionIcon>
-    </Indicator>
-  ) : (
-    <Button
-      variant="default"
-      leftSection={<IconFilter size={20} />}
-      rightSection={
-        activeFilterCount > 0 ? (
-          <Badge size="sm" circle>
-            {activeFilterCount}
-          </Badge>
-        ) : null
-      }
-      onClick={openFilter}
-      hiddenFrom={FILTER_PANEL_BREAKPOINT}
-    >
-      筛选
-    </Button>
-  );
-
   const createButton = small ? (
     <ActionIcon
       size="input-sm"
@@ -534,19 +393,6 @@ export const ScoreListSection = () => {
     </Button>
   );
 
-  const filterPanelTitle = (
-    // 固定行高，避免角标出现/消失时标题行高度变化
-    <Group gap="xs" wrap="nowrap" h={25}>
-      <IconFilter size={20} />
-      <Text fw={700}>筛选成绩</Text>
-      {activeFilterCount > 0 && (
-        <Badge variant="light" size="sm">
-          {activeFilterCount}
-        </Badge>
-      )}
-    </Group>
-  );
-
   return (
     <div ref={topRef} className={classes.scrollAnchor}>
       <Flex gap="xs" align="center" wrap="nowrap" mb="sm">
@@ -558,8 +404,17 @@ export const ScoreListSection = () => {
           flex={1}
           miw={0}
         />
-        {sortMenu}
-        {filterTrigger}
+        <ScoreSortMenu
+          options={sortKeys[game]}
+          sortBy={sortBy}
+          reverseSortDirection={reverseSortDirection}
+          onChange={handleSortChange}
+        />
+        <ScoreFilterButton
+          count={activeFilterCount}
+          onClick={openFilter}
+          hiddenFrom={FILTER_PANEL_BREAKPOINT}
+        />
         {createButton}
       </Flex>
       <Flex gap="md" align="flex-start">
@@ -647,7 +502,7 @@ export const ScoreListSection = () => {
           style={{ flexShrink: 0 }}
         >
           <Group justify="space-between" mb="md">
-            {filterPanelTitle}
+            <ScoreFilterTitle count={activeFilterCount} />
           </Group>
           <AdvancedFilter
             filters={filters}
@@ -663,46 +518,13 @@ export const ScoreListSection = () => {
       {game === "chunithm" && (
         <ChunithmStatisticsSection scores={searchedScores as ChunithmScoreProps[]} />
       )}
-      <Drawer
-        opened={filterOpened}
-        onClose={closeFilter}
-        position={small ? "bottom" : "right"}
-        size={small ? "85%" : "md"}
-        withCloseButton={!small}
-        classNames={
-          small
-            ? {
-                content: classes.bottomSheetContent,
-                title: classes.bottomSheetTitle,
-                body: classes.bottomSheetBody,
-              }
-            : undefined
-        }
-        scrollAreaComponent={ScrollArea.Autosize}
-        title={
-          small ? (
-            <Stack
-              gap={8}
-              style={{ touchAction: "none" }}
-              onPointerDown={handleSheetPointerDown}
-              onPointerMove={handleSheetPointerMove}
-              onPointerUp={handleSheetPointerEnd}
-              onPointerCancel={handleSheetPointerEnd}
-            >
-              <div className={classes.dragHandle} />
-              {filterPanelTitle}
-            </Stack>
-          ) : (
-            filterPanelTitle
-          )
-        }
-      >
+      <ScoreFilterDrawer opened={filterOpened} onClose={closeFilter} count={activeFilterCount}>
         <AdvancedFilter
           filters={filters}
           setFilter={setScoreFilter}
           resetFilters={resetScoreFilters}
         />
-      </Drawer>
+      </ScoreFilterDrawer>
     </div>
   );
 };
