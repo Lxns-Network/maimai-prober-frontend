@@ -17,6 +17,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/zh-cn";
 import { Link } from "@/components/Link";
 import { TrophyBadge } from "@/components/TrophyBadge";
+import { EditAvatarButton } from "@/components/EditAvatarButton";
 import profileClasses from "@/components/Profile/Profile.module.css";
 import { ChunithmProfileCard, FriendItem, MaimaiProfileCard } from "@/types/friend";
 import { Game } from "@/types/game";
@@ -101,9 +102,33 @@ export const RatingBadge = ({ game, rating }: { game: Game; rating: number }) =>
   </Badge>
 );
 
-export const MaimaiSummary = ({ profile }: { profile: MaimaiSummaryProfile }) => (
+const SummaryAvatar = ({
+  game,
+  profile,
+  onAvatarClick,
+}: {
+  game: Game;
+  profile: MaimaiSummaryProfile | ChunithmSummaryProfile;
+  onAvatarClick?: () => void;
+}) => {
+  const avatar = <GameAvatar game={game} profile={profile} />;
+  if (!onAvatarClick) return avatar;
+  return (
+    <EditAvatarButton onClick={onAvatarClick} radius="var(--mantine-radius-md)">
+      {avatar}
+    </EditAvatarButton>
+  );
+};
+
+export const MaimaiSummary = ({
+  profile,
+  onAvatarClick,
+}: {
+  profile: MaimaiSummaryProfile;
+  onAvatarClick?: () => void;
+}) => (
   <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
-    <GameAvatar game="maimai" profile={profile} />
+    <SummaryAvatar game="maimai" profile={profile} onAvatarClick={onAvatarClick} />
 
     <Box className={classes.cardGameDetails}>
       <Group gap={6} wrap="nowrap">
@@ -138,9 +163,15 @@ export const MaimaiSummary = ({ profile }: { profile: MaimaiSummaryProfile }) =>
   </Group>
 );
 
-export const ChunithmSummary = ({ profile }: { profile: ChunithmSummaryProfile }) => (
+export const ChunithmSummary = ({
+  profile,
+  onAvatarClick,
+}: {
+  profile: ChunithmSummaryProfile;
+  onAvatarClick?: () => void;
+}) => (
   <Group wrap="nowrap" align="center" gap="sm" className={classes.cardProfile}>
-    <GameAvatar game="chunithm" profile={profile} />
+    <SummaryAvatar game="chunithm" profile={profile} onAvatarClick={onAvatarClick} />
 
     <Box className={classes.cardGameDetails}>
       <Group gap={6} wrap="nowrap">

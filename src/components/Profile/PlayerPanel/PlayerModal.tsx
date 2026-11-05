@@ -4,6 +4,7 @@ import { ChunithmRatingTrend, ChunithmRatingTrendProps } from "./chunithm/Rating
 import {
   Accordion,
   ActionIcon,
+  Box,
   Center,
   CheckIcon,
   Combobox,
@@ -33,6 +34,7 @@ import { Marquee } from "@/components/Marquee.tsx";
 import { useMediaQuery } from "@mantine/hooks";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
+import { ChunithmSummary, MaimaiSummary } from "@/components/Friends/FriendCard";
 
 interface EditButtonProps {
   title: string;
@@ -68,13 +70,37 @@ interface PlayerContentProps {
   editable: boolean;
 }
 
+/**
+ * 窄屏下完整的玩家信息排不下，改用好友卡片的紧凑摘要。
+ * 紧凑摘要再窄就会挤压称号和名字，因此给它保底宽度，更窄时交给外层横向滚动。
+ */
+const COMPACT_BELOW = "sm";
+const COMPACT_MIN_WIDTH = 300;
+
 export const PlayerContent = ({ player, onCollectionEdit, editable }: PlayerContentProps) => {
   const props = { onCollectionEdit, editable };
+  const editAvatar =
+    editable && onCollectionEdit
+      ? () =>
+          isMaimaiPlayerProps(player)
+            ? onCollectionEdit("icons", player.icon?.id || 0)
+            : onCollectionEdit("characters", player.character?.id || 0)
+      : undefined;
   return (
-    <Container>
-      {isMaimaiPlayerProps(player) && <MaimaiPlayerContent player={player} {...props} />}
-      {isChunithmPlayerProps(player) && <ChunithmPlayerContent player={player} {...props} />}
-    </Container>
+    <>
+      <Box hiddenFrom={COMPACT_BELOW} px="md" miw={COMPACT_MIN_WIDTH}>
+        {isMaimaiPlayerProps(player) && (
+          <MaimaiSummary profile={player} onAvatarClick={editAvatar} />
+        )}
+        {isChunithmPlayerProps(player) && (
+          <ChunithmSummary profile={player} onAvatarClick={editAvatar} />
+        )}
+      </Box>
+      <Container visibleFrom={COMPACT_BELOW}>
+        {isMaimaiPlayerProps(player) && <MaimaiPlayerContent player={player} {...props} />}
+        {isChunithmPlayerProps(player) && <ChunithmPlayerContent player={player} {...props} />}
+      </Container>
+    </>
   );
 };
 
