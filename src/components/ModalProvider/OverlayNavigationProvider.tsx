@@ -1,8 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
-import useOverlayNavigationStore from "@/hooks/useOverlayNavigationStore";
+import useOverlayNavigationStore, { type OverlaySession } from "@/hooks/useOverlayNavigationStore";
 import { ResumableOverlayContext } from "@/hooks/useResumableOverlay";
 import type { ShellViewportRef } from "@/components/Shell/ShellViewportContext";
+
+/**
+ * Mantine Transition 只在 mounted 于挂载后变化时播放进入动画，而 Portal 首次渲染为空、
+ * 在 layout effect 中才挂载内容，与同一提交内的 effect 更新会被合并，故延后一帧再打开。
+ */
+function OverlaySessionView({ session }: { session: OverlaySession }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  return session.render(session.opened && ready);
+}
 
 export function OverlayNavigationProvider({ viewportRef }: { viewportRef: ShellViewportRef }) {
   const sessions = useOverlayNavigationStore((state) => state.sessions);
@@ -53,7 +66,7 @@ export function OverlayNavigationProvider({ viewportRef }: { viewportRef: ShellV
       key={session.id}
       value={{ sessionId: session.id, pageViewportRef: viewportRef }}
     >
-      {session.render(session.opened)}
+      <OverlaySessionView session={session} />
     </ResumableOverlayContext.Provider>
   ));
 }

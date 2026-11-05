@@ -4,7 +4,7 @@ import { navigate } from "vike/client/router";
 import { notifications } from "@mantine/notifications";
 import { suppressTopOverlayHistoryRestore } from "@/utils/overlayBackStack";
 
-type OverlaySession = {
+export type OverlaySession = {
   id: string;
   opened: boolean;
   render: (opened: boolean) => ReactNode;
