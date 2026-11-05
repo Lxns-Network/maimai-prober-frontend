@@ -11,7 +11,6 @@ import { UserAvatar } from "@/components/Friends/UserAvatar";
 import { useUser } from "@/hooks/queries/useUser.ts";
 import { useUnreadCount } from "@/hooks/queries/useUnreadCount.ts";
 import { useLogoutUser } from "@/hooks/mutations/useUserMutations.ts";
-import useGame from "@/hooks/useGame.ts";
 import { profilePath } from "@/utils/profile.ts";
 import classes from "./Navbar.module.css";
 
@@ -21,7 +20,6 @@ interface NavbarUserMenuProps {
 
 export const NavbarUserMenu = ({ onClose }: NavbarUserMenuProps) => {
   const { user } = useUser();
-  const [game] = useGame();
   const unreadCount = useUnreadCount();
   const { mutate: mutateLogout } = useLogoutUser();
 
@@ -65,7 +63,7 @@ export const NavbarUserMenu = ({ onClose }: NavbarUserMenuProps) => {
         <Menu.Item
           leftSection={<IconUserCircle size={18} stroke={1.5} />}
           disabled={!user}
-          onClick={() => user && go(profilePath(user.name, game))}
+          onClick={() => user && go(profilePath(user.name))}
         >
           资料
         </Menu.Item>

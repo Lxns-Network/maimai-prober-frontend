@@ -200,7 +200,7 @@ const CommentItem = ({
   const { mutate: removeComment } = useDeleteComment();
   const { mutate: like } = useLikeComment();
   const { mutate: unlike } = useUnlikeComment();
-  const profileUrl = profilePath(comment.uploader.name, game);
+  const profileUrl = profilePath(comment.uploader.name);
 
   const deleteCommentHandler = () => {
     // Optimistic: remove from list immediately

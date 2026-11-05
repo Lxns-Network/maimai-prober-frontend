@@ -82,7 +82,7 @@ const RequestIdentity = ({ request }: { request: FriendRequestItem }) => {
         <Group gap={6} wrap="nowrap">
           <Anchor
             component={Link}
-            to={profilePath(username, game)}
+            to={profilePath(username)}
             onClick={() => setListSearch("?tab=requests")}
             fw={500}
             size="md"

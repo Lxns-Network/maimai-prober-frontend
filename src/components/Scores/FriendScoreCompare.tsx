@@ -132,7 +132,7 @@ export const FriendScoreCompare = ({
           我 vs{" "}
           <Anchor
             {...profileLinkProps}
-            href={profilePath(theirs.username, game)}
+            href={profilePath(theirs.username)}
             fz="xs"
             underline="hover"
             aria-label={`查看 ${theirName} 的好友资料`}

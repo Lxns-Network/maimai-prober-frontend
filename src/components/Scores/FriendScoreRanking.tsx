@@ -162,7 +162,7 @@ export const FriendScoreRanking = ({
 
         const canCompare = !!myScore && !row.isSelf;
         const displayName = row.remark || row.username;
-        const profileUrl = profilePath(row.isSelf ? (user?.name ?? "") : row.username, game);
+        const profileUrl = profilePath(row.isSelf ? (user?.name ?? "") : row.username);
 
         return (
           <Box key={`${row.user_id}:${row.username}`}>
