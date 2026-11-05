@@ -6,6 +6,8 @@ import {
 } from "@/utils/color.ts";
 import { getDifficulty, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { MaimaiScoreProps } from "@/types/score";
+import { scoreColorIndex } from "@/utils/score.ts";
+import { ChartTypeBadge } from "@/components/ChartBadge.tsx";
 
 interface ScoreContentProps {
   score: MaimaiScoreProps;
@@ -14,7 +16,7 @@ interface ScoreContentProps {
 
 export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
   const deluxeRating = score.type !== "utage" ? `${parseInt(String(score.dx_rating))}` : "-";
-  const levelIndex = score.type !== "utage" ? score.level_index : 5;
+  const levelIndex = scoreColorIndex(score);
 
   const difficulty = song ? getDifficulty(song, score.type, score.level_index) : undefined;
   const isBuddy = difficulty?.is_buddy ?? false;
@@ -35,16 +37,7 @@ export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
         <Text size="sm" fw={500} truncate flex={1} c="white">
           {score.song_name}
         </Text>
-        {score.type === "standard" && (
-          <Badge variant="filled" color="blue" size="sm">
-            标准
-          </Badge>
-        )}
-        {score.type === "dx" && (
-          <Badge variant="filled" color="orange" size="sm">
-            DX
-          </Badge>
-        )}
+        <ChartTypeBadge type={score.type} variant="filled" />
         {isBuddy && (
           <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">
             BUDDY

@@ -1,4 +1,4 @@
-import { Badge, type MantineColor } from "@mantine/core";
+import { Badge, type BadgeProps, type MantineColor } from "@mantine/core";
 import { type ReactNode } from "react";
 
 const CHART_TYPE_BADGES: Partial<Record<string, { label: string; color: MantineColor }>> = {
@@ -8,12 +8,25 @@ const CHART_TYPE_BADGES: Partial<Record<string, { label: string; color: MantineC
   worldsend: { label: "WORLD'S END", color: "gray" },
 };
 
+/** 成绩卡片与成绩详情用 `filled`；列表、时间线等紧凑场景用 `light`。 */
+const CHART_TYPE_BADGE_VARIANTS = {
+  light: { variant: "light", size: "xs", radius: "sm" },
+  filled: { variant: "filled", size: "sm" },
+} as const satisfies Record<string, BadgeProps>;
+
 /** 谱面类型徽章；没有对应类型的谱面（如中二节奏普通谱面）不渲染。 */
-export const ChartTypeBadge = ({ type }: { type: string }) => {
+export const ChartTypeBadge = ({
+  type,
+  variant = "light",
+  ...badgeProps
+}: {
+  type: string;
+  variant?: keyof typeof CHART_TYPE_BADGE_VARIANTS;
+} & Omit<BadgeProps, "variant" | "color">) => {
   const badge = CHART_TYPE_BADGES[type];
   if (!badge) return null;
   return (
-    <Badge size="xs" radius="sm" variant="light" color={badge.color}>
+    <Badge {...CHART_TYPE_BADGE_VARIANTS[variant]} color={badge.color} {...badgeProps}>
       {badge.label}
     </Badge>
   );

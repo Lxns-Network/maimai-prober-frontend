@@ -1,13 +1,10 @@
 import {
-  Badge,
   Flex,
   Group,
   HoverCard,
-  Image,
   Mark,
   Modal,
   NumberFormatter,
-  rem,
   Space,
   Text,
   ThemeIcon,
@@ -18,6 +15,8 @@ import { IconArrowRight, IconDatabaseOff, IconHelp } from "@tabler/icons-react";
 import { useState } from "react";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { EmptyState } from "@/components/EmptyState.tsx";
+import { ChartTypeBadge } from "@/components/ChartBadge.tsx";
+import { MusicIcon } from "@/components/MusicIcon.tsx";
 import { Marquee } from "../Marquee.tsx";
 import { Game } from "@/types/game";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -31,63 +30,21 @@ interface ScoresChangesModalProps {
   onClose: () => void;
 }
 
+const iconValue = (value: unknown) => (value ? String(value) : undefined);
+
 const MusicIconChangeCell = ({ game, icon }: { game: Game; icon: ScoreChangeDetailProps }) => {
   if (icon.new !== undefined && icon.new !== null) {
-    if (game === "chunithm") {
-      return (
-        <Group gap={0} h={0} ml={-3} wrap="nowrap">
-          <Image
-            src={`/assets/${game}/music_icon/${icon.old || "blank"}_xs.webp`}
-            h={rem(24)}
-            w={rem(24)}
-          />
-          <ThemeIcon variant="subtle" color="gray" size={20}>
-            <IconArrowRight />
-          </ThemeIcon>
-          <Image
-            src={`/assets/${game}/music_icon/${icon.new || "blank"}_xs.webp`}
-            h={rem(24)}
-            w={rem(24)}
-          />
-        </Group>
-      );
-    }
     return (
       <Group gap={0} h={0} ml={-3} wrap="nowrap">
-        <Image
-          src={`/assets/${game}/music_icon/${icon.old || "blank"}.webp`}
-          h={rem(24)}
-          w={rem(24)}
-        />
+        <MusicIcon game={game} value={iconValue(icon.old)} />
         <ThemeIcon variant="subtle" color="gray" size={20}>
           <IconArrowRight />
         </ThemeIcon>
-        <Image
-          src={`/assets/${game}/music_icon/${icon.new || "blank"}.webp`}
-          h={rem(24)}
-          w={rem(24)}
-        />
+        <MusicIcon game={game} value={iconValue(icon.new)} />
       </Group>
     );
   }
-  if (game === "chunithm") {
-    return (
-      <Image
-        src={`/assets/${game}/music_icon/${icon.old || "blank"}_xs.webp`}
-        h={rem(24)}
-        w="auto"
-        ml={-3}
-      />
-    );
-  }
-  return (
-    <Image
-      src={`/assets/${game}/music_icon/${icon.old || "blank"}.webp`}
-      h={rem(24)}
-      w="auto"
-      ml={-3}
-    />
-  );
+  return <MusicIcon game={game} value={iconValue(icon.old)} ml={-3} />;
 };
 
 function containsOld(obj: object): boolean {
@@ -150,31 +107,13 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
                 render: ({ song_name, type }) => {
                   return (
                     <Flex align="center">
-                      {type === "standard" ? (
-                        <Badge
-                          variant="filled"
-                          color="blue"
-                          size="xs"
-                          w={33}
-                          style={{
-                            flexShrink: 0,
-                          }}
-                        >
-                          标准
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="filled"
-                          color="orange"
-                          size="xs"
-                          w={33}
-                          style={{
-                            flexShrink: 0,
-                          }}
-                        >
-                          DX
-                        </Badge>
-                      )}
+                      <ChartTypeBadge
+                        type={type}
+                        variant="filled"
+                        size="xs"
+                        w={33}
+                        style={{ flexShrink: 0 }}
+                      />
                       <Space w={8} />
                       <Marquee>{song_name}</Marquee>
                     </Flex>

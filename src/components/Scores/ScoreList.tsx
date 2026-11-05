@@ -12,6 +12,7 @@ import { ChunithmScoreContent } from "./chunithm/Score.tsx";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import classes from "./Scores.module.css";
 import { getScoreSecondaryColor } from "@/utils/color.ts";
+import { isWorldsEnd, scoreColorIndex } from "@/utils/score.ts";
 import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
@@ -38,12 +39,10 @@ export const ScoreCard = ({ game, score, onClick }: ScoreCardProps) => {
   const computedColorScheme = useComputedColorScheme("light");
 
   let borderSize = 2;
-  let levelIndex = score.level_index;
+  const levelIndex = scoreColorIndex(score);
   const classNameList = [classes.card, classes.scoreCard];
 
-  if (game === "maimai" && score.type === "utage") {
-    levelIndex = 5;
-  } else if (game === "chunithm" && score.id >= 8000) {
+  if (game === "chunithm" && isWorldsEnd(score.id)) {
     borderSize = 0;
     classNameList.push(classes.scoreWorldsEnd);
   }

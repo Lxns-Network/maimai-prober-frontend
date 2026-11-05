@@ -1,4 +1,4 @@
-import { Anchor, Badge, Box, Divider, Group, Image, Paper, Stack, Text } from "@mantine/core";
+import { Anchor, Badge, Box, Divider, Group, Paper, Stack, Text } from "@mantine/core";
 import { type OverlayLinkProps } from "@/hooks/useResumableOverlay";
 import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
@@ -6,6 +6,7 @@ import { FriendRankingScoreProps } from "@/hooks/queries/useFriendScoreRanking.t
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { MaimaiSongList, getDifficulty } from "@/utils/api/song/maimai.ts";
 import { profilePath } from "@/utils/profile.ts";
+import { MusicIcon } from "@/components/MusicIcon.tsx";
 
 interface CompareRow {
   label: string;
@@ -17,15 +18,6 @@ interface CompareRow {
 const formatAchievements = (value?: number) => (value === undefined ? "—" : `${value.toFixed(4)}%`);
 
 const formatCount = (value?: number) => (value === undefined ? "—" : value.toLocaleString());
-
-const musicIconOrDash = (game: Game, value?: string) =>
-  value ? (
-    <Image src={`/assets/${game}/music_icon/${value}.webp`} h={20} w="auto" />
-  ) : (
-    <Text fz="sm" c="dimmed">
-      —
-    </Text>
-  );
 
 export const FriendScoreCompare = ({
   game,
@@ -176,3 +168,11 @@ export const FriendScoreCompare = ({
     </Paper>
   );
 };
+const musicIconOrDash = (game: Game, value?: string) =>
+  value ? (
+    <MusicIcon game={game} value={value} size={20} />
+  ) : (
+    <Text fz="sm" c="dimmed">
+      —
+    </Text>
+  );

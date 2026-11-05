@@ -34,7 +34,7 @@ import { Marquee } from "@/components/Marquee.tsx";
 import { useMediaQuery } from "@mantine/hooks";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
 import { useBackDismiss } from "@/hooks/useBackDismiss.ts";
-import { ChunithmSummary, MaimaiSummary } from "@/components/Friends/FriendCard";
+import { ChunithmSummary, MaimaiSummary } from "@/components/Profile/PlayerSummary";
 
 interface EditButtonProps {
   title: string;
@@ -53,7 +53,7 @@ export const EditButton = ({ title, description, onClick }: EditButtonProps) => 
           <Text fz="xs" c="dimmed">
             {title}
           </Text>
-          <Text fz="sm">
+          <Text fz="sm" component="div">
             <Marquee>{description}</Marquee>
           </Text>
         </div>

@@ -40,7 +40,7 @@ export const MaimaiPlayerModalContent = ({ player, onCollectionEdit }: PlayerMod
             <Text fz="xs" c="dimmed">
               上次同步时间
             </Text>
-            <Text fz="sm">
+            <Text fz="sm" component="div">
               <Marquee>{new Date(Date.parse(player.upload_time)).toLocaleString()}</Marquee>
             </Text>
           </Paper>

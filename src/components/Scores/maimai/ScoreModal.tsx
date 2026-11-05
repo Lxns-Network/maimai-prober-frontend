@@ -1,6 +1,5 @@
 import { getTotalNotes, getDeluxeScoreStars } from "@/utils/maimai/deluxeScore.ts";
 import {
-  AspectRatio,
   Avatar,
   Badge,
   Box,
@@ -33,6 +32,9 @@ import { useShallow } from "zustand/react/shallow";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { RatingHistoryModal } from "../RatingHistoryModal.tsx";
 import { DeluxeRatingCalculator } from "./DeluxeRatingCalculator.tsx";
+import { scoreColorIndex } from "@/utils/score.ts";
+import { ChartTypeBadge } from "@/components/ChartBadge.tsx";
+import { MusicIcon } from "@/components/MusicIcon.tsx";
 import { DeluxeScoreDetail } from "./DeluxeScoreDetail.tsx";
 import { MaimaiScoreProps } from "@/types/score";
 
@@ -64,7 +66,7 @@ export const MaimaiScoreModalContent = ({
   const [calculatorOpened, setCalculatorOpened] = useState(false);
   const [deluxeScoreOpened, setDeluxeScoreOpened] = useState(false);
 
-  const levelIndex = score.type !== "utage" ? score.level_index : 5;
+  const levelIndex = scoreColorIndex(score);
   const small = useMediaQuery("(max-width: 30rem)");
 
   useEffect(() => {
@@ -117,16 +119,7 @@ export const MaimaiScoreModalContent = ({
         </SongDisabledIndicator>
         <Box flex={1}>
           <Group gap={8}>
-            {score.type === "standard" && (
-              <Badge variant="filled" color="blue" size="sm">
-                标准
-              </Badge>
-            )}
-            {score.type === "dx" && (
-              <Badge variant="filled" color="orange" size="sm">
-                DX
-              </Badge>
-            )}
+            <ChartTypeBadge type={score.type} variant="filled" />
             {difficulty?.is_buddy && (
               <Badge variant="filled" color="rgb(73, 9, 10)" size="sm">
                 BUDDY
@@ -145,12 +138,8 @@ export const MaimaiScoreModalContent = ({
             {song.artist}
           </Text>
           <Group gap={0} ml={-3} mb={-3}>
-            <AspectRatio ratio={1}>
-              <Image src={`/assets/maimai/music_icon/${score.fc || "blank"}.webp`} w={rem(30)} />
-            </AspectRatio>
-            <AspectRatio ratio={1}>
-              <Image src={`/assets/maimai/music_icon/${score.fs || "blank"}.webp`} w={rem(30)} />
-            </AspectRatio>
+            <MusicIcon game="maimai" value={score.fc} size={30} />
+            <MusicIcon game="maimai" value={score.fs} size={30} />
           </Group>
         </Box>
         <Tooltip label="查看谱面历史定数">

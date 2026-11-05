@@ -1,25 +1,15 @@
-import {
-  ActionIcon,
-  Anchor,
-  Avatar,
-  Box,
-  Button,
-  Center,
-  Loader,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { ActionIcon, Anchor, Box, Button, Center, Loader, Stack, Text } from "@mantine/core";
 import {
   IconAddressBookOff,
   IconChevronDown,
   IconDatabaseOff,
-  IconUser,
   IconUserPlus,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { FriendScoreCompare } from "./FriendScoreCompare.tsx";
 import { RankingRow } from "./RankingRow.tsx";
 import { EmptyState } from "@/components/EmptyState.tsx";
+import { GameAvatar } from "@/components/Profile/PlayerSummary.tsx";
 import { QueryErrorState } from "@/components/QueryErrorState.tsx";
 import { Game } from "@/types/game";
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
@@ -34,7 +24,6 @@ import { useUser } from "@/hooks/queries/useUser.ts";
 import { useSongBests } from "@/hooks/queries/useSongBests.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { type OverlayLinkProps } from "@/hooks/useResumableOverlay";
-import { ASSET_URL } from "@/main";
 import { getFriendLoadErrorMessage } from "@/utils/api/friend.ts";
 import { chartKey } from "@/utils/scoreCompare.ts";
 import { profilePath } from "@/utils/profile.ts";
@@ -153,12 +142,10 @@ export const FriendScoreRanking = ({
     <Stack gap="xs">
       {rows.map((row, index) => {
         const rank = index + 1;
-        const avatarSrc =
-          game === "maimai" && row.icon_id
-            ? `${ASSET_URL}/maimai/icon/${row.icon_id}.png!webp`
-            : game === "chunithm" && row.character_id
-              ? `${ASSET_URL}/chunithm/character/${row.character_id}.png!webp`
-              : undefined;
+        const avatarProfile = {
+          icon: row.icon_id ? { id: row.icon_id } : undefined,
+          character: row.character_id ? { id: row.character_id } : undefined,
+        };
 
         const canCompare = !!myScore && !row.isSelf;
         const displayName = row.remark || row.username;
@@ -172,17 +159,16 @@ export const FriendScoreRanking = ({
               score={row.score}
               highlighted={row.isSelf}
               leading={
-                <Avatar
+                <GameAvatar
                   component="a"
                   {...profileLinkProps}
                   href={profileUrl}
                   aria-label={row.isSelf ? "查看我的档案" : `查看 ${displayName} 的档案`}
-                  src={avatarSrc}
+                  game={game}
+                  profile={avatarProfile}
                   size={28}
                   radius="sm"
-                >
-                  <IconUser size={16} />
-                </Avatar>
+                />
               }
               name={
                 <>

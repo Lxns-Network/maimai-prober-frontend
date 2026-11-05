@@ -1,21 +1,7 @@
 import { ChunithmPlayerProps } from "@/types/player";
-import {
-  Avatar,
-  Badge,
-  Divider,
-  Flex,
-  Group,
-  Text,
-  Image,
-  Center,
-  NumberFormatter,
-  Box,
-} from "@mantine/core";
-import { IconPhotoOff } from "@tabler/icons-react";
-import { getChunithmCharacterColor, getRatingGradient } from "@/utils/color.ts";
-import { ASSET_URL } from "@/main";
+import { Divider, Flex, Group, Text, Image, Center, NumberFormatter, Box } from "@mantine/core";
 import { TrophyBadge } from "@/components/TrophyBadge.tsx";
-import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
+import { PlayerAvatar, RatingBadge } from "@/components/Profile/PlayerSummary.tsx";
 
 type ChunithmPlayerCardFields = Pick<
   ChunithmPlayerProps,
@@ -33,42 +19,15 @@ interface PlayerContentProps {
 }
 
 export const ChunithmPlayerContent = ({ player, onAvatarClick }: PlayerContentProps) => {
-  const avatar = (
-    <Avatar
-      src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`}
-      size={94}
-      p={5}
-      radius="md"
-      style={{
-        backgroundSize: 94,
-        backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(player.character?.level || 0)}.webp)`,
-      }}
-    >
-      <IconPhotoOff />
-    </Avatar>
-  );
-
   return (
     <Group wrap="nowrap">
-      {onAvatarClick ? (
-        <EditAvatarButton onClick={onAvatarClick}>{avatar}</EditAvatarButton>
-      ) : (
-        avatar
-      )}
+      <PlayerAvatar game="chunithm" profile={player} size={94} onAvatarClick={onAvatarClick} />
       <Box pr="md">
         <Flex gap="xs" mb={8}>
           {player.trophy && (
             <TrophyBadge name={player.trophy.name} trophyColor={player.trophy.color || "normal"} />
           )}
-          <Badge
-            variant="gradient"
-            gradient={getRatingGradient(player.rating)}
-            style={{
-              flex: "none",
-            }}
-          >
-            Rating: {player.rating}
-          </Badge>
+          <RatingBadge game="chunithm" rating={player.rating} size="md" />
         </Flex>
 
         <Text fz="lg" fw={500}>

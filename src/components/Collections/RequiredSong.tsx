@@ -3,7 +3,6 @@ import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   ActionIcon,
   Anchor,
-  Badge,
   Box,
   Card,
   Center,
@@ -26,6 +25,8 @@ import { PhotoView } from "react-photo-view";
 import { Marquee } from "../Marquee.tsx";
 import { ASSET_URL } from "@/main";
 import { AnimatedGrid } from "@/components/AnimatedGrid.tsx";
+import { ChartTypeBadge } from "@/components/ChartBadge.tsx";
+import { MusicIcon } from "@/components/MusicIcon.tsx";
 import { motion } from "motion/react";
 import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
 import { Link } from "@/components/Link";
@@ -222,10 +223,11 @@ export const RequiredSong = ({
                       <Text fz="xs" c="dimmed">
                         全连要求
                       </Text>
-                      <Image
-                        w={rem(30)}
+                      <MusicIcon
+                        game="maimai"
+                        value={collection.required[0].fc}
+                        size={30}
                         ml={-3}
-                        src={`/assets/maimai/music_icon/${collection.required[0].fc}.webp`}
                       />
                     </div>
                   )}
@@ -234,10 +236,11 @@ export const RequiredSong = ({
                       <Text fz="xs" c="dimmed">
                         全同步要求
                       </Text>
-                      <Image
-                        w={rem(30)}
+                      <MusicIcon
+                        game="maimai"
+                        value={collection.required[0].fs}
+                        size={30}
                         ml={-3}
-                        src={`/assets/maimai/music_icon/${collection.required[0].fs}.webp`}
                       />
                     </div>
                   )}
@@ -258,10 +261,13 @@ export const RequiredSong = ({
                       <Text fz="xs" c="dimmed">
                         全连要求
                       </Text>
-                      <Image
-                        w={rem(94)}
+                      <MusicIcon
+                        game="chunithm"
+                        value={collection.required[0].full_combo}
+                        size={94}
+                        suffix=""
+                        h="auto"
                         mt={2}
-                        src={`/assets/chunithm/music_icon/${collection.required[0].full_combo}.webp`}
                       />
                     </div>
                   )}
@@ -270,10 +276,13 @@ export const RequiredSong = ({
                       <Text fz="xs" c="dimmed">
                         全同步要求
                       </Text>
-                      <Image
-                        w={rem(94)}
+                      <MusicIcon
+                        game="chunithm"
+                        value={collection.required[0].full_chain}
+                        size={94}
+                        suffix=""
+                        h="auto"
                         mt={2}
-                        src={`/assets/chunithm/music_icon/${collection.required[0].full_chain}.webp`}
                       />
                     </div>
                   )}
@@ -372,19 +381,7 @@ export const RequiredSong = ({
               >
                 {record.title}
               </Anchor>
-              {game === "maimai" && (
-                <>
-                  {record.type === "standard" ? (
-                    <Badge variant="filled" color="blue" size="sm">
-                      标准
-                    </Badge>
-                  ) : (
-                    <Badge variant="filled" color="orange" size="sm">
-                      DX
-                    </Badge>
-                  )}
-                </>
-              )}
+              {game === "maimai" && <ChartTypeBadge type={record.type} variant="filled" />}
             </div>
           </Group>
         )}

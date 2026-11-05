@@ -1,12 +1,14 @@
-import { Avatar, Badge, Box, Card, Group, Image, Stack, Text } from "@mantine/core";
+import { Avatar, Badge, Box, Card, Group, Stack, Text } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { ChartLevelBadge, ChartTypeBadge } from "@/components/ChartBadge";
+import { MusicIcon } from "@/components/MusicIcon";
 import profileClasses from "@/components/Profile/Profile.module.css";
 import useSongListStore from "@/hooks/useSongListStore";
 import { ASSET_URL } from "@/main";
 import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { getScoreCardBackgroundColor } from "@/utils/color";
+import { scoreColorIndex } from "@/utils/score";
 import {
   CompareMetric,
   chartLevelValue,
@@ -16,18 +18,6 @@ import {
 } from "@/utils/scoreCompare";
 
 type AnyScore = MaimaiScoreProps | ChunithmScoreProps;
-
-const isWorldsEnd = (score: AnyScore) => !("type" in score) && score.id >= 8000;
-
-const displayLevelIndex = (score: AnyScore) =>
-  ("type" in score && score.type === "utage") || isWorldsEnd(score) ? 5 : score.level_index;
-
-const MusicIcon = ({ game, value }: { game: Game; value?: string }) =>
-  game === "chunithm" ? (
-    <Image src={`/assets/chunithm/music_icon/${value || "blank"}_xs.webp`} h={24} w={24} />
-  ) : (
-    <Image src={`/assets/maimai/music_icon/${value || "blank"}.webp`} h={24} w={24} />
-  );
 
 const ScoreSide = ({
   game,
@@ -91,7 +81,7 @@ export const FriendVsCard = ({
 }) => {
   const songList = useSongListStore((state) => state[game]);
   const gap = mine ? scoreGap(mine, theirs, metric) : undefined;
-  const levelIndex = displayLevelIndex(theirs);
+  const levelIndex = scoreColorIndex(theirs);
   const levelValue = chartLevelValue(songList, theirs);
 
   return (

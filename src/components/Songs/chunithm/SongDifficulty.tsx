@@ -18,6 +18,7 @@ import classes from "../SongDifficulty.module.css";
 import { ChunithmDifficultyProps, ChunithmVersionProps } from "@/utils/api/song/chunithm.ts";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { ChunithmScoreProps } from "@/types/score";
+import { MusicIcon } from "@/components/MusicIcon.tsx";
 
 interface SongDifficultyProps {
   difficulty: ChunithmDifficultyProps;
@@ -86,10 +87,10 @@ export const ChunithmSongDifficulty = ({
         )}
         <Flex>
           {score?.full_combo && (
-            <Image src={`/assets/chunithm/music_icon/${score.full_combo}.webp`} w={rem(94)} />
+            <MusicIcon game="chunithm" value={score.full_combo} size={94} suffix="" h="auto" />
           )}
           {score?.full_chain && (
-            <Image src={`/assets/chunithm/music_icon/${score.full_chain}.webp`} w={rem(94)} />
+            <MusicIcon game="chunithm" value={score.full_chain} size={94} suffix="" h="auto" />
           )}
         </Flex>
         {difficulty?.star && <Rating count={difficulty.star} value={5} size={12} readOnly />}

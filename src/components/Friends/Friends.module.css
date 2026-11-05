@@ -7,11 +7,6 @@
   justify-content: space-between;
 }
 
-.avatar {
-  flex-shrink: 0;
-  background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-8));
-}
-
 .cardDetailsTrigger {
   display: flex;
   flex: 1;
@@ -44,15 +39,6 @@
   .card:not([data-self]) & {
     padding-right: 58px;
   }
-}
-
-.cardProfile {
-  min-height: 76px;
-}
-
-.cardGameDetails {
-  flex: 1;
-  min-width: 0;
 }
 
 .cardSyncTime {

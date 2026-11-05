@@ -10,6 +10,7 @@ import {
   MaimaiSongProps,
   getDifficulty as getMaimaiDifficulty,
 } from "@/utils/api/song/maimai.ts";
+import { isUtageOrWorldsEnd } from "@/utils/score.ts";
 
 type AnyScore = MaimaiScoreProps | ChunithmScoreProps;
 
@@ -38,7 +39,7 @@ export const ratingGap = (mine: AnyScore | undefined, theirs: AnyScore) => {
 
 /** 谱面定数；宴谱、WORLD'S END 没有定数，与曲目列表里找不到的谱面一样为 `undefined`。 */
 export const chartLevelValue = (songList: MaimaiSongList | ChunithmSongList, score: AnyScore) => {
-  if ("type" in score ? score.type === "utage" : score.id >= 8000) return undefined;
+  if (isUtageOrWorldsEnd(score)) return undefined;
   const song = songList.find(score.id);
   if (!song) return undefined;
   const difficulty =

@@ -35,6 +35,8 @@ import { RatingHistoryModal } from "@/components/Scores/RatingHistoryModal.tsx";
 import { RatingCalculator } from "./RatingCalculator.tsx";
 import { OverPowerCalculator } from "./OverPowerCalculator.tsx";
 import { formatChunithmValue } from "@/utils/chunithm/rating.ts";
+import { MusicIcon } from "@/components/MusicIcon.tsx";
+import { isWorldsEnd } from "@/utils/score.ts";
 import calculatorClasses from "./Calculator.module.css";
 
 export const ChunithmScoreModalContent = ({
@@ -50,7 +52,7 @@ export const ChunithmScoreModalContent = ({
   const difficulty = getDifficulty(song, score.level_index);
   const [ratingHistoryOpened, setRatingHistoryOpened] = useState(false);
   const [calculator, setCalculator] = useState<"rating" | "over_power" | null>(null);
-  const isWorldsEnd = song.id >= 8000;
+  const worldsEnd = isWorldsEnd(song.id);
 
   useEffect(() => {
     onCalculatorOpenedChange(calculator !== null);
@@ -113,18 +115,22 @@ export const ChunithmScoreModalContent = ({
             {song.artist}
           </Text>
           <Flex columnGap="xs" rowGap={8} wrap="wrap">
-            <AspectRatio ratio={132 / 24}>
-              <Image
-                src={`/assets/chunithm/music_icon/${score.full_combo || "fullcombo_blank"}.webp`}
-                w={rem(94)}
-              />
-            </AspectRatio>
-            <AspectRatio ratio={132 / 24}>
-              <Image
-                src={`/assets/chunithm/music_icon/${score.full_chain || "fullchain_blank"}.webp`}
-                w={rem(94)}
-              />
-            </AspectRatio>
+            <MusicIcon
+              game="chunithm"
+              value={score.full_combo}
+              fallback="fullcombo_blank"
+              size={94}
+              suffix=""
+              h="auto"
+            />
+            <MusicIcon
+              game="chunithm"
+              value={score.full_chain}
+              fallback="fullchain_blank"
+              size={94}
+              suffix=""
+              h="auto"
+            />
           </Flex>
         </Box>
         {difficulty?.star ? (
@@ -212,7 +218,7 @@ export const ChunithmScoreModalContent = ({
               ] as const
             ).map((item) => (
               <Grid.Col span={6} key={item.key}>
-                {isWorldsEnd ? (
+                {worldsEnd ? (
                   <Paper className={classes.subParameters}>
                     <Text fz="xs" c="dimmed">
                       {item.label}

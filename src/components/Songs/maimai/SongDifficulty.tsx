@@ -20,6 +20,7 @@ import classes from "../SongDifficulty.module.css";
 import { MaimaiDifficultyProps, MaimaiVersionProps } from "@/utils/api/song/maimai.ts";
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { MaimaiScoreProps } from "@/types/score";
+import { MusicIcon } from "@/components/MusicIcon.tsx";
 import { useState } from "react";
 import { navigate } from "vike/client/router";
 
@@ -141,14 +142,8 @@ export const MaimaiSongDifficulty = ({
             </Tooltip>
           )}
           <Flex>
-            <Image
-              src={`/assets/maimai/music_icon/${(score && score.fc) || "blank"}.webp`}
-              w={rem(30)}
-            />
-            <Image
-              src={`/assets/maimai/music_icon/${(score && score.fs) || "blank"}.webp`}
-              w={rem(30)}
-            />
+            <MusicIcon game="maimai" value={score?.fc} size={30} />
+            <MusicIcon game="maimai" value={score?.fs} size={30} />
           </Flex>
           {difficulty.is_buddy && (
             <Badge variant="filled" color="#49090a" size="sm" ml="xs">

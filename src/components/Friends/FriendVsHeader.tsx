@@ -2,7 +2,7 @@ import { Flex, Stack, Text } from "@mantine/core";
 import { ChunithmProfileCard, MaimaiProfileCard } from "@/types/friend";
 import { Game } from "@/types/game";
 import { ChunithmPlayerProps, MaimaiPlayerProps } from "@/types/player";
-import { GameAvatar, RatingBadge } from "./FriendCard";
+import { GameAvatar, RatingBadge } from "@/components/Profile/PlayerSummary";
 
 type Profile = MaimaiPlayerProps | ChunithmPlayerProps | MaimaiProfileCard | ChunithmProfileCard;
 

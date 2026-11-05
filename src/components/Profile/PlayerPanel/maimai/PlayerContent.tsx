@@ -1,20 +1,7 @@
 import { MaimaiPlayerProps } from "@/types/player";
-import {
-  Avatar,
-  Badge,
-  Box,
-  Divider,
-  Flex,
-  Group,
-  Image,
-  Text,
-  useComputedColorScheme,
-} from "@mantine/core";
-import { IconPhotoOff } from "@tabler/icons-react";
-import { getDeluxeRatingGradient } from "@/utils/color.ts";
-import { ASSET_URL } from "@/main";
+import { Box, Divider, Flex, Group, Image, Text } from "@mantine/core";
 import { TrophyBadge } from "@/components/TrophyBadge.tsx";
-import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
+import { PlayerAvatar, RatingBadge } from "@/components/Profile/PlayerSummary.tsx";
 
 type MaimaiPlayerCardFields = Pick<
   MaimaiPlayerProps,
@@ -29,44 +16,15 @@ interface PlayerContentProps {
 }
 
 export const MaimaiPlayerContent = ({ player, onAvatarClick }: PlayerContentProps) => {
-  const computedColorScheme = useComputedColorScheme("light");
-  const avatar = (
-    <Avatar
-      src={`${ASSET_URL}/maimai/icon/${player.icon ? player.icon.id : 0}.png!webp`}
-      size={94}
-      radius="md"
-      styles={(theme) => ({
-        root: {
-          backgroundColor:
-            computedColorScheme === "dark" ? theme.colors.dark[8] : theme.colors.gray[1],
-        },
-      })}
-    >
-      <IconPhotoOff />
-    </Avatar>
-  );
-
   return (
     <Group wrap="nowrap">
-      {onAvatarClick ? (
-        <EditAvatarButton onClick={onAvatarClick}>{avatar}</EditAvatarButton>
-      ) : (
-        avatar
-      )}
+      <PlayerAvatar game="maimai" profile={player} size={94} onAvatarClick={onAvatarClick} />
       <Box pr="md">
         <Flex gap="xs" mb={8}>
           {player.trophy && (
             <TrophyBadge name={player.trophy.name} trophyColor={player.trophy.color || "normal"} />
           )}
-          <Badge
-            variant="gradient"
-            gradient={getDeluxeRatingGradient(player.rating)}
-            style={{
-              flex: "none",
-            }}
-          >
-            DX 评分: {player.rating}
-          </Badge>
+          <RatingBadge game="maimai" rating={player.rating} size="md" />
         </Flex>
 
         <Text fz="lg" fw={500}>

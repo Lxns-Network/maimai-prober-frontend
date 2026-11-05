@@ -40,7 +40,7 @@ import { getFriendLoadErrorMessage, MAX_OUTGOING_FRIEND_REQUESTS } from "@/utils
 import { profilePath } from "@/utils/profile";
 import { formatDateTime } from "@/utils/time";
 import { AddFriendButton } from "./AddFriendButton";
-import { GameAvatar, RatingBadge } from "./FriendCard";
+import { GameAvatar, RatingBadge } from "@/components/Profile/PlayerSummary";
 import { LoadingBlock } from "./LoadingBlock";
 import { UsernameCopy } from "./UsernameCopy";
 
