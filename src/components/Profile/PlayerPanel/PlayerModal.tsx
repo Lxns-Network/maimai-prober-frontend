@@ -78,8 +78,7 @@ const COMPACT_BELOW = "sm";
 const COMPACT_MIN_WIDTH = 300;
 
 export const PlayerContent = ({ player, onCollectionEdit, editable }: PlayerContentProps) => {
-  const props = { onCollectionEdit, editable };
-  const editAvatar =
+  const onAvatarClick =
     editable && onCollectionEdit
       ? () =>
           isMaimaiPlayerProps(player)
@@ -90,15 +89,19 @@ export const PlayerContent = ({ player, onCollectionEdit, editable }: PlayerCont
     <>
       <Box hiddenFrom={COMPACT_BELOW} px="md" miw={COMPACT_MIN_WIDTH}>
         {isMaimaiPlayerProps(player) && (
-          <MaimaiSummary profile={player} onAvatarClick={editAvatar} />
+          <MaimaiSummary profile={player} onAvatarClick={onAvatarClick} />
         )}
         {isChunithmPlayerProps(player) && (
-          <ChunithmSummary profile={player} onAvatarClick={editAvatar} />
+          <ChunithmSummary profile={player} onAvatarClick={onAvatarClick} />
         )}
       </Box>
       <Container visibleFrom={COMPACT_BELOW}>
-        {isMaimaiPlayerProps(player) && <MaimaiPlayerContent player={player} {...props} />}
-        {isChunithmPlayerProps(player) && <ChunithmPlayerContent player={player} {...props} />}
+        {isMaimaiPlayerProps(player) && (
+          <MaimaiPlayerContent player={player} onAvatarClick={onAvatarClick} />
+        )}
+        {isChunithmPlayerProps(player) && (
+          <ChunithmPlayerContent player={player} onAvatarClick={onAvatarClick} />
+        )}
       </Container>
     </>
   );

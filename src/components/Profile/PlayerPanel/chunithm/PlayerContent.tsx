@@ -15,7 +15,6 @@ import { IconPhotoOff } from "@tabler/icons-react";
 import { getChunithmCharacterColor, getRatingGradient } from "@/utils/color.ts";
 import { ASSET_URL } from "@/main";
 import { TrophyBadge } from "@/components/TrophyBadge.tsx";
-import { Collection } from "../EditCollectionModal.tsx";
 import { EditAvatarButton } from "@/components/EditAvatarButton.tsx";
 
 type ChunithmPlayerCardFields = Pick<
@@ -30,36 +29,32 @@ type ChunithmPlayerCardFields = Pick<
 
 interface PlayerContentProps {
   player: ChunithmPlayerCardFields;
-  onCollectionEdit?: (collectionType: Collection, defaultValue: number) => void;
-  editable: boolean;
+  onAvatarClick?: () => void;
 }
 
-export const ChunithmPlayerContent = ({
-  player,
-  onCollectionEdit,
-  editable,
-}: PlayerContentProps) => {
+export const ChunithmPlayerContent = ({ player, onAvatarClick }: PlayerContentProps) => {
+  const avatar = (
+    <Avatar
+      src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`}
+      size={94}
+      p={5}
+      radius="md"
+      style={{
+        backgroundSize: 94,
+        backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(player.character?.level || 0)}.webp)`,
+      }}
+    >
+      <IconPhotoOff />
+    </Avatar>
+  );
+
   return (
     <Group wrap="nowrap">
-      <EditAvatarButton
-        onClick={() => {
-          editable && onCollectionEdit && onCollectionEdit("characters", player.character?.id || 0);
-        }}
-        disabled={!editable}
-      >
-        <Avatar
-          src={`${ASSET_URL}/chunithm/character/${player.character ? player.character.id : 0}.png!webp`}
-          size={94}
-          p={5}
-          radius="md"
-          style={{
-            backgroundSize: 94,
-            backgroundImage: `url(/assets/chunithm/character/${getChunithmCharacterColor(player.character?.level || 0)}.webp)`,
-          }}
-        >
-          <IconPhotoOff />
-        </Avatar>
-      </EditAvatarButton>
+      {onAvatarClick ? (
+        <EditAvatarButton onClick={onAvatarClick}>{avatar}</EditAvatarButton>
+      ) : (
+        avatar
+      )}
       <Box pr="md">
         <Flex gap="xs" mb={8}>
           {player.trophy && (
