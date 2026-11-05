@@ -1,5 +1,6 @@
 import { Avatar, Badge, Box, Card, Group, Image, Stack, Text } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
+import { ChartLevelBadge, ChartTypeBadge } from "@/components/ChartBadge";
 import profileClasses from "@/components/Profile/Profile.module.css";
 import useSongListStore from "@/hooks/useSongListStore";
 import { ASSET_URL } from "@/main";
@@ -15,12 +16,6 @@ import {
 } from "@/utils/scoreCompare";
 
 type AnyScore = MaimaiScoreProps | ChunithmScoreProps;
-
-const MAIMAI_TYPE_BADGES: Record<string, { label: string; color: string }> = {
-  standard: { label: "标准", color: "blue" },
-  dx: { label: "DX", color: "orange" },
-  utage: { label: "宴", color: "pink" },
-};
 
 const isWorldsEnd = (score: AnyScore) => !("type" in score) && score.id >= 8000;
 
@@ -96,7 +91,6 @@ export const FriendVsCard = ({
 }) => {
   const songList = useSongListStore((state) => state[game]);
   const gap = mine ? scoreGap(mine, theirs, metric) : undefined;
-  const typeBadge = "type" in theirs ? MAIMAI_TYPE_BADGES[theirs.type] : undefined;
   const levelIndex = displayLevelIndex(theirs);
   const levelValue = chartLevelValue(songList, theirs);
 
@@ -116,19 +110,10 @@ export const FriendVsCard = ({
             {theirs.song_name}
           </Text>
           <Group gap={4} mt={4} wrap="nowrap">
-            {typeBadge && (
-              <Badge size="xs" radius="sm" variant="light" color={typeBadge.color}>
-                {typeBadge.label}
-              </Badge>
-            )}
-            <Badge
-              size="xs"
-              radius="sm"
-              px={5}
-              color={getScoreCardBackgroundColor(game, levelIndex)}
-            >
+            {"type" in theirs && <ChartTypeBadge type={theirs.type} />}
+            <ChartLevelBadge color={getScoreCardBackgroundColor(game, levelIndex)}>
               {levelValue === undefined ? theirs.level : levelValue.toFixed(1)}
-            </Badge>
+            </ChartLevelBadge>
           </Group>
         </Box>
       </Group>

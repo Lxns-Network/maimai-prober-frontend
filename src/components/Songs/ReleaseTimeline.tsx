@@ -24,6 +24,7 @@ import {
   IconPhotoOff,
 } from "@tabler/icons-react";
 import { Link } from "@/components/Link";
+import { ChartLevelBadge, ChartTypeBadge } from "@/components/ChartBadge";
 import { ASSET_URL } from "@/main";
 import useGame from "@/hooks/useGame.ts";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -43,13 +44,6 @@ import {
 import classes from "./ReleaseTimeline.module.css";
 
 type SongList = MaimaiSongList | ChunithmSongList;
-
-const TYPE_BADGES: Partial<Record<ReleaseChartType, { label: string; color: string }>> = {
-  standard: { label: "标准", color: "blue" },
-  dx: { label: "DX", color: "orange" },
-  utage: { label: "宴", color: "pink" },
-  worldsend: { label: "WORLD'S END", color: "gray" },
-};
 
 const ROWS_PER_PAGE = 50;
 
@@ -75,24 +69,13 @@ const ChartBadges = ({ charts }: { charts: ReleaseChart[] }) => {
   return (
     <Group gap={6} wrap="wrap">
       {groups.map((group) => {
-        const typeBadge = TYPE_BADGES[group.type];
         return (
           <Group key={group.type} gap={2} wrap="nowrap">
-            {typeBadge && (
-              <Badge size="xs" radius="sm" variant="light" color={typeBadge.color}>
-                {typeBadge.label}
-              </Badge>
-            )}
+            <ChartTypeBadge type={group.type} />
             {group.charts.map((chart) => (
-              <Badge
-                key={chart.difficulty.difficulty}
-                size="xs"
-                radius="sm"
-                px={5}
-                color={chartColor(chart)}
-              >
+              <ChartLevelBadge key={chart.difficulty.difficulty} color={chartColor(chart)}>
                 {chartLabel(chart)}
-              </Badge>
+              </ChartLevelBadge>
             ))}
           </Group>
         );
