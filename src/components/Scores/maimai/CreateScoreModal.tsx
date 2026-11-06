@@ -28,6 +28,7 @@ import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { MaimaiScoreProps } from "@/types/score";
+import { isMaimaiUtageSongId } from "@/utils/score.ts";
 
 interface FormValues {
   id: number | null;
@@ -210,7 +211,7 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
                 >
                   DX
                 </Chip>
-                {song && song.id >= 100000 && (
+                {song && isMaimaiUtageSongId(song.id) && (
                   <Chip size="xs" value="utage" color="rgb(234,61,232)">
                     U·TA·GE
                   </Chip>
@@ -237,7 +238,7 @@ export const MaimaiCreateScoreContent = ({ score, onSubmit, onClose }: CreateSco
                         "🟣 MASTER",
                         "⚪ Re:MASTER",
                         "💮 U·TA·GE",
-                      ][song && song.id >= 100000 ? 5 : difficulty.difficulty]
+                      ][song && isMaimaiUtageSongId(song.id) ? 5 : difficulty.difficulty]
                     } ${difficulty.level}`,
                     value: difficulty.difficulty.toString(),
                   }))

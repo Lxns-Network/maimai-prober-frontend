@@ -6,7 +6,7 @@ import {
 } from "@/utils/color.ts";
 import { getDifficulty, ChunithmSongProps } from "@/utils/api/song/chunithm.ts";
 import { ChunithmScoreProps } from "@/types/score";
-import { isWorldsEnd, scoreColorIndex } from "@/utils/score.ts";
+import { isWorldsEndSongId, scoreColorIndex } from "@/utils/score.ts";
 
 interface ScoreContentProps {
   score: ChunithmScoreProps;
@@ -14,12 +14,12 @@ interface ScoreContentProps {
 }
 
 export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
-  const rating = !isWorldsEnd(score.id) ? `${Math.floor(score.rating * 100) / 100}` : "-";
+  const rating = !isWorldsEndSongId(score.id) ? `${Math.floor(score.rating * 100) / 100}` : "-";
   const levelIndex = scoreColorIndex(score);
 
   const difficulty = song ? getDifficulty(song, score.level_index) : undefined;
   const level = difficulty
-    ? isWorldsEnd(score.id)
+    ? isWorldsEndSongId(score.id)
       ? difficulty.kanji
       : difficulty.level_value.toFixed(1)
     : score.level;
@@ -41,7 +41,7 @@ export const ChunithmScoreContent = ({ score, song }: ScoreContentProps) => {
         <Text size="sm" fw={500} truncate flex={1} c="white">
           {score.song_name}
         </Text>
-        {isWorldsEnd(score.id) && difficulty && (
+        {isWorldsEndSongId(score.id) && difficulty && (
           <Group wrap="nowrap" justify="center" gap={0}>
             <Rating count={difficulty.star} value={5} size={12} readOnly />
           </Group>

@@ -8,6 +8,7 @@ import useSongListStore from "../hooks/useSongListStore.ts";
 import useAliasListStore from "../hooks/useAliasListStore.ts";
 import useGame from "@/hooks/useGame.ts";
 import { VirtualizedCombobox } from "./VirtualizedCombobox.tsx";
+import { isMaimaiUtageSongId, isWorldsEndSongId } from "@/utils/score.ts";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<"input", keyof InputBaseProps> {
   value?: number;
@@ -156,12 +157,12 @@ export const SongCombobox = ({
             {song.artist}
           </Highlight>
         </Box>
-        {songList instanceof MaimaiSongList && song.id >= 100000 && (
+        {songList instanceof MaimaiSongList && isMaimaiUtageSongId(song.id) && (
           <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
             宴
           </Badge>
         )}
-        {songList instanceof ChunithmSongList && song.id >= 8000 && (
+        {songList instanceof ChunithmSongList && isWorldsEndSongId(song.id) && (
           <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
             {(song as ChunithmSongProps).difficulties[0].kanji}
           </Badge>

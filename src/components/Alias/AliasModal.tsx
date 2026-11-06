@@ -32,6 +32,7 @@ import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
 import { AliasProps } from "@/types/alias";
 import { calculateNewAliasWeight } from "@/utils/alias.ts";
+import { isMaimaiUtageSongId, isWorldsEndSongId } from "@/utils/score.ts";
 
 interface AliasModalProps {
   alias: AliasProps;
@@ -107,12 +108,12 @@ const AliasModalBody = ({
             </Text>
             <Group gap="xs">
               <Text>{alias.song.name || "未知"}</Text>
-              {game === "maimai" && alias.song.id >= 100000 && (
+              {game === "maimai" && isMaimaiUtageSongId(alias.song.id) && (
                 <Badge variant="filled" color="rgb(234, 61, 232)" size="sm">
                   宴
                 </Badge>
               )}
-              {game === "chunithm" && alias.song.id >= 8000 && (
+              {game === "chunithm" && isWorldsEndSongId(alias.song.id) && (
                 <Badge variant="filled" color="rgb(14, 45, 56)" size="sm">
                   {song && (song as ChunithmSongProps).difficulties[0].kanji}
                 </Badge>

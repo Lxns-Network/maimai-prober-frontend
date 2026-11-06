@@ -17,6 +17,7 @@ import { getScoreCardBackgroundColor } from "@/utils/color.ts";
 import { EmptyState } from "@/components/EmptyState.tsx";
 import { ChartTypeBadge } from "@/components/ChartBadge.tsx";
 import { MusicIcon } from "@/components/MusicIcon.tsx";
+import { isWorldsEndSongId } from "@/utils/score.ts";
 import { Marquee } from "../Marquee.tsx";
 import { Game } from "@/types/game";
 import useSongListStore from "@/hooks/useSongListStore.ts";
@@ -215,7 +216,7 @@ const ScoresChangesTable = ({ game, scores }: { game: Game; scores: ScoreChanges
                 width: 20,
                 render: ({ id, level, level_index }) => {
                   let levelLabel = level;
-                  if (id >= 8000) {
+                  if (isWorldsEndSongId(id)) {
                     const song = songList.find(id);
                     if (!song) {
                       levelLabel = "未知";

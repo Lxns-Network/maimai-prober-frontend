@@ -12,7 +12,7 @@ import { ChunithmScoreContent } from "./chunithm/Score.tsx";
 import useFixedGame from "@/hooks/useFixedGame.ts";
 import classes from "./Scores.module.css";
 import { getScoreSecondaryColor } from "@/utils/color.ts";
-import { isWorldsEnd, scoreColorIndex } from "@/utils/score.ts";
+import { isWorldsEndSongId, scoreColorIndex } from "@/utils/score.ts";
 import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { useShallow } from "zustand/react/shallow";
@@ -42,7 +42,7 @@ export const ScoreCard = ({ game, score, onClick }: ScoreCardProps) => {
   const levelIndex = scoreColorIndex(score);
   const classNameList = [classes.card, classes.scoreCard];
 
-  if (game === "chunithm" && isWorldsEnd(score.id)) {
+  if (game === "chunithm" && isWorldsEndSongId(score.id)) {
     borderSize = 0;
     classNameList.push(classes.scoreWorldsEnd);
   }

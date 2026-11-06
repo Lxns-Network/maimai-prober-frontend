@@ -36,7 +36,7 @@ import { RatingCalculator } from "./RatingCalculator.tsx";
 import { OverPowerCalculator } from "./OverPowerCalculator.tsx";
 import { formatChunithmValue } from "@/utils/chunithm/rating.ts";
 import { MusicIcon } from "@/components/MusicIcon.tsx";
-import { isWorldsEnd } from "@/utils/score.ts";
+import { isWorldsEndSongId } from "@/utils/score.ts";
 import calculatorClasses from "./Calculator.module.css";
 
 export const ChunithmScoreModalContent = ({
@@ -52,7 +52,7 @@ export const ChunithmScoreModalContent = ({
   const difficulty = getDifficulty(song, score.level_index);
   const [ratingHistoryOpened, setRatingHistoryOpened] = useState(false);
   const [calculator, setCalculator] = useState<"rating" | "over_power" | null>(null);
-  const worldsEnd = isWorldsEnd(song.id);
+  const worldsEnd = isWorldsEndSongId(song.id);
 
   useEffect(() => {
     onCalculatorOpenedChange(calculator !== null);

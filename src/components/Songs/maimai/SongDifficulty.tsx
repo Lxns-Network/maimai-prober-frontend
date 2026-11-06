@@ -21,6 +21,7 @@ import { MaimaiDifficultyProps, MaimaiVersionProps } from "@/utils/api/song/maim
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { MaimaiScoreProps } from "@/types/score";
 import { MusicIcon } from "@/components/MusicIcon.tsx";
+import { isUtage } from "@/utils/score.ts";
 import { useState } from "react";
 import { navigate } from "vike/client/router";
 
@@ -50,8 +51,8 @@ export const MaimaiSongDifficulty = ({
     navigate(`/chart?${params.toString()}`);
   };
 
-  const isUtage = difficulty.type === "utage";
-  const colorIndex = isUtage ? 5 : difficulty.difficulty;
+  const isUtageChart = isUtage(difficulty.type);
+  const colorIndex = isUtageChart ? 5 : difficulty.difficulty;
 
   return (
     <>
@@ -105,7 +106,7 @@ export const MaimaiSongDifficulty = ({
         onClick={onClick}
       >
         <Flex align="center" ml="0.5rem" mr="0.5rem" mb={5}>
-          {isUtage ? (
+          {isUtageChart ? (
             <Text fz="sm" fw={500} flex={1}>
               U·TA·GE
               <Title component="span" order={3} fw={500} ml="xs">

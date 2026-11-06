@@ -24,6 +24,7 @@ import {
 } from "@lxns-network/maimai-chart-engine";
 import classes from "./Chart.module.css";
 import { usePageContext } from "vike-react/usePageContext";
+import { isMaimaiUtageSongId } from "@/utils/score.ts";
 
 async function fetchChartData(chartId: number): Promise<string | null> {
   try {
@@ -150,8 +151,7 @@ function ChartContent() {
   const difficultyParam = searchParams.difficulty;
   const beatParam = searchParams.beat;
   const chartId = chartIdParam ? parseInt(chartIdParam) : null;
-  // 宴谱（UTAGE）曲目 id ≥ 100000
-  const isUtage = chartId !== null && chartId >= 100000;
+  const isUtage = chartId !== null && isMaimaiUtageSongId(chartId);
   const difficulty = difficultyParam ? ((parseInt(difficultyParam) + 2) as ChartDifficulty) : null;
   const beatValue = Number(beatParam);
   const initialBeat = beatParam && Number.isFinite(beatValue) && beatValue >= 0 ? beatValue : null;

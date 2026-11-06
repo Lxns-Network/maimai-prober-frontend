@@ -40,6 +40,7 @@ import { Game } from "@/types/game";
 import { ScoreRanking } from "./ScoreRanking.tsx";
 import { FriendScoreRanking } from "./FriendScoreRanking.tsx";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
+import { isUtage } from "@/utils/score.ts";
 import { ChartComment } from "./ChartComment.tsx";
 import { useScoreComments } from "@/hooks/queries/useScoreComments.ts";
 import { isTokenUndefined } from "@/utils/session.ts";
@@ -65,7 +66,7 @@ function getDifficultyLabel(
   game: Game,
   difficulty: MaimaiDifficultyProps | ChunithmDifficultyProps,
 ) {
-  if ("type" in difficulty && difficulty.type === "utage") {
+  if ("type" in difficulty && isUtage(difficulty.type)) {
     return `${difficultyLabelData[game][5]} ${difficulty.level}`;
   } else if (game === "chunithm" && difficulty.kanji) {
     return `${difficultyLabelData[game][5]} ${difficulty.kanji}`;
@@ -77,7 +78,7 @@ function getDifficultyColor(
   game: Game,
   difficulty: MaimaiDifficultyProps | ChunithmDifficultyProps,
 ) {
-  if ("type" in difficulty && difficulty.type === "utage") {
+  if ("type" in difficulty && isUtage(difficulty.type)) {
     return getScoreCardBackgroundColor(game, 5);
   } else if (game === "chunithm" && difficulty.kanji) {
     return getScoreCardBackgroundColor(game, 5);

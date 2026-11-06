@@ -6,7 +6,7 @@ import {
 } from "@/utils/color.ts";
 import { getDifficulty, MaimaiSongProps } from "@/utils/api/song/maimai.ts";
 import { MaimaiScoreProps } from "@/types/score";
-import { scoreColorIndex } from "@/utils/score.ts";
+import { isUtage, scoreColorIndex } from "@/utils/score.ts";
 import { ChartTypeBadge } from "@/components/ChartBadge.tsx";
 
 interface ScoreContentProps {
@@ -15,13 +15,13 @@ interface ScoreContentProps {
 }
 
 export const MaimaiScoreContent = ({ score, song }: ScoreContentProps) => {
-  const deluxeRating = score.type !== "utage" ? `${parseInt(String(score.dx_rating))}` : "-";
+  const deluxeRating = !isUtage(score.type) ? `${parseInt(String(score.dx_rating))}` : "-";
   const levelIndex = scoreColorIndex(score);
 
   const difficulty = song ? getDifficulty(song, score.type, score.level_index) : undefined;
   const isBuddy = difficulty?.is_buddy ?? false;
   const level =
-    difficulty && score.type !== "utage" ? difficulty.level_value.toFixed(1) : score.level;
+    difficulty && !isUtage(score.type) ? difficulty.level_value.toFixed(1) : score.level;
 
   return (
     <>

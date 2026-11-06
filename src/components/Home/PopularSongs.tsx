@@ -9,6 +9,7 @@ import { getScoreCardBackgroundColor, getTrophyColor } from "@/utils/color";
 import classes from "./PopularSongs.module.css";
 import useSongListStore from "@/hooks/useSongListStore";
 import { useShallow } from "zustand/react/shallow";
+import { isUtage } from "@/utils/score.ts";
 
 function Trend({ delta }: { delta: number | "new" }) {
   if (delta === "new") {
@@ -37,7 +38,7 @@ function SongRow({ game, song }: { game: Game; song: PopularSong }) {
     2: getTrophyColor("silver"),
     3: "#b87333",
   }[rank];
-  const isUtage = game === "maimai" && song.type === "utage";
+  const isUtageChart = game === "maimai" && isUtage(song.type);
 
   return (
     <li className={classes.item}>
@@ -86,7 +87,7 @@ function SongRow({ game, song }: { game: Game; song: PopularSong }) {
               variant="filled"
               size="sm"
               radius="sm"
-              color={getScoreCardBackgroundColor(game, isUtage ? 5 : song.level_index)}
+              color={getScoreCardBackgroundColor(game, isUtageChart ? 5 : song.level_index)}
               px={6}
             >
               {song.level}

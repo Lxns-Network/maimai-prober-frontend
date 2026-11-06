@@ -1,4 +1,5 @@
 import { fetchSongListData } from "./fetchSongListData.ts";
+import { isUtage } from "@/utils/score.ts";
 
 export interface MaimaiDifficultyProps {
   type: string;
@@ -81,7 +82,7 @@ export class MaimaiSongList {
 
   getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
     try {
-      if (type === "utage") {
+      if (isUtage(type)) {
         return song.difficulties.utage[level_index];
       } else if (type === "standard") {
         return song.difficulties.standard[level_index];
@@ -100,7 +101,7 @@ export class MaimaiSongList {
 
 export function getDifficulty(song: MaimaiSongProps, type: string, level_index: number) {
   try {
-    if (type === "utage" && song.difficulties.utage) {
+    if (isUtage(type) && song.difficulties.utage) {
       return song.difficulties.utage[level_index] ?? null;
     } else if (type === "standard" && song.difficulties.standard) {
       return song.difficulties.standard[level_index] ?? null;

@@ -60,6 +60,7 @@ import {
 } from "@tabler/icons-react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
+import { isMaimaiUtageSongId } from "@/utils/score.ts";
 import {
   parseMa2Chart,
   parseSimaiChart,
@@ -907,7 +908,9 @@ export function PlaybackControls({
 export function Controls({ isUtage }: { isUtage?: boolean }) {
   const chartId = Number(usePageContext().urlParsed.search.chart_id);
   const songId =
-    Number.isInteger(chartId) && chartId > 0 && chartId < 100000 ? chartId % 10000 : null;
+    Number.isInteger(chartId) && chartId > 0 && !isMaimaiUtageSongId(chartId)
+      ? chartId % 10000
+      : null;
   const { songDetail: song } = useSongDetail("maimai", songId);
   const difficulties = chartId >= 10000 ? song?.difficulties.dx : song?.difficulties.standard;
   const playbackSpeed = useGameStore((s) => s.playbackSpeed);

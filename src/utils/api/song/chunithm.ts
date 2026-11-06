@@ -1,4 +1,5 @@
 import { fetchSongListData } from "./fetchSongListData.ts";
+import { isWorldsEndSongId } from "@/utils/score.ts";
 
 export interface ChunithmDifficultyProps {
   difficulty: number;
@@ -73,7 +74,7 @@ export class ChunithmSongList {
   getSongResourceId(id: number) {
     const song = this.find(id);
     if (!song) return 0;
-    return song.id < 8000 ? song.id : (song.difficulties[0] || {}).origin_id;
+    return isWorldsEndSongId(song.id) ? (song.difficulties[0] || {}).origin_id : song.id;
   }
 }
 

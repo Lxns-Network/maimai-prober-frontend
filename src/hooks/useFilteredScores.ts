@@ -6,6 +6,7 @@ import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { Game } from "@/types/game";
 import useGame from "@/hooks/useGame.ts";
 import { ScoreFilters } from "@/hooks/useScoreFilters.ts";
+import { isUtage } from "@/utils/score.ts";
 
 export const scoreRatingRanges: Record<Game, [number, number]> = {
   maimai: [1, 15],
@@ -103,7 +104,7 @@ export function useFilteredScores(
     filteredData = filteredData.filter((score) => {
       if (songList instanceof MaimaiSongList) {
         score = score as MaimaiScoreProps;
-        if (type.length > 0 && !type.includes(score.type) && score.type !== "utage") {
+        if (type.length > 0 && !type.includes(score.type) && !isUtage(score.type)) {
           return false;
         }
         if (fullCombo.length > 0) {
@@ -120,7 +121,7 @@ export function useFilteredScores(
           return false;
         }
         // 宴谱的 level_index 基本都是 0，需要提前过滤
-        if (score.type === "utage" && (difficulty.includes("5") || difficulty.length === 0)) {
+        if (isUtage(score.type) && (difficulty.includes("5") || difficulty.length === 0)) {
           return true;
         }
       } else {
@@ -171,7 +172,7 @@ export function useFilteredScores(
           ) || version.length === 0;
         matchRating =
           (difficulty.level_value >= endRating[0] && difficulty.level_value <= endRating[1]) ||
-          (endRating.every((v, i) => v === scoreRatingRanges[game][i]) && score.type === "utage"); // 过滤定数
+          (endRating.every((v, i) => v === scoreRatingRanges[game][i]) && isUtage(score.type)); // 过滤定数
       } else {
         song = song as ChunithmSongProps;
         score = score as ChunithmScoreProps;

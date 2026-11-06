@@ -32,6 +32,7 @@ import type { Game } from "@/types/game";
 import type { ChunithmSongList } from "@/utils/api/song/chunithm.ts";
 import type { MaimaiSongList } from "@/utils/api/song/maimai.ts";
 import { getScoreCardBackgroundColor } from "@/utils/color.ts";
+import { isUtage } from "@/utils/score.ts";
 import {
   buildReleaseTimeline,
   formatReleaseDate,
@@ -48,7 +49,7 @@ type SongList = MaimaiSongList | ChunithmSongList;
 const ROWS_PER_PAGE = 50;
 
 const chartColor = (chart: ReleaseChart) => {
-  if (chart.type === "utage") return getScoreCardBackgroundColor("maimai", 5);
+  if (isUtage(chart.type)) return getScoreCardBackgroundColor("maimai", 5);
   const game = chart.type === "chunithm" || chart.type === "worldsend" ? "chunithm" : "maimai";
   return getScoreCardBackgroundColor(game, chart.difficulty.difficulty);
 };

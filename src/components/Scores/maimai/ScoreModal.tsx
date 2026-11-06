@@ -32,7 +32,7 @@ import { useShallow } from "zustand/react/shallow";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { RatingHistoryModal } from "../RatingHistoryModal.tsx";
 import { DeluxeRatingCalculator } from "./DeluxeRatingCalculator.tsx";
-import { scoreColorIndex } from "@/utils/score.ts";
+import { isUtage, scoreColorIndex } from "@/utils/score.ts";
 import { ChartTypeBadge } from "@/components/ChartBadge.tsx";
 import { MusicIcon } from "@/components/MusicIcon.tsx";
 import { DeluxeScoreDetail } from "./DeluxeScoreDetail.tsx";
@@ -75,7 +75,7 @@ export const MaimaiScoreModalContent = ({
     const difficulty = getDifficulty(song, score.type, score.level_index);
     if (!difficulty) return;
     setDifficulty(difficulty);
-    if (score.type === "utage") {
+    if (isUtage(score.type)) {
       setLevel(difficulty.level);
     } else {
       setLevel(difficulty.level_value.toFixed(1));
@@ -186,7 +186,7 @@ export const MaimaiScoreModalContent = ({
           </Group>
           <Grid mt="md">
             <Grid.Col span={6}>
-              {score.type === "utage" ? (
+              {isUtage(score.type) ? (
                 <Paper className={classes.subParameters}>
                   <Group>
                     <Box flex={1}>

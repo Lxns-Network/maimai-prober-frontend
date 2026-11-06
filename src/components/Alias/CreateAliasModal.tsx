@@ -35,6 +35,7 @@ import { PhotoView } from "react-photo-view";
 import { ASSET_URL } from "@/main";
 import useSongListStore from "@/hooks/useSongListStore.ts";
 import { Game } from "@/types/game";
+import { isMaimaiUtageSongId, isWorldsEndSongId } from "@/utils/score.ts";
 
 interface FormValues {
   song_id: number | null;
@@ -217,8 +218,8 @@ export const CreateAliasModal = ({
             </Flex>
             <Space h="md" />
             {Boolean(form.values.song_id) &&
-              ((game === "maimai" && form.values.song_id! >= 100000) ||
-                (game === "chunithm" && form.values.song_id! >= 8000)) && (
+              ((game === "maimai" && isMaimaiUtageSongId(form.values.song_id!)) ||
+                (game === "chunithm" && isWorldsEndSongId(form.values.song_id!))) && (
                 <Alert
                   color="yellow"
                   variant="light"
