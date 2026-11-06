@@ -17,7 +17,6 @@ import { ScoreCard } from "@/components/Scores/ScoreList";
 import { openScoreModal } from "@/components/Scores/openScoreModal";
 import timelineClasses from "@/components/Songs/ReleaseTimeline.module.css";
 import { useFriendHeatmap, useFriendUploads } from "@/hooks/queries/useFriendScores";
-import useGame from "@/hooks/useGame";
 import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import { getFriendLoadErrorMessage } from "@/utils/api/friend";
@@ -39,8 +38,7 @@ const UploadCard = ({
   return <ScoreCard game="chunithm" score={score} onClick={open} />;
 };
 
-const DayUploads = ({ userId, date }: { userId: number; date: string }) => {
-  const [game] = useGame();
+const DayUploads = ({ game, userId, date }: { game: Game; userId: number; date: string }) => {
   const { uploads, isLoading, error, refetch } = useFriendUploads(userId, game, date);
   const [limit, setLimit] = useState(SCORES_PER_PAGE);
   const remaining = uploads.length - limit;
@@ -78,12 +76,14 @@ const DayUploads = ({ userId, date }: { userId: number; date: string }) => {
 };
 
 const DayItem = ({
+  game,
   userId,
   date,
   count,
   now,
   defaultOpened,
 }: {
+  game: Game;
   userId: number;
   date: string;
   count: number;
@@ -117,16 +117,18 @@ const DayItem = ({
       </UnstyledButton>
       <Collapse expanded={opened} keepMounted={false}>
         <Box pt="sm">
-          <DayUploads userId={userId} date={date} />
+          <DayUploads game={game} userId={userId} date={date} />
         </Box>
       </Collapse>
     </>
   );
 };
 
-/** 按北京时间日期倒序列出上传记录；某一天展开时才请求当天的成绩。 */
-export const UploadTimeline = ({ userId }: { userId: number }) => {
-  const [game] = useGame();
+/**
+ * 按北京时间日期倒序列出上传记录；某一天展开时才请求当天的成绩。
+ * 切换游戏时调用方须以 `game` 作 key 重新挂载，否则按日期保留的展开状态会沿用到另一游戏。
+ */
+export const UploadTimeline = ({ game, userId }: { game: Game; userId: number }) => {
   const { heatmap, isLoading, error, refetch } = useFriendHeatmap(userId, game);
   const now = useMemo(() => new Date(), []);
   const [dayLimit, setDayLimit] = useState(DAYS_PER_PAGE);
@@ -166,6 +168,7 @@ export const UploadTimeline = ({ userId }: { userId: number }) => {
         {visibleDays.map(([date, count], index) => (
           <Timeline.Item key={date}>
             <DayItem
+              game={game}
               userId={userId}
               date={date}
               count={count}

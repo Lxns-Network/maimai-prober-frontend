@@ -613,7 +613,7 @@ export default function FriendProfile() {
                 {
                   id: "uploads",
                   name: "上传历史",
-                  children: <UploadTimeline key={game} userId={profile.user_id} />,
+                  children: <UploadTimeline key={game} game={game} userId={profile.user_id} />,
                 },
                 ...(isSelf
                   ? []
