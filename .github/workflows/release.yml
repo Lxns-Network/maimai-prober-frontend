@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       # Tags and branches are independent refs, so "v*" alone would release whatever
       # commit a tag names, including one on a side branch. Merge to main first.
@@ -28,13 +28,13 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: yarn
@@ -80,7 +80,7 @@ jobs:
           cd build && sha256sum dist-client.tar.gz > dist-client.tar.gz.sha256
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             build/dist-client.tar.gz
