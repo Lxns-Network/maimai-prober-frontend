@@ -1,6 +1,7 @@
 import {
   Accordion,
   Alert,
+  Box,
   Button,
   Card,
   Code,
@@ -316,6 +317,7 @@ export const ProxySyncSection = () => {
         allowNextStepsSelect={false}
       >
         <Stepper.Step
+          component="div"
           label="步骤 1"
           loading={!isProxyAvailable && !proxySkipped}
           description={
@@ -386,7 +388,7 @@ export const ProxySyncSection = () => {
                     <Loader size="md" />
                   )}
                 </Flex>
-                <Text>
+                <Box>
                   <Accordion
                     variant="filled"
                     chevronPosition="left"
@@ -427,12 +429,13 @@ export const ProxySyncSection = () => {
                       </Accordion.Panel>
                     </Accordion.Item>
                   </Accordion>
-                </Text>
+                </Box>
               </Card>
             </Group>
           }
         />
         <Stepper.Step
+          component="div"
           label="步骤 2"
           description={
             <Stack gap="xs" w={containerWidth}>
@@ -481,6 +484,7 @@ export const ProxySyncSection = () => {
           }
         />
         <Stepper.Step
+          component="div"
           label="步骤 3"
           loading={proxyReady && !crawlStatus}
           description={
@@ -494,6 +498,7 @@ export const ProxySyncSection = () => {
           }
         />
         <Stepper.Step
+          component="div"
           label="步骤 4"
           loading={
             proxyReady && (crawlStatus?.status === "pending" || crawlStatus?.status === "assigned")
