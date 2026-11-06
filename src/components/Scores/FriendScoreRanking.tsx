@@ -1,11 +1,5 @@
-import { ActionIcon, Anchor, Box, Button, Center, Loader, Stack, Text } from "@mantine/core";
-import {
-  IconAddressBookOff,
-  IconChevronDown,
-  IconDatabaseOff,
-  IconUserPlus,
-} from "@tabler/icons-react";
-import { useState } from "react";
+import { Accordion, Anchor, Button, Center, Loader, Text } from "@mantine/core";
+import { IconAddressBookOff, IconDatabaseOff, IconUserPlus } from "@tabler/icons-react";
 import { FriendScoreCompare } from "./FriendScoreCompare.tsx";
 import { RankingRow } from "./RankingRow.tsx";
 import { EmptyState } from "@/components/EmptyState.tsx";
@@ -28,7 +22,6 @@ import { getFriendLoadErrorMessage } from "@/utils/api/friend.ts";
 import { chartKey } from "@/utils/scoreCompare.ts";
 import { profilePath } from "@/utils/profile.ts";
 import { isTokenUndefined } from "@/utils/session.ts";
-import { formatDateTime } from "@/utils/time.ts";
 
 interface RankingEntry extends FriendRankingScoreProps {
   isSelf: boolean;
@@ -61,10 +54,6 @@ export const FriendScoreRanking = ({
   const songList = useSongListStore((state) => state[game]);
   const song = readOnly && score ? (songList.find(score.id) ?? null) : null;
   const { scores: mySongScores } = useSongBests(game, song);
-  const [comparedUserId, setComparedUserId] = useState<number | null>(null);
-
-  const toggleCompare = (userId: number) =>
-    setComparedUserId((current) => (current === userId ? null : userId));
 
   if (isTokenUndefined()) {
     return (
@@ -127,7 +116,8 @@ export const FriendScoreRanking = ({
   if (myScore) {
     rows.push({
       user_id: 0,
-      username: "我",
+      username: user?.name ?? "",
+      name: player?.name ?? "",
       achievements: "achievements" in myScore ? myScore.achievements : undefined,
       score: "score" in myScore ? myScore.score : undefined,
       icon_id: game === "maimai" ? selfAvatarId : undefined,
@@ -139,31 +129,69 @@ export const FriendScoreRanking = ({
   rows.sort((a, b) => valueOf(b) - valueOf(a));
 
   return (
-    <Stack gap="xs">
+    <Accordion variant="contained">
       {rows.map((row, index) => {
         const rank = index + 1;
         const avatarProfile = {
           icon: row.icon_id ? { id: row.icon_id } : undefined,
           character: row.character_id ? { id: row.character_id } : undefined,
         };
+        const value = row.isSelf ? "self" : String(row.user_id);
+        const profileUrl = profilePath(row.username);
+        const rowProps = {
+          rank,
+          achievements: row.achievements,
+          score: row.score,
+          withBorder: false,
+          bg: "transparent",
+        };
 
-        const canCompare = !!myScore && !row.isSelf;
-        const displayName = row.remark || row.username;
-        const profileUrl = profilePath(row.isSelf ? (user?.name ?? "") : row.username);
+        if (myScore && !row.isSelf) {
+          return (
+            <Accordion.Item key={value} value={value}>
+              <Accordion.Control>
+                <RankingRow
+                  {...rowProps}
+                  pl={0}
+                  pr="sm"
+                  py={0}
+                  leading={<GameAvatar game={game} profile={avatarProfile} size={28} radius="sm" />}
+                  name={
+                    <Text fz="sm" lineClamp={1} style={{ wordBreak: "break-word" }}>
+                      {row.name}
+                    </Text>
+                  }
+                />
+              </Accordion.Control>
+              <Accordion.Panel>
+                <FriendScoreCompare
+                  game={game}
+                  mine={myScore}
+                  theirs={row}
+                  theirName={row.name}
+                  profileLinkProps={profileLinkProps}
+                />
+              </Accordion.Panel>
+            </Accordion.Item>
+          );
+        }
 
         return (
-          <Box key={`${row.user_id}:${row.username}`}>
+          <Accordion.Item
+            key={value}
+            value={value}
+            bg={row.isSelf ? "var(--mantine-primary-color-light)" : undefined}
+          >
             <RankingRow
-              rank={rank}
-              achievements={row.achievements}
-              score={row.score}
-              highlighted={row.isSelf}
+              {...rowProps}
+              px="md"
+              py="sm"
               leading={
                 <GameAvatar
                   component="a"
                   {...profileLinkProps}
                   href={profileUrl}
-                  aria-label={row.isSelf ? "查看我的档案" : `查看 ${displayName} 的档案`}
+                  aria-label={row.isSelf ? "查看我的档案" : `查看 ${row.name} 的档案`}
                   game={game}
                   profile={avatarProfile}
                   size={28}
@@ -171,56 +199,22 @@ export const FriendScoreRanking = ({
                 />
               }
               name={
-                <>
-                  <Text fz="sm" lineClamp={1} style={{ wordBreak: "break-word" }}>
-                    <Anchor
-                      {...profileLinkProps}
-                      href={profileUrl}
-                      c="inherit"
-                      fz="inherit"
-                      underline="hover"
-                    >
-                      {displayName}
-                    </Anchor>
-                  </Text>
-                  <Text fz="xs" c="dimmed">
-                    {formatDateTime(row.upload_time)}
-                  </Text>
-                </>
-              }
-              trailing={
-                canCompare && (
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    size="sm"
-                    aria-label={`${comparedUserId === row.user_id ? "收起" : "展开"}与 ${displayName} 的成绩对比`}
-                    aria-expanded={comparedUserId === row.user_id}
-                    onClick={() => toggleCompare(row.user_id)}
+                <Text fz="sm" lineClamp={1} style={{ wordBreak: "break-word" }}>
+                  <Anchor
+                    {...profileLinkProps}
+                    href={profileUrl}
+                    c="inherit"
+                    fz="inherit"
+                    underline="hover"
                   >
-                    <IconChevronDown
-                      size={16}
-                      style={{
-                        transform: comparedUserId === row.user_id ? "rotate(180deg)" : undefined,
-                      }}
-                    />
-                  </ActionIcon>
-                )
+                    {row.name}
+                  </Anchor>
+                </Text>
               }
             />
-
-            {comparedUserId === row.user_id && myScore && (
-              <FriendScoreCompare
-                game={game}
-                mine={myScore}
-                theirs={row}
-                theirName={row.remark || row.username}
-                profileLinkProps={profileLinkProps}
-              />
-            )}
-          </Box>
+          </Accordion.Item>
         );
       })}
-    </Stack>
+    </Accordion>
   );
 };

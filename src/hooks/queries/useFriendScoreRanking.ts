@@ -8,6 +8,8 @@ export interface FriendRankingScoreProps {
   user_id: number;
   username: string;
   remark?: string;
+  /** 好友在该游戏中的玩家名称。 */
+  name: string;
   icon_id?: number;
   character_id?: number;
   achievements?: number;

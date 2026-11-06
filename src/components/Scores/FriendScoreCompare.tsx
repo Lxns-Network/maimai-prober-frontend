@@ -1,4 +1,4 @@
-import { Anchor, Badge, Box, Divider, Group, Paper, Stack, Text } from "@mantine/core";
+import { Anchor, Badge, Box, Divider, Group, Stack, Text } from "@mantine/core";
 import { type OverlayLinkProps } from "@/hooks/useResumableOverlay";
 import { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
@@ -112,7 +112,7 @@ export const FriendScoreCompare = ({
           : `落后 ${game === "maimai" ? `${Math.abs(mainGap).toFixed(4)}%` : Math.abs(mainGap).toLocaleString()}`;
 
   return (
-    <Paper radius="md" withBorder p="sm" mt={6}>
+    <Box>
       <Group justify="space-between" wrap="nowrap" gap="xs">
         <Badge
           variant="light"
@@ -165,7 +165,7 @@ export const FriendScoreCompare = ({
           </Group>
         ))}
       </Stack>
-    </Paper>
+    </Box>
   );
 };
 const musicIconOrDash = (game: Game, value?: string) =>
