@@ -6,10 +6,9 @@ import { openConfirmModal, openRetryModal } from "@/utils/modal.tsx";
 import { notifications } from "@mantine/notifications";
 import { useUserConfig } from "@/hooks/queries/useUserConfig.ts";
 import useGame from "@/hooks/useGame.ts";
+import { useApplyUserConfig } from "@/hooks/useApplyUserConfig.ts";
 
-import { useUpdateUserConfig } from "@/hooks/mutations/useUserMutations.ts";
 import { useUnbindPlayer, useDeletePlayerScores } from "@/hooks/mutations/usePlayerMutations.ts";
-import { ConfigProps } from "@/types/user";
 
 const crawlConfigData = {
   maimai: [
@@ -205,30 +204,10 @@ const crawlConfigData = {
 
 export const GeneralSettingsSection = () => {
   const [game] = useGame();
-  const { config, isLoading, setData } = useUserConfig(game);
-  const { mutate: updateConfig } = useUpdateUserConfig();
+  const { config, isLoading } = useUserConfig(game);
+  const applyUserConfig = useApplyUserConfig(game);
   const { mutate: unbindPlayerMutate } = useUnbindPlayer();
   const { mutate: deleteScoresMutate } = useDeletePlayerScores();
-
-  const applyUserConfig = (key: string, value: unknown) => {
-    const newConfig = {
-      ...config,
-      [key]: value,
-    };
-
-    const previousConfig = config;
-    setData(newConfig as ConfigProps);
-
-    updateConfig(
-      { game, data: newConfig },
-      {
-        onError: (error) => {
-          if (previousConfig) setData(previousConfig);
-          openRetryModal("保存设置失败", `${error}`, () => applyUserConfig(key, value));
-        },
-      },
-    );
-  };
 
   const updateUserConfigHandler = (key: string, value: unknown) => {
     if (key === "allow_overwrite_best_score" && value === true) {

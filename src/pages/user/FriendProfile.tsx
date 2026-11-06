@@ -35,6 +35,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { QueryErrorState } from "@/components/QueryErrorState";
 import { AvatarCropModal } from "@/components/Profile/AvatarCropModal";
 import { ScoreHeatmapCard } from "@/components/Profile/PlayerHeatmapSection";
+import { ProfileVisibilityCard } from "@/components/Profile/ProfileVisibilityCard";
 import { PlayerCard, type PlayerCardFields } from "@/components/Profile/PlayerPanel/PlayerCard";
 import profileClasses from "@/components/Profile/Profile.module.css";
 import { MaimaiStatisticsSection } from "@/components/Scores/maimai/StatisticsSection";
@@ -297,6 +298,9 @@ const ProfileTab = ({ friend }: { friend: FriendRelationship }) => {
 
   return (
     <Stack gap="md">
+      {friend.status === "self" && slot.state !== "unbound" && (
+        <ProfileVisibilityCard game={game} />
+      )}
       <GameCard slot={slot} friend={friend} />
       {scoresVisible && <HeatmapSection friend={friend} />}
       {scoresVisible && <StatisticsTab friend={friend} />}
