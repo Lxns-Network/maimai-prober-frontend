@@ -95,7 +95,7 @@ type DifficultyState =
 
 export const ScoreModal = ({ game, score, opened, onClose, readOnly = false }: ScoreModalProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { linkProps, restoreView, navigateFromOverlay } = useResumableOverlay({
+  const { linkProps, restoreView, releaseView, navigateFromOverlay } = useResumableOverlay({
     opened,
     onClose: () => onClose(),
     getScrollViewport: () =>
@@ -176,6 +176,7 @@ export const ScoreModal = ({ game, score, opened, onClose, readOnly = false }: S
       opened={opened}
       keepMounted
       onEnterTransitionEnd={restoreView}
+      onExitTransitionEnd={releaseView}
       onClose={onClose}
       closeOnEscape={!chunithmCalculatorOpened}
       trapFocus={!chunithmCalculatorOpened}

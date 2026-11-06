@@ -13,7 +13,8 @@ export type OverlayLinkProps = {
 };
 
 /**
- * 仅用于 openOverlay 的 render 子树。弹窗须 keepMounted，并在进入动画完成后调用 restoreView。
+ * 仅用于 openOverlay 的 render 子树。弹窗须 keepMounted，并在进入动画完成后调用 restoreView，
+ * 退出动画完成后调用 releaseView，否则关闭的会话会一直挂载到下次打开弹窗。
  * linkProps 须展开到原生 a 元素，不可与自行调用 navigate 的 Link 组件叠加。
  * @throws {Error} 不在 OverlayNavigationProvider 的会话子树内调用时抛出。
  */
@@ -72,6 +73,8 @@ export function useResumableOverlay({
     restoreFocusRef.current?.focus({ preventScroll: true });
   };
 
+  const releaseView = () => useOverlayNavigationStore.getState().removeClosedOverlay(sessionId);
+
   const linkProps: OverlayLinkProps = { "data-vike": "false", onClick: onLinkClick };
-  return { linkProps, restoreView, navigateFromOverlay };
+  return { linkProps, restoreView, releaseView, navigateFromOverlay };
 }

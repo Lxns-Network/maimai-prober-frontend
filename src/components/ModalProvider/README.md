@@ -8,7 +8,8 @@
    `render` 是返回 React 元素的回调而不是组件，不能在其中调用 Hooks；业务数据由这个闭包持有，store 不存业务 DTO。
 2. 弹窗组件内调用 `useResumableOverlay({ opened, onClose, getScrollViewport })`，
    把返回的 `linkProps` 展开到需要「跳走再回来」的原生 `<a>`（或 `Anchor`、`Avatar component="a"`）上，
-   并在 `Modal` 的 `onEnterTransitionEnd` 调用 `restoreView`。
+   并在 `Modal` 的 `onEnterTransitionEnd` 调用 `restoreView`、`onExitTransitionEnd` 调用 `releaseView`。
+   关闭后的会话要等退出动画结束才移除，提前卸载会丢掉关闭动画。
 3. 目标页使用公共 `Page` 即可：`PageHeader` 会读取会话的 `returnLabel` 显示返回箭头，无会话时回退到页面自己的 `backLink`。
 
 ## 禁忌

@@ -26,6 +26,7 @@ type OverlayNavigationState = {
   returnLabel: string | null;
   navigating: boolean;
   openOverlay: <Result>(options: OpenOverlayOptions<Result>) => void;
+  removeClosedOverlay: (id: string) => void;
   visitPage: (id: string, url: string, sourceScrollTop: number) => Promise<void>;
   syncHistory: () => void;
 };
@@ -74,6 +75,15 @@ const useOverlayNavigationStore = create<OverlayNavigationState>((set, get) => (
           resumed: false,
         },
       ],
+    }));
+  },
+
+  /** 退出动画结束后调用；仍处于打开状态或等待从目标页返回的会话不会被移除。 */
+  removeClosedOverlay: (id) => {
+    set(({ sessions }) => ({
+      sessions: sessions.filter(
+        (session) => session.id !== id || session.opened || session.destinationPath,
+      ),
     }));
   },
 
@@ -133,7 +143,12 @@ const useOverlayNavigationStore = create<OverlayNavigationState>((set, get) => (
       });
     } else if (!sessions.some((session) => session.opened && session.sourceUrl === currentUrl())) {
       if (sessions.some((session) => session.opened)) suppressTopOverlayHistoryRestore();
-      set({ sessions: [], returnLabel: null });
+      set({
+        sessions: sessions
+          .filter((session) => !session.destinationPath)
+          .map((session) => ({ ...session, opened: false })),
+        returnLabel: null,
+      });
     }
   },
 }));
