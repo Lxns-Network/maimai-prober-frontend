@@ -105,7 +105,7 @@ function ceilTo01(value: number): number {
  * - 当 `perUnit <= 0` 时（如达成率 < 10.0% 时评级为 D，档位系数为 0），无法通过提升定数获得 Rating，直接返回 0。
  * - 输出结果按游戏定数最小分度向上取整至 0.1 精度。
  *
- * @param targetRating 目标 DX Rating
+ * @param targetRating 目标 DX Rating，须为整数（`dx_rating` 向下取整后的值）；传入未截断的浮点会因浮点误差被 `ceil` 放大成 0.1
  * @param achievementRate 达成率百分比（单位：%，范围 0 ~ 101.0000）
  * @returns 满足目标 Rating 的最低谱面定数（单位：定数，向上取整至 0.1 精度）；若该达成率下无法获得 Rating 则返回 0
  */
