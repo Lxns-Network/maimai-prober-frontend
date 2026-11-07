@@ -1,7 +1,7 @@
 import { Accordion, Badge, Center, Group, Image, Paper, Stack, Text } from "@mantine/core";
 import { DataTable, DataTableColumn } from "mantine-datatable";
 import classes from "./RatingConstantAnalysis.module.css";
-import { ChunithmBestsProps, MaimaiBestsProps, MaimaiScoreProps } from "@/types/score";
+import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
 import { requiredChunithmConstant } from "@/utils/chunithm/rating.ts";
 import { requiredMaimaiConstant } from "@/utils/maimai/rating.ts";
 import { getDeluxeRatingGradient, getRatingGradient } from "@/utils/color.ts";
@@ -35,14 +35,6 @@ function average(values: number[]): number {
 
 function isMaimaiBests(bests: MaimaiBestsProps | ChunithmBestsProps): bests is MaimaiBestsProps {
   return "standard_total" in bests && "dx_total" in bests;
-}
-
-/**
- * `dx_rating` 为未截断的 float（API 契约要求计算时向下取整），游戏按整数展示并参与计算。
- * 在数据入口统一截断，保证 Rating 列与定数反推使用的是同一个整数。
- */
-function truncateMaimaiRatings(scores: MaimaiScoreProps[]): number[] {
-  return scores.map((score) => Math.floor(score.dx_rating));
 }
 
 // 达成率/分数档（图片 id 与 /assets/{game}/music_rank/ 下的资源一致）。
@@ -100,21 +92,19 @@ export function RatingConstantAnalysis({
 
   if (isMaimaiBests(bests)) {
     if (bests.dx) {
-      // oxfmt-ignore
       segments.push(
         buildSegment(
           "BEST 15",
-          truncateMaimaiRatings(bests.dx),
+          bests.dx.map((score) => Math.floor(score.dx_rating)),
           bests.dx_total,
         ),
       );
     }
     if (bests.standard) {
-      // oxfmt-ignore
       segments.push(
         buildSegment(
           "BEST 35",
-          truncateMaimaiRatings(bests.standard),
+          bests.standard.map((score) => Math.floor(score.dx_rating)),
           bests.standard_total,
         ),
       );
