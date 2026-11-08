@@ -18,6 +18,7 @@ import { ResponsivePagination } from "@/components/ResponsivePagination";
 import { AdvancedFilter } from "@/components/Scores/AdvancedFilter";
 import { ScoreFilterButton, ScoreFilterDrawer } from "@/components/Scores/ScoreFilterDrawer";
 import { ScoreSortMenu } from "@/components/Scores/ScoreSortMenu";
+import { SongCombobox } from "@/components/SongCombobox";
 import profileClasses from "@/components/Profile/Profile.module.css";
 import { usePlayer } from "@/hooks/queries/usePlayer";
 import { useScores } from "@/hooks/queries/useScores";
@@ -31,6 +32,8 @@ import { ScoreFilters, useScoreFilters } from "@/hooks/useScoreFilters";
 import useSongListStore from "@/hooks/useSongListStore";
 import { FriendItem } from "@/types/friend";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
+import { ChunithmSongProps } from "@/utils/api/song/chunithm";
+import { MaimaiSongProps } from "@/utils/api/song/maimai";
 import {
   CompareMetric,
   chartKey,
@@ -108,6 +111,10 @@ export const FriendScoreComparison = ({
   const [view, setView] = useState<View>("behind");
   const [metric, setMetric] = useState<CompareMetric>("score");
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [filteredSongs, setFilteredSongs] = useState<
+    (MaimaiSongProps | ChunithmSongProps)[] | null
+  >(null);
   const [sortBy, setSortBy] = useState<SortKey | null>(null);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
   const sortKey: SortKey = sortBy ?? "gap";
@@ -148,8 +155,16 @@ export const FriendScoreComparison = ({
     setPage(1);
   };
 
+  const hasSearch = search.trim().length > 0;
+  const matchedSongIds = useMemo(() => {
+    if (!hasSearch || !filteredSongs) return null;
+    return new Set(filteredSongs.map((song) => song.id));
+  }, [hasSearch, filteredSongs]);
+
   const resetComparisonFilters = () => {
     resetFilters();
+    setSearch("");
+    setFilteredSongs(null);
     setPage(1);
   };
 
@@ -180,13 +195,19 @@ export const FriendScoreComparison = ({
   const common = ahead.length + behind.length + tied.length;
   const percent = (count: number) => (common > 0 ? (count / common) * 100 : 0);
 
-  const behindItems: VsItem[] = filters.showUnplayed
+  const allBehindItems: VsItem[] = filters.showUnplayed
     ? [
         ...behind,
         ...onlyTheirs.map((theirs) => ({ theirs, gap: -metricValue(theirs, activeMetric) })),
       ].sort((a, b) => a.gap - b.gap)
     : behind;
-  const viewItems: VsItem[] = view === "behind" ? behindItems : ahead;
+  const behindItems = matchedSongIds
+    ? allBehindItems.filter((item) => matchedSongIds.has(item.theirs.id))
+    : allBehindItems;
+  const aheadItems = matchedSongIds
+    ? ahead.filter((item) => matchedSongIds.has(item.theirs.id))
+    : ahead;
+  const viewItems: VsItem[] = view === "behind" ? behindItems : aheadItems;
   const direction = view === "behind" ? 1 : -1;
   const sign = reverseSortDirection ? -1 : 1;
   const items = viewItems
@@ -249,6 +270,31 @@ export const FriendScoreComparison = ({
         </Stack>
       </Card>
 
+      <Group gap="xs" wrap="nowrap">
+        <SongCombobox
+          searchValue={search}
+          onSearchChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+          onSongsChange={setFilteredSongs}
+          placeholder="搜索曲名、别名或曲目 ID"
+          flex={1}
+          miw={0}
+        />
+        <ScoreSortMenu
+          options={SORT_OPTIONS}
+          sortBy={sortBy}
+          reverseSortDirection={reverseSortDirection}
+          onChange={(key, reverse) => {
+            setSortBy(key as SortKey | null);
+            setReverseSortDirection(reverse);
+            setPage(1);
+          }}
+        />
+        <ScoreFilterButton count={activeFilterCount} onClick={filterDrawer.open} />
+      </Group>
+
       <Group gap="xs">
         <SegmentedControl
           value={view}
@@ -257,43 +303,31 @@ export const FriendScoreComparison = ({
             setPage(1);
           }}
           flex={1}
-          miw={200}
+          miw={180}
           data={[
             { value: "behind", label: `落后 ${behindItems.length}` },
-            { value: "ahead", label: `领先 ${ahead.length}` },
+            { value: "ahead", label: `领先 ${aheadItems.length}` },
           ]}
         />
-        <Group gap="xs" ml="auto" wrap="nowrap">
-          {game === "maimai" && (
-            <SegmentedControl
-              value={metric}
-              onChange={(value) => {
-                setMetric(value as CompareMetric);
-                setPage(1);
-              }}
-              data={[
-                { value: "score", label: "达成率" },
-                { value: "dx_score", label: "DX 分数" },
-              ]}
-            />
-          )}
-          <ScoreSortMenu
-            options={SORT_OPTIONS}
-            sortBy={sortBy}
-            reverseSortDirection={reverseSortDirection}
-            onChange={(key, reverse) => {
-              setSortBy(key as SortKey | null);
-              setReverseSortDirection(reverse);
+        {game === "maimai" && (
+          <SegmentedControl
+            value={metric}
+            onChange={(value) => {
+              setMetric(value as CompareMetric);
               setPage(1);
             }}
+            ml="auto"
+            data={[
+              { value: "score", label: "达成率" },
+              { value: "dx_score", label: "DX 分数" },
+            ]}
           />
-          <ScoreFilterButton count={activeFilterCount} onClick={filterDrawer.open} />
-        </Group>
+        )}
       </Group>
 
       {items.length === 0 ? (
         <EmptyState icon={<IconDatabaseOff size={64} stroke={1.5} />} title={VIEW_EMPTY[view]}>
-          {activeFilterCount > 0 && (
+          {(activeFilterCount > 0 || hasSearch) && (
             <Button mt="xs" variant="light" size="xs" onClick={resetComparisonFilters}>
               重置筛选条件
             </Button>

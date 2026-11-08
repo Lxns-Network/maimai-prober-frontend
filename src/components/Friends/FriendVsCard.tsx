@@ -1,8 +1,9 @@
-import { Avatar, Badge, Box, Card, Group, Stack, Text } from "@mantine/core";
+import { Avatar, Badge, Box, Card, Group, Stack, Text, UnstyledButton } from "@mantine/core";
 import { IconPhotoOff } from "@tabler/icons-react";
 import { ChartLevelBadge, ChartTypeBadge } from "@/components/ChartBadge";
 import { MusicIcon } from "@/components/MusicIcon";
 import profileClasses from "@/components/Profile/Profile.module.css";
+import { openScoreModal } from "@/components/Scores/openScoreModal";
 import useSongListStore from "@/hooks/useSongListStore";
 import { ASSET_URL } from "@/main";
 import { Game } from "@/types/game";
@@ -16,6 +17,7 @@ import {
   formatScoreValue,
   scoreGap,
 } from "@/utils/scoreCompare";
+import classes from "./Friends.module.css";
 
 type AnyScore = MaimaiScoreProps | ChunithmScoreProps;
 
@@ -85,49 +87,55 @@ export const FriendVsCard = ({
   const levelValue = chartLevelValue(songList, theirs);
 
   return (
-    <Card className={profileClasses.card} withBorder radius="md" p="md">
-      <Group gap="sm" wrap="nowrap">
-        <Avatar
-          src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(theirs.id)}.png!webp`}
-          size={48}
-          radius="md"
-          imageProps={{ loading: "lazy" }}
-        >
-          <IconPhotoOff size={18} />
-        </Avatar>
-        <Box miw={0} flex={1}>
-          <Text truncate size="sm" fw={600} lh={1.2}>
-            {theirs.song_name}
-          </Text>
-          <Group gap={4} mt={4} wrap="nowrap">
-            {"type" in theirs && <ChartTypeBadge type={theirs.type} />}
-            <ChartLevelBadge color={getScoreCardBackgroundColor(game, levelIndex)}>
-              {levelValue === undefined ? theirs.level : levelValue.toFixed(1)}
-            </ChartLevelBadge>
-          </Group>
-        </Box>
-      </Group>
+    <Card className={[profileClasses.card, classes.card].join(" ")} withBorder radius="md" p={0}>
+      <UnstyledButton
+        p="md"
+        className={classes.cardDetailsTrigger}
+        onClick={() => openScoreModal({ game, score: theirs, readOnly: true })}
+      >
+        <Group gap="sm" wrap="nowrap">
+          <Avatar
+            src={`${ASSET_URL}/${game}/jacket/${songList.getSongResourceId(theirs.id)}.png!webp`}
+            size={48}
+            radius="md"
+            imageProps={{ loading: "lazy" }}
+          >
+            <IconPhotoOff size={18} />
+          </Avatar>
+          <Box miw={0} flex={1}>
+            <Text truncate size="sm" fw={600} lh={1.2}>
+              {theirs.song_name}
+            </Text>
+            <Group gap={4} mt={4} wrap="nowrap">
+              {"type" in theirs && <ChartTypeBadge type={theirs.type} />}
+              <ChartLevelBadge color={getScoreCardBackgroundColor(game, levelIndex)}>
+                {levelValue === undefined ? theirs.level : levelValue.toFixed(1)}
+              </ChartLevelBadge>
+            </Group>
+          </Box>
+        </Group>
 
-      <Group mt="sm" gap="xs" wrap="nowrap" align="center">
-        <ScoreSide game={game} score={mine} metric={metric} align="flex-start" />
-        <Stack gap={2} align="center">
-          {gap === undefined ? (
-            <Text fz="sm" fw={700} c="dimmed">
-              VS
-            </Text>
-          ) : (
-            <Badge variant="light" color={gap > 0 ? "teal" : gap < 0 ? "red" : "gray"}>
-              {gap === 0 ? "持平" : formatScoreGap(game, gap, metric)}
-            </Badge>
-          )}
-          {ratingGap !== undefined && (
-            <Text fz="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>
-              {formatRatingGap(game, ratingGap)}
-            </Text>
-          )}
-        </Stack>
-        <ScoreSide game={game} score={theirs} metric={metric} align="flex-end" />
-      </Group>
+        <Group mt="sm" gap="xs" wrap="nowrap" align="center">
+          <ScoreSide game={game} score={mine} metric={metric} align="flex-start" />
+          <Stack gap={2} align="center">
+            {gap === undefined ? (
+              <Text fz="sm" fw={700} c="dimmed">
+                VS
+              </Text>
+            ) : (
+              <Badge variant="light" color={gap > 0 ? "teal" : gap < 0 ? "red" : "gray"}>
+                {gap === 0 ? "持平" : formatScoreGap(game, gap, metric)}
+              </Badge>
+            )}
+            {ratingGap !== undefined && (
+              <Text fz="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>
+                {formatRatingGap(game, ratingGap)}
+              </Text>
+            )}
+          </Stack>
+          <ScoreSide game={game} score={theirs} metric={metric} align="flex-end" />
+        </Group>
+      </UnstyledButton>
     </Card>
   );
 };
