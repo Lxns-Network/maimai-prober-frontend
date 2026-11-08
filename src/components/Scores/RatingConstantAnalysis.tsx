@@ -95,7 +95,7 @@ export function RatingConstantAnalysis({
       segments.push(
         buildSegment(
           "BEST 15",
-          bests.dx.map((s) => s.dx_rating),
+          bests.dx.map((score) => Math.floor(score.dx_rating)),
           bests.dx_total,
         ),
       );
@@ -104,7 +104,7 @@ export function RatingConstantAnalysis({
       segments.push(
         buildSegment(
           "BEST 35",
-          bests.standard.map((s) => s.dx_rating),
+          bests.standard.map((score) => Math.floor(score.dx_rating)),
           bests.standard_total,
         ),
       );
