@@ -2,7 +2,11 @@ import { Accordion, Badge, Center, Group, Image, Paper, Stack, Text } from "@man
 import { DataTable, DataTableColumn } from "mantine-datatable";
 import classes from "./RatingConstantAnalysis.module.css";
 import { ChunithmBestsProps, MaimaiBestsProps } from "@/types/score";
-import { requiredChunithmConstant } from "@/utils/chunithm/rating.ts";
+import {
+  formatChunithmValue,
+  requiredChunithmConstant,
+  truncateChunithmValue,
+} from "@/utils/chunithm/rating.ts";
 import { requiredMaimaiConstant } from "@/utils/maimai/rating.ts";
 import { getDeluxeRatingGradient, getRatingGradient } from "@/utils/color.ts";
 
@@ -19,18 +23,16 @@ interface AnalysisSegment {
   rows: AnalysisRow[];
 }
 
-function truncate2(value: number): number {
-  return Math.floor(value * 100) / 100;
-}
-
 function truncate2Average(values: number[]): number {
   if (values.length === 0) return 0;
-  return truncate2(values.reduce((acc, v) => acc + truncate2(v), 0) / values.length);
+  return truncateChunithmValue(
+    values.reduce((acc, v) => acc + truncateChunithmValue(v), 0) / values.length,
+  );
 }
 
 function average(values: number[]): number {
   if (values.length === 0) return 0;
-  return values.reduce((acc, v) => acc + truncate2(v), 0) / values.length;
+  return values.reduce((acc, v) => acc + truncateChunithmValue(v), 0) / values.length;
 }
 
 function isMaimaiBests(bests: MaimaiBestsProps | ChunithmBestsProps): bests is MaimaiBestsProps {
@@ -60,7 +62,7 @@ export function RatingConstantAnalysis({
   const maimai = isMaimaiBests(bests);
   const ranks = maimai ? MAIMAI_RANKS : CHUNITHM_RANKS;
   const maxConstant = maimai ? 15 : 16;
-  const fmtRating = (r: number) => (maimai ? String(Math.round(r)) : truncate2(r).toFixed(2));
+  const fmtRating = (r: number) => (maimai ? String(Math.round(r)) : formatChunithmValue(r));
   const requiredFor = (rating: number, index: number) =>
     maimai
       ? requiredMaimaiConstant(rating, MAIMAI_RANKS[index].achievement)
@@ -82,7 +84,7 @@ export function RatingConstantAnalysis({
     return {
       title,
       avg: fmtRating(truncate2Average(ratings)),
-      total: maimai ? String(Math.round(totalRaw)) : truncate2(totalRaw).toFixed(2),
+      total: maimai ? String(Math.round(totalRaw)) : formatChunithmValue(totalRaw),
       rows: [buildRow("最高", max), buildRow("最低", min)],
     };
   };
@@ -112,12 +114,12 @@ export function RatingConstantAnalysis({
     total = bests.standard_total + bests.dx_total;
   } else {
     const sum = (scores?: ChunithmBestsProps["bests"]) =>
-      (scores ?? []).reduce((acc, s) => acc + truncate2(s.rating), 0);
+      (scores ?? []).reduce((acc, score) => acc + truncateChunithmValue(score.rating), 0);
     if (bests.bests) {
       segments.push(
         buildSegment(
           "BEST 30",
-          bests.bests.map((s) => s.rating),
+          bests.bests.map((score) => truncateChunithmValue(score.rating)),
           sum(bests.bests),
         ),
       );
@@ -126,7 +128,7 @@ export function RatingConstantAnalysis({
       segments.push(
         buildSegment(
           "SELECTION 10",
-          bests.selections.map((s) => s.rating),
+          bests.selections.map((score) => truncateChunithmValue(score.rating)),
           sum(bests.selections),
         ),
       );
@@ -135,7 +137,7 @@ export function RatingConstantAnalysis({
       segments.push(
         buildSegment(
           "NEW 20",
-          bests.new_bests.map((s) => s.rating),
+          bests.new_bests.map((score) => truncateChunithmValue(score.rating)),
           sum(bests.new_bests),
         ),
       );
@@ -145,7 +147,9 @@ export function RatingConstantAnalysis({
     const b30count = +(bests.bests?.length ?? 30);
     const n20count = +(bests.new_bests?.length ?? 20);
     const bestsCount = b30count + n20count;
-    total = truncate2(b30avg * (b30count / bestsCount) + n20avg * (n20count / bestsCount));
+    total = truncateChunithmValue(
+      b30avg * (b30count / bestsCount) + n20avg * (n20count / bestsCount),
+    );
   }
 
   const columns: DataTableColumn<AnalysisRow>[] = [

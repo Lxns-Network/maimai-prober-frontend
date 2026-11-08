@@ -115,10 +115,16 @@ export function requiredChunithmScore(levelValue: number, targetRating: number):
 }
 
 function ceilTo01(value: number): number {
-  return Math.ceil(value * 10) / 10;
+  return Math.ceil(value * 10 - 1e-8) / 10;
 }
 
-// chunithm：Rating = 定数 + 分数档加成（达 SS 及以上时为正）。反推：定数 = rating − 加成。
+/**
+ * 反查在指定分数档加成下达到目标 Rating 所需的最低谱面定数。
+ *
+ * @param targetRating 目标 Rating，须为向下截断至 2 位小数后的值；传入未截断的浮点会因尾数余量被 `ceil` 放大成 0.1
+ * @param offset 分数档对应的 Rating 加成（如 SSS+ 为 2.15、SSS 为 2.0）
+ * @returns 满足目标 Rating 的最低谱面定数（向上取整至 0.1 精度，最小为 0）
+ */
 export function requiredChunithmConstant(targetRating: number, offset: number): number {
   return Math.max(0, ceilTo01(targetRating - offset));
 }
