@@ -95,5 +95,13 @@
     "image": "ChiffonMai",
     "button": "了解更多",
     "url": "https://github.com/ChiffonOwO/ChiffonMai"
+  },
+  {
+    "title": "McMai @该隐",
+    "tags": ["QQ 机器人", "Discord 机器人", "LINE 机器人", "舞萌 DX"],
+    "description": "McMai 覆盖国服、日服、国际服的 B50、排行榜、牌子进度与查歌等，更以九维雷达与结构定数量化谱面，从成绩中找出弱项，推荐练习谱面与上分目标。",
+    "image": "mcmai",
+    "button": "了解更多",
+    "url": "https://mcmai.moev.cc"
   }
 ]
