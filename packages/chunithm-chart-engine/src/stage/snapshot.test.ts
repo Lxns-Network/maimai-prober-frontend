@@ -89,3 +89,40 @@ it("clones retained per-draw material cells independently of the source scene", 
   expect(Array.from(material.parameter(0, 0)!)).toEqual([0.5, 0, 1, 1]);
   expect(Array.from(copy.extension.material.parameter(0, 0)!)).toEqual([0.75, 0, 1, 1]);
 });
+
+it("leaves packed integer words of mixed-view records unblended between ticks", () => {
+  const build = () => {
+    const buffer = new ArrayBuffer(8);
+    const pool = { i: new Int32Array(buffer), f: new Float32Array(buffer) };
+    pool.i[0] = 1;
+    pool.i[1] = -1;
+    const scene = {
+      tick: 0,
+      failure: null,
+      traversalClock: { framePhase: 0 },
+      top: { flags: 0x15, children: [], graveyard: [] },
+      classState: new Map([["pool", pool]]),
+      options: {
+        nodes: new Map([
+          [
+            0,
+            {
+              finishStep(current: StageScene) {
+                const live = current.classState.get("pool") as typeof pool;
+                // A linked-list relink each tick, as the particle pool's NEXT words change.
+                live.i[0] = current.tick % 2 ? 9 : 1;
+              },
+            },
+          ],
+        ]),
+      },
+    } as unknown as StageScene;
+    return [scene];
+  };
+  const rewind = createStageRewind(build, 2);
+  for (const fraction of [0.5, 0.25, 0]) {
+    const scene = rewind.sample(2, fraction)[0];
+    const pool = scene.classState.get("pool") as { i: Int32Array };
+    expect(Array.from(pool.i)).toEqual([1, -1]);
+  }
+});

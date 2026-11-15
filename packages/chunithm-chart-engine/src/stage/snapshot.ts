@@ -344,10 +344,20 @@ function stageInterpolation(display: Map<object, unknown>, next: Map<object, unk
     if (value.vertices) packedVertices.set(value.vertices, 6);
     if (value.normalVertices) packedVertices.set(value.normalVertices, 9);
   }
+  // A float view sharing its buffer with an integer view is a packed record (a particle pool's
+  // links, flags and colours beside its floats); blending it as floats corrupts those words.
+  const packedRecords = new Set<ArrayBufferLike>();
+  for (const original of display.keys())
+    if (
+      ArrayBuffer.isView(original) &&
+      !(original instanceof Float32Array || original instanceof Float64Array)
+    )
+      packedRecords.add(original.buffer);
   for (const [original, target] of display) {
     const future = next.get(original);
     if (!future || !target) continue;
     if (original instanceof Float32Array || original instanceof Float64Array) {
+      if (packedRecords.has(original.buffer)) continue;
       const a = original.slice();
       const b = future as Float32Array;
       const out = target as Float32Array;
