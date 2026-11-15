@@ -29,6 +29,9 @@ interface GoalRecord {
 const codes = new Int32Array(3);
 const diagonal = new Float32Array(16);
 const product = new Float32Array(16);
+const translation = new Float32Array(4);
+const rotation = new Float32Array(4);
+const scale = new Float32Array(4);
 
 function fail(message: string): never {
   throw new RangeError(`Stage goal: ${message}`);
@@ -363,9 +366,10 @@ class GoalMotion implements MotionInstance {
       return true;
     }
     const delta = node.delta;
-    const translation = Float32Array.of(0, 0, 0, 1);
-    const rotation = Float32Array.of(0, 0, 0, 1);
-    const scale = Float32Array.of(1, 1, 1, 1);
+    translation[0] = translation[1] = translation[2] = 0;
+    rotation[0] = rotation[1] = rotation[2] = 0;
+    translation[3] = rotation[3] = 1;
+    scale.fill(1);
     let translated = this.mode === 1;
     if (translated) {
       translation.set(target.subarray(12, 15));

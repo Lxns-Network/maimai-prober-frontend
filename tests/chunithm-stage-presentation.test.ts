@@ -367,6 +367,30 @@ function response() {
 }
 
 describe("stage presentation lifecycle", () => {
+  it("loads hidden stage resources without advancing or drawing scenes, then resumes at the current time", async () => {
+    const fetcher = vi.fn(async () => response());
+    vi.stubGlobal("fetch", fetcher);
+    const s = setup();
+    s.render().selectBackground(false);
+    await s.render().prepare!(s.scene, Promise.resolve(1), new AbortController().signal);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    s.draw(60);
+    expect(mocked.created).toEqual([]);
+    expect(mocked.draws).toEqual([]);
+    s.render().selectBackground(true);
+    s.draw(60);
+    expect(mocked.draws.length).toBeGreaterThan(0);
+    expect(mocked.postBegin.mock.lastCall?.[2]).toEqual({ tick: 3824, reset: true });
+    mocked.draws.length = 0;
+    mocked.postBegin.mockClear();
+    s.render().selectBackground(false);
+    s.draw(90);
+    expect(mocked.draws).toEqual([]);
+    expect(mocked.postBegin).not.toHaveBeenCalled();
+    s.render().selectBackground(true);
+    s.draw(90);
+    expect(mocked.postBegin.mock.lastCall?.[2]).toEqual({ tick: 5624, reset: true });
+  });
   it.each([10, 60])("resets scene histories on an explicit seek to %s seconds", async (seconds) => {
     vi.stubGlobal(
       "fetch",

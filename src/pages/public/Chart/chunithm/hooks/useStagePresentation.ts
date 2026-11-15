@@ -22,6 +22,7 @@ export function useStagePresentation(
       stage: Promise<number | null>,
       signal: AbortSignal,
       setDividerColor?: (color: number) => void,
+      duration?: Promise<number>,
     ) => {
       if (base === null) throw new Error("Stage assets are not configured");
       return prepareStagePresentation({
@@ -30,6 +31,7 @@ export function useStagePresentation(
         stage,
         signal,
         setDividerColor,
+        duration,
         readFieldValue: () => fieldLabel.current,
         readShowBackground: () => backgroundVisible.current,
         setStatus,

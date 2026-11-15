@@ -163,6 +163,8 @@ export function cloneStageScene(scene: StageScene): StageSceneCopy {
 }
 
 export interface StageRewind {
+  /** Prepares future checkpoints without changing the displayed scenes; returns true at the target. */
+  warm(tick: number, deadline: number): boolean;
   /** The scenes stepped to `tick`, resumed from the latest kept copy when that is closer. */
   seek(tick: number): readonly StageScene[];
   sample(tick: number, fraction: number): readonly StageScene[];
@@ -189,6 +191,7 @@ export function createStageRewind(
   budget = 16 << 20,
 ): StageRewind {
   let scenes: StageScene[] | null = null;
+  let warming: StageScene[] | null = null;
   let every = interval;
   let sampledTick = -1;
   let sampled: StageScene[] = [];
@@ -214,6 +217,33 @@ export function createStageRewind(
     }
   };
   const rewind: StageRewind = {
+    warm(tick, deadline) {
+      if (failure) throw failure.cause;
+      try {
+        let latest = warming;
+        if (scenes && (!latest || scenes[0].tick > latest[0].tick)) latest = scenes;
+        const last = kept[kept.length - 1];
+        if (last && (!latest || last.tick > latest[0].tick)) latest = last.scenes as StageScene[];
+        if (latest && latest[0].tick >= tick) {
+          warming = null;
+          return true;
+        }
+        if (latest !== warming)
+          warming = latest ? cloneStageScenes(latest).map((copy) => copy.scene) : build();
+        warming ??= build();
+        while (warming[0].tick < tick && performance.now() < deadline) {
+          stepStageScenes(warming);
+          finishStageScenes(warming);
+          keep(warming);
+        }
+        if (warming[0].tick < tick) return false;
+        warming = null;
+        return true;
+      } catch (cause) {
+        failure = { cause };
+        throw cause;
+      }
+    },
     sample(tick, fraction) {
       if (sampledTick === tick) {
         for (const update of interpolate) update(fraction);

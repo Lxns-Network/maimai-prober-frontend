@@ -47,6 +47,15 @@ it("preserves sampled poses across repeated fractions, forward steps and rewinds
   }
   expect(rewind.seek(5)[0].tick).toBe(5);
   expect((rewind.seek(5)[0].classState.get("pose") as { frame: number }).frame).toBe(5);
+  const displayed = rewind.sample(5, 0.25)[0];
+  expect(rewind.warm(30, performance.now())).toBe(false);
+  expect(rewind.warm(30, Infinity)).toBe(true);
+  expect(displayed.tick).toBe(5);
+  expect((displayed.classState.get("pose") as { frame: number }).frame).toBe(5.25);
+  for (const tick of [25, 10, 29, 2]) {
+    const warmed = rewind.sample(tick, 0.5)[0];
+    expect((warmed.classState.get("pose") as { frame: number }).frame).toBe(tick + 0.5);
+  }
 });
 
 it("clones retained per-draw material cells independently of the source scene", () => {

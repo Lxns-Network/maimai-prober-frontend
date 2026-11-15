@@ -690,6 +690,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
             dividerColor = color;
             request();
           },
+          musicReady.then((music) => music.durationSeconds),
         )
         .then((releasePrepared) => {
           if (!valid()) releasePrepared();

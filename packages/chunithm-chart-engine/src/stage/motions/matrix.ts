@@ -1,6 +1,11 @@
 import type { StageMotionRecord } from "../graph";
 import type { MotionBehavior, MotionInstance, StageNode, StageScene } from "../runtime";
-import { multiplyAffine, rotateCodes, setIdentity } from "../../math/matrix";
+import {
+  multiplyAffine,
+  multiplyDiagonalTranslation,
+  rotateCodes,
+  setIdentity,
+} from "../../math/matrix";
 import { DEGREES_TO_ANGLE_CODE, sinCosAngleCode } from "../../math/trig";
 import { seededValue } from "../random";
 import { elementMatrix, nodeClock, nodeSeed } from "./common";
@@ -29,8 +34,8 @@ interface RecordState {
 
 const trig = new Float64Array(2);
 const codes = new Int32Array(3);
-const built = new Float32Array(16);
 const product = new Float32Array(16);
+const out = new Float32Array(16);
 
 function randomized(op: number): boolean {
   return op >= 4 && op <= 7;
@@ -122,8 +127,7 @@ function translate(target: Float32Array, v: Float32Array, mode: number, out: Flo
       f(f(f(out[4 + row] * v[1]) + f(out[row] * v[0])) + f(out[8 + row] * v[2])) + out[12 + row],
     );
   out[15] = 1;
-  multiplyAffine(target, out, product);
-  target.set(product);
+  multiplyDiagonalTranslation(target, 1, 1, 1, out[12], out[13], out[14]);
 }
 
 function rotate(target: Float32Array, v: Float32Array, out: Float32Array): void {
@@ -139,14 +143,11 @@ function rotate(target: Float32Array, v: Float32Array, out: Float32Array): void 
 
 function scale(target: Float32Array, v: Float32Array, op: number, out: Float32Array): void {
   const plus = op === 1 || op === 2 || op === 5 || op === 6;
-  setIdentity(built);
-  built[0] = plus ? f(v[0] + 1) : v[0];
-  built[5] = plus ? f(v[1] + 1) : v[1];
-  built[10] = plus ? f(v[2] + 1) : v[2];
-  multiplyAffine(target, built, product);
-  target.set(product);
-  multiplyAffine(out, built, product);
-  out.set(product);
+  const x = plus ? f(v[0] + 1) : v[0];
+  const y = plus ? f(v[1] + 1) : v[1];
+  const z = plus ? f(v[2] + 1) : v[2];
+  multiplyDiagonalTranslation(target, x, y, z, 0, 0, 0);
+  multiplyDiagonalTranslation(out, x, y, z, 0, 0, 0);
 }
 
 class MatrixMotion implements MotionInstance {
@@ -285,8 +286,6 @@ class MatrixMotion implements MotionInstance {
             break;
         }
       }
-      setIdentity(built);
-      const out = new Float32Array(16);
       setIdentity(out);
       if (r.channel === 0) translate(target, r.current, r.mode, out);
       else if (r.channel === 1) rotate(target, r.current, out);
