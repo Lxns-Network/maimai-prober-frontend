@@ -1,0 +1,28 @@
+{
+  "constants": {
+    "floorMagic": 8388608,
+    "one": 1,
+    "beatScale": 4,
+    "tickScale": 384,
+    "half": 0.5,
+    "tickUnit": 0.0026041667442768812,
+    "quarter": 0.25,
+    "lookupTolerance": 0.0052083334885537624,
+    "minuteMs": 60000
+  },
+  "signMask": 2147483648,
+  "u32Conversion": [0, 4294967296],
+  "layout": {
+    "position0": 0,
+    "position4": 4,
+    "position8": 8,
+    "query0": 0,
+    "query4": 4,
+    "rowFromEnd0": -20,
+    "rowFromEnd4": -16,
+    "rowFromEnd8": -12,
+    "rowFromEnd16": -4
+  },
+  "rowStep": -20,
+  "constructorZeroStore": 0
+}

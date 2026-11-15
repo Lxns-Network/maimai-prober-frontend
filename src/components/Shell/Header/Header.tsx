@@ -6,6 +6,8 @@ import { ColorSchemeToggle } from "./ColorSchemeToggle.tsx";
 import { GameTabs } from "./GameTabs.tsx";
 import { Game } from "@/types/game";
 import useGame from "@/hooks/useGame.ts";
+import { usePageContext } from "vike-react/usePageContext";
+import { navigate } from "vike/client/router";
 
 interface HeaderProps {
   navbarOpened: boolean;
@@ -33,9 +35,15 @@ const translateY = {
 
 export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible }: HeaderProps) {
   const [game, setGame] = useGame();
+  const { urlPathname } = usePageContext();
 
-  function handleGameChange(game: Game) {
-    setGame(game);
+  function handleGameChange(nextGame: Game) {
+    if (nextGame === game) return;
+    if (urlPathname === "/chart") {
+      void navigate(`/songs?game=${nextGame}`).then(() => setGame(nextGame));
+      return;
+    }
+    setGame(nextGame);
   }
 
   return (

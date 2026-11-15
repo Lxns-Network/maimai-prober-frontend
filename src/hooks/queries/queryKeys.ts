@@ -1,6 +1,10 @@
 import { Game } from "@/types/game";
 
 export const queryKeys = {
+  chart: {
+    chunithmAssets: (directory: string | null, pageBase: string | null) =>
+      ["chunithm/chart/assets", directory, pageBase] as const,
+  },
   user: {
     profile: () => ["user/profile"] as const,
     refresh: () => ["user/refresh"] as const,

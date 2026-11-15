@@ -1,0 +1,21 @@
+{
+  "parameters": {
+    "stride": 20,
+    "insertionLimit": 32,
+    "minimumSortCount": 2,
+    "pivotLastIndexLimit": 40,
+    "pivotStepShift": 3,
+    "depthHalfShift": 1,
+    "depthQuarterShift": 1,
+    "heapParentShift": 1,
+    "heapParityMask": 1
+  },
+  "constants": {
+    "positionMultiplier": 4,
+    "comparisonTolerance": 0.0052083334885537624
+  },
+  "fields": {
+    "position0": 0,
+    "position4": 4
+  }
+}

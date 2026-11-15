@@ -15,7 +15,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import useFixedGame from "@/hooks/useFixedGame.ts";
+import type { Game } from "@/types/game";
 import { ChunithmScoreProps, MaimaiScoreProps } from "@/types/score";
 import useCreateScoreStore from "@/hooks/useCreateScoreStore.ts";
 import { usePlayer } from "@/hooks/queries/usePlayer.ts";
@@ -25,6 +25,7 @@ import { MaimaiDifficultyProps } from "@/utils/api/song/maimai";
 import { ChunithmDifficultyProps } from "@/utils/api/song/chunithm";
 
 interface ScoreModalActionMenuProps {
+  game: Game;
   score: MaimaiScoreProps | ChunithmScoreProps;
   difficulty?: MaimaiDifficultyProps | ChunithmDifficultyProps;
   onClose?: (score?: MaimaiScoreProps | ChunithmScoreProps) => void;
@@ -32,6 +33,7 @@ interface ScoreModalActionMenuProps {
 }
 
 export const ScoreModalMenu = ({
+  game,
   score,
   difficulty,
   onClose,
@@ -39,7 +41,6 @@ export const ScoreModalMenu = ({
 }: ScoreModalActionMenuProps) => {
   const { openModal: openCreateScoreModal } = useCreateScoreStore();
   const [params, setParams] = useState(new URLSearchParams());
-  const [game] = useFixedGame();
   const queryClient = useQueryClient();
 
   const { player } = usePlayer(game);
@@ -87,6 +88,7 @@ export const ScoreModalMenu = ({
 
   const handleChartPreview = (chartId: number, difficulty: number) => {
     const params = new URLSearchParams({
+      game,
       chart_id: String(chartId),
       difficulty: String(difficulty),
     });
@@ -115,7 +117,7 @@ export const ScoreModalMenu = ({
 
       <Menu.Dropdown>
         <Menu.Label>更多操作</Menu.Label>
-        {"type" in score && (
+        {"type" in score ? (
           <>
             {difficulty && "is_buddy" in difficulty && difficulty.is_buddy ? (
               <Menu.Sub>
@@ -154,6 +156,13 @@ export const ScoreModalMenu = ({
               </Menu.Item>
             )}
           </>
+        ) : (
+          <Menu.Item
+            leftSection={<IconPlayerPlay size={20} stroke={1.5} />}
+            onClick={() => handleChartPreview(score.id, score.level_index)}
+          >
+            谱面预览
+          </Menu.Item>
         )}
         <Menu.Item
           disabled={!player}

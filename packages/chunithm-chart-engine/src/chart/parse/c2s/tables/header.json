@@ -1,0 +1,221 @@
+{
+  "version": {
+    "offset": 32,
+    "stride": 36,
+    "count": 2,
+    "capacityDelta": 20,
+    "requiredAssignments": 3,
+    "failureZero": 0,
+    "numericDeltas": [4, 8, 12]
+  },
+  "commands": {
+    "1": {
+      "writes": [
+        {
+          "kind": "integer",
+          "column": 1,
+          "offset": 104
+        }
+      ],
+      "returnsTrue": true
+    },
+    "2": {
+      "writes": [
+        {
+          "kind": "integer",
+          "column": 1,
+          "offset": 108
+        }
+      ],
+      "returnsTrue": true
+    },
+    "3": {
+      "writes": [
+        {
+          "kind": "string",
+          "column": 1,
+          "offset": 112
+        }
+      ],
+      "returnsTrue": true
+    },
+    "4": {
+      "writes": [
+        {
+          "kind": "float",
+          "column": 1,
+          "offset": 136
+        }
+      ],
+      "returnsTrue": true
+    },
+    "5": {
+      "writes": [
+        {
+          "kind": "string",
+          "column": 1,
+          "offset": 140
+        }
+      ],
+      "returnsTrue": true
+    },
+    "6": {
+      "writes": [
+        {
+          "kind": "float",
+          "column": 1,
+          "offset": 176
+        },
+        {
+          "kind": "float",
+          "column": 2,
+          "offset": 164
+        },
+        {
+          "kind": "float",
+          "column": 3,
+          "offset": 172
+        },
+        {
+          "kind": "float",
+          "column": 4,
+          "offset": 168
+        }
+      ],
+      "returnsTrue": false
+    },
+    "7": {
+      "writes": [
+        {
+          "kind": "integer",
+          "column": 1,
+          "offset": 180
+        },
+        {
+          "kind": "integer",
+          "column": 2,
+          "offset": 184
+        }
+      ],
+      "returnsTrue": true
+    },
+    "8": {
+      "writes": [],
+      "returnsTrue": true
+    },
+    "9": {
+      "writes": [
+        {
+          "kind": "integer",
+          "column": 1,
+          "offset": 192
+        }
+      ],
+      "returnsTrue": true
+    },
+    "10": {
+      "writes": [
+        {
+          "kind": "float",
+          "column": 1,
+          "offset": 196
+        }
+      ],
+      "returnsTrue": true
+    },
+    "11": {
+      "writes": [
+        {
+          "kind": "float",
+          "column": 1,
+          "offset": 200
+        }
+      ],
+      "returnsTrue": true
+    },
+    "12": {
+      "writes": [
+        {
+          "kind": "positive",
+          "column": 1,
+          "offset": 204
+        }
+      ],
+      "returnsTrue": true
+    }
+  },
+  "scalarStores": [
+    {
+      "offset": 104,
+      "size": 4,
+      "bits": 0
+    },
+    {
+      "offset": 108,
+      "size": 4,
+      "bits": 0
+    },
+    {
+      "offset": 136,
+      "size": 4,
+      "bits": 0
+    },
+    {
+      "offset": 164,
+      "size": 4,
+      "bits": 1125515264
+    },
+    {
+      "offset": 168,
+      "size": 4,
+      "bits": 1125515264
+    },
+    {
+      "offset": 172,
+      "size": 4,
+      "bits": 1125515264
+    },
+    {
+      "offset": 176,
+      "size": 4,
+      "bits": 1125515264
+    },
+    {
+      "offset": 180,
+      "size": 4,
+      "bits": 4
+    },
+    {
+      "offset": 184,
+      "size": 4,
+      "bits": 4
+    },
+    {
+      "offset": 188,
+      "size": 4,
+      "bits": 384
+    },
+    {
+      "offset": 192,
+      "size": 4,
+      "bits": 0
+    },
+    {
+      "offset": 196,
+      "size": 4,
+      "bits": 1131413504
+    },
+    {
+      "offset": 200,
+      "size": 4,
+      "bits": 1065336439
+    },
+    {
+      "offset": 204,
+      "size": 1,
+      "bits": 0
+    }
+  ],
+  "pathStringOffset": 8,
+  "sequenceInitial": 1
+}

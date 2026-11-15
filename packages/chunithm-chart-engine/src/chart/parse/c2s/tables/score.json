@@ -1,0 +1,1167 @@
+{
+  "constants": {
+    "maxType": 12,
+    "widthMax": 16,
+    "widthMin": 1,
+    "mirrorBase": 16,
+    "maxNoteIndex": 23,
+    "realWidthRows": 16,
+    "secondaryLimit": 13,
+    "airDirectionFirst": 12,
+    "airDirectionLast": 4,
+    "slideWidthColumn": 7,
+    "idHld": 25,
+    "idHxd": 26,
+    "idSld": 27,
+    "idSxd": 28,
+    "idSlc": 29,
+    "idSxc": 30,
+    "idAhd": 37,
+    "idAsd": 39,
+    "chainAsd": 19,
+    "chainAsc": 20,
+    "sampleFlag": 1,
+    "resolutionOffset": 188,
+    "categoryThreeFirstId": 44,
+    "categoryThreeSlots": 69,
+    "categoryThreeOffset": 372,
+    "idBpm": 13,
+    "idMet": 14,
+    "idStp": 15,
+    "idSfl": 16,
+    "idSfe": 17,
+    "idSlp": 18,
+    "idDcm": 19,
+    "idClk": 20,
+    "signMask": 2147483648,
+    "bpmVectorMax": 214748364,
+    "metVectorMax": 178956970,
+    "noteVectorMax": 12064514,
+    "jointVectorMax": 119304647,
+    "sampleVectorMax": 134217727,
+    "eventVectorMax": 134217727,
+    "clkVectorMax": 268435455,
+    "mapVectorMax": 134217727
+  },
+  "floats": {
+    "beatScale": 1082130432,
+    "nearEpsilon": 1001040555,
+    "heightScale": 1092616192,
+    "half": 1056964608,
+    "quarter": 1048576000,
+    "tenth": 1036831949,
+    "floorMagic": 1258291200,
+    "one": 1065353216
+  },
+  "tables": {
+    "noteNames": [
+      "NON",
+      "TAP",
+      "CHR",
+      "FLK",
+      "MNE",
+      "HLD",
+      "HXD",
+      "SLD",
+      "SXD",
+      "SLC",
+      "SXC",
+      "AIR",
+      "AUR",
+      "AUL",
+      "ADW",
+      "ADR",
+      "ADL",
+      "AHD",
+      "AHX",
+      "ASD",
+      "ASC",
+      "ALD",
+      "ASO",
+      "SLA"
+    ],
+    "chrDirection": ["UP", "DW", "CE", "RC", "LC", "RS", "LS", "BS"],
+    "airColor": ["DEF", "GRN", "PNK"],
+    "slideGroup": ["SLD", "NCL"],
+    "color": [
+      "DEF",
+      "RED",
+      "ORN",
+      "YEL",
+      "LIM",
+      "GRN",
+      "AQA",
+      "CYN",
+      "DGR",
+      "BLU",
+      "PPL",
+      "VLT",
+      "PNK",
+      "GRY",
+      "BLK",
+      "NON"
+    ],
+    "noteTypes": [-1, 0, 4, 6, 11, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 5, 5, 8, 8, 9, 10, 12],
+    "widthIndex": [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    "realWidth": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+    "slaPath": [0, 1, 2, 0, 0, 4, 0, 4, 4, 2, 2, 0, 3],
+    "lastPath": [0, 1, 2, 0, 0, 3, 0, 3, 3, 2, 2, 0],
+    "airDirection": [
+      [0, 0],
+      [1, 2],
+      [2, 1],
+      [3, 3],
+      [4, 5],
+      [5, 4]
+    ]
+  },
+  "stores": {
+    "noteConstructor": [
+      {
+        "offset": 12,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 24,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 28,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 32,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 48,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 52,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 56,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 20,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 44,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 60,
+        "size": 4,
+        "value": 25966444
+      },
+      {
+        "offset": 76,
+        "size": 4,
+        "value": 25966444
+      },
+      {
+        "offset": 92,
+        "size": 4,
+        "value": 25966456
+      },
+      {
+        "offset": 108,
+        "size": 4,
+        "value": 1
+      },
+      {
+        "offset": 324,
+        "size": 4,
+        "value": 25899364
+      },
+      {
+        "offset": 340,
+        "size": 4,
+        "value": 25899364
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 40,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 44,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 48,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 52,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 56,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 112,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 116,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 120,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 124,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 128,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 136,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 140,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 152,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 164,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 180,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 196,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 260,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 165,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 181,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 200,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 264,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 166,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 182,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 204,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 268,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 167,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 183,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 208,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 272,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 168,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 184,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 212,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 276,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 169,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 185,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 216,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 280,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 170,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 186,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 220,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 284,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 171,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 187,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 224,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 288,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 172,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 188,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 228,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 292,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 173,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 189,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 232,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 296,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 174,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 190,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 236,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 300,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 175,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 191,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 240,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 304,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 176,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 192,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 244,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 308,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 177,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 193,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 248,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 312,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 178,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 194,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 252,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 316,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 179,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 195,
+        "size": 1,
+        "value": 0
+      },
+      {
+        "offset": 256,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 320,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 20,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 24,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 28,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 32,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 36,
+        "size": 1,
+        "value": 1
+      },
+      {
+        "offset": 144,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 132,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 148,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 156,
+        "size": 4,
+        "value": 50
+      },
+      {
+        "offset": 160,
+        "size": 4,
+        "value": 50
+      }
+    ],
+    "jointConstructor": [
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 32,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 20,
+        "size": 1,
+        "value": 1
+      },
+      {
+        "offset": 24,
+        "size": 4,
+        "value": 50
+      },
+      {
+        "offset": 28,
+        "size": 4,
+        "value": 50
+      },
+      {
+        "offset": 32,
+        "size": 4,
+        "from": "width"
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "from": "serial"
+      }
+    ],
+    "sampleConstructor": [
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 20,
+        "size": 4,
+        "value": 1084227584
+      },
+      {
+        "offset": 24,
+        "size": 4,
+        "value": 1082130432
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 28,
+        "size": 1,
+        "value": 0
+      }
+    ],
+    "metConstructor": [
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "value": 4
+      },
+      {
+        "offset": 20,
+        "size": 4,
+        "value": 4
+      }
+    ],
+    "eventConstructor": [
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "value": 1065353216
+      },
+      {
+        "offset": 20,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 24,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 28,
+        "size": 4,
+        "value": 0
+      }
+    ],
+    "dcmConstructor": [
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "value": 1065353216
+      },
+      {
+        "offset": 20,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 24,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 28,
+        "size": 4,
+        "value": 0
+      }
+    ],
+    "clkConstructor": [
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "value": 0
+      }
+    ],
+    "ownerConstructor": [
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 4294967295
+      }
+    ]
+  },
+  "layout": {
+    "owner": {
+      "size": 768,
+      "undefined": [
+        [205, 3],
+        [716, 52]
+      ],
+      "vectors": {
+        "208": "bpm",
+        "220": "met",
+        "240": "dcm",
+        "252": "clk",
+        "264": "owner108",
+        "276": "line",
+        "288": "line",
+        "300": "line",
+        "312": "line",
+        "348": "note",
+        "360": null,
+        "704": null
+      },
+      "strings": [8, 32, 68, 112, 140],
+      "maps": {
+        "232": "timelineMap"
+      },
+      "lineOrder": [276, 288, 300, 312]
+    },
+    "bpm": {
+      "size": 20,
+      "undefined": []
+    },
+    "met": {
+      "size": 24,
+      "undefined": []
+    },
+    "dcm": {
+      "size": 32,
+      "undefined": []
+    },
+    "clk": {
+      "size": 16,
+      "undefined": []
+    },
+    "timelineEvent": {
+      "size": 32,
+      "undefined": []
+    },
+    "note": {
+      "size": 356,
+      "undefined": [
+        [37, 3],
+        [141, 3]
+      ],
+      "vectors": {
+        "64": "joint",
+        "80": "joint",
+        "96": "sample",
+        "328": "tick",
+        "344": "tick"
+      }
+    },
+    "joint": {
+      "size": 36,
+      "undefined": [[21, 3]]
+    },
+    "sample": {
+      "size": 32,
+      "undefined": [[29, 3]]
+    },
+    "owner108": {
+      "size": 16,
+      "undefined": []
+    },
+    "line": {
+      "size": 24,
+      "undefined": []
+    },
+    "tick": {
+      "size": 32,
+      "undefined": [[21, 3]]
+    },
+    "joints": {
+      "primary": "64",
+      "secondary": "80",
+      "samples": "96"
+    },
+    "ticks": {
+      "primary": "328",
+      "secondary": "344"
+    }
+  },
+  "post": {
+    "constants": {
+      "tutorialOffset": 204,
+      "progJudgeBpmOffset": 196,
+      "progJudgeAerOffset": 200,
+      "judgeBase": 384,
+      "tickVectorMax": 134217727,
+      "laneCount": 16,
+      "kindHoldMid": 0,
+      "kindHoldEnd": 1,
+      "kindSlideMid": 2,
+      "kindSlideControl": 3,
+      "kindSlideEnd": 4,
+      "kindAirMid": 5,
+      "kindAirControl": 6,
+      "kindAirEnd": 7,
+      "typeSla": 12,
+      "slaPathMaxType": 12,
+      "slaPathDefault": 4,
+      "lastPathMaxType": 11,
+      "lastNoteOffset": 324,
+      "lastEventOffset": 336,
+      "bpmMaxOffset": 172,
+      "bpmMinOffset": 168,
+      "bpmModeOffset": 164,
+      "clockDefOffset": 192,
+      "clockVectorMax": 268435455,
+      "lineVectorMax": 178956970,
+      "bpmStatOffsets": [164, 168, 172, 176],
+      "metDefOffsets": [180, 184]
+    },
+    "floats": {
+      "tick384": 1136656384,
+      "tick96": 1119879168,
+      "bpmKeyScale": 1148846080,
+      "bpmKeyUnscale": 981668463,
+      "densityBins": 1101004800,
+      "tickDepth": 1084227584
+    },
+    "stats": {
+      "clear": {
+        "begin": 372,
+        "end": 704
+      },
+      "primary": {
+        "0": {
+          "kind": "point",
+          "inc": [372, 408, 444, 528]
+        },
+        "1": {
+          "kind": "hold",
+          "inc": [388, 424, 460],
+          "duration": 512,
+          "ticks": 532
+        },
+        "2": {
+          "kind": "slide",
+          "inc": [428],
+          "duration": 516,
+          "ticks": 536,
+          "jointCount": 392,
+          "flaggedJointCount": 464
+        },
+        "4": {
+          "kind": "chr",
+          "inc": [376, 412, 528]
+        },
+        "6": {
+          "kind": "point",
+          "inc": [380, 416, 452, 544]
+        },
+        "9": {
+          "kind": "samples",
+          "count": [476, 540]
+        },
+        "11": {
+          "kind": "point",
+          "inc": [384, 420, 456, 528]
+        }
+      },
+      "groundLong": 444,
+      "judgeTotal": 528,
+      "directionTotal": 448,
+      "directionBase": 480,
+      "span": 552,
+      "density": 568,
+      "densityBins": 20,
+      "air": [396, 432, 468, 540],
+      "airLong": {
+        "count": [400, 472, 476],
+        "once": [436, 468],
+        "duration": 520,
+        "judge": 540
+      },
+      "totals": [
+        [404, 372, 8],
+        [440, 408, 8],
+        [524, 512, 3],
+        [548, 528, 5]
+      ]
+    },
+    "sortStrides": [20, 24, 32, 32, 16, 12],
+    "tickConstructor": [
+      {
+        "offset": 0,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 4,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 8,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 12,
+        "size": 4,
+        "value": 0
+      },
+      {
+        "offset": 16,
+        "size": 4,
+        "value": 4294967295
+      },
+      {
+        "offset": 24,
+        "size": 4,
+        "value": 1090519040
+      },
+      {
+        "offset": 28,
+        "size": 4,
+        "value": 1084227584
+      },
+      {
+        "offset": 20,
+        "size": 1,
+        "value": 0
+      }
+    ]
+  }
+}

@@ -45,6 +45,7 @@ export const MaimaiSongDifficulty = ({
 
   const handleChartPreview = (chartId: number, difficulty: number) => {
     const params = new URLSearchParams({
+      game: "maimai",
       chart_id: String(chartId),
       difficulty: String(difficulty),
     });

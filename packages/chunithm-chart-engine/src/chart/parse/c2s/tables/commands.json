@@ -1,0 +1,563 @@
+{
+  "rows": [
+    {
+      "name": "VERSION",
+      "category": 0,
+      "columnCount": 3,
+      "columnTypes": [0, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "MUSIC",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "SEQUENCEID",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "DIFFICULT",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "LEVEL",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "CREATOR",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "BPM_DEF",
+      "category": 0,
+      "columnCount": 5,
+      "columnTypes": [0, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "MET_DEF",
+      "category": 0,
+      "columnCount": 3,
+      "columnTypes": [0, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "RESOLUTION",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "CLK_DEF",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "PROGJUDGE_BPM",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "PROGJUDGE_AER",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "TUTORIAL",
+      "category": 0,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "BPM",
+      "category": 1,
+      "columnCount": 4,
+      "columnTypes": [0, 2, 2, 1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "MET",
+      "category": 1,
+      "columnCount": 5,
+      "columnTypes": [0, 2, 2, 2, 2, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "STP",
+      "category": 1,
+      "columnCount": 4,
+      "columnTypes": [0, 2, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "SFL",
+      "category": 1,
+      "columnCount": 5,
+      "columnTypes": [0, 2, 2, 2, 1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "SFE",
+      "category": 1,
+      "columnCount": 5,
+      "columnTypes": [0, 2, 2, 2, 1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "SLP",
+      "category": 1,
+      "columnCount": 6,
+      "columnTypes": [0, 2, 2, 2, 1, 2, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "DCM",
+      "category": 1,
+      "columnCount": 5,
+      "columnTypes": [0, 2, 2, 2, 1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "CLK",
+      "category": 1,
+      "columnCount": 3,
+      "columnTypes": [0, 2, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "TAP",
+      "category": 2,
+      "columnCount": 5,
+      "columnTypes": [0, 2, 2, 2, 2, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "CHR",
+      "category": 2,
+      "columnCount": 6,
+      "columnTypes": [0, 2, 2, 2, 2, 0, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "FLK",
+      "category": 2,
+      "columnCount": 6,
+      "columnTypes": [0, 2, 2, 2, 2, 4, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "MNE",
+      "category": 2,
+      "columnCount": 5,
+      "columnTypes": [0, 2, 2, 2, 2, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "HLD",
+      "category": 2,
+      "columnCount": 6,
+      "columnTypes": [0, 2, 2, 2, 2, 2, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "HXD",
+      "category": 2,
+      "columnCount": 7,
+      "columnTypes": [0, 2, 2, 2, 2, 2, 0, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "SLD",
+      "category": 2,
+      "columnCount": 9,
+      "columnTypes": [0, 2, 2, 2, 2, 2, 2, 2, 0, -1, -1, -1]
+    },
+    {
+      "name": "SXD",
+      "category": 2,
+      "columnCount": 10,
+      "columnTypes": [0, 2, 2, 2, 2, 2, 2, 2, 0, 0, -1, -1]
+    },
+    {
+      "name": "SLC",
+      "category": 2,
+      "columnCount": 9,
+      "columnTypes": [0, 2, 2, 2, 2, 2, 2, 2, 0, -1, -1, -1]
+    },
+    {
+      "name": "SXC",
+      "category": 2,
+      "columnCount": 10,
+      "columnTypes": [0, 2, 2, 2, 2, 2, 2, 2, 0, 0, -1, -1]
+    },
+    {
+      "name": "AIR",
+      "category": 2,
+      "columnCount": 7,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 0, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "AUR",
+      "category": 2,
+      "columnCount": 7,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 0, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "AUL",
+      "category": 2,
+      "columnCount": 7,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 0, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "ADW",
+      "category": 2,
+      "columnCount": 7,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 0, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "ADR",
+      "category": 2,
+      "columnCount": 7,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 0, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "ADL",
+      "category": 2,
+      "columnCount": 7,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 0, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "AHD",
+      "category": 2,
+      "columnCount": 8,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 2, 0, -1, -1, -1, -1]
+    },
+    {
+      "name": "AHX",
+      "category": 2,
+      "columnCount": 8,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 2, 0, -1, -1, -1, -1]
+    },
+    {
+      "name": "ASD",
+      "category": 2,
+      "columnCount": 12,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 1, 2, 2, 2, 1, 0]
+    },
+    {
+      "name": "ASC",
+      "category": 2,
+      "columnCount": 12,
+      "columnTypes": [0, 2, 2, 2, 2, 3, 1, 2, 2, 2, 1, 0]
+    },
+    {
+      "name": "ALD",
+      "category": 2,
+      "columnCount": 12,
+      "columnTypes": [0, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 0]
+    },
+    {
+      "name": "ASO",
+      "category": 2,
+      "columnCount": 13,
+      "columnTypes": [0, 2, 2, 2, 2, 1, 1, 2, 2, 2, 1, 1]
+    },
+    {
+      "name": "SLA",
+      "category": 2,
+      "columnCount": 7,
+      "columnTypes": [0, 2, 2, 2, 2, 2, 2, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_TAP",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_CHR",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_FLK",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_MNE",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_HLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_SLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_AIR",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_AHD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_REC_ALL",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_TAP",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_CHR",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_FLK",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_MNE",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_HLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_SLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_AIR",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_AHD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NOTE_ALL",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_TAP",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_CHR",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_FLK",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_MNE",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_HLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_SLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_AIR",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_AHD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_NUM_AAC",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_CHRTYPE_UP",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_CHRTYPE_DW",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_CHRTYPE_CE",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_CHRTYPE_RC",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_CHRTYPE_LC",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_CHRTYPE_RS",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_CHRTYPE_LS",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_CHRTYPE_BS",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_LEN_HLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_LEN_SLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_LEN_AHD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_LEN_ALL",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_JUDGE_TAP",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_JUDGE_HLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_JUDGE_SLD",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_JUDGE_AIR",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_JUDGE_FLK",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    },
+    {
+      "name": "T_JUDGE_ALL",
+      "category": 3,
+      "columnCount": 2,
+      "columnTypes": [0, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    }
+  ],
+  "columnDelimiter": [9],
+  "tailDelimiter": [10],
+  "fieldSelectorMaxIndex": 11,
+  "typeGates": [
+    {
+      "integer": 0,
+      "float": 0
+    },
+    {
+      "integer": 0,
+      "float": 1
+    },
+    {
+      "integer": 1,
+      "float": 0
+    },
+    {
+      "integer": 0,
+      "float": 0
+    },
+    {
+      "integer": 0,
+      "float": 0
+    }
+  ]
+}
