@@ -201,9 +201,14 @@ export function isLxchu(bytes: Uint8Array): boolean {
 }
 
 function selectChart(text: string, difficulty: number): ChartBody {
-  const lines = text.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].endsWith("\r")) lines[i] = lines[i].slice(0, -1);
+  const lines: string[] = [];
+  let start = 0;
+  for (;;) {
+    const newline = text.indexOf("\n", start);
+    const end = newline < 0 ? text.length : newline;
+    lines.push(text.slice(start, end > start && text[end - 1] === "\r" ? end - 1 : end));
+    if (newline < 0) break;
+    start = newline + 1;
   }
   const version = /^&format=lxchu\/(\d+)(?:\.\d+)?$/.exec(lines[0]);
   if (!lines[0].startsWith(FORMAT_KEY)) fail(1, "the first line must declare &format=lxchu/1");
