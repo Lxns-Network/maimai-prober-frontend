@@ -5,7 +5,10 @@ import { beatsToMs, msToBeats } from "../../utils/timeConversion";
 import classes from "./NoteCountGraph.module.css";
 import clsx from "clsx";
 import { match, P } from "ts-pattern";
-import { ChartDensityTimeline } from "../ChartDensityTimeline/ChartDensityTimeline";
+import {
+  ChartDensityTimeline,
+  type DensityNote,
+} from "../ChartDensityTimeline/ChartDensityTimeline";
 import { pickTimeMarkerInterval } from "../ChartDensityTimeline/timeMarkers";
 
 const TICK_STEPS = [1, 5, 10, 50, 100];
@@ -19,317 +22,220 @@ function getLabelTransform(percent: number): string {
   return "translateX(-50%)";
 }
 
-export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
+export function PlaybackTimeline({
+  fullscreen,
+  notes,
+  durationMs: totalDurationMs,
+  measureTimesMs,
+  playing,
+  currentTimeMs,
+  getCurrentTimeMs,
+  subscribeTime,
+  onScrub,
+  onSeek,
+  scrubScheduling = "timeline",
+  disabled = false,
+}: {
+  fullscreen?: boolean;
+  notes: readonly DensityNote[];
+  durationMs: number;
+  measureTimesMs: readonly number[];
+  playing: boolean;
+  currentTimeMs: number;
+  getCurrentTimeMs: () => number;
+  subscribeTime?: (listener: () => void) => () => void;
+  onScrub: (milliseconds: number) => void;
+  onSeek: (milliseconds: number) => void;
+  scrubScheduling?: "timeline" | "player";
+  disabled?: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
   const playheadLabelRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
-  const wasPlayingRef = useRef(false);
-  const animationFrameRef = useRef<number | null>(null);
+  const dragPointerRef = useRef<number | null>(null);
   const dragAnimationFrameRef = useRef<number | null>(null);
   const pendingSeekRef = useRef<number | null>(null);
-  const lastSeekTimeRef = useRef<number>(0);
-
-  const chartData = useGameStore((s) => s.chartData);
-  const isPlaying = useGameStore((s) => s.isPlaying);
-  const preciseTime = useGameStore((s) => s.timeline.preciseTime);
-  const currentMeasure = useGameStore((s) => s.timeline.currentMeasure);
-  const totalMeasures = useGameStore((s) => s.timeline.totalMeasures);
-  const beatsPerMeasure = useGameStore((s) => s.timeline.beatsPerMeasure);
-  const pause = useGameStore((s) => s.pause);
-  const setPreciseTime = useGameStore((s) => s.setPreciseTime);
-
-  const SEEK_THROTTLE_MS = 32;
-
-  const { totalDurationMs, maxBeats, maxMeasure } = useMemo(() => {
-    if (!chartData) {
-      return { totalDurationMs: 0, maxBeats: 0, maxMeasure: 0 };
-    }
-
-    const maxMeas = Math.max(0, totalMeasures - 1);
-    const beats = maxMeas * beatsPerMeasure;
-
-    const durationMs = beatsToMs(beats, chartData.bpmEvents, chartData.bpm);
-
-    return {
-      totalDurationMs: durationMs,
-      maxBeats: beats,
-      maxMeasure: maxMeas,
-    };
-  }, [chartData, totalMeasures, beatsPerMeasure]);
-
-  const progressPercent = useMemo(() => {
-    if (!chartData || totalDurationMs <= 0) return 0;
-    const currentMs = beatsToMs(preciseTime, chartData.bpmEvents, chartData.bpm);
-    return Math.min(100, Math.max(0, (currentMs / totalDurationMs) * 100));
-  }, [chartData, preciseTime, totalDurationMs]);
-
-  // 播放时 rAF 直接改 DOM style，避免 setState 链路触发整图重渲染。
-  useEffect(() => {
-    if (!isPlaying || !chartData || totalDurationMs <= 0) {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
+  const lastTargetRef = useRef(0);
+  const dragNotesRef = useRef(notes);
+  const measureAt = useCallback(
+    (milliseconds: number) => {
+      let low = 0;
+      let high = measureTimesMs.length;
+      while (low < high) {
+        const middle = (low + high) >>> 1;
+        if (measureTimesMs[middle] <= milliseconds) low = middle + 1;
+        else high = middle;
       }
-      return;
-    }
-
-    let lastBadgeMeasure = -1;
-    const updatePlayhead = () => {
-      const currentBeats = playbackTimeRef.current;
-      const currentMs = beatsToMs(currentBeats, chartData.bpmEvents, chartData.bpm);
-      const percent = Math.min(100, Math.max(0, (currentMs / totalDurationMs) * 100));
-      const measure = Math.floor(currentBeats / beatsPerMeasure);
-
-      if (playheadRef.current) {
+      return Math.max(0, low - 1);
+    },
+    [measureTimesMs],
+  );
+  const maxMeasure = measureAt(totalDurationMs);
+  const progressPercent =
+    totalDurationMs > 0 ? Math.min(100, Math.max(0, (currentTimeMs / totalDurationMs) * 100)) : 0;
+  const updatePlayhead = useCallback(
+    (milliseconds: number) => {
+      const percent =
+        totalDurationMs > 0
+          ? Math.min(100, Math.max(0, (milliseconds / totalDurationMs) * 100))
+          : 0;
+      if (playheadRef.current)
         playheadRef.current.style.transform = `translateX(calc(${percent}cqw - 1px))`;
-      }
       if (playheadLabelRef.current) {
         playheadLabelRef.current.style.transform = `translateX(calc(${percent}cqw - 50%))`;
         const badge = playheadLabelRef.current.firstElementChild;
-        if (badge && measure !== lastBadgeMeasure) {
-          lastBadgeMeasure = measure;
-          badge.textContent = String(measure);
-        }
+        const label = String(measureAt(milliseconds));
+        if (badge && badge.textContent !== label) badge.textContent = label;
       }
-
-      animationFrameRef.current = requestAnimationFrame(updatePlayhead);
-    };
-
-    animationFrameRef.current = requestAnimationFrame(updatePlayhead);
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-  }, [isPlaying, chartData, totalDurationMs, beatsPerMeasure]);
-
-  const updatePlayheadVisual = useCallback((percent: number, measure: number) => {
-    if (playheadRef.current) {
-      playheadRef.current.style.transform = `translateX(calc(${percent}cqw - 1px))`;
-    }
-    if (playheadLabelRef.current) {
-      playheadLabelRef.current.style.transform = `translateX(calc(${percent}cqw - 50%))`;
-      const badge = playheadLabelRef.current.firstElementChild;
-      if (badge) {
-        badge.textContent = String(measure);
-      }
-    }
-  }, []);
-
-  const calculateSeekPosition = useCallback(
-    (clientX: number) => {
-      if (!containerRef.current || !chartData || totalDurationMs <= 0) return null;
-
-      const rect = containerRef.current.getBoundingClientRect();
-      const clickX = Math.max(0, Math.min(clientX - rect.left, rect.width));
-      const percent = (clickX / rect.width) * 100;
-      const targetMs = (percent / 100) * totalDurationMs;
-      const targetBeats = msToBeats(targetMs, chartData.bpmEvents, chartData.bpm);
-      const clampedBeats = Math.max(0, Math.min(maxBeats, targetBeats));
-      const measure = Math.floor(clampedBeats / beatsPerMeasure);
-
-      return { percent, beats: clampedBeats, measure };
+      containerRef.current?.setAttribute("aria-valuenow", String(milliseconds));
     },
-    [chartData, totalDurationMs, maxBeats, beatsPerMeasure],
+    [totalDurationMs, measureAt],
   );
-
-  // 拖动 seek 节流（30fps），落在 throttle 窗口内的最后一次会通过 pendingSeekRef 兜底。
-  const throttledSeekToStore = useCallback(
-    (beats: number) => {
-      const now = performance.now();
-      if (now - lastSeekTimeRef.current >= SEEK_THROTTLE_MS) {
-        lastSeekTimeRef.current = now;
-        setPreciseTime(beats, true);
-        pendingSeekRef.current = null;
-      } else {
-        pendingSeekRef.current = beats;
-      }
-    },
-    [setPreciseTime],
-  );
-
-  // 拖动时的 seek 处理
-  const seekToPosition = useCallback(
-    (clientX: number, immediate = false) => {
-      const pos = calculateSeekPosition(clientX);
-      if (!pos) return;
-
-      updatePlayheadVisual(pos.percent, pos.measure);
-      playbackTimeRef.current = pos.beats;
-
-      // immediate 用于点击 / 拖动结束（直接落 store）；拖动过程走 throttle。
-      if (immediate) {
-        setPreciseTime(pos.beats, true);
-        pendingSeekRef.current = null;
-      } else {
-        throttledSeekToStore(pos.beats);
-      }
-    },
-    [calculateSeekPosition, updatePlayheadVisual, setPreciseTime, throttledSeekToStore],
-  );
-
-  const startDragging = useCallback(
-    (clientX: number) => {
-      isDraggingRef.current = true;
-      wasPlayingRef.current = useGameStore.getState().isPlaying;
-      if (wasPlayingRef.current) {
-        pause();
-      }
-      seekToPosition(clientX, true);
-    },
-    [pause, seekToPosition],
-  );
-
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      startDragging(e.clientX);
-    },
-    [startDragging],
-  );
-
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent<HTMLDivElement>) => {
-      if (e.touches.length !== 1) return;
-      startDragging(e.touches[0].clientX);
-    },
-    [startDragging],
-  );
-
   useEffect(() => {
-    let lastClientX = 0;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDraggingRef.current) return;
-      lastClientX = e.clientX;
-
-      // rAF coalescing：mousemove 频率远高于 60fps，把同一帧的更新合并掉。
-      if (dragAnimationFrameRef.current === null) {
-        dragAnimationFrameRef.current = requestAnimationFrame(() => {
-          dragAnimationFrameRef.current = null;
-          if (isDraggingRef.current) {
-            seekToPosition(lastClientX, false);
-          }
-        });
-      }
+    updatePlayhead(currentTimeMs);
+    if (subscribeTime) return subscribeTime(() => updatePlayhead(getCurrentTimeMs()));
+    if (!playing) return;
+    let frame = 0;
+    const tick = () => {
+      updatePlayhead(getCurrentTimeMs());
+      frame = requestAnimationFrame(tick);
     };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDraggingRef.current || e.touches.length !== 1) return;
-      e.preventDefault();
-      lastClientX = e.touches[0].clientX;
-
-      if (dragAnimationFrameRef.current === null) {
-        dragAnimationFrameRef.current = requestAnimationFrame(() => {
-          dragAnimationFrameRef.current = null;
-          if (isDraggingRef.current) {
-            seekToPosition(lastClientX, false);
-          }
-        });
-      }
-    };
-
-    const handleEnd = () => {
-      if (!isDraggingRef.current) return;
-      isDraggingRef.current = false;
-
-      if (dragAnimationFrameRef.current !== null) {
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [playing, currentTimeMs, getCurrentTimeMs, subscribeTime, updatePlayhead]);
+  useEffect(
+    () => () => {
+      if (dragAnimationFrameRef.current !== null)
         cancelAnimationFrame(dragAnimationFrameRef.current);
-        dragAnimationFrameRef.current = null;
-      }
-
-      // 拖动期间 throttle 可能丢掉最后一次落点，松手时强制落。
-      if (pendingSeekRef.current !== null) {
-        setPreciseTime(pendingSeekRef.current, true);
-        pendingSeekRef.current = null;
-      }
-
-      if (wasPlayingRef.current) {
-        wasPlayingRef.current = false;
-        requestAnimationFrame(() => {
-          useGameStore.getState().play();
-        });
-      }
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleEnd);
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-    document.addEventListener("touchend", handleEnd);
-    document.addEventListener("touchcancel", handleEnd);
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleEnd);
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", handleEnd);
-      document.removeEventListener("touchcancel", handleEnd);
-
-      if (dragAnimationFrameRef.current !== null) {
-        cancelAnimationFrame(dragAnimationFrameRef.current);
-      }
-    };
-  }, [seekToPosition, setPreciseTime]);
-
-  // 小节按时间定位，变速谱才能跟 playhead 对齐。
-  const measurePercents = useMemo(() => {
-    if (!chartData || totalDurationMs <= 0 || maxMeasure <= 0) return [];
-    const arr: number[] = [];
-    for (let m = 0; m <= maxMeasure; m++) {
-      const timeMs = beatsToMs(m * beatsPerMeasure, chartData.bpmEvents, chartData.bpm);
-      arr.push((timeMs / totalDurationMs) * 100);
-    }
-    return arr;
-  }, [chartData, totalDurationMs, maxMeasure, beatsPerMeasure]);
-
+    },
+    [],
+  );
+  useEffect(() => {
+    const chartChanged = dragNotesRef.current !== notes;
+    dragNotesRef.current = notes;
+    if (!disabled && !chartChanged) return;
+    const pointer = dragPointerRef.current;
+    dragPointerRef.current = null;
+    if (dragAnimationFrameRef.current !== null) cancelAnimationFrame(dragAnimationFrameRef.current);
+    dragAnimationFrameRef.current = null;
+    pendingSeekRef.current = null;
+    const element = containerRef.current;
+    if (pointer !== null && element?.hasPointerCapture(pointer))
+      element.releasePointerCapture(pointer);
+  }, [disabled, notes]);
+  const seekToPosition = useCallback(
+    (clientX: number, commit: boolean) => {
+      if (!containerRef.current || disabled || totalDurationMs <= 0) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const target = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * totalDurationMs;
+      lastTargetRef.current = target;
+      updatePlayhead(target);
+      if (commit) onSeek(target);
+      else onScrub(target);
+    },
+    [disabled, totalDurationMs, updatePlayhead, onSeek, onScrub],
+  );
+  const measurePercents = useMemo(
+    () => measureTimesMs.map((time) => (time / totalDurationMs) * 100),
+    [measureTimesMs, totalDurationMs],
+  );
   const { ref: rulerRef, width: rulerWidth } = useElementSize();
-
-  const tickStep = useMemo(() => {
-    for (const step of TICK_STEPS) {
-      if (maxMeasure > 0 && (rulerWidth * step) / maxMeasure >= MIN_TICK_SPACING_PX) return step;
-    }
-    return TICK_STEPS[TICK_STEPS.length - 1];
-  }, [maxMeasure, rulerWidth]);
-
+  const tickStep = useMemo(
+    () =>
+      TICK_STEPS.find(
+        (step) => maxMeasure > 0 && (rulerWidth * step) / maxMeasure >= MIN_TICK_SPACING_PX,
+      ) ?? TICK_STEPS[TICK_STEPS.length - 1],
+    [maxMeasure, rulerWidth],
+  );
   const measureMarkers = useMemo(() => {
     if (maxMeasure <= 0) return [];
-
-    let step = LABEL_STEPS[LABEL_STEPS.length - 1];
-    for (const candidate of LABEL_STEPS) {
-      if ((rulerWidth * candidate) / maxMeasure >= MIN_LABEL_SPACING_PX) {
-        step = candidate;
-        break;
-      }
-    }
-
+    const step =
+      LABEL_STEPS.find(
+        (candidate) => (rulerWidth * candidate) / maxMeasure >= MIN_LABEL_SPACING_PX,
+      ) ?? LABEL_STEPS[LABEL_STEPS.length - 1];
     const markers: { measure: number; percent: number }[] = [];
-    for (let m = 0; m <= maxMeasure; m += step) {
-      markers.push({
-        measure: m,
-        percent: measurePercents[m] ?? 0,
-      });
-    }
+    for (let measure = 0; measure <= maxMeasure; measure += step)
+      markers.push({ measure, percent: measurePercents[measure] });
     return markers;
   }, [maxMeasure, measurePercents, rulerWidth]);
-
   const timeMarkerIntervalMs = pickTimeMarkerInterval(totalDurationMs, rulerWidth);
-
-  if (!chartData || totalDurationMs <= 0) {
-    return null;
-  }
-
+  if (totalDurationMs <= 0) return null;
   return (
     <div
       ref={containerRef}
       className={classes.container}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
+      role="slider"
+      aria-label="谱面时间"
+      aria-valuemin={0}
+      aria-valuemax={totalDurationMs}
+      aria-valuenow={currentTimeMs}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
+      onPointerDown={(event) => {
+        if (disabled || event.button !== 0 || dragPointerRef.current !== null) return;
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        dragPointerRef.current = event.pointerId;
+        seekToPosition(event.clientX, false);
+      }}
+      onPointerMove={(event) => {
+        if (disabled || dragPointerRef.current !== event.pointerId) return;
+        if (scrubScheduling === "player") {
+          seekToPosition(event.clientX, false);
+          return;
+        }
+        pendingSeekRef.current = event.clientX;
+        if (dragAnimationFrameRef.current !== null) return;
+        dragAnimationFrameRef.current = requestAnimationFrame(() => {
+          dragAnimationFrameRef.current = null;
+          if (pendingSeekRef.current !== null) seekToPosition(pendingSeekRef.current, false);
+          pendingSeekRef.current = null;
+        });
+      }}
+      onPointerUp={(event) => {
+        if (dragPointerRef.current !== event.pointerId) return;
+        dragPointerRef.current = null;
+        if (dragAnimationFrameRef.current !== null)
+          cancelAnimationFrame(dragAnimationFrameRef.current);
+        dragAnimationFrameRef.current = null;
+        pendingSeekRef.current = null;
+        seekToPosition(event.clientX, true);
+      }}
+      onLostPointerCapture={(event) => {
+        if (dragPointerRef.current !== event.pointerId) return;
+        dragPointerRef.current = null;
+        if (dragAnimationFrameRef.current !== null)
+          cancelAnimationFrame(dragAnimationFrameRef.current);
+        dragAnimationFrameRef.current = null;
+        pendingSeekRef.current = null;
+        if (!disabled) onSeek(lastTargetRef.current);
+      }}
+      onKeyDown={(event) => {
+        if (disabled) return;
+        let target: number;
+        switch (event.key) {
+          case "ArrowLeft":
+            target = getCurrentTimeMs() - 1000;
+            break;
+          case "ArrowRight":
+            target = getCurrentTimeMs() + 1000;
+            break;
+          case "Home":
+            target = 0;
+            break;
+          case "End":
+            target = totalDurationMs;
+            break;
+          default:
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        onSeek(Math.max(0, Math.min(totalDurationMs, target)));
+      }}
     >
       <ChartDensityTimeline
-        notes={chartData.notes}
+        notes={notes}
         durationMs={totalDurationMs}
         className={classes.graphArea}
       />
@@ -424,11 +330,80 @@ export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
             [classes.fullscreen]: fullscreen,
           })}
         >
-          {currentMeasure}
+          {measureAt(currentTimeMs)}
         </div>
       </div>
     </div>
   );
 }
 
+export function NoteCountGraph({ fullscreen }: { fullscreen?: boolean }) {
+  const chartData = useGameStore((state) => state.chartData);
+  const playing = useGameStore((state) => state.isPlaying);
+  const preciseTime = useGameStore((state) => state.timeline.preciseTime);
+  const totalMeasures = useGameStore((state) => state.timeline.totalMeasures);
+  const beatsPerMeasure = useGameStore((state) => state.timeline.beatsPerMeasure);
+  const resumeRef = useRef(false);
+  const draggingRef = useRef(false);
+  const resumeFrameRef = useRef<number | null>(null);
+  useEffect(() => {
+    draggingRef.current = false;
+    resumeRef.current = false;
+    return () => {
+      if (resumeFrameRef.current !== null) cancelAnimationFrame(resumeFrameRef.current);
+      resumeFrameRef.current = null;
+    };
+  }, [chartData]);
+  const measureTimesMs = useMemo(
+    () =>
+      chartData
+        ? Array.from({ length: totalMeasures }, (_, measure) =>
+            beatsToMs(measure * beatsPerMeasure, chartData.bpmEvents, chartData.bpm),
+          )
+        : [],
+    [chartData, totalMeasures, beatsPerMeasure],
+  );
+  const getCurrentTimeMs = useCallback(
+    () => (chartData ? beatsToMs(playbackTimeRef.current, chartData.bpmEvents, chartData.bpm) : 0),
+    [chartData],
+  );
+  if (!chartData) return null;
+  const seek = (milliseconds: number) =>
+    useGameStore
+      .getState()
+      .setPreciseTime(msToBeats(milliseconds, chartData.bpmEvents, chartData.bpm), true);
+  return (
+    <PlaybackTimeline
+      fullscreen={fullscreen}
+      notes={chartData.notes}
+      durationMs={measureTimesMs[measureTimesMs.length - 1] ?? 0}
+      measureTimesMs={measureTimesMs}
+      playing={playing}
+      currentTimeMs={beatsToMs(preciseTime, chartData.bpmEvents, chartData.bpm)}
+      getCurrentTimeMs={getCurrentTimeMs}
+      onScrub={(milliseconds) => {
+        if (!draggingRef.current) {
+          draggingRef.current = true;
+          const pendingResume = resumeFrameRef.current !== null;
+          if (resumeFrameRef.current !== null) cancelAnimationFrame(resumeFrameRef.current);
+          resumeFrameRef.current = null;
+          resumeRef.current = pendingResume || useGameStore.getState().isPlaying;
+          if (resumeRef.current) useGameStore.getState().pause();
+        }
+        seek(milliseconds);
+      }}
+      onSeek={(milliseconds) => {
+        seek(milliseconds);
+        draggingRef.current = false;
+        if (resumeRef.current) {
+          resumeRef.current = false;
+          resumeFrameRef.current = requestAnimationFrame(() => {
+            resumeFrameRef.current = null;
+            useGameStore.getState().play();
+          });
+        }
+      }}
+    />
+  );
+}
 export default NoteCountGraph;

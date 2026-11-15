@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@cap.js/widget": "0.1.57",
+    "@lxns-network/chunithm-chart-engine": "workspace:*",
     "@lxns-network/maimai-chart-engine": "workspace:*",
     "@mantine/charts": "9.5.1",
     "@mantine/code-highlight": "9.5.1",

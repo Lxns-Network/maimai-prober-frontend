@@ -761,6 +761,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lxns-network/chunithm-chart-engine@workspace:*, @lxns-network/chunithm-chart-engine@workspace:packages/chunithm-chart-engine":
+  version: 0.0.0-use.local
+  resolution: "@lxns-network/chunithm-chart-engine@workspace:packages/chunithm-chart-engine"
+  dependencies:
+    vite: "npm:8.2.2"
+    vitest: "npm:5.0.0"
+  languageName: unknown
+  linkType: soft
+
 "@lxns-network/maimai-chart-engine@workspace:*, @lxns-network/maimai-chart-engine@workspace:packages/maimai-chart-engine":
   version: 0.0.0-use.local
   resolution: "@lxns-network/maimai-chart-engine@workspace:packages/maimai-chart-engine"
@@ -5056,6 +5065,7 @@ __metadata:
   resolution: "maimai-prober-frontend@workspace:."
   dependencies:
     "@cap.js/widget": "npm:0.1.57"
+    "@lxns-network/chunithm-chart-engine": "workspace:*"
     "@lxns-network/maimai-chart-engine": "workspace:*"
     "@mantine/charts": "npm:9.5.1"
     "@mantine/code-highlight": "npm:9.5.1"

@@ -242,6 +242,7 @@ export const ScoreModal = ({ game, score, opened, onClose, readOnly = false }: S
           <Group wrap="nowrap" gap="xs">
             {score && !readOnly && (
               <ScoreModalMenu
+                game={game}
                 score={score}
                 difficulty={difficultyState?.difficulty ?? undefined}
                 onClose={onClose}

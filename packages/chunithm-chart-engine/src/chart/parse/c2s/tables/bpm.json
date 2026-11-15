@@ -1,0 +1,38 @@
+{
+  "acceptedIds": [13],
+  "columns": {
+    "position0": 1,
+    "position1": 2,
+    "bpm": 3
+  },
+  "sequenceOffset": 12,
+  "bpmOffset": 16,
+  "recordBytes": 20,
+  "initialRecord": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 67],
+  "pass": {
+    "skipMode": 1,
+    "commandId": 13,
+    "resolutionOffset": 188
+  },
+  "accumulate": {
+    "constants": {
+      "floorMagic": 8388608,
+      "one": 1,
+      "beatScale": 4,
+      "tickScale": 384,
+      "half": 0.5,
+      "tickUnit": 0.0026041667442768812,
+      "quarter": 0.25,
+      "lookupTolerance": 0.0052083334885537624,
+      "minuteMs": 60000
+    },
+    "signMask": 2147483648,
+    "fields": {
+      "position0": 0,
+      "position4": 4,
+      "time8": 8,
+      "bpm16": 16
+    },
+    "stride": 20
+  }
+}

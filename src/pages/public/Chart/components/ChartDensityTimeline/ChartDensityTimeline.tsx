@@ -6,7 +6,9 @@ import { match, P } from "ts-pattern";
 import { pickTimeMarkerInterval } from "./timeMarkers";
 import classes from "./ChartDensityTimeline.module.css";
 
-type NoteCountKey = "tap" | "hold" | "slide" | "touch" | "break";
+type NoteCountKey = "tap" | "hold" | "slide" | "touch" | "break" | "air" | "flick";
+
+export type DensityNote = { timingMs: number; type: Note["type"] | "hold" | "air" | "flick" };
 
 type NoteCountData = Record<NoteCountKey, number> & {
   startMs: number;
@@ -14,7 +16,7 @@ type NoteCountData = Record<NoteCountKey, number> & {
 };
 
 type ChartDensityTimelineProps = {
-  notes: Note[];
+  notes: readonly DensityNote[];
   durationMs: number;
   windowStartMs?: number;
   scaleWindowStartMs?: number;
@@ -39,6 +41,8 @@ const NOTE_COLORS: Record<NoteCountKey, string> = {
   slide: "#00CED1",
   touch: "#0080FF",
   break: "#ff69b4",
+  air: "#00C060",
+  flick: "#FF4040",
 };
 const NOTE_COLOR_ENTRIES = Object.entries(NOTE_COLORS) as [NoteCountKey, string][];
 
@@ -54,12 +58,14 @@ function formatTimeLabel(timeMs: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-function classifyNote(note: Note): NoteCountKey | null {
+function classifyNote(note: DensityNote): NoteCountKey | null {
   return match(note.type)
     .returnType<NoteCountKey | null>()
     .with("break", () => "break")
     .with(P.union("tap", "simultaneous"), () => "tap")
-    .with(P.union("hold-start", "hold-start-simultaneous"), () => "hold")
+    .with(P.union("hold", "hold-start", "hold-start-simultaneous"), () => "hold")
+    .with("air", () => "air")
+    .with("flick", () => "flick")
     .with("slide", () => "slide")
     .with(P.union("touch", "touch-hold-start"), () => "touch")
     .with(P.union("hold-end", "hold-end-simultaneous", "touch-hold-end"), () => null)
@@ -74,12 +80,14 @@ function createEmptyBucket(startMs: number): NoteCountData {
     slide: 0,
     touch: 0,
     break: 0,
+    air: 0,
+    flick: 0,
     total: 0,
   };
 }
 
 function calculateNoteCounts(
-  notes: Note[],
+  notes: readonly DensityNote[],
   windowStartMs: number,
   durationMs: number,
   bucketDurationMs: number,

@@ -1,0 +1,33 @@
+{
+  "name": "@lxns-network/chunithm-chart-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./assets/*": "./src/assets/*.ts",
+    "./audio/*": "./src/audio/*.ts",
+    "./chart/*": "./src/chart/*.ts",
+    "./effects/*": "./src/effects/*.ts",
+    "./field/*": "./src/field/*.ts",
+    "./gpu/*": "./src/gpu/*.ts",
+    "./hud/*": "./src/hud/*.ts",
+    "./loop/*": "./src/loop/*.ts",
+    "./math/*": "./src/math/*.ts",
+    "./notes/*": "./src/notes/*.ts",
+    "./render/*": "./src/render/*.ts",
+    "./scene/*": "./src/scene/*.ts",
+    "./stage/*": "./src/stage/*.ts",
+    "./field": "./src/field/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vite": "8.2.2",
+    "vitest": "5.0.0"
+  }
+}

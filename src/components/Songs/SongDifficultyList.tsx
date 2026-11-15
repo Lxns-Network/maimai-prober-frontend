@@ -63,6 +63,7 @@ const SongDifficulty = ({ song, difficulty, score, onClick }: SongDifficultyProp
       <ChunithmSongDifficulty
         difficulty={difficulty}
         score={score}
+        songId={song.id}
         versions={versions}
         onClick={() => {
           onClick &&

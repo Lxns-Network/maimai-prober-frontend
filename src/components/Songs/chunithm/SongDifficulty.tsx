@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   AspectRatio,
   Box,
   Card,
@@ -12,6 +13,7 @@ import {
   Stack,
   Text,
   Title,
+  Tooltip,
   useComputedColorScheme,
 } from "@mantine/core";
 import classes from "../SongDifficulty.module.css";
@@ -19,10 +21,13 @@ import { ChunithmDifficultyProps, ChunithmVersionProps } from "@/utils/api/song/
 import { getScoreCardBackgroundColor, getScoreSecondaryColor } from "@/utils/color.ts";
 import { ChunithmScoreProps } from "@/types/score";
 import { MusicIcon } from "@/components/MusicIcon.tsx";
+import { IconPlayerPlay } from "@tabler/icons-react";
+import { navigate } from "vike/client/router";
 
 interface SongDifficultyProps {
   difficulty: ChunithmDifficultyProps;
   score: ChunithmScoreProps;
+  songId: number;
   versions: ChunithmVersionProps[];
   onClick: () => void;
 }
@@ -30,6 +35,7 @@ interface SongDifficultyProps {
 export const ChunithmSongDifficulty = ({
   difficulty,
   score,
+  songId,
   versions,
   onClick,
 }: SongDifficultyProps) => {
@@ -69,7 +75,7 @@ export const ChunithmSongDifficulty = ({
       }}
       onClick={onClick}
     >
-      <Flex align="center" ml="0.5rem" mr="0.5rem" mb={5}>
+      <Flex align="center" gap="xs" ml="0.5rem" mr="0.5rem" mb={5}>
         {isWorldsEnd ? (
           <Text fz="sm" fw={500} flex={1}>
             WORLD'S END
@@ -85,14 +91,35 @@ export const ChunithmSongDifficulty = ({
             </Title>
           </Text>
         )}
-        <Flex>
-          {score?.full_combo && (
-            <MusicIcon game="chunithm" value={score.full_combo} size={94} suffix="" h="auto" />
-          )}
-          {score?.full_chain && (
-            <MusicIcon game="chunithm" value={score.full_chain} size={94} suffix="" h="auto" />
-          )}
-        </Flex>
+        <Tooltip label="谱面预览">
+          <ActionIcon
+            variant="subtle"
+            color="white"
+            size="sm"
+            aria-label="谱面预览"
+            onClick={(event) => {
+              event.stopPropagation();
+              const params = new URLSearchParams({
+                game: "chunithm",
+                chart_id: String(songId),
+                difficulty: String(difficulty.difficulty),
+              });
+              void navigate(`/chart?${params}`);
+            }}
+          >
+            <IconPlayerPlay size={16} />
+          </ActionIcon>
+        </Tooltip>
+        {(score?.full_combo || score?.full_chain) && (
+          <Flex>
+            {score.full_combo && (
+              <MusicIcon game="chunithm" value={score.full_combo} size={94} suffix="" h="auto" />
+            )}
+            {score.full_chain && (
+              <MusicIcon game="chunithm" value={score.full_chain} size={94} suffix="" h="auto" />
+            )}
+          </Flex>
+        )}
         {difficulty?.star && <Rating count={difficulty.star} value={5} size={12} readOnly />}
       </Flex>
       {score && score.score >= 0 ? (

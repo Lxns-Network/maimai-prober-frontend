@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef } from "react";
+import { lazy, Suspense, useEffect, useCallback, useState, useRef } from "react";
 import {
   ActionIcon,
   Text,
@@ -10,37 +10,23 @@ import {
   Stack,
   Container,
   Badge,
+  Center,
+  Loader,
+  Button,
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconLock, IconLockOpen } from "@tabler/icons-react";
-import { ChartCanvas } from "@/pages/public/Chart/components/ChartCanvas";
-import { Controls, PlaybackControls } from "@/pages/public/Chart/components/Controls";
-import { useGameStore } from "@/pages/public/Chart/stores/useGameStore";
-import { useGameSettingsStore } from "@/pages/public/Chart/stores/useGameSettingsStore";
-import {
-  parseSimaiChart,
-  getAvailableDifficulties,
-  type ChartDifficulty,
-} from "@lxns-network/maimai-chart-engine";
-import classes from "./Chart.module.css";
+import { IconArrowLeft, IconLock, IconLockOpen, IconDatabaseOff } from "@tabler/icons-react";
+import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
-import { isMaimaiUtageSongId } from "@/utils/score.ts";
-
-async function fetchChartData(chartId: number): Promise<string | null> {
-  try {
-    const response = await fetch(`https://assets2.lxns.net/maimai/chart/${chartId}.txt`);
-    if (!response.ok) {
-      console.error("Failed to fetch chart data:", response.status);
-      return null;
-    }
-    return await response.text();
-  } catch (error) {
-    console.error("Failed to fetch chart data:", error);
-    return null;
-  }
-}
-
-function KeyboardShortcuts() {
+import useGame from "@/hooks/useGame";
+import { EmptyState } from "@/components/EmptyState";
+import { useGameStore } from "./Chart/stores/useGameStore";
+import type { ChartPlayerParts } from "./Chart/types";
+import type { Game } from "@/types/game";
+import classes from "./Chart.module.css";
+const MaimaiPlayer = lazy(() => import("./Chart/components/MaimaiPlayer"));
+const ChunithmPlayer = lazy(() => import("./Chart/components/ChunithmPlayer"));
+function KeyboardShortcuts({ restartLabel }: { restartLabel: string }) {
   return (
     <Card className={classes.card} radius="lg" withBorder>
       <Text size="sm" fw={500} mb="sm">
@@ -56,7 +42,7 @@ function KeyboardShortcuts() {
         <Group justify="space-between">
           <Kbd>R</Kbd>
           <Text size="xs" c="dimmed">
-            重新播放当前小节
+            {restartLabel}
           </Text>
         </Group>
         <Group justify="space-between">
@@ -76,61 +62,14 @@ function KeyboardShortcuts() {
   );
 }
 
-function useKeyboardShortcuts() {
-  const togglePlayback = useGameStore((s) => s.togglePlayback);
-  const restartCurrentMeasure = useGameStore((s) => s.restartCurrentMeasure);
-  const stepMeasure = useGameStore((s) => s.stepMeasure);
-  const stepPosition = useGameStore((s) => s.stepPosition);
-  const setHiSpeed = useGameSettingsStore((s) => s.setHiSpeed);
-  const hiSpeed = useGameSettingsStore((s) => s.hiSpeed);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      switch (e.key) {
-        case " ":
-          e.preventDefault();
-          togglePlayback();
-          break;
-        case "r":
-        case "R":
-          e.preventDefault();
-          restartCurrentMeasure();
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          e.shiftKey ? stepMeasure(-1) : stepPosition(-1);
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          e.shiftKey ? stepMeasure(1) : stepPosition(1);
-          break;
-        case "ArrowUp":
-          e.preventDefault();
-          setHiSpeed(Math.min(9, hiSpeed + 0.25));
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          setHiSpeed(Math.max(3, hiSpeed - 0.25));
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlayback, restartCurrentMeasure, stepMeasure, stepPosition, setHiSpeed, hiSpeed]);
-}
-
-function ChartContent() {
-  const reset = useGameStore((s) => s.reset);
-  const setRawSimaiText = useGameStore((s) => s.setRawSimaiText);
-  const setMusicUrl = useGameStore((s) => s.setMusicUrl);
-  const setChartData = useGameStore((s) => s.setChartData);
-  const setPreciseTime = useGameStore((s) => s.setPreciseTime);
-  const setAvailableDifficulties = useGameStore((s) => s.setAvailableDifficulties);
-  const setSelectedDifficulty = useGameStore((s) => s.setSelectedDifficulty);
-  const chartData = useGameStore((s) => s.chartData);
+function ChartContent({
+  title,
+  canvas,
+  controls,
+  playbackControls,
+  restartLabel,
+  game,
+}: ChartPlayerParts & { game: Game }) {
   const isFullscreen = useGameStore((s) => s.isFullscreen);
   const toggleFullscreen = useGameStore((s) => s.toggleFullscreen);
   const setIsFullscreen = useGameStore((s) => s.setIsFullscreen);
@@ -145,75 +84,6 @@ function ChartContent() {
     fullscreenElementRef.current = el;
     setFullscreenEl(el);
   }, []);
-
-  const searchParams = usePageContext().urlParsed.search;
-  const chartIdParam = searchParams.chart_id;
-  const difficultyParam = searchParams.difficulty;
-  const beatParam = searchParams.beat;
-  const chartId = chartIdParam ? parseInt(chartIdParam) : null;
-  const isUtage = chartId !== null && isMaimaiUtageSongId(chartId);
-  const difficulty = difficultyParam ? ((parseInt(difficultyParam) + 2) as ChartDifficulty) : null;
-  const beatValue = Number(beatParam);
-  const initialBeat = beatParam && Number.isFinite(beatValue) && beatValue >= 0 ? beatValue : null;
-
-  useKeyboardShortcuts();
-
-  const loadChart = useCallback(async () => {
-    if (!chartId) return;
-
-    setMusicUrl(`https://assets2.lxns.net/maimai/music/${chartId % 10000}.mp3`);
-
-    const simai = await fetchChartData(chartId);
-    if (simai) {
-      setRawSimaiText(simai);
-
-      try {
-        const available = getAvailableDifficulties(simai);
-        setAvailableDifficulties(available);
-
-        let diffToUse = difficulty;
-        if (!diffToUse || !available[diffToUse]) {
-          const availableList = Object.keys(available)
-            .map(Number)
-            .sort((a, b) => b - a) as ChartDifficulty[];
-          diffToUse = availableList[0] || null;
-        }
-
-        if (diffToUse) {
-          setSelectedDifficulty(diffToUse);
-          const chart = parseSimaiChart(simai, diffToUse);
-          setChartData(chart);
-          if (initialBeat !== null) {
-            const totalBeats = chart.measures * 4;
-            const beats = Math.max(0, Math.min(initialBeat, totalBeats));
-            setPreciseTime(beats, true);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to parse chart:", error);
-      }
-    }
-  }, [
-    chartId,
-    difficulty,
-    initialBeat,
-    setRawSimaiText,
-    setMusicUrl,
-    setChartData,
-    setPreciseTime,
-    setAvailableDifficulties,
-    setSelectedDifficulty,
-  ]);
-
-  useEffect(() => {
-    loadChart();
-  }, [loadChart]);
-
-  useEffect(() => {
-    return () => {
-      reset();
-    };
-  }, [reset]);
 
   useEffect(() => {
     if (!isFullscreen) {
@@ -446,29 +316,36 @@ function ChartContent() {
               <Title order={3}>谱面预览</Title>
               <Badge variant="light">测试版</Badge>
             </Group>
-            {chartData && (
+            {title && (
               <Text size="sm" c="dimmed">
-                {chartData.title}
+                {title}
               </Text>
             )}
           </div>
         </Group>
 
-        <div className={classes.grid}>
-          <Stack gap="md">
-            <div id="normal-chart-container">
-              <div ref={chartCanvasRef}>
-                <ChartCanvas />
+        {!canvas ? (
+          <EmptyState icon={<IconDatabaseOff size={32} />} title="请选择谱面开始预览">
+            <Button component="a" href={`/songs?game=${game}`} variant="light">
+              浏览曲目
+            </Button>
+          </EmptyState>
+        ) : (
+          <div className={classes.grid}>
+            <Stack gap="md">
+              <div id="normal-chart-container">
+                <div ref={chartCanvasRef}>{canvas}</div>
               </div>
-            </div>
-            <PlaybackControls onToggleFullscreen={toggleFullscreen} isFullscreen={false} />
-          </Stack>
+              {!isFullscreen &&
+                playbackControls({ onToggleFullscreen: toggleFullscreen, isFullscreen: false })}
+            </Stack>
 
-          <Stack gap="md" className={classes.sidebar}>
-            <Controls isUtage={isUtage} />
-            <KeyboardShortcuts />
-          </Stack>
-        </div>
+            <Stack gap="md" className={classes.sidebar}>
+              {controls}
+              <KeyboardShortcuts restartLabel={restartLabel} />
+            </Stack>
+          </div>
+        )}
       </Container>
 
       {isFullscreen && (
@@ -480,11 +357,11 @@ function ChartContent() {
           <div
             className={`${classes.fullscreenControls} ${showControls ? classes.showControls : ""}`}
           >
-            <PlaybackControls
-              onToggleFullscreen={toggleFullscreen}
-              isFullscreen={true}
-              portalTarget={fullscreenEl}
-            />
+            {playbackControls({
+              onToggleFullscreen: toggleFullscreen,
+              isFullscreen: true,
+              portalTarget: fullscreenEl,
+            })}
           </div>
           <ActionIcon
             className={`${classes.lockButton} ${isLocked || showControls ? classes.showButton : ""}`}
@@ -505,5 +382,51 @@ function ChartContent() {
 }
 
 export default function Chart() {
-  return <ChartContent />;
+  const search = usePageContext().urlParsed.search;
+  const [activeGame, setGame] = useGame();
+  const game = search.game === "chunithm" || search.game === "maimai" ? search.game : activeGame;
+  const setIsFullscreen = useGameStore((state) => state.setIsFullscreen);
+  const hasUrlGame = search.game === "chunithm" || search.game === "maimai";
+  useEffect(() => {
+    if (hasUrlGame) {
+      if (activeGame !== game) setGame(game);
+      return;
+    }
+    const url = new URL(window.location.href);
+    const stored = localStorage.getItem("game");
+    const selected =
+      stored === '"chunithm"' ? "chunithm" : stored === '"maimai"' ? "maimai" : activeGame;
+    url.searchParams.set("game", selected);
+    void navigate(`${url.pathname}${url.search}${url.hash}`, { overwriteLastHistoryEntry: true });
+  }, [activeGame, game, hasUrlGame, setGame]);
+  useEffect(() => () => setIsFullscreen(false), [game, setIsFullscreen]);
+  if (!hasUrlGame)
+    return (
+      <Center py="xl">
+        <Loader />
+      </Center>
+    );
+  const renderPlayer = (parts: ChartPlayerParts) => <ChartContent {...parts} game={game} />;
+  if (!search.chart_id && !(import.meta.env.DEV && game === "maimai"))
+    return renderPlayer({
+      canvas: null,
+      controls: null,
+      playbackControls: () => null,
+      restartLabel: "重新播放",
+    });
+  return (
+    <Suspense
+      fallback={
+        <Center py="xl">
+          <Loader />
+        </Center>
+      }
+    >
+      {game === "chunithm" ? (
+        <ChunithmPlayer>{renderPlayer}</ChunithmPlayer>
+      ) : (
+        <MaimaiPlayer>{renderPlayer}</MaimaiPlayer>
+      )}
+    </Suspense>
+  );
 }

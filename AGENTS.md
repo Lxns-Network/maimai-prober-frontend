@@ -151,6 +151,18 @@ Located at `src/pages/public/Chart/`, using workspace package `@lxns-network/mai
 5. **Background video sync** (`/__video/{song_id}.mp4`) is best-effort visual media follower and must never become a timing source.
 6. **Seek handoff** is an atomic schedule: stop old node, compute target time once, schedule new `AudioBufferSourceNode` at `AudioContext.currentTime + 0.05`, hold visual playhead at target during lead-in, and switch back to audio clock once audible. Never reintroduce `playbackStartTime` or `playbackStartPositionMs`.
 
+### CHUNITHM Preview Ownership
+
+The shared `Chart.tsx` route selects `components/ChunithmPlayer.tsx`. CHUNITHM integration lives under `Chart/chunithm/`; it is not a separate page.
+
+- `components/`: controls and export UI; `hooks/`: React lifecycle and persisted-setting synchronization only.
+- `assets/`: chart metadata and resource URLs; `options/`: game option tables and conversions.
+- `runtime/session.ts`: session cancellation, playback intent, looping and frame scheduling. It owns and releases the attached renderers and the audio subsystem.
+- `runtime/audio.ts`: sole owner of the AudioContext, gain nodes, music and SFX. Its transport exposes chart seconds; padded-buffer offsets are private to this module. Renderers never create an independent playback clock.
+- `runtime/viewport.ts`: resize/DPR subscriptions and deferred canvas allocation. `runtime/exportGif.ts`: encoding only; the session suspends and restores playback.
+- `rendering/`: Stage, notes, field and HUD integration, without React imports. Stage owns its attached GPU resources; its hook owns UI state. Engine algorithms remain in `packages/chunithm-chart-engine`.
+- `runtime/liveState.ts` publishes frame snapshots to UI subscribers; it does not advance time. Shared types live in `runtime/types.ts`; do not import the session implementation just for control types.
+
 ### Performance Measurement Policy
 
 Never judge performance visually or eyeball FPS. `MainRenderer` instruments CPU timing per stage (`setProfilingEnabled` / `takeFrameProfile`), visible via `/chart` DEV overlay. Follow methodology in [src/pages/public/Chart/bench/README.md](src/pages/public/Chart/bench/README.md): use `yarn chart:bench:paired --baseline <checkout>` for optimizations, `yarn chart:fill` for overdraw, and `yarn chart:visual` for regressions.

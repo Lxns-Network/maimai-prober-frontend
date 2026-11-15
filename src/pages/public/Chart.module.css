@@ -16,6 +16,18 @@
   }
 }
 
+.chunithmCanvas {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--mantine-radius-lg);
+
+  &[data-fullscreen] {
+    width: min(100vw, calc(100dvh * 16 / 9));
+    border-radius: 0;
+  }
+}
+
 .fullscreen {
   position: fixed;
   top: 0;

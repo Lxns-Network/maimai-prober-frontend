@@ -42,12 +42,16 @@ const SongsContent = () => {
 
   useEffect(() => {
     if (!songId) {
-      window.history.replaceState(null, "", window.location.pathname);
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${window.location.pathname}?game=${game}`,
+      );
       return;
     }
     if (!song) return;
     window.history.replaceState(
-      null,
+      window.history.state,
       "",
       `${window.location.pathname}?game=${game}&song_id=${song.id.toString()}`,
     );

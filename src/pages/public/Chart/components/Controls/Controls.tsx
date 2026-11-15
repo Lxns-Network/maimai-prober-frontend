@@ -35,21 +35,14 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import {
-  IconPlayerPlay,
-  IconPlayerPause,
   IconRefresh,
   IconRepeat,
-  IconChevronLeft,
   IconChevronRight,
-  IconChevronsLeft,
-  IconChevronsRight,
   IconMusic,
   IconMovie,
   IconChevronDown,
   IconAdjustments,
   IconHelp,
-  IconMaximize,
-  IconMinimize,
   IconCamera,
   IconShare,
   IconDownload,
@@ -86,6 +79,7 @@ import { openConfirmModal } from "@/utils/modal";
 import classes from "./Controls.module.css";
 import { usePageContext } from "vike-react/usePageContext";
 import { useSongDetail } from "@/hooks/queries/useSongDetail";
+import { PlaybackButtons } from "./PlaybackButtons";
 
 const DevHitFxPreview = import.meta.env.DEV
   ? lazy(() => import("../../HitFxPreview/HitFxPreview"))
@@ -688,74 +682,19 @@ export function PlaybackControls({
           </div>
         )}
 
-        <Group justify="center" gap="xs" wrap="wrap">
-          <Tooltip label="上一小节" portalProps={fullscreenPortalProps}>
-            <ActionIcon
-              variant="subtle"
-              color={isFullscreen ? "white" : "gray"}
-              size="lg"
-              onClick={() => stepMeasure(-1)}
-            >
-              <IconChevronsLeft size={20} />
-            </ActionIcon>
-          </Tooltip>
-
-          <Tooltip label="上一位置" portalProps={fullscreenPortalProps}>
-            <ActionIcon
-              variant="subtle"
-              color={isFullscreen ? "white" : "gray"}
-              size="lg"
-              onClick={() => stepPosition(-1)}
-            >
-              <IconChevronLeft size={20} />
-            </ActionIcon>
-          </Tooltip>
-
-          {pendingPlay && !isPlaying ? (
-            <ActionIcon variant="filled" size="xl" radius="xl" loading={true} />
-          ) : (
-            <Tooltip label={isPlaying ? "暂停" : "播放"} portalProps={fullscreenPortalProps}>
-              <ActionIcon variant="filled" size="xl" radius="xl" onClick={togglePlayback}>
-                {isPlaying ? <IconPlayerPause size={24} /> : <IconPlayerPlay size={24} />}
-              </ActionIcon>
-            </Tooltip>
-          )}
-
-          <Tooltip label="下一位置" portalProps={fullscreenPortalProps}>
-            <ActionIcon
-              variant="subtle"
-              color={isFullscreen ? "white" : "gray"}
-              size="lg"
-              onClick={() => stepPosition(1)}
-            >
-              <IconChevronRight size={20} />
-            </ActionIcon>
-          </Tooltip>
-
-          <Tooltip label="下一小节" portalProps={fullscreenPortalProps}>
-            <ActionIcon
-              variant="subtle"
-              color={isFullscreen ? "white" : "gray"}
-              size="lg"
-              onClick={() => stepMeasure(1)}
-            >
-              <IconChevronsRight size={20} />
-            </ActionIcon>
-          </Tooltip>
-
-          <div className={classes.separator} />
-
-          <Tooltip label="重新播放当前小节" portalProps={fullscreenPortalProps}>
-            <ActionIcon
-              variant="subtle"
-              color={isFullscreen ? "white" : "gray"}
-              size="lg"
-              onClick={restartCurrentMeasure}
-            >
-              <IconRefresh size={20} />
-            </ActionIcon>
-          </Tooltip>
-
+        <PlaybackButtons
+          disabled={!chartData}
+          playing={isPlaying}
+          pending={pendingPlay}
+          toggle={togglePlayback}
+          restart={restartCurrentMeasure}
+          restartLabel="重新播放当前小节"
+          step={stepPosition}
+          stepMeasure={stepMeasure}
+          onToggleFullscreen={onToggleFullscreen}
+          isFullscreen={isFullscreen}
+          portalTarget={portalTarget}
+        >
           <Menu shadow="md" width={220} position="top" portalProps={fullscreenPortalProps}>
             <Menu.Target>
               <Tooltip label="区间循环" portalProps={fullscreenPortalProps}>
@@ -817,6 +756,7 @@ export function PlaybackControls({
                   color={isFullscreen ? "white" : "gray"}
                   size="lg"
                   aria-label="画面导出"
+                  disabled={!chartData}
                 >
                   <IconCamera size={20} />
                 </ActionIcon>
@@ -879,27 +819,12 @@ export function PlaybackControls({
               size="lg"
               onClick={() => void copyCurrentTimeUrl()}
               aria-label="复制当前时间点 URL"
+              disabled={!chartData}
             >
               <IconLink size={20} />
             </ActionIcon>
           </Tooltip>
-
-          {onToggleFullscreen && (
-            <Tooltip
-              label={isFullscreen ? "退出全屏" : "全屏预览"}
-              portalProps={fullscreenPortalProps}
-            >
-              <ActionIcon
-                variant="subtle"
-                color={isFullscreen ? "white" : "gray"}
-                size="lg"
-                onClick={onToggleFullscreen}
-              >
-                {isFullscreen ? <IconMinimize size={20} /> : <IconMaximize size={20} />}
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </Group>
+        </PlaybackButtons>
       </Stack>
     </Card>
   );
@@ -1145,16 +1070,26 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
       const chartText = debugChartFileType === "simai" ? rawSimaiText : debugSimai;
       if (!chartText.trim()) return;
 
-      setSelectedDifficulty(difficulty);
-      const chart =
-        debugChartFileType === "simai"
-          ? parseSimaiChart(chartText, difficulty)
-          : parseMa2Chart(chartText, difficulty);
-      setChartData(chart);
+      try {
+        const chart =
+          debugChartFileType === "simai"
+            ? parseSimaiChart(chartText, difficulty)
+            : parseMa2Chart(chartText, difficulty);
+        setSelectedDifficulty(difficulty);
+        setChartData(chart);
 
-      const url = new URL(window.location.href);
-      url.searchParams.set("difficulty", String(difficulty - 2));
-      window.history.replaceState({}, "", url.toString());
+        const url = new URL(window.location.href);
+        url.searchParams.set("difficulty", String(difficulty - 2));
+        url.searchParams.delete("beat");
+        url.searchParams.delete("t");
+        window.history.replaceState(window.history.state, "", url.toString());
+      } catch (error) {
+        notifications.show({
+          title: "谱面加载失败",
+          message: getErrorMessage(error),
+          color: "red",
+        });
+      }
     },
     [debugChartFileType, debugSimai, rawSimaiText, setSelectedDifficulty, setChartData],
   );
