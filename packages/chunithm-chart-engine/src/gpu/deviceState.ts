@@ -288,7 +288,7 @@ export function createDeviceState(gl: DeviceStateTarget): DeviceState {
   /** Per program: the depth-bias bits, alpha test flag, function and reference it was last given. */
   const uniformCache = new Map<WebGLProgram, Float64Array>();
   const bits = new DataView(new ArrayBuffer(4));
-  const token = {};
+  const owner = {};
   let lastSet: DeviceStateSet | null = null;
   let lastProgram: WebGLProgram | null = null;
   const toggle = (capability: number, enabled: number) =>
@@ -303,8 +303,8 @@ export function createDeviceState(gl: DeviceStateTarget): DeviceState {
       owners.delete(gl);
     },
     apply(set, program, locations) {
-      if (owners.get(gl) !== token) {
-        owners.set(gl, token);
+      if (owners.get(gl) !== owner) {
+        owners.set(gl, owner);
         current.fill(Number.NaN);
         lastSet = null;
       } else if (set === lastSet && program === lastProgram) return;
