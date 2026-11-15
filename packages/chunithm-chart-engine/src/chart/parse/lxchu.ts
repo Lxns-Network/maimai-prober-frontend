@@ -201,9 +201,10 @@ export function isLxchu(bytes: Uint8Array): boolean {
 }
 
 function selectChart(text: string, difficulty: number): ChartBody {
-  // Literal newline splitting does not execute a regular expression.
-  // nosemgrep: Semgrep_rules_lgpl_javascript_dos_rule-regex-dos
-  const lines = text.split("\n").map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line));
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].endsWith("\r")) lines[i] = lines[i].slice(0, -1);
+  }
   const version = /^&format=lxchu\/(\d+)(?:\.\d+)?$/.exec(lines[0]);
   if (!lines[0].startsWith(FORMAT_KEY)) fail(1, "the first line must declare &format=lxchu/1");
   if (!version || Number(version[1]) !== MAJOR_VERSION)
