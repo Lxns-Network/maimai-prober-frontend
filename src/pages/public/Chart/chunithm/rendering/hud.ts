@@ -121,8 +121,9 @@ export async function loadHudResources(input: {
 export interface HudHost {
   /** What the interface cannot draw for this song. */
   readonly missing: readonly string[];
+  readonly scrolling: boolean;
   /** Draws the interface for a grid step over what the scene just rendered. */
-  draw(step: number): void;
+  draw(step: number, textSeconds?: number): void;
   selectSpeed(speedRow: number): void;
   selectMirror(mirror: boolean): void;
   replaceChart(song: HudSong, timeline: Timeline): void;
@@ -174,6 +175,10 @@ export function createHudHost(input: {
     mirror,
   });
   let chart: HudChartState;
+  const hasScrollingText = () => {
+    for (const text of chart.texts.values()) if (text.scrollPeriod) return true;
+    return false;
+  };
   try {
     chart = prepareHudChart(hud, chartOf());
   } catch (error) {
@@ -224,14 +229,17 @@ export function createHudHost(input: {
     get missing() {
       return chart.missing;
     },
-    draw(step) {
+    get scrolling() {
+      return hasScrollingText();
+    },
+    draw(step, textSeconds = step / 120) {
       if (disposed) return;
       if (textureFailure) throw textureFailure.cause;
       read(step, values);
       const key = `${values.score}:${values.combo}:${values.gauge}:${values.counts.join()}`;
-      if (key !== assembled) {
+      if (key !== assembled || hasScrollingText()) {
         assembled = key;
-        assembleHud(hud, chart, values, geometry);
+        assembleHud(hud, chart, values, geometry, textSeconds);
         revision++;
       }
       scene.withPresentation((device) => {

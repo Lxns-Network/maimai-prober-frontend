@@ -64,6 +64,7 @@ vi.mock("@lxns-network/chunithm-chart-engine/stage/pack", () => ({
   }),
 }));
 vi.mock("@lxns-network/chunithm-chart-engine/stage/runtime", () => ({
+  liveNodes: () => [],
   createStageTraversalClock: () => ({ tick: 0 }),
   sceneState: (scene: { classState: Map<string, unknown> }, key: string, create: () => unknown) => {
     if (!scene.classState.has(key)) scene.classState.set(key, create());
@@ -436,7 +437,7 @@ describe("stage presentation lifecycle", () => {
     expect(mocked.reflectionSizes[mocked.reflectionSizes.length - 1]).toEqual([320, 180]);
   });
 
-  it("resets scene histories once when a field rebuild and seek arrive together", async () => {
+  it("resets scene histories once when a brightness change and seek arrive together", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => response()),

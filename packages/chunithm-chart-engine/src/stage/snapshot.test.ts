@@ -89,3 +89,55 @@ it("clones retained per-draw material cells independently of the source scene", 
   expect(Array.from(material.parameter(0, 0)!)).toEqual([0.5, 0, 1, 1]);
   expect(Array.from(copy.extension.material.parameter(0, 0)!)).toEqual([0.75, 0, 1, 1]);
 });
+
+it("reuses display storage while refreshing changed fields and preserving rewind snapshots", () => {
+  const rewind = createStageRewind(
+    () => [
+      {
+        tick: 0,
+        failure: null,
+        traversalClock: { framePhase: 0 },
+        top: { flags: 0x15, children: [], graveyard: [] },
+        classState: new Map([["pose", { frame: 0, world: Float32Array.of(0), old: true }]]),
+        options: {
+          nodes: new Map([
+            [
+              0,
+              {
+                finishStep(scene: StageScene) {
+                  const pose = scene.classState.get("pose") as {
+                    frame: number;
+                    world: Float32Array;
+                    old?: boolean;
+                  };
+                  pose.frame = scene.tick;
+                  pose.world[0] = scene.tick * 2;
+                  if (scene.tick >= 4) delete pose.old;
+                },
+              },
+            ],
+          ]),
+        },
+      } as unknown as StageScene,
+    ],
+    2,
+  );
+  const first = rewind.sample(3, 0.5)[0];
+  const pose = first.classState.get("pose") as {
+    frame: number;
+    world: Float32Array;
+    old?: boolean;
+  };
+  const buffer = pose.world;
+  expect(pose.world[0]).toBe(7);
+  const second = rewind.sample(4, 0.5)[0];
+  expect(second).not.toBe(first);
+  const nextPose = second.classState.get("pose") as typeof pose;
+  expect(nextPose).not.toBe(pose);
+  expect(nextPose.world).toBe(buffer);
+  expect(nextPose.world[0]).toBe(9);
+  expect(nextPose).not.toHaveProperty("old");
+  const back = rewind.sample(2, 0.5)[0].classState.get("pose") as typeof pose;
+  expect(back.world[0]).toBe(5);
+  expect(back.old).toBe(true);
+});

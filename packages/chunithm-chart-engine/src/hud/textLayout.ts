@@ -43,6 +43,7 @@ export type HudTextLayout =
       glyphs: HudTextGlyph[];
       /** Whether the registered layout held, rather than the fitted fallback. */
       registered: boolean;
+      scrollPeriod?: number;
     }
   | { status: "unsupported"; reason: string };
 
@@ -105,6 +106,7 @@ function layoutLine(
   source: readonly number[],
   uvBias: number,
   registered: boolean,
+  naturalWidth = false,
 ): { measuredWidth: number; layout: HudTextLayout } {
   const f = Math.fround;
   const unsupported = (reason: string) => ({
@@ -121,7 +123,7 @@ function layoutLine(
     measuredWidth = f(advance + f(edge(index) * scaleX));
     advance = f(advance + f(font.advance[index] * scaleX));
   }
-  if (measuredWidth > profile.width) {
+  if (measuredWidth > profile.width && !naturalWidth) {
     if ((profile.flags & 1) !== 0) return unsupported("unscaled overflow/wrapping");
     scaleX = f(f(f(scaleX * f(profile.width)) / measuredWidth) * f(0.999));
   }
@@ -131,7 +133,7 @@ function layoutLine(
   advance = 0;
   for (const index of source) {
     right = f(advance + f(edge(index) * scaleX));
-    if (right > profile.width) return unsupported("glyph overflow/wrapping");
+    if (right > profile.width && !naturalWidth) return unsupported("glyph overflow/wrapping");
     advance = f(advance + f(font.advance[index] * scaleX));
   }
   const horizontal = (profile.flags & 12) >>> 2;
@@ -207,8 +209,8 @@ function layoutLine(
 const REGISTERED_FLAGS = [32, 34];
 
 /**
- * Lays out one line of a text cast. A registered cast keeps its natural width and samples glyph
- * edges unbiased; a line wider than its box falls back to the horizontally fitted layout.
+ * Registered song text uses noWrapPutMode 4: overflowing lines repeat after four full-width
+ * spaces. The draw offset is supplied separately, so glyph layout stays fixed during playback.
  */
 export function layoutHudTextLine(
   profile: HudTextProfile,
@@ -221,8 +223,21 @@ export function layoutHudTextLine(
   if (registered) {
     if (!REGISTERED_FLAGS.includes(profile.flags))
       return { status: "unsupported", reason: "registered title/artist alignment profile" };
-    const line = layoutLine(profile, font, source, 0, true);
+    const line = layoutLine(profile, font, source, 0, true, true);
     if (line.layout.status !== "ready" || line.measuredWidth <= profile.width) return line.layout;
+    const space = glyphIndex(font, 0x3000);
+    if (space < 0) return { status: "unsupported", reason: "missing full-width scroll separator" };
+    const repeated = layoutLine(
+      profile,
+      font,
+      [...source, space, space, space, space, ...source],
+      0,
+      true,
+      true,
+    );
+    if (repeated.layout.status === "ready")
+      repeated.layout.scrollPeriod = Math.fround(repeated.measuredWidth - line.measuredWidth);
+    return repeated.layout;
   }
   return layoutLine(profile, font, source, Math.fround(0.00001), false).layout;
 }

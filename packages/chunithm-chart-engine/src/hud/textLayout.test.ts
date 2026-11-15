@@ -27,15 +27,15 @@ function fontOf(advance = 12): HudFont {
       { width: 64, height: 64 },
       { width: 64, height: 64 },
     ],
-    codepoints: Uint32Array.of(32, 65, 66),
-    originX: Int16Array.of(0, 0, 0),
-    originY: Int16Array.of(0, 0, 0),
-    advance: Int16Array.of(4, advance, advance),
-    sx: Uint16Array.of(0, 2, 2),
-    sy: Uint16Array.of(0, 2, 2),
-    sw: Uint16Array.of(0, 8, 8),
-    sh: Uint16Array.of(0, 8, 8),
-    page: Uint8Array.of(HUD_NO_PAGE, 0, 1),
+    codepoints: Uint32Array.of(32, 65, 66, 0x3000),
+    originX: Int16Array.of(0, 0, 0, 0),
+    originY: Int16Array.of(0, 0, 0, 0),
+    advance: Int16Array.of(4, advance, advance, 16),
+    sx: Uint16Array.of(0, 2, 2, 0),
+    sy: Uint16Array.of(0, 2, 2, 0),
+    sw: Uint16Array.of(0, 8, 8, 0),
+    sh: Uint16Array.of(0, 8, 8, 0),
+    page: Uint8Array.of(HUD_NO_PAGE, 0, 1, HUD_NO_PAGE),
   };
 }
 
@@ -163,8 +163,22 @@ describe("HUD font pages", () => {
       { score: 0, combo: 0, gauge: 0, counts: [0, 0, 0, 0] },
       narrowGeometry,
     );
-    expect(narrowState.texts.get(narrowSlot)?.registered).toBe(false);
+    expect(narrowState.texts.get(narrowSlot)?.registered).toBe(true);
+    expect(narrowState.texts.get(narrowSlot)?.scrollPeriod).toBe(76);
     expect(narrowState.missing).toEqual([]);
-    expect([...narrowGeometry.materials.subarray(0, narrowGeometry.count)]).toEqual([0, 1, 0]);
+    expect([...narrowGeometry.materials.subarray(0, narrowGeometry.count)]).toEqual([1, 0, 0]);
+    const initial = narrowGeometry.positions.slice();
+    const values = {
+      score: 0,
+      combo: 0,
+      gauge: 0,
+      counts: [0, 0, 0, 0] as [number, number, number, number],
+    };
+    assembleHud(narrow, narrowState, values, narrowGeometry, 1);
+    expect(narrowGeometry.positions).toEqual(initial);
+    assembleHud(narrow, narrowState, values, narrowGeometry, 2.9);
+    expect(narrowGeometry.positions).toEqual(initial);
+    assembleHud(narrow, narrowState, values, narrowGeometry, 1.5);
+    expect(narrowGeometry.count).toBe(0);
   });
 });

@@ -12,6 +12,9 @@ import {
 import {
   createStageScene,
   createStageTraversalClock,
+  liveNodes,
+  resolveState,
+  setState,
   type StageHeldState,
 } from "@lxns-network/chunithm-chart-engine/stage/runtime";
 import {
@@ -256,7 +259,6 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
       const option = brightness.find((item) => item.label === heldLabel);
       if (option) held.set(FIELD_BRIGHTNESS_RECORD, { state: option.state, match: -1 });
       else held.delete(FIELD_BRIGHTNESS_RECORD);
-      rewind = null;
     };
     const build = () => {
       const traversalClock = createStageTraversalClock();
@@ -308,6 +310,23 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         rewind ??= createStageRewind(build);
         const fraction = frame - tick;
         const [fieldScene, baseScene] = rewind.sample(tick, fraction);
+        const fieldState = held.get(FIELD_BRIGHTNESS_RECORD);
+        if (fieldState) {
+          for (const node of liveNodes(fieldScene)) {
+            if (node.record?.id !== FIELD_BRIGHTNESS_RECORD) continue;
+            const index = resolveState(node, fieldState.state, false);
+            if (node.stateIndex !== index) {
+              setState(node, index, true);
+              for (const motion of node.graveyard) motion.dispose?.(node);
+              node.graveyard.length = 0;
+            }
+            // Brightness states are static transforms; apply after interpolation without advancing time.
+            const delta = node.delta;
+            node.delta = 0;
+            nodeBehaviors.get(node.record.type)!.update!(node);
+            node.delta = delta;
+          }
+        }
         const historyReset =
           resetHistory || resized || fieldChanged || (previousTick !== null && tick < previousTick);
         if (historyReset) {

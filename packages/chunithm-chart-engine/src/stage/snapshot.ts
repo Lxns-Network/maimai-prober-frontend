@@ -70,6 +70,7 @@ type View = ArrayBufferView & {
 function cloneStageScenes(
   scenes: readonly StageScene[],
   copies = new Map<object, unknown>(),
+  previous = new Map<object, unknown>(),
 ): StageSceneCopy[] {
   const shared = scenes.map(sharedStageData);
   const buffers = new Map<ArrayBufferLike, ArrayBuffer>();
@@ -83,11 +84,15 @@ function cloneStageScenes(
       return value;
     const done = copies.get(value);
     if (done !== undefined) return done;
+    const retained = previous.get(value);
     if (ArrayBuffer.isView(value)) {
       if (shared.some((data) => data.buffers.has(value.buffer))) return value;
       let buffer = buffers.get(value.buffer);
       if (!buffer) {
-        buffer = (value.buffer as ArrayBuffer).slice(0);
+        buffer = ArrayBuffer.isView(retained)
+          ? (retained.buffer as ArrayBuffer)
+          : new ArrayBuffer(value.buffer.byteLength);
+        new Uint8Array(buffer).set(new Uint8Array(value.buffer));
         buffers.set(value.buffer, buffer);
         bytes += buffer.byteLength;
       }
@@ -97,56 +102,50 @@ function cloneStageScenes(
           ? value.byteLength
           : (value as unknown as { length: number }).length;
       const result =
-        value instanceof DataView
-          ? new DataView(buffer, value.byteOffset, length)
-          : new view.constructor(buffer, value.byteOffset, length);
+        ArrayBuffer.isView(retained) && retained.buffer === buffer
+          ? retained
+          : value instanceof DataView
+            ? new DataView(buffer, value.byteOffset, length)
+            : new view.constructor(buffer, value.byteOffset, length);
       copies.set(value, result);
       return result;
     }
     if (Array.isArray(value)) {
-      const result: unknown[] = value.slice();
+      const result: unknown[] = Array.isArray(retained) ? retained : [];
+      result.length = value.length;
       copies.set(value, result);
       bytes += 16 + 8 * value.length;
       for (let i = 0; i < value.length; i++)
-        if (value[i] !== null && typeof value[i] === "object") result[i] = copy(value[i]);
+        result[i] = value[i] !== null && typeof value[i] === "object" ? copy(value[i]) : value[i];
       return result;
     }
     if (value instanceof Map) {
-      const result = new Map();
+      const result = retained instanceof Map ? retained : new Map();
+      result.clear();
       copies.set(value, result);
       bytes += 32 + 24 * value.size;
       for (const [k, v] of value) result.set(copy(k), copy(v));
       return result;
     }
     if (value instanceof Set) {
-      const result = new Set();
+      const result = retained instanceof Set ? retained : new Set();
+      result.clear();
       copies.set(value, result);
       bytes += 32 + 16 * value.size;
       for (const v of value) result.add(copy(v));
       return result;
     }
-    const keys = Reflect.ownKeys(value);
+    // Mutable scene instances store data in enumerable fields; methods and getters live on
+    // their prototypes. Copy those fields directly without allocating property descriptors.
+    const keys = Object.keys(value);
     bytes += 24 + 8 * keys.length;
     const prototype = Object.getPrototypeOf(value) as object | null;
-    const descriptors = keys.map((key) => Object.getOwnPropertyDescriptor(value, key)!);
-    const plain = descriptors.every((d) => d.writable && d.enumerable && d.configurable);
-    const result = (
-      plain
-        ? prototype === Object.prototype
-          ? { ...value }
-          : Object.setPrototypeOf({ ...value }, prototype)
-        : Object.create(prototype)
-    ) as Record<PropertyKey, unknown>;
+    // Render caches key poses, blends and filter plans by identity, so records stay fresh.
+    const result = Object.create(prototype) as Record<string, unknown>;
     copies.set(value, result);
-    for (let i = 0; i < keys.length; i++) {
-      const descriptor = descriptors[i];
-      if (plain) {
-        const item = descriptor.value as unknown;
-        if (item !== null && typeof item === "object") result[keys[i]] = copy(item);
-        continue;
-      }
-      if ("value" in descriptor) descriptor.value = copy(descriptor.value);
-      Object.defineProperty(result, keys[i], descriptor);
+    for (const key of keys) {
+      const item = (value as Record<string, unknown>)[key];
+      result[key] = item !== null && typeof item === "object" ? copy(item) : item;
     }
     return result;
   };
@@ -194,6 +193,7 @@ export function createStageRewind(
   let sampledTick = -1;
   let sampled: StageScene[] = [];
   let interpolate: ((fraction: number) => void)[] = [];
+  let displayCopies = new Map<object, unknown>();
   let kept: Kept[] = [];
   let bytes = 0;
   let failure: { readonly cause: unknown } | null = null;
@@ -222,7 +222,8 @@ export function createStageRewind(
       const live = rewind.seek(tick);
       if (fraction === 0) return live;
       const copies = new Map<object, unknown>();
-      sampled = cloneStageScenes(live, copies).map((copy) => copy.scene);
+      sampled = cloneStageScenes(live, copies, displayCopies).map((copy) => copy.scene);
+      displayCopies = copies;
       const display = new Map<object, unknown>();
       const next = new Map<object, unknown>();
       for (const [original, copy] of copies) {
