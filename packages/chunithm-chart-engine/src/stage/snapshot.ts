@@ -130,7 +130,7 @@ function cloneStageScenes(
       result.clear();
       copies.set(value, result);
       bytes += 32 + 24 * value.size;
-      for (const [k, v] of value) result.set(copy(k, presentation), copy(v, presentation));
+      value.forEach((v, k) => result.set(copy(k, presentation), copy(v, presentation)));
       return result;
     }
     if (value instanceof Set) {
@@ -146,19 +146,26 @@ function cloneStageScenes(
     const keys = Object.keys(value);
     bytes += 24 + 8 * keys.length;
     const prototype = Object.getPrototypeOf(value) as object | null;
-    // Render caches key poses, blends and filter plans by identity, so records stay fresh.
-    const result = Object.create(prototype) as Record<string, unknown>;
-    copies.set(value, result);
     const node =
       presentation && "record" in value && "birth" in value ? (value as StageNode) : null;
     const held = node?.record && node.scene.options.heldStates?.has(node.record.id);
     const provider = presentation && "poses" in value && "pose" in value && "playback" in value;
     const controller = presentation && "schedule" in value && "killWhenChildrenDone" in value;
+    // Pose, blend and post-process publications retain fresh identities for render caches.
+    const result = (
+      retained && (node || provider || controller) ? retained : Object.create(prototype)
+    ) as Record<string, unknown>;
+    if (result === retained)
+      for (const key of Object.keys(result))
+        if (!Object.prototype.hasOwnProperty.call(value, key)) delete result[key];
+    copies.set(value, result);
     for (const key of keys) {
       const item = (value as Record<string, unknown>)[key];
       // Drawing consumes published bone worlds, not animation samples or future spawn schedules.
       if ((provider && key === "poses") || (controller && key === "schedule")) {
-        result[key] = [];
+        const empty = result[key];
+        if (Array.isArray(empty)) empty.length = 0;
+        else result[key] = [];
         continue;
       }
       if (provider && key === "playback") {
@@ -175,7 +182,9 @@ function cloneStageScenes(
           key === "pending" ||
           key === "graveyard")
       ) {
-        result[key] = [];
+        const empty = result[key];
+        if (Array.isArray(empty)) empty.length = 0;
+        else result[key] = [];
         continue;
       }
       result[key] =
@@ -309,9 +318,9 @@ export function createStageRewind(
       spareCopies.clear();
       displayCopies = copies;
       next.clear();
-      for (const [original, copy] of copies) {
+      copies.forEach((copy, original) => {
         next.set(copy as object, original);
-      }
+      });
       stepStageScenes(live);
       finishStageScenes(live);
       keep(scenes!);
@@ -359,18 +368,23 @@ export function createStageRewind(
 
 /** Continuous display fields only; event counters, selectors and random state stay at the current tick. */
 class StageInterpolation {
-  private readonly arrays = new WeakMap<object, ArrayInterpolation>();
   private readonly active: ArrayInterpolation[] = [];
+  private arrayCount = 0;
   private readonly scalars: ScalarInterpolation[] = [];
   private scalarCount = 0;
+  private readonly paired = new Set<object>();
+  private readonly discontinuous = new Set<object>();
+  private readonly packedVertices = new Map<object, number>();
+  private readonly packedRecords = new Set<ArrayBufferLike>();
 
   clear(): void {
-    this.active.length = 0;
+    this.arrayCount = 0;
     this.scalarCount = 0;
   }
 
   apply(fraction: number): void {
-    for (const entry of this.active) {
+    for (let entryIndex = 0; entryIndex < this.arrayCount; entryIndex++) {
+      const entry = this.active[entryIndex];
       const { start, end, out, stride, startWords, endWords, outWords } = entry;
       if (entry.constant) {
         out.set(start);
@@ -393,7 +407,11 @@ class StageInterpolation {
   prepare(next: Map<object, unknown>): void {
     this.clear();
     // Publications can replace a pose or camera object while keeping their owning node alive.
-    const paired = new Set<object>();
+    const { paired, discontinuous, packedVertices, packedRecords } = this;
+    paired.clear();
+    discontinuous.clear();
+    packedVertices.clear();
+    packedRecords.clear();
     const align = (original: unknown, future: unknown) => {
       if (
         !original ||
@@ -409,7 +427,7 @@ class StageInterpolation {
       next.set(original, future);
       if (ArrayBuffer.isView(original)) return;
       if (original instanceof Map && future instanceof Map) {
-        for (const [key, value] of original) align(value, future.get(next.get(key) ?? key));
+        original.forEach((value, key) => align(value, future.get(next.get(key) ?? key)));
       } else if (Array.isArray(original) && Array.isArray(future)) {
         for (let i = 0; i < original.length; i++) {
           const value: unknown = original[i];
@@ -425,7 +443,6 @@ class StageInterpolation {
     };
     for (const original of next.keys())
       if ("top" in original && "classState" in original) align(original, next.get(original));
-    const discontinuous = new Set<object>();
     const transformChanged = (node: StageNode): boolean => {
       const future = next.get(node) as StageNode | undefined;
       return (
@@ -440,7 +457,6 @@ class StageInterpolation {
       const node = original as StageNode;
       if (transformChanged(node)) discontinuous.add(node.world);
     }
-    const packedVertices = new Map<object, number>();
     for (const original of next.keys()) {
       const value = original as { vertices?: Float32Array; normalVertices?: Float32Array };
       if (value.vertices) packedVertices.set(value.vertices, 6);
@@ -448,20 +464,19 @@ class StageInterpolation {
     }
     // A float view sharing its buffer with an integer view is a packed record (a particle pool's
     // links, flags and colours beside its floats); blending it as floats corrupts those words.
-    const packedRecords = new Set<ArrayBufferLike>();
     for (const original of next.keys())
       if (
         ArrayBuffer.isView(original) &&
         !(original instanceof Float32Array || original instanceof Float64Array)
       )
         packedRecords.add(original.buffer);
-    for (const [original, future] of next) {
-      if (!future) continue;
+    next.forEach((future, original) => {
+      if (!future) return;
       if (original instanceof Float32Array || original instanceof Float64Array) {
         const stride = packedVertices.get(original);
-        if (!stride && packedRecords.has(original.buffer)) continue;
+        if (!stride && packedRecords.has(original.buffer)) return;
         const b = future as Float32Array | Float64Array;
-        if (original.length !== b.length) continue;
+        if (original.length !== b.length) return;
         const holdTransform = discontinuous.has(original);
         // Copy constant arrays too: held-state presentation can mutate them between samples.
         let unchanged = !stride;
@@ -474,8 +489,14 @@ class StageInterpolation {
             }
           }
         }
-        let entry = this.arrays.get(original);
-        if (!entry || entry.stride !== stride) {
+        const index = this.arrayCount++;
+        let entry = this.active[index];
+        if (
+          !entry ||
+          entry.stride !== stride ||
+          entry.start.constructor !== original.constructor ||
+          entry.start.length !== original.length
+        ) {
           const start = original.slice();
           entry = {
             start,
@@ -491,8 +512,16 @@ class StageInterpolation {
               ? new Uint32Array(original.buffer, original.byteOffset, original.length)
               : null,
           };
-          this.arrays.set(original, entry);
+          this.active[index] = entry;
         } else entry.start.set(original);
+        entry.out = original;
+        if (
+          stride &&
+          (!entry.outWords ||
+            entry.outWords.buffer !== original.buffer ||
+            entry.outWords.byteOffset !== original.byteOffset)
+        )
+          entry.outWords = new Uint32Array(original.buffer, original.byteOffset, original.length);
         entry.constant = unchanged || holdTransform;
         entry.end = b;
         if (
@@ -502,8 +531,7 @@ class StageInterpolation {
             entry.endWords.byteOffset !== b.byteOffset)
         )
           entry.endWords = new Uint32Array(b.buffer, b.byteOffset, b.length);
-        this.active.push(entry);
-        continue;
+        return;
       }
       if (
         ArrayBuffer.isView(original) ||
@@ -511,7 +539,7 @@ class StageInterpolation {
         original instanceof Map ||
         original instanceof Set
       )
-        continue;
+        return;
       const a = original as Record<string, unknown>;
       const b = future as Record<string, unknown>;
       const out = a;
@@ -534,8 +562,13 @@ class StageInterpolation {
           entry.colour = colour;
         }
       }
-    }
+    });
+    this.active.length = this.arrayCount;
     this.scalars.length = this.scalarCount;
+    paired.clear();
+    discontinuous.clear();
+    packedVertices.clear();
+    packedRecords.clear();
   }
 }
 
@@ -543,11 +576,11 @@ interface ArrayInterpolation {
   constant: boolean;
   readonly start: Float32Array | Float64Array;
   end: Float32Array | Float64Array;
-  readonly out: Float32Array | Float64Array;
+  out: Float32Array | Float64Array;
   readonly stride: number | undefined;
   readonly startWords: Uint32Array | null;
   endWords: Uint32Array | null;
-  readonly outWords: Uint32Array | null;
+  outWords: Uint32Array | null;
 }
 interface ScalarInterpolation {
   out: Record<string, unknown>;

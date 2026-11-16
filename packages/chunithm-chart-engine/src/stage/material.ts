@@ -71,49 +71,61 @@ export interface StageMaterial {
   readonly vertexShake: boolean;
 }
 
-/** Resolves UV transforms enabled by the draw features or a retained node-offset publication. */
+export interface StageUvTransforms {
+  layers: number[][];
+  specular: number[];
+  normal: number[];
+  incandescence: number[];
+  blend: Float32Array | null;
+}
+
+/** Resolves UV transforms, overwriting caller-owned output when supplied. */
 export function stageUvTransforms(
   material: StageMaterial,
   offsets: ArrayLike<number> | null,
   animation: { readonly state: StageMaterialUvState; readonly draw: number } | null = null,
   drawMask: number = material.uvOffsetMask,
-): {
-  readonly layers: readonly (readonly number[])[];
-  readonly specular: readonly number[];
-  readonly normal: readonly number[];
-  readonly incandescence: readonly number[];
-  readonly blend: Float32Array | null;
-} {
-  const own = {
-    layers: [
-      material.layers[0]?.offsetScale ?? IDENTITY_TRANSFORM,
-      material.layers[1]?.offsetScale ?? IDENTITY_TRANSFORM,
-    ],
-    specular: material.specularMap?.offsetScale ?? IDENTITY_TRANSFORM,
-    normal: material.normalMap?.offsetScale ?? IDENTITY_TRANSFORM,
-    incandescence: material.incandescenceMap?.offsetScale ?? IDENTITY_TRANSFORM,
-  };
-  const slot = (i: number, fallback: readonly number[]): readonly number[] => {
-    if (!offsets && !animation?.state.offsetsPublished && !(drawMask & (1 << i)))
-      return IDENTITY_TRANSFORM;
-    const value = animation?.state.parameter(animation.draw, i);
-    return value
-      ? Array.from(value)
-      : offsets
-        ? [offsets[i * 2], offsets[i * 2 + 1], 1, 1]
-        : fallback;
+  out: StageUvTransforms = {
+    layers: [new Array(4), new Array(4)],
+    specular: new Array(4),
+    normal: new Array(4),
+    incandescence: new Array(4),
+    blend: null,
+  },
+): StageUvTransforms {
+  const slot = (
+    i: number,
+    fallback: readonly number[],
+    target: number[] | Float32Array,
+    at = 0,
+  ): void => {
+    const enabled = offsets || animation?.state.offsetsPublished || drawMask & (1 << i);
+    const value = enabled ? animation?.state.parameter(animation.draw, i) : null;
+    const source = !enabled ? IDENTITY_TRANSFORM : (value ?? fallback);
+    target[at] = enabled && !value && offsets ? offsets[i * 2] : source[0];
+    target[at + 1] = enabled && !value && offsets ? offsets[i * 2 + 1] : source[1];
+    target[at + 2] = enabled && !value && offsets ? 1 : source[2];
+    target[at + 3] = enabled && !value && offsets ? 1 : source[3];
   };
   const blendMaps = material.blendMaps;
-  const blend = blendMaps ? new Float32Array(blendMaps.length * 4) : null;
+  const blend = blendMaps
+    ? out.blend?.length === blendMaps.length * 4
+      ? out.blend
+      : new Float32Array(blendMaps.length * 4)
+    : null;
   if (blend)
-    for (let i = 0; i < blend.length / 4; i++) blend.set(slot(6 + i, IDENTITY_TRANSFORM), i * 4);
-  return {
-    layers: [slot(0, own.layers[0]), slot(1, own.layers[1])],
-    specular: slot(SPECULAR_SLOT, own.specular),
-    normal: slot(NORMAL_SLOT, own.normal),
-    incandescence: slot(INCANDESCENCE_SLOT, own.incandescence),
-    blend,
-  };
+    for (let i = 0; i < blend.length / 4; i++) slot(6 + i, IDENTITY_TRANSFORM, blend, i * 4);
+  slot(0, material.layers[0]?.offsetScale ?? IDENTITY_TRANSFORM, out.layers[0]);
+  slot(1, material.layers[1]?.offsetScale ?? IDENTITY_TRANSFORM, out.layers[1]);
+  slot(SPECULAR_SLOT, material.specularMap?.offsetScale ?? IDENTITY_TRANSFORM, out.specular);
+  slot(NORMAL_SLOT, material.normalMap?.offsetScale ?? IDENTITY_TRANSFORM, out.normal);
+  slot(
+    INCANDESCENCE_SLOT,
+    material.incandescenceMap?.offsetScale ?? IDENTITY_TRANSFORM,
+    out.incandescence,
+  );
+  out.blend = blend;
+  return out;
 }
 
 const bitsView = new DataView(new ArrayBuffer(4));

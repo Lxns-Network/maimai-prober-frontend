@@ -104,6 +104,24 @@ function setup(initiallyMissing = false) {
 }
 
 describe("ordinary model animation recovery", () => {
+  it("preserves the blend origin across repeated updates and independent checkpoint updates", () => {
+    const target = setup();
+    target.update();
+    const copy = cloneStageScene(target.scene).scene as typeof target.scene;
+    const provider = target.state.provider!;
+    const next = target.clips.get(11)!;
+    updateStageModelProvider(target.model, next, 0, provider, 0.25);
+    expect(provider.pose.worlds[0][3]).toBe(3);
+    updateStageModelProvider(target.model, next, 0, provider, 0.5);
+    expect(provider.pose.worlds[0][3]).toBe(4);
+    updateStageModelProvider(target.model, next, 0, provider, 0.75);
+    expect(provider.pose.worlds[0][3]).toBe(5);
+    const restored = stageModelState(copy.target!)!.provider!;
+    expect(restored.pose.worlds[0][3]).toBe(2);
+    updateStageModelProvider(target.model, next, 0, restored, 0.5);
+    expect(restored.pose.worlds[0][3]).toBe(4);
+    expect(provider.pose.worlds[0][3]).toBe(5);
+  });
   it("resumes a valid clip after a failed selection without replacing its provider", () => {
     const target = setup();
     target.update();

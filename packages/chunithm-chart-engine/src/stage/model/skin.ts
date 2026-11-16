@@ -48,6 +48,7 @@ export function providerLocal(
   t: readonly number[],
   q: readonly number[],
   s: readonly number[],
+  out: Float32Array = new Float32Array(12),
 ): Float32Array {
   const xx = f(q[0] * q[0]),
     yy = f(q[1] * q[1]),
@@ -59,25 +60,35 @@ export function providerLocal(
     wx = f(q[3] * q[0]),
     wy = f(q[3] * q[1]);
   // Keep the native rounding at each product and sum without allocating intermediate arrays.
-  return Float32Array.of(
-    f(f(1 - f(f(zz + yy) * 2)) * s[0]),
-    f(f(f(yx - wz) * 2) * s[1]),
-    f(f(f(xz + wy) * 2) * s[2]),
-    t[0],
-    f(f(f(yx + wz) * 2) * s[0]),
-    f(f(1 - f(f(xx + zz) * 2)) * s[1]),
-    f(f(f(zy - wx) * 2) * s[2]),
-    t[1],
-    f(f(f(xz - wy) * 2) * s[0]),
-    f(f(f(zy + wx) * 2) * s[1]),
-    f(f(1 - f(f(yy + xx) * 2)) * s[2]),
-    t[2],
-  );
+  out[0] = f(f(1 - f(f(zz + yy) * 2)) * s[0]);
+  out[1] = f(f(f(yx - wz) * 2) * s[1]);
+  out[2] = f(f(f(xz + wy) * 2) * s[2]);
+  out[3] = t[0];
+  out[4] = f(f(f(yx + wz) * 2) * s[0]);
+  out[5] = f(f(1 - f(f(xx + zz) * 2)) * s[1]);
+  out[6] = f(f(f(zy - wx) * 2) * s[2]);
+  out[7] = t[1];
+  out[8] = f(f(f(xz - wy) * 2) * s[0]);
+  out[9] = f(f(f(zy + wx) * 2) * s[1]);
+  out[10] = f(f(1 - f(f(yy + xx) * 2)) * s[2]);
+  out[11] = t[2];
+  return out;
 }
 
 /** The inverse of a row-major 3x4 affine matrix; identity rotation when it is near singular. */
 export function invertAffine(m: ArrayLike<number>): Float32Array {
-  const [a, b, c, tx, d, e, h, ty, g, j, k, tz] = Array.from(m);
+  const a = m[0],
+    b = m[1],
+    c = m[2],
+    tx = m[3];
+  const d = m[4],
+    e = m[5],
+    h = m[6],
+    ty = m[7];
+  const g = m[8],
+    j = m[9],
+    k = m[10],
+    tz = m[11];
   const determinant = f(
     f(f(f(f(a * e) * k) + f(f(b * h) * g)) + f(f(c * d) * j)) - f(f(a * h) * j),
   );
@@ -85,22 +96,17 @@ export function invertAffine(m: ArrayLike<number>): Float32Array {
   const out = new Float32Array(12);
   if (Math.abs(det) > 1.1920928955078125e-7) {
     const reciprocal = f(1 / det);
-    const entries = [
-      [k, e, j, h],
-      [j, c, k, b],
-      [h, b, e, c],
-      [g, h, k, d],
-      [k, a, g, c],
-      [d, c, h, a],
-      [j, d, g, e],
-      [g, b, j, a],
-      [e, a, d, b],
-    ];
-    entries.forEach(([p, q, r, s], i) => {
-      out[Math.floor(i / 3) * 4 + (i % 3)] = f(f(f(p * q) - f(r * s)) * reciprocal);
-    });
+    out[0] = f(f(f(k * e) - f(j * h)) * reciprocal);
+    out[1] = f(f(f(j * c) - f(k * b)) * reciprocal);
+    out[2] = f(f(f(h * b) - f(e * c)) * reciprocal);
+    out[4] = f(f(f(g * h) - f(k * d)) * reciprocal);
+    out[5] = f(f(f(k * a) - f(g * c)) * reciprocal);
+    out[6] = f(f(f(d * c) - f(h * a)) * reciprocal);
+    out[8] = f(f(f(j * d) - f(g * e)) * reciprocal);
+    out[9] = f(f(f(g * b) - f(j * a)) * reciprocal);
+    out[10] = f(f(f(e * a) - f(d * b)) * reciprocal);
   } else out[0] = out[5] = out[10] = 1;
-  for (const row of [0, 4, 8])
+  for (let row = 0; row < 12; row += 4)
     out[row + 3] = f(f(-f(out[row] * tx) - f(out[row + 1] * ty)) - f(out[row + 2] * tz));
   return out;
 }

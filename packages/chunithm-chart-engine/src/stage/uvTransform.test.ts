@@ -36,6 +36,20 @@ describe("UV transforms", () => {
     ]);
     expect(t.specular).toEqual([0, 0, 1, 1]);
   });
+  it("refreshes reused draw output when offsets and feature masks change", () => {
+    const offsets = Float32Array.from({ length: 28 }, (_, i) => i + 1);
+    const out = stageUvTransforms(material, offsets);
+    const layer = out.layers[0];
+    stageUvTransforms(material, null, null, 0, out);
+    expect(out.layers[0]).toBe(layer);
+    expect(out.layers).toEqual([
+      [0, 0, 1, 1],
+      [0, 0, 1, 1],
+    ]);
+    expect(out.specular).toEqual([0, 0, 1, 1]);
+    stageUvTransforms(material, null, null, material.uvOffsetMask, out);
+    expect(out).toEqual(stageUvTransforms(material, null));
+  });
   it("overlays only written material slots on a shape's node offsets and own transforms", () => {
     const animation: UvAnimation = {
       frameCount: 1,

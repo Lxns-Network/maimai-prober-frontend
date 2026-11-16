@@ -139,6 +139,7 @@ interface ShapeProgram {
   readonly nodeIndices: readonly number[];
   readonly material: StageMaterial;
   readonly staticUv: ReturnType<typeof stageUvTransforms>;
+  readonly animatedUv: ReturnType<typeof stageUvTransforms>;
   readonly state: DeviceStateSet;
   readonly vao: WebGLVertexArrayObject;
   readonly buffers: WebGLBuffer[];
@@ -574,6 +575,7 @@ export function createStageRenderer(
           nodeIndices,
           material,
           staticUv: stageUvTransforms(material, null),
+          animatedUv: stageUvTransforms(material, null),
           state,
           vao,
           buffers: allocatedBuffers,
@@ -1435,7 +1437,7 @@ export function createStageRenderer(
               const transforms =
                 !entry.uvOffsets && !uvAnimation && uvMask === m.uvOffsetMask
                   ? shape.staticUv
-                  : stageUvTransforms(m, entry.uvOffsets, uvAnimation, uvMask);
+                  : stageUvTransforms(m, entry.uvOffsets, uvAnimation, uvMask, shape.animatedUv);
               gl.uniform4fv(u("uvOffsetScale0"), transforms.layers[0]);
               gl.uniform4fv(u("uvOffsetScale1"), transforms.layers[1]);
               gl.uniform4fv(u("specularOffsetScale"), transforms.specular);

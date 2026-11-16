@@ -158,7 +158,12 @@ function quaternionSine(value: number): number {
 }
 
 /** Interpolates from `a` toward `b` with `weight` on `a`, along the shorter arc. */
-function slerp(a: readonly number[], b: readonly number[], weight: number): number[] {
+function slerp(
+  a: readonly number[],
+  b: readonly number[],
+  weight: number,
+  out = new Array<number>(4),
+): number[] {
   weight = f(weight);
   let dot = f(f(f(f(b[1] * a[1]) + f(b[0] * a[0])) + f(b[2] * a[2])) + f(b[3] * a[3]));
   const sign = dot < 0 ? -1 : 1;
@@ -177,11 +182,14 @@ function slerp(a: readonly number[], b: readonly number[], weight: number): numb
     left = f(quaternionSine(f(theta * weight)) / denominator);
   }
   left = f(left * sign);
-  return b.map((value, index) =>
-    index === 3
-      ? f(f(left * operand[index]) + f(right * value))
-      : f(f(value * right) + f(left * operand[index])),
-  );
+  for (let index = 0; index < 4; index++) {
+    const value = b[index];
+    out[index] =
+      index === 3
+        ? f(f(left * operand[index]) + f(right * value))
+        : f(f(value * right) + f(left * operand[index]));
+  }
+  return out;
 }
 
 /** A track with its animated curves decoded. */
@@ -198,7 +206,7 @@ export interface StageAnimation {
   readonly cvu: Cvu;
   tracks(): readonly Track[];
   /** Samples a valid track index at a frame within the animation. */
-  sample(index: number, frame: number): StageProviderPose;
+  sample(index: number, frame: number, out?: MutableProviderPose): StageProviderPose;
 }
 
 const animations = new WeakMap<Uint8Array, StageAnimation>();
@@ -228,46 +236,79 @@ export function stageAnimation(bytes: Uint8Array): StageAnimation {
         });
       return tracks;
     },
-    sample(index, frame) {
-      return sampleTrack(this.tracks()[index], frame, cvu.frameCount);
+    sample(index, frame, out) {
+      return sampleTrack(this.tracks()[index], frame, cvu.frameCount, out);
     },
   };
   animations.set(bytes, animation);
   return animation;
 }
 
-function vector(curves: (Curve | null)[], rest: readonly number[], time: number): number[] {
-  return rest.map((value, i) => {
+function vector(
+  curves: (Curve | null)[],
+  rest: readonly number[],
+  time: number,
+  out: number[],
+): number[] {
+  for (let i = 0; i < rest.length; i++) {
     const curve = curves[i];
-    return curve ? sampleCurve(curve, time) : value;
-  });
+    out[i] = curve ? sampleCurve(curve, time) : rest[i];
+  }
+  return out;
 }
 
-function sampleTrack(track: Track, time: number, frameCount: number): StageProviderPose {
-  const position = vector(track.position, track.source.position, time);
-  const scale = vector(track.scale, track.source.scale, time);
-  let quaternion: number[] = [...track.source.quaternion];
+interface MutableProviderPose extends StageProviderPose {
+  position: number[];
+  quaternion: number[];
+  scale: number[];
+  active: boolean;
+}
+
+const emptyPose = (): MutableProviderPose => ({
+  position: new Array(3),
+  quaternion: new Array(4),
+  scale: new Array(3),
+  active: true,
+});
+const nextQuaternion = new Array<number>(4);
+
+function sampleTrack(
+  track: Track,
+  time: number,
+  frameCount: number,
+  out = emptyPose(),
+): MutableProviderPose {
+  vector(track.position, track.source.position, time, out.position);
+  vector(track.scale, track.source.scale, time, out.scale);
+  const quaternion = out.quaternion;
   if (track.source.flags & 2) {
     const left = Math.trunc(time);
     const right = f(time + 1) >= frameCount ? 0 : left + 1;
     const fraction = f(time - left);
-    const current = vector(track.quaternion, track.source.quaternion, left);
-    quaternion =
-      fraction <= EPSILON
-        ? current
-        : slerp(current, vector(track.quaternion, track.source.quaternion, right), f(1 - fraction));
-  }
-  if (quaternion[3] < 0) quaternion = quaternion.map((v) => -v);
-  return {
-    position,
-    scale,
-    quaternion,
-    active: track.active ? sampleCurve(track.active, Math.floor(time)) > 0.5 : true,
-  };
+    vector(track.quaternion, track.source.quaternion, left, quaternion);
+    if (fraction > EPSILON)
+      slerp(
+        quaternion,
+        vector(track.quaternion, track.source.quaternion, right, nextQuaternion),
+        f(1 - fraction),
+        quaternion,
+      );
+  } else for (let i = 0; i < 4; i++) quaternion[i] = track.source.quaternion[i];
+  if (quaternion[3] < 0) for (let i = 0; i < 4; i++) quaternion[i] = -quaternion[i];
+  out.active = track.active ? sampleCurve(track.active, Math.floor(time)) > 0.5 : true;
+  return out;
 }
 
-const lerp = (next: readonly number[], previous: readonly number[], weight: number) =>
-  next.map((value, i) => f(f(f(value - previous[i]) * weight) + previous[i]));
+const lerp = (
+  next: readonly number[],
+  previous: readonly number[],
+  weight: number,
+  out = new Array<number>(next.length),
+) => {
+  for (let i = 0; i < next.length; i++)
+    out[i] = f(f(f(next[i] - previous[i]) * weight) + previous[i]);
+  return out;
+};
 
 /** A provider pose used by the ordered animation write. */
 export interface StageProviderPose {
@@ -287,6 +328,18 @@ export function blendStageProviderPose(
   sample.quaternion = slerp(sample.quaternion, previous.quaternion, weight);
   sample.scale = lerp(sample.scale, previous.scale, f(weight));
   return sample;
+}
+
+function blendProviderInto(
+  previous: StageProviderPose,
+  sample: StageProviderPose,
+  weight: number,
+  out: MutableProviderPose,
+): void {
+  lerp(sample.position, previous.position, f(weight), out.position);
+  slerp(sample.quaternion, previous.quaternion, weight, out.quaternion);
+  lerp(sample.scale, previous.scale, f(weight), out.scale);
+  out.active = sample.active;
 }
 
 /** The words of a node field as floats. */
@@ -369,13 +422,13 @@ export interface StageModelPose {
   readonly active: boolean[];
 }
 
-/** Mutable provider values belonging to one scene model instance. */
+/** Mutable provider values owned by one scene instance; updates reuse its arrays and matrices. */
 export interface StageModelProvider {
-  poses: StageProviderPose[];
+  poses: MutableProviderPose[];
   pose: StageModelPose;
   playback: {
     bytes: Uint8Array;
-    samples: StageProviderPose[];
+    samples: MutableProviderPose[];
     previous: StageProviderPose[];
     binding: readonly [number, number][];
   } | null;
@@ -397,17 +450,19 @@ function providerWorlds(
   model: StageModel,
   rest: readonly Rest[],
   poses: readonly StageProviderPose[],
+  retained?: StageModelPose,
 ): StageModelPose {
   const providers = stageProviderNodes(model);
-  const worlds: Float32Array[] = new Array(rest.length);
-  const active: boolean[] = new Array(rest.length);
+  const worlds: Float32Array[] = retained?.worlds ?? new Array(rest.length);
+  const active: boolean[] = retained?.active ?? new Array(rest.length);
+  const local = new Float32Array(12);
   for (const i of providers) {
     const node = rest[i];
     const pose = poses[i];
-    const local = providerLocal(pose.position, pose.quaternion, pose.scale);
     active[i] = pose.active;
-    worlds[i] =
-      node.parent < 0 ? local : composeAffine(worlds[node.parent], local, new Float32Array(12));
+    const world = worlds[i] ?? new Float32Array(12);
+    providerLocal(pose.position, pose.quaternion, pose.scale, node.parent < 0 ? world : local);
+    worlds[i] = node.parent < 0 ? world : composeAffine(worlds[node.parent], local, world);
   }
   for (let index = 0; index < rest.length; index++) {
     const first = rest[index].provider;
@@ -417,7 +472,7 @@ function providerWorlds(
   return { worlds, active };
 }
 
-/** Applies ordered track writes, blending from retained per-track samples on resource changes. */
+/** Applies ordered writes in place and publishes a new pose identity for renderer caches. */
 export function updateStageModelProvider(
   model: StageModel,
   bytes: Uint8Array,
@@ -439,20 +494,42 @@ export function updateStageModelProvider(
       const samples = playback.samples;
       playback.binding.forEach(([node], index) => last.set(node, samples[index]));
     }
-    const previous = binding.map(([node]) => last.get(node) ?? provider.poses[node]);
-    playback = { bytes, binding, previous, samples: playback ? previous.slice() : previous };
+    const previous = binding.map(([node]) => {
+      const pose = last.get(node) ?? provider.poses[node];
+      return {
+        position: [...pose.position],
+        quaternion: [...pose.quaternion],
+        scale: [...pose.scale],
+        active: pose.active,
+      };
+    });
+    const samples = binding.map(() => emptyPose());
+    if (!playback) {
+      for (let i = 0; i < samples.length; i++) {
+        const pose = previous[i];
+        samples[i].position = [...pose.position];
+        samples[i].quaternion = [...pose.quaternion];
+        samples[i].scale = [...pose.scale];
+        samples[i].active = pose.active;
+      }
+    }
+    playback = { bytes, binding, previous: playback ? previous : samples, samples };
   }
-  const samples = binding.map(([, track]) => animation.sample(track, time));
+  const samples = playback.samples;
   const blend = blendWeight < 1 && playback.previous !== playback.samples;
-  if (blend)
-    samples.forEach((sample, index) =>
-      blendStageProviderPose(playback.previous[index], sample, blendWeight),
-    );
-  const poses = provider.poses.slice();
-  binding.forEach(([node], index) => {
-    poses[node] = blendStageProviderPose(poses[node], { ...samples[index] }, 1);
-  });
-  const pose = providerWorlds(model, rest, poses);
+  for (let index = 0; index < binding.length; index++) {
+    const sample = samples[index];
+    animation.sample(binding[index][1], time, sample);
+    if (blend) blendProviderInto(playback.previous[index], sample, blendWeight, sample);
+  }
+  const poses = provider.poses;
+  for (let index = 0; index < binding.length; index++) {
+    const node = binding[index][0];
+    const previous = poses[node];
+    const sample = samples[index];
+    blendProviderInto(previous, sample, 1, previous);
+  }
+  const pose = providerWorlds(model, rest, poses, provider.pose);
   provider.poses = poses;
   provider.pose = pose;
   playback.samples = samples;
