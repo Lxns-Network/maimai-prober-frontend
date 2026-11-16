@@ -175,6 +175,25 @@ async function setup(
     devicePixelRatio: 1,
     matchMedia: () => ({ addEventListener() {}, removeEventListener() {} }),
   });
+  const visibility = {
+    state: "visible" as DocumentVisibilityState,
+    changed: null as (() => void) | null,
+  };
+  vi.stubGlobal("document", {
+    get visibilityState() {
+      return visibility.state;
+    },
+    addEventListener(_type: string, listener: () => void) {
+      visibility.changed = listener;
+    },
+    removeEventListener() {
+      visibility.changed = null;
+    },
+  });
+  const setVisibility = (state: DocumentVisibilityState) => {
+    visibility.state = state;
+    visibility.changed?.();
+  };
   vi.stubGlobal("fetch", async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(0) }));
   const frames = new Map<number, FrameRequestCallback>();
   let nextFrame = 1;
@@ -264,6 +283,7 @@ async function setup(
     sources,
     flushFrame,
     advance,
+    setVisibility,
     start,
     cleanup,
     audio,
@@ -644,6 +664,36 @@ describe("preview scrub handoff", () => {
       expect(f.sources[0].start.mock.calls[0][1]).toBe(5);
     } finally {
       f.cleanup();
+    }
+  });
+});
+
+describe("preview hidden page", () => {
+  it("polls the music from a timer for SFX and looping, drawing again once shown", async () => {
+    const f = await setup();
+    try {
+      await f.start();
+      f.page.setLoop({ start: 0, end: 1 });
+      vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+      f.setVisibility("hidden");
+      mock.render.mockClear();
+      mock.sfxUpdate.mockClear();
+      f.advance(0.1);
+      vi.advanceTimersByTime(100);
+      expect(mock.sfxUpdate).toHaveBeenCalledTimes(1);
+      f.advance(1);
+      vi.advanceTimersByTime(100);
+      f.advance(0.1);
+      vi.advanceTimersByTime(100);
+      expect(f.sources).toHaveLength(2);
+      expect(f.sources[1].start.mock.calls[0][1]).toBe(2);
+      expect(mock.render).not.toHaveBeenCalled();
+      f.setVisibility("visible");
+      f.flushFrame();
+      expect(mock.render).toHaveBeenCalledTimes(1);
+    } finally {
+      f.cleanup();
+      vi.useRealTimers();
     }
   });
 });

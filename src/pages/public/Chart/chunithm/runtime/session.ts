@@ -32,6 +32,11 @@ import { DEFAULT_JUDGE_DISPLAY_ROW, JUDGE_DISPLAY_OPTIONS } from "../options/jud
 import { createChartOverview } from "./chartOverview";
 
 const EFFECT_LIST = "effects/resources.json";
+/**
+ * Poll period on a hidden page, in milliseconds: two polls fit in the 250 ms of cues the SFX player
+ * schedules ahead.
+ */
+const HIDDEN_POLL_MILLISECONDS = 100;
 
 /**
  * Runs the page with engine notes and interface over the scene's field, driven by the music clock.
@@ -92,6 +97,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   /** Where a drag of the timeline is, and whether playback picks up there once it is let go. */
   let scrubbing: { seconds: number; resume: boolean } | null = null;
   let frame = 0;
+  let hiddenTimer: ReturnType<typeof setInterval> | null = null;
   let fpsLimit = input.fpsLimit ?? 0;
   let nextDrawTime = 0;
   let ready = false;
@@ -120,9 +126,16 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     live.setSeconds(clamped);
     if (import.meta.env.DEV) canvas.setAttribute("data-chart-frame", String(clamped));
   };
+  /** The loop's draw: a hidden page keeps polling the music without rendering unseen frames. */
+  const present = (at: number) => {
+    if (document.visibilityState !== "hidden") draw(at);
+  };
   const release = () => {
     changeController?.abort();
     viewport.dispose();
+    document.removeEventListener("visibilitychange", visibilityChanged);
+    if (hiddenTimer !== null) clearInterval(hiddenTimer);
+    hiddenTimer = null;
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
     input.setControls(null);
@@ -161,7 +174,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         audibleRate = state.position.playbackRate;
         ui.setSeeking(state.transitioning);
         if (state.needsFrame) request();
-        draw(scrubbing.seconds);
+        present(scrubbing.seconds);
       } else if (music && audio?.running) {
         const state = music.poll();
         audibleRate = state.position.playbackRate;
@@ -176,7 +189,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           audio?.pauseSfx();
           frameHost?.resetBackgroundHistory();
           seconds = loopRange.start;
-          draw(seconds);
+          present(seconds);
           request();
           return;
         }
@@ -191,7 +204,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           desiredPlaying = false;
           ui.setPlaying(false);
           seconds = durationSeconds;
-          draw(seconds);
+          present(seconds);
           if (state.position.phase === "playing" || hud?.scrolling) request();
           return;
         }
@@ -200,7 +213,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         ui.setSeeking(state.transitioning);
         seconds = state.requestedSeconds ?? state.position.bufferSeconds;
         if (!fpsLimit || !desiredPlaying || state.transitioning || timestamp >= nextDrawTime) {
-          draw(seconds);
+          present(seconds);
           if (fpsLimit) {
             const interval = 1000 / fpsLimit;
             nextDrawTime =
@@ -210,7 +223,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           }
         }
         if (state.needsFrame) request(false);
-      } else draw(scrubbing?.seconds ?? seconds);
+      } else present(scrubbing?.seconds ?? seconds);
       if (hud?.scrolling) request(false);
     } catch (cause) {
       if (isMusicOutputPending(cause)) request();
@@ -227,6 +240,25 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     () => !ready || capturing,
     request,
   );
+  /**
+   * Animation frames stop on a hidden page while the music plays on, so a timer polls the music
+   * there for looping, the end of the chart and SFX scheduling. Showing the page draws again.
+   */
+  const visibilityChanged = () => {
+    if (hiddenTimer !== null) clearInterval(hiddenTimer);
+    hiddenTimer = null;
+    if (document.visibilityState !== "hidden") {
+      request();
+      return;
+    }
+    hiddenTimer = setInterval(() => {
+      if (!desiredPlaying) return;
+      // A frame requested by the previous poll never ran; left queued, they all run on return.
+      if (frame) cancelAnimationFrame(frame);
+      tick(performance.now());
+    }, HIDDEN_POLL_MILLISECONDS);
+  };
+  document.addEventListener("visibilitychange", visibilityChanged);
 
   const changeDifficulty = async () => {
     if (!ready || !chartInput || !notes || !hud || !audio || !music || capturing) return;

@@ -136,6 +136,31 @@ describe("music player", () => {
     expect(f.sources[1].start.mock.calls[0][1]).toBeCloseTo(stopAt - startAt, 12);
   });
 
+  it("pauses when the context clock advances before the stop is queued", () => {
+    const f = fakeContext();
+    const music = createMusicPlayer({
+      context: f.context,
+      buffer: f.buffer,
+      initialSeconds: 0,
+      scheduleLeadSeconds: 0.05,
+    });
+    music.play();
+    music.poll();
+    f.advance(1);
+    music.poll();
+    // Chromium updates `currentTime` from the audio thread, also between reads in one task.
+    Object.defineProperty(f.context, "currentTime", {
+      get() {
+        f.clock.current += 128 / f.context.sampleRate;
+        return f.clock.current;
+      },
+    });
+    music.pause();
+    expect(f.sources[0].stop).toHaveBeenCalledTimes(1);
+    f.advance(0.2);
+    expect(music.poll().position.phase).toBe("paused");
+  });
+
   it("hands a seek during playback to a new source at the target", () => {
     const f = fakeContext();
     const music = createMusicPlayer({
