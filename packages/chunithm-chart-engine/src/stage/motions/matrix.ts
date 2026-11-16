@@ -9,6 +9,7 @@ import {
 import { DEGREES_TO_ANGLE_CODE, sinCosAngleCode } from "../../math/trig";
 import { seededValue } from "../random";
 import { elementMatrix, nodeClock, nodeSeed } from "./common";
+import { stageTransformRequired } from "../runtime";
 
 const f = Math.fround;
 const RECORD_BYTES = 116;
@@ -130,7 +131,12 @@ function translate(target: Float32Array, v: Float32Array, mode: number, out: Flo
   multiplyDiagonalTranslation(target, 1, 1, 1, out[12], out[13], out[14]);
 }
 
-function rotate(target: Float32Array, v: Float32Array, out: Float32Array): void {
+function rotate(
+  target: Float32Array,
+  v: Float32Array,
+  out: Float32Array,
+  accumulate: boolean,
+): void {
   for (let i = 0; i < 3; i++) {
     let degrees = f(v[i] % 360);
     v[i] = degrees;
@@ -138,16 +144,22 @@ function rotate(target: Float32Array, v: Float32Array, out: Float32Array): void 
     codes[i] = Math.trunc(f(degrees * DEGREES_TO_ANGLE_CODE));
   }
   rotateCodes(target, codes);
-  rotateCodes(out, codes);
+  if (accumulate) rotateCodes(out, codes);
 }
 
-function scale(target: Float32Array, v: Float32Array, op: number, out: Float32Array): void {
+function scale(
+  target: Float32Array,
+  v: Float32Array,
+  op: number,
+  out: Float32Array,
+  accumulate: boolean,
+): void {
   const plus = op === 1 || op === 2 || op === 5 || op === 6;
   const x = plus ? f(v[0] + 1) : v[0];
   const y = plus ? f(v[1] + 1) : v[1];
   const z = plus ? f(v[2] + 1) : v[2];
   multiplyDiagonalTranslation(target, x, y, z, 0, 0, 0);
-  multiplyDiagonalTranslation(out, x, y, z, 0, 0, 0);
+  if (accumulate) multiplyDiagonalTranslation(out, x, y, z, 0, 0, 0);
 }
 
 class MatrixMotion implements MotionInstance {
@@ -192,7 +204,11 @@ class MatrixMotion implements MotionInstance {
     }
   }
 
-  update(node: StageNode, scratch: Float32Array): boolean {
+  update(node: StageNode, scratch: Float32Array, accumulate = true): boolean {
+    if (!stageTransformRequired(node)) {
+      this.elapsed = f(node.delta + this.elapsed);
+      return true;
+    }
     const scene = this.scene;
     let target: Float32Array | null;
     let produced = false;
@@ -209,7 +225,7 @@ class MatrixMotion implements MotionInstance {
       if (!(r.start <= this.elapsed && (!ended || r.keep))) continue;
       if (r.channel >= 100) throw new RangeError(`Stage matrix: element channel ${r.channel}`);
       if (!ended) {
-        const seed = seedOf(node, r.source);
+        const seed = r.source === 3 ? seedOf(node, r.source) : 0;
         const c = r.current;
         switch (r.op) {
           case 0:
@@ -286,12 +302,14 @@ class MatrixMotion implements MotionInstance {
             break;
         }
       }
-      setIdentity(out);
+      if (accumulate || r.channel === 0) setIdentity(out);
       if (r.channel === 0) translate(target, r.current, r.mode, out);
-      else if (r.channel === 1) rotate(target, r.current, out);
-      else if (r.channel === 2) scale(target, r.current, r.op, out);
-      multiplyAffine(scratch, out, product);
-      scratch.set(product);
+      else if (r.channel === 1) rotate(target, r.current, out, accumulate);
+      else if (r.channel === 2) scale(target, r.current, r.op, out, accumulate);
+      if (accumulate) {
+        multiplyAffine(scratch, out, product);
+        scratch.set(product);
+      }
     }
     this.elapsed = f(node.delta + this.elapsed);
     return produced;

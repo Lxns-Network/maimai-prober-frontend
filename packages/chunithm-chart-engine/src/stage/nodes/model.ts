@@ -2,6 +2,7 @@ import {
   computeWorld,
   applyMotions,
   stageNodeDrawable,
+  stageTransformRequired,
   sceneState,
   type NodeBehavior,
   type StageNode,
@@ -371,8 +372,9 @@ function modelBehavior(type: number, elementType: number, settled: boolean): Nod
     update(node) {
       const state = node.extension as StageModelState;
       if (type === INSTANCED_TYPE) state.instanceJointAnimation = state.instanceAnimation;
-      computeWorld(node);
+      if (stageTransformRequired(node)) computeWorld(node);
       applyMotions(node);
+      if (!stageTransformRequired(node)) return;
       if (state.instanceGroup) {
         let target = node.scene.options.targetScene;
         for (let parent = node.parent; parent; parent = parent.parent) {

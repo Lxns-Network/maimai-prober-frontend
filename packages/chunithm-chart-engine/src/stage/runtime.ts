@@ -34,8 +34,8 @@ export interface MotionSlot {
 export interface MotionInstance {
   readonly behavior: MotionBehavior;
   readonly record: StageMotionRecord;
-  /** Advances one step; writes a transform into `scratch` and returns true when it produced one. */
-  update(node: StageNode, scratch: Float32Array): boolean;
+  /** Advances one step; writes a transform into `scratch` unless accumulation is disabled, and returns true when it produced one. */
+  update(node: StageNode, scratch: Float32Array, accumulate?: boolean): boolean;
   /** Releases the motion on state exit, expiry, node retirement or an unsupported update being skipped. */
   dispose?(node: StageNode): void;
   /** Receives a float parameter sent to this initialized motion. */
@@ -393,17 +393,18 @@ function retireMotions(node: StageNode): void {
 }
 
 function runList(node: StageNode, list: MotionSlot[], accumulate: boolean): void {
+  const transform = stageTransformRequired(node);
   for (const slot of list) {
     if (!slot.instance) continue;
-    setIdentity(scratch);
+    if (transform) setIdentity(scratch);
     let produced: boolean;
     try {
-      produced = slot.instance.update(node, scratch);
+      produced = slot.instance.update(node, scratch, accumulate);
     } catch (error) {
       skipMotion(node, slot, error);
       continue;
     }
-    if (accumulate && produced) {
+    if (transform && accumulate && produced) {
       multiplyAffine(node.local, scratch, product);
       node.local.set(product);
     }
@@ -914,7 +915,12 @@ function prePass(scene: StageScene, node: StageNode): void {
   }
 }
 
-function updatePass(scene: StageScene, node: StageNode, parent: StageNode | null): void {
+function updatePass(
+  scene: StageScene,
+  node: StageNode,
+  parent: StageNode | null,
+  leaves?: ReadonlySet<StageNodeRecord>,
+): void {
   if (node.flags & 0x15) return;
   if (parent) {
     node.delta = parent.delta;
@@ -924,16 +930,132 @@ function updatePass(scene: StageScene, node: StageNode, parent: StageNode | null
     }
   }
   if (node.flags & 0x200100) {
-    for (const child of node.children) updatePass(scene, child, node);
+    for (const child of node.children) updatePass(scene, child, node, leaves);
     return;
   }
   const behavior = behaviorOf(scene, node);
-  if (behavior?.update) behavior.update(node);
-  else defaultUpdate(node);
+  if (
+    node.record &&
+    leaves?.has(node.record) &&
+    node.flags & NODE_UPDATED &&
+    !(node.flags & (NODE_COORDINATE_TARGET | NODE_FIXED_WORLD))
+  )
+    deferredTransform = node;
+  try {
+    if (behavior?.update) behavior.update(node);
+    else defaultUpdate(node);
+  } finally {
+    deferredTransform = null;
+  }
   node.flags |= NODE_UPDATED;
-  for (let i = 0; i < node.children.length; i++) updatePass(scene, node.children[i], node);
+  for (let i = 0; i < node.children.length; i++) updatePass(scene, node.children[i], node, leaves);
   behavior?.afterChildren?.(node);
   if (!(node.flags & 0x200300)) behavior?.post?.(node);
+}
+
+let deferredTransform: StageNode | null = null;
+
+/** False only for independent leaf instances during undisplayed seek steps. */
+export function stageTransformRequired(node: StageNode): boolean {
+  return deferredTransform !== node;
+}
+
+const seekLeaves = new WeakMap<StageGraph, ReadonlySet<StageNodeRecord>>();
+/** Leaf transforms can be deferred only when no graph consumer reads them and each motion can restore its output from its clock. */
+function independentSeekLeaves(graph: StageGraph): ReadonlySet<StageNodeRecord> {
+  const cached = seekLeaves.get(graph);
+  if (cached) return cached;
+  const eligible = new Set<StageNodeRecord>();
+  seekLeaves.set(graph, eligible);
+  for (const record of graph.nodes) {
+    if (
+      ![
+        2, 3, 6000001, 6001001, 6001010, 6001011, 6001012, 6001100, 6001101, 6001102, 6001104,
+        6001106, 6001109, 6001203, 6001205,
+      ].includes(record.type)
+    )
+      return eligible;
+    if (record.elements.some((element) => element.type === 1001)) return eligible;
+    for (const motion of [
+      ...(record.before ?? []),
+      ...(record.after ?? []),
+      ...record.states.flatMap((state) => state.motions),
+    ]) {
+      if (![100, 106, 250, 300, 403, 751].includes(motion.type)) return eligible;
+      if (motion.data === null) return eligible;
+      if (motion.type === 106 && graph.i32(motion.data + 4) > 0) {
+        const head = graph.target(motion.data);
+        for (let i = 0; i < graph.i32(motion.data + 4); i++)
+          if (graph.u32(head + i * 92 + 0x40)) return eligible;
+      }
+      if (motion.type === 250 && graph.i32(motion.data) > 0) {
+        const head = graph.target(motion.data + 4);
+        for (let i = 0; i < graph.i32(motion.data); i++)
+          if (graph.i32(head + i * 20) === 0 && graph.i32(head + i * 20 + 4) === -1)
+            return eligible;
+      }
+    }
+  }
+  for (const record of graph.nodes)
+    if (
+      record.type === 6001010 &&
+      record.id === -1 &&
+      !(record.flags & RECORD_HALF_RATE) &&
+      !record.children.length &&
+      record.states.every(
+        (state) => state.carry === 0 && state.motions.some((motion) => motion.type === 106),
+      ) &&
+      record.elements.every((element) => {
+        if (element.type !== 400 && element.type !== 402) return true;
+        return graph.u32(element.offset + 12) === 0;
+      }) &&
+      [
+        ...(record.before ?? []),
+        ...(record.after ?? []),
+        ...record.states.flatMap((state) => state.motions),
+      ].every((motion) => {
+        if (
+          (motion.type === 100 || motion.type === 106) &&
+          (motion.start !== 0 ||
+            motion.startRange > 0 ||
+            motion.length >= 0 ||
+            motion.lengthRange > 0)
+        )
+          return false;
+        if (motion.type === 100) {
+          const data = motion.data!;
+          const head = graph.target(data + 8);
+          if (motion.ordinal >= 0 || graph.u32(data) !== 0) return false;
+          for (let i = 0; i < graph.u32(data + 4); i++) {
+            const at = head + i * 116;
+            if (
+              ![0, 1, 4].includes(graph.u32(at)) ||
+              graph.u32(at + 4) > 2 ||
+              (graph.u32(at + 4) === 0 && graph.u32(at + 8) > 2) ||
+              graph.u32(at + 12) === 3 ||
+              graph.f32(at + 24) !== 0 ||
+              graph.f32(at + 28) >= 0
+            )
+              return false;
+          }
+          return true;
+        }
+        if (motion.type === 106) {
+          const data = motion.data!;
+          if (graph.u32(data + 12) !== 0 || graph.i32(data + 8) >= 0 || graph.f32(data + 36) >= 0)
+            return false;
+          if (graph.i32(data + 4) === 0) return true;
+          const head = graph.target(data);
+          for (let i = 0; i < graph.i32(data + 4); i++)
+            if (graph.u32(head + i * 92 + 36) !== 2 || graph.u32(head + i * 92 + 40) !== 0)
+              return false;
+          return true;
+        }
+        return motion.type === 300 || motion.type === 751;
+      })
+    )
+      eligible.add(record);
+  return eligible;
 }
 
 function drawPass(scene: StageScene, node: StageNode): void {
@@ -986,8 +1108,8 @@ function retirePass(node: StageNode): void {
   }
 }
 
-/** Advances synchronized scene files one step. A failed step invalidates every scene in the group. */
-export function stepStageScenes(scenes: readonly StageScene[], delta = 1): void {
+/** Advances synchronized scenes. Seek deferral requires the built-in behaviors and two full steps before drawing or saving a checkpoint. A failed step invalidates the group. */
+export function stepStageScenes(scenes: readonly StageScene[], delta = 1, seek = false): void {
   for (const scene of scenes)
     if (scene.failure !== null) throw new Error(`Stage scene: failed step: ${scene.failure}`);
   try {
@@ -1000,7 +1122,14 @@ export function stepStageScenes(scenes: readonly StageScene[], delta = 1): void 
     for (const scene of scenes) {
       scene.top.delta = delta;
       prePass(scene, scene.top);
-      updatePass(scene, scene.top, null);
+      updatePass(
+        scene,
+        scene.top,
+        null,
+        seek && scene.graph && !scene.options.genericNodes
+          ? independentSeekLeaves(scene.graph)
+          : undefined,
+      );
     }
     for (const scene of scenes) scene.tick++;
   } catch (error) {

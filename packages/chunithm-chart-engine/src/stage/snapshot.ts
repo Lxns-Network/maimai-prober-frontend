@@ -5,6 +5,7 @@ import {
   type StageScene,
   type StageSceneOptions,
 } from "./runtime";
+import { instancedModelNode } from "./nodes/model";
 
 /** The objects and buffers every copy of a scene shares: its options and what they reach. */
 interface Shared {
@@ -218,6 +219,19 @@ export function createStageRewind(
   let kept: Kept[] = [];
   let bytes = 0;
   let failure: { readonly cause: unknown } | null = null;
+  const step = (live: StageScene[], target: number) => {
+    const next = live[0].tick + 1;
+    const defer =
+      next < target - 1 &&
+      next % every !== 0 &&
+      (next + 1) % every !== 0 &&
+      live.every(
+        (scene) => scene.options.nodes.get(instancedModelNode.type) === instancedModelNode,
+      );
+    stepStageScenes(live, 1, defer);
+    finishStageScenes(live);
+    keep(live);
+  };
   const keep = (live: StageScene[]) => {
     const tick = live[0].tick;
     if (tick % every !== 0) return;
@@ -250,9 +264,7 @@ export function createStageRewind(
           warming = latest ? cloneStageScenes(latest).map((copy) => copy.scene) : build();
         warming ??= build();
         while (warming[0].tick < tick && performance.now() < deadline) {
-          stepStageScenes(warming);
-          finishStageScenes(warming);
-          keep(warming);
+          step(warming, tick);
         }
         if (warming[0].tick < tick) return false;
         warming = null;
@@ -302,9 +314,7 @@ export function createStageRewind(
         else if (current < 0) scenes = build();
         const live = scenes!;
         while (live[0].tick < tick) {
-          stepStageScenes(live);
-          finishStageScenes(live);
-          keep(live);
+          step(live, tick);
         }
         return live;
       } catch (cause) {

@@ -6,6 +6,7 @@ import { MatrixElement, nthElement } from "../elements";
 import { nodeClock } from "./common";
 import { displayCameraMatrix, sceneCamera } from "./turnCamera";
 import { sinCosCode } from "../camera/math";
+import { stageTransformRequired } from "../runtime";
 
 const f = Math.fround;
 const RECORD_BYTES = 92;
@@ -355,6 +356,7 @@ class GoalMotion implements MotionInstance {
     const target = this.target(node);
     if (!target) return false;
     if (this.finished) {
+      if (!stageTransformRequired(node)) return true;
       if (this.mode === 1) {
         target[12] = target[13] = target[14] = 0;
         target[15] = 1;
@@ -381,6 +383,7 @@ class GoalMotion implements MotionInstance {
     let done = true;
     const current = this.current;
     current.set(this.base);
+    const deferred = !stageTransformRequired(node);
     for (let i = 0; i < this.records.length; i++) {
       const r = this.records[i];
       const start = this.starts[i];
@@ -406,15 +409,30 @@ class GoalMotion implements MotionInstance {
         }
       }
       const acc = r.channel === 0 ? translation : r.channel === 1 ? rotation : scale;
-      const value =
-        r.channel === 0 && r.sourced
-          ? this.source(node, r)
-          : this.values.subarray(i * 4, i * 4 + 4);
-      if (!this.approach(i, acc, value)) done = false;
+      if (deferred) {
+        if (this.times[i] < this.durations[i]) done = false;
+        else this.states[i] = 2;
+      } else {
+        const value =
+          r.channel === 0 && r.sourced
+            ? this.source(node, r)
+            : this.values.subarray(i * 4, i * 4 + 4);
+        if (!this.approach(i, acc, value)) done = false;
+      }
       if (r.channel === 0) translated = true;
       else if (r.channel === 1) rotated = true;
       else scaled = true;
       this.times[i] = f(this.times[i] + delta);
+    }
+    if (deferred && !done) {
+      this.elapsed = f(this.elapsed + delta);
+      return true;
+    }
+    if (deferred && done) {
+      scale.fill(1);
+      for (let i = 0; i < this.records.length; i++) {
+        this.approach(i, scale, this.values.subarray(i * 4, i * 4 + 4));
+      }
     }
     if (translated) {
       if (this.mode === 2) {
