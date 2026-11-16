@@ -245,30 +245,37 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
         style={props.isFullscreen ? { background: "transparent" } : undefined}
       >
         <Stack gap="sm">
-          <Timeline preview={preview} fullscreen={props.isFullscreen} disabled={exporting} />
-          <PlaybackButtons
-            {...props}
-            playing={preview.playing}
-            disabled={!ready}
-            toggle={preview.toggle}
-            restart={preview.restartMeasure}
-            restartLabel="重新播放当前小节"
-            stepMeasure={preview.stepMeasure}
-            stepLabel={["后退 5 秒", "前进 5 秒"]}
-            step={(direction) =>
-              preview.seek(
-                Math.max(
-                  0,
-                  Math.min(
-                    preview.durationSeconds,
-                    preview.live.time.getSnapshot() + direction * 5,
-                  ),
-                ),
-              )
-            }
-          >
-            <PlaybackActions {...props} preview={preview} onExporting={setExporting} />
-          </PlaybackButtons>
+          <PlaybackActions {...props} preview={preview} onExporting={setExporting}>
+            {(actions, selection) => (
+              <>
+                <Timeline preview={preview} fullscreen={props.isFullscreen} disabled={exporting} />
+                {selection}
+                <PlaybackButtons
+                  {...props}
+                  playing={preview.playing}
+                  disabled={!ready}
+                  toggle={preview.toggle}
+                  restart={preview.restartMeasure}
+                  restartLabel="重新播放当前小节"
+                  stepMeasure={preview.stepMeasure}
+                  stepLabel={["后退 5 秒", "前进 5 秒"]}
+                  step={(direction) =>
+                    preview.seek(
+                      Math.max(
+                        0,
+                        Math.min(
+                          preview.durationSeconds,
+                          preview.live.time.getSnapshot() + direction * 5,
+                        ),
+                      ),
+                    )
+                  }
+                >
+                  {actions}
+                </PlaybackButtons>
+              </>
+            )}
+          </PlaybackActions>
         </Stack>
       </Card>
     ),

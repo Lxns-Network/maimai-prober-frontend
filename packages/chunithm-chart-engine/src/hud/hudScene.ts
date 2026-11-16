@@ -264,7 +264,7 @@ export function createHudGeometry(scene: HudScene): HudGeometry {
 export interface HudChartState {
   choices: Record<HudChoiceKey, string>;
   level: number;
-  texts: Map<HudSlot, { glyphs: HudTextGlyph[]; registered: boolean }>;
+  texts: Map<HudSlot, { glyphs: HudTextGlyph[]; registered: boolean; scrollPeriod?: number }>;
   /** What the interface cannot draw for this chart. */
   missing: string[];
 }
@@ -294,7 +294,10 @@ export function prepareHudChart(scene: HudScene, chart: HudChart): HudChartState
     jacket: chart.jacket ? "jacket" : "none",
     stock: "0",
   };
-  const texts = new Map<HudSlot, { glyphs: HudTextGlyph[]; registered: boolean }>();
+  const texts = new Map<
+    HudSlot,
+    { glyphs: HudTextGlyph[]; registered: boolean; scrollPeriod?: number }
+  >();
   const picked = new Set(Object.entries(choices).map(([key, value]) => `${key}:${value}`));
   const missing = (scene.meta.missing ?? [])
     .filter((item) => item.choices.some((choice) => picked.has(choice)))
@@ -414,6 +417,7 @@ export function assembleHud(
   chart: HudChartState,
   values: HudValues,
   out: HudGeometry,
+  textSeconds = 0,
 ): void {
   let n = 0;
   const copy = (first: number, count: number) => {
@@ -491,9 +495,33 @@ export function assembleHud(
       if (slot.levels && !slot.levels.includes(chart.choices.level)) continue;
       const text = chart.texts.get(slot);
       if (!text) continue;
+      // Song FontParamData specifies scrollSpeed=40 and scrollWait=1; the wait is initial only.
+      const offset = text.scrollPeriod
+        ? Math.fround(
+            Math.max(0, Math.fround(Math.fround(textSeconds - 1) * 40)) % text.scrollPeriod,
+          )
+        : 0;
       for (const glyph of text.glyphs) {
-        transform(slot.matrix, glyph.vertices, out.positions, n * 18);
-        out.uvs.set(glyph.uvs, n * 12);
+        if (text.scrollPeriod) {
+          const left = glyph.vertices[3] - offset;
+          const right = glyph.vertices[0] - offset;
+          const clippedLeft = Math.max(left, -slot.profile.pivotX);
+          const clippedRight = Math.min(right, slot.profile.width - slot.profile.pivotX);
+          if (clippedLeft >= clippedRight) continue;
+          for (let v = 0; v < HUD_VERTICES; v++) {
+            const x = v === 0 || v === 3 || v === 4 ? clippedRight : clippedLeft;
+            expanded[v * 3] = x;
+            expanded[v * 3 + 1] = glyph.vertices[v * 3 + 1];
+            expanded[v * 3 + 2] = glyph.vertices[v * 3 + 2];
+            out.uvs[n * 12 + v * 2] =
+              glyph.uvs[2] + (glyph.uvs[0] - glyph.uvs[2]) * ((x - left) / (right - left));
+            out.uvs[n * 12 + v * 2 + 1] = glyph.uvs[v * 2 + 1];
+          }
+          transform(slot.matrix, expanded, out.positions, n * 18);
+        } else {
+          transform(slot.matrix, glyph.vertices, out.positions, n * 18);
+          out.uvs.set(glyph.uvs, n * 12);
+        }
         out.secondaryUvs.fill(0, n * 12, n * 12 + 12);
         colors(text.registered ? slot : slot.fallback, null);
         out.materials[n] = slot.materials[glyph.page];

@@ -47,6 +47,15 @@ it("preserves sampled poses across repeated fractions, forward steps and rewinds
   }
   expect(rewind.seek(5)[0].tick).toBe(5);
   expect((rewind.seek(5)[0].classState.get("pose") as { frame: number }).frame).toBe(5);
+  const displayed = rewind.sample(5, 0.25)[0];
+  expect(rewind.warm(30, performance.now())).toBe(false);
+  expect(rewind.warm(30, Infinity)).toBe(true);
+  expect(displayed.tick).toBe(5);
+  expect((displayed.classState.get("pose") as { frame: number }).frame).toBe(5.25);
+  for (const tick of [25, 10, 29, 2]) {
+    const warmed = rewind.sample(tick, 0.5)[0];
+    expect((warmed.classState.get("pose") as { frame: number }).frame).toBe(tick + 0.5);
+  }
 });
 
 it("clones retained per-draw material cells independently of the source scene", () => {
@@ -125,4 +134,56 @@ it("leaves packed integer words of mixed-view records unblended between ticks", 
     const pool = scene.classState.get("pool") as { i: Int32Array };
     expect(Array.from(pool.i)).toEqual([1, -1]);
   }
+});
+
+it("reuses display storage while refreshing changed fields and preserving rewind snapshots", () => {
+  const rewind = createStageRewind(
+    () => [
+      {
+        tick: 0,
+        failure: null,
+        traversalClock: { framePhase: 0 },
+        top: { flags: 0x15, children: [], graveyard: [] },
+        classState: new Map([["pose", { frame: 0, world: Float32Array.of(0), old: true }]]),
+        options: {
+          nodes: new Map([
+            [
+              0,
+              {
+                finishStep(scene: StageScene) {
+                  const pose = scene.classState.get("pose") as {
+                    frame: number;
+                    world: Float32Array;
+                    old?: boolean;
+                  };
+                  pose.frame = scene.tick;
+                  pose.world[0] = scene.tick * 2;
+                  if (scene.tick >= 4) delete pose.old;
+                },
+              },
+            ],
+          ]),
+        },
+      } as unknown as StageScene,
+    ],
+    2,
+  );
+  const first = rewind.sample(3, 0.5)[0];
+  const pose = first.classState.get("pose") as {
+    frame: number;
+    world: Float32Array;
+    old?: boolean;
+  };
+  const buffer = pose.world;
+  expect(pose.world[0]).toBe(7);
+  const second = rewind.sample(4, 0.5)[0];
+  expect(second).not.toBe(first);
+  const nextPose = second.classState.get("pose") as typeof pose;
+  expect(nextPose).not.toBe(pose);
+  expect(nextPose.world).toBe(buffer);
+  expect(nextPose.world[0]).toBe(9);
+  expect(nextPose).not.toHaveProperty("old");
+  const back = rewind.sample(2, 0.5)[0].classState.get("pose") as typeof pose;
+  expect(back.world[0]).toBe(5);
+  expect(back.old).toBe(true);
 });

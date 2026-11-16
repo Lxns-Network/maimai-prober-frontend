@@ -68,6 +68,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   let changeRevision = 0;
   let changeController: AbortController | null = null;
   let hud: HudHost | null = null;
+  let hudStartedAt = 0;
   let music: PreviewMusic | null = null;
   let audio: ReturnType<typeof createPreviewAudio> | null = null;
   let releasePresentation: (() => void) | null = null;
@@ -97,7 +98,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const capture = import.meta.env.DEV && new URLSearchParams(window.location.search).has("capture");
   /** Set once a recording drives the frames, which stops the animation loop for good. */
   let capturing = false;
-  const draw = (at: number) => {
+  const draw = (at: number, textSeconds = (performance.now() - hudStartedAt) / 1000) => {
     if (!frameHost) return;
     viewport.apply();
     const clamped = Math.max(
@@ -115,7 +116,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       alwaysKeepHiSpeed ? 1 / audibleRate : 1,
       audibleRate,
     );
-    hud?.draw(stepForSeconds(chartSeconds));
+    hud?.draw(stepForSeconds(chartSeconds), textSeconds);
     live.setSeconds(clamped);
     if (import.meta.env.DEV) canvas.setAttribute("data-chart-frame", String(clamped));
   };
@@ -191,7 +192,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           ui.setPlaying(false);
           seconds = durationSeconds;
           draw(seconds);
-          if (state.position.phase === "playing") request();
+          if (state.position.phase === "playing" || hud?.scrolling) request();
           return;
         }
         desiredPlaying = state.intendedPlaying;
@@ -210,6 +211,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         }
         if (state.needsFrame) request(false);
       } else draw(scrubbing?.seconds ?? seconds);
+      if (hud?.scrolling) request(false);
     } catch (cause) {
       if (isMusicOutputPending(cause)) request();
       else fail(cause);
@@ -329,6 +331,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       const restoreSeconds = live.time.getSnapshot();
       const resume = desiredPlaying;
       const restoreRate = audibleRate;
+      const exportTextSeconds = (performance.now() - hudStartedAt) / 1000;
       capturing = true;
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
@@ -375,7 +378,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           playbackSpeed,
           exportScope.signal,
           progress,
-          draw,
+          (at) => draw(at, exportTextSeconds + (at - range.start) / playbackSpeed),
         );
       } finally {
         exportScope.dispose();
@@ -687,6 +690,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
             dividerColor = color;
             request();
           },
+          musicReady.then((music) => music.durationSeconds),
         )
         .then((releasePrepared) => {
           if (!valid()) releasePrepared();
@@ -794,6 +798,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       timeline: noteHost.timeline,
       onChange: request,
     });
+    hudStartedAt = performance.now();
     mark("hud");
     void resources.jacket.then(
       () => mark("jacket"),

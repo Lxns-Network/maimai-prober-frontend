@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   ActionIcon,
   Button,
   Group,
   Menu,
-  NumberInput,
+  Box,
   Progress,
   Stack,
   Text,
   Tooltip,
 } from "@mantine/core";
+import { ExportRangeOverlay } from "../../components/ExportRangeOverlay/ExportRangeOverlay";
+import { ChartDensityTimeline } from "../../components/ChartDensityTimeline/ChartDensityTimeline";
+import classes from "../../components/Controls/Controls.module.css";
 import { notifications } from "@mantine/notifications";
 import {
   IconCamera,
@@ -30,12 +33,24 @@ export function PlaybackActions({
   isFullscreen,
   portalTarget,
   onExporting,
+  children,
 }: PlaybackControlsProps & {
   preview: ReturnType<typeof useChartPreview>;
   onExporting(value: boolean): void;
+  children(actions: ReactNode, selection: ReactNode): ReactNode;
 }) {
   const [range, setRange] = useState<{ start: number; end: number } | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
+  const [windowStart, setWindowStart] = useState(0);
+  const chart = useSyncExternalStore(
+    preview.live.chart.subscribe,
+    preview.live.chart.getSnapshot,
+    preview.live.chart.getSnapshot,
+  );
+  const windowDuration = Math.min(
+    preview.durationSeconds,
+    Math.max(15 * preview.playbackSpeed, 15, Math.min(60, preview.durationSeconds / 4)),
+  );
   const abort = useRef<AbortController | null>(null);
   useEffect(() => () => abort.current?.abort(), []);
   const portalProps = isFullscreen && portalTarget ? { target: portalTarget } : undefined;
@@ -73,7 +88,7 @@ export function PlaybackActions({
         await navigator.share({ files: [file] });
       }
     });
-  const exportGif = () =>
+  const exportGif = (action: "download" | "share") =>
     void run(async () => {
       if (!range) return;
       const controller = new AbortController();
@@ -83,7 +98,8 @@ export function PlaybackActions({
       onExporting(true);
       try {
         const blob = await preview.exportGif(range, controller.signal, setProgress);
-        downloadBlob(blob, name);
+        if (action === "download") downloadBlob(blob, name);
+        else await navigator.share({ files: [new File([blob], name, { type: "image/gif" })] });
         setRange(null);
       } finally {
         abort.current = null;
@@ -91,7 +107,7 @@ export function PlaybackActions({
         onExporting(false);
       }
     });
-  return (
+  const actions = (
     <>
       <Menu shadow="md" width={220} position="top" portalProps={portalProps}>
         <Menu.Target>
@@ -167,6 +183,16 @@ export function PlaybackActions({
                 preview.live.time.getSnapshot(),
                 Math.max(0, preview.durationSeconds - 0.5),
               );
+              if (preview.playing) preview.toggle();
+              setWindowStart(
+                Math.max(
+                  0,
+                  Math.min(
+                    start + 4 * preview.playbackSpeed - windowDuration / 2,
+                    preview.durationSeconds - windowDuration,
+                  ),
+                ),
+              );
               setRange({
                 start,
                 end: Math.min(start + 8 * preview.playbackSpeed, preview.durationSeconds),
@@ -201,63 +227,112 @@ export function PlaybackActions({
           <IconLink size={20} />
         </ActionIcon>
       </Tooltip>
-      {range && (
-        <Stack gap="xs" w="100%">
-          <Text size="sm">GIF 导出范围（秒）</Text>
-          <Group grow>
-            <NumberInput
-              aria-label="GIF 起点"
-              value={range.start}
-              min={0}
-              max={preview.durationSeconds}
-              decimalScale={2}
-              step={0.5}
-              disabled={disabled}
-              onChange={(value) =>
-                typeof value === "number" && setRange({ ...range, start: value })
-              }
-            />
-            <NumberInput
-              aria-label="GIF 终点"
-              value={range.end}
-              min={0}
-              max={preview.durationSeconds}
-              decimalScale={2}
-              step={0.5}
-              disabled={disabled}
-              onChange={(value) => typeof value === "number" && setRange({ ...range, end: value })}
-            />
-          </Group>
-          <Text size="xs" c="dimmed">
-            按当前播放速度导出，最长 15 秒。
-          </Text>
-          {progress !== null && <Progress value={progress} />}
-          <Group justify="flex-end">
-            <Button
-              size="xs"
-              variant="light"
-              color="gray"
-              onClick={() => (progress !== null ? abort.current?.abort() : setRange(null))}
-            >
-              取消
-            </Button>
-            <Button
-              size="xs"
-              onClick={exportGif}
-              loading={progress !== null}
-              disabled={
-                disabled ||
-                range.start < 0 ||
-                range.end > preview.durationSeconds ||
-                range.end - range.start < 0.5 ||
-                (range.end - range.start) / preview.playbackSpeed > 15
-              }
-            >
-              下载 GIF
-            </Button>
-          </Group>
-        </Stack>
-      )}
     </>
   );
+  const selection = range && (
+    <Stack gap="sm" data-mantine-color-scheme={isFullscreen ? "dark" : undefined}>
+      <Box
+        component="fieldset"
+        disabled={progress !== null}
+        m={0}
+        p={0}
+        bd={0}
+        style={progress !== null ? { pointerEvents: "none" } : undefined}
+      >
+        <div className={classes.exportZoomTrack}>
+          {chart && (
+            <ChartDensityTimeline
+              notes={chart.notes}
+              windowStartMs={windowStart * 1000}
+              durationMs={windowDuration * 1000}
+              scaleWindowStartMs={0}
+              scaleDurationMs={preview.durationSeconds * 1000}
+              barMaxHeight={22}
+              className={classes.exportZoomDensityTimeline}
+            />
+          )}
+          <Box className={classes.exportZoomLabel} left={0}>
+            {formatDuration(windowStart * 1000, "s")}
+          </Box>
+          <Box className={classes.exportZoomLabel} right={0}>
+            {formatDuration((windowStart + windowDuration) * 1000, "s")}
+          </Box>
+          <ExportRangeOverlay
+            range={{
+              startMs: (range.start - windowStart) * 1000,
+              endMs: (range.end - windowStart) * 1000,
+            }}
+            totalDurationMs={windowDuration * 1000}
+            maxDurationMs={15000 * preview.playbackSpeed}
+            onChange={(next) =>
+              setRange({
+                start: next.startMs / 1000 + windowStart,
+                end: next.endMs / 1000 + windowStart,
+              })
+            }
+            onPreview={(ms) => preview.seek(ms / 1000 + windowStart)}
+            onViewportPan={(ms) => {
+              const next = Math.max(
+                0,
+                Math.min(windowStart + ms / 1000, preview.durationSeconds - windowDuration),
+              );
+              const delta = next - windowStart;
+              setWindowStart(next);
+              setRange({ start: range.start + delta, end: range.end + delta });
+              preview.seek(range.start + delta);
+            }}
+          />
+        </div>
+      </Box>
+      <div className={classes.exportConfirmBar}>
+        {progress !== null ? (
+          <>
+            <Text size="xs" c="dimmed">
+              正在生成 GIF
+            </Text>
+            <Progress className={classes.exportProgress} size="sm" radius="xl" value={progress} />
+            <Button size="xs" variant="light" color="gray" onClick={() => abort.current?.abort()}>
+              取消
+            </Button>
+          </>
+        ) : (
+          <Group gap="xs" justify="center">
+            <Button size="xs" variant="light" color="gray" onClick={() => setRange(null)}>
+              取消
+            </Button>
+            <Menu shadow="md" width={160} position="top" portalProps={portalProps}>
+              <Menu.Target>
+                <Button
+                  size="xs"
+                  disabled={disabled || (range.end - range.start) / preview.playbackSpeed > 15}
+                >
+                  确认导出
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconShare size={14} />}
+                  disabled={
+                    !navigator.canShare?.({
+                      files: [new File([], "chart.gif", { type: "image/gif" })],
+                    })
+                  }
+                  onClick={() => exportGif("share")}
+                >
+                  系统分享
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconDownload size={14} />}
+                  onClick={() => exportGif("download")}
+                >
+                  下载 GIF
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
+        )}
+      </div>
+    </Stack>
+  );
+  return children(actions, selection);
 }

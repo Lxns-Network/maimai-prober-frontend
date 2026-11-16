@@ -384,12 +384,12 @@ describe("preview play timing", () => {
       f.page.selectPlayTiming("40");
       f.flushFrame();
       expect(mock.render).toHaveBeenLastCalledWith(4, 0, 4 - 2 / 60, 1, 1);
-      expect(mock.hudDraw).toHaveBeenLastCalledWith(476);
+      expect(mock.hudDraw).toHaveBeenLastCalledWith(476, 0);
       expect(f.live.time.getSnapshot()).toBe(4);
       f.page.selectPlayTiming("0");
       f.flushFrame();
       expect(mock.render).toHaveBeenLastCalledWith(4, 0, 4 + 2 / 60, 1, 1);
-      expect(mock.hudDraw).toHaveBeenLastCalledWith(484);
+      expect(mock.hudDraw).toHaveBeenLastCalledWith(484, 0);
       expect(f.live.time.getSnapshot()).toBe(4);
       await f.start();
       const position = mock.sfxUpdate.mock.lastCall![0];
@@ -406,7 +406,7 @@ describe("preview play timing", () => {
       f.page.selectPlayTiming("40");
       f.flushFrame();
       expect(mock.render).toHaveBeenLastCalledWith(0, 0, -2 / 60, 1, 1);
-      expect(mock.hudDraw).toHaveBeenLastCalledWith(0);
+      expect(mock.hudDraw).toHaveBeenLastCalledWith(0, 0);
       expect(f.live.time.getSnapshot()).toBe(0);
     } finally {
       f.cleanup();

@@ -68,6 +68,7 @@ export interface PreviewSessionInput {
     stage: Promise<number | null>,
     signal: AbortSignal,
     setDividerColor: (color: number) => void,
+    duration: Promise<number>,
   ) => Promise<() => void>;
   live: PreviewLiveState;
   ui: {

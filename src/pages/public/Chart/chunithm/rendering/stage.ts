@@ -12,6 +12,9 @@ import {
 import {
   createStageScene,
   createStageTraversalClock,
+  liveNodes,
+  resolveState,
+  setState,
   type StageHeldState,
 } from "@lxns-network/chunithm-chart-engine/stage/runtime";
 import {
@@ -101,6 +104,7 @@ interface StagePresentationInput {
   base: string;
   scene: FrameSurface;
   stage: Promise<number | null>;
+  duration?: Promise<number>;
   signal: AbortSignal;
   readFieldValue(): string;
   readShowBackground(): boolean;
@@ -122,9 +126,13 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
   const requestSignal = scope.signal;
   let disposed = false;
   let release = () => {};
+  let warmingFrame = 0;
+  let idleWork = 0;
   const detach = () => {
     if (disposed) return;
     disposed = true;
+    if (warmingFrame) cancelAnimationFrame(warmingFrame);
+    if (idleWork) cancelIdleCallback(idleWork);
     loading.abort();
     if (!signal.aborted) scene.setBackgroundRenderer(null);
     release();
@@ -256,7 +264,6 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
       const option = brightness.find((item) => item.label === heldLabel);
       if (option) held.set(FIELD_BRIGHTNESS_RECORD, { state: option.state, match: -1 });
       else held.delete(FIELD_BRIGHTNESS_RECORD);
-      rewind = null;
     };
     const build = () => {
       const traversalClock = createStageTraversalClock();
@@ -289,8 +296,43 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
       bindStageBlooms(scenes);
       return scenes;
     };
+    let warmTarget = 0;
+    let warmed = false;
+    void input.duration?.then(
+      (seconds) => {
+        warmTarget = Math.ceil(stageFrameForSeconds(seconds));
+        if (!disposed && !signal.aborted && rewind) scheduleWarm();
+      },
+      () => {},
+    );
+    const warm = () => {
+      warmingFrame = 0;
+      idleWork = 0;
+      if (disposed || signal.aborted || !input.readShowBackground() || !rewind || !warmTarget)
+        return;
+      try {
+        warmed = rewind.warm(warmTarget, performance.now() + 3);
+        if (!warmed) scheduleWarm();
+      } catch (cause) {
+        detach();
+        setError(cause instanceof Error ? cause.message : String(cause));
+        setStatus("error");
+      }
+    };
+    const scheduleWarm = () => {
+      if (warmed || warmingFrame || idleWork || !warmTarget) return;
+      warmingFrame = requestAnimationFrame(() => {
+        warmingFrame = 0;
+        if (typeof requestIdleCallback === "function") idleWork = requestIdleCallback(warm);
+        else warm();
+      });
+    };
     scene.setBackgroundRenderer((seconds, device, resetHistory) => {
       if (disposed || signal.aborted) return false;
+      if (!input.readShowBackground()) {
+        previousTick = null;
+        return false;
+      }
       const gl = device.gl as WebGL2RenderingContext;
       const width = device.canvas.width;
       const height = device.canvas.height;
@@ -308,8 +350,26 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         rewind ??= createStageRewind(build);
         const fraction = frame - tick;
         const [fieldScene, baseScene] = rewind.sample(tick, fraction);
+        scheduleWarm();
+        const fieldState = held.get(FIELD_BRIGHTNESS_RECORD);
+        if (fieldState) {
+          for (const node of liveNodes(fieldScene)) {
+            if (node.record?.id !== FIELD_BRIGHTNESS_RECORD) continue;
+            const index = resolveState(node, fieldState.state, false);
+            if (node.stateIndex !== index) {
+              setState(node, index, true);
+              for (const motion of node.graveyard) motion.dispose?.(node);
+              node.graveyard.length = 0;
+            }
+            // Brightness states are static transforms; apply after interpolation without advancing time.
+            const delta = node.delta;
+            node.delta = 0;
+            nodeBehaviors.get(node.record.type)!.update!(node);
+            node.delta = delta;
+          }
+        }
         const historyReset =
-          resetHistory || resized || fieldChanged || (previousTick !== null && tick < previousTick);
+          resetHistory || resized || fieldChanged || previousTick === null || tick < previousTick;
         if (historyReset) {
           for (const buffer of reflectionTargets.values()) buffer.sizing.reset();
           for (const buffer of shadowBuffers.values()) buffer.cameras = createStageShadowCameras();
@@ -586,47 +646,39 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
             texture: reflectionTexture,
           });
         }
-        if (input.readShowBackground()) {
-          post.begin(width, height, { tick, reset: historyReset });
-          {
-            const stats = renderer.draw({
-              scene: baseScene,
-              role: "base",
-              camera,
-              instanceCameras,
-              cameraScopes: baseCameraScopes,
-              lighting,
-              wind,
-              shadows,
-              deferFront: true,
-              captureAlpha: true,
-              rimMasks,
-              snapshotDepth,
-              reflections,
-            });
-            draws += stats.draws;
-            front = stats.finish;
-            for (const reason of stats.skipped.values()) skipped.add(reason);
-          }
-          post.end(
-            stagePostFilters(baseScene),
-            destination,
-            () => {
-              if (!front) return;
-              gl.viewport(0, 0, width, height);
-              gl.depthMask(true);
-              gl.clear(gl.DEPTH_BUFFER_BIT);
-              draws += front();
-            },
+        post.begin(width, height, { tick, reset: historyReset });
+        {
+          const stats = renderer.draw({
+            scene: baseScene,
+            role: "base",
             camera,
-          );
-        } else {
-          gl.bindFramebuffer(gl.FRAMEBUFFER, destination);
-          gl.disable(gl.SCISSOR_TEST);
-          gl.colorMask(true, true, true, true);
-          gl.clearColor(0, 0, 0, 1);
-          gl.clear(gl.COLOR_BUFFER_BIT);
+            instanceCameras,
+            cameraScopes: baseCameraScopes,
+            lighting,
+            wind,
+            shadows,
+            deferFront: true,
+            captureAlpha: true,
+            rimMasks,
+            snapshotDepth,
+            reflections,
+          });
+          draws += stats.draws;
+          front = stats.finish;
+          for (const reason of stats.skipped.values()) skipped.add(reason);
         }
+        post.end(
+          stagePostFilters(baseScene),
+          destination,
+          () => {
+            if (!front) return;
+            gl.viewport(0, 0, width, height);
+            gl.depthMask(true);
+            gl.clear(gl.DEPTH_BUFFER_BIT);
+            draws += front();
+          },
+          camera,
+        );
         gl.viewport(0, 0, width, height);
         gl.depthMask(true);
         gl.clear(gl.DEPTH_BUFFER_BIT);
