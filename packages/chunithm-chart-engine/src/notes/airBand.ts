@@ -310,6 +310,8 @@ export function createAirBand() {
   const segAt = (i: number): Segment => pool[i] ?? (pool[i] = blank());
   const segs: Segment[] = [];
   const clipOrigin = blank();
+  const layerEnd = [0, 0, 0];
+  const counts = [0, 0, 0];
 
   let capacity = 0;
   let vx = new Float64Array(0);
@@ -536,7 +538,7 @@ export function createAirBand() {
     }
     grow(count * 12);
     used = 0;
-    const layerEnd = [0, 0, 0];
+
     if (joints[0].enabled) {
       for (let i = 0; i < count; i++) {
         const s = segs[i];
@@ -577,11 +579,9 @@ export function createAirBand() {
       }
     }
     layerEnd[2] = used;
-    const counts = [
-      (layerEnd[0] >> 2) * 6,
-      ((layerEnd[1] - layerEnd[0]) >> 2) * 6,
-      ((layerEnd[2] - layerEnd[1]) >> 2) * 12,
-    ];
+    counts[0] = (layerEnd[0] >> 2) * 6;
+    counts[1] = ((layerEnd[1] - layerEnd[0]) >> 2) * 6;
+    counts[2] = ((layerEnd[2] - layerEnd[1]) >> 2) * 12;
     const total = counts[0] + counts[1] + counts[2];
     if (output.byteLength < (vertexOffset + total) * HOLD_VERTEX_BYTES)
       throw new RangeError("Vertex buffer is too small for the AIR band");

@@ -79,17 +79,13 @@ function cloneStageScenes(
   const buffers = new Map<ArrayBufferLike, ArrayBuffer>();
   let bytes = 0;
   const copy = (value: unknown, presentation = displayOnly): unknown => {
-    if (
-      value === null ||
-      typeof value !== "object" ||
-      shared.some((data) => data.objects.has(value))
-    )
-      return value;
+    if (value === null || typeof value !== "object") return value;
+    for (const data of shared) if (data.objects.has(value)) return value;
     const done = copies.get(value);
     if (done !== undefined) return done;
     const retained = previous.get(value);
     if (ArrayBuffer.isView(value)) {
-      if (shared.some((data) => data.buffers.has(value.buffer))) return value;
+      for (const data of shared) if (data.buffers.has(value.buffer)) return value;
       let buffer = buffers.get(value.buffer);
       if (!buffer) {
         buffer = ArrayBuffer.isView(retained)
@@ -238,6 +234,7 @@ export function createStageRewind(
 ): StageRewind {
   let scenes: StageScene[] | null = null;
   let warming: StageScene[] | null = null;
+  let warmStepMs = 0;
   let every = interval;
   let sampledTick = -1;
   let sampled: StageScene[] = [];
@@ -293,8 +290,14 @@ export function createStageRewind(
         if (latest !== warming)
           warming = latest ? cloneStageScenes(latest).map((copy) => copy.scene) : build();
         warming ??= build();
-        while (warming[0].tick < tick && performance.now() < deadline) {
+        while (warming[0].tick < tick) {
+          const started = performance.now();
+          if (started + warmStepMs >= deadline) {
+            warmStepMs *= 0.9;
+            break;
+          }
           step(warming, tick);
+          warmStepMs = Math.max(performance.now() - started, warmStepMs * 0.9);
         }
         if (warming[0].tick < tick) return false;
         warming = null;
@@ -453,23 +456,20 @@ class StageInterpolation {
       );
     };
     for (const original of next.keys()) {
-      if (!("record" in original && "birth" in original)) continue;
-      const node = original as StageNode;
-      if (transformChanged(node)) discontinuous.add(node.world);
-    }
-    for (const original of next.keys()) {
+      if ("record" in original && "birth" in original) {
+        const node = original as StageNode;
+        if (transformChanged(node)) discontinuous.add(node.world);
+      }
       const value = original as { vertices?: Float32Array; normalVertices?: Float32Array };
       if (value.vertices) packedVertices.set(value.vertices, 6);
       if (value.normalVertices) packedVertices.set(value.normalVertices, 9);
-    }
-    // A float view sharing its buffer with an integer view is a packed record (a particle pool's
-    // links, flags and colours beside its floats); blending it as floats corrupts those words.
-    for (const original of next.keys())
+      // Integer views share packed particle flags and links that must not be interpolated.
       if (
         ArrayBuffer.isView(original) &&
         !(original instanceof Float32Array || original instanceof Float64Array)
       )
         packedRecords.add(original.buffer);
+    }
     next.forEach((future, original) => {
       if (!future) return;
       if (original instanceof Float32Array || original instanceof Float64Array) {

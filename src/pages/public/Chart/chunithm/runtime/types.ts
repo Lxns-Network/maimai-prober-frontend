@@ -36,6 +36,13 @@ export interface PreviewControls {
   refreshPresentation(): void;
 }
 
+/** Live scheduling limits for optional Stage checkpoint work. Times are in milliseconds. */
+export interface PreviewWarmState {
+  playing: boolean;
+  busy: boolean;
+  blockedUntil: number;
+}
+
 export interface PreviewSessionInput {
   canvas: HTMLCanvasElement;
   /** Directory of the engine packs and the resources every chart shares. */
@@ -71,6 +78,7 @@ export interface PreviewSessionInput {
     signal: AbortSignal,
     setDividerColor: (color: number) => void,
     duration: Promise<number>,
+    readWarmState: () => PreviewWarmState,
   ) => Promise<() => void>;
   live: PreviewLiveState;
   ui: {

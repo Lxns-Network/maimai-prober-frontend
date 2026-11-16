@@ -8,7 +8,7 @@ import { readFieldPack, type FieldPackData } from "@lxns-network/chunithm-chart-
 import type { Pack } from "@lxns-network/chunithm-chart-engine/assets/packFormat";
 import { createFrameHost } from "@lxns-network/chunithm-chart-engine/render/frameHost";
 import type { FrameHost } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
-import type { LoopRange, PreviewSessionInput } from "./types";
+import type { LoopRange, PreviewSessionInput, PreviewWarmState } from "./types";
 import type { CanvasResolution } from "./canvasSize";
 import { createPreviewViewport } from "./viewport";
 import { loadChartInput, readChartSong } from "../assets/chartInput";
@@ -108,6 +108,19 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const capture = import.meta.env.DEV && new URLSearchParams(window.location.search).has("capture");
   /** Set once a recording drives the frames, which stops the animation loop for good. */
   let capturing = false;
+  const warmState: PreviewWarmState = { playing: false, busy: true, blockedUntil: 0 };
+  let previousFrameTime = 0;
+  let displayInterval = 1000 / 60;
+  const readWarmState = () => {
+    warmState.playing = desiredPlaying;
+    warmState.busy =
+      !ready ||
+      capturing ||
+      changingDifficulty ||
+      scrubbing !== null ||
+      document.visibilityState === "hidden";
+    return warmState;
+  };
   const draw = (at: number, textSeconds = (performance.now() - hudStartedAt) / 1000) => {
     if (!frameHost) return;
     viewport.apply();
@@ -172,6 +185,13 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const tick = (timestamp: number) => {
     frame = 0;
     if (!valid() || !ready || capturing || changingDifficulty) return;
+    const started = performance.now();
+    if (desiredPlaying && previousFrameTime) {
+      const gap = timestamp - previousFrameTime;
+      if (gap > 0 && gap < displayInterval) displayInterval = gap;
+      if (gap > displayInterval * 1.5) warmState.blockedUntil = started + 200;
+    }
+    previousFrameTime = desiredPlaying ? timestamp : 0;
     try {
       if (music && audio?.running && scrubbing) {
         const state = music.poll();
@@ -232,6 +252,10 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     } catch (cause) {
       if (isMusicOutputPending(cause)) request();
       else fail(cause);
+    } finally {
+      const budget = fpsLimit ? Math.max(displayInterval, 1000 / fpsLimit) : displayInterval;
+      if (performance.now() - started > budget * 0.7)
+        warmState.blockedUntil = performance.now() + 200;
     }
   };
   const request = (redraw = true) => {
@@ -791,6 +815,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
             request();
           },
           musicReady.then((music) => music.durationSeconds),
+          readWarmState,
         )
         .then((releasePrepared) => {
           if (!valid()) releasePrepared();

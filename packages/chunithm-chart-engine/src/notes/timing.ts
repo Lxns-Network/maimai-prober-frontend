@@ -185,22 +185,17 @@ export function timelineIntegral(
   return remember(acc);
 }
 
-/** Frame distance from the current note time to `t`, with an optional SFL retime. */
+/** Retimed frame distance; callers can reject raw distances before evaluating the integral. */
 export function frameDelta(
   state: DataView,
   score: NoteTimelineScore,
   key: number,
   t: number,
   integrate: boolean,
-): { dt: number; retime: () => number } {
-  const dt = f32(t - nowOf(state));
-  return {
-    dt,
-    retime: () =>
-      (key | 0) >= 0 && integrate
-        ? f32(toFrames(timelineIntegral(score, key, toMs(nowOf(state)), toMs(t))) - nowOf(state))
-        : dt,
-  };
+): number {
+  return (key | 0) >= 0 && integrate
+    ? f32(toFrames(timelineIntegral(score, key, toMs(nowOf(state)), toMs(t))) - nowOf(state))
+    : f32(t - nowOf(state));
 }
 
 /** Frame position of `t` after integrating the SFL rows from the current note time. */
@@ -290,9 +285,8 @@ export function spawnSide(
   time: number,
   key: number,
 ): boolean {
-  const delta = frameDelta(state, score, key, time, true);
-  if (SPAWN_CONSTANTS.earlyFrames > delta.dt) return true;
-  const dt = delta.retime();
+  if (SPAWN_CONSTANTS.earlyFrames > f32(time - nowOf(state))) return true;
+  const dt = frameDelta(state, score, key, time, true);
   const scale = dt > SPAWN_CONSTANTS.zero ? scrollAt(score, state, dt) : SPAWN_CONSTANTS.one;
   const z = depth(state, f32(rf(state, NOTE_FIELDS.viewOffset) + dt), scale);
   if (SPAWN_CONSTANTS.windowMinimum > z) return false;
@@ -327,9 +321,8 @@ export function windowPredicate(
   const t = f32(tArgument);
   const integral = flagOf(flagIntegral);
   const scroll = flagOf(flagScroll);
-  const delta = frameDelta(state, score, key, t, integral);
-  if (SPAWN_CONSTANTS.earlyFrames > delta.dt) return true;
-  let dt = delta.retime();
+  if (SPAWN_CONSTANTS.earlyFrames > f32(t - nowOf(state))) return true;
+  let dt = frameDelta(state, score, key, t, integral);
   let scale = SPAWN_CONSTANTS.one;
   if (scroll) {
     if (dt > SPAWN_CONSTANTS.zero) scale = scrollAt(score, state, dt);
@@ -348,9 +341,10 @@ export function passedLine(
   tArgument: number,
   flagIntegral: number,
 ): boolean {
-  const delta = frameDelta(state, score, key, f32(tArgument), flagOf(flagIntegral));
-  if (delta.dt > SPAWN_CONSTANTS.passedFrameLimit) return false;
-  const dt = delta.retime();
+  const t = f32(tArgument);
+  const integral = flagOf(flagIntegral);
+  if (f32(t - nowOf(state)) > SPAWN_CONSTANTS.passedFrameLimit) return false;
+  const dt = frameDelta(state, score, key, t, integral);
   const scale = dt > SPAWN_CONSTANTS.zero ? scrollAt(score, state, dt) : SPAWN_CONSTANTS.one;
   const z = depth(state, f32(rf(state, NOTE_FIELDS.viewOffset) + dt), scale);
   return !(SPAWN_CONSTANTS.passedDepth > z);

@@ -79,6 +79,24 @@ export interface StageUvTransforms {
   blend: Float32Array | null;
 }
 
+function writeUvSlot(
+  offsets: ArrayLike<number> | null,
+  animation: { readonly state: StageMaterialUvState; readonly draw: number } | null,
+  drawMask: number,
+  i: number,
+  fallback: readonly number[],
+  target: number[] | Float32Array,
+  at = 0,
+): void {
+  const enabled = offsets || animation?.state.offsetsPublished || drawMask & (1 << i);
+  const value = enabled ? animation?.state.parameter(animation.draw, i) : null;
+  const source = !enabled ? IDENTITY_TRANSFORM : (value ?? fallback);
+  target[at] = enabled && !value && offsets ? offsets[i * 2] : source[0];
+  target[at + 1] = enabled && !value && offsets ? offsets[i * 2 + 1] : source[1];
+  target[at + 2] = enabled && !value && offsets ? 1 : source[2];
+  target[at + 3] = enabled && !value && offsets ? 1 : source[3];
+}
+
 /** Resolves UV transforms, overwriting caller-owned output when supplied. */
 export function stageUvTransforms(
   material: StageMaterial,
@@ -93,20 +111,6 @@ export function stageUvTransforms(
     blend: null,
   },
 ): StageUvTransforms {
-  const slot = (
-    i: number,
-    fallback: readonly number[],
-    target: number[] | Float32Array,
-    at = 0,
-  ): void => {
-    const enabled = offsets || animation?.state.offsetsPublished || drawMask & (1 << i);
-    const value = enabled ? animation?.state.parameter(animation.draw, i) : null;
-    const source = !enabled ? IDENTITY_TRANSFORM : (value ?? fallback);
-    target[at] = enabled && !value && offsets ? offsets[i * 2] : source[0];
-    target[at + 1] = enabled && !value && offsets ? offsets[i * 2 + 1] : source[1];
-    target[at + 2] = enabled && !value && offsets ? 1 : source[2];
-    target[at + 3] = enabled && !value && offsets ? 1 : source[3];
-  };
   const blendMaps = material.blendMaps;
   const blend = blendMaps
     ? out.blend?.length === blendMaps.length * 4
@@ -114,12 +118,44 @@ export function stageUvTransforms(
       : new Float32Array(blendMaps.length * 4)
     : null;
   if (blend)
-    for (let i = 0; i < blend.length / 4; i++) slot(6 + i, IDENTITY_TRANSFORM, blend, i * 4);
-  slot(0, material.layers[0]?.offsetScale ?? IDENTITY_TRANSFORM, out.layers[0]);
-  slot(1, material.layers[1]?.offsetScale ?? IDENTITY_TRANSFORM, out.layers[1]);
-  slot(SPECULAR_SLOT, material.specularMap?.offsetScale ?? IDENTITY_TRANSFORM, out.specular);
-  slot(NORMAL_SLOT, material.normalMap?.offsetScale ?? IDENTITY_TRANSFORM, out.normal);
-  slot(
+    for (let i = 0; i < blend.length / 4; i++)
+      writeUvSlot(offsets, animation, drawMask, 6 + i, IDENTITY_TRANSFORM, blend, i * 4);
+  writeUvSlot(
+    offsets,
+    animation,
+    drawMask,
+    0,
+    material.layers[0]?.offsetScale ?? IDENTITY_TRANSFORM,
+    out.layers[0],
+  );
+  writeUvSlot(
+    offsets,
+    animation,
+    drawMask,
+    1,
+    material.layers[1]?.offsetScale ?? IDENTITY_TRANSFORM,
+    out.layers[1],
+  );
+  writeUvSlot(
+    offsets,
+    animation,
+    drawMask,
+    SPECULAR_SLOT,
+    material.specularMap?.offsetScale ?? IDENTITY_TRANSFORM,
+    out.specular,
+  );
+  writeUvSlot(
+    offsets,
+    animation,
+    drawMask,
+    NORMAL_SLOT,
+    material.normalMap?.offsetScale ?? IDENTITY_TRANSFORM,
+    out.normal,
+  );
+  writeUvSlot(
+    offsets,
+    animation,
+    drawMask,
     INCANDESCENCE_SLOT,
     material.incandescenceMap?.offsetScale ?? IDENTITY_TRANSFORM,
     out.incandescence,

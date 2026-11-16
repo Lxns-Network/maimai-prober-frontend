@@ -1,3 +1,4 @@
+import type { PreviewWarmState } from "../runtime/types";
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
 import { createAbortScope } from "@lxns-network/chunithm-chart-engine/assets/abort";
 import { createDepthSnapshot } from "@lxns-network/chunithm-chart-engine/gpu/depthSnapshot";
@@ -105,6 +106,7 @@ interface StagePresentationInput {
   scene: FrameSurface;
   stage: Promise<number | null>;
   duration?: Promise<number>;
+  readWarmState?: () => PreviewWarmState;
   signal: AbortSignal;
   readFieldValue(): string;
   readShowBackground(): boolean;
@@ -128,11 +130,13 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
   let release = () => {};
   let warmingFrame = 0;
   let idleWork = 0;
+  let warmTimer: ReturnType<typeof setTimeout> | null = null;
   const detach = () => {
     if (disposed) return;
     disposed = true;
     if (warmingFrame) cancelAnimationFrame(warmingFrame);
     if (idleWork) cancelIdleCallback(idleWork);
+    if (warmTimer !== null) clearTimeout(warmTimer);
     loading.abort();
     if (!signal.aborted) scene.setBackgroundRenderer(null);
     release();
@@ -311,8 +315,12 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
       if (disposed || signal.aborted || !input.readShowBackground() || !rewind || !warmTarget)
         return;
       try {
-        const budget = deadline ? Math.min(3, deadline.timeRemaining() - 1) : 1;
-        if (budget > 0) warmed = rewind.warm(warmTarget, performance.now() + budget);
+        const state = input.readWarmState?.();
+        const now = performance.now();
+        const available = deadline ? deadline.timeRemaining() - 1 : 1;
+        const budget = Math.min(state?.playing ? 1 : 3, available);
+        if (!state?.busy && (!state?.playing || now >= state.blockedUntil) && budget > 0)
+          warmed = rewind.warm(warmTarget, now + budget);
         if (!warmed) scheduleWarm();
       } catch (cause) {
         detach();
@@ -321,12 +329,31 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
       }
     };
     const scheduleWarm = () => {
-      if (warmed || warmingFrame || idleWork || !warmTarget) return;
-      warmingFrame = requestAnimationFrame(() => {
-        warmingFrame = 0;
-        if (typeof requestIdleCallback === "function") idleWork = requestIdleCallback(warm);
-        else warm();
-      });
+      if (
+        warmed ||
+        warmingFrame ||
+        idleWork ||
+        warmTimer !== null ||
+        !warmTarget ||
+        disposed ||
+        signal.aborted
+      )
+        return;
+      const state = input.readWarmState?.();
+      const delay = state?.busy
+        ? 50
+        : state?.playing
+          ? Math.max(50, state.blockedUntil - performance.now())
+          : 0;
+      warmTimer = setTimeout(() => {
+        warmTimer = null;
+        if (disposed || signal.aborted) return;
+        warmingFrame = requestAnimationFrame(() => {
+          warmingFrame = 0;
+          if (typeof requestIdleCallback === "function") idleWork = requestIdleCallback(warm);
+          else warm();
+        });
+      }, delay);
     };
     scene.setBackgroundRenderer((seconds, device, resetHistory) => {
       if (disposed || signal.aborted) return false;

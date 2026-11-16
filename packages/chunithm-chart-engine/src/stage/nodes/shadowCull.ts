@@ -13,8 +13,8 @@ export function shadowCullBox(
   size: ArrayLike<number>,
   world: ArrayLike<number>,
   scale: number,
+  result = new Float32Array(16),
 ): ShadowCullBox {
-  const result = new Float32Array(16);
   result.set(world);
   for (let axis = 0; axis < 3; axis++) {
     const row = axis * 4;
@@ -25,23 +25,17 @@ export function shadowCullBox(
       ) + world[row + 3],
     );
   }
-  const half = [f(size[0] * 0.5), f(size[1] * 0.5), f(size[2] * 0.5)];
-  const transformed = [0, 1, 2].map((axis) => {
-    const row = axis * 4;
-    return f(
-      f(f(world[row + 1] * half[1]) + f(world[row] * half[0])) + f(world[row + 2] * half[2]),
-    );
-  });
-  const radius = f(
-    Math.sqrt(
-      f(
-        f(f(transformed[0] * transformed[0]) + f(transformed[1] * transformed[1])) +
-          f(transformed[2] * transformed[2]),
-      ),
-    ),
-  );
+  const hx = f(size[0] * 0.5),
+    hy = f(size[1] * 0.5),
+    hz = f(size[2] * 0.5);
+  const x = f(f(f(world[1] * hy) + f(world[0] * hx)) + f(world[2] * hz));
+  const y = f(f(f(world[5] * hy) + f(world[4] * hx)) + f(world[6] * hz));
+  const z = f(f(f(world[9] * hy) + f(world[8] * hx)) + f(world[10] * hz));
+  const radius = f(Math.sqrt(f(f(f(x * x) + f(y * y)) + f(z * z))));
   // Native caches this radius before scaling the box extents.
-  for (let axis = 0; axis < 3; axis++) result[12 + axis] = f(half[axis] * scale);
+  result[12] = f(hx * scale);
+  result[13] = f(hy * scale);
+  result[14] = f(hz * scale);
   result[15] = radius;
   return result;
 }
@@ -62,23 +56,15 @@ function planeSphere(plane: readonly number[], box: ShadowCullBox): 0 | 1 | 2 {
 
 function planeBox(plane: readonly number[], box: ShadowCullBox): boolean {
   const [a, b, c, d] = plane;
-  const half = [box[12], box[13], box[14]];
-  for (let axis = 0; axis < 3; axis++) {
-    const dot = f(f(f(box[4 + axis] * b) + f(box[axis] * a)) + f(box[8 + axis] * c));
-    if (dot < 0) half[axis] = -half[axis];
-  }
-  const corner = [0, 1, 2].map((axis) => {
-    const row = axis * 4;
-    return f(
-      f(f(box[row + 3] + f(box[row] * half[0])) + f(box[row + 1] * half[1])) +
-        f(box[row + 2] * half[2]),
-    );
-  });
-  const distance = f(f(f(f(a * corner[0]) + f(b * corner[1])) + f(c * corner[2])) + d);
+  const hx = f(f(f(box[4] * b) + f(box[0] * a)) + f(box[8] * c)) < 0 ? -box[12] : box[12];
+  const hy = f(f(f(box[5] * b) + f(box[1] * a)) + f(box[9] * c)) < 0 ? -box[13] : box[13];
+  const hz = f(f(f(box[6] * b) + f(box[2] * a)) + f(box[10] * c)) < 0 ? -box[14] : box[14];
+  const x = f(f(f(box[3] + f(box[0] * hx)) + f(box[1] * hy)) + f(box[2] * hz));
+  const y = f(f(f(box[7] + f(box[4] * hx)) + f(box[5] * hy)) + f(box[6] * hz));
+  const z = f(f(f(box[11] + f(box[8] * hx)) + f(box[9] * hy)) + f(box[10] * hz));
+  const distance = f(f(f(f(a * x) + f(b * y)) + f(c * z)) + d);
   const normalSquared = f(f(f(f(a * a) + f(b * b)) + f(c * c)) + f(d * d));
-  const cornerSquared = f(
-    f(f(corner[1] * corner[1]) + f(corner[0] * corner[0])) + f(corner[2] * corner[2]),
-  );
+  const cornerSquared = f(f(f(y * y) + f(x * x)) + f(z * z));
   return distance > -f(f(normalSquared + cornerSquared) * PLANE_TOLERANCE);
 }
 
@@ -94,7 +80,8 @@ export function shadowBoxVisible(
     if (result === 0) return false;
     intersects ||= result === 1;
   }
-  return !intersects || planes.every((plane) => planeBox(plane, box));
+  if (intersects) for (const plane of planes) if (!planeBox(plane, box)) return false;
+  return true;
 }
 
 /** Applies the kind-0 draw's native bounding-box and distance-band tests. */

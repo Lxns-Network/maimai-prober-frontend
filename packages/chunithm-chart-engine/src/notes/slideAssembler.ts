@@ -47,6 +47,9 @@ interface SlidePlan {
   initialKeys: number[];
   width: number;
   scratch: DataView;
+  relativeTimes: number[];
+  depthArgs: number[];
+  joints: SlideBandInput["joints"];
   statics: SlideStatics | null;
   events: { time: number; mode: number }[];
 }
@@ -102,6 +105,12 @@ export function createSlideBandAssembler(input: {
       initialKeys,
       width,
       scratch: new DataView(new ArrayBuffer((times.length + 2) * 72 * HOLD_VERTEX_BYTES)),
+      relativeTimes: new Array(times.length).fill(0),
+      depthArgs: new Array(times.length).fill(0),
+      joints: profiles.map((name) => ({
+        enabled: name !== null,
+        priorCount: 0,
+      })) as unknown as SlideBandInput["joints"],
       statics: null,
       events: [],
     });
@@ -124,23 +133,25 @@ export function createSlideBandAssembler(input: {
     now: number,
     mode: number,
     statics: SlideStatics,
-  ): SlideBandInput => ({
-    mode,
-    phase: timelineFramesAt(manager, score),
-    depthArgs: plan.times.map((time, i) =>
-      f(effectiveTime(manager, score, plan.keys[i], time) - now),
-    ),
-    times: plan.times.map((time) => f(time - now)),
-    elements: plan.elements,
-    joints: plan.profiles.map((name) => ({
-      enabled: name !== null,
-      priorCount: 0,
-    })) as unknown as SlideBandInput["joints"],
-    manager,
-    score,
-    statics,
-    x87: "extended",
-  });
+  ): SlideBandInput => {
+    for (let i = 0; i < plan.times.length; i++) {
+      const time = plan.times[i];
+      plan.depthArgs[i] = f(effectiveTime(manager, score, plan.keys[i], time) - now);
+      plan.relativeTimes[i] = f(time - now);
+    }
+    return {
+      mode,
+      phase: timelineFramesAt(manager, score),
+      depthArgs: plan.depthArgs,
+      times: plan.relativeTimes,
+      elements: plan.elements,
+      joints: plan.joints,
+      manager,
+      score,
+      statics,
+      x87: "extended",
+    };
+  };
   return {
     assemble(
       step: number,

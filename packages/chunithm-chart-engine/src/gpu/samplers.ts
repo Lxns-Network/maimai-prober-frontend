@@ -55,7 +55,10 @@ export function stageSamplerParameters(
 
 /** Retains sampler state per backing image while processing material binds in draw order. */
 export function createStageSamplerState() {
-  const states = new Map<string, SamplerState & { readonly lodBias: number }>();
+  const states = new Map<
+    string,
+    { state: SamplerState & { lodBias: number }; parameters: SamplerParameters; lodBias: number }
+  >();
   return {
     synchronize(
       gl: WebGL2RenderingContext,
@@ -66,21 +69,34 @@ export function createStageSamplerState() {
       },
       owner: string,
     ): void {
-      const state = {
-        ...recorded,
-        magFilter: recorded.magFilter ?? states.get(image)?.magFilter ?? 2,
-      };
-      stageSamplerParameters(gl, state, owner);
-      states.set(image, state);
+      const previous = states.get(image);
+      const magFilter = recorded.magFilter ?? previous?.state.magFilter ?? 2;
+      if (previous) {
+        const old = previous.state;
+        if (
+          old.addressU === recorded.addressU &&
+          old.addressV === recorded.addressV &&
+          old.minFilter === recorded.minFilter &&
+          old.magFilter === magFilter &&
+          old.mipFilter === recorded.mipFilter &&
+          old.maxMipLevel === recorded.maxMipLevel &&
+          old.maxAnisotropy === recorded.maxAnisotropy &&
+          old.lodBias === recorded.lodBias
+        )
+          return;
+      }
+      const state = { ...recorded, magFilter };
+      const parameters = stageSamplerParameters(gl, state, owner);
+      states.set(image, { state, parameters, lodBias: state.lodBias });
     },
     current(
-      gl: WebGL2RenderingContext,
+      _gl: WebGL2RenderingContext,
       image: string,
       owner: string,
     ): { readonly parameters: SamplerParameters; readonly lodBias: number } {
       const state = states.get(image);
       if (!state) throw new Error(`${owner} has no synchronized sampler state`);
-      return { parameters: stageSamplerParameters(gl, state, owner), lodBias: state.lodBias };
+      return state;
     },
     clear() {
       states.clear();
@@ -145,7 +161,7 @@ function samplerParametersFor(
   };
 }
 
-/** Sampler objects shared between equal parameter sets; `dispose` deletes every one created. */
+/** Sampler objects shared between immutable parameter sets; `dispose` deletes every one created. */
 export interface SamplerCache {
   samplerFor(parameters: SamplerParameters, owner?: string): WebGLSampler;
   dispose(): void;
@@ -153,12 +169,18 @@ export interface SamplerCache {
 
 export function createSamplerCache(gl: WebGL2RenderingContext): SamplerCache {
   const samplers = new Map<string, WebGLSampler>();
+  let resolved = new WeakMap<SamplerParameters, WebGLSampler>();
   let anisotropy: EXT_texture_filter_anisotropic | null | undefined;
   return {
     samplerFor(parameters, owner = "Sampler") {
+      const cached = resolved.get(parameters);
+      if (cached) return cached;
       const key = `${parameters.wrapS},${parameters.wrapT},${parameters.min},${parameters.mag},${parameters.anisotropy}`;
       const known = samplers.get(key);
-      if (known) return known;
+      if (known) {
+        resolved.set(parameters, known);
+        return known;
+      }
       if (parameters.anisotropy !== null) {
         if (anisotropy === undefined)
           anisotropy = gl.getExtension("EXT_texture_filter_anisotropic");
@@ -169,6 +191,7 @@ export function createSamplerCache(gl: WebGL2RenderingContext): SamplerCache {
       const sampler = gl.createSampler();
       if (!sampler) throw new Error("A sampler object is required for note drawing");
       samplers.set(key, sampler);
+      resolved.set(parameters, sampler);
       gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_S, parameters.wrapS);
       gl.samplerParameteri(sampler, gl.TEXTURE_WRAP_T, parameters.wrapT);
       gl.samplerParameteri(sampler, gl.TEXTURE_MIN_FILTER, parameters.min);
@@ -180,6 +203,7 @@ export function createSamplerCache(gl: WebGL2RenderingContext): SamplerCache {
     dispose() {
       for (const sampler of samplers.values()) gl.deleteSampler(sampler);
       samplers.clear();
+      resolved = new WeakMap();
     },
   };
 }

@@ -149,6 +149,14 @@ export function createSlideBand() {
     twoPi: f(T.twoPi),
   };
   const hold = createHoldBand();
+  const laneMemo: Record<StripPrecision, Map<number, number>> = {
+    single: new Map(),
+    extended: new Map(),
+  };
+  const widthMemo: Record<StripPrecision, Map<number, number>> = {
+    single: new Map(),
+    extended: new Map(),
+  };
   const laneOffsetExact = exact(F.laneOffset);
   const laneScaleExact = exact(F.laneScale);
   const halfExact = exact(F.half);
@@ -158,14 +166,25 @@ export function createSlideBand() {
 
   /** Lane coordinate of a lane-unit position, evaluated in extended precision then rounded. */
   const laneX = (x: number, x87: StripPrecision): number => {
-    const P = precisionBits(x87);
-    return toF32(laneX87(x, P));
+    const memo = laneMemo[x87];
+    const cached = memo.get(x);
+    if (cached !== undefined) return cached;
+    const result = toF32(laneX87(x, precisionBits(x87)));
+    if (memo.size >= 1 << 16) memo.clear();
+    memo.set(x, result);
+    return result;
   };
 
   /** Half width of a lane-width value: the width is biased, converted, halved and rounded. */
   const halfWidth = (w: number, x87: StripPrecision): number => {
+    const memo = widthMemo[x87];
+    const cached = memo.get(w);
+    if (cached !== undefined) return cached;
     const P = precisionBits(x87);
-    return toF32(round(mul(laneX87(f(w + F.widthBias), P), halfExact), P));
+    const result = toF32(round(mul(laneX87(f(w + F.widthBias), P), halfExact), P));
+    if (memo.size >= 1 << 16) memo.clear();
+    memo.set(w, result);
+    return result;
   };
 
   const clamp01 = (x: number): number => (x > F.one ? F.one : x > 0 ? x : 0);
@@ -193,6 +212,30 @@ export function createSlideBand() {
     vE: number;
   }
 
+  const segment = (): Segment => ({
+    tiny: 0,
+    visible: 0,
+    f4: 0,
+    f8: 0,
+    zS: 0,
+    zE: 0,
+    xS: 0,
+    xE: 0,
+    wS: 0,
+    wE: 0,
+    hS: 0,
+    hE: 0,
+    start: 0,
+    end: 0,
+    vS: 0,
+    vE: 0,
+  });
+  const pool: Segment[] = [];
+  const segmentAt = (i: number): Segment => pool[i] ?? (pool[i] = segment());
+  const segments: Segment[] = [];
+  const clipOrigin = segment();
+  const vertices = Array.from({ length: 8 }, () => [0, 0, 0, 0]);
+
   /**
    * Writes the three layers into `output` at `vertexOffset` and returns how many vertices each
    * layer used. Layers are laid out consecutively in body, centre, pulse order.
@@ -209,7 +252,6 @@ export function createSlideBand() {
       throw new RangeError("Vertex buffer must hold whole 24-byte records");
 
     const depth = (x: number) => depthAt(manager, x, 1, 1, score.scroll);
-    const layerState = input.joints.map((joint) => ({ ...joint }));
     const n = input.depthArgs.length;
     const nextStatics: SlideStatics = {
       zeroDepth: statics.zeroDepth,
@@ -219,7 +261,7 @@ export function createSlideBand() {
     const early = (): SlideBandResult => ({
       early: true,
       statics: nextStatics,
-      joints: layerState.map((joint) =>
+      joints: input.joints.map((joint) =>
         joint.enabled
           ? ({ cleared: true, count: 0, scalar: null } as const)
           : ({ untouched: true } as const),
@@ -234,27 +276,9 @@ export function createSlideBand() {
       nextStatics.zeroDepth = { initialized: true, bits: bitsOf(depth(0)) };
     const S = fromBits(nextStatics.zeroDepth.bits);
 
-    const segments: Segment[] = [];
-    const segment = (): Segment => ({
-      tiny: 0,
-      visible: 0,
-      f4: 0,
-      f8: 0,
-      zS: 0,
-      zE: 0,
-      xS: 0,
-      xE: 0,
-      wS: 0,
-      wE: 0,
-      hS: 0,
-      hE: 0,
-      start: 0,
-      end: 0,
-      vS: 0,
-      vE: 0,
-    });
+    segments.length = 0;
     const segCount = n - 1;
-    for (let i = 0; i < segCount; i++) segments.push(segment());
+    for (let i = 0; i < segCount; i++) segments.push(segmentAt(i));
 
     let firstTiny = segCount;
     let chainStart = 0;
@@ -301,7 +325,7 @@ export function createSlideBand() {
       let d = span(s.f8, s.f4);
       if (F.eps > abs(d)) d = F.eps;
       const t = clamp01(f(abs(s.f4) / d));
-      const tail = { ...s };
+      const tail = Object.assign(segmentAt(segCount), s);
       segments.splice(firstTiny + 1, 0, tail);
       const omt = f(F.one - t);
       const txE = f(t * s.xE);
@@ -331,7 +355,7 @@ export function createSlideBand() {
 
     for (const s of segments) {
       if (!s.visible) continue;
-      const o = { ...s };
+      const o = Object.assign(clipOrigin, s);
       const d = span(o.zS, o.zE);
       if (!(d >= F.eps)) continue;
       // Each bound moves its own end along the segment, carrying x, width and V with it.
@@ -412,16 +436,39 @@ export function createSlideBand() {
         const { hS, hE } = s;
         const iS = f(hS * F.inner);
         const iE = f(hE * F.inner);
-        const v: number[][] = [
-          [f(s.xS - hS), s.zS, 0, s.vS],
-          [f(s.xS + hS), s.zS, I.uOne, s.vS],
-          [f(s.xE - hE), s.zE, 0, s.vE],
-          [f(s.xE + hE), s.zE, I.uOne, s.vE],
-          [f(s.xS - iS), s.zS, I.uInner, s.vS],
-          [f(s.xS + iS), s.zS, I.uInnerFar, s.vS],
-          [f(s.xE - iE), s.zE, I.uInner, s.vE],
-          [f(s.xE + iE), s.zE, I.uInnerFar, s.vE],
-        ];
+        const v = vertices;
+        v[0][0] = f(s.xS - hS);
+        v[0][1] = s.zS;
+        v[0][2] = 0;
+        v[0][3] = s.vS;
+        v[1][0] = f(s.xS + hS);
+        v[1][1] = s.zS;
+        v[1][2] = I.uOne;
+        v[1][3] = s.vS;
+        v[2][0] = f(s.xE - hE);
+        v[2][1] = s.zE;
+        v[2][2] = 0;
+        v[2][3] = s.vE;
+        v[3][0] = f(s.xE + hE);
+        v[3][1] = s.zE;
+        v[3][2] = I.uOne;
+        v[3][3] = s.vE;
+        v[4][0] = f(s.xS - iS);
+        v[4][1] = s.zS;
+        v[4][2] = I.uInner;
+        v[4][3] = s.vS;
+        v[5][0] = f(s.xS + iS);
+        v[5][1] = s.zS;
+        v[5][2] = I.uInnerFar;
+        v[5][3] = s.vS;
+        v[6][0] = f(s.xE - iE);
+        v[6][1] = s.zE;
+        v[6][2] = I.uInner;
+        v[6][3] = s.vE;
+        v[7][0] = f(s.xE + iE);
+        v[7][1] = s.zE;
+        v[7][2] = I.uInnerFar;
+        v[7][3] = s.vE;
         const dw = abs(f(s.wS - s.wE));
         const up = s.zE > s.zS;
         const wider = s.wE > s.wS;
@@ -462,12 +509,23 @@ export function createSlideBand() {
       let count = 0;
       for (const s of segments) {
         if (!s.visible) continue;
-        const v: number[][] = [
-          [f(s.xS - c), s.zS, 0, s.vS],
-          [f(s.xS + c), s.zS, I.uOne, s.vS],
-          [f(s.xE - c), s.zE, 0, s.vE],
-          [f(s.xE + c), s.zE, I.uOne, s.vE],
-        ];
+        const v = vertices;
+        v[0][0] = f(s.xS - c);
+        v[0][1] = s.zS;
+        v[0][2] = 0;
+        v[0][3] = s.vS;
+        v[1][0] = f(s.xS + c);
+        v[1][1] = s.zS;
+        v[1][2] = I.uOne;
+        v[1][3] = s.vS;
+        v[2][0] = f(s.xE - c);
+        v[2][1] = s.zE;
+        v[2][2] = 0;
+        v[2][3] = s.vE;
+        v[3][0] = f(s.xE + c);
+        v[3][1] = s.zE;
+        v[3][2] = I.uOne;
+        v[3][3] = s.vE;
         const order = s.zE > s.zS ? ORDERS.flatUp : ORDERS.flatDown;
         count += 6;
         at = writeOrder(at, v, order, BAND_COLOURS.normal);
@@ -486,12 +544,23 @@ export function createSlideBand() {
         for (const s of segments) {
           if (!s.visible) continue;
           const { hS, hE } = s;
-          const v: number[][] = [
-            [f(s.xS - hS), s.zS, 0, s.vS],
-            [f(s.xS + hS), s.zS, I.uOne, s.vS],
-            [f(s.xE - hE), s.zE, 0, s.vE],
-            [f(hE + s.xE), s.zE, I.uOne, s.vE],
-          ];
+          const v = vertices;
+          v[0][0] = f(s.xS - hS);
+          v[0][1] = s.zS;
+          v[0][2] = 0;
+          v[0][3] = s.vS;
+          v[1][0] = f(s.xS + hS);
+          v[1][1] = s.zS;
+          v[1][2] = I.uOne;
+          v[1][3] = s.vS;
+          v[2][0] = f(s.xE - hE);
+          v[2][1] = s.zE;
+          v[2][2] = 0;
+          v[2][3] = s.vE;
+          v[3][0] = f(hE + s.xE);
+          v[3][1] = s.zE;
+          v[3][2] = I.uOne;
+          v[3][3] = s.vE;
           const order = s.zE > s.zS ? ORDERS.flatUp : ORDERS.flatDown;
           count += 6;
           at = writeOrder(at, v, order, table.joint2Colour);

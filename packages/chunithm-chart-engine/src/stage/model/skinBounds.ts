@@ -10,43 +10,45 @@ export interface StageSkinBounds {
   readonly sphere: Float32Array;
 }
 
-/** Expands a shape's source box to the positions of its bound skin providers. */
+/** Expands the source box using bone positions. Work buffers may be reused; returned bounds remain independent. */
 export function skinBounds(
   skin: StageShapeSkin,
   worlds: readonly Float32Array[],
   meshWorld: Float32Array,
   sourceCenter: ArrayLike<number>,
   sourceSize: ArrayLike<number>,
+  inverse = invertAffine(meshWorld),
+  relative = new Float32Array(12),
+  scratch = new Float64Array(9),
 ): StageSkinBounds | null {
   if (!skin.bones.length) return null;
-  const inverse = invertAffine(meshWorld);
-  const relative = new Float32Array(12);
-  const min = [3.4028234663852886e38, 3.4028234663852886e38, 3.4028234663852886e38];
+  scratch[0] = scratch[1] = scratch[2] = 3.4028234663852886e38;
   // The native max accumulator starts at FLT_MIN, not at a negative value.
-  const max = [INITIAL_MAX, INITIAL_MAX, INITIAL_MAX];
+  scratch[3] = scratch[4] = scratch[5] = INITIAL_MAX;
   for (const bone of skin.bones) {
     composeAffine(inverse, worlds[bone], relative);
     for (let axis = 0; axis < 3; axis++) {
       const value = relative[axis * 4 + 3];
-      min[axis] = Math.min(value, min[axis]);
-      max[axis] = Math.max(value, max[axis]);
+      scratch[axis] = Math.min(value, scratch[axis]);
+      scratch[axis + 3] = Math.max(value, scratch[axis + 3]);
     }
   }
   const center = new Float32Array(3);
   const size = new Float32Array(3);
-  const half = new Float32Array(3);
   for (let axis = 0; axis < 3; axis++) {
     const extent = f(sourceSize[axis] * 0.5);
-    const lo = Math.min(f(sourceCenter[axis] - extent), min[axis]);
-    const hi = Math.max(f(extent + sourceCenter[axis]), max[axis]);
-    half[axis] = f(f(hi - lo) * 0.5);
+    const lo = Math.min(f(sourceCenter[axis] - extent), scratch[axis]);
+    const hi = Math.max(f(extent + sourceCenter[axis]), scratch[axis + 3]);
+    scratch[axis + 6] = f(f(hi - lo) * 0.5);
     center[axis] = f(f(hi + lo) * 0.5);
-    size[axis] = f(half[axis] * 2);
+    size[axis] = f(scratch[axis + 6] * 2);
   }
   const radius = f(
-    Math.sqrt(f(f(f(half[0] * half[0]) + f(half[1] * half[1])) + f(half[2] * half[2]))),
+    Math.sqrt(
+      f(f(f(scratch[6] * scratch[6]) + f(scratch[7] * scratch[7])) + f(scratch[8] * scratch[8])),
+    ),
   );
-  return { center, size, sphere: Float32Array.of(...center, radius) };
+  return { center, size, sphere: Float32Array.of(center[0], center[1], center[2], radius) };
 }
 
 /** Transforms the sphere's center by the draw joint; native retains its local radius. */

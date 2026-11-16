@@ -34,6 +34,7 @@ import { STAGE_ATTRIBUTES, STAGE_MAX_BONES } from "./stageShader";
 import { stageBlendSortFlags, type StageBlend } from "../blend";
 import {
   restPose,
+  invertAffine,
   skinMeshWorld,
   skinPalette,
   stageShapeSkin,
@@ -304,6 +305,12 @@ export function createStageRenderer(
     };
 
     const poses = new Map<StageModel, Float32Array[]>();
+    const skinInverse = new Float32Array(12);
+    const skinRelative = new Float32Array(12);
+    const skinResult = new Float32Array(12);
+    const skinBoundsScratch = new Float64Array(9);
+    const cullRows = new Float32Array(12);
+    const cullBox = new Float32Array(16);
     const poseColumns = new WeakMap<StageModelPose, (Float32Array | undefined)[]>();
     const animatedWorld = (pose: StageModelPose, index: number): Float32Array => {
       let worlds = poseColumns.get(pose);
@@ -968,13 +975,25 @@ export function createStageRenderer(
                 const meshWorld = skinMeshWorld(prepared.skin, worlds, worlds[at]);
                 meshWorldForSkin = rowsToColumns(meshWorld);
                 palette = new Float32Array(STAGE_MAX_BONES * 12);
-                skinPalette(prepared.skin, worlds, meshWorld, palette);
+                invertAffine(meshWorld, skinInverse);
+                skinPalette(
+                  prepared.skin,
+                  worlds,
+                  meshWorld,
+                  palette,
+                  skinInverse,
+                  skinRelative,
+                  skinResult,
+                );
                 boundsForSkin = skinBounds(
                   prepared.skin,
                   worlds,
                   meshWorld,
                   shapeBounds(shape, "_boundingBoxCenter", 3),
                   shapeBounds(shape, "_boundingBoxSize", 3),
+                  skinInverse,
+                  skinRelative,
+                  skinBoundsScratch,
                 );
               }
               for (let joint = 0; joint < shape.nodeRefs.length; joint++) {
@@ -995,7 +1014,7 @@ export function createStageRenderer(
                   const center =
                     boundsForSkin?.center ?? shapeBounds(shape, "_boundingBoxCenter", 3);
                   const size = boundsForSkin?.size ?? shapeBounds(shape, "_boundingBoxSize", 3);
-                  const box = shadowCullBox(center, size, affineRows(world), 1);
+                  const box = shadowCullBox(center, size, affineRows(world, cullRows), 1, cullBox);
                   if (box[15] > 1.1920928955078125e-7 && !shadowBoxVisible(box, planes)) continue;
                 }
                 const sortWorld = state.instanceGroup

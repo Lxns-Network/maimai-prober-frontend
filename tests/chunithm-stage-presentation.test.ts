@@ -9,6 +9,7 @@ import { reflectionRenderCamera } from "@lxns-network/chunithm-chart-engine/stag
 import type { StageDrawCamera } from "@lxns-network/chunithm-chart-engine/stage/camera/scopes";
 
 const mocked = vi.hoisted(() => ({
+  warm: vi.fn(() => false),
   useState: vi.fn(),
   useRef: vi.fn(),
   missing: [] as string[],
@@ -88,7 +89,7 @@ vi.mock("@lxns-network/chunithm-chart-engine/stage/runtime", () => ({
   },
 }));
 vi.mock("@lxns-network/chunithm-chart-engine/stage/snapshot", () => ({
-  createStageRewind: (build: () => unknown[]) => ({ sample: () => build() }),
+  createStageRewind: (build: () => unknown[]) => ({ sample: () => build(), warm: mocked.warm }),
 }));
 vi.mock("@lxns-network/chunithm-chart-engine/stage/registry", () => ({
   motionBehaviors: [],
@@ -253,6 +254,7 @@ vi.mock("@lxns-network/chunithm-chart-engine/stage/render/stageRimMask", () => (
 }));
 
 beforeEach(() => {
+  mocked.warm.mockClear();
   mocked.missing = [];
   mocked.created = [];
   mocked.lightGroups = [];
@@ -924,4 +926,53 @@ describe("stage presentation lifecycle", () => {
       expect(setBackground).not.toHaveBeenCalled();
     },
   );
+});
+
+it("throttles playing warm work, yields while busy and cancels pending work on detach", async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => response()),
+  );
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
+    setTimeout(() => callback(performance.now()), 1),
+  );
+  vi.stubGlobal("cancelAnimationFrame", clearTimeout);
+  vi.stubGlobal("requestIdleCallback", (callback: IdleRequestCallback) =>
+    setTimeout(() => callback({ timeRemaining: () => 10, didTimeout: false }), 1),
+  );
+  vi.stubGlobal("cancelIdleCallback", clearTimeout);
+  let detach: (() => void) | undefined;
+  try {
+    const s = setup();
+    const state = { playing: true, busy: false, blockedUntil: 0 };
+    detach = await s.render().prepare!(
+      s.scene,
+      Promise.resolve(1),
+      new AbortController().signal,
+      undefined,
+      Promise.resolve(160),
+      () => state,
+    );
+    s.draw();
+    await vi.advanceTimersByTimeAsync(49);
+    expect(mocked.warm).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(4);
+    expect(mocked.warm).toHaveBeenCalledTimes(1);
+    state.busy = true;
+    await vi.advanceTimersByTimeAsync(100);
+    expect(mocked.warm).toHaveBeenCalledTimes(1);
+    state.busy = false;
+    state.playing = false;
+    await vi.advanceTimersByTimeAsync(60);
+    expect(mocked.warm.mock.calls.length).toBeGreaterThan(2);
+    detach();
+    const calls = mocked.warm.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(100);
+    expect(mocked.warm).toHaveBeenCalledTimes(calls);
+  } finally {
+    detach?.();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  }
 });

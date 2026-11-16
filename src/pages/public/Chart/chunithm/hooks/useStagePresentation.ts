@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
+import type { PreviewWarmState } from "../runtime/types";
 import { prepareStagePresentation } from "../rendering/stage";
 
 /** Draws a chart's stage behind it with the engine stage interpreter, following the chart's seconds. */
@@ -23,6 +24,7 @@ export function useStagePresentation(
       signal: AbortSignal,
       setDividerColor?: (color: number) => void,
       duration?: Promise<number>,
+      readWarmState?: () => PreviewWarmState,
     ) => {
       if (base === null) throw new Error("Stage assets are not configured");
       return prepareStagePresentation({
@@ -32,6 +34,7 @@ export function useStagePresentation(
         signal,
         setDividerColor,
         duration,
+        readWarmState,
         readFieldValue: () => fieldLabel.current,
         readShowBackground: () => backgroundVisible.current,
         setStatus,

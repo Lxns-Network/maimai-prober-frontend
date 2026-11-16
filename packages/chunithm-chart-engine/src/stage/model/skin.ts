@@ -75,8 +75,8 @@ export function providerLocal(
   return out;
 }
 
-/** The inverse of a row-major 3x4 affine matrix; identity rotation when it is near singular. */
-export function invertAffine(m: ArrayLike<number>): Float32Array {
+/** Writes the inverse of a row-major 3x4 affine matrix into `out`; uses identity rotation near singularity. */
+export function invertAffine(m: ArrayLike<number>, out = new Float32Array(12)): Float32Array {
   const a = m[0],
     b = m[1],
     c = m[2],
@@ -93,7 +93,6 @@ export function invertAffine(m: ArrayLike<number>): Float32Array {
     f(f(f(f(a * e) * k) + f(f(b * h) * g)) + f(f(c * d) * j)) - f(f(a * h) * j),
   );
   const det = f(f(determinant - f(f(d * b) * k)) - f(f(c * e) * g));
-  const out = new Float32Array(12);
   if (Math.abs(det) > 1.1920928955078125e-7) {
     const reciprocal = f(1 / det);
     out[0] = f(f(f(k * e) - f(j * h)) * reciprocal);
@@ -105,7 +104,10 @@ export function invertAffine(m: ArrayLike<number>): Float32Array {
     out[8] = f(f(f(j * d) - f(g * e)) * reciprocal);
     out[9] = f(f(f(g * b) - f(j * a)) * reciprocal);
     out[10] = f(f(f(e * a) - f(d * b)) * reciprocal);
-  } else out[0] = out[5] = out[10] = 1;
+  } else {
+    out.fill(0);
+    out[0] = out[5] = out[10] = 1;
+  }
   for (let row = 0; row < 12; row += 4)
     out[row + 3] = f(f(-f(out[row] * tx) - f(out[row + 1] * ty)) - f(out[row + 2] * tz));
   return out;
@@ -232,19 +234,20 @@ export function skinMeshWorld(
     : meshWorld;
 }
 
-/** Writes mesh-local rows `(inverse(meshWorld) × boneWorld) × bind`, twelve floats per bone. */
+/** Writes mesh-local rows `(inverse(meshWorld) × boneWorld) × bind`; optional work buffers must be distinct. */
 export function skinPalette(
   skin: StageShapeSkin,
   worlds: readonly Float32Array[],
   meshWorld: Float32Array,
   out: Float32Array,
+  inverseMesh = invertAffine(meshWorld),
+  relative = new Float32Array(12),
+  result = new Float32Array(12),
 ): void {
-  const inverseMesh = invertAffine(meshWorld);
-  const relative = new Float32Array(12);
-  const result = new Float32Array(12);
-  skin.bones.forEach((bone, i) => {
+  for (let i = 0; i < skin.bones.length; i++) {
+    const bone = skin.bones[i];
     composeAffine(inverseMesh, worlds[bone], relative);
     composeAffine(relative, skin.binds[i], result);
     out.set(result, i * 12);
-  });
+  }
 }

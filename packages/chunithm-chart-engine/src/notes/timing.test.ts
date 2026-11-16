@@ -145,20 +145,19 @@ describe("mapFind", () => {
 });
 
 describe("frameDelta", () => {
-  it("reports the raw delta and the retimed delta", () => {
+  it("reports the retimed delta", () => {
     const score = rowScore();
     registerImmutableTimeline(score);
     const state = stateView();
     const delta = frameDelta(state, score, 7, 12, true);
-    expect(delta.dt).toBe(12);
-    expect(Number.isFinite(delta.retime())).toBe(true);
+    expect(delta).toBe(18);
   });
 
   it("does not retime when the key is negative or integration is off", () => {
     const score = rowScore();
     const state = stateView();
-    expect(frameDelta(state, score, -1, 12, true).retime()).toBe(12);
-    expect(frameDelta(state, score, 7, 12, false).retime()).toBe(12);
+    expect(frameDelta(state, score, -1, 12, true)).toBe(12);
+    expect(frameDelta(state, score, 7, 12, false)).toBe(12);
   });
 });
 

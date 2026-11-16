@@ -67,17 +67,29 @@ function primitiveIndices(strip: boolean, vertexCount: number): Uint32Array {
 function createArena(initial: number) {
   let buffer = new Float32Array(initial);
   let used = 0;
+  let viewCount = 0;
+  const views: Float32Array[] = [];
   return {
     take(length: number): Float32Array {
       if (used + length > buffer.length) {
         buffer = new Float32Array(Math.max(buffer.length * 2, length));
         used = 0;
       }
-      const view = buffer.subarray(used, used + length);
+      let view = views[viewCount];
+      if (
+        !view ||
+        view.buffer !== buffer.buffer ||
+        view.byteOffset !== used * 4 ||
+        view.length !== length
+      )
+        views[viewCount] = view = buffer.subarray(used, used + length);
+      viewCount++;
       used += length;
       return view;
     },
     reset() {
+      views.length = viewCount;
+      viewCount = 0;
       used = 0;
     },
   };
@@ -91,6 +103,9 @@ interface PrimitiveSlot {
   sortPosition: Float32Array;
   bindings: EffectBinding[];
   order: EffectPrimitivePacket["order"];
+  normal: { size: number; values: Float32Array };
+  secondaryUv: { size: number; values: Float32Array };
+  words: Uint32Array;
 }
 
 interface ParticleSlot {
@@ -174,6 +189,9 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
         material: { context, fixedParam0: [], materialKey: [], environmentIndex: 0 },
         order,
       },
+      normal: { size: 3, values: empty },
+      secondaryUv: { size: 2, values: empty },
+      words: new Uint32Array(0),
       context,
       contextView: new DataView(context.buffer),
       worldMatrix,
@@ -229,7 +247,13 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
     const color = colors.take(count * 4);
     const uv = uvs.take(count * 2);
     const vertices = source.vertices;
-    const words = new Uint32Array(vertices.buffer, vertices.byteOffset, vertices.length);
+    let words = slot.words;
+    if (
+      words.buffer !== vertices.buffer ||
+      words.byteOffset !== vertices.byteOffset ||
+      words.length !== vertices.length
+    )
+      slot.words = words = new Uint32Array(vertices.buffer, vertices.byteOffset, vertices.length);
     const normal = draw.layout === 10 ? normals.take(count * 3) : null;
     const stride = normal ? 9 : 6;
     const colourOffset = normal ? 6 : 3;
@@ -255,12 +279,15 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
     attributes.aPosition.values = position;
     attributes.aColor.values = color;
     attributes.aTexCoord.values = uv;
-    if (normal) attributes.aNormal = { size: 3, values: normal };
-    else delete attributes.aNormal;
+    if (normal) {
+      slot.normal.values = normal;
+      attributes.aNormal = slot.normal;
+    } else delete attributes.aNormal;
     if (draw.layout === 5) {
       const second = uvs.take(12);
       second.set(source.secondaryUv);
-      attributes.aTexCoord1 = { size: 2, values: second };
+      slot.secondaryUv.values = second;
+      attributes.aTexCoord1 = slot.secondaryUv;
     } else delete attributes.aTexCoord1;
     packet.mesh.indices = indicesOf(draw.strip, count);
     packet.layout = draw.layout;

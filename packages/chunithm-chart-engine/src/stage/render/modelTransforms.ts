@@ -29,21 +29,10 @@ export function transpose(m: ArrayLike<number>): Float32Array {
   return out;
 }
 
-export function affineRows(m: ArrayLike<number>): Float32Array {
-  return Float32Array.of(
-    m[0],
-    m[4],
-    m[8],
-    m[12],
-    m[1],
-    m[5],
-    m[9],
-    m[13],
-    m[2],
-    m[6],
-    m[10],
-    m[14],
-  );
+export function affineRows(m: ArrayLike<number>, out = new Float32Array(12)): Float32Array {
+  for (let row = 0; row < 3; row++)
+    for (let col = 0; col < 4; col++) out[row * 4 + col] = m[col * 4 + row];
+  return out;
 }
 
 export function multiplyColumns(

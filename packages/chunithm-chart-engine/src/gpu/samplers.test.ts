@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createSamplerCache, samplerParameters, stageSamplerParameters } from "./samplers";
+import {
+  createSamplerCache,
+  createStageSamplerState,
+  samplerParameters,
+  stageSamplerParameters,
+} from "./samplers";
 const state = {
   addressU: 1,
   addressV: 3,
@@ -79,4 +84,23 @@ describe("Stage anisotropic samplers", () => {
     );
     expect(stageSamplerParameters(gl, { ...state, minFilter: 2 }, "Stage").anisotropy).toBeNull();
   });
+});
+
+it("preserves inherited filters across shared-image binds and state reset", () => {
+  const { gl } = context(16);
+  const bindings = createStageSamplerState();
+  const first = { ...state, magFilter: 1, lodBias: 0 };
+  bindings.synchronize(gl, "shared", first, "first");
+  const original = bindings.current(gl, "shared", "first");
+  bindings.synchronize(gl, "shared", { ...first, magFilter: null }, "inherited");
+  expect(bindings.current(gl, "shared", "inherited").parameters.mag).toBe(gl.NEAREST);
+  bindings.synchronize(gl, "shared", { ...first, magFilter: 2, lodBias: 1 }, "second");
+  bindings.synchronize(gl, "shared", { ...first, magFilter: null }, "inherited");
+  expect(bindings.current(gl, "shared", "inherited").parameters.mag).toBe(gl.LINEAR);
+  expect(original.parameters.mag).toBe(gl.NEAREST);
+  expect(() => bindings.synchronize(gl, "shared", { ...first, mipFilter: 9 }, "invalid")).toThrow();
+  expect(bindings.current(gl, "shared", "after failure").parameters.mag).toBe(gl.LINEAR);
+  bindings.clear();
+  bindings.synchronize(gl, "shared", { ...first, magFilter: null }, "reset");
+  expect(bindings.current(gl, "shared", "reset").parameters.mag).toBe(gl.LINEAR);
 });
