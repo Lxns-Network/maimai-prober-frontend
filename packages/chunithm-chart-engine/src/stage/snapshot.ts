@@ -1,6 +1,7 @@
 import {
   finishStageScenes,
   stepStageScenes,
+  type StageNode,
   type StageScene,
   type StageSceneOptions,
 } from "./runtime";
@@ -71,6 +72,7 @@ function cloneStageScenes(
   scenes: readonly StageScene[],
   copies = new Map<object, unknown>(),
   previous = new Map<object, unknown>(),
+  displayOnly = false,
 ): StageSceneCopy[] {
   const shared = scenes.map(sharedStageData);
   const buffers = new Map<ArrayBufferLike, ArrayBuffer>();
@@ -143,8 +145,23 @@ function cloneStageScenes(
     // Render caches key poses, blends and filter plans by identity, so records stay fresh.
     const result = Object.create(prototype) as Record<string, unknown>;
     copies.set(value, result);
+    const node = displayOnly && "record" in value && "birth" in value ? (value as StageNode) : null;
+    const held = node?.record && node.scene.options.heldStates?.has(node.record.id);
     for (const key of keys) {
       const item = (value as Record<string, unknown>)[key];
+      // Display scenes never run the scheduler. Held nodes can still apply a presentation override.
+      if (
+        node &&
+        !held &&
+        (key === "before" ||
+          key === "stateMotions" ||
+          key === "after" ||
+          key === "pending" ||
+          key === "graveyard")
+      ) {
+        result[key] = [];
+        continue;
+      }
       result[key] = item !== null && typeof item === "object" ? copy(item) : item;
     }
     return result;
@@ -167,6 +184,7 @@ export interface StageRewind {
   warm(tick: number, deadline: number): boolean;
   /** The scenes stepped to `tick`, resumed from the latest kept copy when that is closer. */
   seek(tick: number): readonly StageScene[];
+  /** Display-only scenes with interpolated render state; motion lists are retained only for held nodes. */
   sample(tick: number, fraction: number): readonly StageScene[];
   /** Approximate memory the kept copies hold. */
   readonly bytes: number;
@@ -252,18 +270,16 @@ export function createStageRewind(
       const live = rewind.seek(tick);
       if (fraction === 0) return live;
       const copies = new Map<object, unknown>();
-      sampled = cloneStageScenes(live, copies, displayCopies).map((copy) => copy.scene);
+      sampled = cloneStageScenes(live, copies, displayCopies, true).map((copy) => copy.scene);
       displayCopies = copies;
-      const display = new Map<object, unknown>();
       const next = new Map<object, unknown>();
       for (const [original, copy] of copies) {
-        display.set(copy as object, copy);
         next.set(copy as object, original);
       }
       stepStageScenes(live);
       finishStageScenes(live);
       keep(scenes!);
-      interpolate = stageInterpolation(display, next);
+      interpolate = stageInterpolation(next);
       sampledTick = tick;
       for (const update of interpolate) update(fraction);
       return sampled;
@@ -307,7 +323,7 @@ export function createStageRewind(
 }
 
 /** Continuous display fields only; event counters, selectors and random state stay at the current tick. */
-function stageInterpolation(display: Map<object, unknown>, next: Map<object, unknown>) {
+function stageInterpolation(next: Map<object, unknown>) {
   const updates: ((fraction: number) => void)[] = [];
   // Publications can replace a pose or camera object while keeping their owning node alive.
   const paired = new Set<object>();
@@ -317,7 +333,7 @@ function stageInterpolation(display: Map<object, unknown>, next: Map<object, unk
       !future ||
       typeof original !== "object" ||
       typeof future !== "object" ||
-      !display.has(original) ||
+      !next.has(original) ||
       paired.has(original)
     )
       return;
@@ -332,7 +348,7 @@ function stageInterpolation(display: Map<object, unknown>, next: Map<object, unk
         align((original as Record<string, unknown>)[key], (future as Record<string, unknown>)[key]);
     }
   };
-  for (const original of display.keys())
+  for (const original of next.keys())
     if ("top" in original && "classState" in original) align(original, next.get(original));
   const scalars = new Set([
     "frame",
@@ -370,7 +386,7 @@ function stageInterpolation(display: Map<object, unknown>, next: Map<object, unk
     return out >>> 0;
   };
   const packedVertices = new Map<object, number>();
-  for (const original of display.keys()) {
+  for (const original of next.keys()) {
     const value = original as { vertices?: Float32Array; normalVertices?: Float32Array };
     if (value.vertices) packedVertices.set(value.vertices, 6);
     if (value.normalVertices) packedVertices.set(value.normalVertices, 9);
@@ -378,21 +394,20 @@ function stageInterpolation(display: Map<object, unknown>, next: Map<object, unk
   // A float view sharing its buffer with an integer view is a packed record (a particle pool's
   // links, flags and colours beside its floats); blending it as floats corrupts those words.
   const packedRecords = new Set<ArrayBufferLike>();
-  for (const original of display.keys())
+  for (const original of next.keys())
     if (
       ArrayBuffer.isView(original) &&
       !(original instanceof Float32Array || original instanceof Float64Array)
     )
       packedRecords.add(original.buffer);
-  for (const [original, target] of display) {
-    const future = next.get(original);
-    if (!future || !target) continue;
+  for (const [original, future] of next) {
+    if (!future) continue;
     if (original instanceof Float32Array || original instanceof Float64Array) {
       const stride = packedVertices.get(original);
       if (!stride && packedRecords.has(original.buffer)) continue;
       const a = original.slice();
       const b = future as Float32Array;
-      const out = target as Float32Array;
+      const out = original;
       if (a.length !== b.length) continue;
       const aw = stride ? new Uint32Array(a.buffer, a.byteOffset, a.length) : null;
       const bw = stride ? new Uint32Array(b.buffer, b.byteOffset, b.length) : null;
@@ -408,7 +423,7 @@ function stageInterpolation(display: Map<object, unknown>, next: Map<object, unk
     if (ArrayBuffer.isView(original)) continue;
     const a = original as Record<string, unknown>;
     const b = future as Record<string, unknown>;
-    const out = target as Record<string, unknown>;
+    const out = a;
     for (const key of Object.keys(a)) {
       const start = a[key];
       const end = b[key];

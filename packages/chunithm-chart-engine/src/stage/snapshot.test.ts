@@ -1,9 +1,66 @@
 import { expect, it } from "vitest";
-import { type StageScene } from "./runtime";
+import { type StageNode, type StageScene } from "./runtime";
 import { cloneStageScene, createStageRewind } from "./snapshot";
 import { bindStageMaterialUv, StageMaterialUvState } from "./model/materialUv";
 import type { UvAnimation } from "../assets/uvAnimation";
 import type { StageShape } from "./pack";
+
+it("keeps motion state in rewind checkpoints and held nodes without copying it into ordinary displays", () => {
+  const build = () => {
+    const scene = {
+      tick: 0,
+      failure: null,
+      traversalClock: { framePhase: 0 },
+      top: { flags: 0x15, children: [], graveyard: [] },
+      classState: new Map(),
+      options: {
+        heldStates: new Map([[100, { state: 1, match: -1 }]]),
+        nodes: new Map([
+          [
+            0,
+            {
+              finishStep(current: StageScene) {
+                for (const node of current.classState.values() as Iterable<StageNode>) {
+                  const state = node.stateMotions[0].instance as unknown as { elapsed: number };
+                  state.elapsed++;
+                  node.world[0] = state.elapsed;
+                }
+              },
+            },
+          ],
+        ]),
+      },
+    } as unknown as StageScene;
+    for (const id of [100, 200]) {
+      scene.classState.set(String(id), {
+        scene,
+        record: { id },
+        birth: 0,
+        world: new Float32Array(1),
+        stateMotions: [{ instance: { elapsed: 0 } }],
+        before: [],
+        after: [],
+        pending: [],
+        graveyard: [],
+      } as unknown as StageNode);
+    }
+    return [scene];
+  };
+  const rewind = createStageRewind(build, 2);
+  for (const tick of [3, 7, 2, 6]) {
+    const display = rewind.sample(tick, 0.5)[0];
+    const held = display.classState.get("100") as StageNode;
+    const ordinary = display.classState.get("200") as StageNode;
+    expect(ordinary.stateMotions).toEqual([]);
+    expect(held.stateMotions).toHaveLength(1);
+    expect(ordinary.world[0]).toBe(tick + 0.5);
+    expect(held.world[0]).toBe(tick + 0.5);
+  }
+  const restored = rewind.seek(4)[0];
+  expect((restored.classState.get("200") as StageNode).stateMotions).toHaveLength(1);
+  expect((restored.classState.get("200") as StageNode).world[0]).toBe(4);
+});
+
 it("preserves sampled poses across repeated fractions, forward steps and rewinds", () => {
   const build = () => {
     const scene = {
