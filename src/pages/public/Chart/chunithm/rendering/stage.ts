@@ -305,13 +305,14 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
       },
       () => {},
     );
-    const warm = () => {
+    const warm = (deadline?: IdleDeadline) => {
       warmingFrame = 0;
       idleWork = 0;
       if (disposed || signal.aborted || !input.readShowBackground() || !rewind || !warmTarget)
         return;
       try {
-        warmed = rewind.warm(warmTarget, performance.now() + 3);
+        const budget = deadline ? Math.min(3, deadline.timeRemaining() - 1) : 1;
+        if (budget > 0) warmed = rewind.warm(warmTarget, performance.now() + budget);
         if (!warmed) scheduleWarm();
       } catch (cause) {
         detach();

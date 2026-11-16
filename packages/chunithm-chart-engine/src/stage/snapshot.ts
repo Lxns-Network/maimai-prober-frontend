@@ -253,6 +253,7 @@ export function createStageRewind(
   const rewind: StageRewind = {
     warm(tick, deadline) {
       if (failure) throw failure.cause;
+      if (performance.now() >= deadline) return false;
       try {
         let latest = warming;
         if (scenes && (!latest || scenes[0].tick > latest[0].tick)) latest = scenes;
