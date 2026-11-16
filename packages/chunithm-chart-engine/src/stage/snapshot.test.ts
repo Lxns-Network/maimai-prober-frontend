@@ -201,7 +201,9 @@ it("reuses display storage while refreshing changed fields and preserving rewind
         failure: null,
         traversalClock: { framePhase: 0 },
         top: { flags: 0x15, children: [], graveyard: [] },
-        classState: new Map([["pose", { frame: 0, world: Float32Array.of(0), old: true }]]),
+        classState: new Map([
+          ["pose", { frame: 0, world: Float32Array.of(0), fixed: Float32Array.of(1), old: true }],
+        ]),
         options: {
           nodes: new Map([
             [
@@ -229,10 +231,15 @@ it("reuses display storage while refreshing changed fields and preserving rewind
   const pose = first.classState.get("pose") as {
     frame: number;
     world: Float32Array;
+    fixed: Float32Array;
     old?: boolean;
   };
   const buffer = pose.world;
   expect(pose.world[0]).toBe(7);
+  pose.fixed[0] = 9;
+  rewind.sample(3, 0.75);
+  expect(pose.fixed[0]).toBe(1);
+  expect(pose.world[0]).toBe(7.5);
   const second = rewind.sample(4, 0.5)[0];
   expect(second).not.toBe(first);
   const nextPose = second.classState.get("pose") as typeof pose;

@@ -214,7 +214,9 @@ export function createStageRewind(
   let every = interval;
   let sampledTick = -1;
   let sampled: StageScene[] = [];
-  let interpolate: ((fraction: number) => void)[] = [];
+  const interpolate = new StageInterpolation();
+  const next = new Map<object, unknown>();
+  let spareCopies = new Map<object, unknown>();
   let displayCopies = new Map<object, unknown>();
   let kept: Kept[] = [];
   let bytes = 0;
@@ -276,35 +278,39 @@ export function createStageRewind(
     },
     sample(tick, fraction) {
       if (sampledTick === tick) {
-        for (const update of interpolate) update(fraction);
+        interpolate.apply(fraction);
         return sampled;
       }
       const live = rewind.seek(tick);
       if (fraction === 0) return live;
-      const copies = new Map<object, unknown>();
+      const copies = spareCopies;
+      copies.clear();
       sampled = cloneStageScenes(live, copies, displayCopies, true).map((copy) => copy.scene);
+      spareCopies = displayCopies;
+      spareCopies.clear();
       displayCopies = copies;
-      const next = new Map<object, unknown>();
+      next.clear();
       for (const [original, copy] of copies) {
         next.set(copy as object, original);
       }
       stepStageScenes(live);
       finishStageScenes(live);
       keep(scenes!);
-      interpolate = stageInterpolation(next);
+      interpolate.prepare(next);
+      next.clear();
       sampledTick = tick;
-      for (const update of interpolate) update(fraction);
+      interpolate.apply(fraction);
       return sampled;
     },
     seek(tick) {
       if (failure) throw failure.cause;
       if (sampledTick === tick) {
-        for (const update of interpolate) update(0);
+        interpolate.apply(0);
         return sampled;
       }
       sampledTick = -1;
       sampled = [];
-      interpolate = [];
+      interpolate.clear();
       try {
         let from: Kept | undefined;
         for (const copy of kept) if (copy.tick <= tick) from = copy;
@@ -333,120 +339,209 @@ export function createStageRewind(
 }
 
 /** Continuous display fields only; event counters, selectors and random state stay at the current tick. */
-function stageInterpolation(next: Map<object, unknown>) {
-  const updates: ((fraction: number) => void)[] = [];
-  // Publications can replace a pose or camera object while keeping their owning node alive.
-  const paired = new Set<object>();
-  const align = (original: unknown, future: unknown) => {
-    if (
-      !original ||
-      !future ||
-      typeof original !== "object" ||
-      typeof future !== "object" ||
-      !next.has(original) ||
-      paired.has(original)
-    )
-      return;
-    paired.add(original);
-    if ("record" in original && "birth" in original && next.get(original) !== future) return;
-    next.set(original, future);
-    if (ArrayBuffer.isView(original)) return;
-    if (original instanceof Map && future instanceof Map) {
-      for (const [key, value] of original) align(value, future.get(next.get(key) ?? key));
-    } else {
-      for (const key of Object.keys(original))
-        align((original as Record<string, unknown>)[key], (future as Record<string, unknown>)[key]);
-    }
-  };
-  for (const original of next.keys())
-    if ("top" in original && "classState" in original) align(original, next.get(original));
-  const scalars = new Set([
-    "frame",
-    "previousFrame",
-    "time",
-    "sampledAge",
-    "weight",
-    "blendWeight",
-    "fov",
-    "fovDegrees",
-    "aspect",
-    "near",
-    "far",
-    "offsetX",
-    "offsetY",
-    "intensity",
-    "radius",
-    "exposure",
-    "strength",
-    "threshold",
-    "amount",
-  ]);
-  const colours = new Set([
-    "color",
-    "colour",
-    "globalColor",
-    "diffuse",
-    "specular",
-    "holderColour",
-  ]);
-  const blendColour = (a: number, b: number, t: number) => {
-    let out = 0;
-    for (let shift = 0; shift < 32; shift += 8)
-      out |= Math.round(((a >>> shift) & 255) * (1 - t) + ((b >>> shift) & 255) * t) << shift;
-    return out >>> 0;
-  };
-  const packedVertices = new Map<object, number>();
-  for (const original of next.keys()) {
-    const value = original as { vertices?: Float32Array; normalVertices?: Float32Array };
-    if (value.vertices) packedVertices.set(value.vertices, 6);
-    if (value.normalVertices) packedVertices.set(value.normalVertices, 9);
+class StageInterpolation {
+  private readonly arrays = new WeakMap<object, ArrayInterpolation>();
+  private readonly active: ArrayInterpolation[] = [];
+  private readonly scalars: ScalarInterpolation[] = [];
+  private scalarCount = 0;
+
+  clear(): void {
+    this.active.length = 0;
+    this.scalarCount = 0;
   }
-  // A float view sharing its buffer with an integer view is a packed record (a particle pool's
-  // links, flags and colours beside its floats); blending it as floats corrupts those words.
-  const packedRecords = new Set<ArrayBufferLike>();
-  for (const original of next.keys())
-    if (
-      ArrayBuffer.isView(original) &&
-      !(original instanceof Float32Array || original instanceof Float64Array)
-    )
-      packedRecords.add(original.buffer);
-  for (const [original, future] of next) {
-    if (!future) continue;
-    if (original instanceof Float32Array || original instanceof Float64Array) {
-      const stride = packedVertices.get(original);
-      if (!stride && packedRecords.has(original.buffer)) continue;
-      const a = original.slice();
-      const b = future as Float32Array;
-      const out = original;
-      if (a.length !== b.length) continue;
-      const aw = stride ? new Uint32Array(a.buffer, a.byteOffset, a.length) : null;
-      const bw = stride ? new Uint32Array(b.buffer, b.byteOffset, b.length) : null;
-      const ow = stride ? new Uint32Array(out.buffer, out.byteOffset, out.length) : null;
-      updates.push((t) => {
-        for (let i = 0; i < a.length; i++) {
-          if (stride && i % stride === stride - 3) ow![i] = blendColour(aw![i], bw![i], t);
-          else out[i] = a[i] + (b[i] - a[i]) * t;
+
+  apply(fraction: number): void {
+    for (const entry of this.active) {
+      const { start, end, out, stride, startWords, endWords, outWords } = entry;
+      if (entry.constant) {
+        out.set(start);
+        continue;
+      }
+      for (let i = 0; i < start.length; i++) {
+        if (stride && i % stride === stride - 3)
+          outWords![i] = blendColour(startWords![i], endWords![i], fraction);
+        else out[i] = start[i] + (end[i] - start[i]) * fraction;
+      }
+    }
+    for (let i = 0; i < this.scalarCount; i++) {
+      const entry = this.scalars[i];
+      entry.out[entry.key] = entry.colour
+        ? blendColour(entry.start, entry.end, fraction)
+        : entry.start + (entry.end - entry.start) * fraction;
+    }
+  }
+
+  prepare(next: Map<object, unknown>): void {
+    this.clear();
+    // Publications can replace a pose or camera object while keeping their owning node alive.
+    const paired = new Set<object>();
+    const align = (original: unknown, future: unknown) => {
+      if (
+        !original ||
+        !future ||
+        typeof original !== "object" ||
+        typeof future !== "object" ||
+        !next.has(original) ||
+        paired.has(original)
+      )
+        return;
+      paired.add(original);
+      if ("record" in original && "birth" in original && next.get(original) !== future) return;
+      next.set(original, future);
+      if (ArrayBuffer.isView(original)) return;
+      if (original instanceof Map && future instanceof Map) {
+        for (const [key, value] of original) align(value, future.get(next.get(key) ?? key));
+      } else {
+        for (const key of Object.keys(original))
+          align(
+            (original as Record<string, unknown>)[key],
+            (future as Record<string, unknown>)[key],
+          );
+      }
+    };
+    for (const original of next.keys())
+      if ("top" in original && "classState" in original) align(original, next.get(original));
+    const packedVertices = new Map<object, number>();
+    for (const original of next.keys()) {
+      const value = original as { vertices?: Float32Array; normalVertices?: Float32Array };
+      if (value.vertices) packedVertices.set(value.vertices, 6);
+      if (value.normalVertices) packedVertices.set(value.normalVertices, 9);
+    }
+    // A float view sharing its buffer with an integer view is a packed record (a particle pool's
+    // links, flags and colours beside its floats); blending it as floats corrupts those words.
+    const packedRecords = new Set<ArrayBufferLike>();
+    for (const original of next.keys())
+      if (
+        ArrayBuffer.isView(original) &&
+        !(original instanceof Float32Array || original instanceof Float64Array)
+      )
+        packedRecords.add(original.buffer);
+    for (const [original, future] of next) {
+      if (!future) continue;
+      if (original instanceof Float32Array || original instanceof Float64Array) {
+        const stride = packedVertices.get(original);
+        if (!stride && packedRecords.has(original.buffer)) continue;
+        const b = future as Float32Array | Float64Array;
+        if (original.length !== b.length) continue;
+        // Copy constant arrays too: held-state presentation can mutate them between samples.
+        let unchanged = !stride;
+        if (!stride) {
+          for (let i = 0; i < original.length; i++) {
+            const value = original[i];
+            if (value !== b[i] || !Number.isFinite(value) || Object.is(value, -0)) {
+              unchanged = false;
+              break;
+            }
+          }
         }
-      });
-      continue;
+        let entry = this.arrays.get(original);
+        if (!entry || entry.stride !== stride) {
+          const start = original.slice();
+          entry = {
+            start,
+            end: b,
+            out: original,
+            stride,
+            constant: unchanged,
+            startWords: stride
+              ? new Uint32Array(start.buffer, start.byteOffset, start.length)
+              : null,
+            endWords: null,
+            outWords: stride
+              ? new Uint32Array(original.buffer, original.byteOffset, original.length)
+              : null,
+          };
+          this.arrays.set(original, entry);
+        } else entry.start.set(original);
+        entry.constant = unchanged;
+        entry.end = b;
+        if (
+          stride &&
+          (!entry.endWords ||
+            entry.endWords.buffer !== b.buffer ||
+            entry.endWords.byteOffset !== b.byteOffset)
+        )
+          entry.endWords = new Uint32Array(b.buffer, b.byteOffset, b.length);
+        this.active.push(entry);
+        continue;
+      }
+      if (ArrayBuffer.isView(original)) continue;
+      const a = original as Record<string, unknown>;
+      const b = future as Record<string, unknown>;
+      const out = a;
+      for (const key of Object.keys(a)) {
+        const start = a[key];
+        const end = b[key];
+        if (typeof start !== "number" || typeof end !== "number" || start === end) continue;
+        const colour = colourFields.has(key);
+        if (!colour && !(scalarFields.has(key) && Number.isFinite(start) && Number.isFinite(end)))
+          continue;
+        let entry = this.scalars[this.scalarCount++];
+        if (!entry) {
+          entry = { out, key, start, end, colour };
+          this.scalars.push(entry);
+        } else {
+          entry.out = out;
+          entry.key = key;
+          entry.start = start;
+          entry.end = end;
+          entry.colour = colour;
+        }
+      }
     }
-    if (ArrayBuffer.isView(original)) continue;
-    const a = original as Record<string, unknown>;
-    const b = future as Record<string, unknown>;
-    const out = a;
-    for (const key of Object.keys(a)) {
-      const start = a[key];
-      const end = b[key];
-      if (typeof start !== "number" || typeof end !== "number" || start === end) continue;
-      if (colours.has(key))
-        updates.push((t) => {
-          out[key] = blendColour(start, end, t);
-        });
-      else if (scalars.has(key) && Number.isFinite(start) && Number.isFinite(end))
-        updates.push((t) => {
-          out[key] = start + (end - start) * t;
-        });
-    }
+    this.scalars.length = this.scalarCount;
   }
-  return updates;
 }
+
+interface ArrayInterpolation {
+  constant: boolean;
+  readonly start: Float32Array | Float64Array;
+  end: Float32Array | Float64Array;
+  readonly out: Float32Array | Float64Array;
+  readonly stride: number | undefined;
+  readonly startWords: Uint32Array | null;
+  endWords: Uint32Array | null;
+  readonly outWords: Uint32Array | null;
+}
+interface ScalarInterpolation {
+  out: Record<string, unknown>;
+  key: string;
+  start: number;
+  end: number;
+  colour: boolean;
+}
+const scalarFields = new Set([
+  "frame",
+  "previousFrame",
+  "time",
+  "sampledAge",
+  "weight",
+  "blendWeight",
+  "fov",
+  "fovDegrees",
+  "aspect",
+  "near",
+  "far",
+  "offsetX",
+  "offsetY",
+  "intensity",
+  "radius",
+  "exposure",
+  "strength",
+  "threshold",
+  "amount",
+]);
+const colourFields = new Set([
+  "color",
+  "colour",
+  "globalColor",
+  "diffuse",
+  "specular",
+  "holderColour",
+]);
+const blendColour = (a: number, b: number, t: number) => {
+  let out = 0;
+  for (let shift = 0; shift < 32; shift += 8)
+    out |= Math.round(((a >>> shift) & 255) * (1 - t) + ((b >>> shift) & 255) * t) << shift;
+  return out >>> 0;
+};
