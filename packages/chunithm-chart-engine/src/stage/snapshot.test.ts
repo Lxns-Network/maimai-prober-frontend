@@ -42,6 +42,14 @@ it("keeps motion state in rewind checkpoints and held nodes without copying it i
         after: [],
         pending: [],
         graveyard: [],
+        controller: { schedule: [{ remaining: 10 }], killWhenChildrenDone: false },
+        extension: {
+          provider: {
+            poses: [{ position: Float32Array.of(1, 2, 3) }],
+            playback: { samples: [Float32Array.of(4, 5, 6)] },
+            pose: { worlds: [Float32Array.of(7)], active: [true] },
+          },
+        },
       } as unknown as StageNode);
     }
     return [scene];
@@ -53,12 +61,26 @@ it("keeps motion state in rewind checkpoints and held nodes without copying it i
     const ordinary = display.classState.get("200") as StageNode;
     expect(ordinary.stateMotions).toEqual([]);
     expect(held.stateMotions).toHaveLength(1);
+    expect(ordinary.controller!.schedule).toEqual([]);
+    expect(held.controller!.schedule).toHaveLength(1);
+    const providerOf = (node: StageNode) =>
+      (
+        node.extension as {
+          provider: { poses: unknown[]; playback: unknown; pose: { worlds: Float32Array[] } };
+        }
+      ).provider;
+    expect(providerOf(ordinary).poses).toEqual([]);
+    expect(providerOf(ordinary).playback).toBeNull();
+    expect(providerOf(ordinary).pose.worlds[0][0]).toBe(7);
+    expect(providerOf(held).poses).toHaveLength(1);
+    expect(providerOf(held).playback).not.toBeNull();
     expect(ordinary.world[0]).toBe(tick + 0.5);
     expect(held.world[0]).toBe(tick + 0.5);
   }
   const restored = rewind.seek(4)[0];
   expect((restored.classState.get("200") as StageNode).stateMotions).toHaveLength(1);
   expect((restored.classState.get("200") as StageNode).world[0]).toBe(4);
+  expect((restored.classState.get("200") as StageNode).controller!.schedule).toHaveLength(1);
 });
 
 it("preserves sampled poses across repeated fractions, forward steps and rewinds", () => {

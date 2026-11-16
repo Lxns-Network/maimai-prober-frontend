@@ -403,10 +403,8 @@ export function evaluateInstances(input: EvaluateInput, store: EvaluateStore): n
       );
     const slot = store.instances[written];
     const meshMatrix = meshMatrices.get(mesh) ?? null;
-    const world = composeWorldMatrix(note, meshMatrix);
-    // Copy into the slot's preallocated views so nothing is retained per frame.
-    slot.world.set(world);
-    slot.sortJoint.set(sorting === "own" ? world : (meshMatrix ?? IDENTITY));
+    composeWorldMatrix(note, meshMatrix, slot.world);
+    slot.sortJoint.set(sorting === "own" ? slot.world : (meshMatrix ?? IDENTITY));
     slot.record = record;
     slot.key = key;
     slot.depth = z;

@@ -90,10 +90,11 @@ export function createEffectHost(input: {
   textures: EffectTextures;
 }): EffectHost {
   const { scene, resources, textures } = input;
-  const renderer = createEffectRenderer(input.gl, textures);
+  const gpuEpoch = scene.withPresentation((device) => () => device.executionSequence);
+  const renderer = createEffectRenderer(input.gl, textures, gpuEpoch);
   let publisher = createEffectPublisher({ maximumParticles: MAXIMUM_PARTICLES });
   let nextPublisher = createEffectPublisher({ maximumParticles: MAXIMUM_PARTICLES });
-  let interpolate: ((fraction: number) => void)[] = [];
+  const interpolation = new EffectInterpolation();
 
   let source: ChartEffects | null = null;
   const playback = createEffectPlayback();
@@ -142,7 +143,7 @@ export function createEffectHost(input: {
         published = -1;
         publisher.reset();
         nextPublisher.reset();
-        interpolate = [];
+        interpolation.reset();
       }
       const eye = scene.readEffectCamera();
       const step = stepForSeconds(frame.seconds);
@@ -162,10 +163,10 @@ export function createEffectHost(input: {
         }
         nextPublisher.reset();
         scheduler!.advanceTo(step + 1, eye, nextPublisher.sink);
-        interpolate = effectInterpolation(publisher.packets, nextPublisher.packets);
+        interpolation.prepare(publisher.packets, nextPublisher.packets);
         published = step;
       }
-      for (const update of interpolate) update(frame.seconds * 120 - step);
+      interpolation.apply(frame.seconds * 120 - step);
       return renderer.prepare(publisher.packets, {
         viewport: camera.viewport,
         viewProjection: camera.viewProjection,
@@ -177,6 +178,7 @@ export function createEffectHost(input: {
     dispose() {
       if (disposed) return;
       disposed = true;
+      interpolation.reset();
       try {
         renderer.dispose();
       } finally {
@@ -230,53 +232,142 @@ export function createEffectSlot(pending: Promise<EffectHost>, onChange?: () => 
   };
 }
 
+type MutableValues = { [index: number]: number };
+
+interface ArrayInterpolation {
+  start: Float32Array;
+  target: MutableValues;
+  next: ArrayLike<number>;
+  length: number;
+}
+
+interface MaterialInterpolation {
+  target: DataView;
+  start: Float64Array;
+  end: Float64Array;
+}
+
+interface ParticleInterpolation {
+  target: MutableValues;
+  start: Float64Array;
+  end: Float64Array;
+  time: number;
+}
+
+const PARTICLE_INTERPOLATION_INDICES = [16, 17, 18, 19, 20, 21, 22, 23, 223];
+
 /** Pairs stable draw identities, retaining the current step's births, removals and texture selections. */
-function effectInterpolation(current: readonly EffectPacket[], next: readonly EffectPacket[]) {
-  const targets = new Map(next.map((packet) => [packet.interpolationKey, packet]));
-  const updates: ((fraction: number) => void)[] = [];
-  const bind = (current: ArrayLike<number>, next: ArrayLike<number>) => {
+class EffectInterpolation {
+  private readonly targets = new Map<string | undefined, EffectPacket>();
+  private readonly arrays: ArrayInterpolation[] = [];
+  private readonly materials: MaterialInterpolation[] = [];
+  private readonly particles: ParticleInterpolation[] = [];
+  private arrayCount = 0;
+  private materialCount = 0;
+  private particleCount = 0;
+
+  reset() {
+    this.targets.clear();
+    this.arrays.length = this.materials.length = this.particles.length = 0;
+    this.arrayCount = this.materialCount = this.particleCount = 0;
+  }
+
+  private bind(current: ArrayLike<number>, next: ArrayLike<number>) {
     if (current.length !== next.length) return;
-    const start = Float32Array.from(current);
-    const target = current as { [index: number]: number };
-    updates.push((fraction) => {
-      for (let i = 0; i < start.length; i++) target[i] = start[i] + (next[i] - start[i]) * fraction;
-    });
-  };
-  for (const packet of current) {
-    const other = targets.get(packet.interpolationKey);
-    if (!other || other.kind !== packet.kind || other.resourceId !== packet.resourceId) continue;
-    bind(packet.worldMatrix, other.worldMatrix);
-    if (packet.kind === "simple" && other.kind === "simple") {
-      bind(packet.order.sortPosition, other.order.sortPosition);
-      for (const key of ["aPosition", "aColor", "aNormal"] as const) {
-        const a = packet.mesh.attributes[key];
-        const b = other.mesh.attributes[key];
-        if (a && b) bind(a.values, b.values);
-      }
-      const context = packet.material.context as Uint8Array;
-      const future = other.material.context as Uint8Array;
-      const a = new DataView(context.buffer, context.byteOffset, context.byteLength);
-      const b = new DataView(future.buffer, future.byteOffset, future.byteLength);
-      for (let offset = 60; offset < 84; offset += 4) {
-        const start = a.getFloat32(offset, true);
-        const end = b.getFloat32(offset, true);
-        updates.push((t) => a.setFloat32(offset, start + (end - start) * t, true));
-      }
-    } else if (packet.kind === "particle" && other.kind === "particle") {
-      const parameters = packet.parameters as { [index: number]: number };
-      const start = parameters[0];
-      // Shader time is relative to this draw's ring slice; the next slice may wrap or retire particles.
-      updates.push((fraction) => {
-        parameters[0] = start + fraction * 0.5;
-      });
-      for (const index of [16, 17, 18, 19, 20, 21, 22, 23, 223]) {
-        const a = parameters[index];
-        const b = other.parameters[index];
-        updates.push((fraction) => {
-          parameters[index] = a + (b - a) * fraction;
-        });
+    let slot = this.arrays[this.arrayCount++];
+    if (!slot) {
+      slot = {
+        start: new Float32Array(current.length),
+        target: current as MutableValues,
+        next,
+        length: current.length,
+      };
+      this.arrays.push(slot);
+    } else {
+      if (slot.start.length < current.length) slot.start = new Float32Array(current.length);
+      slot.target = current as MutableValues;
+      slot.next = next;
+      slot.length = current.length;
+    }
+    slot.start.set(current);
+  }
+
+  prepare(current: readonly EffectPacket[], next: readonly EffectPacket[]) {
+    this.arrayCount = this.materialCount = this.particleCount = 0;
+    this.targets.clear();
+    for (const packet of next) this.targets.set(packet.interpolationKey, packet);
+    for (const packet of current) {
+      const other = this.targets.get(packet.interpolationKey);
+      if (!other || other.kind !== packet.kind || other.resourceId !== packet.resourceId) continue;
+      this.bind(packet.worldMatrix, other.worldMatrix);
+      if (packet.kind === "simple" && other.kind === "simple") {
+        this.bind(packet.order.sortPosition, other.order.sortPosition);
+        for (const key of ["aPosition", "aColor", "aNormal"] as const) {
+          const a = packet.mesh.attributes[key];
+          const b = other.mesh.attributes[key];
+          if (a && b) this.bind(a.values, b.values);
+        }
+        const context = packet.material.context as Uint8Array;
+        const future = other.material.context as Uint8Array;
+        let slot = this.materials[this.materialCount++];
+        if (!slot) {
+          slot = {
+            target: new DataView(context.buffer, context.byteOffset, context.byteLength),
+            start: new Float64Array(6),
+            end: new Float64Array(6),
+          };
+          this.materials.push(slot);
+        } else if (
+          slot.target.buffer !== context.buffer ||
+          slot.target.byteOffset !== context.byteOffset ||
+          slot.target.byteLength !== context.byteLength
+        ) {
+          slot.target = new DataView(context.buffer, context.byteOffset, context.byteLength);
+        }
+        const futureView = new DataView(future.buffer, future.byteOffset, future.byteLength);
+        for (let i = 0; i < 6; i++) {
+          slot.start[i] = slot.target.getFloat32(60 + i * 4, true);
+          slot.end[i] = futureView.getFloat32(60 + i * 4, true);
+        }
+      } else if (packet.kind === "particle" && other.kind === "particle") {
+        let slot = this.particles[this.particleCount++];
+        if (!slot) {
+          slot = {
+            target: packet.parameters as MutableValues,
+            start: new Float64Array(9),
+            end: new Float64Array(9),
+            time: 0,
+          };
+          this.particles.push(slot);
+        }
+        slot.target = packet.parameters as MutableValues;
+        slot.time = packet.parameters[0];
+        for (let i = 0; i < PARTICLE_INTERPOLATION_INDICES.length; i++) {
+          const index = PARTICLE_INTERPOLATION_INDICES[i];
+          slot.start[i] = packet.parameters[index];
+          slot.end[i] = other.parameters[index];
+        }
       }
     }
   }
-  return updates;
+
+  apply(fraction: number) {
+    for (let j = 0; j < this.arrayCount; j++) {
+      const { start, target, next, length } = this.arrays[j];
+      for (let i = 0; i < length; i++) target[i] = start[i] + (next[i] - start[i]) * fraction;
+    }
+    for (let j = 0; j < this.materialCount; j++) {
+      const { start, end, target } = this.materials[j];
+      for (let i = 0; i < 6; i++)
+        target.setFloat32(60 + i * 4, start[i] + (end[i] - start[i]) * fraction, true);
+    }
+    for (let j = 0; j < this.particleCount; j++) {
+      const { start, end, target, time } = this.particles[j];
+      // Shader time is relative to this draw's ring slice; the next slice may wrap or retire particles.
+      target[0] = time + fraction * 0.5;
+      for (let i = 0; i < PARTICLE_INTERPOLATION_INDICES.length; i++) {
+        target[PARTICLE_INTERPOLATION_INDICES[i]] = start[i] + (end[i] - start[i]) * fraction;
+      }
+    }
+  }
 }

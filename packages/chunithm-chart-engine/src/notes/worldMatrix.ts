@@ -20,9 +20,10 @@
 export type Affine = ArrayLike<number>;
 
 /** Rounds to float32, rejecting anything that is not already an exact finite float32. */
-const finiteF32 = (value: number, label: string): number => {
-  if (!Number.isFinite(value)) throw new RangeError(`${label} must be finite`);
-  if (Math.fround(value) !== value) throw new RangeError(`${label} must be an exact float32`);
+const finiteF32 = (value: number, label: string, index: number): number => {
+  if (!Number.isFinite(value)) throw new RangeError(`${label}[${index}] must be finite`);
+  if (Math.fround(value) !== value)
+    throw new RangeError(`${label}[${index}] must be an exact float32`);
   return value;
 };
 
@@ -41,8 +42,14 @@ export function affine(values: Affine, label: string): number[] {
   if (!values || values.length !== 12)
     throw new RangeError(`${label} must hold twelve values, got ${values?.length ?? 0}`);
   const out = new Array<number>(12);
-  for (let i = 0; i < 12; i++) out[i] = finiteF32(values[i], `${label}[${i}]`);
+  for (let i = 0; i < 12; i++) out[i] = finiteF32(values[i], label, i);
   return out;
+}
+
+function checkAffine(values: Affine, label: string): void {
+  if (!values || values.length !== 12)
+    throw new RangeError(`${label} must hold twelve values, got ${values?.length ?? 0}`);
+  for (let i = 0; i < 12; i++) finiteF32(values[i], label, i);
 }
 
 /**
@@ -52,11 +59,15 @@ export function affine(values: Affine, label: string): number[] {
  * innermost pair is summed and rounded, the second pair likewise, then the two are added and rounded
  * again. Accumulating the row as one running sum differs in the last bit, and the difference
  * propagates into the clip position.
+ * A supplied output must have twelve elements and must not overlap either input.
  */
-export function multiplyAffine(a: Affine, b: Affine): Float32Array {
-  const left = affine(a, "The left transform");
-  const right = affine(b, "The right transform");
-  const out = new Float32Array(12);
+export function multiplyAffine(
+  left: Affine,
+  right: Affine,
+  out: Float32Array = new Float32Array(12),
+): Float32Array {
+  checkAffine(left, "The left transform");
+  checkAffine(right, "The right transform");
   for (let at = 0; at < 12; at += 4)
     for (let col = 0; col < 4; col++)
       out[at + col] = f(
@@ -72,9 +83,14 @@ export function multiplyAffine(a: Affine, b: Affine): Float32Array {
  * The note transform is the left operand and the mesh's the right, which is the reference's order.
  * A mesh that records no matrix multiplies by the identity. Composing the other way round transposes
  * the result relative to the reference.
+ * A supplied output follows `multiplyAffine`'s size and non-overlap contract.
  */
-export function composeWorldMatrix(note: Affine, meshMatrix: Affine | null): Float32Array {
-  return multiplyAffine(note, meshMatrix ?? IDENTITY);
+export function composeWorldMatrix(
+  note: Affine,
+  meshMatrix: Affine | null,
+  out?: Float32Array,
+): Float32Array {
+  return multiplyAffine(note, meshMatrix ?? IDENTITY, out);
 }
 
 /** The affine identity, used when a mesh records no matrix of its own. */

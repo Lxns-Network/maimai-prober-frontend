@@ -48,9 +48,7 @@ export interface OrderedDraw {
 
 /** Returns a new array in draw order; `entries` is not changed. */
 export function orderPass<T extends OrderedDraw>(entries: readonly T[], mode: PassSortMode): T[] {
-  const compare = (a: number, b: number): number => {
-    const x = entries[a];
-    const y = entries[b];
+  return [...entries].sort((x, y) => {
     let order: number;
     if (mode === 2) order = y.depth - x.depth;
     else if (mode === 3) order = x.depth - y.depth;
@@ -58,9 +56,6 @@ export function orderPass<T extends OrderedDraw>(entries: readonly T[], mode: Pa
       order = mode === 4 ? y.key - x.key : x.key - y.key;
       if (order === 0 && mode >= 6) order = mode === 6 ? y.depth - x.depth : x.depth - y.depth;
     }
-    return order || a - b;
-  };
-  const rows = entries.map((_, index) => index);
-  rows.sort(compare);
-  return rows.map((row) => entries[row]);
+    return order;
+  });
 }

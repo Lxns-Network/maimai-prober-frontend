@@ -11,12 +11,12 @@ import { createRendererResources, releaseResources, type RendererResources } fro
  * The note renderer: instance buffer, band buffer, grouping and the draws.
  *
  * Per frame the caller supplies the records present at a grid step; each one is evaluated into an
- * instance (or a band) and the instances are submitted grouped by the pass sort key. All buffers are
- * sized here, once, from the capacity the caller passes — the frame path only writes.
+ * instance (or a band) and the instances are submitted grouped by the pass sort key. CPU storage
+ * uses the caller's capacity; per-draw GPU streams grow to their peak batch size and are reused.
  *
  * The GL work is deliberately thin: the shaders are the packed ones with `uWorld` rewritten to an
- * instance attribute, so the only per-instance data uploaded is the transform, the tint and the UV
- * offset. The arithmetic that places a note happens on the CPU, in the note modules, exactly as it
+ * instance attribute, so the per-instance data uploaded is the transform. The arithmetic that
+ * places a note happens on the CPU, in the note modules, exactly as it
  * does in the reference.
  */
 
@@ -176,6 +176,7 @@ function buildNoteRenderer(
     /** Fixed-function state the material draws with, checked at build time. */
     readonly state: DeviceStateSet;
     readonly program: WebGLProgram;
+    readonly instanceLocations: readonly number[];
     readonly locations: UniformLocations;
     readonly uniforms: Readonly<Record<string, PackedUniform>>;
     /** Sampler slot to the image name that slot samples; empty when the pack records no names. */
@@ -360,6 +361,7 @@ function buildNoteRenderer(
           pass: resolveMaterialPass(name, meshName, material.pass, options),
           state,
           program: binding.program,
+          instanceLocations: binding.locations,
           locations,
           uniforms,
           textureNames,
@@ -403,11 +405,16 @@ function buildNoteRenderer(
   // match `INSTANCE_FLOATS` or an instance reads its neighbour's data.
   if (INSTANCED_FLOATS !== BUFFER_FLOATS)
     throw new RangeError("The shader and buffer instance strides disagree");
-  // The instance buffer is bound while each mesh's vertex array is built, because a vertex array
-  // records the buffer bound at the time its attributes were pointed. One buffer serves every
-  // vertex array; only the attribute slots differ, and they differ per program.
+  // Each draw gets separate instance storage: overwriting a submitted draw's buffer causes
+  // expensive driver synchronization on mobile. Three frame sets keep recent draws intact.
+  const instanceStreams: { buffer: WebGLBuffer; capacity: number }[][] = [
+    [{ buffer: instanceGlBuffer, capacity: INSTANCED_FLOATS * 4 }],
+    [],
+    [],
+  ];
+  let instanceStreamIndex = 0;
   gl.bindBuffer(gl.ARRAY_BUFFER, instanceGlBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, instanceBuffer.floats().byteLength, gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, INSTANCED_FLOATS * 4, gl.STREAM_DRAW);
   // The instance attributes are per program's locations, so they are applied to each mesh's vertex
   // array together with that mesh's own attributes — one vertex array per (program, mesh) pair.
   for (const [key, bound] of meshCache) {
@@ -699,8 +706,21 @@ function buildNoteRenderer(
           material.samplers,
         );
 
-      // The instance buffer holds this draw's instances from the base onward; the reference uploads
-      // per draw rather than using a base-instance offset, which WebGL2 lacks.
+      const streams = instanceStreams[frameSerial % instanceStreams.length];
+      const streamIndex = instanceStreamIndex++;
+      let stream = streams[streamIndex];
+      if (!stream) {
+        const buffer = target.createBuffer();
+        if (!buffer) throw new Error("An instance buffer is required");
+        buffers.push(buffer);
+        stream = streams[streamIndex] = { buffer, capacity: 0 };
+      }
+      target.bindBuffer(target.ARRAY_BUFFER, stream.buffer);
+      const bytes = instances * INSTANCED_FLOATS * 4;
+      if (stream.capacity < bytes) {
+        stream.capacity = 2 ** Math.ceil(Math.log2(bytes));
+        target.bufferData(target.ARRAY_BUFFER, stream.capacity, target.STREAM_DRAW);
+      }
       target.bufferSubData(
         target.ARRAY_BUFFER,
         0,
@@ -709,6 +729,15 @@ function buildNoteRenderer(
         instances * INSTANCED_FLOATS,
       );
       target.bindVertexArray(material.bound.vertexArray);
+      for (let column = 0; column < material.instanceLocations.length; column++)
+        target.vertexAttribPointer(
+          material.instanceLocations[column],
+          3,
+          target.FLOAT,
+          false,
+          INSTANCED_FLOATS * 4,
+          column * 3 * 4,
+        );
       target.drawElementsInstanced(
         target.TRIANGLES,
         material.bound.geometry.indexCount,
@@ -768,6 +797,7 @@ function buildNoteRenderer(
       if (disposed) throw new Error("The note renderer has been disposed");
       const stamp = ++preparation;
       frameSerial++;
+      instanceStreamIndex = 0;
       if (input.instances.length > options.instanceCapacity || input.bands.length > maxBands)
         throw new RangeError("Prepared frame exceeds renderer capacity");
       resolveMaterials(input.instances);
@@ -904,7 +934,6 @@ function buildNoteRenderer(
           instanceDepths[i],
           () => {
             runDrawn[run] = 1;
-            gl.bindBuffer(gl.ARRAY_BUFFER, instanceGlBuffer);
             const before = draws;
             drawBatched(gl, input, runStart[run], runCount[run], identityOrder, viewProjection);
             return {
@@ -929,6 +958,7 @@ function buildNoteRenderer(
     frame(input: FrameInput): DrawStats {
       preparation++;
       frameSerial++;
+      instanceStreamIndex = 0;
       const started = typeof performance !== "undefined" ? performance.now() : 0;
       if (disposed) throw new Error("The note renderer has been disposed");
       if (input.instances.length > options.instanceCapacity)
@@ -1011,7 +1041,6 @@ function buildNoteRenderer(
             bandBuffer.count() * HOLD_VERTEX_BYTES,
           );
         }
-        gl.bindBuffer(gl.ARRAY_BUFFER, instanceGlBuffer);
         // Anything else that draws on this context between frames may have changed its state, so the
         // frame starts from nothing assumed.
         deviceState.invalidate();

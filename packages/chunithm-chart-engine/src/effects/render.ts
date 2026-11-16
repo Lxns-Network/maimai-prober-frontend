@@ -185,6 +185,7 @@ export interface EffectDrawContext {
 }
 
 export interface EffectDraw {
+  readonly source: object;
   /** Index in the scene's pass table. */
   readonly pass: number;
   readonly key: number;
@@ -259,6 +260,7 @@ interface Program {
 }
 
 interface Slot {
+  readonly source: object;
   lines: boolean;
   points: boolean;
   pointSize: number;
@@ -296,11 +298,14 @@ function compile(gl: WebGL2RenderingContext, key: EffectProgramKey): WebGLProgra
   return compileProgram(gl, { name: "Effect " + key, vertex, fragment });
 }
 
-/** Builds the renderer over a context and the textures its packets name. */
+/** Builds the renderer over a context and its textures. `gpuEpoch` changes after external state writes. */
 export function createEffectRenderer(
   gl: WebGL2RenderingContext,
   textures: EffectTextureSource,
+  gpuEpoch?: () => number,
 ): EffectRenderer {
+  const drawSource = {};
+  let drawEpoch: number | undefined;
   const deviceState = createDeviceState(gl);
   const samplerCache = createSamplerCache(gl);
   const samplers = new Map<number, WebGLSampler>();
@@ -456,7 +461,9 @@ export function createEffectRenderer(
     if (program.refraction && !supplied?.color)
       throw new Error("A refractive effect needs the scene color snapshot");
     selectFrame(slot.frame);
-    deviceState.invalidate();
+    const epoch = gpuEpoch?.();
+    if (epoch === undefined || epoch !== drawEpoch) deviceState.invalidate();
+    drawEpoch = undefined;
     gl.useProgram(program.program);
     deviceState.apply(slot.state!, program.program, program.locations);
     if (program.frame !== slot.frame) {
@@ -604,6 +611,7 @@ export function createEffectRenderer(
     if (program.softEdge) gl.bindSampler(EFFECT_DEPTH_UNIT, null);
     if (program.refraction) gl.bindSampler(EFFECT_COLOR_UNIT, null);
     gl.bindVertexArray(null);
+    drawEpoch = epoch;
     return ONE_DRAW;
   };
 
@@ -611,6 +619,7 @@ export function createEffectRenderer(
     let slot = slots[index];
     if (!slot) {
       const created: Slot = {
+        source: drawSource,
         lines: false,
         points: false,
         pointSize: 1,

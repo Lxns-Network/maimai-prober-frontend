@@ -355,6 +355,25 @@ describe("effect shaders", () => {
 });
 
 describe("createEffectRenderer", () => {
+  it("reuses consecutive draw state and restores it after external rendering", () => {
+    const { gl, calls } = recordingGl();
+    let epoch = 1;
+    const renderer = createEffectRenderer(gl, textures, () => epoch);
+    const entries = renderer.prepare([primitive(), primitive(), primitive()], frame());
+    expect(entries[0].source).toBe(entries[1].source);
+    calls.length = 0;
+    entries[0].draw();
+    const first = calls.filter((call) => call.startsWith("blendFuncSeparate("));
+    expect(first).toHaveLength(1);
+    calls.length = 0;
+    entries[1].draw();
+    expect(calls.filter((call) => call.startsWith("blendFuncSeparate("))).toHaveLength(0);
+    epoch++;
+    calls.length = 0;
+    entries[2].draw();
+    expect(calls.filter((call) => call.startsWith("blendFuncSeparate("))).toEqual(first);
+    renderer.dispose();
+  });
   it("submits camera wireframes as lines without changing triangle packets", () => {
     const { gl, calls } = recordingGl();
     const renderer = createEffectRenderer(gl, textures);

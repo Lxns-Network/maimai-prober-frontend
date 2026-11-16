@@ -215,6 +215,14 @@ export function createStageRenderer(
     let colorSnapshot: ColorSnapshot | null = null;
     const { program, locations, uniform: u } = createStageModelProgram(gl);
     initialized.push(() => gl.deleteProgram(program));
+    // This program is private to the renderer; switching programs does not change its uniforms.
+    const integers = new Map<WebGLUniformLocation, number>();
+    const setInteger = (location: WebGLUniformLocation | null, value: number) => {
+      if (location === null || integers.get(location) === value) return;
+      gl.uniform1i(location, value);
+      integers.set(location, value);
+    };
+
     const device = createDeviceState(gl);
     const samplerCache = own(createSamplerCache(gl));
     const samplerState = createStageSamplerState();
@@ -1125,7 +1133,7 @@ export function createStageRenderer(
       const viewProjection = transpose(camera.viewProjection);
       const cameraView = transpose(camera.view);
       const wind = frame.wind;
-      gl.uniform1i(u("shakeEnabled"), wind?.state.enabled ? 1 : 0);
+      setInteger(u("shakeEnabled"), wind?.state.enabled ? 1 : 0);
       if (wind?.state.enabled) {
         const [frequency0, frequency1] = stageWindPhases(wind.state, wind.graphicsClock);
         gl.uniform3fv(u("shakeDirection"), wind.state.vector);
@@ -1143,15 +1151,15 @@ export function createStageRenderer(
         if (!lights) groupLights.set(key, (lights = lightingForGroup(lighting, group, pass)));
         currentKey = key;
         current = lights;
-        gl.uniform1i(u("ambientEnabled"), lights.ambient ? 1 : 0);
+        setInteger(u("ambientEnabled"), lights.ambient ? 1 : 0);
         if (lights.ambient) gl.uniform3fv(u("ambient"), lights.ambient);
-        gl.uniform1i(u("hemisphereEnabled"), lights.hemisphere ? 1 : 0);
+        setInteger(u("hemisphereEnabled"), lights.hemisphere ? 1 : 0);
         if (lights.hemisphere) {
           gl.uniform3fv(u("hemisphereDirection"), lights.hemisphere.direction);
           gl.uniform3fv(u("hemisphereSky"), lights.hemisphere.sky);
           gl.uniform3fv(u("hemisphereGround"), lights.hemisphere.ground);
         }
-        gl.uniform1i(u("parallelCount"), lights.parallel.length);
+        setInteger(u("parallelCount"), lights.parallel.length);
         if (lights.parallel.length) {
           gl.uniform3fv(
             u("parallelDirection"),
@@ -1166,7 +1174,7 @@ export function createStageRenderer(
             lights.parallel.flatMap((l) => l.specular),
           );
         }
-        gl.uniform1i(u("pointCount"), lights.point.length);
+        setInteger(u("pointCount"), lights.point.length);
         if (lights.point.length) {
           gl.uniform4fv(
             u("pointPosition"),
@@ -1182,42 +1190,42 @@ export function createStageRenderer(
           );
         }
         if (lights.rim) {
-          gl.uniform1i(u("rimMode"), lights.rim.mode);
+          setInteger(u("rimMode"), lights.rim.mode);
           gl.uniform3fv(u("rimDirection"), lights.rim.direction);
           gl.uniform4fv(u("rimColorBias"), lights.rim.colorBias);
           gl.uniform1f(u("rimOffset"), lights.rim.offset);
         }
         if (lights.fog) {
-          gl.uniform1i(u("fogMode"), lights.fog.mode);
+          setInteger(u("fogMode"), lights.fog.mode);
           gl.uniform4fv(u("fogRange"), lights.fog.range);
           gl.uniform4fv(u("fogHeight"), lights.fog.height);
           gl.uniform3fv(u("fogColor"), lights.fog.color);
         }
         return lights;
       };
-      gl.uniform1i(u("image0"), 0);
-      gl.uniform1i(u("image1"), 1);
-      gl.uniform1i(u("environmentImage"), 2);
-      gl.uniform1i(u("environmentCube"), ENVIRONMENT_CUBE_UNIT);
-      gl.uniform1i(u("reflectionImage"), REFLECTION_UNIT);
-      gl.uniform1i(u("rimMaskImage"), RIM_MASK_UNIT);
-      gl.uniform1i(u("shadowDepthPass"), frame.shadowPass ? 1 : 0);
+      setInteger(u("image0"), 0);
+      setInteger(u("image1"), 1);
+      setInteger(u("environmentImage"), 2);
+      setInteger(u("environmentCube"), ENVIRONMENT_CUBE_UNIT);
+      setInteger(u("reflectionImage"), REFLECTION_UNIT);
+      setInteger(u("rimMaskImage"), RIM_MASK_UNIT);
+      setInteger(u("shadowDepthPass"), frame.shadowPass ? 1 : 0);
       gl.uniform1f(u("shadowAlphaRef"), (frame.shadowPass?.settings.alphaReference ?? 0) / 255);
-      gl.uniform1i(u("shadowOutputMode"), frame.shadowPass?.settings.softness ?? 0);
+      setInteger(u("shadowOutputMode"), frame.shadowPass?.settings.softness ?? 0);
       let boundShadow: StageShadowFrame | undefined | null = null;
       const bindShadow = (shadow: StageShadowFrame | undefined) => {
         if (boundShadow === shadow) return;
         boundShadow = shadow;
-        gl.uniform1i(u("shadowCascadeCount"), shadow?.cameras.length ?? 0);
-        gl.uniform1i(u("shadowEdgeHide"), shadow?.light.settings.edgeHide ? 1 : 0);
-        gl.uniform1i(u("shadowSoftness"), shadow?.light.settings.softness ?? 0);
-        gl.uniform1i(u("shadowMomentImage"), 15);
+        setInteger(u("shadowCascadeCount"), shadow?.cameras.length ?? 0);
+        setInteger(u("shadowEdgeHide"), shadow?.light.settings.edgeHide ? 1 : 0);
+        setInteger(u("shadowSoftness"), shadow?.light.settings.softness ?? 0);
+        setInteger(u("shadowMomentImage"), 15);
         gl.activeTexture(gl.TEXTURE0 + 15);
         gl.bindTexture(gl.TEXTURE_2D_ARRAY, shadow?.moments ?? null);
-        gl.uniform1i(u("shadowMomentMode"), shadow?.moments ? 1 : 0);
+        setInteger(u("shadowMomentMode"), shadow?.moments ? 1 : 0);
         gl.bindSampler(15, null);
         for (const [index, unit] of SHADOW_UNITS.entries()) {
-          gl.uniform1i(u(`shadowImage${index}`), unit);
+          setInteger(u(`shadowImage${index}`), unit);
           if (shadow) {
             const cascade = Math.min(index, shadow.cameras.length - 1);
             gl.activeTexture(gl.TEXTURE0 + unit);
@@ -1231,14 +1239,14 @@ export function createStageRenderer(
           }
         }
         if (shadow) {
-          gl.uniform1i(u("shadowColorMode"), shadow.light.settings.colorShadow);
+          setInteger(u("shadowColorMode"), shadow.light.settings.colorShadow);
           gl.uniform3fv(u("shadowDirection"), shadow.light.direction);
           gl.uniform3fv(u("shadowDiffuse"), shadow.light.diffuse);
           gl.uniform3fv(u("shadowSpecular"), shadow.light.specular);
           gl.uniform3fv(u("shadowColor"), shadow.light.color);
         }
       };
-      gl.uniform1i(u("clipEnabled"), frame.mirror?.clipPlane ? 1 : 0);
+      setInteger(u("clipEnabled"), frame.mirror?.clipPlane ? 1 : 0);
       if (frame.mirror) gl.uniform4fv(u("clipPlane"), frame.mirror.plane);
       let boundReflection: StageReflectionFrame | undefined | null = null;
       const bindReflection = (reflection: StageReflectionFrame | undefined) => {
@@ -1254,10 +1262,10 @@ export function createStageRenderer(
         gl.bindTexture(gl.TEXTURE_2D, reflection.texture);
         gl.bindSampler(REFLECTION_UNIT, null);
       };
-      gl.uniform1i(u("specularImage"), 3);
-      gl.uniform1i(u("normalImage"), 4);
-      gl.uniform1i(u("incandescenceImage"), 5);
-      BLEND_TEXTURE_UNITS.forEach((unit, index) => gl.uniform1i(u(`blendImage${index}`), unit));
+      setInteger(u("specularImage"), 3);
+      setInteger(u("normalImage"), 4);
+      setInteger(u("incandescenceImage"), 5);
+      BLEND_TEXTURE_UNITS.forEach((unit, index) => setInteger(u(`blendImage${index}`), unit));
       device.invalidate();
       const needsDepth = (entry: StageParticleEntry | StagePrimitiveEntry) =>
         "requiresDepthSnapshot" in entry && entry.requiresDepthSnapshot;
@@ -1342,7 +1350,7 @@ export function createStageRenderer(
               }
               const state = stateOf(shape, entry.blend);
               device.apply(frame.mirror ? mirrorDeviceState(state) : state, program, locations);
-              gl.uniform1i(
+              setInteger(
                 u("writeOpaqueAlpha"),
                 frame.captureAlpha && !state.values[STATE_BLEND] ? 1 : 0,
               );
@@ -1362,23 +1370,23 @@ export function createStageRenderer(
                 ? undefined
                 : stageGroupReflection(frame.reflections, group);
               bindReflection(reflection);
-              gl.uniform1i(u("shadowLightEnabled"), shadow ? 1 : 0);
-              gl.uniform1i(u("shadowReceiver"), shadow && m.shadowReceiver ? 1 : 0);
+              setInteger(u("shadowLightEnabled"), shadow ? 1 : 0);
+              setInteger(u("shadowReceiver"), shadow && m.shadowReceiver ? 1 : 0);
               gl.uniformMatrix4fv(u("world"), false, entry.world);
-              gl.uniform1i(u("instanceBatch"), entry.instances ? 1 : 0);
-              gl.uniform1i(u("hasColors"), shape.hasColors ? 1 : 0);
-              gl.uniform1i(u("hasColor1"), shape.hasColor1 ? 1 : 0);
-              gl.uniform1i(u("shakeShader"), m.vertexShake && shape.hasColors ? 1 : 0);
+              setInteger(u("instanceBatch"), entry.instances ? 1 : 0);
+              setInteger(u("hasColors"), shape.hasColors ? 1 : 0);
+              setInteger(u("hasColor1"), shape.hasColor1 ? 1 : 0);
+              setInteger(u("shakeShader"), m.vertexShake && shape.hasColors ? 1 : 0);
               const instanced = node.record?.type === 6001010;
               const instanceFlags = instanced ? (model.instanceGroup?.flags ?? 0) : 0;
               const instanceColorEnabled = (instanceFlags & 2) !== 0;
-              gl.uniform1i(u("instanceColorEnabled"), instanceColorEnabled ? 1 : 0);
-              gl.uniform1i(u("instanceColorAdd"), (instanceFlags & 0x2000) !== 0 ? 1 : 0);
-              gl.uniform1i(u("instanceColorEdge"), (instanceFlags & 0x8000) !== 0 ? 1 : 0);
+              setInteger(u("instanceColorEnabled"), instanceColorEnabled ? 1 : 0);
+              setInteger(u("instanceColorAdd"), (instanceFlags & 0x2000) !== 0 ? 1 : 0);
+              setInteger(u("instanceColorEdge"), (instanceFlags & 0x8000) !== 0 ? 1 : 0);
               if (instanceColorEnabled)
                 gl.uniform4fv(u("instanceColor"), unpackColor(model.diffuse ?? 0xffffffff));
               const instanceMotion = shape.instanceMotion;
-              gl.uniform1i(u("instanceMotion"), instanceMotion ? 1 : 0);
+              setInteger(u("instanceMotion"), instanceMotion ? 1 : 0);
               if (instanceMotion) {
                 const selected = entry.instanceAnimation!;
                 const offset = instanceMotion.clips.get(selected.source)!;
@@ -1393,7 +1401,7 @@ export function createStageRenderer(
                 gl.activeTexture(gl.TEXTURE0 + INSTANCE_MOTION_UNIT);
                 gl.bindTexture(gl.TEXTURE_2D, instanceMotion.texture);
                 gl.bindSampler(INSTANCE_MOTION_UNIT, null);
-                gl.uniform1i(u("instanceMotionTexture"), INSTANCE_MOTION_UNIT);
+                setInteger(u("instanceMotionTexture"), INSTANCE_MOTION_UNIT);
                 gl.uniform4f(
                   u("instanceMotionTextureSize"),
                   instanceMotion.bones,
@@ -1407,17 +1415,17 @@ export function createStageRenderer(
                   previousCoordinate,
                   selected.weight < 1 ? selected.weight : 1,
                 );
-                gl.uniform1i(u("instanceMotionHasWeight1"), shape.instanceHasWeight1 ? 1 : 0);
-                gl.uniform1i(u("instanceMotionSingleWeight"), shape.instanceSingleWeight ? 1 : 0);
-                gl.uniform1i(u("instanceMotionBlend"), (instanceFlags & 8) !== 0 ? 1 : 0);
+                setInteger(u("instanceMotionHasWeight1"), shape.instanceHasWeight1 ? 1 : 0);
+                setInteger(u("instanceMotionSingleWeight"), shape.instanceSingleWeight ? 1 : 0);
+                setInteger(u("instanceMotionBlend"), (instanceFlags & 8) !== 0 ? 1 : 0);
               }
               const palette = entry.palette;
-              gl.uniform1i(u("skinned"), palette ? 1 : 0);
+              setInteger(u("skinned"), palette ? 1 : 0);
               if (palette) {
-                gl.uniform1i(u("skinInfluences"), shape.influences);
+                setInteger(u("skinInfluences"), shape.influences);
                 gl.uniform4fv(u("skinRows"), palette);
               }
-              gl.uniform1i(u("layerCount"), m.layers.length);
+              setInteger(u("layerCount"), m.layers.length);
               gl.uniform2i(u("uvSets"), m.layers[0]?.uv ?? 0, m.layers[1]?.uv ?? 0);
               const instanceUv = entry.instanceUv;
               gl.uniform4fv(u("instanceUvOffsetScale"), instanceUv ?? [0, 0, 1, 1]);
@@ -1433,16 +1441,16 @@ export function createStageRenderer(
               gl.uniform4fv(u("specularOffsetScale"), transforms.specular);
               gl.uniform2f(u("lodBias"), shape.lodBias[0], shape.lodBias[1]);
               gl.uniform3iv(u("layerBlend"), m.layerBlend);
-              gl.uniform1i(u("baseMapType"), m.baseMapType);
-              gl.uniform1i(u("lighting"), ["constant", "lambert", "phong"].indexOf(m.lighting));
-              gl.uniform1i(u("lightModel"), m.lightModel);
-              gl.uniform1i(u("hasNormals"), m.hasNormals ? 1 : 0);
-              gl.uniform1i(u("hasTexcoords"), m.hasTexcoords ? 1 : 0);
-              gl.uniform1i(
+              setInteger(u("baseMapType"), m.baseMapType);
+              setInteger(u("lighting"), ["constant", "lambert", "phong"].indexOf(m.lighting));
+              setInteger(u("lightModel"), m.lightModel);
+              setInteger(u("hasNormals"), m.hasNormals ? 1 : 0);
+              setInteger(u("hasTexcoords"), m.hasTexcoords ? 1 : 0);
+              setInteger(
                 u("rimEnabled"),
                 lights.rim && lights.rim.mode !== 0 && m.rimRate !== 0 ? 1 : 0,
               );
-              gl.uniform1i(u("rimMask"), m.rimRate !== 0 ? (lights.rim?.rimMask ?? 0) : 0);
+              setInteger(u("rimMask"), m.rimRate !== 0 ? (lights.rim?.rimMask ?? 0) : 0);
               if (
                 !frame.shadowPass &&
                 m.rimRate !== 0 &&
@@ -1456,17 +1464,14 @@ export function createStageRenderer(
                 gl.activeTexture(gl.TEXTURE0 + RIM_MASK_UNIT);
                 gl.bindTexture(gl.TEXTURE_2D, texture);
                 gl.bindSampler(RIM_MASK_UNIT, null);
-                gl.uniform1i(u("rimMaskImage"), RIM_MASK_UNIT);
+                setInteger(u("rimMaskImage"), RIM_MASK_UNIT);
               }
               gl.uniform1f(u("rimRate"), m.rimRate);
-              gl.uniform1i(
-                u("fogEnabled"),
-                lights.fog && m.fogRate > 1.1920928955078125e-7 ? 1 : 0,
-              );
+              setInteger(u("fogEnabled"), lights.fog && m.fogRate > 1.1920928955078125e-7 ? 1 : 0);
               gl.uniform1f(u("fogRate"), m.fogRate);
-              gl.uniform1i(u("edgeAlphaEnabled"), m.edgeAlpha ? 1 : 0);
+              setInteger(u("edgeAlphaEnabled"), m.edgeAlpha ? 1 : 0);
               gl.uniform3fv(u("edgeAlpha"), m.edgeAlpha ?? [0, 0, 0]);
-              gl.uniform1i(u("fresnelEnabled"), m.fresnel ? 1 : 0);
+              setInteger(u("fresnelEnabled"), m.fresnel ? 1 : 0);
               gl.uniform3fv(u("fresnel"), m.fresnel ?? [1, 0, 4]);
               gl.uniform4fv(u("diffuseBase"), m.diffuseBase);
               gl.uniform4fv(u("specularBase"), m.specularBase);
@@ -1479,31 +1484,31 @@ export function createStageRenderer(
                 u("systemSpecular"),
                 instanced || model.specular === null ? [1, 1, 1, 1] : unpackColor(model.specular),
               );
-              gl.uniform1i(
+              setInteger(
                 u("pixelAlphaTest"),
                 (entry.blend ? entry.blend.alphaTest : m.pixelAlphaTest) ? 1 : 0,
               );
               gl.uniform1f(u("pixelAlphaRef"), m.pixelAlphaRef);
-              gl.uniform1i(
+              setInteger(
                 u("environmentKind"),
                 m.environment && !frame.mirror ? (m.environment.kind === "sphere" ? 1 : 2) : 0,
               );
-              gl.uniform1i(
+              setInteger(
                 u("reflectionEnabled"),
                 !frame.mirror && reflection && m.environment && m.reflectionOverride ? 1 : 0,
               );
-              gl.uniform1i(u("environmentMapType"), m.environment?.mapType ?? 0);
+              setInteger(u("environmentMapType"), m.environment?.mapType ?? 0);
               gl.uniform1f(u("environmentLodBias"), shape.lodBias[2]);
-              gl.uniform1i(u("hasSpecularMap"), m.specularMap ? 1 : 0);
-              gl.uniform1i(u("specularUv"), m.specularMap?.uv ?? 0);
-              gl.uniform1i(u("specularMapType"), m.specularMap?.mapType ?? 0);
+              setInteger(u("hasSpecularMap"), m.specularMap ? 1 : 0);
+              setInteger(u("specularUv"), m.specularMap?.uv ?? 0);
+              setInteger(u("specularMapType"), m.specularMap?.mapType ?? 0);
               gl.uniform1f(u("specularLodBias"), shape.lodBias[3]);
-              gl.uniform1i(u("hasNormalMap"), m.normalMap ? 1 : 0);
-              gl.uniform1i(u("normalMapCompressed"), m.normalMap?.compressed ? 1 : 0);
-              gl.uniform1i(u("normalUv"), m.normalMap?.uv ?? 0);
+              setInteger(u("hasNormalMap"), m.normalMap ? 1 : 0);
+              setInteger(u("normalMapCompressed"), m.normalMap?.compressed ? 1 : 0);
+              setInteger(u("normalUv"), m.normalMap?.uv ?? 0);
               gl.uniform1f(u("normalLodBias"), shape.lodBias[4]);
               gl.uniform4fv(u("normalOffsetScale"), transforms.normal);
-              gl.uniform1i(u("blendShader"), m.blendMaps ? 1 : 0);
+              setInteger(u("blendShader"), m.blendMaps ? 1 : 0);
               if (m.blendMaps) {
                 gl.uniform4fv(u("blendOffsetScale"), transforms.blend!);
                 gl.uniform1iv(
@@ -1515,9 +1520,9 @@ export function createStageRenderer(
                   BLEND_TEXTURE_UNITS.map((unit) => shape.lodBias[unit]),
                 );
               }
-              gl.uniform1i(u("hasIncandescenceMap"), m.incandescenceMap ? 1 : 0);
-              gl.uniform1i(u("incandescenceUv"), m.incandescenceMap?.uv ?? 0);
-              gl.uniform1i(u("incandescenceMapType"), m.incandescenceMap?.mapType ?? 0);
+              setInteger(u("hasIncandescenceMap"), m.incandescenceMap ? 1 : 0);
+              setInteger(u("incandescenceUv"), m.incandescenceMap?.uv ?? 0);
+              setInteger(u("incandescenceMapType"), m.incandescenceMap?.mapType ?? 0);
               gl.uniform1f(u("incandescenceLodBias"), shape.lodBias[5]);
               gl.uniform4fv(u("incandescenceOffsetScale"), transforms.incandescence);
               for (let unit = 0; unit < MAX_TEXTURE_SLOTS; unit++) {

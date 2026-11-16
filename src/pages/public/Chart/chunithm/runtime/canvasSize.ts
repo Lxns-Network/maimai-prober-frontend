@@ -20,10 +20,7 @@ export function canvasBackingSize(
   resolution: CanvasResolution = "auto",
 ) {
   if (resolution !== "auto") return { ...FIXED_BACKING[resolution] };
-  const units = Math.max(
-    1,
-    Math.min(120, Math.floor(Math.min(width / 16, height / 9) * Math.min(dpr, 2))),
-  );
+  const units = Math.max(1, Math.min(120, Math.floor(Math.min(width / 16, height / 9) * dpr)));
   return {
     width: units * 16,
     height: units * 9,

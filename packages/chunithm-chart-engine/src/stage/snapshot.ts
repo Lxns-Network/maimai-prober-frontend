@@ -78,7 +78,7 @@ function cloneStageScenes(
   const shared = scenes.map(sharedStageData);
   const buffers = new Map<ArrayBufferLike, ArrayBuffer>();
   let bytes = 0;
-  const copy = (value: unknown): unknown => {
+  const copy = (value: unknown, presentation = displayOnly): unknown => {
     if (
       value === null ||
       typeof value !== "object" ||
@@ -119,7 +119,10 @@ function cloneStageScenes(
       copies.set(value, result);
       bytes += 16 + 8 * value.length;
       for (let i = 0; i < value.length; i++)
-        result[i] = value[i] !== null && typeof value[i] === "object" ? copy(value[i]) : value[i];
+        result[i] =
+          value[i] !== null && typeof value[i] === "object"
+            ? copy(value[i], presentation)
+            : value[i];
       return result;
     }
     if (value instanceof Map) {
@@ -127,7 +130,7 @@ function cloneStageScenes(
       result.clear();
       copies.set(value, result);
       bytes += 32 + 24 * value.size;
-      for (const [k, v] of value) result.set(copy(k), copy(v));
+      for (const [k, v] of value) result.set(copy(k, presentation), copy(v, presentation));
       return result;
     }
     if (value instanceof Set) {
@@ -135,7 +138,7 @@ function cloneStageScenes(
       result.clear();
       copies.set(value, result);
       bytes += 32 + 16 * value.size;
-      for (const v of value) result.add(copy(v));
+      for (const v of value) result.add(copy(v, presentation));
       return result;
     }
     // Mutable scene instances store data in enumerable fields; methods and getters live on
@@ -146,10 +149,22 @@ function cloneStageScenes(
     // Render caches key poses, blends and filter plans by identity, so records stay fresh.
     const result = Object.create(prototype) as Record<string, unknown>;
     copies.set(value, result);
-    const node = displayOnly && "record" in value && "birth" in value ? (value as StageNode) : null;
+    const node =
+      presentation && "record" in value && "birth" in value ? (value as StageNode) : null;
     const held = node?.record && node.scene.options.heldStates?.has(node.record.id);
+    const provider = presentation && "poses" in value && "pose" in value && "playback" in value;
+    const controller = presentation && "schedule" in value && "killWhenChildrenDone" in value;
     for (const key of keys) {
       const item = (value as Record<string, unknown>)[key];
+      // Drawing consumes published bone worlds, not animation samples or future spawn schedules.
+      if ((provider && key === "poses") || (controller && key === "schedule")) {
+        result[key] = [];
+        continue;
+      }
+      if (provider && key === "playback") {
+        result[key] = null;
+        continue;
+      }
       // Display scenes never run the scheduler. Held nodes can still apply a presentation override.
       if (
         node &&
@@ -163,7 +178,10 @@ function cloneStageScenes(
         result[key] = [];
         continue;
       }
-      result[key] = item !== null && typeof item === "object" ? copy(item) : item;
+      result[key] =
+        item !== null && typeof item === "object"
+          ? copy(item, presentation && !(held && key !== "scene" && key !== "parent"))
+          : item;
     }
     return result;
   };
@@ -392,12 +410,17 @@ class StageInterpolation {
       if (ArrayBuffer.isView(original)) return;
       if (original instanceof Map && future instanceof Map) {
         for (const [key, value] of original) align(value, future.get(next.get(key) ?? key));
+      } else if (Array.isArray(original) && Array.isArray(future)) {
+        for (let i = 0; i < original.length; i++) {
+          const value: unknown = original[i];
+          if (value !== null && typeof value === "object") align(value, future[i]);
+        }
       } else {
-        for (const key of Object.keys(original))
-          align(
-            (original as Record<string, unknown>)[key],
-            (future as Record<string, unknown>)[key],
-          );
+        for (const key of Object.keys(original)) {
+          const value = (original as Record<string, unknown>)[key];
+          if (value !== null && typeof value === "object")
+            align(value, (future as Record<string, unknown>)[key]);
+        }
       }
     };
     for (const original of next.keys())
@@ -466,7 +489,13 @@ class StageInterpolation {
         this.active.push(entry);
         continue;
       }
-      if (ArrayBuffer.isView(original)) continue;
+      if (
+        ArrayBuffer.isView(original) ||
+        Array.isArray(original) ||
+        original instanceof Map ||
+        original instanceof Set
+      )
+        continue;
       const a = original as Record<string, unknown>;
       const b = future as Record<string, unknown>;
       const out = a;
