@@ -116,8 +116,15 @@ export function createPreviewAudio(input: PreviewAudioInput) {
       },
     };
   })();
+  const replaceSfx = (timeline: Timeline) => {
+    if (!library) throw new Error("SFX library is not ready");
+    const next = createSfxPlayer({ context, destination: soundGain, library, timeline });
+    sfx?.dispose();
+    sfx = next;
+  };
   return {
     ready,
+    replaceSfx,
     sfxUrl,
     get running() {
       return context.state === "running";
@@ -132,13 +139,7 @@ export function createPreviewAudio(input: PreviewAudioInput) {
         library = decoded;
       }
       throwIfAborted(input.signal);
-      sfx?.dispose();
-      sfx = createSfxPlayer({
-        context,
-        destination: soundGain,
-        library,
-        timeline,
-      });
+      replaceSfx(timeline);
     },
     updateSfx(state: MusicPoll, playTiming: number) {
       const position = !state.intendedPlaying

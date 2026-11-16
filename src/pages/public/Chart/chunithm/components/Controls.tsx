@@ -17,6 +17,7 @@ import { openConfirmModal } from "@/utils/modal";
 import type { useChartPreview } from "../hooks/useChartPreview";
 import { CANVAS_RESOLUTION_OPTIONS, type CanvasResolution } from "../runtime/canvasSize";
 import { PLAY_TIMING_OPTIONS } from "../options/playTiming";
+import { JUDGE_TIMING_OPTIONS } from "../options/judgeTiming";
 import { JUDGE_POSITION_OPTIONS } from "../options/judgePosition";
 import { OptionSlider } from "./OptionSlider";
 import { SettingsCard } from "./SettingsCard";
@@ -202,8 +203,19 @@ export function Controls({
           value={preview.playTimingValue}
           options={PLAY_TIMING_OPTIONS}
           markValue="20"
+          startPointValue="20"
           disabled={!ready}
           onChange={preview.selectPlayTiming}
+        />
+        <OptionSlider
+          label="判定时机 B（帧）"
+          value={preview.judgeTimingValue}
+          options={JUDGE_TIMING_OPTIONS}
+          markValue="20"
+          startPointValue="20"
+          disabled={!ready}
+          onChange={preview.selectJudgeTiming}
+          onChangeEnd={preview.applyJudgeTiming}
         />
         <OptionSlider
           label="挡板位置"

@@ -53,11 +53,15 @@ export function chartSteps(records: readonly DataView[]): number {
 }
 
 /** Runs every note lifecycle of a bound chart at a display speed row. */
-export function nativeChart(bound: BoundScore, speedRow: number): NativeChart {
+export function nativeChart(
+  bound: BoundScore,
+  speedRow: number,
+  judgeTimingRow?: number,
+): NativeChart {
   const score = noteScoreOf(bound);
   const steps = chartSteps(score.records);
   const objects = noteObjects(score.records, spawnSteps(score, speedRow, steps));
-  const context = lifecycleContext(bound);
+  const context = lifecycleContext(bound, judgeTimingRow);
   const runs = lifecycleRuns(score, objects, context);
   const events = assembleEvents(runs).filter((event) => Math.round(event.time * STEP_HZ) < steps);
   const effects = effectSweep({ score, runs, events, steps });

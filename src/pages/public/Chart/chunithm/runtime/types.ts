@@ -24,6 +24,7 @@ export interface PreviewControls {
   selectPlaybackSpeed(value: number): void;
   selectKeepHiSpeed(value: boolean): void;
   selectPlayTiming(value: string): void;
+  selectJudgeTiming(value: string): void;
   selectJudgePosition(value: string): void;
   selectCriticalDisplay(value: string): void;
   selectFieldWall(value: string): void;
@@ -47,6 +48,7 @@ export interface PreviewSessionInput {
   playbackSpeed?: number;
   alwaysKeepHiSpeed?: boolean;
   initialPlayTimingRow: number | null;
+  initialJudgeTimingRow: number | null;
   initialJudgePositionRow: number | null;
   initialCriticalDisplayRow: number | null;
   mirror: boolean;
@@ -81,6 +83,7 @@ export interface PreviewSessionInput {
     setSpeedOptions(options: FrameSurface["speedOptions"]): void;
     setSpeedValue(value: string | null): void;
     setPlayTimingValue(value: string): void;
+    setJudgeTimingValue(value: string): void;
     setJudgePositionValue(value: string): void;
     setCriticalDisplayValue(value: string): void;
     setFieldWallOptions(options: { value: string; label: string }[]): void;

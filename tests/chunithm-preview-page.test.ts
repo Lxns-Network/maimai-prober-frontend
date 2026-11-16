@@ -7,6 +7,9 @@ const mock = vi.hoisted(() => ({
   sfxPause: vi.fn(),
   sfxUpdate: vi.fn(),
   computedSpeed: vi.fn(),
+  timingComputations: [] as { row: number; resolve: (chart: unknown) => void }[],
+  replaceChart: vi.fn(),
+  replaceHudChart: vi.fn(),
   render: vi.fn(() => ({ draws: 1, notes: 1, backgroundDrawn: false })),
   resetBackgroundHistory: vi.fn(),
   hudDraw: vi.fn(),
@@ -28,8 +31,10 @@ vi.mock("../src/pages/public/Chart/chunithm/assets/chartInput", () => ({
 vi.mock("../src/pages/public/Chart/chunithm/rendering/notes", () => ({
   readNotePack: async () => ({}),
   openPageChartSession: () => ({
-    compute: async (row: number) => {
+    compute: async (row: number, _signal: AbortSignal, timingRow: number) => {
       mock.computedSpeed(row);
+      if (timingRow !== 20)
+        return new Promise((resolve) => mock.timingComputations.push({ row: timingRow, resolve }));
       return { effects: {} };
     },
     dispose() {},
@@ -42,6 +47,8 @@ vi.mock("../src/pages/public/Chart/chunithm/rendering/notes", () => ({
     mock.criticalDisplayRow = input.criticalDisplayRow;
     return {
       timeline: { duration: 10, column: () => [], meta: {} },
+      replaceChart: mock.replaceChart,
+      selectMirror() {},
       textures: new Map(),
       dispose() {},
     };
@@ -84,7 +91,13 @@ vi.mock("@lxns-network/chunithm-chart-engine/render/frameHost", () => ({
 }));
 vi.mock("../src/pages/public/Chart/chunithm/rendering/hud", () => ({
   loadHudResources: async () => ({ jacket: Promise.resolve(null) }),
-  createHudHost: () => ({ missing: [], draw: mock.hudDraw, selectSpeed() {}, dispose() {} }),
+  createHudHost: () => ({
+    missing: [],
+    draw: mock.hudDraw,
+    replaceChart: mock.replaceHudChart,
+    selectSpeed() {},
+    dispose() {},
+  }),
 }));
 vi.mock("@lxns-network/chunithm-chart-engine/audio/sfx", () => ({
   loadSfxLibrary: () => ({}),
@@ -155,6 +168,9 @@ async function setup(
   mock.sfxPause.mockClear();
   mock.sfxUpdate.mockClear();
   mock.computedSpeed.mockClear();
+  mock.timingComputations.length = 0;
+  mock.replaceChart.mockClear();
+  mock.replaceHudChart.mockClear();
   mock.hudDraw.mockClear();
   mock.render.mockClear();
   mock.resetBackgroundHistory.mockClear();
@@ -232,6 +248,7 @@ async function setup(
     initialSeconds: 0,
     initialSpeedRow,
     initialPlayTimingRow: null,
+    initialJudgeTimingRow: null,
     initialJudgePositionRow,
     initialCriticalDisplayRow: null,
     mirror: false,
@@ -249,6 +266,7 @@ async function setup(
       setSpeedOptions() {},
       setSpeedValue() {},
       setPlayTimingValue() {},
+      setJudgeTimingValue() {},
       setJudgePositionValue: (value) => judgePositions.push(value),
       setCriticalDisplayValue: (value) => criticalDisplays.push(value),
       setFieldWallOptions() {},
@@ -696,4 +714,37 @@ describe("preview hidden page", () => {
       vi.useRealTimers();
     }
   });
+});
+
+it("keeps music running during B timing computation and discards superseded results", async () => {
+  const f = await setup();
+  try {
+    await f.start();
+    const sources = f.sources.length;
+    const before = f.live.time.getSnapshot();
+    f.page.selectJudgeTiming("30");
+    f.advance(0.1);
+    f.flushFrame();
+    expect(f.live.time.getSnapshot()).toBeGreaterThan(before);
+    expect(f.playing[f.playing.length - 1]).toBe(true);
+    f.page.selectJudgeTiming("40");
+    const chart = {
+      effects: {},
+      timeline: { duration: 10, column: () => [], meta: {} },
+      score: { records: [] },
+    };
+    mock.timingComputations[1].resolve(chart);
+    await vi.waitFor(() => expect(mock.replaceChart).toHaveBeenCalledTimes(1));
+    expect(mock.replaceHudChart).toHaveBeenCalledWith({}, chart.timeline);
+    mock.timingComputations[0].resolve({ ...chart });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(mock.replaceChart).toHaveBeenCalledTimes(1);
+    f.advance(0.1);
+    f.flushFrame();
+    expect(f.sources).toHaveLength(sources);
+    expect(f.playing[f.playing.length - 1]).toBe(true);
+  } finally {
+    f.cleanup();
+  }
 });

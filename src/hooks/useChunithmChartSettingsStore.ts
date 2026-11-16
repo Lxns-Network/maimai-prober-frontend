@@ -7,6 +7,7 @@ interface ChunithmChartSettings {
   playbackSpeed: number;
   alwaysKeepHiSpeed: boolean;
   playTimingRow: number;
+  judgeTimingRow: number;
   judgePositionRow: number;
   criticalDisplayRow: number;
   mirror: boolean;
@@ -34,6 +35,7 @@ const useChunithmChartSettingsStore = create<
       playbackSpeed: 1,
       alwaysKeepHiSpeed: false,
       playTimingRow: 20,
+      judgeTimingRow: 20,
       judgePositionRow: 0,
       criticalDisplayRow: 0,
       mirror: false,

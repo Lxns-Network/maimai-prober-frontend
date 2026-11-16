@@ -1,4 +1,9 @@
-import { AUTOPLAY_JUDGE_TIMING_ROW, autoplayThreshold, judgeTimingOffset } from "./autoplayJudge";
+import {
+  AUTOPLAY_JUDGE_TIMING_ROW,
+  JUDGE_TIMING_OFFSETS,
+  autoplayThreshold,
+  judgeTimingOffset,
+} from "./autoplayJudge";
 
 /** Chart-wide inputs every note lifecycle reads. */
 export interface LifecycleContext {
@@ -11,14 +16,23 @@ export interface LifecycleContext {
   threshold: number;
 }
 
-export function lifecycleContext(bound: {
-  config: DataView;
-  difficulty: number;
-}): LifecycleContext {
+export function lifecycleContext(
+  bound: {
+    config: DataView;
+    difficulty: number;
+  },
+  judgeTimingRow = AUTOPLAY_JUDGE_TIMING_ROW,
+): LifecycleContext {
+  if (
+    !Number.isInteger(judgeTimingRow) ||
+    judgeTimingRow < 0 ||
+    judgeTimingRow >= JUDGE_TIMING_OFFSETS.length
+  )
+    throw new RangeError("Invalid judge timing option");
   return {
     config: bound.config,
     difficulty: bound.difficulty,
-    offset: judgeTimingOffset(AUTOPLAY_JUDGE_TIMING_ROW),
-    threshold: autoplayThreshold(bound.config, AUTOPLAY_JUDGE_TIMING_ROW),
+    offset: judgeTimingOffset(judgeTimingRow),
+    threshold: autoplayThreshold(bound.config, judgeTimingRow),
   };
 }

@@ -6,6 +6,7 @@ import type { PreviewControls } from "../runtime/types";
 import type { CanvasResolution } from "../runtime/canvasSize";
 import { useStagePresentation } from "./useStagePresentation";
 import { DEFAULT_PLAY_TIMING_ROW, PLAY_TIMING_OPTIONS } from "../options/playTiming";
+import { DEFAULT_JUDGE_TIMING_ROW, JUDGE_TIMING_OPTIONS } from "../options/judgeTiming";
 import { DEFAULT_JUDGE_POSITION_ROW, JUDGE_POSITION_OPTIONS } from "../options/judgePosition";
 import { DEFAULT_JUDGE_DISPLAY_ROW, JUDGE_DISPLAY_OPTIONS } from "../options/judgeDisplay";
 import useChunithmChartSettingsStore from "@/hooks/useChunithmChartSettingsStore";
@@ -64,6 +65,7 @@ export function useChartPreview(options: ChartPreviewOptions) {
   const playbackRef = useRef({ playbackSpeed, alwaysKeepHiSpeed });
   const speedRef = useRef(initialSpeedRow ?? settings.speedRow);
   const playTimingRef = useRef(settings.playTimingRow);
+  const judgeTimingRef = useRef(settings.judgeTimingRow);
   const judgePositionRef = useRef(settings.judgePositionRow);
   const criticalDisplayRef = useRef(settings.criticalDisplayRow);
   const wallRef = useRef(settings.wallRawId);
@@ -97,6 +99,7 @@ export function useChartPreview(options: ChartPreviewOptions) {
   const [speedOptions, setSpeedOptions] = useState<FrameSurface["speedOptions"]>([]);
   const [speedValue, setSpeedValue] = useState<string | null>(null);
   const [playTimingValue, setPlayTimingValue] = useState(String(DEFAULT_PLAY_TIMING_ROW));
+  const [judgeTimingValue, setJudgeTimingValue] = useState(String(DEFAULT_JUDGE_TIMING_ROW));
   const [judgePositionValue, setJudgePositionValue] = useState(String(DEFAULT_JUDGE_POSITION_ROW));
   const [criticalDisplayValue, setCriticalDisplayValue] = useState(
     String(DEFAULT_JUDGE_DISPLAY_ROW),
@@ -124,6 +127,7 @@ export function useChartPreview(options: ChartPreviewOptions) {
       initialSpeedRow: speedRef.current,
       ...playbackRef.current,
       initialPlayTimingRow: playTimingRef.current,
+      initialJudgeTimingRow: judgeTimingRef.current,
       initialJudgePositionRow: judgePositionRef.current,
       initialCriticalDisplayRow: criticalDisplayRef.current,
       mirror: mirrorRef.current,
@@ -164,6 +168,7 @@ export function useChartPreview(options: ChartPreviewOptions) {
         setSpeedOptions,
         setSpeedValue,
         setPlayTimingValue,
+        setJudgeTimingValue,
         setJudgePositionValue,
         setCriticalDisplayValue,
         setFieldWallOptions,
@@ -238,6 +243,7 @@ export function useChartPreview(options: ChartPreviewOptions) {
       controls.current?.selectKeepHiSpeed(value);
     },
     playTimingValue,
+    judgeTimingValue,
     judgePositionValue,
     criticalDisplayValue,
     fieldWallOptions,
@@ -317,6 +323,15 @@ export function useChartPreview(options: ChartPreviewOptions) {
       playTimingRef.current = Number(value);
       setOptions({ playTimingRow: Number(value) });
       controls.current?.selectPlayTiming(value);
+    },
+    selectJudgeTiming(value: string) {
+      if (!JUDGE_TIMING_OPTIONS.some((option) => option.value === value)) return;
+      judgeTimingRef.current = Number(value);
+      setJudgeTimingValue(value);
+      setOptions({ judgeTimingRow: Number(value) });
+    },
+    applyJudgeTiming(value: string) {
+      controls.current?.selectJudgeTiming(value);
     },
     selectJudgePosition(value: string) {
       if (!JUDGE_POSITION_OPTIONS.some((option) => option.value === value)) return;

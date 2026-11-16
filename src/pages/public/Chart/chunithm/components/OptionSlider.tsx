@@ -5,15 +5,19 @@ export function OptionSlider({
   value,
   options,
   markValue,
+  startPointValue,
   disabled,
   onChange,
+  onChangeEnd,
 }: {
   label: string;
   value: string | null;
   options: readonly { value: string; label: string }[];
   markValue?: string;
+  startPointValue?: string;
   disabled: boolean;
   onChange: (value: string) => void;
+  onChangeEnd?: (value: string) => void;
 }) {
   const index = options.findIndex((option) => option.value === value);
   const mark =
@@ -36,10 +40,16 @@ export function OptionSlider({
         min={0}
         max={Math.max(1, options.length - 1)}
         step={1}
+        startPointValue={
+          startPointValue === undefined
+            ? undefined
+            : options.findIndex((option) => option.value === startPointValue)
+        }
         value={Math.max(0, index)}
         label={(next) => options[next]?.label}
         marks={interiorMark ? [{ value: mark }] : []}
         onChange={(next) => onChange(options[next].value)}
+        onChangeEnd={onChangeEnd && ((next) => onChangeEnd(options[next].value))}
         disabled={disabled || options.length < 2}
         onKeyDown={(event) => {
           if (event.key.startsWith("Arrow") || event.key === "Home" || event.key === "End")

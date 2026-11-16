@@ -17,6 +17,7 @@ export interface LoadChartOptions {
   musicId: number;
   /** Display speed row the lifecycles run at; row 0 when omitted. */
   speedRow?: number;
+  judgeTimingRow?: number;
   config: Uint8Array;
   signal?: AbortSignal;
   /** Load deadline in milliseconds; defaults to 30,000. */
@@ -156,6 +157,7 @@ export function loadChart(
         difficulty: options.difficulty,
         mirror: options.mirror,
         musicId: options.musicId,
+        judgeTimingRow: options.judgeTimingRow,
         ...(options.speedRow === undefined ? {} : { speedRow: options.speedRow }),
         config,
       };
@@ -174,7 +176,7 @@ export interface ChartSession {
    * queue time. A Worker failure or deadline ends the Worker and rejects all pending computations;
    * the next row starts a new one.
    */
-  compute(speedRow: number, signal?: AbortSignal): Promise<LoadedChart>;
+  compute(speedRow: number, signal?: AbortSignal, judgeTimingRow?: number): Promise<LoadedChart>;
   dispose(): void;
 }
 
@@ -190,6 +192,7 @@ export function openChartSession(
     number,
     {
       speedRow: number;
+      judgeTimingRow: number | undefined;
       timer: ReturnType<typeof setTimeout>;
       resolve(chart: LoadedChart): void;
       reject(error: unknown): void;
@@ -289,6 +292,7 @@ export function openChartSession(
           mirror: options.mirror,
           musicId: options.musicId,
           speedRow: entry.speedRow,
+          judgeTimingRow: entry.judgeTimingRow,
         };
         const transfer: ArrayBuffer[] = [];
         if (fresh) {
@@ -306,7 +310,7 @@ export function openChartSession(
   };
 
   return {
-    compute(speedRow, signal) {
+    compute(speedRow, signal, judgeTimingRow = options.judgeTimingRow) {
       if (disposed) return Promise.reject(new Error("The chart session has been disposed"));
       if (!Number.isSafeInteger(speedRow) || speedRow < 0)
         return Promise.reject(new RangeError("Chart speed row must be a non-negative row index"));
@@ -335,6 +339,7 @@ export function openChartSession(
         );
         pending.set(id, {
           speedRow,
+          judgeTimingRow,
           timer,
           resolve(loaded) {
             settle();

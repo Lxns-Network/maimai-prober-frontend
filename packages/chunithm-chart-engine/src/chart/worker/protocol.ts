@@ -26,6 +26,8 @@ export interface ChartRequest {
   musicId: number;
   /** Display speed row the lifecycles run at; row 0 when omitted. */
   speedRow?: number;
+  /** Native B timing row; zero offset when omitted. */
+  judgeTimingRow?: number;
 }
 
 export type ChartReply =

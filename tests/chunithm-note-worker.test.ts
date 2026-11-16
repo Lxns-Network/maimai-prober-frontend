@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { compileJudgeTimingIni } from "@lxns-network/chunithm-chart-engine/chart/bind/config";
-import { handleChartRequest } from "@lxns-network/chunithm-chart-engine/chart/worker/computeChart";
+import { Timeline } from "@lxns-network/chunithm-chart-engine/chart/timeline/reader";
+import {
+  createChartHandler,
+  handleChartRequest,
+} from "@lxns-network/chunithm-chart-engine/chart/worker/computeChart";
 import type { ChartRequest } from "@lxns-network/chunithm-chart-engine/chart/worker/protocol";
 
 const fixture = vi.hoisted(() => ({ records: [] as number[], disposed: 0 }));
@@ -137,4 +141,54 @@ it("cancels a pending bake and never builds a layer after the page is disposed",
   await expect(pending).rejects.toMatchObject({ name: "AbortError" });
   expect(worker.terminated).toBe(true);
   expect(fixture.disposed).toBe(0);
+});
+
+it("retimes judgments and sounds for B timing while keeping chart positions and guides", () => {
+  const handle = createChartHandler();
+  const request = {
+    id: 1,
+    bytes: new TextEncoder().encode(
+      "VERSION\t1.13.00\t1.13.00\nRESOLUTION\t384\nBPM_DEF\t120\t120\t120\t120\nMET_DEF\t4\t4\nCLK_DEF\t384\nBPM\t0\t0\t120\nTAP\t0\t192\t0\t4\nHLD\t1\t0\t4\t4\t192\n",
+    ).buffer,
+    config: compileJudgeTimingIni(new Uint8Array()).buffer as ArrayBuffer,
+    difficulty: 3,
+    mirror: false,
+    musicId: 1,
+    includeScore: true,
+    includeMirror: true,
+  };
+  const compute = (row: number, first = false) => {
+    const { message } = handle({
+      ...request,
+      bytes: first ? request.bytes : undefined,
+      judgeTimingRow: row,
+    });
+    if (!message.ok) throw new Error(message.error.message);
+    return { ...message, timeline: Timeline.from(message.timeline) };
+  };
+  const zero = compute(20, true);
+  for (const row of [0, 40]) {
+    const next = compute(row);
+    const shift = (row === 0 ? -2 : 2) / 60;
+    const times = (chart: typeof next) => chart.timeline.column("judge", "time");
+    expect(times(next).length).toBe(times(zero).length);
+    times(next).forEach((time, i) => expect(time - times(zero)[i]).toBeCloseTo(shift, 6));
+    expect(next.score!.records.map((r) => r.getFloat32(8, true))).toEqual(
+      zero.score!.records.map((r) => r.getFloat32(8, true)),
+    );
+    expect(next.lifetimes!.spawns).toEqual(zero.lifetimes!.spawns);
+    next.livePlayback!.runs.forEach((run, i) => {
+      expect(run.removal - zero.livePlayback!.runs[i].removal).toBe(row === 0 ? -4 : 4);
+    });
+    const cues = (chart: typeof next, id: number) =>
+      Array.from(chart.timeline.column("cue", "time")).filter(
+        (_, i) => chart.timeline.column("cue", "cue")[i] === id,
+      );
+    expect(cues(next, 44)).toEqual(cues(zero, 44));
+    for (const id of [60, 92, 71]) {
+      expect(cues(next, id).length).toBeGreaterThan(0);
+      cues(next, id).forEach((time, i) => expect(time - cues(zero, id)[i]).toBeCloseTo(shift, 6));
+    }
+  }
+  expect(handle({ ...request, bytes: undefined, judgeTimingRow: 41 }).message.ok).toBe(false);
 });

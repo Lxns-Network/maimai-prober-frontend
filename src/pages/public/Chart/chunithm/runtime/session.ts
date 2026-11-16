@@ -29,6 +29,7 @@ import {
 } from "../options/playTiming";
 import { DEFAULT_JUDGE_POSITION_ROW, JUDGE_POSITION_OPTIONS } from "../options/judgePosition";
 import { DEFAULT_JUDGE_DISPLAY_ROW, JUDGE_DISPLAY_OPTIONS } from "../options/judgeDisplay";
+import { DEFAULT_JUDGE_TIMING_ROW, JUDGE_TIMING_OPTIONS } from "../options/judgeTiming";
 import { createChartOverview } from "./chartOverview";
 
 const EFFECT_LIST = "effects/resources.json";
@@ -72,6 +73,9 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   let changingDifficulty = false;
   let changeRevision = 0;
   let changeController: AbortController | null = null;
+  let timingController: AbortController | null = null;
+  let judgeTimingRow = input.initialJudgeTimingRow ?? DEFAULT_JUDGE_TIMING_ROW;
+  let appliedJudgeTimingRow = judgeTimingRow;
   let hud: HudHost | null = null;
   let hudStartedAt = 0;
   let music: PreviewMusic | null = null;
@@ -260,9 +264,62 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   };
   document.addEventListener("visibilitychange", visibilityChanged);
 
+  const changeJudgeTiming = async () => {
+    timingController?.abort();
+    timingController = null;
+    if (
+      !ready ||
+      !chartInput ||
+      !notes ||
+      !hud ||
+      !audio ||
+      capturing ||
+      changingDifficulty ||
+      appliedJudgeTimingRow === judgeTimingRow
+    )
+      return;
+    const row = judgeTimingRow;
+    const controller = new AbortController();
+    timingController = controller;
+    const scope = createAbortScope([signal, controller.signal]);
+    const worker = openPageChartSession(chartInput);
+    const cancel = () => worker.dispose();
+    scope.signal.addEventListener("abort", cancel, { once: true });
+    try {
+      const next = await worker.compute(speedRow, scope.signal, row);
+      if (scope.signal.aborted) return;
+      await effectHost?.ensureEffects(next.effects);
+      if (next.mirrored) await effectHost?.ensureEffects(next.mirrored.effects);
+      if (scope.signal.aborted) return;
+      // Export keeps its original timeline for the whole capture.
+      if (capturing) return;
+      notes.replaceChart(next, chartInput.mirror);
+      notes.selectMirror(mirror);
+      hud.replaceChart(chartInput.song, next.timeline);
+      audio.replaceSfx(next.timeline);
+      live.setChart(createChartOverview(next.timeline, next.score));
+      appliedJudgeTimingRow = row;
+      if (capture)
+        Object.assign((window as unknown as { __chartCapture: object }).__chartCapture, {
+          timeline: next.timeline,
+        });
+      request();
+    } catch (cause) {
+      if (!scope.signal.aborted) throw cause;
+    } finally {
+      scope.signal.removeEventListener("abort", cancel);
+      worker.dispose();
+      scope.dispose();
+      if (timingController === controller) timingController = null;
+    }
+  };
+
   const changeDifficulty = async () => {
     if (!ready || !chartInput || !notes || !hud || !audio || !music || capturing) return;
     pendingDifficulty = false;
+    timingController?.abort();
+    timingController = null;
+    const timingRow = judgeTimingRow;
     const original = chartInput;
     const difficulty = original.difficulties.some(
       (item) => Number(item.value) === requestedDifficulty,
@@ -294,7 +351,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     const cancelWorker = () => worker.dispose();
     scope.signal.addEventListener("abort", cancelWorker, { once: true });
     try {
-      const next = await worker.compute(speedRow, scope.signal);
+      const next = await worker.compute(speedRow, scope.signal, timingRow);
       if (scope.signal.aborted) return;
       await effectHost?.ensureEffects(next.effects);
       if (next.mirrored) await effectHost?.ensureEffects(next.mirrored.effects);
@@ -305,6 +362,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       await audio.connectSfx(next.timeline);
       if (scope.signal.aborted) return;
       chartInput = nextInput;
+      appliedJudgeTimingRow = timingRow;
       live.setChart(createChartOverview(next.timeline, next.score));
       if (capture)
         Object.assign((window as unknown as { __chartCapture: object }).__chartCapture, {
@@ -325,6 +383,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         changeController = null;
         changingDifficulty = false;
         ui.setChangingDifficulty(false);
+        void changeJudgeTiming().catch(fail);
         request();
       }
     }
@@ -426,7 +485,10 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           ui.setPlaying(desiredPlaying);
           draw(restoreSeconds);
           if (pendingDifficulty) void changeDifficulty().catch(fail);
-          else request();
+          else {
+            void changeJudgeTiming().catch(fail);
+            request();
+          }
         }
       }
     },
@@ -544,6 +606,12 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       mirror = value;
       request();
     },
+    selectJudgeTiming(value) {
+      if (!JUDGE_TIMING_OPTIONS.some((option) => option.value === value)) return;
+      judgeTimingRow = Number(value);
+      ui.setJudgeTimingValue(value);
+      void changeJudgeTiming().catch(fail);
+    },
     selectPlayTiming(value) {
       if (!PLAY_TIMING_OPTIONS.some((option) => option.value === value)) return;
       const row = Number(value);
@@ -638,7 +706,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     const firstReady = chartReady.then((chart) => {
       if (!valid()) throw new DOMException("The page was left", "AbortError");
       chartSession = openPageChartSession(chart);
-      return chartSession.compute(initialRow, signal).finally(() => {
+      return chartSession.compute(initialRow, signal, judgeTimingRow).finally(() => {
         chartSession?.dispose();
         chartSession = null;
       });
@@ -738,6 +806,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     speedRow = initialRow;
     ui.setSpeedValue(selected.value);
     ui.setPlayTimingValue(String(playTimingRow));
+    ui.setJudgeTimingValue(String(judgeTimingRow));
     ui.setJudgePositionValue(String(judgePositionRow));
     ui.setCriticalDisplayValue(String(criticalDisplayRow));
     ui.setFieldWallOptions(
@@ -858,6 +927,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     chartInput = chart;
     ui.setStatus("ready");
     if (pendingDifficulty) void changeDifficulty().catch(fail);
+    else void changeJudgeTiming().catch(fail);
     if (capture)
       Object.assign(window, {
         __chartCapture: {

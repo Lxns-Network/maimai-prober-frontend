@@ -84,7 +84,7 @@ function answer(
   const { id, musicId, speedRow = 0 } = data;
   try {
     const bound = bindChart();
-    const chart = nativeChart(bound, speedRow);
+    const chart = nativeChart(bound, speedRow, data.judgeTimingRow);
     const lastMeasure = bound.parsed.notes.reduce(
       (last, note) => Math.max(last, note.start.measure, note.end.measure, note.airEnd.measure),
       0,
@@ -101,7 +101,7 @@ function answer(
     });
     if (!data.includeScore) return { message: { id, ok: true, timeline }, transfer: [timeline] };
     const { score, motion, lifetimes } = chart;
-    const context = lifecycleContext(bound);
+    const context = lifecycleContext(bound, data.judgeTimingRow);
     const runs = lifecycleRuns(
       score,
       noteObjects(score.records, spawnSteps(score, 0, chart.steps)),
