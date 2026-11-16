@@ -181,8 +181,9 @@ function createTransport(context: MusicContext, buffer: AudioBuffer, destination
     if (current && cursor(current, atContextTime) < frames) stop(current, atContextTime);
     pending = { at: atContextTime, next: node, heldFrame: offsetFrames };
   };
+  // Chromium advances `currentTime` between reads in one task, so `at` may already be processed;
+  // a stop time in the past stops the source at once.
   const stop = (node: Node, at: number) => {
-    ahead(at);
     const entry = voices.get(node.voice);
     if (!entry) throw new Error("Current music voice disappeared before its handoff");
     entry.source.stop(at);
