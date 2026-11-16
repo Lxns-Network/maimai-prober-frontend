@@ -388,12 +388,12 @@ function stageInterpolation(display: Map<object, unknown>, next: Map<object, unk
     const future = next.get(original);
     if (!future || !target) continue;
     if (original instanceof Float32Array || original instanceof Float64Array) {
-      if (packedRecords.has(original.buffer)) continue;
+      const stride = packedVertices.get(original);
+      if (!stride && packedRecords.has(original.buffer)) continue;
       const a = original.slice();
       const b = future as Float32Array;
       const out = target as Float32Array;
       if (a.length !== b.length) continue;
-      const stride = packedVertices.get(original);
       const aw = stride ? new Uint32Array(a.buffer, a.byteOffset, a.length) : null;
       const bw = stride ? new Uint32Array(b.buffer, b.byteOffset, b.length) : null;
       const ow = stride ? new Uint32Array(out.buffer, out.byteOffset, out.length) : null;
