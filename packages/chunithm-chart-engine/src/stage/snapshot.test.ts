@@ -99,6 +99,43 @@ it("clones retained per-draw material cells independently of the source scene", 
   expect(Array.from(copy.extension.material.parameter(0, 0)!)).toEqual([0.75, 0, 1, 1]);
 });
 
+it("leaves packed integer words of mixed-view records unblended between ticks", () => {
+  const build = () => {
+    const buffer = new ArrayBuffer(8);
+    const pool = { i: new Int32Array(buffer), f: new Float32Array(buffer) };
+    pool.i[0] = 1;
+    pool.i[1] = -1;
+    const scene = {
+      tick: 0,
+      failure: null,
+      traversalClock: { framePhase: 0 },
+      top: { flags: 0x15, children: [], graveyard: [] },
+      classState: new Map([["pool", pool]]),
+      options: {
+        nodes: new Map([
+          [
+            0,
+            {
+              finishStep(current: StageScene) {
+                const live = current.classState.get("pool") as typeof pool;
+                // A linked-list relink each tick, as the particle pool's NEXT words change.
+                live.i[0] = current.tick % 2 ? 9 : 1;
+              },
+            },
+          ],
+        ]),
+      },
+    } as unknown as StageScene;
+    return [scene];
+  };
+  const rewind = createStageRewind(build, 2);
+  for (const fraction of [0.5, 0.25, 0]) {
+    const scene = rewind.sample(2, fraction)[0];
+    const pool = scene.classState.get("pool") as { i: Int32Array };
+    expect(Array.from(pool.i)).toEqual([1, -1]);
+  }
+});
+
 it("reuses display storage while refreshing changed fields and preserving rewind snapshots", () => {
   const rewind = createStageRewind(
     () => [
@@ -150,3 +187,53 @@ it("reuses display storage while refreshing changed fields and preserving rewind
   expect(back.world[0]).toBe(5);
   expect(back.old).toBe(true);
 });
+
+it.each([
+  ["vertices", 6],
+  ["normalVertices", 9],
+] as const)(
+  "keeps %s positions and packed colours interpolated with shared integer views",
+  (key, stride) => {
+    const rewind = createStageRewind(() => {
+      const vertices = new Float32Array(stride);
+      const mesh = { [key]: vertices, words: new Uint32Array(vertices.buffer) };
+      return [
+        {
+          tick: 0,
+          failure: null,
+          traversalClock: { framePhase: 0 },
+          top: { flags: 0x15, children: [], graveyard: [] },
+          classState: new Map([["mesh", mesh]]),
+          options: {
+            nodes: new Map([
+              [
+                0,
+                {
+                  finishStep(scene: StageScene) {
+                    const live = scene.classState.get("mesh") as typeof mesh;
+                    live[key][0] = scene.tick * 10;
+                    live.words[stride - 3] = scene.tick % 2 ? 0xffffffff : 0xff000000;
+                  },
+                },
+              ],
+            ]),
+          },
+        } as unknown as StageScene,
+      ];
+    }, 2);
+    for (const [tick, fraction, x, colour] of [
+      [2, 0.5, 25, 0xff808080],
+      [2, 0.25, 22.5, 0xff404040],
+      [3, 0.5, 35, 0xff808080],
+      [2, 0, 20, 0xff000000],
+    ]) {
+      const mesh = rewind.sample(tick, fraction)[0].classState.get("mesh") as Record<
+        string,
+        Float32Array | Uint32Array
+      >;
+      expect(mesh[key][0]).toBe(x);
+      expect(mesh.words[stride - 3]).toBe(colour);
+      expect(mesh.words.buffer).toBe(mesh[key].buffer);
+    }
+  },
+);
