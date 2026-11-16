@@ -68,6 +68,7 @@ class GoalMotion implements MotionInstance {
   elapsed = 0;
   initialized = false;
   finished = false;
+  private resetTransform = false;
 
   constructor(
     readonly scene: StageScene,
@@ -355,6 +356,10 @@ class GoalMotion implements MotionInstance {
     if (!this.initialized) this.initialize(node);
     const target = this.target(node);
     if (!target) return false;
+    if (this.resetTransform) {
+      node.transformEpoch++;
+      this.resetTransform = false;
+    }
     if (this.finished) {
       if (!stageTransformRequired(node)) return true;
       if (this.mode === 1) {
@@ -476,6 +481,7 @@ class GoalMotion implements MotionInstance {
       if (this.keep) this.base.set(current);
       this.loops--;
       if (this.loopLimit < 0 || this.loops >= 0) {
+        this.resetTransform = !this.keep;
         this.times.fill(0);
         this.states.fill(0);
         this.elapsed = 0;

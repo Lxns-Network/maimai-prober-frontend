@@ -425,6 +425,21 @@ class StageInterpolation {
     };
     for (const original of next.keys())
       if ("top" in original && "classState" in original) align(original, next.get(original));
+    const discontinuous = new Set<object>();
+    const transformChanged = (node: StageNode): boolean => {
+      const future = next.get(node) as StageNode | undefined;
+      return (
+        (future !== undefined && node.transformEpoch !== future.transformEpoch) ||
+        (node.coordinateMode !== 1 &&
+          node.coordinateParent != null &&
+          transformChanged(node.coordinateParent))
+      );
+    };
+    for (const original of next.keys()) {
+      if (!("record" in original && "birth" in original)) continue;
+      const node = original as StageNode;
+      if (transformChanged(node)) discontinuous.add(node.world);
+    }
     const packedVertices = new Map<object, number>();
     for (const original of next.keys()) {
       const value = original as { vertices?: Float32Array; normalVertices?: Float32Array };
@@ -447,6 +462,7 @@ class StageInterpolation {
         if (!stride && packedRecords.has(original.buffer)) continue;
         const b = future as Float32Array | Float64Array;
         if (original.length !== b.length) continue;
+        const holdTransform = discontinuous.has(original);
         // Copy constant arrays too: held-state presentation can mutate them between samples.
         let unchanged = !stride;
         if (!stride) {
@@ -477,7 +493,7 @@ class StageInterpolation {
           };
           this.arrays.set(original, entry);
         } else entry.start.set(original);
-        entry.constant = unchanged;
+        entry.constant = unchanged || holdTransform;
         entry.end = b;
         if (
           stride &&

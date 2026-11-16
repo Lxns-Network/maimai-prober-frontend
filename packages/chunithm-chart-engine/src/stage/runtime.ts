@@ -110,6 +110,8 @@ export interface StageNode {
   readonly halfRatePhase: number;
   readonly world: Float32Array;
   readonly local: Float32Array;
+  /** Changes when motion resets the transform instead of moving continuously. */
+  transformEpoch: number;
   carry: Float32Array | null;
   offset: Float32Array | null;
   fixedWorld: Float32Array | null;
@@ -828,6 +830,7 @@ function createNode(
     halfRatePhase: clock.constructionPhase,
     world: Float32Array.from(identity),
     local: Float32Array.from(identity),
+    transformEpoch: 0,
     carry: null,
     offset: null,
     fixedWorld: null,

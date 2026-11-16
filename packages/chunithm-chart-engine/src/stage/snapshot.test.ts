@@ -137,6 +137,64 @@ it("preserves sampled poses across repeated fractions, forward steps and rewinds
   }
 });
 
+it("holds looping transforms and their children across a reset without blending through the scene", () => {
+  const build = () => {
+    const scene = {
+      tick: 0,
+      failure: null,
+      traversalClock: { framePhase: 0 },
+      top: { flags: 0x15, children: [], graveyard: [] },
+      classState: new Map(),
+      options: {
+        nodes: new Map([
+          [
+            0,
+            {
+              finishStep(current: StageScene) {
+                const parent = current.classState.get("parent") as StageNode;
+                const child = current.classState.get("child") as StageNode;
+                parent.transformEpoch = current.tick >= 2 ? 1 : 0;
+                parent.world[0] = current.tick === 1 ? 500 : current.tick - 2;
+                child.world[0] = parent.world[0] + 10;
+              },
+            },
+          ],
+        ]),
+      },
+    } as unknown as StageScene;
+    const parent = {
+      scene,
+      record: { id: 1 },
+      birth: 0,
+      coordinateMode: 1,
+      coordinateParent: null,
+      transformEpoch: 0,
+      world: Float32Array.of(499),
+    } as unknown as StageNode;
+    const child = {
+      scene,
+      record: { id: 2 },
+      birth: 0,
+      coordinateMode: 0,
+      coordinateParent: parent,
+      transformEpoch: 0,
+      world: Float32Array.of(509),
+    } as unknown as StageNode;
+    scene.classState.set("parent", parent);
+    scene.classState.set("child", child);
+    return [scene];
+  };
+  const rewind = createStageRewind(build, 2);
+  for (const fraction of [0.25, 0.75, 0]) {
+    const scene = rewind.sample(1, fraction)[0];
+    expect((scene.classState.get("parent") as StageNode).world[0]).toBe(500);
+    expect((scene.classState.get("child") as StageNode).world[0]).toBe(510);
+  }
+  const scene = rewind.sample(2, 0.5)[0];
+  expect((scene.classState.get("parent") as StageNode).world[0]).toBe(0.5);
+  expect((scene.classState.get("child") as StageNode).world[0]).toBe(10.5);
+});
+
 it("clones retained per-draw material cells independently of the source scene", () => {
   const shape = {
     state: { _name: "material" },
