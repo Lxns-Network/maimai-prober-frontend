@@ -396,9 +396,10 @@ export default function Chart() {
     const stored = localStorage.getItem("game");
     const selected =
       stored === '"chunithm"' ? "chunithm" : stored === '"maimai"' ? "maimai" : activeGame;
-    url.searchParams.set("game", selected);
+    // 中二谱面预览上线前分享的谱面链接不带 game 参数，只可能指向舞萌谱面。
+    url.searchParams.set("game", search.chart_id ? "maimai" : selected);
     void navigate(`${url.pathname}${url.search}${url.hash}`, { overwriteLastHistoryEntry: true });
-  }, [activeGame, game, hasUrlGame, setGame]);
+  }, [activeGame, game, hasUrlGame, search.chart_id, setGame]);
   useEffect(() => () => setIsFullscreen(false), [game, setIsFullscreen]);
   if (!hasUrlGame)
     return (
