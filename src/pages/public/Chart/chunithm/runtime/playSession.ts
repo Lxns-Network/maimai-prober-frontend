@@ -12,7 +12,7 @@ import type { NoteScore } from "@lxns-network/chunithm-chart-engine/notes/score"
 import { createPlayEffects, type ResultText } from "./playEffects";
 import { createPlayStates } from "./playStates";
 import { createPlayer, type Judgment, type Player, type PlayerOptions } from "./player";
-import type { ControlChange } from "./keyControls";
+import type { ControlChange } from "./controls";
 
 /** Running totals of one play, for the page to show. */
 export interface PlayStats {
@@ -185,11 +185,16 @@ export function createPlaySession(input: {
       else player.advance(step);
       if (player.finished && !stats.finished) publish({ ...stats, finished: true });
     },
-    /** Passes a control change made at chart time `seconds` and judges up to it at once. */
+    /**
+     * Passes a control change made at chart time `seconds` and judges up to it at once. A change
+     * from before the last step played, as an event stamped before the frame that handled it is,
+     * keeps its own time and is judged with the next step instead of starting the play over.
+     */
     control(change: ControlChange, seconds: number) {
       if (!player) return;
       player.push({ ...change, frames: seconds * 60 });
-      this.advance(Math.floor(seconds * 120));
+      const step = Math.floor(seconds * 120);
+      if (step > player.step) this.advance(step);
     },
     get step() {
       return player?.step ?? -1;

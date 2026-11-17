@@ -166,6 +166,8 @@ export type EffectRow = Extract<BakeEvent, { kind: "effect" }>;
 
 /** Per-instance creation parameters and fate, one entry per effect row in row order. */
 export interface EffectInstances {
+  /** Stable, increasing creation identities for live input; retained rows are immutable. */
+  ids?: Uint32Array;
   resource: Uint16Array;
   group: Uint8Array;
   /** Step the instance is created at. */

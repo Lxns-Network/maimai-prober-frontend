@@ -270,7 +270,7 @@ function buildNoteLayer(input: NoteLayerInput): NoteLayer {
   state.setFloat32(0x354, speedForRowIndex(input.speedRow), true);
   state.setFloat32(0x358, DEPTH_SCALE, true);
   const livePlayback = input.livePlayback
-    ? createLivePlayback(score, input.livePlayback.runs, state, input.liveSlack)
+    ? createLivePlayback(score, input.livePlayback.runs, state, modelStates, input.liveSlack)
     : null;
   if (livePlayback)
     motionFrames = { animated: motion.animated, has: livePlayback.has, at: livePlayback.at };

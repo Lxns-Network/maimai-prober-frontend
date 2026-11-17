@@ -237,7 +237,9 @@ function ChartContent({
 
   useEffect(() => {
     const element = fullscreenElementRef.current;
-    if (!element) return;
+    // A home-screen app has no browser interface to hide, and iPadOS Safari warns of phishing when
+    // the page is tapped rapidly under the Fullscreen API, which touch play does.
+    if (!element || window.matchMedia("(display-mode: standalone)").matches) return;
 
     const enterFullscreen = async () => {
       try {

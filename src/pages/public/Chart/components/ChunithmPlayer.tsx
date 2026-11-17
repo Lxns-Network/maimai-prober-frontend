@@ -21,6 +21,7 @@ import { useChartPreview } from "../chunithm/hooks/useChartPreview";
 import { PlaybackActions } from "../chunithm/components/PlaybackActions";
 import { Controls } from "../chunithm/components/Controls";
 import { PlaySettings } from "../chunithm/components/PlaySettings";
+import { FpsDisplay } from "../chunithm/components/FpsDisplay";
 import { selectChunithmChartDifficulty } from "../chunithm/assets/urls";
 import { useChartAssets } from "../chunithm/hooks/useChartAssets";
 import { useGameStore } from "../stores/useGameStore";
@@ -180,6 +181,7 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
               浏览器不支持 Canvas。
             </Box>
           </AspectRatio>
+          <FpsDisplay live={preview.live} />
           <LoadingOverlay visible={preview.status === "loading"} zIndex={1} />
         </Box>
         {preview.error && (

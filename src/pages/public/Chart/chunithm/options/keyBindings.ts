@@ -79,6 +79,15 @@ export function keyLabel(code: string): string {
   return code;
 }
 
+/** Lanes and AIR sensor `code` is bound to. */
+export function keyHold(bindings: KeyBindings, code: string): { lanes: number; air: boolean } {
+  let lanes = 0;
+  bindings.lanes.forEach((keys, lane) => {
+    if (keys.includes(code)) lanes |= 1 << lane;
+  });
+  return { lanes, air: bindings.air.includes(code) };
+}
+
 /** Binds `code` to one lane, or to the AIR sensor with lane -1, taking it off everything else. */
 export function bindKey(bindings: KeyBindings, code: string, lane: number): KeyBindings {
   const lanes = bindings.lanes.map((keys, at) =>

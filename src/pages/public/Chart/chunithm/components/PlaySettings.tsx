@@ -20,6 +20,7 @@ import {
   type KeyBindings,
 } from "../options/keyBindings";
 import type { useChartPreview } from "../hooks/useChartPreview";
+import { useGameStore } from "../../stores/useGameStore";
 import classes from "../../../Chart.module.css";
 
 const RESULTS = [
@@ -101,73 +102,83 @@ function KeyMap({ disabled }: { disabled: boolean }) {
   );
 }
 
-export function PlaySettings({
-  preview,
-  disabled = false,
-}: {
+interface PlaySettingsProps {
   preview: ReturnType<typeof useChartPreview>;
   disabled?: boolean;
-}) {
+}
+
+function PlayProgress({ preview, disabled = false }: PlaySettingsProps) {
   const ready = preview.status === "ready" && !disabled;
   const stats = useSyncExternalStore(preview.live.play.subscribe, preview.live.play.getSnapshot);
+  return (
+    <>
+      <Group justify="space-between">
+        <Group gap="xs">
+          <IconDeviceGamepad2 size={20} />
+          <Text size="sm" fw={500}>
+            游玩模式
+          </Text>
+          {stats?.finished && (
+            <Badge variant="light" color={stats.counts[3] === 0 ? "yellow" : "blue"}>
+              {stats.partial ? "练习完成" : stats.counts[3] === 0 ? "FULL COMBO" : "完成"}
+            </Badge>
+          )}
+        </Group>
+        <Switch
+          aria-label="游玩模式"
+          checked={preview.playMode}
+          onChange={(event) => preview.selectPlayMode(event.currentTarget.checked)}
+          disabled={!ready}
+        />
+      </Group>
+      {preview.playMode && stats && (
+        <>
+          <SimpleGrid cols={4} spacing="xs">
+            {RESULTS.map(({ label, color }, index) => (
+              <Stack key={label} gap={0} align="center">
+                <Text fz="lg" fw={700} ff="monospace" c={color}>
+                  {stats.counts[index]}
+                </Text>
+                <Text fz={10} c="dimmed">
+                  {label}
+                </Text>
+              </Stack>
+            ))}
+          </SimpleGrid>
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">
+              最大连击{" "}
+              <Text span ff="monospace" c="var(--mantine-color-text)">
+                {stats.maxCombo}
+              </Text>
+            </Text>
+            <Text size="xs" c="dimmed">
+              FAST{" "}
+              <Text span ff="monospace" c="blue">
+                {stats.fast}
+              </Text>{" "}
+              / LATE{" "}
+              <Text span ff="monospace" c="red">
+                {stats.late}
+              </Text>
+            </Text>
+          </Group>
+        </>
+      )}
+    </>
+  );
+}
+
+export function PlaySettings({ preview, disabled = false }: PlaySettingsProps) {
+  const isFullscreen = useGameStore((state) => state.isFullscreen);
   const flickNeedsMotion = useChunithmChartSettingsStore((state) => state.flickNeedsMotion);
   const setOptions = useChunithmChartSettingsStore((state) => state.setOptions);
+  if (isFullscreen) return null;
+  const ready = preview.status === "ready" && !disabled;
   return (
     <Card className={classes.card} radius="lg" withBorder>
       <Stack gap="md">
-        <Group justify="space-between">
-          <Group gap="xs">
-            <IconDeviceGamepad2 size={20} />
-            <Text size="sm" fw={500}>
-              游玩模式
-            </Text>
-            {stats?.finished && (
-              <Badge variant="light" color={stats.counts[3] === 0 ? "yellow" : "blue"}>
-                {stats.partial ? "练习完成" : stats.counts[3] === 0 ? "FULL COMBO" : "完成"}
-              </Badge>
-            )}
-          </Group>
-          <Switch
-            aria-label="游玩模式"
-            checked={preview.playMode}
-            onChange={(event) => preview.selectPlayMode(event.currentTarget.checked)}
-            disabled={!ready}
-          />
-        </Group>
-        {preview.playMode && stats && (
-          <>
-            <SimpleGrid cols={4} spacing="xs">
-              {RESULTS.map(({ label, color }, index) => (
-                <Stack key={label} gap={0} align="center">
-                  <Text fz="lg" fw={700} ff="monospace" c={color}>
-                    {stats.counts[index]}
-                  </Text>
-                  <Text fz={10} c="dimmed">
-                    {label}
-                  </Text>
-                </Stack>
-              ))}
-            </SimpleGrid>
-            <Group justify="space-between">
-              <Text size="xs" c="dimmed">
-                最大连击{" "}
-                <Text span ff="monospace" c="var(--mantine-color-text)">
-                  {stats.maxCombo}
-                </Text>
-              </Text>
-              <Text size="xs" c="dimmed">
-                FAST{" "}
-                <Text span ff="monospace" c="blue">
-                  {stats.fast}
-                </Text>{" "}
-                / LATE{" "}
-                <Text span ff="monospace" c="red">
-                  {stats.late}
-                </Text>
-              </Text>
-            </Group>
-          </>
-        )}
+        <PlayProgress preview={preview} disabled={disabled} />
         <KeyMap disabled={!ready} />
         <Group justify="space-between">
           <Text size="sm">FLICK 需要擦动</Text>

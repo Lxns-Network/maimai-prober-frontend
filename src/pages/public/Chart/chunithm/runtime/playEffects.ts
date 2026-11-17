@@ -18,6 +18,7 @@ const SPAN = 240;
 const PRUNE_AFTER = 96;
 
 interface Instance {
+  id: number;
   resource: number;
   group: number;
   created: number;
@@ -47,12 +48,16 @@ export function createPlayEffects(score: NoteScore, text: ResultText) {
   const earlier = new Map<number, JudgeEmission[]>();
   let instances: Instance[] = [];
   let built: ChartEffects | null = null;
+  let nextId = 1;
+  let sequence = {};
 
   const build = (): ChartEffects => {
     const count = instances.length;
     const births = instances.reduce((n, instance) => n + instance.births.length, 0);
     const out: ChartEffects = {
+      sequence,
       instances: {
+        ids: new Uint32Array(count),
         resource: new Uint16Array(count),
         group: new Uint8Array(count),
         created: new Int32Array(count),
@@ -90,6 +95,7 @@ export function createPlayEffects(score: NoteScore, text: ResultText) {
     let birth = 0;
     instances.forEach((instance, i) => {
       const columns = out.instances;
+      columns.ids![i] = instance.id;
       columns.resource[i] = instance.resource;
       columns.group[i] = instance.group;
       columns.created[i] = instance.created;
@@ -125,6 +131,7 @@ export function createPlayEffects(score: NoteScore, text: ResultText) {
       return (built ??= build());
     },
     reset() {
+      sequence = {};
       earlier.clear();
       instances = [];
       built = null;
@@ -171,6 +178,7 @@ export function createPlayEffects(score: NoteScore, text: ResultText) {
         const isText = group === EFFECT_GROUP.text;
         if (isText ? state === null : judgment.grade === 0) continue;
         instances.push({
+          id: nextId++,
           resource: columns.resource[i],
           group,
           created: judgment.step,

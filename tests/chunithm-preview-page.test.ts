@@ -244,6 +244,9 @@ async function setup(
       getBoundingClientRect: () => ({ width: 640, height: 360 }),
       getContext: () => ({}),
       setAttribute() {},
+      addEventListener() {},
+      removeEventListener() {},
+      style: {},
     } as unknown as HTMLCanvasElement,
     assetBase: "https://local.test/",
     musicId: 1,
@@ -522,6 +525,84 @@ describe("preview play timing", () => {
       expect(mock.sfxUpdate.mock.lastCall![0].phase).toBe("paused");
     } finally {
       f.cleanup();
+    }
+  });
+});
+
+describe("preview FPS display", () => {
+  it("measures frame work independently of the interval between callbacks", async () => {
+    const preview = await setup();
+    let now = 100;
+    let workMs = 2;
+    vi.mocked(performance.now).mockImplementation(() => now);
+    try {
+      await preview.start();
+      preview.page.setFpsLimit(0);
+      await mock.render.withImplementation(
+        () => {
+          now += workMs;
+          return { draws: 1, notes: 1, backgroundDrawn: false };
+        },
+        () => {
+          preview.flushFrame();
+          for (let frame = 1; frame <= 60; frame++) {
+            now = 100 + (frame * 1000) / 60;
+            workMs = frame % 2 ? 6 : 2;
+            preview.advance(1 / 60);
+            preview.flushFrame();
+          }
+          expect(preview.live.frameStats.getSnapshot()).toEqual({
+            fps: 60,
+            callbacksPerSecond: 60,
+            averageWorkMs: 4,
+            maximumWorkMs: 6,
+            width: 640,
+            height: 360,
+          });
+        },
+      );
+    } finally {
+      preview.cleanup();
+    }
+  });
+
+  it("counts rendered frames under a frame limit and clears the sample when hidden or paused", async () => {
+    const preview = await setup();
+    let now = 100;
+    vi.mocked(performance.now).mockImplementation(() => now);
+    try {
+      await preview.start();
+      preview.page.setFpsLimit(30);
+      preview.flushFrame();
+      expect(preview.live.frameStats.getSnapshot()).toBeNull();
+      for (let frame = 1; frame <= 250; frame++) {
+        now = 100 + (frame * 1000) / 240;
+        preview.advance(1 / 240);
+        preview.flushFrame();
+      }
+      expect(preview.live.frameStats.getSnapshot()).toMatchObject({
+        fps: 30,
+        callbacksPerSecond: 240,
+      });
+      preview.setVisibility("hidden");
+      expect(preview.live.frameStats.getSnapshot()).toBeNull();
+      now += 1000;
+      preview.setVisibility("visible");
+      preview.flushFrame();
+      expect(preview.live.frameStats.getSnapshot()).toBeNull();
+      for (let frame = 0; frame < 250; frame++) {
+        now += 1000 / 240;
+        preview.advance(1 / 240);
+        preview.flushFrame();
+      }
+      expect(preview.live.frameStats.getSnapshot()).toMatchObject({
+        fps: 30,
+        callbacksPerSecond: 240,
+      });
+      preview.page.toggle();
+      expect(preview.live.frameStats.getSnapshot()).toBeNull();
+    } finally {
+      preview.cleanup();
     }
   });
 });

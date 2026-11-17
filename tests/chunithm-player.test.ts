@@ -1,13 +1,23 @@
 import { describe, expect, test } from "vitest";
 import { parseLxchu } from "@lxns-network/chunithm-chart-engine/chart/parse/lxchu";
 import { bindScore } from "@lxns-network/chunithm-chart-engine/chart/bind/bindScore";
+import { bake } from "@lxns-network/chunithm-chart-engine/chart/bake/bake";
+import { GROUND_MAIN_PART } from "@lxns-network/chunithm-chart-engine/chart/bake/events";
 import { compileJudgeTimingIni } from "@lxns-network/chunithm-chart-engine/chart/bind/config";
 import { assembleEvents } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/emissions";
 import { lifecycleContext } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/context";
 import { chartSteps } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/nativeChart";
 import { noteObjects } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/objects";
 import { lifecycleRuns } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/runs";
-import { spawnSteps } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/spawnStep";
+import {
+  scanState,
+  spawnSteps,
+} from "@lxns-network/chunithm-chart-engine/chart/lifecycle/spawnStep";
+import { motionParts } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/motion";
+import { Timeline } from "@lxns-network/chunithm-chart-engine/chart/timeline/reader";
+import { createLivePlayback } from "@lxns-network/chunithm-chart-engine/notes/livePlayback";
+import { createPlayStates } from "@/pages/public/Chart/chunithm/runtime/playStates";
+import { createPlayEffects } from "@/pages/public/Chart/chunithm/runtime/playEffects";
 import { createScoreKeeper } from "@lxns-network/chunithm-chart-engine/chart/sweep/score";
 import { noteScoreOf } from "@lxns-network/chunithm-chart-engine/notes/score";
 import {
@@ -57,7 +67,7 @@ function load() {
   const score = noteScoreOf(bound);
   const steps = chartSteps(score.records);
   const objects = noteObjects(score.records, spawnSteps(score, 0, steps));
-  return { score, steps, objects, context: lifecycleContext(bound) };
+  return { bound, score, steps, objects, context: lifecycleContext(bound) };
 }
 
 /** Plays the test chart with `inputs` and returns everything the player wrote. */
@@ -109,6 +119,73 @@ const raise = (ms: number, hold = 30): PlayInput[] => [
   { frames: ms * 0.06, lanes: 0, air: true, down: true },
   { frames: (ms + hold) * 0.06, lanes: 0, air: true, down: false },
 ];
+
+describe("live play animation", () => {
+  test("keeps effect identities across additions and distinguishes a restarted play", () => {
+    const { score, judgments } = play([...touch(4000, lanes(0, 3)), ...touch(4500, lanes(4, 7))]);
+    const effects = createPlayEffects(score, () => 0);
+    effects.add(judgments[0]);
+    const first = effects.effects;
+    effects.add(judgments[1]);
+    const next = effects.effects;
+    expect(first.instances.ids!.length).toBeGreaterThan(0);
+    expect(next.sequence).toBe(first.sequence);
+    expect(next.instances.ids!.slice(0, first.instances.ids!.length)).toEqual(first.instances.ids);
+    expect(createPlayEffects(score, () => 0).effects.sequence).not.toBe(next.sequence);
+    effects.reset();
+    expect(effects.effects.sequence).not.toBe(next.sequence);
+    expect(effects.effects.instances.ids).toHaveLength(0);
+  });
+  test.each([0, 0.375])("samples missed notes within their UV range at sub-step %s", (fraction) => {
+    const { bound, score, steps, objects, context } = load();
+    const runs = lifecycleRuns(score, objects, context);
+    const timeline = Timeline.from(bake(bound, () => assembleEvents(runs), { musicId: 0 }));
+    const states = createPlayStates(timeline, score.records);
+    states.setPlaying(true);
+    const player = createPlayer({
+      score,
+      objects,
+      context,
+      options: { flickNeedsMotion: true },
+      output: {
+        model: states.model,
+        band: states.band,
+        judge() {},
+        sound() {},
+        endStep() {},
+      },
+    });
+    const slack = 60;
+    const playback = createLivePlayback(score, runs, scanState(0), states.live.modelStates, slack);
+    const parts = motionParts(score, runs, steps);
+    let lateSamples = 0;
+    for (let step = 0; step < steps + slack; step++) {
+      player.advance(step);
+      const count = playback.update(step, 0, 1);
+      const active = new Set(playback.records.subarray(0, count));
+      for (const part of parts) {
+        const record = part.run.object.record;
+        const visiblePart = part.pool === null ? GROUND_MAIN_PART : part.part;
+        if (
+          !active.has(record) ||
+          step >= part.release + slack ||
+          !states.live.modelStates.shownAt(record, visiblePart, step)
+        )
+          continue;
+        const frame = playback.at(record, part.part, part.model, step + fraction);
+        expect(
+          frame,
+          `${part.run.object.className}/${part.part} at ${step}`,
+        ).toBeGreaterThanOrEqual(0);
+        expect(frame, `${part.run.object.className}/${part.part} at ${step}`).toBeLessThanOrEqual(
+          part.clock.upper,
+        );
+        if (step >= part.release) lateSamples++;
+      }
+    }
+    expect(lateSamples).toBeGreaterThan(0);
+  });
+});
 
 describe("skipped play", () => {
   test("commits what the engine's automatic play commits, for every note family", () => {

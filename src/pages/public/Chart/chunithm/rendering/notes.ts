@@ -81,6 +81,8 @@ export interface NoteHost {
   readonly effects: LoadedChart["effects"];
   /** The note pack textures by id, for the field drawn over the same pack. */
   readonly textures: ReadonlyMap<string, { readonly texture: WebGLTexture }>;
+  /** View-projection the notes were last drawn with: row-major, for column vectors. */
+  readonly viewProjection: Float32Array;
   selectMirror(mirror: boolean): void;
   replaceChart(chart: LoadedChart, mirror: boolean): void;
   /** Keeps notes drawable this many steps past their automatic run, for a player's late results. */
@@ -436,6 +438,7 @@ export async function createNoteHost(input: {
         return first.effects;
       },
       textures: assets.textures,
+      viewProjection,
       replaceChart(next, nextMirror) {
         rebuild(next, nextMirror, input.live?.(next));
       },

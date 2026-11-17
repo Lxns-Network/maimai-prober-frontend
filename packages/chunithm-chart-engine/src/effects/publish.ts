@@ -2,6 +2,7 @@ import type { ParticleDrawState, TextureBinding } from "./eval/draw";
 import { particleTangentRings } from "./eval/random";
 import type { EffectDrawSink, ParticlePacket, PrimitivePacket } from "./instance";
 import { particlePass, primitivePass } from "./passes";
+import { PLAYER_ORDER } from "./players";
 import type {
   EffectBinding,
   EffectPacket,
@@ -18,6 +19,8 @@ export interface EffectPublisher {
   readonly particle: (packet: ParticlePacket<ParticleDrawState>) => void;
   /** The packets received since the last `reset`, in arrival order; valid until the next `reset`. */
   readonly packets: readonly EffectPacket[];
+  /** Restores player/creation order after appending live instances with increasing ids. */
+  sort(): void;
   reset(): void;
 }
 
@@ -31,6 +34,7 @@ const FILTER = [1, 2, 3, 0];
 const COLOR = Array.from({ length: 256 }, (_, byte) => Math.fround(byte * Math.fround(1 / 255)));
 const NO_INDICES = new Uint32Array(0);
 const PASSES = new Map<number, EffectPass>();
+const PLAYER_RANK = new Map(PLAYER_ORDER.map((id, i) => [id, i]));
 
 const filterIndex = (value: number) => (value === 1 ? 1 : value === 2 ? 2 : 0);
 
@@ -292,6 +296,7 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
     packet.mesh.indices = indicesOf(draw.strip, count);
     packet.layout = draw.layout;
     packet.interpolationKey = source.interpolationKey;
+    packet.instanceId = source.instanceId;
     packet.frame = source.frame;
     packet.normalLights = normal ? source.normalLights : undefined;
     packet.shadow = source.shadow;
@@ -327,6 +332,7 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
     const slot = particleSlot();
     const packet = slot.packet;
     packet.interpolationKey = source.interpolationKey;
+    packet.instanceId = source.instanceId;
     packet.frame = source.frame;
     packet.resourceId = source.resourceId;
     packet.mesh.attributes.aTangent.values = ringOf(source.ringIndex);
@@ -359,6 +365,13 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
     sink: { primitive, particle },
     particle,
     packets,
+    sort() {
+      packets.sort(
+        (a, b) =>
+          PLAYER_RANK.get(a.resourceId)! - PLAYER_RANK.get(b.resourceId)! ||
+          a.instanceId! - b.instanceId!,
+      );
+    },
     reset() {
       packets.length = 0;
       primitivesUsed = 0;

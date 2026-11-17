@@ -3,6 +3,16 @@ import type { PlayStats } from "./playSession";
 
 type Listener = () => void;
 
+export interface PreviewFrameStats {
+  fps: number;
+  callbacksPerSecond: number;
+  /** Synchronous frame callback duration; excludes asynchronous GPU execution and input handlers. */
+  averageWorkMs: number;
+  maximumWorkMs: number;
+  width: number;
+  height: number;
+}
+
 function subscriptions() {
   const listeners = new Set<Listener>();
   return {
@@ -26,7 +36,15 @@ export function createPreviewLiveState() {
   const chartChanges = subscriptions();
   let playStats: PlayStats | null = null;
   const playChanges = subscriptions();
+  let frameStats: PreviewFrameStats | null = null;
+  const frameChanges = subscriptions();
   return {
+    frameStats: { subscribe: frameChanges.subscribe, getSnapshot: () => frameStats },
+    setFrameStats(next: PreviewFrameStats | null) {
+      if (next === frameStats) return;
+      frameStats = next;
+      frameChanges.notify();
+    },
     chart: { subscribe: chartChanges.subscribe, getSnapshot: () => chart },
     setChart(value: NonNullable<typeof chart>) {
       chart = value;

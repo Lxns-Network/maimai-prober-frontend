@@ -46,7 +46,9 @@ import {
 } from "@lxns-network/chunithm-chart-engine/chart/bind/config";
 import type { ChartInput } from "../rendering/notes";
 import { createPlaySession, type PlaySession } from "./playSession";
-import { createKeyControls } from "./keyControls";
+import { createControls, NO_HOLD, type ControlChange } from "./controls";
+import { touchHold } from "./touchZones";
+import { keyHold } from "../options/keyBindings";
 import type { Judgment } from "./player";
 
 const EFFECT_LIST = "effects/resources.json";
@@ -152,9 +154,9 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   let play: PlaySession | null = null;
   /** Chart and judge row the next computed chart was requested with. */
   let liveInput: { chart: ChartInput; judgeTimingRow: number } | null = null;
-  /** The music at its last poll, for placing key events on the chart's clock. */
+  /** The music at its last poll, for placing key and touch events on the chart's clock. */
   const clock = { performance: 0, seconds: 0, rate: 1, playing: false };
-  const keys = createKeyControls();
+  const held = createControls();
   let playSettings: PlaySettings | null = null;
   let desiredPlaying = false;
   let loopRange: LoopRange | null = null;
@@ -171,6 +173,18 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const warmState: PreviewWarmState = { playing: false, busy: true, blockedUntil: 0 };
   let previousFrameTime = 0;
   let displayInterval = 1000 / 60;
+  let fpsSampleStart: number | null = null;
+  let renderedFrames = 0;
+  let frameCallbacks = 0;
+  let frameWorkMs = 0;
+  let maximumFrameWorkMs = 0;
+  const resetFps = () => {
+    fpsSampleStart = null;
+    renderedFrames = 0;
+    frameCallbacks = 0;
+    frameWorkMs = maximumFrameWorkMs = 0;
+    live.setFrameStats(null);
+  };
   const readWarmState = () => {
     warmState.playing = desiredPlaying;
     warmState.busy =
@@ -205,7 +219,13 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   };
   /** The loop's draw: a hidden page keeps polling the music without rendering unseen frames. */
   const present = (at: number) => {
-    if (document.visibilityState !== "hidden") draw(at);
+    if (document.visibilityState === "hidden") return;
+    draw(at);
+    if (!desiredPlaying) {
+      resetFps();
+      return;
+    }
+    renderedFrames++;
   };
   const playStep = (at: number) => stepForSeconds(at - playTiming);
   /** Display state of a judgment's result text, under the critical display option. */
@@ -245,6 +265,13 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     }
     return next.live;
   };
+  /** Passes control changes an event made at `timeStamp` to a running play. */
+  const send = (changes: ControlChange[], timeStamp: number) => {
+    if (!changes.length || !play || !clock.playing || !desiredPlaying) return;
+    const at = clock.seconds + ((timeStamp - clock.performance) / 1000) * clock.rate - playTiming;
+    for (const change of changes) play.control(change, at);
+    request(false);
+  };
   /** Feeds a bound key to the play; Escape pauses and resumes. */
   const keyChanged = (event: KeyboardEvent) => {
     if (
@@ -262,26 +289,55 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       controls.toggle();
       return;
     }
-    const bindings = playSettings.keyBindings;
-    if (!keys.bound(bindings, event.code)) return;
+    const bound = keyHold(playSettings.keyBindings, event.code);
+    if (!bound.lanes && !bound.air) return;
     event.preventDefault();
-    const change = keys.change(bindings, event.code, event.type === "keydown");
-    if (!change || !clock.playing || !desiredPlaying) return;
-    const at =
-      clock.seconds + ((event.timeStamp - clock.performance) / 1000) * clock.rate - playTiming;
-    play.control(change, at);
-    request(false);
+    send(
+      held.hold(`key:${event.code}`, event.type === "keydown" ? bound : NO_HOLD),
+      event.timeStamp,
+    );
   };
-  /** Lets go of every key and pauses a play the page lost focus during. */
+  /** Feeds a touch or pen on the canvas to the play, holding what lies under it. */
+  const touched = (event: PointerEvent) => {
+    if (!playMode || !play || !notes || event.pointerType === "mouse") return;
+    event.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const next =
+      event.type === "pointerup" || event.type === "pointercancel" || event.buttons === 0
+        ? NO_HOLD
+        : touchHold(
+            notes.viewProjection,
+            (event.clientX - rect.left) / rect.width,
+            (event.clientY - rect.top) / rect.height,
+          );
+    send(held.hold(`touch:${event.pointerId}`, next), event.timeStamp);
+  };
+  /**
+   * Keeps a touch on the canvas in play from scrolling or zooming the page and from reaching the
+   * page's own touch handlers, which would toggle the fullscreen controls over the lanes.
+   */
+  const touchStarted = (event: TouchEvent) => {
+    if (!playMode) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  /** Lets go of every key and touch and pauses a play the page lost focus during. */
   const focusLost = () => {
-    for (const change of keys.releaseAll())
+    for (const change of held.releaseAll())
       if (clock.playing) play?.control(change, clock.seconds - playTiming);
     if (playMode && desiredPlaying) controls.toggle();
   };
+  const pointerEvents = ["pointerdown", "pointermove", "pointerup", "pointercancel"] as const;
+  for (const type of pointerEvents) canvas.addEventListener(type, touched);
+  canvas.addEventListener("touchstart", touchStarted, { passive: false });
   window.addEventListener("keydown", keyChanged, { capture: true });
   window.addEventListener("keyup", keyChanged, { capture: true });
   window.addEventListener("blur", focusLost);
   const release = () => {
+    resetFps();
+    for (const type of pointerEvents) canvas.removeEventListener(type, touched);
+    canvas.removeEventListener("touchstart", touchStarted);
+    canvas.style.touchAction = "";
     window.removeEventListener("keydown", keyChanged, { capture: true });
     window.removeEventListener("keyup", keyChanged, { capture: true });
     window.removeEventListener("blur", focusLost);
@@ -400,9 +456,34 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       if (isMusicOutputPending(cause)) request();
       else fail(cause);
     } finally {
+      const now = performance.now();
+      const workMs = now - started;
       const budget = fpsLimit ? Math.max(displayInterval, 1000 / fpsLimit) : displayInterval;
-      if (performance.now() - started > budget * 0.7)
-        warmState.blockedUntil = performance.now() + 200;
+      if (workMs > budget * 0.7) warmState.blockedUntil = now + 200;
+      if (valid() && desiredPlaying && document.visibilityState !== "hidden") {
+        if (fpsSampleStart === null) {
+          fpsSampleStart = now;
+          renderedFrames = 0;
+        } else {
+          frameCallbacks++;
+          frameWorkMs += workMs;
+          maximumFrameWorkMs = Math.max(maximumFrameWorkMs, workMs);
+          const elapsed = now - fpsSampleStart;
+          if (elapsed >= 1000) {
+            live.setFrameStats({
+              fps: Math.round((renderedFrames * 1000) / elapsed),
+              callbacksPerSecond: Math.round((frameCallbacks * 1000) / elapsed),
+              averageWorkMs: frameWorkMs / frameCallbacks,
+              maximumWorkMs: maximumFrameWorkMs,
+              width: canvas.width,
+              height: canvas.height,
+            });
+            fpsSampleStart = now;
+            renderedFrames = frameCallbacks = 0;
+            frameWorkMs = maximumFrameWorkMs = 0;
+          }
+        }
+      }
     }
   };
   const request = (redraw = true) => {
@@ -420,6 +501,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
    * there for looping, the end of the chart and SFX scheduling. Showing the page draws again.
    */
   const visibilityChanged = () => {
+    resetFps();
     if (hiddenTimer !== null) clearInterval(hiddenTimer);
     hiddenTimer = null;
     if (document.visibilityState !== "hidden") {
@@ -504,6 +586,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     changeController = controller;
     const scope = createAbortScope([signal, controller.signal]);
     changingDifficulty = true;
+    resetFps();
     ui.setChangingDifficulty(true);
     desiredPlaying = false;
     scrubbing = null;
@@ -597,6 +680,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       const restoreRate = audibleRate;
       const exportTextSeconds = (performance.now() - hudStartedAt) / 1000;
       capturing = true;
+      resetFps();
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       const exportScope = createAbortScope([signal, exportSignal]);
@@ -667,6 +751,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     },
     toggle() {
       if (!music || !audio || changingDifficulty) return;
+      resetFps();
       if (scrubbing) {
         seconds = scrubbing.seconds;
         scrubbing = null;
@@ -838,6 +923,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     },
     setFpsLimit(value) {
       fpsLimit = value;
+      resetFps();
       request();
     },
     setAudioOffsets(nextMusicOffset, nextSoundOffset) {
@@ -859,7 +945,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     setPlayMode(value) {
       if (value === playMode) return;
       playMode = value;
-      keys.releaseAll();
+      held.releaseAll();
+      canvas.style.touchAction = value ? "none" : "";
       audio?.pauseSfx();
       notes?.setLiveSlack(value ? LIVE_SLACK_STEPS : 0);
       play?.setPlaying(value, playStep(scrubbing?.seconds ?? seconds));
@@ -868,7 +955,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       request();
     },
     setPlaySettings(value) {
-      if (playSettings?.keyBindings !== value.keyBindings) keys.releaseAll();
+      if (playSettings?.keyBindings !== value.keyBindings) held.releaseAll();
       playSettings = value;
     },
   };

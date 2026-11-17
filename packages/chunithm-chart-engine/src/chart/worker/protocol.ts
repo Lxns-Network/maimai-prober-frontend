@@ -6,6 +6,8 @@ import type { LivePlaybackData } from "../../notes/livePlayback";
 
 /** Effect instance columns, random-stream starts and position changes; instances are in effect row order. */
 export interface ChartEffects {
+  /** Identity of a live effect stream; instance ids are only unique within this stream. */
+  sequence?: object;
   instances: EffectInstances;
   consumption: Consumption;
   moves: EffectMoves;

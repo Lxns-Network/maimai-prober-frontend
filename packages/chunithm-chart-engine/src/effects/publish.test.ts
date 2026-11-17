@@ -8,9 +8,8 @@ import {
 } from "./eval/draw";
 import type { ParticlePacket, PrimitivePacket } from "./instance";
 import { createEffectPublisher } from "./publish";
-it("refreshes a reused particle slot's material fog gate", () => {
-  const publisher = createEffectPublisher({ maximumParticles: 1 });
-  const source: ParticlePacket<ParticleDrawState> = {
+function particleSource(): ParticlePacket<ParticleDrawState> {
+  return {
     instanceId: 0,
     resourceId: 0,
     draw: {
@@ -43,6 +42,11 @@ it("refreshes a reused particle slot's material fog gate", () => {
     priority: 0,
     orderKey: 0x8580,
   };
+}
+
+it("refreshes a reused particle slot's material fog gate", () => {
+  const publisher = createEffectPublisher({ maximumParticles: 1 });
+  const source = particleSource();
   let previous;
   for (const gate of [0, 0x4000, 0]) {
     publisher.reset();
@@ -54,6 +58,28 @@ it("refreshes a reused particle slot's material fog gate", () => {
     expect(packet.material.fog).toBe(gate === 0);
     previous = packet;
   }
+});
+
+it("merges additions in player and creation order, retaining an instance's draw order", () => {
+  const publisher = createEffectPublisher({ maximumParticles: 1 });
+  const source = particleSource();
+  [
+    [24, 3],
+    [23, 5],
+    [23, 2],
+    [24, 1],
+    [23, 2],
+  ].forEach(([resourceId, instanceId], i) => {
+    publisher.particle({ ...source, resourceId, instanceId, interpolationKey: String(i) });
+  });
+  publisher.sort();
+  expect(publisher.packets.map((packet) => packet.interpolationKey)).toEqual([
+    "2",
+    "4",
+    "1",
+    "3",
+    "0",
+  ]);
 });
 it("retains live texture conversions across frames and selects new references independently", () => {
   const publisher = createEffectPublisher({ maximumParticles: 1 });

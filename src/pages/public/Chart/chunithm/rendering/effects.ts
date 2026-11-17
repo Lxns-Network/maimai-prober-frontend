@@ -103,6 +103,9 @@ export function createEffectHost(input: {
   let judgePositionOffset = 0;
   let criticalDisplayRow = 0;
   let published = -1;
+  let previousSeconds = -Infinity;
+  let previousRate = 1;
+  let previousEpoch = 0;
   const publishedEye = new Float64Array(6);
   let disposed = false;
   return {
@@ -118,33 +121,6 @@ export function createEffectHost(input: {
     }) {
       if (disposed) throw new Error("The effect host has been disposed");
       const frame = playback.update(effects, seconds, playbackRate, playbackEpoch);
-      if (
-        effects !== source ||
-        frame.effects !== mapped ||
-        nextOffset !== judgePositionOffset ||
-        nextDisplayRow !== criticalDisplayRow
-      ) {
-        scheduler = createEffectScheduler({
-          resources,
-          layerParameters: resources.map((resource, id) =>
-            resource ? effectPlayerLayer(id) : null,
-          ),
-          instances: frame.effects.instances,
-          consumption: frame.effects.consumption,
-          moves: frame.effects.moves,
-          maximumParticles: MAXIMUM_PARTICLES,
-          judgePositionOffset: nextOffset,
-          criticalDisplayRow: nextDisplayRow,
-        });
-        source = effects;
-        mapped = frame.effects;
-        judgePositionOffset = nextOffset;
-        criticalDisplayRow = nextDisplayRow;
-        published = -1;
-        publisher.reset();
-        nextPublisher.reset();
-        interpolation.reset();
-      }
       const eye = scene.readEffectCamera();
       const step = stepForSeconds(frame.seconds);
       let sameEye = true;
@@ -154,6 +130,58 @@ export function createEffectHost(input: {
         publishedEye[i] = eye.position[i];
         publishedEye[i + 3] = eye.up[i];
       }
+      let appended = false;
+      if (
+        effects !== source ||
+        frame.effects !== mapped ||
+        nextOffset !== judgePositionOffset ||
+        nextDisplayRow !== criticalDisplayRow
+      ) {
+        if (
+          scheduler &&
+          effects.sequence === source?.sequence &&
+          published >= 0 &&
+          sameEye &&
+          seconds >= previousSeconds &&
+          playbackRate === previousRate &&
+          playbackEpoch === previousEpoch &&
+          nextOffset === judgePositionOffset &&
+          nextDisplayRow === criticalDisplayRow
+        ) {
+          interpolation.apply(0);
+          appended = scheduler.update(frame.effects, eye, (at) =>
+            at === published ? publisher.sink : at === published + 1 ? nextPublisher.sink : null,
+          );
+        }
+        if (appended) {
+          publisher.sort();
+          nextPublisher.sort();
+        } else {
+          scheduler = createEffectScheduler({
+            resources,
+            layerParameters: resources.map((resource, id) =>
+              resource ? effectPlayerLayer(id) : null,
+            ),
+            instances: frame.effects.instances,
+            consumption: frame.effects.consumption,
+            moves: frame.effects.moves,
+            maximumParticles: MAXIMUM_PARTICLES,
+            judgePositionOffset: nextOffset,
+            criticalDisplayRow: nextDisplayRow,
+          });
+          published = -1;
+          publisher.reset();
+          nextPublisher.reset();
+          interpolation.reset();
+        }
+        source = effects;
+        mapped = frame.effects;
+        judgePositionOffset = nextOffset;
+        criticalDisplayRow = nextDisplayRow;
+      }
+      previousSeconds = seconds;
+      previousRate = playbackRate;
+      previousEpoch = playbackEpoch;
       if (step !== published || !sameEye) {
         if (published >= 0 && step === published + 1 && sameEye) {
           [publisher, nextPublisher] = [nextPublisher, publisher];
@@ -165,7 +193,7 @@ export function createEffectHost(input: {
         scheduler!.advanceTo(step + 1, eye, nextPublisher.sink);
         interpolation.prepare(publisher.packets, nextPublisher.packets);
         published = step;
-      }
+      } else if (appended) interpolation.prepare(publisher.packets, nextPublisher.packets);
       interpolation.apply(frame.seconds * 120 - step);
       return renderer.prepare(publisher.packets, {
         viewport: camera.viewport,
