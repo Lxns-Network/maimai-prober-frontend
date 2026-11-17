@@ -1,6 +1,7 @@
 import { createSortDepthCamera, type SortDepthCamera } from "../render/sortDepth";
 
 export interface FieldFrame {
+  readonly barPositions?: Float32Array;
   /** Camera view matrix as the scene stores it (row-major, the reference's cameraA). */
   readonly view: ArrayLike<number>;
   /** Camera projection matrix (the reference's cameraB). */

@@ -36,6 +36,8 @@ const TICK_BYTES = 32;
 
 /** The score the note layer reads: the timeline score, and each slide record's joints by record index. */
 export interface NoteScore extends NoteTimelineScore {
+  /** MET-derived measure boundaries in milliseconds, including the terminal zero-meter boundary. */
+  barTimes?: Float32Array;
   /** One 36-byte view per joint of each slide record; absent when the score has no slide. */
   slideJoints?: ReadonlyMap<number, readonly DataView[]>;
   /** Each AIR slide record's 36-byte joints by record index; absent when the score has no AIR slide. */
@@ -109,6 +111,9 @@ export function noteScoreOf(bound: BoundScore): NoteScore {
       });
   });
   const score: NoteScore = {
+    barTimes: Float32Array.from(bound.parsed.run.lines[2].items, (line) =>
+      line.getFloat32(8, true),
+    ),
     records: bound.records,
     timeline: keyed,
     scroll: concatEvents(timeline.dcm.items),

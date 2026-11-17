@@ -107,7 +107,16 @@ export interface FrameHost extends FrameSurface {
     playbackRate?: number,
   ): FrameRender;
   /** Draws owned by the page for the current frame, placed before the external draws. */
-  setScenery(scenery: ((camera: FrameCamera) => readonly FrameDraw[]) | null): void;
+  setScenery(
+    scenery:
+      | ((
+          camera: FrameCamera,
+          seconds: number,
+          speedRow: number,
+          speedMultiplier: number,
+        ) => readonly FrameDraw[])
+      | null,
+  ): void;
   dispose(): void;
 }
 

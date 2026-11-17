@@ -219,7 +219,7 @@ export interface SfxPlayerOptions {
   destination: unknown;
   library: SfxLibrary;
   timeline: Timeline;
-  /** Seconds of cues scheduled ahead of the audible position. */
+  /** Seconds of cues scheduled ahead of audio processing, including output already queued. */
   lookaheadSeconds?: number;
   volume?: number;
 }
@@ -406,7 +406,10 @@ export function createSfxPlayer(options: SfxPlayerOptions) {
       silent = false;
       const now = context.currentTime;
       live = live.filter((voice) => voice.end > now);
-      const horizon = position.bufferSeconds + lookahead * playbackRate;
+      // Bluetooth output can trail processing by more than the entire lookahead window.
+      const horizon =
+        position.bufferSeconds +
+        (Math.max(0, now - position.outputTime) + lookahead) * playbackRate;
       while (cursor < count && times[cursor] < horizon) start(cursor++, base, -Infinity, true);
     },
     /** Drops every sounding and scheduled voice and restarts scheduling at `seconds`. */

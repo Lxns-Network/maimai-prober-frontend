@@ -21,7 +21,7 @@ export const EFFECT_END = Object.freeze({ natural: 0, evicted: 1, stopped: 2 });
 
 /** Life, in frames, of each resource's root node; a negative life never ends on its own. */
 export const EFFECT_LIFE_FRAMES: ReadonlyMap<number, number> = new Map<number, number>([
-  ...[2, 3, 4, 5, 6, 7, 8, 14].map((id) => [id, 30] as const),
+  ...[2, 3, 4, 5, 6, 7, 8, 14, 15, 16, 17, 18, 19, 20, 21].map((id) => [id, 30] as const),
   [22, 40],
   ...Array.from({ length: 20 }, (_, i) => [23 + i, 60] as const),
   [44, -1],
@@ -58,6 +58,13 @@ const SECTION: Draw[] = [
 export const EFFECT_DRAWS: ReadonlyMap<number, readonly Draw[]> = new Map<number, readonly Draw[]>([
   ...[2, 3, 4, 5, 6, 7, 8].map((id) => [id, SECTION] as const),
   [14, repeat([1, 8, 0], 6)],
+  [15, repeat([1, 8, 0], 6)],
+  [16, [[1, 8, 0]]],
+  [17, repeat([1, 8, 0], 3)],
+  [18, repeat([1, 8, 0], 3)],
+  [19, repeat([1, 8, 0], 6)],
+  [20, repeat([1, 8, 0], 6)],
+  [21, repeat([1, 8, 0], 6)],
   [22, [...repeat([0, 4, 0], 6), ...repeat([1, 4, 0], 6)]],
   [23, [[1, 0, 3]]],
   [24, [[1, 4, 0]]],
@@ -129,7 +136,8 @@ export const SECTION_RESOURCE: readonly number[] = [8, 7, 6, 5, 4, 4, 3, 3, 2, 2
 const BEAM_RESOURCE = 48;
 const SLIDE_KEEP_RESOURCE = 44;
 const CHARA_LOCAL_RESOURCE = 22;
-const CHARA_GLOBAL_RESOURCE = 14;
+/** Native directional CHR selection: UP, DW, CE, RC, LC, RS, LS, BS. */
+const CHARA_GLOBAL_RESOURCES = [14, 15, 16, 18, 17, 20, 19, 21] as const;
 /** Lanes a chara effect's exclusion window spans by width colour, and the frames it holds. */
 export const CHARA_WINDOW: readonly number[] = [2, 4, 6, 8, 2, 12, 2, 16, 2, 2, 2, 2, 2, 2, 2, 32];
 export const CHARA_LOCAL_FRAMES = 1;
@@ -453,14 +461,15 @@ function collectRequests(input: EffectInput): Requests {
         });
     };
     const chara = (at: number, span: number) => {
+      const resource = CHARA_GLOBAL_RESOURCES[record.getInt32(0x88, true)];
+      if (resource === undefined) return;
       const { local, global } = gate(at, span, stepFrames(step));
       if (local)
         requests.push(step, EFFECT_GROUP.charaLocal, CHARA_LOCAL_RESOURCE, index, at, span, {
           displayState: 1,
           x: lanePosition(at, span),
         });
-      if (global)
-        requests.push(step, EFFECT_GROUP.charaGlobal, CHARA_GLOBAL_RESOURCE, index, 0, 0, { z: 0 });
+      if (global) requests.push(step, EFFECT_GROUP.charaGlobal, resource, index, 0, 0, { z: 0 });
     };
     const section = (colour: number, x: number, y: number) => {
       requests.push(step, EFFECT_GROUP.section, SECTION_RESOURCE[colour], index, 0, colour + 1, {

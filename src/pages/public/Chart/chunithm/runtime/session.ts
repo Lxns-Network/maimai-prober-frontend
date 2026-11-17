@@ -175,6 +175,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const fail = (cause: unknown) => {
     if (!valid()) return;
     if (cause instanceof DOMException && cause.name === "AbortError") return;
+    // Context loss can interrupt a draw before the browser dispatches its loss event.
+    if (canvas.getContext("webgl2")?.isContextLost()) return;
     lifetime.abort();
     release();
     ui.setPlaying(false);
@@ -902,8 +904,12 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       return;
     }
     field = layer;
-    host.setScenery((camera) =>
+    host.setScenery((camera, seconds, speedRow, speedMultiplier) =>
       layer.draws({
+        score: noteHost!.score,
+        seconds,
+        speedRow,
+        speedMultiplier,
         camera,
         environment: data.camera.environment,
         wallRawId,

@@ -3,6 +3,8 @@ import {
   type FieldPackData,
 } from "@lxns-network/chunithm-chart-engine/field";
 import { readCameraSample } from "@lxns-network/chunithm-chart-engine/field/cameraSample";
+import { createBarlinePositions } from "@lxns-network/chunithm-chart-engine/field/barlines";
+import type { NoteScore } from "@lxns-network/chunithm-chart-engine/notes/score";
 import { createDeviceState } from "@lxns-network/chunithm-chart-engine/gpu/deviceState";
 import type {
   FrameCamera,
@@ -18,6 +20,10 @@ const CAMERA_NODE = 1000;
 
 export interface Field {
   draws(input: {
+    score: NoteScore;
+    seconds: number;
+    speedRow: number;
+    speedMultiplier: number;
     camera: FrameCamera;
     environment: FieldPackData["camera"]["environment"];
     wallRawId: number;
@@ -38,14 +44,27 @@ export async function createField(input: {
   textures: ReadonlyMap<string, { readonly texture: WebGLTexture }>;
 }): Promise<Field> {
   const deviceState = createDeviceState(input.gl);
+  const positions = createBarlinePositions();
   const resources = await createFieldResources(
     { gl: input.gl, deviceState, textures: input.textures },
     input.data,
   );
   return {
-    draws({ camera, environment, wallRawId, maskShown, dividerRow, dividerColor }) {
+    draws({
+      camera,
+      environment,
+      wallRawId,
+      maskShown,
+      dividerRow,
+      dividerColor,
+      score,
+      seconds,
+      speedRow,
+      speedMultiplier,
+    }) {
       return resources
         .draws({
+          barPositions: positions(score, seconds, speedRow, speedMultiplier),
           view: camera.cameraA,
           projection: camera.cameraB,
           viewProjection: camera.viewProjection,

@@ -158,7 +158,7 @@ export async function createNoteHost(input: {
           for (const model of field.statics)
             for (const mesh of model.meshes)
               for (const texture of mesh.textures) ids.add(texture.id);
-          for (const divider of field.dividers.models)
+          for (const divider of [...field.dividers.models, field.barline])
             for (const id of divider.byColor) ids.add(id);
           recordPlans = buildRecordPlans(pack, first.score);
           if (first.mirrored) {

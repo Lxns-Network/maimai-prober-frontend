@@ -14,6 +14,7 @@ describe("noteScoreOf", () => {
     parsed: {
       canonical: { vectors: {} },
       run: {
+        lines: [{ items: [] }, { items: [] }, { items: [] }, { items: [] }],
         timeline: {
           dcm: { items: [event(1), event(2)] },
           map: new Map([
@@ -69,7 +70,10 @@ describe("noteScoreOf", () => {
             },
           },
         },
-        run: { timeline: { dcm: { items: [] }, map: new Map() } },
+        run: {
+          lines: [{ items: [] }, { items: [] }, { items: [] }, { items: [] }],
+          timeline: { dcm: { items: [] }, map: new Map() },
+        },
       },
     } as unknown as BoundScore;
 
@@ -109,7 +113,10 @@ describe("noteScoreOf", () => {
         records: notes.map((_, i) => record(i === 2 ? 3 : 5)),
         parsed: {
           canonical: { vectors: { "0x15c": { items: notes } } },
-          run: { timeline: { dcm: { items: [] }, map: new Map() } },
+          run: {
+            lines: [{ items: [] }, { items: [] }, { items: [] }, { items: [] }],
+            timeline: { dcm: { items: [] }, map: new Map() },
+          },
         },
       }) as unknown as BoundScore;
 

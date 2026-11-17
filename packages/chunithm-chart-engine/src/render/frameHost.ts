@@ -41,7 +41,7 @@ export function createFrameHost(options: FrameHostOptions): FrameHost {
   let resetBackgroundHistory = true;
   let playbackEpoch = 0;
   let external: FrameExternalRenderer | null = null;
-  let scenery: ((camera: FrameCamera) => readonly FrameDraw[]) | null = null;
+  let scenery: Parameters<FrameHost["setScenery"]>[0] = null;
   let snapshot: DepthSnapshot | null = null;
 
   const presentation: FramePresentation = {
@@ -166,7 +166,9 @@ export function createFrameHost(options: FrameHostOptions): FrameHost {
         : false;
       if (backgroundDrawn) resetBackgroundHistory = false;
       const camera = cameraOf();
-      const entries: FrameDraw[] = scenery ? [...scenery(camera)] : [];
+      const entries: FrameDraw[] = scenery
+        ? [...scenery(camera, chartSeconds, speedRow, speedMultiplier)]
+        : [];
       let notes = 0;
       if (external) {
         const frame = external({

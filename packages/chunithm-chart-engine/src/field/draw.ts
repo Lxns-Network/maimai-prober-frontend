@@ -18,6 +18,7 @@ import { affineToWebGL, matrixToWebGL } from "./matrices";
 import type { FieldMesh, FieldPackData, FieldSampler, FieldStaticMesh } from "./fieldPack";
 import { fieldFrameDepths, modelDepth, primitiveDepth, type FieldFrame } from "./order";
 import { wallAttributes, wallZ } from "./wall";
+import { BAR_CAPACITY, barlineScale } from "./barlines";
 
 export interface FieldGlContext {
   readonly gl: WebGL2RenderingContext;
@@ -137,6 +138,7 @@ export async function createFieldResources(
   need(data.mask.meta.program);
   for (const model of data.statics) for (const mesh of model.meshes) need(mesh.program);
   for (const divider of data.dividers.models) need(divider.mesh.program);
+  need(data.barline.mesh.program);
   const programs = await compilePrograms(gl, sources);
   const program = (name: string): WebGLProgram => {
     const found = programs.get(name);
@@ -311,6 +313,10 @@ export async function createFieldResources(
       const draw = prepareStatic(model.mesh, model.key, "divider");
       return { draw, colors: model.byColor.map(textureOf), items: [...statics, draw] };
     });
+    const barline = prepareStatic(data.barline.mesh, data.barline.key, "barline");
+    const barColors = data.barline.byColor.map(textureOf);
+    const barWorlds = Array.from({ length: BAR_CAPACITY }, () => barline.world.slice());
+    const barSortWorld = [...barline.mesh.world3x4];
 
     const drawIndexed = (mesh: UploadedMesh) => {
       gl.bindVertexArray(mesh.vao);
@@ -332,6 +338,45 @@ export async function createFieldResources(
         const depths = fieldFrameDepths(frame);
         const viewProjection = matrixToWebGL(Float32Array.from(frame.viewProjection));
         const out: FieldDraw[] = [];
+        const color =
+          frame.dividerColor >= 0 && frame.dividerColor < data.dividers.colors
+            ? frame.dividerColor
+            : data.dividers.defaultColor;
+        barline.textures.set(0, barColors[color]);
+        for (let i = 0; i < (frame.barPositions?.length ?? 0); i++) {
+          const z = frame.barPositions![i];
+          const world = barWorlds[i];
+          world[10] = barlineScale(frame.viewProjection, z);
+          world[14] = z;
+          barSortWorld[10] = world[10];
+          barSortWorld[11] = z;
+          out.push({
+            pass: barline.mesh.passIndex,
+            key: barline.key,
+            depth: modelDepth(depths, barSortWorld, barline.mesh.sortDistanceOffset),
+            draw() {
+              withState(barline.program, barline.state, barline.locations);
+              gl.uniformMatrix4fv(barline.locations.get("uWorld") ?? null, false, world);
+              gl.uniformMatrix4fv(
+                barline.locations.get("uViewProjection") ?? null,
+                false,
+                viewProjection,
+              );
+              applyPackedUniforms(gl, barline.locations, barline.mesh.uniforms, scratch);
+              applyPackedTextures(
+                gl,
+                barline.program,
+                barline.units,
+                barline.textures,
+                [],
+                undefined,
+                barline.samplers,
+              );
+              drawIndexed(barline.uploaded);
+              return { draws: 1 };
+            },
+          });
+        }
         const wallDepth = primitiveDepth(
           depths,
           wall.meta.sortPosition,

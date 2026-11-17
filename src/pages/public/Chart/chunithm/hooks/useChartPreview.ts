@@ -118,74 +118,115 @@ export function useChartPreview(options: ChartPreviewOptions) {
     if (!canvas) return;
     let publishedPlaying: boolean | undefined;
     let publishedSeeking: boolean | undefined;
-    return createPreviewSession({
-      canvas,
-      assetBase,
-      musicId,
-      difficulty: difficultyRef.current,
-      initialSeconds: secondsRef.current,
-      initialSpeedRow: speedRef.current,
-      ...playbackRef.current,
-      initialPlayTimingRow: playTimingRef.current,
-      initialJudgeTimingRow: judgeTimingRef.current,
-      initialJudgePositionRow: judgePositionRef.current,
-      initialCriticalDisplayRow: criticalDisplayRef.current,
-      mirror: mirrorRef.current,
-      initialWallRawId: wallRef.current,
-      initialDividerRow: dividerRef.current,
-      musicUrl,
-      jacketUrl,
-      resolution: resolutionRef.current,
-      fpsLimit: fpsLimitRef.current,
-      ...offsetsRef.current,
-      musicVolume: volumeRef.current.musicVolume,
-      soundVolume: volumeRef.current.soundVolume,
-      fieldMaskPresentation,
-      preparePresentation,
-      live,
-      ui: {
-        setStatus,
-        setChangingDifficulty,
-        setError,
-        setPlaying(value) {
-          if (publishedPlaying === value) return;
-          publishedPlaying = value;
-          setPlaying(value);
+    const start = () =>
+      createPreviewSession({
+        canvas,
+        assetBase,
+        musicId,
+        difficulty: difficultyRef.current,
+        initialSeconds: secondsRef.current,
+        initialSpeedRow: speedRef.current,
+        ...playbackRef.current,
+        initialPlayTimingRow: playTimingRef.current,
+        initialJudgeTimingRow: judgeTimingRef.current,
+        initialJudgePositionRow: judgePositionRef.current,
+        initialCriticalDisplayRow: criticalDisplayRef.current,
+        mirror: mirrorRef.current,
+        initialWallRawId: wallRef.current,
+        initialDividerRow: dividerRef.current,
+        musicUrl,
+        jacketUrl,
+        resolution: resolutionRef.current,
+        fpsLimit: fpsLimitRef.current,
+        ...offsetsRef.current,
+        musicVolume: volumeRef.current.musicVolume,
+        soundVolume: volumeRef.current.soundVolume,
+        fieldMaskPresentation,
+        preparePresentation,
+        live,
+        ui: {
+          setStatus,
+          setChangingDifficulty,
+          setError,
+          setPlaying(value) {
+            if (publishedPlaying === value) return;
+            publishedPlaying = value;
+            setPlaying(value);
+          },
+          setSeeking(value) {
+            if (publishedSeeking === value) return;
+            publishedSeeking = value;
+            setSeeking(value);
+          },
+          setDurationSeconds(value) {
+            setDurationSeconds(value);
+            const selected = loopRef.current;
+            if (!selected) return;
+            if (selected.start >= value) updateLoop(null);
+            else if (selected.end !== null && selected.end > value)
+              updateLoop({ ...selected, end: value });
+          },
+          setSpeedOptions,
+          setSpeedValue,
+          setPlayTimingValue,
+          setJudgeTimingValue,
+          setJudgePositionValue,
+          setCriticalDisplayValue,
+          setFieldWallOptions,
+          setFieldWallValue,
+          setDividerOptions,
+          setDividerValue,
+          setDifficultyOptions,
+          setDifficultyValue,
         },
-        setSeeking(value) {
-          if (publishedSeeking === value) return;
-          publishedSeeking = value;
-          setSeeking(value);
+        setControls(value) {
+          controls.current = value;
+          const loop = loopRef.current;
+          value?.setLoop(
+            loop?.enabled && loop.end !== null ? { start: loop.start, end: loop.end } : null,
+          );
         },
-        setDurationSeconds(value) {
-          setDurationSeconds(value);
-          const selected = loopRef.current;
-          if (!selected) return;
-          if (selected.start >= value) updateLoop(null);
-          else if (selected.end !== null && selected.end > value)
-            updateLoop({ ...selected, end: value });
-        },
-        setSpeedOptions,
-        setSpeedValue,
-        setPlayTimingValue,
-        setJudgeTimingValue,
-        setJudgePositionValue,
-        setCriticalDisplayValue,
-        setFieldWallOptions,
-        setFieldWallValue,
-        setDividerOptions,
-        setDividerValue,
-        setDifficultyOptions,
-        setDifficultyValue,
-      },
-      setControls(value) {
-        controls.current = value;
-        const loop = loopRef.current;
-        value?.setLoop(
-          loop?.enabled && loop.end !== null ? { start: loop.start, end: loop.end } : null,
-        );
-      },
-    });
+      });
+    let release: (() => void) | null = null;
+    let recovering = false;
+    let restored = false;
+    const stop = () => {
+      release?.();
+      release = null;
+    };
+    const recover = () => {
+      if (!recovering || !restored || document.visibilityState === "hidden") return;
+      recovering = false;
+      release = start();
+    };
+    const contextLost = (event: Event) => {
+      // Cancelling the loss event permits the browser to restore this canvas's context.
+      event.preventDefault();
+      if (recovering) return;
+      recovering = true;
+      restored = false;
+      secondsRef.current = live.time.getSnapshot();
+      stop();
+      setPlaying(false);
+      setSeeking(false);
+      setChangingDifficulty(false);
+      setError(null);
+      setStatus("loading");
+    };
+    const contextRestored = () => {
+      restored = true;
+      recover();
+    };
+    canvas.addEventListener("webglcontextlost", contextLost);
+    canvas.addEventListener("webglcontextrestored", contextRestored);
+    document.addEventListener("visibilitychange", recover);
+    release = start();
+    return () => {
+      canvas.removeEventListener("webglcontextlost", contextLost);
+      canvas.removeEventListener("webglcontextrestored", contextRestored);
+      document.removeEventListener("visibilitychange", recover);
+      stop();
+    };
   }, [assetBase, musicId, musicUrl, jacketUrl, live, preparePresentation, fieldMaskPresentation]);
   useEffect(() => {
     if (difficultyRef.current === difficulty) return;

@@ -140,6 +140,7 @@ function answer(
       for (const view of [
         ...(keepBound ? [] : layout.records),
         layout.scroll,
+        ...(layout.barTimes ? [layout.barTimes] : []),
         ...layout.timeline.values(),
         ...[...(layout.slideJoints?.values() ?? [])].flat(),
       ])

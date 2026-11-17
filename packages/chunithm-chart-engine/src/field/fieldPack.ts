@@ -104,6 +104,7 @@ export interface FieldDivider {
 }
 
 export interface FieldPackData {
+  readonly barline: FieldDivider;
   readonly wall: FieldWallData & {
     readonly meta: WallMeta;
     readonly positions: readonly {
@@ -240,7 +241,7 @@ export function readFieldPack(pack: Pack): FieldPackData {
     defaultColor: number;
     colors: number;
   }>(pack, "field/divider-options");
-  const dividers = dividerOptions.rows.slice(1).map((row) => {
+  const readLine = (name: string): FieldDivider => {
     const meta = metaOf<{
       mesh: string;
       program: string;
@@ -252,9 +253,9 @@ export function readFieldPack(pack: Pack): FieldPackData {
       key: number;
       sortDistanceOffset: number;
       world3x4: number[];
-    }>(pack, `field/divider/${row.value}`);
+    }>(pack, name);
     if (meta.byColor.length !== dividerOptions.colors)
-      throw new RangeError(`Field divider ${row.value} has incomplete colors`);
+      throw new RangeError(`${name} has incomplete colors`);
     return {
       key: meta.key,
       byColor: meta.byColor,
@@ -269,13 +270,17 @@ export function readFieldPack(pack: Pack): FieldPackData {
         world3x4: meta.world3x4,
       },
     };
-  });
+  };
+  const dividers = dividerOptions.rows
+    .slice(1)
+    .map((row) => readLine(`field/divider/${row.value}`));
   const camera = metaOf<{
     environment: { fpcw: number; mxcsr: number };
     camera: PlayCameraEntry;
     sample: { name: string; url: string; sha256: string };
   }>(pack, "field/camera/inputs");
   return {
+    barline: readLine("field/barline"),
     wall: {
       template,
       zBits,
