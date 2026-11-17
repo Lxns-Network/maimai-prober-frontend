@@ -1,10 +1,17 @@
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
 import type { PreviewLiveState } from "./liveState";
 import type { CanvasResolution } from "./canvasSize";
+import type { KeyBindings } from "../options/keyBindings";
 
 export interface LoopRange {
   start: number;
   end: number;
+}
+
+export interface PlaySettings {
+  keyBindings: KeyBindings;
+  /** Whether a FLICK needs a slash across its lanes; otherwise a touch takes it. Applies from the next restart. */
+  flickNeedsMotion: boolean;
 }
 
 export interface PreviewControls {
@@ -34,6 +41,9 @@ export interface PreviewControls {
   setAudioOffsets(musicOffset: number, soundOffset: number): void;
   setVolume(musicVolume: number, soundVolume: number): void;
   refreshPresentation(): void;
+  /** Plays the chart with the player's controls instead of showing the automatic play. */
+  setPlayMode(value: boolean): void;
+  setPlaySettings(value: PlaySettings): void;
 }
 
 /** Live scheduling limits for optional Stage checkpoint work. Times are in milliseconds. */

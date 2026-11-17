@@ -1,4 +1,5 @@
 import type { DensityNote } from "../../components/ChartDensityTimeline/ChartDensityTimeline";
+import type { PlayStats } from "./playSession";
 
 type Listener = () => void;
 
@@ -23,6 +24,8 @@ export function createPreviewLiveState() {
   const time = subscriptions();
   let chart: { notes: readonly DensityNote[]; measureTimesMs: readonly number[] } | null = null;
   const chartChanges = subscriptions();
+  let playStats: PlayStats | null = null;
+  const playChanges = subscriptions();
   return {
     chart: { subscribe: chartChanges.subscribe, getSnapshot: () => chart },
     setChart(value: NonNullable<typeof chart>) {
@@ -30,6 +33,13 @@ export function createPreviewLiveState() {
       chartChanges.notify();
     },
     time: { subscribe: time.subscribe, getSnapshot: () => seconds },
+    /** Totals of the current play, or null while the automatic play shows. */
+    play: { subscribe: playChanges.subscribe, getSnapshot: () => playStats },
+    setPlayStats(next: PlayStats | null) {
+      if (next === playStats) return;
+      playStats = next;
+      playChanges.notify();
+    },
     setSeconds(next: number) {
       if (Object.is(seconds, next)) return;
       seconds = next;

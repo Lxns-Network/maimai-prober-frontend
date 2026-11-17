@@ -20,6 +20,7 @@ import { useWakeLock } from "./ChartCanvas/hooks/useWakeLock";
 import { useChartPreview } from "../chunithm/hooks/useChartPreview";
 import { PlaybackActions } from "../chunithm/components/PlaybackActions";
 import { Controls } from "../chunithm/components/Controls";
+import { PlaySettings } from "../chunithm/components/PlaySettings";
 import { selectChunithmChartDifficulty } from "../chunithm/assets/urls";
 import { useChartAssets } from "../chunithm/hooks/useChartAssets";
 import { useGameStore } from "../stores/useGameStore";
@@ -201,6 +202,7 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
     controls: (
       <Box component="fieldset" disabled={exporting} m={0} p={0} bd={0}>
         <Controls preview={preview} disabled={exporting}>
+          <PlaySettings preview={preview} disabled={exporting} />
           {preview.difficultyOptions.length > 0 && (
             <Group gap="xs" grow>
               {preview.difficultyOptions.map((option) => {

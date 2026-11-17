@@ -190,6 +190,8 @@ async function setup(
     location: { search: "?effect_diagnostic=off", href: "https://local.test/" },
     devicePixelRatio: 1,
     matchMedia: () => ({ addEventListener() {}, removeEventListener() {} }),
+    addEventListener() {},
+    removeEventListener() {},
   });
   const visibility = {
     state: "visible" as DocumentVisibilityState,

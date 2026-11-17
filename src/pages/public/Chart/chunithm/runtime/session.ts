@@ -8,7 +8,13 @@ import { readFieldPack, type FieldPackData } from "@lxns-network/chunithm-chart-
 import type { Pack } from "@lxns-network/chunithm-chart-engine/assets/packFormat";
 import { createFrameHost } from "@lxns-network/chunithm-chart-engine/render/frameHost";
 import type { FrameHost } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
-import type { LoopRange, PreviewSessionInput, PreviewWarmState } from "./types";
+import type {
+  LoopRange,
+  PlaySettings,
+  PreviewControls,
+  PreviewSessionInput,
+  PreviewWarmState,
+} from "./types";
 import type { CanvasResolution } from "./canvasSize";
 import { createPreviewViewport } from "./viewport";
 import { loadChartInput, readChartSong } from "../assets/chartInput";
@@ -21,7 +27,10 @@ import {
   readNotePack,
   type NoteHost,
 } from "../rendering/notes";
-import type { ChartSession } from "@lxns-network/chunithm-chart-engine/chart/worker/loadChart";
+import type {
+  ChartSession,
+  LoadedChart,
+} from "@lxns-network/chunithm-chart-engine/chart/worker/loadChart";
 import {
   DEFAULT_PLAY_TIMING_ROW,
   PLAY_TIMING_OPTIONS,
@@ -31,6 +40,14 @@ import { DEFAULT_JUDGE_POSITION_ROW, JUDGE_POSITION_OPTIONS } from "../options/j
 import { DEFAULT_JUDGE_DISPLAY_ROW, JUDGE_DISPLAY_OPTIONS } from "../options/judgeDisplay";
 import { DEFAULT_JUDGE_TIMING_ROW, JUDGE_TIMING_OPTIONS } from "../options/judgeTiming";
 import { createChartOverview } from "./chartOverview";
+import {
+  compileJudgeTimingIni,
+  JUDGE_TIMING_BYTES,
+} from "@lxns-network/chunithm-chart-engine/chart/bind/config";
+import type { ChartInput } from "../rendering/notes";
+import { createPlaySession, type PlaySession } from "./playSession";
+import { createKeyControls } from "./keyControls";
+import type { Judgment } from "./player";
 
 const EFFECT_LIST = "effects/resources.json";
 /**
@@ -38,6 +55,40 @@ const EFFECT_LIST = "effects/resources.json";
  * schedules ahead.
  */
 const HIDDEN_POLL_MILLISECONDS = 100;
+/** Highest difficulty row the judge-window binding distinguishes. */
+const MAX_BIND_DIFFICULTY = 3;
+/**
+ * Steps a note stays drawable past its automatic run while a player plays: the latest a player can
+ * judge it, past the widest late window of an AIR, is later than the automatic play judges it.
+ */
+const LIVE_SLACK_STEPS = 60;
+/**
+ * Display states of the result text, each plain, with FAST and with LATE; the last row shows only
+ * FAST or LATE, and its plain state shows nothing.
+ */
+const RESULT_TEXT = {
+  critical: [0, 8, 9],
+  justice: [1, 2, 3],
+  attack: [4, 5, 6],
+  miss: 7,
+  timingOnly: [12, 10, 11],
+} as const;
+
+/** The judge-timing configuration a chart input carries, compiled. */
+function judgeConfig(bytes: Uint8Array): DataView {
+  return bytes.byteLength === JUDGE_TIMING_BYTES
+    ? new DataView(bytes.slice().buffer)
+    : compileJudgeTimingIni(bytes);
+}
+
+/** Whether a key event belongs to a form control rather than to the game. */
+function typing(event: KeyboardEvent): boolean {
+  const target = event.target;
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || !!target.closest("input, textarea, select, [role='combobox']"))
+  );
+}
 
 /**
  * Runs the page with engine notes and interface over the scene's field, driven by the music clock.
@@ -96,6 +147,15 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     throw new RangeError("Invalid initial critical display option");
   let durationSeconds = Infinity;
   let seconds = input.initialSeconds;
+  /** Whether the player plays the chart instead of watching the automatic play. */
+  let playMode = false;
+  let play: PlaySession | null = null;
+  /** Chart and judge row the next computed chart was requested with. */
+  let liveInput: { chart: ChartInput; judgeTimingRow: number } | null = null;
+  /** The music at its last poll, for placing key events on the chart's clock. */
+  const clock = { performance: 0, seconds: 0, rate: 1, playing: false };
+  const keys = createKeyControls();
+  let playSettings: PlaySettings | null = null;
   let desiredPlaying = false;
   let loopRange: LoopRange | null = null;
   /** Where a drag of the timeline is, and whether playback picks up there once it is let go. */
@@ -147,7 +207,84 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const present = (at: number) => {
     if (document.visibilityState !== "hidden") draw(at);
   };
+  const playStep = (at: number) => stepForSeconds(at - playTiming);
+  /** Display state of a judgment's result text, under the critical display option. */
+  const resultText = (judgment: Judgment): number | null => {
+    const { grade } = judgment;
+    const timing = judgment.timing === null || grade === 4 ? 0 : judgment.timing < 0 ? 1 : 2;
+    if (grade === 0) return RESULT_TEXT.miss;
+    if (grade === 1) return RESULT_TEXT.attack[timing];
+    if (grade === 2) return RESULT_TEXT.justice[timing];
+    // The critical display option: its text, its text with FAST/LATE, FAST/LATE alone, or nothing.
+    const state = [
+      RESULT_TEXT.critical[0],
+      RESULT_TEXT.critical[timing],
+      RESULT_TEXT.timingOnly[timing],
+    ][criticalDisplayRow];
+    return state === undefined || state === RESULT_TEXT.timingOnly[0] ? null : state;
+  };
+  /** The play of a newly computed chart, judging with the lane layout on screen. */
+  const liveFor = (chart: LoadedChart) => {
+    const requested = liveInput ?? { chart: chartInput!, judgeTimingRow: appliedJudgeTimingRow };
+    const next = createPlaySession({
+      chart,
+      config: judgeConfig(requested.chart.config),
+      difficulty: Math.min(requested.chart.difficulty, MAX_BIND_DIFFICULTY),
+      judgeTimingRow: requested.judgeTimingRow,
+      sounds: () => audio?.liveSounds ?? null,
+      text: resultText,
+      options: () => ({ flickNeedsMotion: playSettings?.flickNeedsMotion ?? true }),
+    });
+    if (mirror !== requested.chart.mirror && chart.mirrored)
+      next.selectScore(chart.mirrored.score, 0);
+    next.stats.subscribe(() => live.setPlayStats(next.playing ? next.stats.getSnapshot() : null));
+    play = next;
+    if (playMode) {
+      next.setPlaying(true, playStep(seconds));
+      hud?.readValuesFrom(next.hudValues);
+    }
+    return next.live;
+  };
+  /** Feeds a bound key to the play; Escape pauses and resumes. */
+  const keyChanged = (event: KeyboardEvent) => {
+    if (
+      !playMode ||
+      !play ||
+      !playSettings ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      typing(event)
+    )
+      return;
+    if (event.type === "keydown" && event.code === "Escape") {
+      event.preventDefault();
+      controls.toggle();
+      return;
+    }
+    const bindings = playSettings.keyBindings;
+    if (!keys.bound(bindings, event.code)) return;
+    event.preventDefault();
+    const change = keys.change(bindings, event.code, event.type === "keydown");
+    if (!change || !clock.playing || !desiredPlaying) return;
+    const at =
+      clock.seconds + ((event.timeStamp - clock.performance) / 1000) * clock.rate - playTiming;
+    play.control(change, at);
+    request(false);
+  };
+  /** Lets go of every key and pauses a play the page lost focus during. */
+  const focusLost = () => {
+    for (const change of keys.releaseAll())
+      if (clock.playing) play?.control(change, clock.seconds - playTiming);
+    if (playMode && desiredPlaying) controls.toggle();
+  };
+  window.addEventListener("keydown", keyChanged, { capture: true });
+  window.addEventListener("keyup", keyChanged, { capture: true });
+  window.addEventListener("blur", focusLost);
   const release = () => {
+    window.removeEventListener("keydown", keyChanged, { capture: true });
+    window.removeEventListener("keyup", keyChanged, { capture: true });
+    window.removeEventListener("blur", focusLost);
     changeController?.abort();
     viewport.dispose();
     document.removeEventListener("visibilitychange", visibilityChanged);
@@ -215,11 +352,17 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           audio?.pauseSfx();
           frameHost?.resetBackgroundHistory();
           seconds = loopRange.start;
+          play?.restart(playStep(seconds));
           present(seconds);
           request();
           return;
         }
-        audio?.updateSfx(state, playTiming);
+        if (play?.playing) audio?.trackLiveSfx(state, playTiming);
+        else audio?.updateSfx(state, playTiming);
+        clock.performance = performance.now();
+        clock.seconds = state.position.bufferSeconds;
+        clock.rate = state.position.playbackRate ?? 1;
+        clock.playing = state.intendedPlaying && state.position.phase === "playing";
         if (
           !state.transitioning &&
           state.requestedSeconds === null &&
@@ -238,6 +381,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         ui.setPlaying(state.intendedPlaying);
         ui.setSeeking(state.transitioning);
         seconds = state.requestedSeconds ?? state.position.bufferSeconds;
+        if (play?.playing && desiredPlaying && !state.transitioning)
+          play.advance(playStep(seconds));
         if (!fpsLimit || !desiredPlaying || state.transitioning || timestamp >= nextDrawTime) {
           present(seconds);
           if (fpsLimit) {
@@ -319,6 +464,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       if (scope.signal.aborted) return;
       // Export keeps its original timeline for the whole capture.
       if (capturing) return;
+      liveInput = { chart: chartInput, judgeTimingRow: row };
       notes.replaceChart(next, chartInput.mirror);
       notes.selectMirror(mirror);
       hud.replaceChart(chartInput.song, next.timeline);
@@ -382,6 +528,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       await effectHost?.ensureEffects(next.effects);
       if (next.mirrored) await effectHost?.ensureEffects(next.mirrored.effects);
       if (scope.signal.aborted) return;
+      liveInput = { chart: nextInput, judgeTimingRow: timingRow };
       notes.replaceChart(next, nextInput.mirror);
       notes.selectMirror(mirror);
       hud.replaceChart(nextInput.song, next.timeline);
@@ -415,7 +562,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     }
   };
 
-  input.setControls({
+  const controls: PreviewControls = {
     selectDifficulty(value, at = 0) {
       requestedDifficulty = value;
       requestedChartSeconds = at;
@@ -528,8 +675,9 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         live.setSeconds(seconds);
       }
       desiredPlaying = !desiredPlaying;
-      if (desiredPlaying && live.time.getSnapshot() >= durationSeconds) {
+      if (desiredPlaying && (live.time.getSnapshot() >= durationSeconds || play?.finished)) {
         seconds = 0;
+        play?.restart(playStep(seconds));
         music.seek(seconds);
         frameHost?.resetBackgroundHistory();
         live.setSeconds(seconds);
@@ -546,7 +694,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
               try {
                 const state = active.poll();
                 audibleRate = state.position.playbackRate;
-                audio?.updateSfx(state, playTiming);
+                if (play?.playing) audio?.trackLiveSfx(state, playTiming);
+                else audio?.updateSfx(state, playTiming);
               } catch (cause) {
                 if (!isMusicOutputPending(cause)) throw cause;
               }
@@ -601,6 +750,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       seconds = target;
       frameHost?.resetBackgroundHistory();
       music.seek(target);
+      play?.restart(playStep(target));
       if (resume && target < durationSeconds) {
         desiredPlaying = true;
         ui.setPlaying(true);
@@ -627,6 +777,12 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       request();
     },
     selectMirror(value) {
+      const chart = notes?.chart;
+      if (chart && chartInput)
+        play?.selectScore(
+          value === chartInput.mirror ? chart.score : (chart.mirrored?.score ?? chart.score),
+          playStep(seconds),
+        );
       notes?.selectMirror(value);
       hud?.selectMirror(value);
       mirror = value;
@@ -700,7 +856,23 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     refreshPresentation() {
       request();
     },
-  });
+    setPlayMode(value) {
+      if (value === playMode) return;
+      playMode = value;
+      keys.releaseAll();
+      audio?.pauseSfx();
+      notes?.setLiveSlack(value ? LIVE_SLACK_STEPS : 0);
+      play?.setPlaying(value, playStep(scrubbing?.seconds ?? seconds));
+      hud?.readValuesFrom(value && play ? play.hudValues : null);
+      live.setPlayStats(value && play ? play.stats.getSnapshot() : null);
+      request();
+    },
+    setPlaySettings(value) {
+      if (playSettings?.keyBindings !== value.keyBindings) keys.releaseAll();
+      playSettings = value;
+    },
+  };
+  input.setControls(controls);
   ui.setStatus("loading");
   ui.setError(null);
   ui.setPlaying(false);
@@ -866,7 +1038,10 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       () => mark("effects-failed"),
     );
     const chart = await chartReady;
+    liveInput = { chart, judgeTimingRow };
     const noteHost = await createNoteHost({
+      live: liveFor,
+      liveEffects: () => (play?.playing ? play.effects : null),
       canvas,
       field: data,
       scene: host,
@@ -891,6 +1066,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       return;
     }
     notes = noteHost;
+    if (playMode) notes.setLiveSlack(LIVE_SLACK_STEPS);
     if (mirror !== input.mirror) notes.selectMirror(mirror);
     live.setChart(createChartOverview(noteHost.timeline, noteHost.score));
     mark("notes");
@@ -930,6 +1106,9 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       timeline: noteHost.timeline,
       onChange: request,
     });
+    // The note host made the play while it was built.
+    const created = play as PlaySession | null;
+    if (playMode && created) hud.readValuesFrom(created.hudValues);
     hudStartedAt = performance.now();
     mark("hud");
     void resources.jacket.then(

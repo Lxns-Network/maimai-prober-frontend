@@ -69,14 +69,20 @@ function store64(value: ExtendedValue): number {
   return (rounded.s ? -1 : 1) * Number(rounded.m) * 2 ** rounded.e;
 }
 
+/** Score, combo, gauge and judgment counts after a judgment. */
+export interface ScoreValues {
+  score: number;
+  combo: number;
+  gauge: number;
+  /** justice critical, justice, attack, miss. */
+  counts: [number, number, number, number];
+}
+
 /**
- * The score, combo and judgment counts after each judgment, in judgment order, each with the gauge as
- * it stands after every judgment of its step. Every judgment must carry the automatic play grade.
+ * Keeps the score of one chart judgment by judgment. Grades run from 0 (MISS) to 4; 3 and 4 are
+ * both JUSTICE CRITICAL. A MISS breaks the combo.
  */
-export function scoreEvents(
-  score: NoteScore,
-  events: readonly BakeEvent[],
-): Extract<BakeEvent, { kind: "score" }>[] {
+export function createScoreKeeper(score: NoteScore) {
   const counts = judgmentCounts(score);
   const perCategory = new Uint32Array(CATEGORIES);
   counts.forEach((count, type) => {
@@ -109,48 +115,62 @@ export function scoreEvents(
 
   const graded = Array.from({ length: CATEGORIES }, () => new Uint32Array(GRADES));
   const weighted = new Uint32Array(CATEGORIES);
-  let combo = 0;
-  let gauge = 0;
+  const values: ScoreValues = { score: 0, combo: 0, gauge: 0, counts: [0, 0, 0, 0] };
   let gaugeEmpty = true;
-  let scoreValue = 0;
+  const sum = (g: number) => graded.reduce((n, row) => (n + row[g]) >>> 0, 0);
+  return {
+    /** Counts one judgment of `record` and returns the values after it, which the next call reuses. */
+    judge(record: number, part: number, phase: number, grade: number): ScoreValues {
+      if (!Number.isInteger(grade) || grade < 0 || grade >= GRADES)
+        throw new RangeError(`Judgment of record ${record} has grade ${grade}`);
+      const type = judgmentType(score.records[record], part, phase);
+      const category = TYPE_CATEGORY[type];
+      const counted = graded[category];
+      if (counted[grade] !== 0xffffffff) {
+        counted[grade]++;
+        let value = 0;
+        for (let g = 0; g < GRADES; g++) value = (value + Math.imul(weight(g), counted[g])) >>> 0;
+        weighted[category] = value;
+        let total = 0;
+        for (let c = 0; c < CATEGORIES; c++) total = (total + weighted[c]) >>> 0;
+        values.score = scaled(total);
+      }
+      values.combo =
+        grade === 0
+          ? 0
+          : Math.min(values.combo >= 0xfffffffe ? 0xffffffff : values.combo + 1, COMBO_LIMIT);
+
+      const share = GAUGE_KIND_WEIGHT[TYPE_GAUGE_KIND[type]] * PERCENT * perWeight;
+      let gauge = values.gauge + GRADE_GAUGE_GAIN[grade] * share * PERCENT;
+      if (gaugeEmpty && gauge > 0) {
+        gaugeEmpty = false;
+        gauge += EMPTY_GAUGE_INCREMENT;
+      }
+      gauge = Math.max(0, Math.min(GAUGE_CAPACITY, gauge));
+      if (gauge <= 0) gaugeEmpty = true;
+      values.gauge = gauge;
+      values.counts = [(sum(4) + sum(3)) >>> 0, sum(2), sum(1), sum(0)];
+      return values;
+    },
+  };
+}
+
+/**
+ * The score, combo and judgment counts after each judgment, in judgment order, each with the gauge as
+ * it stands after every judgment of its step. Every judgment must carry the automatic play grade.
+ */
+export function scoreEvents(
+  score: NoteScore,
+  events: readonly BakeEvent[],
+): Extract<BakeEvent, { kind: "score" }>[] {
+  const keeper = createScoreKeeper(score);
   const out: Extract<BakeEvent, { kind: "score" }>[] = [];
   for (const event of events) {
     if (event.kind !== "judge") continue;
     if (event.result !== GRADES - 1)
       throw new RangeError(`Judgment of record ${event.note} has grade ${event.result}`);
-    const grade = event.result;
-    const type = judgmentType(score.records[event.note], event.part ?? 1, event.phase);
-    const category = TYPE_CATEGORY[type];
-    const counted = graded[category];
-    if (counted[grade] !== 0xffffffff) {
-      counted[grade]++;
-      let value = 0;
-      for (let g = 0; g < GRADES; g++) value = (value + Math.imul(weight(g), counted[g])) >>> 0;
-      weighted[category] = value;
-      let total = 0;
-      for (let c = 0; c < CATEGORIES; c++) total = (total + weighted[c]) >>> 0;
-      scoreValue = scaled(total);
-    }
-    combo = Math.min(combo >= 0xfffffffe ? 0xffffffff : combo + 1, COMBO_LIMIT);
-
-    const share = GAUGE_KIND_WEIGHT[TYPE_GAUGE_KIND[type]] * PERCENT * perWeight;
-    gauge += GRADE_GAUGE_GAIN[grade] * share * PERCENT;
-    if (gaugeEmpty && gauge > 0) {
-      gaugeEmpty = false;
-      gauge += EMPTY_GAUGE_INCREMENT;
-    }
-    gauge = Math.max(0, Math.min(GAUGE_CAPACITY, gauge));
-    if (gauge <= 0) gaugeEmpty = true;
-
-    const sum = (g: number) => graded.reduce((n, row) => (n + row[g]) >>> 0, 0);
-    out.push({
-      kind: "score",
-      time: event.time,
-      score: scoreValue,
-      combo,
-      gauge,
-      counts: [sum(4), sum(3), sum(2), (sum(0) + sum(1)) >>> 0],
-    });
+    const values = keeper.judge(event.note, event.part ?? 1, event.phase, event.result);
+    out.push({ kind: "score", time: event.time, ...values, counts: [...values.counts] });
   }
   for (let i = out.length - 2; i >= 0; i--)
     if (out[i].time === out[i + 1].time) out[i].gauge = out[i + 1].gauge;

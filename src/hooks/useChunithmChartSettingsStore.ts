@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CanvasResolution } from "@/pages/public/Chart/chunithm/runtime/canvasSize";
+import {
+  DEFAULT_KEY_BINDINGS,
+  type KeyBindings,
+} from "@/pages/public/Chart/chunithm/options/keyBindings";
 
 interface ChunithmChartSettings {
   speedRow: number;
@@ -22,6 +26,9 @@ interface ChunithmChartSettings {
   soundOffset: number;
   musicVolume: number;
   soundVolume: number;
+  keyBindings: KeyBindings;
+  /** Whether a FLICK needs a slash across its lanes; otherwise a touch takes it. */
+  flickNeedsMotion: boolean;
 }
 
 const useChunithmChartSettingsStore = create<
@@ -50,6 +57,8 @@ const useChunithmChartSettingsStore = create<
       soundOffset: 0,
       musicVolume: 0.8,
       soundVolume: 0.6,
+      keyBindings: DEFAULT_KEY_BINDINGS,
+      flickNeedsMotion: true,
       setOptions: (options) => set(options),
     }),
     { name: "chunithm_chart_preview_settings" },

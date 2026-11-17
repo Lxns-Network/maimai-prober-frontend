@@ -47,6 +47,9 @@ export function useChartPreview(options: ChartPreviewOptions) {
   const musicOffset = useChunithmChartSettingsStore((state) => state.musicOffset);
   const soundOffset = useChunithmChartSettingsStore((state) => state.soundOffset);
   const fpsLimit = useChunithmChartSettingsStore((state) => state.fpsLimit);
+  const keyBindings = useChunithmChartSettingsStore((state) => state.keyBindings);
+  const flickNeedsMotion = useChunithmChartSettingsStore((state) => state.flickNeedsMotion);
+  const playSettingsRef = useRef({ keyBindings, flickNeedsMotion });
   const fpsLimitRef = useRef(fpsLimit);
   const offsetsRef = useRef({ musicOffset, soundOffset });
   const setOptions = useChunithmChartSettingsStore((state) => state.setOptions);
@@ -112,6 +115,8 @@ export function useChartPreview(options: ChartPreviewOptions) {
     [],
   );
   const [difficultyValue, setDifficultyValue] = useState<string | null>(null);
+  const [playMode, setPlayMode] = useState(false);
+  const playModeRef = useRef(playMode);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -181,6 +186,8 @@ export function useChartPreview(options: ChartPreviewOptions) {
         },
         setControls(value) {
           controls.current = value;
+          value?.setPlaySettings(playSettingsRef.current);
+          value?.setPlayMode(playModeRef.current);
           const loop = loopRef.current;
           value?.setLoop(
             loop?.enabled && loop.end !== null ? { start: loop.start, end: loop.end } : null,
@@ -257,6 +264,10 @@ export function useChartPreview(options: ChartPreviewOptions) {
     offsetsRef.current = { musicOffset, soundOffset };
     controls.current?.setAudioOffsets(musicOffset, soundOffset);
   }, [musicOffset, soundOffset]);
+  useEffect(() => {
+    playSettingsRef.current = { keyBindings, flickNeedsMotion };
+    controls.current?.setPlaySettings(playSettingsRef.current);
+  }, [keyBindings, flickNeedsMotion]);
   return {
     canvasRef,
     live,
@@ -293,6 +304,12 @@ export function useChartPreview(options: ChartPreviewOptions) {
     dividerValue,
     difficultyOptions,
     difficultyValue,
+    playMode,
+    selectPlayMode(value: boolean) {
+      playModeRef.current = value;
+      setPlayMode(value);
+      controls.current?.setPlayMode(value);
+    },
     stage: {
       ...stage,
       selectBackground(value: boolean) {

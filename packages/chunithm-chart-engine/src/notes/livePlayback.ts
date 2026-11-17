@@ -15,15 +15,24 @@ export interface LivePlaybackData {
   runs: ObjectRun[];
 }
 
-/** Advances only candidate records and their clocks; changing speed never rebuilds a chart. */
-export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[], state: DataView) {
+/**
+ * Advances only candidate records and their clocks; changing speed never rebuilds a chart. A
+ * `slack` keeps every record a candidate, and its clocks running, that many steps past the run's
+ * end, for notes a player judges later than the automatic play.
+ */
+export function createLivePlayback(
+  score: NoteScore,
+  runs: readonly ObjectRun[],
+  state: DataView,
+  slack = 0,
+) {
   const count = score.records.length;
   const starts = new Int32Array(count).fill(-1);
   const ends = new Int32Array(count);
   for (const run of runs) {
     const record = run.object.record;
     starts[record] = run.object.spawn;
-    ends[record] = Math.max(ends[record], run.removal);
+    ends[record] = Math.max(ends[record], run.removal + slack);
   }
   const intervalCounts = new Uint32Array(count);
   const intervals: number[] = [];
@@ -85,7 +94,7 @@ export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[],
       clock = { frame: part.initial ?? inherited, step: spawned[record] - 1, seeded: false };
       clocks.set(part, clock);
     }
-    const end = Math.min(step, part.release - 1);
+    const end = Math.min(step, part.release + slack - 1);
     for (let k = clock.step + 1; k <= end; k++) {
       let lo = 0;
       let hi = part.shownSteps.length;
@@ -125,7 +134,7 @@ export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[],
     clock.step = end;
     if (part.slot) {
       part.slot.frame = clock.frame;
-      if (step >= part.release) part.slot.busy = false;
+      if (step >= part.release + slack) part.slot.busy = false;
     }
   };
   return {
@@ -147,7 +156,7 @@ export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[],
       }
       state.setFloat32(NOTE_FIELDS.speed, speedForRowIndex(row) * multiplier, true);
       for (const [part] of clocks)
-        if (part.release <= step) {
+        if (part.release + slack <= step) {
           advance(part, step);
           clocks.delete(part);
         }
@@ -161,7 +170,8 @@ export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[],
           if (!spawnPredicate(state, score, score.records[record])) continue;
           spawned[record] = Math.max(0, step - ACTIVE_AFTER);
         }
-        for (const part of byRecord.get(record) ?? []) if (step < part.release) advance(part, step);
+        for (const part of byRecord.get(record) ?? [])
+          if (step < part.release + slack) advance(part, step);
         visible[written++] = record;
       }
       state.setFloat32(NOTE_FIELDS.now, Math.fround(step * 0.5), true);

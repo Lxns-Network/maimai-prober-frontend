@@ -15,7 +15,7 @@ const f = Math.fround;
 const K = SPAWN_CONSTANTS.framesPerMs;
 
 /** Channels and cues of each judgment sound at the automatic grade. */
-const SOUND = Object.freeze({
+export const SOUND = Object.freeze({
   tap: { channel: 6, cue: 60 },
   holdTail: { channel: 9, cue: 71 },
   slideTail: { channel: 12, cue: 72 },
@@ -29,7 +29,7 @@ const SOUND = Object.freeze({
   airDown: { channel: 4, cue: 306 },
 });
 /** Cue each kind of long note loops, and the pool its player is taken from. */
-const LOOP = {
+export const LOOP = {
   hold: { pool: 0, cue: 92 },
   slide: { pool: 0, cue: 95 },
   air: { pool: 1, cue: 85 },
@@ -40,7 +40,7 @@ const POOLS = [
   { first: 33, count: 6 },
 ] as const;
 /** Directions below this index an AIR upward. */
-const AIR_UP_DIRECTIONS = 3;
+export const AIR_UP_DIRECTIONS = 3;
 /** EX kinds that have an additional sound. */
 const EXTRA_KINDS = 8;
 
@@ -90,7 +90,7 @@ const CATEGORY_LIMITS: ReadonlyMap<number, { category: number; count: number }> 
 ]);
 
 /** One sound an object plays: a cue started on a channel, a looping player started, or stopped. */
-type Sound =
+export type Sound =
   | { kind: "start"; cue: number; channel: number }
   | { kind: "loop"; pool: 0 | 1; cue: number }
   | { kind: "stop" };
@@ -115,7 +115,7 @@ interface Cue {
   wake: number;
 }
 
-type CueRow = Extract<BakeEvent, { kind: "cue" | "cuestop" }>;
+export type CueRow = Extract<BakeEvent, { kind: "cue" | "cuestop" }>;
 
 const MICROSECONDS = 1000;
 const binary64 = new DataView(new ArrayBuffer(8));
@@ -133,7 +133,7 @@ function sequenceMilliseconds(step: number): number {
  * The cue instances of one song: group limits, player pools, the cues a first service starts and
  * the cues a script stops once its wait has run out.
  */
-function cueSimulation(rows: CueRow[]) {
+export function cueSimulation(rows: CueRow[]) {
   const groups = new Map<number, Cue[]>();
   const categories = new Map<number, Cue[]>();
   const byChannel = new Map<number, Cue[]>();
@@ -242,14 +242,14 @@ function cueSimulation(rows: CueRow[]) {
 }
 
 /** Whether a TAP, HOLD or SLIDE result plays the additional EX sound. */
-const playsExtra = (record: DataView) => {
+export const playsExtra = (record: DataView) => {
   const type = record.getInt32(0x10, true);
   const kind = record.getInt32(0x88, true);
   const extra = type > 0 && ((type <= 2 && record.getUint8(0x8c) !== 0) || type === 4);
   return extra && kind >= 0 && kind < EXTRA_KINDS;
 };
 
-const startSound = (target: { channel: number; cue: number }): Sound => ({
+export const startSound = (target: { channel: number; cue: number }): Sound => ({
   kind: "start",
   cue: target.cue,
   channel: target.channel,
@@ -263,7 +263,7 @@ const RECORD_TAIL_TIME = 0x38;
 const TICK_FRAMES_PER_MS = f(0.06);
 
 /** Step a HOLD plays its tail sound at, or -1 when it is removed first. */
-function holdTailStep(run: ObjectRun, record: DataView, context: LifecycleContext): number {
+export function holdTailStep(run: ObjectRun, record: DataView, context: LifecycleContext): number {
   const { config, offset } = context;
   const noteFrames = f(record.getFloat32(8, true) * K);
   const tailStart = f(noteFrames + offset);
@@ -285,7 +285,7 @@ function holdTailStep(run: ObjectRun, record: DataView, context: LifecycleContex
 }
 
 /** Steps each flagged joint of a SLIDE plays its tail sound at, in joint order. */
-function slideTailSteps(
+export function slideTailSteps(
   run: ObjectRun,
   record: DataView,
   joints: readonly DataView[],
