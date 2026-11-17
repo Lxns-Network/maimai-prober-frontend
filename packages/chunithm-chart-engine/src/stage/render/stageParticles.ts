@@ -1,4 +1,4 @@
-import { createEffectPublisher } from "../../effects/publish";
+import { createEffectPublisher, createParticleRings } from "../../effects/publish";
 import {
   createEffectRenderer,
   type EffectDrawContext,
@@ -11,6 +11,7 @@ import {
   particleDrawRange,
   particleFrameParameters,
   particleRingIndex,
+  readParticleProgram,
   type ParticleRange,
 } from "../../effects/eval/particle";
 import { depthParticleEffectState } from "../../effects/renderState";
@@ -121,7 +122,25 @@ export function createStageParticles(
     },
   };
   let renderer: ReturnType<typeof createEffectRenderer> | null = null;
-  const publisher = createEffectPublisher({ maximumParticles });
+  const particleRings = createParticleRings(maximumParticles);
+  for (const role of ROLES) {
+    const graph = pack.graphs[role];
+    for (const node of graph.nodes) {
+      if (node.type !== PARTICLE_TYPE || node.settings === null) continue;
+      let program;
+      try {
+        program = readParticleProgram(graph, node.settings);
+      } catch (error) {
+        // Scene construction owns unsupported-node handling; warming must not change it.
+        if (error instanceof RangeError) continue;
+        throw error;
+      }
+      const ring = (program.box ? 4 : 0) + (program.reverse ? 1 : 0);
+      particleRings.get(ring);
+      particleRings.get(ring + 2);
+    }
+  }
+  const publisher = createEffectPublisher({ maximumParticles, particleRings });
   const range: ParticleRange = { small: false, start: 0, count: 0, shaderTime: 0 };
   const worldMatrix = new Float32Array(16);
   const parameters = new Float32Array(PARTICLE_PARAMETER_COUNT);

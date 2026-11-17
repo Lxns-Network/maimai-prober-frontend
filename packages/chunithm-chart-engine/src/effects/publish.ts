@@ -24,6 +24,8 @@ export interface EffectPublisher {
 export interface EffectPublisherOptions {
   /** The particle capacity the scheduler's players draw slices against. */
   maximumParticles: number;
+  /** Session-owned immutable particle geometry, shared by interpolation publishers. */
+  particleRings?: ReturnType<typeof createParticleRings>;
 }
 
 const ADDRESS = [1, 2, 3, 4];
@@ -118,6 +120,26 @@ interface ParticleSlot {
   order: EffectParticlePacket["order"];
 }
 
+/** Shares deterministic particle geometry within one renderer session; callers never mutate it. */
+export function createParticleRings(maximumParticles: number) {
+  let rings: Float32Array[] | null = null;
+  const expanded: (Float32Array | undefined)[] = [];
+  return {
+    get(index: number): Float32Array {
+      let values = expanded[index];
+      if (!values) {
+        rings ??= particleTangentRings(maximumParticles);
+        const ring = rings[index];
+        values = new Float32Array(ring.length * 4);
+        for (let i = 0; i < ring.length / 4; i++)
+          for (let j = 0; j < 4; j++) values[i * 16 + j] = ring[i * 4 + j];
+        expanded[index] = values;
+      }
+      return values;
+    },
+  };
+}
+
 export function createEffectPublisher(options: EffectPublisherOptions): EffectPublisher {
   const packets: EffectPacket[] = [];
   const primitiveSlots: PrimitiveSlot[] = [];
@@ -131,8 +153,7 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
   const births = createArena(1 << 14);
   const bindingStates = new WeakMap<TextureBinding, EffectBinding>();
   const indexCache = new Map<number, Uint32Array>();
-  let rings: Float32Array[] | null = null;
-  const expandedRings: (Float32Array | undefined)[] = [];
+  const rings = options.particleRings ?? createParticleRings(options.maximumParticles);
 
   const bindingOf = (binding: TextureBinding): EffectBinding => {
     let state = bindingStates.get(binding);
@@ -148,19 +169,6 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
     let indices = indexCache.get(key);
     if (!indices) indexCache.set(key, (indices = primitiveIndices(strip, vertexCount)));
     return indices;
-  };
-
-  const ringOf = (index: number): Float32Array => {
-    let expanded = expandedRings[index];
-    if (!expanded) {
-      rings ??= particleTangentRings(options.maximumParticles);
-      const ring = rings[index];
-      expanded = new Float32Array(ring.length * 4);
-      for (let i = 0; i < ring.length / 4; i++)
-        expanded.set(ring.subarray(i * 4, i * 4 + 4), i * 16);
-      expandedRings[index] = expanded;
-    }
-    return expanded;
   };
 
   const primitiveSlot = (): PrimitiveSlot => {
@@ -329,7 +337,7 @@ export function createEffectPublisher(options: EffectPublisherOptions): EffectPu
     packet.interpolationKey = source.interpolationKey;
     packet.frame = source.frame;
     packet.resourceId = source.resourceId;
-    packet.mesh.attributes.aTangent.values = ringOf(source.ringIndex);
+    packet.mesh.attributes.aTangent.values = rings.get(source.ringIndex);
     slot.range.firstIndex = source.start * 6;
     slot.range.count = source.count * 6;
     if (source.births) {

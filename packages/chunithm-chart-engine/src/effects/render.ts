@@ -1,4 +1,4 @@
-import { compileProgram } from "../assets/shaderCompile";
+import { compileProgram, compilePrograms } from "../assets/shaderCompile";
 /**
  * Effect drawing: turns one frame's effect packets into entries for the scene's draw queue.
  *
@@ -201,7 +201,7 @@ export interface EffectRenderer {
   /** Packs one frame's packets and returns their entries in packet order. */
   prepare(packets: readonly EffectPacket[], frame: EffectFrame): readonly EffectDraw[];
   /** Compiles programs ahead of the frames that need them. */
-  warm(keys: readonly EffectProgramKey[]): void;
+  warm(keys: readonly EffectProgramKey[]): Promise<void>;
   dispose(): void;
 }
 
@@ -376,11 +376,11 @@ export function createEffectRenderer(
   let frameShadow: EffectShadow | undefined;
   const shadowMatrices = SHADOW_UNITS.map(() => new Float32Array(16));
 
-  const programFor = (key: EffectProgramKey): Program => {
+  const programFor = (key: EffectProgramKey, compiled?: WebGLProgram): Program => {
     const id = effectProgramId(key);
     const known = programs.get(id);
     if (known) return known;
-    const program = compile(gl, key);
+    const program = compiled ?? compile(gl, key);
     const location = (name: string) => gl.getUniformLocation(program, name);
     const locations = resolveUniforms(gl, program, {}, [
       "uDepthBias",
@@ -976,8 +976,25 @@ export function createEffectRenderer(
       upload();
       return entries;
     },
-    warm(keys) {
-      for (const key of keys) programFor(key);
+    async warm(keys) {
+      const missing = new Map(keys.map((key) => [effectProgramId(key), key]));
+      for (const id of programs.keys()) missing.delete(id);
+      if (!missing.size) return;
+      const compiled = await compilePrograms(
+        gl,
+        [...missing].map(([id, key]) => ({ name: String(id), ...effectShaders(key) })),
+      );
+      try {
+        if (disposed) throw new DOMException("Effect renderer was disposed", "AbortError");
+        for (const [id, key] of missing) {
+          // A draw or another warm call may have registered this variant while linking.
+          if (programs.has(id)) continue;
+          programFor(key, compiled.get(String(id))!);
+          compiled.delete(String(id));
+        }
+      } finally {
+        for (const program of compiled.values()) gl.deleteProgram(program);
+      }
     },
     dispose() {
       if (disposed) return;

@@ -10,10 +10,14 @@ import {
   type EffectResource,
 } from "@lxns-network/chunithm-chart-engine/effects/afb";
 import { effectPlayerLayer } from "@lxns-network/chunithm-chart-engine/effects/players";
-import { createEffectPublisher } from "@lxns-network/chunithm-chart-engine/effects/publish";
+import {
+  createEffectPublisher,
+  createParticleRings,
+} from "@lxns-network/chunithm-chart-engine/effects/publish";
 import {
   createEffectRenderer,
   type EffectPacket,
+  type EffectProgramKey,
 } from "@lxns-network/chunithm-chart-engine/effects/render";
 import {
   createEffectScheduler,
@@ -27,6 +31,8 @@ import {
 import { createEffectPlayback } from "@lxns-network/chunithm-chart-engine/effects/playback";
 import { stepForSeconds } from "@lxns-network/chunithm-chart-engine/loop/audioClock";
 import type { LoadedChart } from "@lxns-network/chunithm-chart-engine/chart/worker/loadChart";
+
+import { createEffectPlayer } from "@lxns-network/chunithm-chart-engine/effects/instance";
 
 const MAXIMUM_PARTICLES = 10000;
 
@@ -79,6 +85,7 @@ export interface EffectHost {
       criticalDisplayRow: number;
     },
   ): readonly FrameDraw[];
+  prepareResources(ids: readonly number[]): Promise<void>;
   dispose(): void;
 }
 
@@ -90,10 +97,13 @@ export function createEffectHost(input: {
   textures: EffectTextures;
 }): EffectHost {
   const { scene, resources, textures } = input;
-  const gpuEpoch = scene.withPresentation((device) => () => device.executionSequence);
+  const device = scene.withPresentation((device) => device);
+  const gpuEpoch = () => device.executionSequence;
   const renderer = createEffectRenderer(input.gl, textures, gpuEpoch);
-  let publisher = createEffectPublisher({ maximumParticles: MAXIMUM_PARTICLES });
-  let nextPublisher = createEffectPublisher({ maximumParticles: MAXIMUM_PARTICLES });
+  const particleRings = createParticleRings(MAXIMUM_PARTICLES);
+  const publisherOptions = { maximumParticles: MAXIMUM_PARTICLES, particleRings };
+  let publisher = createEffectPublisher(publisherOptions);
+  let nextPublisher = createEffectPublisher(publisherOptions);
   const interpolation = new EffectInterpolation();
 
   let source: ChartEffects | null = null;
@@ -106,6 +116,51 @@ export function createEffectHost(input: {
   const publishedEye = new Float64Array(6);
   let disposed = false;
   return {
+    async prepareResources(ids) {
+      const keys: EffectProgramKey[] = [];
+      for (const id of ids) {
+        const player = createEffectPlayer(resources[id]!);
+        for (const node of player.program.nodes) {
+          if (node.type === 6001008) {
+            const particle = player.particleProgram(node);
+            const ring = (particle.box ? 4 : 0) + (particle.reverse ? 1 : 0);
+            particleRings.get(ring);
+            particleRings.get(ring + 2);
+            keys.push({
+              particle: true,
+              softEdge: false,
+              textures: 1,
+              blend0: 0,
+              blend1: 0,
+              separateUv: false,
+              uniformColor: false,
+              parallelLights: 0,
+            });
+          } else if (node.type === 100 || node.type === 204) {
+            const draw = player.draws.primitive(node);
+            const material = draw.material;
+            // Animated vertex colours can switch between uniform and per-vertex forms.
+            for (const uniformColor of [false, true])
+              keys.push({
+                particle: false,
+                softEdge: material.environmentIndex === 1,
+                refraction: material.environmentIndex === 2 || material.environmentIndex === 3,
+                textures: draw.elementOffsets.length,
+                blend0: (material.materialKey[0] >>> 26) & 15,
+                blend1: material.materialKey[1] & 7,
+                separateUv: draw.layout === 5,
+                uniformColor,
+                parallelLights: 0,
+              });
+          }
+        }
+      }
+      try {
+        await renderer.warm(keys);
+      } finally {
+        device.markResourcesUnknown();
+      }
+    },
     draws({
       seconds,
       playbackRate = 1,

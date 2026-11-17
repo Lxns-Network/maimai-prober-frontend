@@ -100,7 +100,11 @@ for (const targets of [1, 31, 32, 34])
       nodes: [node(1, "mesh", [2, -3, 4], 0), node(2, "bone", [0, 0, 5], 1)],
       shapes: [shape],
     };
-    const pack = { model: () => model, texture: () => null } as unknown as StagePack;
+    const pack = {
+      model: () => model,
+      texture: () => null,
+      graphs: { base: { nodes: [] }, field: { nodes: [] } },
+    } as unknown as StagePack;
     const identity = Float32Array.of(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     const scene = {
       graph: {},
