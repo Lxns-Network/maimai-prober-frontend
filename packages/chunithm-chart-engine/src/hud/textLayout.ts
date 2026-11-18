@@ -77,13 +77,12 @@ function prepare(font: HudFont, text: string): number[] | string {
     const glyphPage = font.page[index];
     if (glyphPage !== HUD_NO_PAGE) {
       const atlas = font.pages[glyphPage];
+      // The font sampler clamps the one-texel draw padding at atlas edges.
       if (
-        font.sx[index] < 1 ||
-        font.sy[index] < 1 ||
-        font.sx[index] + font.sw[index] + 1 > atlas.width ||
-        font.sy[index] + font.sh[index] + 1 > atlas.height
+        font.sx[index] + font.sw[index] > atlas.width ||
+        font.sy[index] + font.sh[index] > atlas.height
       )
-        return "glyph crop without its padding texel";
+        return "glyph crop outside its atlas";
     }
     source.push(index);
   }
