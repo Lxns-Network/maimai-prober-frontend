@@ -1,6 +1,7 @@
-import { throwIfAborted } from "@lxns-network/chunithm-chart-engine/assets/abort";
+import { createAbortScope, throwIfAborted } from "@lxns-network/chunithm-chart-engine/assets/abort";
 import {
   createMusicPlayer,
+  readAudioOutputTime,
   type MusicPlayer,
   type MusicPoll,
 } from "@lxns-network/chunithm-chart-engine/audio/music";
@@ -10,6 +11,10 @@ import {
   type SfxPlayer,
 } from "@lxns-network/chunithm-chart-engine/audio/sfx";
 import type { Timeline } from "@lxns-network/chunithm-chart-engine/chart/timeline/reader";
+import {
+  startMusicCalibration,
+  type StartMusicCalibration,
+} from "@/pages/public/Chart/utils/musicCalibration";
 
 /** Silence at either end supports the full music-offset range without clipping chart time. */
 const MUSIC_PADDING_SECONDS = 2;
@@ -129,6 +134,29 @@ export function createPreviewAudio(input: PreviewAudioInput) {
     get running() {
       return context.state === "running";
     },
+    startMusicCalibration: (async (signal, onProgress, mode) => {
+      const scope = createAbortScope([input.signal, signal]);
+      scope.signal.addEventListener(
+        "abort",
+        () => {
+          if (!signal.aborted) onProgress({ count: 0, result: "interrupted" });
+        },
+        { once: true },
+      );
+      try {
+        return await startMusicCalibration(
+          context,
+          musicGain,
+          (at) => readAudioOutputTime(context, at),
+          scope.signal,
+          onProgress,
+          mode,
+        );
+      } catch (cause) {
+        scope.dispose();
+        throw cause;
+      }
+    }) satisfies StartMusicCalibration,
     async connectSfx(timeline: Timeline) {
       if (!library) {
         const bytes = await sfxBytes!;

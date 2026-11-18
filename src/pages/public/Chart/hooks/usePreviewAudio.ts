@@ -12,6 +12,7 @@ import {
 import { beatsToMs, msToBeats, calculateMusicTime, getLeadInMs } from "../utils/timeConversion";
 import { clamp } from "../utils/math";
 import { PlaybackClock } from "../utils/playbackClock";
+import { startMusicCalibration, type StartMusicCalibration } from "../utils/musicCalibration";
 
 const SEEK_THROTTLE_MS = 50;
 const SOURCE_FADE_TIME_S = 0.015;
@@ -62,6 +63,7 @@ interface PreviewFrameState {
 export interface PreviewAudioController {
   syncFrame: (timestamp: number) => PreviewFrameState | null;
   getClockSource: () => PreviewClockSource;
+  calibrateMusic: StartMusicCalibration;
 }
 
 export function usePreviewAudio(): PreviewAudioController {
@@ -247,6 +249,21 @@ export function usePreviewAudio(): PreviewAudioController {
 
     return state.audioContext;
   }, []);
+
+  const calibrateMusic = useCallback<StartMusicCalibration>(
+    (signal, onProgress, mode) => {
+      const context = ensureAudioContext();
+      return startMusicCalibration(
+        context,
+        audioStateRef.current.musicGainNode!,
+        (at) => Math.max(0, getAudioContextOutputTime(context) + (at - performance.now()) / 1000),
+        signal,
+        onProgress,
+        mode,
+      );
+    },
+    [ensureAudioContext],
+  );
 
   const configureAnswerManager = useCallback((manager: AudioManager) => {
     const settings = useGameSettingsStore.getState();
@@ -881,8 +898,9 @@ export function usePreviewAudio(): PreviewAudioController {
     () => ({
       syncFrame,
       getClockSource: () => audioStateRef.current.clockSource,
+      calibrateMusic,
     }),
-    [syncFrame],
+    [syncFrame, calibrateMusic],
   );
 
   return previewAudio;

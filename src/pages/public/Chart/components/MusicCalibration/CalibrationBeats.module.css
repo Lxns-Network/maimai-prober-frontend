@@ -1,0 +1,40 @@
+.rail {
+  position: relative;
+  place-items: center;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline: 12.5%;
+    top: 50%;
+    border-top: 2px solid var(--mantine-color-default-border);
+  }
+}
+
+.marker {
+  position: relative;
+}
+
+.countInLabel {
+  grid-column: span 3;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marker[data-active] {
+    animation: beat-pulse 180ms ease-out;
+  }
+}
+
+@keyframes beat-pulse {
+  0% {
+    transform: scale(0.94);
+  }
+
+  45% {
+    transform: scale(1.12);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}

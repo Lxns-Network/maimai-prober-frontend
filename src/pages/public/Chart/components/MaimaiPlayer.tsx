@@ -8,6 +8,7 @@ import {
 } from "@lxns-network/maimai-chart-engine";
 import { ChartCanvas } from "./ChartCanvas";
 import { Controls, PlaybackControls } from "./Controls";
+import { usePreviewAudio } from "../hooks/usePreviewAudio";
 import { useGameStore } from "../stores/useGameStore";
 import { useGameSettingsStore } from "../stores/useGameSettingsStore";
 import { isMaimaiUtageSongId } from "@/utils/score";
@@ -37,7 +38,7 @@ function useKeyboardShortcuts() {
         (e.target instanceof HTMLElement &&
           (e.target.isContentEditable ||
             e.target.closest(
-              'input, textarea, select, button, a[href], [role="slider"], [role="combobox"], [role="menuitem"], [role="option"]',
+              'input, textarea, select, button, a[href], [role="slider"], [role="combobox"], [role="menuitem"], [role="option"], [role="dialog"]',
             )))
       )
         return;
@@ -97,6 +98,7 @@ export default function MaimaiPlayer({ children }: ChartPlayerProps) {
   const initialBeat = beatParam && Number.isFinite(beatValue) && beatValue >= 0 ? beatValue : null;
 
   useKeyboardShortcuts();
+  const previewAudio = usePreviewAudio();
 
   const loadChart = useCallback(
     async (signal: AbortSignal) => {
@@ -174,9 +176,14 @@ export default function MaimaiPlayer({ children }: ChartPlayerProps) {
         </Stack>
       </Alert>
     ) : (
-      <ChartCanvas />
+      <ChartCanvas previewAudio={previewAudio} />
     ),
-    controls: <Controls isUtage={chartId !== null && isMaimaiUtageSongId(chartId)} />,
+    controls: (
+      <Controls
+        isUtage={chartId !== null && isMaimaiUtageSongId(chartId)}
+        calibrateMusic={previewAudio.calibrateMusic}
+      />
+    ),
     playbackControls: (props) => <PlaybackControls {...props} />,
     restartLabel: "重新播放当前小节",
   });

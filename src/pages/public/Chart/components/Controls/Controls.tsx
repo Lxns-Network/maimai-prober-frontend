@@ -39,6 +39,7 @@ import {
   IconRepeat,
   IconChevronRight,
   IconMusic,
+  IconMetronome,
   IconMovie,
   IconChevronDown,
   IconAdjustments,
@@ -80,6 +81,8 @@ import classes from "./Controls.module.css";
 import { usePageContext } from "vike-react/usePageContext";
 import { useSongDetail } from "@/hooks/queries/useSongDetail";
 import { PlaybackButtons } from "./PlaybackButtons";
+import { MusicCalibration } from "../MusicCalibration/MusicCalibration";
+import type { StartMusicCalibration } from "../../utils/musicCalibration";
 
 const DevHitFxPreview = import.meta.env.DEV
   ? lazy(() => import("../../HitFxPreview/HitFxPreview"))
@@ -830,7 +833,13 @@ export function PlaybackControls({
   );
 }
 
-export function Controls({ isUtage }: { isUtage?: boolean }) {
+export function Controls({
+  isUtage,
+  calibrateMusic,
+}: {
+  isUtage?: boolean;
+  calibrateMusic: StartMusicCalibration;
+}) {
   const chartId = Number(usePageContext().urlParsed.search.chart_id);
   const songId =
     Number.isInteger(chartId) && chartId > 0 && !isMaimaiUtageSongId(chartId)
@@ -1061,6 +1070,7 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
 
   const [showDisplaySettings, setShowDisplaySettings] = useState(false);
   const [showMusicSettings, setShowMusicSettings] = useState(false);
+  const [calibrationOpened, setCalibrationOpened] = useState(false);
   const [showVideoSettings, setShowVideoSettings] = useState(false);
   const [hitFxPreviewOpened, setHitFxPreviewOpened] = useState(false);
   const closeHitFxPreview = useCallback(() => setHitFxPreviewOpened(false), []);
@@ -1571,7 +1581,22 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
 
             <div>
               <Group justify="space-between" mb={4}>
-                <Text size="sm">音乐偏移</Text>
+                <Group gap="xs">
+                  <Text size="sm">音乐偏移</Text>
+                  <Button
+                    size="compact-xs"
+                    variant="light"
+                    leftSection={<IconMetronome size={14} />}
+                    aria-label="校准音乐偏移"
+                    disabled={!chartData}
+                    onClick={() => {
+                      useGameStore.getState().pause();
+                      setCalibrationOpened(true);
+                    }}
+                  >
+                    校准
+                  </Button>
+                </Group>
                 <Group gap={4}>
                   <Text size="sm" c="dimmed" ff="monospace">
                     {musicOffset}ms
@@ -1659,6 +1684,16 @@ export function Controls({ isUtage }: { isUtage?: boolean }) {
           </Stack>
         </Collapse>
       </Card>
+
+      <MusicCalibration
+        opened={calibrationOpened}
+        onClose={() => setCalibrationOpened(false)}
+        disabled={!chartData}
+        muted={musicVolume === 0}
+        currentOffset={musicOffset}
+        start={calibrateMusic}
+        onApply={setMusicOffset}
+      />
 
       <Card className={classes.card} radius="lg" withBorder>
         <UnstyledButton onClick={() => setShowVideoSettings(!showVideoSettings)} w="100%">

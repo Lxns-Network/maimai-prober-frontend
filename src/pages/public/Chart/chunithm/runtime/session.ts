@@ -8,7 +8,7 @@ import { readFieldPack, type FieldPackData } from "@lxns-network/chunithm-chart-
 import type { Pack } from "@lxns-network/chunithm-chart-engine/assets/packFormat";
 import { createFrameHost } from "@lxns-network/chunithm-chart-engine/render/frameHost";
 import type { FrameHost } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
-import type { LoopRange, PreviewSessionInput, PreviewWarmState } from "./types";
+import type { LoopRange, PreviewControls, PreviewSessionInput, PreviewWarmState } from "./types";
 import type { CanvasResolution } from "./canvasSize";
 import { createPreviewViewport } from "./viewport";
 import { loadChartInput, readChartSong } from "../assets/chartInput";
@@ -415,7 +415,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     }
   };
 
-  input.setControls({
+  const controls: PreviewControls = {
     selectDifficulty(value, at = 0) {
       requestedDifficulty = value;
       requestedChartSeconds = at;
@@ -562,6 +562,16 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         request();
       }
     },
+    pause() {
+      if (scrubbing) scrubbing.resume = false;
+      if (desiredPlaying) controls.toggle();
+    },
+    startMusicCalibration(signal, onProgress, mode) {
+      if (!ready || !audio || changingDifficulty || capturing)
+        return Promise.reject(new Error("播放器尚未就绪"));
+      controls.pause();
+      return audio.startMusicCalibration(signal, onProgress, mode);
+    },
     scrub(target) {
       if (!music || !Number.isFinite(target) || target < 0 || target > durationSeconds) return;
       if (!scrubbing) {
@@ -700,7 +710,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     refreshPresentation() {
       request();
     },
-  });
+  };
+  input.setControls(controls);
   ui.setStatus("loading");
   ui.setError(null);
   ui.setPlaying(false);
