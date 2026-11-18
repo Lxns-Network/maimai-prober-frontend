@@ -110,7 +110,7 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
         (event.target instanceof HTMLElement &&
           (event.target.isContentEditable ||
             event.target.closest(
-              'input, textarea, select, button, a[href], [role="slider"], [role="combobox"], [role="menuitem"], [role="option"]',
+              'input, textarea, select, button, a[href], [role="slider"], [role="combobox"], [role="menuitem"], [role="option"], [role="dialog"]',
             )))
       )
         return;
