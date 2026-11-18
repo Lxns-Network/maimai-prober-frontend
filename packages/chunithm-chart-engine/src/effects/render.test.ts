@@ -355,6 +355,30 @@ describe("effect shaders", () => {
 });
 
 describe("createEffectRenderer", () => {
+  it("prepares shader variants before playback and reuses them without compiling", async () => {
+    const { gl, calls } = recordingGl();
+    const renderer = createEffectRenderer(gl, textures);
+    const key = {
+      particle: false,
+      softEdge: false,
+      textures: 1,
+      blend0: 0,
+      blend1: 0,
+      separateUv: false,
+      uniformColor: true,
+      parallelLights: 0,
+    };
+    await renderer.warm([key, key]);
+    expect(calls.filter((call) => call.startsWith("linkProgram("))).toHaveLength(1);
+    calls.length = 0;
+    renderer.prepare([primitive()], frame())[0].draw();
+    await renderer.warm([key]);
+    expect(
+      calls.some((call) => call.startsWith("compileShader(") || call.startsWith("linkProgram(")),
+    ).toBe(false);
+    renderer.dispose();
+  });
+
   it("reuses consecutive draw state and restores it after external rendering", () => {
     const { gl, calls } = recordingGl();
     let epoch = 1;

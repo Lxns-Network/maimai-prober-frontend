@@ -95,7 +95,7 @@ export async function loadPreviewEffects(
       for (const group of groups) group.dispose();
     },
   };
-  let host: EffectHost;
+  let host: EffectHost | undefined;
   try {
     host = createEffectHost({
       gl: resourceInput.canvas.getContext("webgl2")!,
@@ -103,8 +103,11 @@ export async function loadPreviewEffects(
       resources,
       textures,
     });
+    await host.prepareResources(ids);
+    throwIfAborted(input.signal);
   } catch (error) {
-    textures.dispose();
+    if (host) host.dispose();
+    else textures.dispose();
     throw error;
   }
   let loading = Promise.resolve();
@@ -124,6 +127,8 @@ export async function loadPreviewEffects(
           loaded.add(id);
         }
         groups.push(next.textures);
+        await host!.prepareResources(ids);
+        throwIfAborted(input.signal);
       });
       return loading;
     },

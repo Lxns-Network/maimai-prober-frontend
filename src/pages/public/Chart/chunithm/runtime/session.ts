@@ -750,7 +750,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       }
     },
     toggle() {
-      if (!music || !audio || changingDifficulty) return;
+      if (!music || !audio || changingDifficulty || capturing) return;
       resetFps();
       if (scrubbing) {
         seconds = scrubbing.seconds;

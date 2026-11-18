@@ -7,7 +7,7 @@ import {
   type TextureBinding,
 } from "./eval/draw";
 import type { ParticlePacket, PrimitivePacket } from "./instance";
-import { createEffectPublisher } from "./publish";
+import { createEffectPublisher, createParticleRings } from "./publish";
 function particleSource(): ParticlePacket<ParticleDrawState> {
   return {
     instanceId: 0,
@@ -45,7 +45,9 @@ function particleSource(): ParticlePacket<ParticleDrawState> {
 }
 
 it("refreshes a reused particle slot's material fog gate", () => {
-  const publisher = createEffectPublisher({ maximumParticles: 1 });
+  const particleRings = createParticleRings(1);
+  const publisher = createEffectPublisher({ maximumParticles: 1, particleRings });
+  const next = createEffectPublisher({ maximumParticles: 1, particleRings });
   const source = particleSource();
   let previous;
   for (const gate of [0, 0x4000, 0]) {
@@ -56,6 +58,11 @@ it("refreshes a reused particle slot's material fog gate", () => {
     if (packet.kind !== "particle") throw new Error("expected particle");
     if (previous) expect(packet).toBe(previous);
     expect(packet.material.fog).toBe(gate === 0);
+    next.reset();
+    next.particle(source);
+    const other = next.packets[0];
+    if (other.kind !== "particle") throw new Error("expected particle");
+    expect(packet.mesh.attributes.aTangent.values).toBe(other.mesh.attributes.aTangent.values);
     previous = packet;
   }
 });

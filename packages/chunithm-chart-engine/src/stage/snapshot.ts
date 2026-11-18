@@ -209,7 +209,9 @@ export interface StageRewind {
   /** The scenes stepped to `tick`, resumed from the latest kept copy when that is closer. */
   seek(tick: number): readonly StageScene[];
   /** Display-only scenes with interpolated render state; motion lists are retained only for held nodes. */
-  sample(tick: number, fraction: number): readonly StageScene[];
+  sample(tick: number, fraction: number, presentationChanged?: boolean): readonly StageScene[];
+  /** Copies the upcoming display tick while its simulation state is already available. */
+  prepareDisplay(tick: number): void;
   /** Approximate memory the kept copies hold. */
   readonly bytes: number;
   /** The ticks between kept copies. */
@@ -242,6 +244,8 @@ export function createStageRewind(
   const next = new Map<object, unknown>();
   let spareCopies = new Map<object, unknown>();
   let displayCopies = new Map<object, unknown>();
+  let prepared: { tick: number; scenes: StageScene[]; source: readonly StageScene[] } | null = null;
+  let idleCopies = new Map<object, unknown>();
   let kept: Kept[] = [];
   let bytes = 0;
   let failure: { readonly cause: unknown } | null = null;
@@ -307,17 +311,33 @@ export function createStageRewind(
         throw cause;
       }
     },
-    sample(tick, fraction) {
+    prepareDisplay(tick) {
+      if (prepared || !scenes || scenes[0].tick !== tick || sampledTick !== tick - 1) return;
+      spareCopies.clear();
+      const display = cloneStageScenes(scenes, spareCopies, idleCopies, true).map(
+        (copy) => copy.scene,
+      );
+      prepared = { tick, scenes: display, source: scenes };
+    },
+    sample(tick, fraction, presentationChanged = false) {
+      if (presentationChanged) prepared = null;
       if (sampledTick === tick) {
         interpolate.apply(fraction);
         return sampled;
       }
+      const upcoming = prepared;
       const live = rewind.seek(tick);
       if (fraction === 0) return live;
       const copies = spareCopies;
-      copies.clear();
-      sampled = cloneStageScenes(live, copies, displayCopies, true).map((copy) => copy.scene);
-      spareCopies = displayCopies;
+      if (upcoming && upcoming.tick === tick && upcoming.source === live) {
+        sampled = upcoming.scenes;
+        spareCopies = idleCopies;
+        idleCopies = displayCopies;
+      } else {
+        copies.clear();
+        sampled = cloneStageScenes(live, copies, displayCopies, true).map((copy) => copy.scene);
+        spareCopies = displayCopies;
+      }
       spareCopies.clear();
       displayCopies = copies;
       next.clear();
@@ -334,6 +354,7 @@ export function createStageRewind(
       return sampled;
     },
     seek(tick) {
+      prepared = null;
       if (failure) throw failure.cause;
       if (sampledTick === tick) {
         interpolate.apply(0);

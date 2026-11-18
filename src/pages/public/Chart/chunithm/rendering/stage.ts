@@ -130,12 +130,14 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
   let release = () => {};
   let warmingFrame = 0;
   let idleWork = 0;
+  let displayWork = 0;
   let warmTimer: ReturnType<typeof setTimeout> | null = null;
   const detach = () => {
     if (disposed) return;
     disposed = true;
     if (warmingFrame) cancelAnimationFrame(warmingFrame);
     if (idleWork) cancelIdleCallback(idleWork);
+    if (displayWork) cancelIdleCallback(displayWork);
     if (warmTimer !== null) clearTimeout(warmTimer);
     loading.abort();
     if (!signal.aborted) scene.setBackgroundRenderer(null);
@@ -309,6 +311,38 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
       },
       () => {},
     );
+    let lastDisplayTick = -1;
+    let displayCopyMs = 1;
+    const scheduleDisplay = (tick: number) => {
+      if (
+        tick === lastDisplayTick ||
+        displayWork ||
+        typeof requestIdleCallback !== "function" ||
+        !input.readWarmState?.().playing
+      )
+        return;
+      lastDisplayTick = tick;
+      displayWork = requestIdleCallback((deadline) => {
+        displayWork = 0;
+        const state = input.readWarmState?.();
+        if (
+          !state?.playing ||
+          state.busy ||
+          !input.readShowBackground() ||
+          deadline.timeRemaining() < displayCopyMs + 1
+        )
+          return;
+        const start = performance.now();
+        try {
+          rewind?.prepareDisplay(tick + 1);
+          displayCopyMs = Math.max(performance.now() - start, displayCopyMs * 0.9);
+        } catch (cause) {
+          detach();
+          setError(cause instanceof Error ? cause.message : String(cause));
+          setStatus("error");
+        }
+      });
+    };
     const warm = (deadline?: IdleDeadline) => {
       warmingFrame = 0;
       idleWork = 0;
@@ -377,7 +411,8 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         const tick = Math.floor(frame);
         rewind ??= createStageRewind(build);
         const fraction = frame - tick;
-        const [fieldScene, baseScene] = rewind.sample(tick, fraction);
+        const [fieldScene, baseScene] = rewind.sample(tick, fraction, resized || fieldChanged);
+        scheduleDisplay(tick);
         scheduleWarm();
         const fieldState = held.get(FIELD_BRIGHTNESS_RECORD);
         if (fieldState) {

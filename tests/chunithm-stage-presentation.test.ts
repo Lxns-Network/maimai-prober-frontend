@@ -89,7 +89,11 @@ vi.mock("@lxns-network/chunithm-chart-engine/stage/runtime", () => ({
   },
 }));
 vi.mock("@lxns-network/chunithm-chart-engine/stage/snapshot", () => ({
-  createStageRewind: (build: () => unknown[]) => ({ sample: () => build(), warm: mocked.warm }),
+  createStageRewind: (build: () => unknown[]) => ({
+    sample: () => build(),
+    prepareDisplay: vi.fn(),
+    warm: mocked.warm,
+  }),
 }));
 vi.mock("@lxns-network/chunithm-chart-engine/stage/registry", () => ({
   motionBehaviors: [],

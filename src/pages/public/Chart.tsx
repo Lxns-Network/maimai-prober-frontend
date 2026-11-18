@@ -358,6 +358,7 @@ function ChartContent({
           />
           <div
             className={`${classes.fullscreenControls} ${showControls ? classes.showControls : ""}`}
+            inert={!showControls}
           >
             {playbackControls({
               onToggleFullscreen: toggleFullscreen,

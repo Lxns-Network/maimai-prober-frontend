@@ -1,3 +1,4 @@
+import { createVec4Setter } from "../../gpu/uniforms";
 import type { StageFrame, StageDrawStats, StageShadowQueue, StageRenderer } from "./types";
 import {
   rowsToColumns,
@@ -218,6 +219,7 @@ export function createStageRenderer(
     const { program, locations, uniform: u } = createStageModelProgram(gl);
     initialized.push(() => gl.deleteProgram(program));
     // This program is private to the renderer; switching programs does not change its uniforms.
+    const setVec4 = createVec4Setter(gl);
     const integers = new Map<WebGLUniformLocation, number>();
     const setInteger = (location: WebGLUniformLocation | null, value: number) => {
       if (location === null || integers.get(location) === value) return;
@@ -1405,7 +1407,7 @@ export function createStageRenderer(
               setInteger(u("instanceColorAdd"), (instanceFlags & 0x2000) !== 0 ? 1 : 0);
               setInteger(u("instanceColorEdge"), (instanceFlags & 0x8000) !== 0 ? 1 : 0);
               if (instanceColorEnabled)
-                gl.uniform4fv(u("instanceColor"), unpackColor(model.diffuse ?? 0xffffffff));
+                setVec4(u("instanceColor"), unpackColor(model.diffuse ?? 0xffffffff));
               const instanceMotion = shape.instanceMotion;
               setInteger(u("instanceMotion"), instanceMotion ? 1 : 0);
               if (instanceMotion) {
@@ -1449,7 +1451,7 @@ export function createStageRenderer(
               setInteger(u("layerCount"), m.layers.length);
               gl.uniform2i(u("uvSets"), m.layers[0]?.uv ?? 0, m.layers[1]?.uv ?? 0);
               const instanceUv = entry.instanceUv;
-              gl.uniform4fv(u("instanceUvOffsetScale"), instanceUv ?? [0, 0, 1, 1]);
+              setVec4(u("instanceUvOffsetScale"), instanceUv ?? [0, 0, 1, 1]);
               const uvAnimation = instanceUv ? null : entry.materialUv;
               const uvMask =
                 entry.instanceUvFeature === null ? m.uvOffsetMask : Number(entry.instanceUvFeature);
@@ -1457,9 +1459,9 @@ export function createStageRenderer(
                 !entry.uvOffsets && !uvAnimation && uvMask === m.uvOffsetMask
                   ? shape.staticUv
                   : stageUvTransforms(m, entry.uvOffsets, uvAnimation, uvMask, shape.animatedUv);
-              gl.uniform4fv(u("uvOffsetScale0"), transforms.layers[0]);
-              gl.uniform4fv(u("uvOffsetScale1"), transforms.layers[1]);
-              gl.uniform4fv(u("specularOffsetScale"), transforms.specular);
+              setVec4(u("uvOffsetScale0"), transforms.layers[0]);
+              setVec4(u("uvOffsetScale1"), transforms.layers[1]);
+              setVec4(u("specularOffsetScale"), transforms.specular);
               gl.uniform2f(u("lodBias"), shape.lodBias[0], shape.lodBias[1]);
               gl.uniform3iv(u("layerBlend"), m.layerBlend);
               setInteger(u("baseMapType"), m.baseMapType);
@@ -1494,14 +1496,14 @@ export function createStageRenderer(
               gl.uniform3fv(u("edgeAlpha"), m.edgeAlpha ?? [0, 0, 0]);
               setInteger(u("fresnelEnabled"), m.fresnel ? 1 : 0);
               gl.uniform3fv(u("fresnel"), m.fresnel ?? [1, 0, 4]);
-              gl.uniform4fv(u("diffuseBase"), m.diffuseBase);
-              gl.uniform4fv(u("specularBase"), m.specularBase);
+              setVec4(u("diffuseBase"), m.diffuseBase);
+              setVec4(u("specularBase"), m.specularBase);
               gl.uniform3fv(u("incandescenceBase"), m.incandescenceBase);
-              gl.uniform4fv(
+              setVec4(
                 u("systemDiffuse"),
                 instanced || model.diffuse === null ? [1, 1, 1, 1] : unpackColor(model.diffuse),
               );
-              gl.uniform4fv(
+              setVec4(
                 u("systemSpecular"),
                 instanced || model.specular === null ? [1, 1, 1, 1] : unpackColor(model.specular),
               );
@@ -1528,10 +1530,10 @@ export function createStageRenderer(
               setInteger(u("normalMapCompressed"), m.normalMap?.compressed ? 1 : 0);
               setInteger(u("normalUv"), m.normalMap?.uv ?? 0);
               gl.uniform1f(u("normalLodBias"), shape.lodBias[4]);
-              gl.uniform4fv(u("normalOffsetScale"), transforms.normal);
+              setVec4(u("normalOffsetScale"), transforms.normal);
               setInteger(u("blendShader"), m.blendMaps ? 1 : 0);
               if (m.blendMaps) {
-                gl.uniform4fv(u("blendOffsetScale"), transforms.blend!);
+                setVec4(u("blendOffsetScale"), transforms.blend!);
                 gl.uniform1iv(
                   u("blendUv"),
                   m.blendMaps.map((map) => map.uv),
@@ -1545,7 +1547,7 @@ export function createStageRenderer(
               setInteger(u("incandescenceUv"), m.incandescenceMap?.uv ?? 0);
               setInteger(u("incandescenceMapType"), m.incandescenceMap?.mapType ?? 0);
               gl.uniform1f(u("incandescenceLodBias"), shape.lodBias[5]);
-              gl.uniform4fv(u("incandescenceOffsetScale"), transforms.incandescence);
+              setVec4(u("incandescenceOffsetScale"), transforms.incandescence);
               for (let unit = 0; unit < MAX_TEXTURE_SLOTS; unit++) {
                 gl.activeTexture(gl.TEXTURE0 + unit);
                 const texture = (entry.textures ?? shape.textures)[unit];

@@ -31,7 +31,7 @@ function fontOf(advance = 12): HudFont {
     originX: Int16Array.of(0, 0, 0, 0),
     originY: Int16Array.of(0, 0, 0, 0),
     advance: Int16Array.of(4, advance, advance, 16),
-    sx: Uint16Array.of(0, 2, 2, 0),
+    sx: Uint16Array.of(0, 2, 56, 0),
     sy: Uint16Array.of(0, 2, 2, 0),
     sw: Uint16Array.of(0, 8, 8, 0),
     sh: Uint16Array.of(0, 8, 8, 0),

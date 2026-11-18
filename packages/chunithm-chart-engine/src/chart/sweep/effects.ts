@@ -15,6 +15,30 @@ const f = Math.fround;
 /** Live instances each group holds before the oldest is evicted, and its admission interval in frames. */
 export const GROUP_CAPACITY: readonly number[] = [24, 24, 24, 32, 16, 16, 16, 4, 48, 4];
 export const GROUP_INTERVAL_FRAMES: readonly number[] = [0, 0, 0, 0, 0, 0, 0, 5, 0, 5];
+const intervalMs = GROUP_INTERVAL_FRAMES.map((frames) =>
+  Math.trunc(f(f((1000 / STEP_HZ) * frames) + 0.5)),
+);
+
+/** One group's emission count resets each update; its cooldown spans updates. */
+function createEffectAdmission() {
+  const emitted = new Uint8Array(GROUP_CAPACITY.length);
+  const nextTime = new Float64Array(GROUP_CAPACITY.length);
+  let previousStep = -1;
+  return (group: number, step: number) => {
+    if (step !== previousStep) {
+      emitted.fill(0);
+      previousStep = step;
+    }
+    if (emitted[group] >= GROUP_CAPACITY[group]) return false;
+    if (intervalMs[group]) {
+      const now = Math.floor((step * 1000) / STEP_HZ);
+      if (now < nextTime[group]) return false;
+      nextTime[group] = now + intervalMs[group];
+    }
+    emitted[group]++;
+    return true;
+  };
+}
 
 /** Why an instance ended: its life ran out, its group made room, or its slide stopped it. */
 export const EFFECT_END = Object.freeze({ natural: 0, evicted: 1, stopped: 2 });
@@ -369,8 +393,16 @@ function charaGate() {
   };
 }
 
-const flagged = (rows: readonly DataView[] | undefined) =>
-  (rows ?? []).filter((row) => row.getUint8(0x14) !== 0);
+const scoringRows = new WeakMap<readonly DataView[], DataView[]>();
+function flagged(rows: readonly DataView[] | undefined) {
+  if (!rows) return [];
+  let selected = scoringRows.get(rows);
+  if (!selected) {
+    selected = rows.filter((row) => row.getUint8(0x14) !== 0);
+    scoringRows.set(rows, selected);
+  }
+  return selected;
+}
 
 /** Every effect request the notes make, in order. */
 function collectRequests(input: EffectInput): Requests {
@@ -644,9 +676,7 @@ export function effectSweep(input: EffectInput): EffectSweep {
   for (const run of runs)
     if (run.object.className === "SlideNote") removal.set(run.object.record, run.removal);
 
-  const intervals = GROUP_INTERVAL_FRAMES.map((frames) =>
-    frames ? Math.trunc(f(f((1000 / STEP_HZ) * frames) + 0.5)) : 0,
-  );
+  const admit = createEffectAdmission();
   const horizon = steps + 400;
   const accepted = new Int32Array(requests.length);
   let count = 0;
@@ -659,10 +689,6 @@ export function effectSweep(input: EffectInput): EffectSweep {
   const queues: number[][] = GROUP_CAPACITY.map(() => []);
   const heads = new Int32Array(GROUP_CAPACITY.length);
   const live = new Int32Array(GROUP_CAPACITY.length);
-  const emitted = new Int32Array(GROUP_CAPACITY.length);
-  const timerStart = new Uint32Array(GROUP_CAPACITY.length);
-  const timerDuration = new Uint32Array(GROUP_CAPACITY.length);
-  const timerExpired = new Uint8Array(GROUP_CAPACITY.length);
 
   const schedule = (instance: number, step: number, kind: number) => {
     if (step > horizon) return;
@@ -681,17 +707,10 @@ export function effectSweep(input: EffectInput): EffectSweep {
 
   let next = 0;
   for (let step = 0; step <= horizon; step++) {
-    emitted.fill(0);
-    const now = Math.floor((step * 1000) / STEP_HZ);
     for (; next < requests.length && requests.step[next] === step; next++) {
       const group = requests.group[next];
       const capacity = GROUP_CAPACITY[group];
-      if (emitted[group] >= capacity) continue;
-      if (intervals[group]) {
-        const elapsed = (now - timerStart[group]) >>> 0;
-        if (!timerExpired[group] && timerDuration[group] > elapsed) continue;
-        timerExpired[group] = 1;
-      }
+      if (!admit(group, step)) continue;
       const instance = count++;
       accepted[instance] = next;
       if (live[group] >= capacity) {
@@ -699,14 +718,8 @@ export function effectSweep(input: EffectInput): EffectSweep {
         while (dead[queue[heads[group]]]) heads[group]++;
         release(queue[heads[group]++], step, EFFECT_END.evicted);
       }
-      if (intervals[group]) {
-        timerStart[group] = now;
-        timerDuration[group] = intervals[group];
-        timerExpired[group] = 0;
-      }
       queues[group].push(instance);
       live[group]++;
-      emitted[group]++;
       const resource = requests.resource[next];
       const life = EFFECT_LIFE_FRAMES.get(resource);
       if (life === undefined) throw new RangeError(`Effect resource ${resource} has no life`);

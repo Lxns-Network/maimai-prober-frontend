@@ -285,7 +285,7 @@ export function createSfxPlayer(options: SfxPlayerOptions) {
   };
 
   function cut(voice: Playing, at: number) {
-    if (voice.releaseAt <= at) return;
+    if (voice.releaseAt <= at || voice.end <= at) return;
     voice.gain.gain.cancelScheduledValues(at);
     voice.gain.gain.setValueCurveAtTime(
       releaseCurve(0, 1).map((value) => value * voice.gain.gain.value),
