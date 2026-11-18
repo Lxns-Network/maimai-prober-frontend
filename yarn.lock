@@ -2405,6 +2405,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/w3c-web-hid@npm:^1.0.7":
+  version: 1.0.7
+  resolution: "@types/w3c-web-hid@npm:1.0.7"
+  checksum: 10c0/e0f1204970e193fa006664b975d65b36608c424d6511a06bee6d495d2c8af2f2df9ef67f8d4fe2e5f5e460285edabe3ace5989879c6476b080ec76f092c2d7d3
+  languageName: node
+  linkType: hard
+
 "@types/w3c-web-usb@npm:^1.0.14":
   version: 1.0.14
   resolution: "@types/w3c-web-usb@npm:1.0.14"
@@ -5107,6 +5114,7 @@ __metadata:
     "@types/react-dom": "npm:19.2.4"
     "@types/react-is": "npm:19.2.0"
     "@types/react-lazyload": "npm:3.2.3"
+    "@types/w3c-web-hid": "npm:^1.0.7"
     "@types/w3c-web-usb": "npm:^1.0.14"
     "@vcarl/remark-headings": "npm:0.1.0"
     "@vitejs/plugin-react": "npm:6.1.0"

@@ -1,12 +1,22 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Button, Divider, Group, SimpleGrid, Text, ThemeIcon, Tooltip } from "@mantine/core";
+import {
+  Box,
+  Button,
+  Divider,
+  Group,
+  Menu,
+  SimpleGrid,
+  Text,
+  ThemeIcon,
+  Tooltip,
+} from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconPlug, IconPlugConnected } from "@tabler/icons-react";
+import { IconChevronDown, IconPlug, IconPlugConnected } from "@tabler/icons-react";
 import {
   LANE_COUNT,
   type SurfaceSample,
 } from "@lxns-network/chunithm-chart-engine/chart/play/input";
-import { readController } from "../input/controllers/webUsb";
+import { readController, type ControllerTransport } from "../input/controllers/connection";
 import type { ControllerLightWriter } from "../input/controllers/adapter";
 import styles from "./PlaySettings.module.css";
 
@@ -16,6 +26,10 @@ const airLevels = [
   { label: "低", mask: 0b000011 },
   { label: "中", mask: 0b001100 },
   { label: "高", mask: 0b110000 },
+] as const;
+const controllerOptions = [
+  { transport: "usb", label: "TASOLLER / TASOLLER Plus" },
+  { transport: "hid", label: "Chu Pico" },
 ] as const;
 
 export function ControllerInput({
@@ -49,11 +63,15 @@ export function ControllerInput({
     }
     shown.current = sample;
   }
-  const supported = typeof navigator !== "undefined" && !!navigator.usb;
+  const available = controllerOptions.filter(
+    ({ transport }) => typeof navigator !== "undefined" && !!navigator[transport],
+  );
+  const supported = available.length > 0;
+  const showMenu = !name && available.length > 1;
   const unsupportedHint = supported
     ? undefined
-    : "请使用支持 WebUSB 的浏览器，通过 HTTPS 或 localhost 打开。";
-  const idleStatus = supported ? "未连接设备" : "WebUSB 不可用";
+    : "请使用支持 WebUSB 或 WebHID 的浏览器，通过 HTTPS 或 localhost 打开。";
+  const idleStatus = supported ? "未连接设备" : "无法连接控制器";
   useEffect(
     () => () => {
       active.current?.abort();
@@ -63,18 +81,19 @@ export function ControllerInput({
     [onLights],
   );
 
-  async function connect() {
-    if (!supported || active.current) return;
+  async function connect(transport: ControllerTransport) {
+    if (active.current) return;
     const controller = new AbortController();
     active.current = controller;
     setPending(true);
     let frame = 0;
     try {
       await readController(
+        transport,
         controller.signal,
-        (sample, receivedAt, deviceName) => {
+        (sample, receivedAt) => {
+          if (active.current !== controller) return;
           onInput(sample, receivedAt);
-          if (!latest.current) setName(deviceName);
           latest.current = sample;
           if (!frame)
             frame = requestAnimationFrame(() => {
@@ -82,8 +101,13 @@ export function ControllerInput({
               paint();
             });
         },
-        (writer) => {
-          if (active.current === controller) onLights(writer);
+        (connected) => {
+          if (active.current !== controller) return;
+          if (connected) {
+            setName(connected.name);
+            setPending(false);
+          }
+          onLights(connected?.writeLights ?? null);
         },
       );
     } catch (reason) {
@@ -106,6 +130,24 @@ export function ControllerInput({
     }
   }
 
+  const button = (
+    <Button
+      size="xs"
+      variant={name ? "default" : "filled"}
+      aria-label={name ? `断开 ${name}` : "连接设备"}
+      aria-description={unsupportedHint}
+      aria-disabled={!supported || undefined}
+      data-disabled={!supported || undefined}
+      loading={pending}
+      rightSection={showMenu ? <IconChevronDown size={14} aria-hidden /> : undefined}
+      onClick={() => {
+        if (name) active.current?.abort();
+        else if (available.length === 1) void connect(available[0].transport);
+      }}
+    >
+      {name ? "断开" : "连接"}
+    </Button>
+  );
   return (
     <>
       <Group gap="xs" justify="space-between" wrap="nowrap">
@@ -117,26 +159,28 @@ export function ControllerInput({
             {name ?? (pending ? "正在连接…" : idleStatus)}
           </Text>
         </Group>
-        <Tooltip
-          label={unsupportedHint}
-          disabled={supported}
-          position="top-end"
-          events={{ hover: true, focus: true, touch: true }}
-          withArrow
-        >
-          <Button
-            size="xs"
-            variant={name ? "default" : "filled"}
-            aria-label={name ? `断开 ${name}` : "连接设备"}
-            aria-description={unsupportedHint}
-            aria-disabled={!supported || undefined}
-            data-disabled={!supported || undefined}
-            loading={pending && !name}
-            onClick={name ? () => active.current?.abort() : connect}
+        {showMenu ? (
+          <Menu shadow="md" position="bottom-end">
+            <Menu.Target>{button}</Menu.Target>
+            <Menu.Dropdown>
+              {available.map(({ transport, label }) => (
+                <Menu.Item key={transport} onClick={() => void connect(transport)}>
+                  {label}
+                </Menu.Item>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
+        ) : (
+          <Tooltip
+            label={unsupportedHint}
+            disabled={supported}
+            position="top-end"
+            events={{ hover: true, focus: true, touch: true }}
+            withArrow
           >
-            {name ? "断开" : "连接"}
-          </Button>
-        </Tooltip>
+            {button}
+          </Tooltip>
+        )}
       </Group>
       <Divider />
       <Text size="xs" c="dimmed">
