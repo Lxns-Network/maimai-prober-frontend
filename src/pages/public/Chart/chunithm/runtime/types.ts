@@ -1,7 +1,9 @@
+import type { SurfaceSample } from "@lxns-network/chunithm-chart-engine/chart/play/input";
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
 import type { PreviewLiveState } from "./liveState";
 import type { CanvasResolution } from "./canvasSize";
-import type { KeyBindings } from "../options/keyBindings";
+import type { KeyBindings } from "../input/keyboard";
+import type { ControllerLightWriter } from "../input/controllers/adapter";
 
 export interface LoopRange {
   start: number;
@@ -10,11 +12,13 @@ export interface LoopRange {
 
 export interface PlaySettings {
   keyBindings: KeyBindings;
-  /** Whether a FLICK needs a slash across its lanes; otherwise a touch takes it. Applies from the next restart. */
+  /** Whether keyboard and touch play require a slash across a FLICK's lanes. */
   flickNeedsMotion: boolean;
 }
 
 export interface PreviewControls {
+  controllerInput(sample: SurfaceSample | null, receivedAt: number): void;
+  setControllerLights(writer: ControllerLightWriter | null): void;
   selectDifficulty(value: number | undefined, seconds?: number): void;
   setLoop(range: LoopRange | null): void;
   captureFrame(): Promise<Blob>;

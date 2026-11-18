@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { Timeline } from "../chart/timeline/reader";
 import { TimelineWriter } from "../chart/timeline/writer";
-import { createSfxPlayer, type SfxLibrary, type SfxSourceLike } from "./sfx";
+import { createLiveCuePlayer, createSfxPlayer, type SfxLibrary, type SfxSourceLike } from "./sfx";
 
 function player(times: number[]) {
   const writer = new TimelineWriter();
@@ -40,7 +40,7 @@ function player(times: number[]) {
       return source;
     },
   };
-  const library: SfxLibrary = {
+  const library = {
     sampleRate: 48000,
     cues: new Map([
       [
@@ -63,13 +63,37 @@ function player(times: number[]) {
     buffers: new Map([
       ["tap", { buffer: context.createBuffer(), frames: 4800, loopStart: 0, loopEnd: 0 }],
     ]),
-  };
+  } satisfies SfxLibrary;
   return {
     context,
+    library,
     sources,
     sfx: createSfxPlayer({ context, destination: {}, library, timeline }),
   };
 }
+
+it("resumes a live sustained voice at its loop phase without replaying a tap", () => {
+  const { context, library, sources } = player([]);
+  const sample = library.buffers.get("tap")!;
+  library.buffers.set("sustain", { ...sample, loopStart: 480, loopEnd: 2400 });
+  const voice = library.cues.get(1)!.voices[0];
+  library.cues.set(2, { combo: null, voices: [{ ...voice, sample: "sustain" }] });
+  const live = createLiveCuePlayer({ context, destination: {}, library });
+  live.start(0, 1, 1, 1, 0);
+  live.start(1, 2, 1, 1, 0);
+  context.currentTime = 1.12;
+  live.pause();
+  context.currentTime = 2;
+  live.resume();
+  live.resume();
+  expect(sources).toHaveLength(3);
+  expect(sources[2].loop).toBe(true);
+  expect(sources[2].start.mock.calls[0][1]).toBeCloseTo(0.04);
+  live.pause();
+  live.stop(1, 2);
+  live.resume();
+  expect(sources).toHaveLength(3);
+});
 
 describe("SFX output latency", () => {
   it.each([1, 0.5, 0.1])("keeps taps scheduled through a 400ms output delay at %sx", (rate) => {

@@ -1,5 +1,6 @@
 import { createAbortScope, throwIfAborted } from "@lxns-network/chunithm-chart-engine/assets/abort";
 import { createPackedFetch } from "@lxns-network/chunithm-chart-engine/assets/packedFetch";
+import { KEY_BEAM_RESOURCE } from "@lxns-network/chunithm-chart-engine/effects/players";
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
 import {
   loadEffectTextures,
@@ -20,17 +21,16 @@ async function loadEffectBundle(input: {
   canvas: HTMLCanvasElement;
   scene: FrameSurface;
   effectList: string;
-  manifest?: Promise<EffectResourceList>;
+  manifest: EffectResourceList;
   ids: readonly number[];
   signal: AbortSignal;
   textureOverride: string | null;
   textureCache: EffectTextureCache;
 }) {
-  const { canvas, scene, effectList, manifest, signal } = input;
+  const { canvas, scene, effectList, manifest: list, signal } = input;
   const gl = canvas.getContext("webgl2");
   if (!gl) throw new Error("The scene's WebGL context is not available");
   const ids = input.ids;
-  const list = await (manifest ?? loadEffectResourceList(effectList, signal));
   throwIfAborted(signal);
   const loading = new AbortController();
   const scope = createAbortScope([signal, loading.signal]);
@@ -67,15 +67,26 @@ async function loadEffectBundle(input: {
   }
 }
 
-/** Keeps effect resources across difficulties; only missing resource ids are loaded on replacement. */
+/** Shares textures across difficulties and loads the manual key beam only when the release has it. */
 export async function loadPreviewEffects(
-  input: Omit<Parameters<typeof loadEffectBundle>[0], "ids" | "textureCache"> & {
+  input: Omit<Parameters<typeof loadEffectBundle>[0], "ids" | "textureCache" | "manifest"> & {
+    manifest?: Promise<EffectResourceList>;
     effects: LoadedChart["effects"];
+    playMode?: boolean;
   },
-): Promise<EffectHost & { ensureEffects(effects: LoadedChart["effects"]): Promise<void> }> {
-  const { effects, ...rest } = input;
-  const resourceInput = { ...rest, textureCache: new Map() as EffectTextureCache };
-  const ids = effectResourceIds(effects);
+): Promise<
+  EffectHost & { ensureEffects(effects: LoadedChart["effects"], playMode?: boolean): Promise<void> }
+> {
+  const { effects, manifest, playMode, ...rest } = input;
+  const list = await (manifest ?? loadEffectResourceList(rest.effectList, rest.signal));
+  const hasKeyBeam = list.effects.some((entry) => entry.id === KEY_BEAM_RESOURCE);
+  const resourceInput = { ...rest, manifest: list, textureCache: new Map() as EffectTextureCache };
+  const idsFor = (chartEffects: LoadedChart["effects"], manual = false) => {
+    const ids = effectResourceIds(chartEffects);
+    if (manual && hasKeyBeam) ids.push(KEY_BEAM_RESOURCE);
+    return ids;
+  };
+  const ids = idsFor(effects, playMode);
   const initial = await loadEffectBundle({ ...resourceInput, ids });
   const groups = [initial.textures];
   const resources = initial.resources;
@@ -113,9 +124,9 @@ export async function loadPreviewEffects(
   let loading = Promise.resolve();
   return {
     ...host,
-    ensureEffects(effects) {
+    ensureEffects(effects, playMode) {
       loading = loading.then(async () => {
-        const ids = effectResourceIds(effects).filter((id) => !loaded.has(id));
+        const ids = idsFor(effects, playMode).filter((id) => !loaded.has(id));
         if (!ids.length) return;
         const next = await loadEffectBundle({ ...resourceInput, ids });
         if (disposed) {

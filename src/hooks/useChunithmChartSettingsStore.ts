@@ -4,7 +4,7 @@ import type { CanvasResolution } from "@/pages/public/Chart/chunithm/runtime/can
 import {
   DEFAULT_KEY_BINDINGS,
   type KeyBindings,
-} from "@/pages/public/Chart/chunithm/options/keyBindings";
+} from "@/pages/public/Chart/chunithm/input/keyboard";
 
 interface ChunithmChartSettings {
   speedRow: number;

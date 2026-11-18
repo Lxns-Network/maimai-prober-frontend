@@ -9,7 +9,11 @@ import {
   readEffectResource,
   type EffectResource,
 } from "@lxns-network/chunithm-chart-engine/effects/afb";
-import { effectPlayerLayer } from "@lxns-network/chunithm-chart-engine/effects/players";
+import {
+  effectPlayerLayer,
+  KEY_BEAM_RESOURCE,
+} from "@lxns-network/chunithm-chart-engine/effects/players";
+import { createKeyBeamDraws } from "@lxns-network/chunithm-chart-engine/effects/keyBeamDraws";
 import {
   createEffectPublisher,
   createParticleRings,
@@ -73,7 +77,9 @@ export async function loadEffectResources(
 
 /** Resource ids a computation of the chart's effects creates instances of. */
 export function effectResourceIds(effects: ChartEffects): number[] {
-  return [...new Set(effects.instances.resource)].sort((a, b) => a - b);
+  return [...new Set(effects.possibleResources ?? effects.instances.resource)].sort(
+    (a, b) => a - b,
+  );
 }
 
 export interface EffectHost {
@@ -110,6 +116,7 @@ export function createEffectHost(input: {
   const playback = createEffectPlayback();
   let mapped: ChartEffects | null = null;
   let scheduler: EffectScheduler | null = null;
+  let keyBeamDraws: ReturnType<typeof createKeyBeamDraws> | undefined;
   let judgePositionOffset = 0;
   let criticalDisplayRow = 0;
   let published = -1;
@@ -250,7 +257,14 @@ export function createEffectHost(input: {
         published = step;
       } else if (appended) interpolation.prepare(publisher.packets, nextPublisher.packets);
       interpolation.apply(frame.seconds * 120 - step);
-      return renderer.prepare(publisher.packets, {
+      let packets = publisher.packets;
+      const beams = effects.keyBeams;
+      const beamResource = resources[KEY_BEAM_RESOURCE];
+      if (beams?.active && beamResource) {
+        keyBeamDraws ??= createKeyBeamDraws(beamResource);
+        packets = keyBeamDraws(packets, beams, step, playback.animationStep, eye);
+      }
+      return renderer.prepare(packets, {
         viewport: camera.viewport,
         viewProjection: camera.viewProjection,
         projection: camera.cameraB,

@@ -38,7 +38,7 @@ export interface EffectSchedulerOptions {
   criticalDisplayRow?: number;
 }
 
-// The native selector uses state 12 when a CRITICAL has no FAST/LATE text to show.
+const PLAIN_CRITICAL_STATE = 0;
 const NO_JUDGE_TEXT_STATE = 12;
 
 export interface EffectScheduler {
@@ -152,7 +152,9 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
     const inst = createEffectInstance(player, {
       instanceId: instances.ids?.[index] ?? index + 1,
       displayState:
-        instances.group[index] === EFFECT_GROUP.text && criticalDisplayRow >= 2
+        instances.group[index] === EFFECT_GROUP.text &&
+        instances.displayState[index] === PLAIN_CRITICAL_STATE &&
+        criticalDisplayRow >= 2
           ? NO_JUDGE_TEXT_STATE
           : instances.displayState[index],
       animation: instances.animation[index],
@@ -186,6 +188,13 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
       position[2] = moves.z[move];
       setInstancePosition(inst, position);
       entry.move++;
+    }
+    const path = moves.paths?.[index];
+    if (path && step >= instances.reveal[index]) {
+      position[0] = path(step / 2);
+      position[1] = instances.posY[index];
+      position[2] = instances.posZ[index];
+      setInstancePosition(inst, position);
     }
     const created = instances.created[index];
     const reveal = instances.reveal[index];
@@ -227,6 +236,7 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
       let kept = 0;
       for (let k = 0; k < n; k++) {
         const entry = list[k];
+        if (instances.end[entry.index] <= step) continue;
         if (settle(entry, step, sink)) list[kept++] = entry;
       }
       list.length = kept;
@@ -260,6 +270,15 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
     update(effects, cameraOverride, sinkAtStep) {
       if (!instances.ids || !effects.instances.ids) return false;
       const indices = new Map(Array.from(effects.instances.ids, (id, i) => [id, i]));
+      // The publishers already hold the current and preceding steps. Rebuild if a
+      // newly reported eviction invalidates packets in either one.
+      for (let i = 0; i < instances.ids.length; i++) {
+        const next = indices.get(instances.ids[i]);
+        if (next === undefined) continue;
+        const end = effects.instances.end[next];
+        if (end < instances.end[i] && end <= current && instances.end[i] > current - 1)
+          return false;
+      }
       for (const list of live)
         for (const entry of list) if (!indices.has(entry.inst.instanceId)) return false;
       const previousIds = new Set(instances.ids);
@@ -282,6 +301,7 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
       while (nextCreate < count && instances.created[creation[nextCreate]] <= current) {
         const index = creation[nextCreate++];
         if (previousIds.has(instances.ids![index])) continue;
+        if (instances.end[index] <= instances.created[index]) continue;
         const entry = activate(index);
         let alive = true;
         for (let t = instances.created[index]; alive && t <= current; t++) {

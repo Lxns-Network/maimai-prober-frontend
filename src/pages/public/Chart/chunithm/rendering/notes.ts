@@ -83,6 +83,7 @@ export interface NoteHost {
   readonly textures: ReadonlyMap<string, { readonly texture: WebGLTexture }>;
   /** View-projection the notes were last drawn with: row-major, for column vectors. */
   readonly viewProjection: Float32Array;
+  showRecorded(): () => void;
   selectMirror(mirror: boolean): void;
   replaceChart(chart: LoadedChart, mirror: boolean): void;
   /** Keeps notes drawable this many steps past their automatic run, for a player's late results. */
@@ -441,6 +442,11 @@ export async function createNoteHost(input: {
       viewProjection,
       replaceChart(next, nextMirror) {
         rebuild(next, nextMirror, input.live?.(next));
+      },
+      showRecorded() {
+        const previous = live;
+        rebuild(first, layoutMirror, undefined);
+        return () => rebuild(first, layoutMirror, previous);
       },
       setLiveSlack(value) {
         if (value === liveSlack) return;

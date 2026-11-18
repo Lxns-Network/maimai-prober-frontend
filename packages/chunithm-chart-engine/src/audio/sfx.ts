@@ -240,6 +240,19 @@ interface Playing {
   releaseAt: number;
 }
 
+function cutVoice(voice: Playing, at: number) {
+  if (voice.releaseAt <= at || voice.end <= at) return;
+  voice.gain.gain.cancelScheduledValues(at);
+  voice.gain.gain.setValueCurveAtTime(
+    releaseCurve(0, 1).map((value) => value * voice.gain.gain.value),
+    at,
+    CUT_SECONDS,
+  );
+  voice.source.stop(at + CUT_SECONDS);
+  voice.releaseAt = at;
+  voice.end = at + CUT_SECONDS;
+}
+
 /** Offset change, in seconds, past which the music is taken to have jumped. */
 const JUMP_SECONDS = 0.03;
 const DEFAULT_LOOKAHEAD = 0.25;
@@ -284,21 +297,8 @@ export function createSfxPlayer(options: SfxPlayerOptions) {
     if (disposed) throw new Error("The cue player is disposed");
   };
 
-  function cut(voice: Playing, at: number) {
-    if (voice.releaseAt <= at || voice.end <= at) return;
-    voice.gain.gain.cancelScheduledValues(at);
-    voice.gain.gain.setValueCurveAtTime(
-      releaseCurve(0, 1).map((value) => value * voice.gain.gain.value),
-      at,
-      CUT_SECONDS,
-    );
-    voice.source.stop(at + CUT_SECONDS);
-    voice.releaseAt = at;
-    voice.end = at + CUT_SECONDS;
-  }
-
   function silence(now = context.currentTime) {
-    for (const voice of live) if (voice.end > now) cut(voice, now);
+    for (const voice of live) cutVoice(voice, now);
     live = [];
     silent = true;
   }
@@ -465,7 +465,11 @@ export function createLiveCuePlayer(options: {
   master.connect(options.destination);
   const combo: ComboState = new Map();
   const curves = new Map<string, Float32Array>();
-  const rows = new Map<number, { playing: Playing; begin: number; voice: SfxVoice }[]>();
+  const rows = new Map<number, Track[]>();
+  const suspended = new Map<
+    number,
+    { voice: SfxVoice; gain: number; offset: number; delay: number }[]
+  >();
   let disposed = false;
 
   const release = (playing: Playing, voice: SfxVoice, at: number) => {
@@ -486,6 +490,50 @@ export function createLiveCuePlayer(options: {
     playing.end = Math.min(playing.end, at + length);
   };
 
+  type Track = { playing: Playing; begin: number; voice: SfxVoice; offset: number };
+  function startVoice(
+    row: number,
+    started: Track[],
+    voice: SfxVoice,
+    gain: number,
+    begin: number,
+    offset: number,
+  ) {
+    const sample = library.buffers.get(voice.sample);
+    if (!sample || sample.frames <= 1) return;
+
+    const source = context.createBufferSource();
+    source.buffer = sample.buffer;
+    const looping = sample.loopEnd > sample.loopStart;
+    if (looping) {
+      source.loop = true;
+      source.loopStart = sample.loopStart / library.sampleRate;
+      source.loopEnd = sample.loopEnd / library.sampleRate;
+    }
+    const node = context.createGain();
+    node.gain.value = gain;
+    source.connect(node);
+    node.connect(master);
+    const playing: Playing = { source, gain: node, end: Infinity, releaseAt: Infinity };
+    source.start(begin, offset);
+    if (!looping) {
+      playing.end = begin + sample.frames / library.sampleRate;
+      source.stop(playing.end);
+    }
+    source.onended = () => {
+      source.disconnect();
+      node.disconnect();
+      const index = started.findIndex((track) => track.playing === playing);
+      if (index >= 0) started.splice(index, 1);
+      if (!started.length && rows.get(row) === started) rows.delete(row);
+    };
+    started.push({ playing, begin, voice, offset });
+  }
+  function cut() {
+    const now = context.currentTime;
+    for (const started of rows.values()) for (const { playing } of started) cutVoice(playing, now);
+    rows.clear();
+  }
   return Object.freeze({
     /** Starts the tracks of cue `id` as row `row` at context time `at`; `seconds` is its chart time. */
     start(row: number, id: number, gain: number, at: number, seconds: number) {
@@ -493,67 +541,75 @@ export function createLiveCuePlayer(options: {
       const cue = library.cues.get(id);
       if (!cue) return;
       const pick = cue.combo ? pickComboTrack(combo, cue, id, seconds) : -1;
-      const started: { playing: Playing; begin: number; voice: SfxVoice }[] = [];
-      for (const voice of pick >= 0 ? [cue.voices[pick]] : cue.voices) {
-        const sample = library.buffers.get(voice.sample);
-        if (!sample || sample.frames <= 1) continue;
-        const begin = Math.max(context.currentTime, at + voice.delayMilliseconds / 1000);
-        const source = context.createBufferSource();
-        source.buffer = sample.buffer;
-        const looping = sample.loopEnd > sample.loopStart;
-        if (looping) {
-          source.loop = true;
-          source.loopStart = sample.loopStart / library.sampleRate;
-          source.loopEnd = sample.loopEnd / library.sampleRate;
-        }
-        const node = context.createGain();
-        node.gain.value = gain;
-        source.connect(node);
-        node.connect(master);
-        const playing: Playing = { source, gain: node, end: Infinity, releaseAt: Infinity };
-        source.start(begin);
-        if (!looping) {
-          playing.end = begin + sample.frames / library.sampleRate;
-          source.stop(playing.end);
-        }
-        source.onended = () => {
-          source.disconnect();
-          node.disconnect();
-        };
-        started.push({ playing, begin, voice });
-      }
-      rows.set(row, started);
+      const started: Track[] = [];
+      for (const voice of pick >= 0 ? [cue.voices[pick]] : cue.voices)
+        startVoice(
+          row,
+          started,
+          voice,
+          gain,
+          Math.max(context.currentTime, at + voice.delayMilliseconds / 1000),
+          0,
+        );
+      if (started.length) rows.set(row, started);
     },
     /** Stops row `row` at context time `at`: its tracks release, and one not sounding yet never does. */
     stop(row: number, at: number) {
+      suspended.delete(row);
       const started = rows.get(row);
       if (!started) return;
-      rows.delete(row);
       const when = Math.max(context.currentTime, at);
       for (const { playing, begin, voice } of started) {
         if (playing.end <= when) continue;
         if (begin >= when) {
           playing.source.stop(begin);
+          playing.releaseAt = when;
           playing.end = begin;
         } else release(playing, voice, when);
       }
     },
-    /** Cuts every sounding track. */
-    silence() {
+    pause() {
       const now = context.currentTime;
-      for (const started of rows.values())
-        for (const { playing } of started)
-          if (playing.end > now) {
-            playing.gain.gain.cancelScheduledValues(now);
-            playing.gain.gain.setValueCurveAtTime(
-              releaseCurve(0, 1).map((value) => value * playing.gain.gain.value),
-              now,
-              CUT_SECONDS,
-            );
-            playing.source.stop(now + CUT_SECONDS);
-            playing.end = now + CUT_SECONDS;
-          }
-      rows.clear();
+      for (const [row, tracks] of rows) {
+        const loops = tracks
+          .filter((t) => t.playing.source.loop && t.playing.releaseAt === Infinity)
+          .map((t) => {
+            const { loopStart, loopEnd } = t.playing.source;
+            const elapsed = t.offset + Math.max(0, now - t.begin);
+            return {
+              voice: t.voice,
+              gain: t.playing.gain.gain.value,
+              offset:
+                elapsed < loopEnd
+                  ? elapsed
+                  : loopStart + ((elapsed - loopStart) % (loopEnd - loopStart)),
+              delay: Math.max(0, t.begin - now),
+            };
+          });
+        if (loops.length) suspended.set(row, loops);
+      }
+      cut();
+    },
+    resume() {
+      for (const [row, loops] of suspended) {
+        const tracks: Track[] = [];
+        for (const loop of loops)
+          startVoice(
+            row,
+            tracks,
+            loop.voice,
+            loop.gain,
+            context.currentTime + loop.delay,
+            loop.offset,
+          );
+        rows.set(row, tracks);
+      }
+      suspended.clear();
+    },
+    silence() {
+      combo.clear();
+      suspended.clear();
+      cut();
     },
     setVolume(volume: number) {
       master.gain.value = volume;

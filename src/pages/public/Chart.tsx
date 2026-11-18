@@ -15,7 +15,13 @@ import {
   Button,
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconLock, IconLockOpen, IconDatabaseOff } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconLock,
+  IconLockOpen,
+  IconDatabaseOff,
+  IconAdjustmentsHorizontal,
+} from "@tabler/icons-react";
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import useGame from "@/hooks/useGame";
@@ -26,37 +32,41 @@ import type { Game } from "@/types/game";
 import classes from "./Chart.module.css";
 const MaimaiPlayer = lazy(() => import("./Chart/components/MaimaiPlayer"));
 const ChunithmPlayer = lazy(() => import("./Chart/components/ChunithmPlayer"));
-function KeyboardShortcuts({ restartLabel }: { restartLabel: string }) {
+function KeyboardShortcuts({
+  restartLabel,
+  playInput,
+}: Pick<ChartPlayerParts, "restartLabel" | "playInput">) {
+  const available = (code: string) =>
+    playInput?.device !== "keyboard" || !playInput.boundKeys.includes(code);
+  const shortcuts = [
+    [[playInput && "Esc", available("Space") && "Space"].filter(Boolean).join(" / "), "播放/暂停"],
+    [available("KeyR") && "R", restartLabel],
+    [
+      [available("ArrowLeft") && "←", available("ArrowRight") && "→"].filter(Boolean).join(" "),
+      "步进",
+    ],
+    [
+      [available("ArrowUp") && "↑", available("ArrowDown") && "↓"].filter(Boolean).join(" "),
+      "流速",
+    ],
+  ] as const;
   return (
     <Card className={classes.card} radius="lg" withBorder>
       <Text size="sm" fw={500} mb="sm">
         键盘快捷键
       </Text>
       <SimpleGrid cols={2} spacing="xs">
-        <Group justify="space-between">
-          <Kbd>Space</Kbd>
-          <Text size="xs" c="dimmed">
-            播放/暂停
-          </Text>
-        </Group>
-        <Group justify="space-between">
-          <Kbd>R</Kbd>
-          <Text size="xs" c="dimmed">
-            {restartLabel}
-          </Text>
-        </Group>
-        <Group justify="space-between">
-          <Kbd>← →</Kbd>
-          <Text size="xs" c="dimmed">
-            步进
-          </Text>
-        </Group>
-        <Group justify="space-between">
-          <Kbd>↑ ↓</Kbd>
-          <Text size="xs" c="dimmed">
-            流速
-          </Text>
-        </Group>
+        {shortcuts.map(
+          ([keys, label]) =>
+            keys && (
+              <Group key={label} justify="space-between">
+                <Kbd>{keys}</Kbd>
+                <Text size="xs" c="dimmed">
+                  {label}
+                </Text>
+              </Group>
+            ),
+        )}
       </SimpleGrid>
     </Card>
   );
@@ -68,6 +78,7 @@ function ChartContent({
   controls,
   playbackControls,
   restartLabel,
+  playInput,
   game,
 }: ChartPlayerParts & { game: Game }) {
   const isFullscreen = useGameStore((s) => s.isFullscreen);
@@ -76,6 +87,7 @@ function ChartContent({
 
   const [showControls, setShowControls] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
+  const revealControls = playInput?.device === "keyboard" && !isLocked && !showControls;
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const chartCanvasRef = useRef<HTMLDivElement>(null);
   const fullscreenElementRef = useRef<HTMLDivElement>(null);
@@ -344,7 +356,7 @@ function ChartContent({
 
             <Stack gap="md" className={classes.sidebar}>
               {controls}
-              <KeyboardShortcuts restartLabel={restartLabel} />
+              <KeyboardShortcuts restartLabel={restartLabel} playInput={playInput} />
             </Stack>
           </div>
         )}
@@ -367,15 +379,25 @@ function ChartContent({
             })}
           </div>
           <ActionIcon
-            className={`${classes.lockButton} ${isLocked || showControls ? classes.showButton : ""}`}
+            className={`${classes.lockButton} ${isLocked || showControls || revealControls ? classes.showButton : ""}`}
             variant="filled"
             color="dark"
             size="lg"
             radius="xl"
-            onClick={() => setIsLocked((prev) => !prev)}
-            aria-label={isLocked ? "解锁控制" : "锁定控制"}
+            onTouchStart={(event) => event.stopPropagation()}
+            onClick={() => {
+              if (revealControls) setShowControls(true);
+              else setIsLocked((prev) => !prev);
+            }}
+            aria-label={revealControls ? "显示播放控制" : isLocked ? "解锁控制" : "锁定控制"}
           >
-            {isLocked ? <IconLock size={20} /> : <IconLockOpen size={20} />}
+            {revealControls ? (
+              <IconAdjustmentsHorizontal size={20} />
+            ) : isLocked ? (
+              <IconLock size={20} />
+            ) : (
+              <IconLockOpen size={20} />
+            )}
           </ActionIcon>
           <Notifications withinPortal={false} />
         </div>

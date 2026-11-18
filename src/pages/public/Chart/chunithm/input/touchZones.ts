@@ -1,7 +1,7 @@
-import { LANES } from "../options/keyBindings";
+import { LANE_COUNT } from "@lxns-network/chunithm-chart-engine/chart/play/input";
 import type { Hold } from "./controls";
 
-/** World width of one ground lane; lane 0 starts at `-LANES / 2` lanes, as the note space lays out. */
+/** World width of one ground lane; the field is centred on the world origin. */
 const LANE_WIDTH = 4;
 /** Fraction of the canvas, from its top, in which a touch holds the AIR sensor instead of a lane. */
 const AIR_ZONE = 2 / 3;
@@ -24,6 +24,6 @@ export function touchHold(viewProjection: ArrayLike<number>, x: number, y: numbe
   const e = m[6] - ny * m[14];
   const g = ny * m[15] - m[7];
   const wx = (c * e - b * g) / (a * e - b * d);
-  const lane = Math.floor(wx / LANE_WIDTH + LANES / 2);
-  return { lanes: 1 << Math.min(LANES - 1, Math.max(0, lane)), air: false };
+  const lane = Math.floor(wx / LANE_WIDTH + LANE_COUNT / 2);
+  return { lanes: 1 << Math.min(LANE_COUNT - 1, Math.max(0, lane)), air: false };
 }

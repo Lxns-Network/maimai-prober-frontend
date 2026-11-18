@@ -49,6 +49,7 @@ export function laneChecker(
   config: DataView,
   configRow: number,
   offset: number,
+  boundsByLane?: Float32Array,
 ): LaneChecker {
   const lane = record.getInt32(0x28, true);
   const widthIndex = record.getInt32(0x2c, true);
@@ -83,6 +84,10 @@ export function laneChecker(
     }
     early = Math.min(early, laneEarly);
     late = Math.max(late, laneLate);
+    if (boundsByLane) {
+      boundsByLane[i * 2] = laneEarly;
+      boundsByLane[i * 2 + 1] = laneLate;
+    }
   }
   return { early, late };
 }

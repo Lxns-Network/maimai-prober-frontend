@@ -1,4 +1,4 @@
-export const LANES = 16;
+import type { Hold } from "./controls";
 
 /** Physical keys (`KeyboardEvent.code`) bound to each ground lane, and to the AIR sensor. */
 export interface KeyBindings {
@@ -80,7 +80,7 @@ export function keyLabel(code: string): string {
 }
 
 /** Lanes and AIR sensor `code` is bound to. */
-export function keyHold(bindings: KeyBindings, code: string): { lanes: number; air: boolean } {
+export function keyHold(bindings: KeyBindings, code: string): Hold {
   let lanes = 0;
   bindings.lanes.forEach((keys, lane) => {
     if (keys.includes(code)) lanes |= 1 << lane;

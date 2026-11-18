@@ -8,6 +8,8 @@ export interface MusicPosition {
   readonly phase: "scheduled" | "playing" | "paused" | "ended";
   /** The context time currently reaching the output. */
   readonly outputTime: number;
+  /** Monotonic clock time in milliseconds at which this position was sampled. */
+  readonly performanceTime: number;
   /** Seconds into the music at `outputTime`. */
   readonly bufferSeconds: number;
   readonly playbackRate: number;
@@ -53,7 +55,11 @@ export function isMusicOutputPending(cause: unknown): boolean {
 }
 
 /** Projects the device timestamp to now, bounded by audio already processed by the context. */
-function readOutputTime(context: MusicContext, sample = context.getOutputTimestamp()): number {
+function readOutputTime(
+  context: MusicContext,
+  sample: AudioTimestamp,
+  performanceTime: number,
+): number {
   if (context.state !== "running") throw new Error("Running output clock required");
   if (
     !Number.isFinite(sample.contextTime) ||
@@ -66,7 +72,7 @@ function readOutputTime(context: MusicContext, sample = context.getOutputTimesta
     0,
     Math.min(
       context.currentTime,
-      sample.contextTime! + (performance.now() - sample.performanceTime!) / 1000,
+      sample.contextTime! + (performanceTime - sample.performanceTime!) / 1000,
     ),
   );
 }
@@ -122,7 +128,9 @@ function createTransport(context: MusicContext, buffer: AudioBuffer, destination
 
   const read = (): MusicPosition => {
     available();
-    const time = Math.max(lastTime, readOutputTime(context));
+    const sample = context.getOutputTimestamp();
+    const performanceTime = performance.now();
+    const time = Math.max(lastTime, readOutputTime(context, sample, performanceTime));
     finite(time);
     lastTime = time;
     if (pending && time >= pending.at) {
@@ -138,6 +146,7 @@ function createTransport(context: MusicContext, buffer: AudioBuffer, destination
     return Object.freeze({
       phase: current ? "playing" : pending ? "scheduled" : frame >= frames ? "ended" : "paused",
       outputTime: time,
+      performanceTime,
       bufferSeconds: frame / rate,
       playbackRate: current?.playbackRate ?? playbackRate,
     });
@@ -286,7 +295,7 @@ function waitForOutput(context: MusicContext, signal: AbortSignal): Promise<void
           frame = requestAnimationFrame(poll);
           return;
         }
-        readOutputTime(context, stamp);
+        readOutputTime(context, stamp, performance.now());
         finish();
       } catch (error) {
         finish(error);

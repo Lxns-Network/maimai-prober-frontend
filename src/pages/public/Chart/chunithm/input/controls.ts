@@ -1,11 +1,7 @@
-import { LANES } from "../options/keyBindings";
-
-/** A change of the controls, before it has a chart time. */
-export interface ControlChange {
-  lanes: number;
-  air: boolean;
-  down: boolean;
-}
+import {
+  LANE_COUNT,
+  type ControlChange,
+} from "@lxns-network/chunithm-chart-engine/chart/play/input";
 
 /** Ground lanes and AIR sensor one key or touch holds. */
 export interface Hold {
@@ -16,13 +12,11 @@ export interface Hold {
 export const NO_HOLD: Hold = { lanes: 0, air: false };
 
 /**
- * Merges what every key and touch holds into lane and AIR changes. A lane is let go only once
- * nothing holds it, and the AIR sensor likewise, so overlapping keys, touches and controllers in
- * keyboard mode report one touch per lane.
+ * Merges overlapping keys and touches. A lane or AIR is released only when its last holder lets go.
  */
 export function createControls() {
   const holds = new Map<string, Hold>();
-  const laneHolders = new Uint8Array(LANES);
+  const laneHolders = new Uint8Array(LANE_COUNT);
   let airHolders = 0;
   return {
     /**
@@ -35,7 +29,7 @@ export function createControls() {
       else holds.delete(holder);
       let pressed = 0;
       let released = 0;
-      for (let lane = 0; lane < LANES; lane++) {
+      for (let lane = 0; lane < LANE_COUNT; lane++) {
         const bit = 1 << lane;
         const holding = (next.lanes & bit) !== 0;
         if (holding === ((previous.lanes & bit) !== 0)) continue;

@@ -1,18 +1,20 @@
-import { Timeline } from "@lxns-network/chunithm-chart-engine/chart/timeline/reader";
-import { lifecycleContext } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/context";
+import { Timeline } from "../timeline/reader";
+import { lifecycleContext } from "../lifecycle/context";
+import { cueSimulation, type CueRow, type Sound } from "../sweep/cues";
+import { createScoreKeeper } from "../sweep/score";
+import type { LoadedChart } from "../worker/loadChart";
+import type { HudValues } from "../../hud/timelineValues";
+import type { NoteScore } from "../../notes/score";
+import { createPlayEffects, type ResultText } from "./effects";
+import type { ControlChange, SurfaceSample } from "./input";
+import { createPlayStates } from "./noteStates";
 import {
-  cueSimulation,
-  type CueRow,
-  type Sound,
-} from "@lxns-network/chunithm-chart-engine/chart/sweep/cues";
-import { createScoreKeeper } from "@lxns-network/chunithm-chart-engine/chart/sweep/score";
-import type { LoadedChart } from "@lxns-network/chunithm-chart-engine/chart/worker/loadChart";
-import type { HudValues } from "@lxns-network/chunithm-chart-engine/hud/timelineValues";
-import type { NoteScore } from "@lxns-network/chunithm-chart-engine/notes/score";
-import { createPlayEffects, type ResultText } from "./playEffects";
-import { createPlayStates } from "./playStates";
-import { createPlayer, type Judgment, type Player, type PlayerOptions } from "./player";
-import type { ControlChange } from "./controls";
+  createPlayer,
+  type Judgment,
+  type Player,
+  type PlayerOptions,
+  type SliderLightOutput,
+} from "./player";
 
 /** Running totals of one play, for the page to show. */
 export interface PlayStats {
@@ -53,13 +55,14 @@ export interface PlaySounds {
  * states are the recorded automatic play and nothing else runs.
  */
 export function createPlaySession(input: {
-  chart: LoadedChart;
+  chart: Pick<LoadedChart, "score" | "livePlayback">;
   /** Compiled judge-timing configuration. */
   config: DataView;
   /** Difficulty row the judge windows were bound for. */
   difficulty: number;
   judgeTimingRow: number;
   sounds: () => PlaySounds | null;
+  readonly sliderLights?: SliderLightOutput;
   text: ResultText;
   options: () => PlayerOptions;
 }) {
@@ -70,16 +73,19 @@ export function createPlaySession(input: {
     { config: input.config, difficulty: input.difficulty },
     input.judgeTimingRow,
   );
+  const slideObjects = new Map(
+    objects.filter((o) => o.className === "SlideNote").map((o) => [o.record, o]),
+  );
   let score: NoteScore = chart.score;
   let effects = createPlayEffects(score, input.text);
   let keeper = createScoreKeeper(score);
   let player: Player | null = null;
   let stats = EMPTY_STATS;
-  let rows: CueRow[] = [];
+  let skippedJudgment = false;
+  const rows: CueRow[] = [];
   let simulation = cueSimulation(rows);
-  let flushed = 0;
   let cues = 0;
-  let sounds: { order: number; sound: Sound }[] = [];
+  const sounds: { order: number; sound: Sound }[] = [];
   const listeners = new Set<() => void>();
   const publish = (next: PlayStats) => {
     stats = next;
@@ -91,21 +97,30 @@ export function createPlaySession(input: {
     const { object } = judgment;
     if (judgment.judgePhase === 0) states.judged(object.record, judgment.part === 2, judgment.step);
     effects.add(judgment);
-    if (judgment.skipped) return;
+    if (judgment.skipped) {
+      skippedJudgment = true;
+      return;
+    }
     const values = keeper.judge(object.record, judgment.part, judgment.judgePhase, judgment.grade);
     hud.score = values.score;
     hud.combo = values.combo;
     hud.gauge = values.gauge;
     hud.counts = values.counts;
-    const timed = judgment.timing !== null && judgment.grade > 0 && judgment.grade < 4;
+    const timedHead =
+      judgment.judgePhase === 0 &&
+      (object.className === "TapNote" ||
+        object.className === "CharaTapNote" ||
+        object.className === "HoldNote" ||
+        object.className === "SlideNote");
+    const timing = timedHead && judgment.grade > 0 && judgment.grade < 4 ? judgment.timing : null;
     publish({
       ...stats,
       score: values.score,
       combo: values.combo,
       maxCombo: Math.max(stats.maxCombo, values.combo),
       counts: values.counts,
-      fast: stats.fast + Number(timed && judgment.timing! < 0),
-      late: stats.late + Number(timed && judgment.timing! > 0),
+      fast: stats.fast + Number(timing !== null && timing < 0),
+      late: stats.late + Number(timing !== null && timing > 0),
     });
   };
 
@@ -113,27 +128,29 @@ export function createPlaySession(input: {
   const endStep = (step: number) => {
     simulation.begin(step);
     for (const { order, sound } of sounds) simulation.apply(sound, order);
-    sounds = [];
+    sounds.length = 0;
     simulation.service();
     const target = input.sounds();
-    for (; flushed < rows.length; flushed++) {
-      const row = rows[flushed];
-      if (row.kind === "cue") target?.start(cues++, row.cue, row.gain, row.time);
-      else target?.stop(row.row, row.time);
+    for (const row of rows) {
+      if (row.kind === "cue") {
+        target?.start(cues, row.cue, row.gain, row.time);
+        cues++;
+      } else target?.stop(row.row, row.time);
     }
+    rows.length = 0;
   };
 
   /** Starts over at `step`, skipping every note before it. */
   const restart = (step: number) => {
-    states.reset();
+    states.setPlaying(true);
     effects = createPlayEffects(score, input.text);
     keeper = createScoreKeeper(score);
     hud.score = hud.combo = hud.gauge = 0;
     hud.counts = [0, 0, 0, 0];
-    rows = [];
+    rows.length = 0;
     simulation = cueSimulation(rows);
-    flushed = cues = 0;
-    sounds = [];
+    cues = 0;
+    sounds.length = 0;
     input.sounds()?.silence();
     player = createPlayer({
       score,
@@ -142,7 +159,15 @@ export function createPlaySession(input: {
       options: input.options(),
       output: {
         model: states.model,
-        band: states.band,
+        spawn: effects.spawn,
+        keyBeam: effects.keyBeam,
+        get sliderLights() {
+          return input.sliderLights;
+        },
+        band(kind, record, at, state) {
+          states.band(kind, record, at, state);
+          if (kind === "slide") effects.slide(slideObjects.get(record)!, at, state);
+        },
         judge,
         sound(object, sound, skipped) {
           if (!skipped) sounds.push({ order: object.order, sound });
@@ -150,8 +175,9 @@ export function createPlaySession(input: {
         endStep,
       },
     });
+    skippedJudgment = false;
     player.advance(step - 1, step);
-    publish({ ...EMPTY_STATS, partial: step > 0 });
+    publish({ ...EMPTY_STATS, partial: skippedJudgment });
   };
 
   return {
@@ -161,9 +187,9 @@ export function createPlaySession(input: {
     },
     /** Turns play on, starting over at `step`, or back to the recorded automatic play. */
     setPlaying(value: boolean, step: number) {
-      states.setPlaying(value);
       if (value) restart(step);
       else {
+        states.setPlaying(false);
         player = null;
         input.sounds()?.silence();
         publish(EMPTY_STATS);
@@ -178,11 +204,11 @@ export function createPlaySession(input: {
     restart(step: number) {
       if (player) restart(step);
     },
-    /** Plays up to `step`; a step behind the last one played starts over there. */
-    advance(step: number) {
+    /** Advances only forward and releases any held key beams when the music ends. */
+    advance(step: number, musicEnded = false) {
       if (!player) return;
-      if (step < player.step) restart(step);
-      else player.advance(step);
+      if (step > player.step) player.advance(step);
+      if (musicEnded) player.finishKeyBeams();
       if (player.finished && !stats.finished) publish({ ...stats, finished: true });
     },
     /**
@@ -195,6 +221,12 @@ export function createPlaySession(input: {
       player.push({ ...change, frames: seconds * 60 });
       const step = Math.floor(seconds * 120);
       if (step > player.step) this.advance(step);
+    },
+    surface(sample: SurfaceSample, seconds: number) {
+      player?.push({ ...sample, frames: seconds * 60 });
+    },
+    seedSurface(sample: SurfaceSample) {
+      player?.seedSurface(sample);
     },
     get step() {
       return player?.step ?? -1;

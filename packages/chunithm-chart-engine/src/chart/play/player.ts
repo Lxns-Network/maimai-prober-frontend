@@ -4,24 +4,15 @@ import {
   PLAIN_AIR_PART,
   slideJointPart,
   type JudgePhase,
-} from "@lxns-network/chunithm-chart-engine/chart/bake/events";
-import {
-  airChecker,
-  laneChecker,
-  stepFrames,
-  type AirChecker,
-  type LaneChecker,
-} from "@lxns-network/chunithm-chart-engine/chart/lifecycle/autoplayJudge";
-import type { LifecycleContext } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/context";
-import { ACTIVE_AFTER } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/emissions";
-import {
-  airRow,
-  airTimeMs,
-} from "@lxns-network/chunithm-chart-engine/chart/lifecycle/families/air";
-import { AIR_HOLD_PARTS } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/families/airHold";
-import { AIR_SLIDE_HEAD_PART } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/families/airSlide";
-import { longHeadRow } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/families/hold";
-import type { NoteObject } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/objects";
+} from "../bake/events";
+import { airChecker, laneChecker, stepFrames, type AirChecker } from "../lifecycle/autoplayJudge";
+import type { LifecycleContext } from "../lifecycle/context";
+import { ACTIVE_AFTER } from "../lifecycle/emissions";
+import { airRow, airTimeMs } from "../lifecycle/families/air";
+import { AIR_HOLD_PARTS } from "../lifecycle/families/airHold";
+import { AIR_SLIDE_HEAD_PART } from "../lifecycle/families/airSlide";
+import { longHeadRow } from "../lifecycle/families/hold";
+import type { NoteObject } from "../lifecycle/objects";
 import {
   AIR_UP_DIRECTIONS,
   LOOP,
@@ -31,15 +22,24 @@ import {
   slideTailSteps,
   startSound,
   type Sound,
-} from "@lxns-network/chunithm-chart-engine/chart/sweep/cues";
-import type { NoteScore } from "@lxns-network/chunithm-chart-engine/notes/score";
-import { NOTE_WIDTHS, SPAWN_CONSTANTS } from "@lxns-network/chunithm-chart-engine/notes/tables";
-import type { BandKind } from "./playStates";
+} from "../sweep/cues";
+import type { NoteScore } from "../../notes/score";
+import { NOTE_WIDTHS, SPAWN_CONSTANTS } from "../../notes/tables";
+import {
+  createAirSensor,
+  createContactGate,
+  createKeep,
+  createSlideAreas,
+  createSlash,
+  type GroundContacts,
+} from "./arcadeJudgment";
+import { LANE_COUNT, laneRows, type ControlChange, type SurfaceSample } from "./input";
+import { createKeyBeams, type KeyBeamOutput } from "./keyBeams";
+import type { BandKind } from "./noteStates";
 
 const f = Math.fround;
 const K = SPAWN_CONSTANTS.framesPerMs;
-const LANES = 16;
-const ALL_LANES = (1 << LANES) - 1;
+const ALL_LANES = (1 << LANE_COUNT) - 1;
 /** Head and tail state a long note sets once that end is done. */
 const GROUND_DONE = 4;
 /** Head and hold state an AIR long note sets once that part is done. */
@@ -70,13 +70,8 @@ const LADDER_ROW = 7;
 const SLIDE_SLACK_LANES = 1;
 
 /** One change of the player's controls, at a chart time in frames. */
-export interface PlayInput {
+export interface PlayInput extends ControlChange {
   frames: number;
-  /** Ground lanes pressed or released. */
-  lanes: number;
-  /** Whether the AIR sensor went up (`down`) or down. */
-  air: boolean;
-  down: boolean;
 }
 
 /** One result a note commits. */
@@ -95,18 +90,30 @@ export interface Judgment {
   skipped: boolean;
 }
 
+/** Physical slider feedback from manual ground judgments. Masks use one bit per lane. */
+export interface SliderLightOutput {
+  /** Installs a group across the note's full width, in judgment order. */
+  hit(lanes: number, mine: boolean): void;
+  /** End of a manual input step, after all hits and the HOLD/SLIDE keep checks. */
+  step(step: number, touched: number, sustained: number): void;
+}
+
 /** Where the player's results go, step by step. */
 export interface PlayerOutput {
+  spawn?(object: NoteObject): void;
   model(record: number, part: number, step: number, shown: 0 | 1): void;
   band(kind: BandKind, record: number, step: number, state: number): void;
   judge(judgment: Judgment): void;
   /** A sound an object plays at the current step, in the order it plays them. */
   sound(object: NoteObject, sound: Sound, skipped: boolean): void;
+  sliderLights?: SliderLightOutput;
+  keyBeam?: KeyBeamOutput;
   /** Called once every object has ticked and the new ones are built. */
   endStep(step: number): void;
 }
 
 export interface PlayerOptions {
+  surface?: SurfaceSample | null;
   /** Whether a FLICK needs a slash after its touch; otherwise a touch takes it. */
   flickNeedsMotion: boolean;
 }
@@ -119,7 +126,14 @@ interface Press {
 }
 
 /** What the controls did up to the end of one grid step. */
-interface Step {
+interface Step extends GroundContacts {
+  arcade: boolean;
+  lights?: SliderLightOutput;
+  sustainedLights: number;
+  hiddenBeams: number;
+  airInUse: boolean;
+  actions: number;
+  owners: Int32Array;
   step: number;
   now: number;
   /** Plays every note as the automatic play does, for a stretch the player skipped. */
@@ -137,6 +151,7 @@ interface Step {
 interface Live {
   readonly object: NoteObject;
   done: boolean;
+  nominate?(state: Step): void;
   /** Writes made as the object is built, at its spawn step. */
   build(step: number): void;
   /** One tick, from its first active step on. */
@@ -147,15 +162,32 @@ const widthOf = (index: number) => NOTE_WIDTHS[index] ?? 0;
 
 function laneMask(lane: number, width: number): number {
   let mask = 0;
-  for (let at = Math.max(0, lane); at < Math.min(LANES, lane + width); at++) mask |= 1 << at;
+  for (let at = Math.max(0, lane); at < Math.min(LANE_COUNT, lane + width); at++) mask |= 1 << at;
   return mask;
 }
 
 const recordMask = (record: DataView) =>
   laneMask(record.getInt32(0x28, true), widthOf(record.getInt32(0x2c, true)));
 
+function groundChecker(record: DataView, config: DataView, row: number, offset: number) {
+  const bounds = new Float32Array(2 * LANE_COUNT);
+  const window = laneChecker(record, config, row, offset, bounds);
+  return {
+    ...window,
+    accepting(lanes: number, delta: number) {
+      let accepted = 0;
+      for (let pending = lanes; pending; pending &= pending - 1) {
+        const bit = pending & -pending;
+        const at = (31 - Math.clz32(bit)) * 2;
+        if (bounds[at] <= delta && delta < bounds[at + 1]) accepted |= bit;
+      }
+      return accepted;
+    },
+  };
+}
+
 /** Grade of a ground input `delta` frames from its note, with the judge timing offset taken out. */
-function groundGrade(config: DataView, row: number, delta: number): number {
+function groundGrade(config: DataView, row: number, delta: number, arcade = false): number {
   const at = (index: number) =>
     config.getFloat32(CONFIG_WINDOWS + CONFIG_ROW_BYTES * row + 4 * index, true);
   if (delta < 0) {
@@ -164,10 +196,11 @@ function groundGrade(config: DataView, row: number, delta: number): number {
     if (delta >= at(2)) return 2;
     return delta >= at(1) ? 1 : 0;
   }
-  if (delta <= at(10)) return 4;
-  if (delta <= at(9)) return 3;
-  if (delta <= at(8)) return 2;
-  return delta <= at(7) ? 1 : 0;
+  const within = (limit: number) => (arcade ? delta < limit : delta <= limit);
+  if (within(at(10))) return 4;
+  if (within(at(9))) return 3;
+  if (within(at(8))) return 2;
+  return within(at(7)) ? 1 : 0;
 }
 
 /** AIR windows of a configuration row: its checker, latest accepted delta and grading. */
@@ -176,11 +209,27 @@ function airWindows(config: DataView, row: number, offset: number) {
     config.getFloat32(CONFIG_AIR_ROWS + CONFIG_AIR_ROW_BYTES * row + 4 * index, true);
   const shift = f(config.getFloat32(CONFIG_AIR_SHIFT, true) + at(0));
   const checker = airChecker(config, row, offset);
+  let best: { grade: number; timing: number; priority: number } | null = null;
   return {
     checker,
     late: f(f(at(10) + offset) + shift),
     centre: f(offset + shift),
-    grade(delta: number): number {
+    manual(delta: number, actions: number) {
+      if (delta <= checker.early) return null;
+      const timing = delta - checker.centre;
+      const late = f(f(at(10) + offset) + shift);
+      const grade = this.grade(delta, true);
+      // C3BE50 prefers the inner critical window, then FAST over LATE at each equal grade.
+      const priority = delta >= late ? 2 : grade === 4 ? 11 : 3 + 2 * grade + Number(timing < 0);
+      const savedWins = !!best && best.priority > priority;
+      const triggered = !!(actions & (1 << row));
+      if (triggered && !savedWins) best = { grade, timing, priority };
+      if (timing < 0) return null;
+      if (best?.grade === 4) return best;
+      if (delta >= late) return { grade: 0, timing: null };
+      return savedWins || triggered ? best : null;
+    },
+    grade(delta: number, arcade = false): number {
       const d = delta - offset - shift;
       if (d < 0) {
         if (d >= at(9)) return 4;
@@ -188,10 +237,11 @@ function airWindows(config: DataView, row: number, offset: number) {
         if (d >= at(7)) return 2;
         return d >= at(6) ? 1 : 0;
       }
-      if (d <= at(14)) return 4;
-      if (d <= at(13)) return 3;
-      if (d <= at(12)) return 2;
-      return d <= at(11) ? 1 : 0;
+      const within = (limit: number) => (arcade ? d < limit : d <= limit);
+      if (within(at(14))) return 4;
+      if (within(at(13))) return 3;
+      if (within(at(12))) return 2;
+      return within(at(11)) ? 1 : 0;
     },
   };
 }
@@ -203,7 +253,7 @@ const settles = (checker: AirChecker, delta: number) =>
 function sinceLetGo(state: Step, mask: number): number {
   if (state.auto || state.held & mask) return 0;
   let last = -Infinity;
-  for (let lane = 0; lane < LANES; lane++)
+  for (let lane = 0; lane < LANE_COUNT; lane++)
     if (mask & (1 << lane)) last = Math.max(last, state.released[lane]);
   return state.now - last;
 }
@@ -224,15 +274,24 @@ function keepGrade(config: DataView, thresholds: number, since: number): number 
 function takePress(
   state: Step,
   mask: number,
-  checker: LaneChecker,
+  checker: ReturnType<typeof groundChecker>,
   noteFrames: number,
+  priority = true,
 ): { delta: number; frames: number; lanes: number } | null {
   for (const press of state.presses) {
-    if (!(press.lanes & ~press.used & mask)) continue;
     const delta = f(press.frames - noteFrames);
-    if (checker.early > delta || !(delta < checker.late)) continue;
-    press.used |= press.lanes & mask;
-    return { delta, frames: press.frames, lanes: press.lanes };
+    let accepted = checker.accepting(
+      press.lanes & mask & (state.arcade ? ALL_LANES : ~press.used),
+      delta,
+    );
+    if (state.arcade && priority)
+      for (let bits = accepted; bits; bits &= bits - 1) {
+        const bit = bits & -bits;
+        if (state.owners[31 - Math.clz32(bit)] !== Math.trunc(noteFrames)) accepted &= ~bit;
+      }
+    if (!accepted) continue;
+    if (!state.arcade) press.used |= accepted;
+    return { delta, frames: press.frames, lanes: accepted };
   }
   return null;
 }
@@ -286,6 +345,13 @@ export function createPlayer(input: {
 }) {
   const { score, objects, context, output, options } = input;
   const { config, offset, threshold, difficulty } = context;
+  const keyBeams = output.keyBeam && createKeyBeams(output.keyBeam);
+
+  function groundHit(s: Step, mask: number, grade: number, mine = false) {
+    if (s.auto) return;
+    keyBeams?.hit(mask, grade);
+    s.lights?.hit(mask, mine);
+  }
 
   /** Shared writers of one object: its judgments, sounds and the end of its life. */
   const writers = (object: NoteObject, state: () => Step) => {
@@ -322,6 +388,20 @@ export function createPlayer(input: {
     };
   };
 
+  function nominate(
+    mask: number,
+    checker: ReturnType<typeof groundChecker>,
+    frames: number,
+    s: Step,
+  ) {
+    const time = Math.trunc(frames);
+    if (time < 0) return;
+    for (let bits = checker.accepting(mask, f(s.now - frames)); bits; bits &= bits - 1) {
+      const lane = 31 - Math.clz32(bits & -bits);
+      s.owners[lane] = Math.min(s.owners[lane], time);
+    }
+  }
+
   let current: Step;
   const state = () => current;
 
@@ -332,9 +412,13 @@ export function createPlayer(input: {
   function flickSlash(record: DataView) {
     const lane = record.getInt32(0x28, true);
     const width = widthOf(record.getInt32(0x2c, true));
-    const reach = Math.ceil(config.getFloat32(CONFIG_FLICK_MOVES + 4 * (LANES - width), true));
+    const reach = Math.ceil(config.getFloat32(CONFIG_FLICK_MOVES + 4 * (LANE_COUNT - width), true));
     const area = laneMask(lane - reach, width + 2 * reach);
-    const checker = laneChecker(record, config, FLICK_SLASH_ROW, offset);
+    const base = CONFIG_WINDOWS + CONFIG_ROW_BYTES * FLICK_SLASH_ROW;
+    const checker = {
+      early: f(config.getFloat32(base, true) + offset),
+      late: f(config.getFloat32(base + 24, true) + offset),
+    };
     return {
       checker,
       find(s: Step, touch: { frames: number; lanes: number }, noteFrames: number) {
@@ -356,15 +440,23 @@ export function createPlayer(input: {
       ? FLICK_ROW
       : (object.className === "CharaTapNote" ? 2 : 0) + Number(difficulty >= 2);
     const noteFrames = f(record.getFloat32(8, true) * K);
-    const checker = laneChecker(record, config, row, offset);
+    const checker = groundChecker(record, config, row, offset);
     const mask = recordMask(record);
-    const slash = flick && options.flickNeedsMotion ? flickSlash(record) : null;
+    const motion =
+      flick && options.surface
+        ? createSlash(record.getInt32(0x28, true), widthOf(record.getInt32(0x2c, true)), config)
+        : null;
+    const slash = flick ? flickSlash(record) : null;
     let touch: { frames: number; lanes: number; grade: number; timing: number } | null = null;
     const mine = object.className === "MineNote";
     const delay = config.getFloat32(CONFIG_MINE_DELAY, true);
+    let mineContact = 0;
     const live: Live = {
       object,
       done: false,
+      nominate(s) {
+        if (!mine && !touch) nominate(mask, checker, noteFrames, s);
+      },
       build(step) {
         if (mine) w.model(step, GROUND_MAIN_PART, 1);
         else if (!flick) w.model(step, GROUND_MAIN_PART, 0);
@@ -374,32 +466,69 @@ export function createPlayer(input: {
         let grade = -1;
         let timing: number | null = null;
         if (mine) {
-          const passing = f(f(f(delta - delay) - offset) - threshold);
-          if (f(passing + offset) >= 0) grade = s.auto || !(s.held & mask) ? 4 : 0;
+          if (s.arcade && !s.auto) {
+            const time = f(delta - delay - offset);
+            const begin = config.getFloat32(0x724, true),
+              end = config.getFloat32(0x728, true);
+            const limit = config.getFloat32(0x72c, true);
+            if (s.held & mask)
+              mineContact += Math.max(0, Math.min(time, end) - Math.max(time - 0.5, begin));
+            if (time >= 0) {
+              if (mineContact >= limit) grade = 0;
+              else if (mineContact + Math.max(end - time, 0) < limit) grade = 4;
+            }
+          } else {
+            const passing = f(f(f(delta - delay) - offset) - threshold);
+            if (f(passing + offset) >= 0) grade = s.auto || !(s.held & mask) ? 4 : 0;
+          }
         } else if (s.auto) {
           const commits = flick
             ? delta >= threshold
             : !(checker.early > delta) && (delta >= threshold || !(delta < checker.late));
           if (commits) grade = 4;
-        } else if (slash) {
+        } else if (slash && (motion || options.flickNeedsMotion || touch)) {
           if (!touch) {
-            const press = takePress(s, mask, checker, noteFrames);
+            const press = takePress(s, mask, checker, noteFrames, false);
             if (press) {
               const timing = press.delta - offset;
               touch = {
                 frames: press.frames,
                 lanes: press.lanes,
-                grade: groundGrade(config, row, timing),
+                grade: groundGrade(config, row, timing, s.arcade),
                 timing,
               };
             } else if (!(delta < checker.late)) grade = 0;
           }
           if (touch) {
-            const result = slash.find(s, touch, noteFrames);
+            const moved =
+              motion &&
+              delta >= slash.checker.early &&
+              delta < slash.checker.late &&
+              motion(s.front, s.rear);
+            const result = motion
+              ? moved
+                ? {
+                    grade: groundGrade(config, FLICK_SLASH_ROW, delta - offset, true),
+                    timing: delta - offset,
+                  }
+                : null
+              : slash.find(s, touch, noteFrames);
             if (result) {
               const worse = result.grade < touch.grade;
-              grade = worse ? result.grade : touch.grade;
-              timing = worse ? result.timing : touch.timing;
+              grade = motion
+                ? touch.grade + result.grade >= 5
+                  ? 4
+                  : 2
+                : worse
+                  ? result.grade
+                  : touch.grade;
+              timing = motion
+                ? grade === 4
+                  ? null
+                  : touch.timing
+                : worse
+                  ? result.timing
+                  : touch.timing;
             } else if (!(delta < slash.checker.late)) {
               grade = 1;
               timing = slash.checker.late - offset;
@@ -409,7 +538,7 @@ export function createPlayer(input: {
           const press = takePress(s, mask, checker, noteFrames);
           if (press) {
             timing = press.delta - offset;
-            grade = groundGrade(config, row, timing);
+            grade = groundGrade(config, row, timing, s.arcade);
           } else if (!(delta < checker.late)) grade = 0;
         }
         if (grade < 0) {
@@ -417,6 +546,7 @@ export function createPlayer(input: {
           return;
         }
         w.judge(0, grade, timing);
+        if (mine ? grade === 0 : grade > 0) groundHit(s, mask, grade, mine);
         if (grade > 0) {
           if (playsExtra(record) && !mine) w.sound(startSound(SOUND.extra));
           w.sound(startSound(SOUND.tap));
@@ -433,7 +563,7 @@ export function createPlayer(input: {
   function longHead(
     s: Step,
     row: number,
-    checker: LaneChecker,
+    checker: ReturnType<typeof groundChecker>,
     mask: number,
     noteFrames: number,
   ): { grade: number; timing: number | null } | null {
@@ -445,11 +575,11 @@ export function createPlayer(input: {
     const press = takePress(s, mask, checker, noteFrames);
     if (press) {
       const timing = press.delta - offset;
-      return { grade: groundGrade(config, row, timing), timing };
+      return { grade: groundGrade(config, row, timing, s.arcade), timing };
     }
-    if (delta >= offset && delta < checker.late && s.held & mask) {
+    if (!s.arcade && delta >= offset && checker.accepting(s.held & mask, delta)) {
       const timing = delta - offset;
-      return { grade: groundGrade(config, row, timing), timing };
+      return { grade: groundGrade(config, row, timing, s.arcade), timing };
     }
     return !(delta < checker.late) ? { grade: 0, timing: null } : null;
   }
@@ -458,8 +588,10 @@ export function createPlayer(input: {
     const w = writers(object, state);
     const row = longHeadRow(record, difficulty);
     const noteFrames = f(record.getFloat32(8, true) * K);
-    const head = laneChecker(record, config, row, offset);
+    const head = groundChecker(record, config, row, offset);
     const tailStart = f(noteFrames + offset);
+    const keep = createKeep(tailStart);
+    const contacts = createContactGate();
     const mask = recordMask(record);
     const pending = [...ticks];
     const tailSound = holdTailStep(
@@ -476,6 +608,9 @@ export function createPlayer(input: {
         w.model(step, GROUND_MAIN_PART, 0);
         w.model(step, GROUND_TAIL_PART, 0);
       },
+      nominate(s) {
+        if (headState !== GROUND_DONE) nominate(mask, head, noteFrames, s);
+      },
       tick(s) {
         const { step: k, now } = s;
         if (headState !== GROUND_DONE) {
@@ -483,6 +618,7 @@ export function createPlayer(input: {
           if (result) {
             w.judge(0, result.grade, result.timing);
             if (result.grade > 0) {
+              groundHit(s, mask, result.grade);
               if (playsExtra(record)) w.sound(startSound(SOUND.extra));
               w.sound({ kind: "loop", pool: LOOP.hold.pool, cue: LOOP.hold.cue });
             }
@@ -490,14 +626,25 @@ export function createPlayer(input: {
           } else headState = 0;
         }
         if (tailState !== GROUND_DONE) {
+          const contact =
+            s.arcade &&
+            now >= noteFrames + head.early &&
+            contacts(s, mask, now >= tailStart ? mask : 0);
           if (head.early > now) tailState = 0;
           else if (tailStart <= now) {
-            const grade = keepGrade(config, CONFIG_HOLD_THRESHOLDS, sinceLetGo(s, mask));
+            s.hiddenBeams |= mask;
+            const grade = keepGrade(
+              config,
+              CONFIG_HOLD_THRESHOLDS,
+              s.arcade && !s.auto ? keep.sample(now, contact) : sinceLetGo(s, mask),
+            );
+            if (grade === 4) s.sustainedLights |= mask;
             const held = grade >= 3;
             const tick = pending[0];
             if (tick && !(now < f(f(tick.getFloat32(8, true) * TICK_FRAMES_PER_MS) + offset))) {
               if (tick.getUint8(0x14))
                 w.judge(tick.getInt32(0x10, true) === 1 ? 2 : 1, grade, null);
+              keep.commit();
               pending.shift();
             }
             if (k === tailSound && held) {
@@ -537,13 +684,15 @@ export function createPlayer(input: {
     const w = writers(object, state);
     const row = longHeadRow(record, difficulty);
     const noteFrames = f(record.getFloat32(8, true) * K);
-    const head = laneChecker(record, config, row, offset);
+    const head = groundChecker(record, config, row, offset);
     const tailStart = f(noteFrames + offset);
+    const keep = createKeep(tailStart);
+    const contacts = createContactGate();
     const firstWidth = record.getInt32(0x2c, true) + 1;
     const gate = f(
       f(
         config.getFloat32(
-          CONFIG_SLIDE_WINDOWS + CONFIG_SLIDE_ROW_BYTES * (16 - firstWidth) + 4,
+          CONFIG_SLIDE_WINDOWS + CONFIG_SLIDE_ROW_BYTES * (LANE_COUNT - firstWidth) + 4,
           true,
         ) + offset,
       ) + noteFrames,
@@ -554,6 +703,7 @@ export function createPlayer(input: {
     );
     const marks = joints.map(() => UNMARKED);
     const path = slidePath(record, joints);
+    let areas = options.surface ? createSlideAreas(record, joints, config, offset, K) : null;
     const mask = recordMask(record);
     const tails = slideTailSteps(
       { object, removal: Infinity, judges: [], models: [] },
@@ -570,6 +720,9 @@ export function createPlayer(input: {
       build(step) {
         w.model(step, GROUND_MAIN_PART, 0);
       },
+      nominate(s) {
+        if (headState !== GROUND_DONE) nominate(mask, head, noteFrames, s);
+      },
       tick(s) {
         const { step: k, now } = s;
         if (headState !== GROUND_DONE) {
@@ -577,6 +730,7 @@ export function createPlayer(input: {
           if (result) {
             w.judge(0, result.grade, result.timing);
             if (result.grade > 0) {
+              groundHit(s, mask, result.grade);
               if (playsExtra(record)) w.sound(startSound(SOUND.extra));
               w.sound({ kind: "loop", pool: LOOP.slide.pool, cue: LOOP.slide.cue });
             }
@@ -584,9 +738,23 @@ export function createPlayer(input: {
           } else headState = 0;
         }
         if (tailState !== GROUND_DONE) {
+          if (keyBeams && !s.auto) areas ??= createSlideAreas(record, joints, config, offset, K);
+          const area = areas?.(now);
+          if (area && now >= gate) s.hiddenBeams |= area.active;
+          const contact = s.arcade && !!area && contacts(s, area.trigger, area.active);
           if (gate > now || now < tailStart) tailState = 0;
           else {
-            const grade = keepGrade(config, CONFIG_HOLD_THRESHOLDS, sinceLetGo(s, path(now)));
+            const grade = keepGrade(
+              config,
+              CONFIG_HOLD_THRESHOLDS,
+              s.arcade && !s.auto ? keep.sample(now, contact) : sinceLetGo(s, path(now)),
+            );
+            if (s.lights && grade === 4 && area?.active) {
+              // SlideNote lights the whole span between its outermost active lanes.
+              const first = 31 - Math.clz32(area.active & -area.active);
+              const last = 31 - Math.clz32(area.active);
+              s.sustainedLights |= laneMask(first, last - first + 1);
+            }
             const held = grade >= 3;
             let last = 0;
             const tick = pending[0];
@@ -596,6 +764,7 @@ export function createPlayer(input: {
                 const kind = tick.getInt32(0x10, true);
                 w.judge(kind === 4 ? 2 : 1, last, null);
               }
+              keep.commit();
               pending.shift();
             }
             marks.forEach((mark, j) => {
@@ -652,6 +821,10 @@ export function createPlayer(input: {
   function airHead(s: Step, windows: ReturnType<typeof airWindows>, noteFrames: number) {
     const delta = f(s.now - noteFrames);
     if (s.auto) return settles(windows.checker, delta) ? { grade: 4, timing: null } : null;
+    if (s.arcade) {
+      if (delta > windows.checker.early) s.airInUse = true;
+      return windows.manual(delta, s.actions);
+    }
     const action = airAction(s, windows.checker, windows.late, noteFrames);
     if (action)
       return { grade: windows.grade(action.delta), timing: action.delta - windows.centre };
@@ -703,6 +876,7 @@ export function createPlayer(input: {
     const head = windows.checker;
     const centre = config.getFloat32(CONFIG_AIR_HOLD_CENTRE, true);
     const holdStart = slideKind ? noteFrames : f(noteFrames + offset);
+    const keep = createKeep(holdStart);
     const elementChecker = airChecker(config, AIR_ELEMENT_ROW, offset);
     const elementIndices = slideKind
       ? vectors.elements.flatMap((joint, k) => (joint.getUint8(0x14) ? [k] : []))
@@ -727,6 +901,10 @@ export function createPlayer(input: {
           AIR_HOLD_PARTS.cap,
           ...elementTimes.flatMap((_t, k) => [elementPart(k, 0), elementPart(k, 1)]),
         ];
+    const elements = options.surface
+      ? elementTimes.map(() => airWindows(config, AIR_ELEMENT_ROW, offset))
+      : null;
+    let airEligible = false;
     const pending = [...vectors.ticks];
     let element = 0;
     let headState = 0;
@@ -756,24 +934,36 @@ export function createPlayer(input: {
         }
         if (holdState !== AIR_DONE) {
           const t = f(now - centre);
+          if (s.arcade && t >= holdStart + head.early) {
+            airEligible ||= !s.airHeld || !!(s.actions & (1 << AIR_ELEMENT_ROW));
+            s.airInUse = true;
+          }
           if (f(holdStart + head.early) > t || holdStart > t) holdState = 0;
           else {
-            const grade = keepGrade(config, CONFIG_AIR_HOLD_THRESHOLDS, sinceAirLetGo(s));
+            const grade = keepGrade(
+              config,
+              CONFIG_AIR_HOLD_THRESHOLDS,
+              s.arcade && !s.auto ? keep.sample(t, airEligible && s.airHeld) : sinceAirLetGo(s),
+            );
             holdState = grade >= 3 ? 3 : 4;
             const tick = pending[0];
             if (tick && t >= f(f(tick.getFloat32(8, true) * K) + offset)) {
               if (tick.getUint8(0x14)) w.judge(1, grade, null, 2);
+              keep.commit();
               pending.shift();
             }
+            const delta = f(now - elementTimes[element]);
+            const action = elements && !s.auto ? elements[element]?.manual(delta, s.actions) : null;
             if (
               element < elementTimes.length &&
-              settles(elementChecker, f(now - elementTimes[element]))
+              (elements && !s.auto ? !!action : settles(elementChecker, delta))
             ) {
               const final = slideKind
                 ? elementIndices[element] === lastElement
                 : element === elementTimes.length - 1;
-              w.judge(final ? 2 : 1, grade, null, 2, true);
-              if (grade > 0) w.sound(startSound(SOUND.airElement));
+              const elementGrade = action?.grade ?? grade;
+              w.judge(final ? 2 : 1, elementGrade, action?.timing ?? null, 2, true);
+              if (elementGrade > 0) w.sound(startSound(SOUND.airElement));
               judged[element++] = true;
             }
             if (!pending.length && element === elementTimes.length) {
@@ -818,6 +1008,9 @@ export function createPlayer(input: {
     const endFrames = f(last.getFloat32(8, true) * K);
     const times = vectors.samples.map((sample) => f(sample.getFloat32(8, true) * K));
     const windows = airWindows(config, LADDER_ROW, offset);
+    const samples = options.surface
+      ? times.map(() => airWindows(config, LADDER_ROW, offset))
+      : null;
     const judged = times.map(() => false);
     let remaining = times.length;
     const live: Live = {
@@ -834,7 +1027,10 @@ export function createPlayer(input: {
           // The hand was up at some point since the element's window opened.
           const raised = s.auto || s.airHeld || s.airReleased > f(time + windows.checker.early);
           let grade = -1;
-          if (raised && settles(windows.checker, delta)) grade = 4;
+          if (samples && !s.auto) {
+            if (delta > windows.checker.early) s.airInUse = true;
+            grade = samples[e].manual(delta, s.actions)?.grade ?? -1;
+          } else if (raised && settles(windows.checker, delta)) grade = 4;
           else if (delta > windows.late) grade = 0;
           if (grade < 0) return;
           judged[e] = true;
@@ -903,13 +1099,19 @@ export function createPlayer(input: {
     }
   }
 
-  const queue: PlayInput[] = [];
+  type DeviceInput = SurfaceSample & { frames: number };
+  const queue: (PlayInput | DeviceInput)[] = [];
+  const arcade = !!options.surface;
+  let surface = options.surface ?? { touch: 0, beams: 0 };
+  let [front, rear] = laneRows(surface.touch);
+  let sensor = createAirSensor(config);
+  const owners = new Int32Array(LANE_COUNT);
   let lives: Live[] = [];
   let next = 0;
   let step = -1;
   let held = 0;
   let airHeld = false;
-  const released = new Float64Array(LANES).fill(-Infinity);
+  const released = new Float64Array(LANE_COUNT).fill(-Infinity);
   let airReleased = -Infinity;
 
   const run = (k: number, auto: boolean) => {
@@ -920,6 +1122,10 @@ export function createPlayer(input: {
     while (taken < queue.length && (auto || queue[taken].frames <= now)) {
       const event = queue[taken++];
       if (auto) continue;
+      if ("touch" in event) {
+        surface = event;
+        continue;
+      }
       if (event.air) {
         if (event.down) {
           airHeld = true;
@@ -937,11 +1143,37 @@ export function createPlayer(input: {
         continue;
       }
       held &= ~lanes;
-      for (let lane = 0; lane < LANES; lane++)
+      for (let lane = 0; lane < LANE_COUNT; lane++)
         if (lanes & (1 << lane)) released[lane] = event.frames;
     }
     queue.splice(0, taken);
+    const previousFront = current?.usedFront ?? 0,
+      previousRear = current?.usedRear ?? 0;
+    let actions = 0;
+    if (arcade && !auto) {
+      const rows = laneRows(surface.touch);
+      const pressed = (rows[0] & ~front) | (rows[1] & ~rear);
+      [front, rear] = rows;
+      held = front | rear;
+      if (pressed) presses.push({ frames: now, lanes: pressed, used: 0 });
+      actions = sensor(surface, current?.airInUse ?? false);
+      if (airHeld && !(actions & 128)) airReleased = now;
+      airHeld = !!(actions & 128);
+    }
     current = {
+      arcade,
+      lights: arcade && !auto ? output.sliderLights : undefined,
+      sustainedLights: 0,
+      hiddenBeams: 0,
+      owners,
+      front,
+      rear,
+      previousFront,
+      previousRear,
+      usedFront: 0,
+      usedRear: 0,
+      airInUse: false,
+      actions,
       step: k,
       now,
       auto,
@@ -952,13 +1184,20 @@ export function createPlayer(input: {
       released,
       airReleased,
     };
+    if (arcade && presses.length) {
+      owners.fill(0x7fffffff);
+      for (const live of lives) if (k >= live.object.spawn + ACTIVE_AFTER) live.nominate?.(current);
+    }
     for (const live of lives) if (k >= live.object.spawn + ACTIVE_AFTER) live.tick(current);
     lives = lives.filter((live) => !live.done);
     while (next < objects.length && objects[next].spawn <= k) {
       const live = build(objects[next++]);
+      output.spawn?.(live.object);
       live.build(k);
       lives.push(live);
     }
+    current.lights?.step(k, held, current.sustainedLights);
+    if (!auto) keyBeams?.update(k, held, current.hiddenBeams);
     output.endStep(k);
   };
 
@@ -972,7 +1211,13 @@ export function createPlayer(input: {
       return next === objects.length && lives.length === 0;
     },
     /** Queues a change of the controls; changes must come in time order. */
-    push(change: PlayInput) {
+    seedSurface(sample: SurfaceSample) {
+      surface = sample;
+      [front, rear] = laneRows(sample.touch);
+      sensor = createAirSensor(config);
+      queue.length = 0;
+    },
+    push(change: PlayInput | DeviceInput) {
       queue.push(change);
     },
     /**
@@ -982,6 +1227,9 @@ export function createPlayer(input: {
     advance(target: number, skipUntil = -1) {
       for (let k = step + 1; k <= target; k++) run(k, k < skipUntil);
       step = Math.max(step, target);
+    },
+    finishKeyBeams() {
+      keyBeams?.update(step, 0, 0);
     },
     /** Lanes held and whether the AIR sensor is up, as of the last step played. */
     get controls() {

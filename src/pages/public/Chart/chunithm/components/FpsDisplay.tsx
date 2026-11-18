@@ -4,6 +4,7 @@ import type { PreviewLiveState } from "../runtime/liveState";
 
 export function FpsDisplay({ live }: { live: PreviewLiveState }) {
   const stats = useSyncExternalStore(live.frameStats.subscribe, live.frameStats.getSnapshot);
+  if (!stats) return null;
   return (
     <Paper
       pos="absolute"
@@ -20,18 +21,14 @@ export function FpsDisplay({ live }: { live: PreviewLiveState }) {
     >
       <Stack gap={2}>
         <Text size="sm" fw={700}>
-          FPS {stats?.fps ?? "—"}
+          FPS {stats.fps}
         </Text>
-        {import.meta.env.DEV && stats && (
-          <>
-            <Text size="xs">
-              帧回调 {stats.callbacksPerSecond}/s · {stats.width} × {stats.height}
-            </Text>
-            <Text size="xs">
-              帧处理 {stats.averageWorkMs.toFixed(1)} ms · 峰值 {stats.maximumWorkMs.toFixed(1)} ms
-            </Text>
-          </>
-        )}
+        <Text size="xs">
+          帧回调 {stats.callbacksPerSecond}/s · {stats.width} × {stats.height}
+        </Text>
+        <Text size="xs">
+          帧处理 {stats.averageWorkMs.toFixed(1)} ms · 峰值 {stats.maximumWorkMs.toFixed(1)} ms
+        </Text>
       </Stack>
     </Paper>
   );

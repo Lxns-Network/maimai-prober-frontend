@@ -107,6 +107,7 @@
     "@types/react-dom": "19.2.4",
     "@types/react-is": "19.2.0",
     "@types/react-lazyload": "3.2.3",
+    "@types/w3c-web-usb": "^1.0.14",
     "@vitejs/plugin-react": "6.1.0",
     "oxfmt": "^0.53.0",
     "oxlint": "1.82.0",

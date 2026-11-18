@@ -22,6 +22,7 @@ import { PlaybackActions } from "../chunithm/components/PlaybackActions";
 import { Controls } from "../chunithm/components/Controls";
 import { PlaySettings } from "../chunithm/components/PlaySettings";
 import { FpsDisplay } from "../chunithm/components/FpsDisplay";
+import { isChartControlTarget } from "../chunithm/input/browserControls";
 import { selectChunithmChartDifficulty } from "../chunithm/assets/urls";
 import { useChartAssets } from "../chunithm/hooks/useChartAssets";
 import { useGameStore } from "../stores/useGameStore";
@@ -95,6 +96,7 @@ type PreviewProps = {
 
 function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerProps) {
   const resolution = useChunithmChartSettingsStore((state) => state.resolution);
+  const bindings = useChunithmChartSettingsStore((state) => state.keyBindings);
   const preview = useChartPreview({ ...options, resolution });
   const [exporting, setExporting] = useState(false);
   const ready = preview.status === "ready" && !preview.changingDifficulty && !exporting;
@@ -109,11 +111,7 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
         event.ctrlKey ||
         event.altKey ||
         event.metaKey ||
-        (event.target instanceof HTMLElement &&
-          (event.target.isContentEditable ||
-            event.target.closest(
-              'input, textarea, select, button, a[href], [role="slider"], [role="combobox"], [role="menuitem"], [role="option"], [role="dialog"]',
-            )))
+        isChartControlTarget(event.target)
       )
         return;
       switch (event.key) {
@@ -176,12 +174,13 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
               w="100%"
               bg="dark.9"
               aria-label="CHUNITHM 谱面预览"
+              tabIndex={-1}
               data-autoplay-status={preview.status}
             >
               浏览器不支持 Canvas。
             </Box>
           </AspectRatio>
-          <FpsDisplay live={preview.live} />
+          {import.meta.env.DEV && <FpsDisplay live={preview.live} />}
           <LoadingOverlay visible={preview.status === "loading"} zIndex={1} />
         </Box>
         {preview.error && (
@@ -284,6 +283,11 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
       </Card>
     ),
     restartLabel: "重新播放当前小节",
+    playInput: !preview.playMode
+      ? undefined
+      : preview.controllerConnected
+        ? { device: "controller" }
+        : { device: "keyboard", boundKeys: [...bindings.lanes.flat(), ...bindings.air] },
   });
 }
 export default function ChunithmPlayer({ children }: ChartPlayerProps) {

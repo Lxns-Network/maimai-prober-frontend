@@ -18,6 +18,7 @@
 | `gpu/`、`math/`      | 共享 GPU 状态、采样器、网格快照与数学计算；独立于业务模块                                             |
 
 - 引擎独立于 React 和页面状态，由页面集成层（仓库根 `src/pages/public/Chart/chunithm/`）将 UI 状态转为引擎参数，通过 `@lxns-network/chunithm-chart-engine` 及其子路径导入。引擎内部使用相对导入。
+- `chart/play/` 接收地键和 AIR 输入，计算游玩判定、成绩、音符状态及特效。设备协议、AIR 去抖和浏览器事件由页面的 `input/` 负责。
 
 ## 播放时钟与实时更新
 

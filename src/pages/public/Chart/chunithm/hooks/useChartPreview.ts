@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { SurfaceSample } from "@lxns-network/chunithm-chart-engine/chart/play/input";
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
+import type { ControllerLightWriter } from "../input/controllers/adapter";
 import { createPreviewLiveState } from "../runtime/liveState";
 import { createPreviewSession } from "../runtime/session";
 import type { PreviewControls } from "../runtime/types";
@@ -117,6 +119,13 @@ export function useChartPreview(options: ChartPreviewOptions) {
   const [difficultyValue, setDifficultyValue] = useState<string | null>(null);
   const [playMode, setPlayMode] = useState(false);
   const playModeRef = useRef(playMode);
+  const surface = useRef<SurfaceSample | null>(null);
+  const lightWriter = useRef<ControllerLightWriter | null>(null);
+  const setControllerLights = useCallback((writer: ControllerLightWriter | null) => {
+    lightWriter.current = writer;
+    controls.current?.setControllerLights(writer);
+  }, []);
+  const [controllerConnected, setControllerConnected] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -187,7 +196,9 @@ export function useChartPreview(options: ChartPreviewOptions) {
         setControls(value) {
           controls.current = value;
           value?.setPlaySettings(playSettingsRef.current);
+          value?.controllerInput(surface.current, performance.now());
           value?.setPlayMode(playModeRef.current);
+          value?.setControllerLights(lightWriter.current);
           const loop = loopRef.current;
           value?.setLoop(
             loop?.enabled && loop.end !== null ? { start: loop.start, end: loop.end } : null,
@@ -305,6 +316,20 @@ export function useChartPreview(options: ChartPreviewOptions) {
     difficultyOptions,
     difficultyValue,
     playMode,
+    controllerConnected,
+    setControllerLights,
+    controllerInput(sample: SurfaceSample | null, receivedAt: number) {
+      const changed = !!surface.current !== !!sample;
+      surface.current = sample;
+      if (changed) {
+        setControllerConnected(!!sample);
+        playModeRef.current = !!sample;
+        setPlayMode(!!sample);
+        controls.current?.setPlayMode(false);
+      }
+      controls.current?.controllerInput(sample, receivedAt);
+      if (changed && sample) controls.current?.setPlayMode(true);
+    },
     selectPlayMode(value: boolean) {
       playModeRef.current = value;
       setPlayMode(value);

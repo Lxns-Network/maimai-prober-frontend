@@ -16,16 +16,24 @@ export function createEffectPlayback() {
   let previous = -Infinity;
   let segments: Segment[] = [];
 
-  const animationStep = (chart: number) => {
+  const segmentAt = (step: number, clock: "chart" | "animation") => {
     let lo = 0;
     let hi = segments.length;
     while (lo + 1 < hi) {
       const mid = (lo + hi) >>> 1;
-      if (segments[mid].chart <= chart) lo = mid;
+      if (segments[mid][clock] <= step) lo = mid;
       else hi = mid;
     }
-    const segment = segments[lo];
+    return segments[lo];
+  };
+  const animationStep = (chart: number) => {
+    const segment = segmentAt(chart, "chart");
     return segment.animation + (chart - segment.chart) / segment.rate;
+  };
+  const chartFrame = (animationFrame: number) => {
+    const step = animationFrame * 2;
+    const segment = segmentAt(step, "animation");
+    return (segment.chart + (step - segment.animation) * segment.rate) / 2;
   };
   const eventStep = (chart: number) =>
     chart === 0x7fffffff ? chart : Math.min(0x7fffffff, Math.ceil(animationStep(chart)));
@@ -50,7 +58,11 @@ export function createEffectPlayback() {
         start: Int32Array.from(original.start, (step) => (step < 0 ? step : eventStep(step))),
         end,
       },
-      moves: { ...effects.moves, step: Int32Array.from(effects.moves.step, eventStep) },
+      moves: {
+        ...effects.moves,
+        step: Int32Array.from(effects.moves.step, eventStep),
+        paths: effects.moves.paths?.map((path) => path && ((frame) => path(chartFrame(frame)))),
+      },
       consumption: {
         ...effects.consumption,
         step: Int32Array.from(effects.consumption.step, (step, row) => {
@@ -66,6 +78,7 @@ export function createEffectPlayback() {
   };
 
   return {
+    animationStep,
     update(effects: Effects, seconds: number, rate: number, nextEpoch: number) {
       const chart = Math.max(0, seconds * 120);
       let changed = false;

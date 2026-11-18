@@ -154,17 +154,21 @@ export function createPreviewAudio(input: PreviewAudioInput) {
           ? { ...state.scheduledPosition, phase: "playing" as const }
           : state.position;
       sfx?.update({
-        ...position,
+        phase: position.phase,
+        outputTime: position.outputTime,
+        playbackRate: position.playbackRate,
         bufferSeconds: position.bufferSeconds - playTiming - soundOffset,
       });
     },
     pauseSfx() {
       sfx?.pause();
-      liveCues?.silence();
+      liveCues?.pause();
     },
     /** Follows the music for cues played as they happen, in place of the timeline's cues. */
     trackLiveSfx(state: MusicPoll, playTiming: number) {
       sfx?.pause();
+      if (state.intendedPlaying && !state.transitioning && state.position.phase === "playing")
+        liveCues?.resume();
       clock = {
         outputTime: state.position.outputTime,
         seconds: state.position.bufferSeconds - playTiming - soundOffset,

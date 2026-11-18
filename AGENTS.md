@@ -157,6 +157,8 @@ The shared `Chart.tsx` route selects `components/ChunithmPlayer.tsx`. CHUNITHM i
 
 - `components/`: controls and export UI; `hooks/`: React lifecycle and persisted-setting synchronization only.
 - `assets/`: chart metadata and resource URLs; `options/`: game option tables and conversions.
+- `input/` maps keyboard and touch events to game controls. `input/controllers/` manages WebUSB connections and debounces AIR on every report. Each device adapter decodes its protocol into the engine's `SurfaceSample`.
+- `packages/chunithm-chart-engine/src/chart/play/` judges those inputs and produces the live score, note states, effects and sound cues.
 - `runtime/session.ts`: session cancellation, playback intent, looping and frame scheduling. It owns and releases the attached renderers and the audio subsystem.
 - `runtime/audio.ts`: sole owner of the AudioContext, gain nodes, music and SFX. Its transport exposes chart seconds; padded-buffer offsets are private to this module. Renderers never create an independent playback clock.
 - `runtime/viewport.ts`: resize/DPR subscriptions and deferred canvas allocation. `runtime/exportGif.ts`: encoding only; the session suspends and restores playback.

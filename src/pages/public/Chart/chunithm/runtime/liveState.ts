@@ -1,5 +1,5 @@
+import type { PlayStats } from "@lxns-network/chunithm-chart-engine/chart/play/session";
 import type { DensityNote } from "../../components/ChartDensityTimeline/ChartDensityTimeline";
-import type { PlayStats } from "./playSession";
 
 type Listener = () => void;
 

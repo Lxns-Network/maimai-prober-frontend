@@ -1,0 +1,22 @@
+/* Keyboard bindings alternate A/W, S/E, and so on, starting on the lower row. */
+.keyRows > * {
+  grid-row: 2;
+  min-width: 0;
+}
+
+.keyRows > :nth-child(even) {
+  grid-row: 1;
+}
+
+.groundRows {
+  grid-template-rows: repeat(2, auto);
+  grid-auto-flow: column;
+}
+
+.inputLight {
+  background-color: var(--mantine-color-default-border);
+
+  &[aria-checked="true"] {
+    background-color: var(--mantine-primary-color-filled);
+  }
+}

@@ -3,9 +3,9 @@ import {
   NOTE_CAMERA,
   cameraViewProjection,
 } from "@lxns-network/chunithm-chart-engine/notes/camera";
-import { createControls, NO_HOLD } from "@/pages/public/Chart/chunithm/runtime/controls";
-import { touchHold } from "@/pages/public/Chart/chunithm/runtime/touchZones";
-import { DEFAULT_KEY_BINDINGS, keyHold } from "@/pages/public/Chart/chunithm/options/keyBindings";
+import { createControls, NO_HOLD } from "@/pages/public/Chart/chunithm/input/controls";
+import { touchHold } from "@/pages/public/Chart/chunithm/input/touchZones";
+import { DEFAULT_KEY_BINDINGS, keyHold } from "@/pages/public/Chart/chunithm/input/keyboard";
 
 const lane = (index: number) => ({ lanes: 1 << index, air: false });
 

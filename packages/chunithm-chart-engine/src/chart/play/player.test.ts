@@ -1,30 +1,25 @@
 import { describe, expect, test } from "vitest";
-import { parseLxchu } from "@lxns-network/chunithm-chart-engine/chart/parse/lxchu";
-import { bindScore } from "@lxns-network/chunithm-chart-engine/chart/bind/bindScore";
-import { bake } from "@lxns-network/chunithm-chart-engine/chart/bake/bake";
-import { GROUND_MAIN_PART } from "@lxns-network/chunithm-chart-engine/chart/bake/events";
-import { compileJudgeTimingIni } from "@lxns-network/chunithm-chart-engine/chart/bind/config";
-import { assembleEvents } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/emissions";
-import { lifecycleContext } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/context";
-import { chartSteps } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/nativeChart";
-import { noteObjects } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/objects";
-import { lifecycleRuns } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/runs";
-import {
-  scanState,
-  spawnSteps,
-} from "@lxns-network/chunithm-chart-engine/chart/lifecycle/spawnStep";
-import { motionParts } from "@lxns-network/chunithm-chart-engine/chart/lifecycle/motion";
-import { Timeline } from "@lxns-network/chunithm-chart-engine/chart/timeline/reader";
-import { createLivePlayback } from "@lxns-network/chunithm-chart-engine/notes/livePlayback";
-import { createPlayStates } from "@/pages/public/Chart/chunithm/runtime/playStates";
-import { createPlayEffects } from "@/pages/public/Chart/chunithm/runtime/playEffects";
-import { createScoreKeeper } from "@lxns-network/chunithm-chart-engine/chart/sweep/score";
-import { noteScoreOf } from "@lxns-network/chunithm-chart-engine/notes/score";
-import {
-  createPlayer,
-  type Judgment,
-  type PlayInput,
-} from "@/pages/public/Chart/chunithm/runtime/player";
+import { parseLxchu } from "../parse/lxchu";
+import { bindScore } from "../bind/bindScore";
+import { bake } from "../bake/bake";
+import { GROUND_MAIN_PART } from "../bake/events";
+import { compileJudgeTimingIni } from "../bind/config";
+import { assembleEvents } from "../lifecycle/emissions";
+import { lifecycleContext } from "../lifecycle/context";
+import { chartSteps } from "../lifecycle/nativeChart";
+import { noteObjects } from "../lifecycle/objects";
+import { lifecycleRuns } from "../lifecycle/runs";
+import { scanState, spawnSteps } from "../lifecycle/spawnStep";
+import { motionParts } from "../lifecycle/motion";
+import { Timeline } from "../timeline/reader";
+import { createLivePlayback } from "../../notes/livePlayback";
+import { createPlaySession } from "./session";
+import { effectSweep } from "../sweep/effects";
+import { createPlayStates } from "./noteStates";
+import { createPlayEffects } from "./effects";
+import { createScoreKeeper } from "../sweep/score";
+import { noteScoreOf } from "../../notes/score";
+import { createPlayer, type Judgment, type PlayInput, type PlayerOptions } from "./player";
 
 /** One of every note family at 120 BPM. */
 const PATTERN = `&format=lxchu/1
@@ -57,9 +52,9 @@ tap 2880 0-15
 `;
 
 /** The test chart with the built-in judge windows. */
-function load() {
-  const config = compileJudgeTimingIni(new Uint8Array());
-  const bytes = new TextEncoder().encode(PATTERN);
+function load(pattern = PATTERN, ini = "") {
+  const config = compileJudgeTimingIni(new TextEncoder().encode(ini));
+  const bytes = new TextEncoder().encode(pattern);
   const bound = bindScore(parseLxchu(bytes, { difficulty: 3, mirror: false }), config, {
     difficulty: 3,
     mirror: false,
@@ -71,8 +66,13 @@ function load() {
 }
 
 /** Plays the test chart with `inputs` and returns everything the player wrote. */
-function play(inputs: PlayInput[], options = { flickNeedsMotion: true }, skipUntil = -1) {
-  const { score, steps, objects, context } = load();
+function play(
+  inputs: Parameters<ReturnType<typeof createPlayer>["push"]>[0][],
+  options: PlayerOptions = { flickNeedsMotion: true },
+  skipUntil = -1,
+  chart = load(),
+) {
+  const { score, steps, objects, context } = chart;
   const judgments: Judgment[] = [];
   const models = new Map<string, [number, number][]>();
   const bands = new Map<string, [number, number][]>();
@@ -121,6 +121,56 @@ const raise = (ms: number, hold = 30): PlayInput[] => [
 ];
 
 describe("live play animation", () => {
+  test("a late clock sample preserves committed judgments until an explicit seek", () => {
+    const { score, objects, context, bound } = load();
+    const runs = lifecycleRuns(score, objects, context);
+    const timeline = bake(bound, () => assembleEvents(runs), { musicId: 0 });
+    const session = createPlaySession({
+      chart: { score, livePlayback: { runs, timeline } },
+      config: bound.config,
+      difficulty: 3,
+      judgeTimingRow: 20,
+      sounds: () => null,
+      text: () => 0,
+      options: () => ({ flickNeedsMotion: true }),
+    });
+    session.setPlaying(true, 0);
+    session.control({ lanes: 15, down: true, air: false }, 4);
+    session.advance(500);
+    const stats = session.stats.getSnapshot();
+    expect(stats.score).toBeGreaterThan(0);
+    session.advance(499);
+    expect(session.stats.getSnapshot()).toBe(stats);
+    session.restart(499);
+    expect(session.stats.getSnapshot()).toMatchObject({ score: 0, partial: true });
+  });
+  test("missing the first of two nearby EX notes can show the second direction", () => {
+    const chart = load(PATTERN.split("tap 768")[0] + "tap 768 0-3 ex up\ntap 774 8-11 ex down\n");
+    const runs = lifecycleRuns(chart.score, chart.objects, chart.context);
+    const baked = effectSweep({ ...chart, runs, events: assembleEvents(runs) });
+    const effects = createPlayEffects(chart.score, () => 0);
+    for (const j of play(touch(4032, lanes(8, 11)), undefined, -1, chart).judgments) effects.add(j);
+    const liveOnly = [...effects.effects.instances.resource].filter(
+      (id) => !baked.instances.resource.includes(id),
+    );
+    expect(liveOnly.length).toBeGreaterThan(0);
+    for (const id of liveOnly) expect(baked.possibleResources).toContain(id);
+  });
+  test("a nearby tap protects only the overlapping lanes of a wide EX tap", () => {
+    const chart = load(
+      PATTERN.split("tap 768")[0] + "tap 768 0-1\ntap 780 0-3 ex up\n",
+      "[EXT.HARD]\nMINIMALIZE=0",
+    );
+    const grades = (lane: number) =>
+      play(
+        [...touch(4000, 1, 2), ...touch(4010, 1 << lane, 2)],
+        undefined,
+        -1,
+        chart,
+      ).judgments.map((result) => result.grade);
+    expect(grades(0)).toEqual([4, 0]);
+    expect(grades(3)[1]).toBeGreaterThan(0);
+  });
   test("keeps effect identities across additions and distinguishes a restarted play", () => {
     const { score, judgments } = play([...touch(4000, lanes(0, 3)), ...touch(4500, lanes(4, 7))]);
     const effects = createPlayEffects(score, () => 0);
@@ -131,10 +181,9 @@ describe("live play animation", () => {
     expect(first.instances.ids!.length).toBeGreaterThan(0);
     expect(next.sequence).toBe(first.sequence);
     expect(next.instances.ids!.slice(0, first.instances.ids!.length)).toEqual(first.instances.ids);
-    expect(createPlayEffects(score, () => 0).effects.sequence).not.toBe(next.sequence);
-    effects.reset();
-    expect(effects.effects.sequence).not.toBe(next.sequence);
-    expect(effects.effects.instances.ids).toHaveLength(0);
+    const restarted = createPlayEffects(score, () => 0).effects;
+    expect(restarted.sequence).not.toBe(next.sequence);
+    expect(restarted.instances.ids).toHaveLength(0);
   });
   test.each([0, 0.375])("samples missed notes within their UV range at sub-step %s", (fraction) => {
     const { bound, score, steps, objects, context } = load();
@@ -363,5 +412,38 @@ describe("player input", () => {
     expect(values.score).toBe(1010000);
     expect(values.combo).toBe(judgments.length);
     expect(keeper.judge(0, 1, 0, 0).combo).toBe(0);
+  });
+});
+
+describe("controller surface judgments", () => {
+  const options = { surface: { touch: 0, beams: 0 }, flickNeedsMotion: false };
+  const sample = (ms: number, touch: number, beams = 0) => ({ frames: ms * 0.06, touch, beams });
+  test("a second electrode on a held lane still hits a new TAP", () => {
+    const chart = load(PATTERN.split("tap 768")[0] + "tap 768 0-0\ntap 864 0-0\n");
+    const run = play([sample(4000, 1), sample(4500, 3)], options, -1, chart);
+    expect(run.judgments.map((j) => j.grade)).toEqual([4, 4]);
+  });
+  test("the FLICK tracks movement and combines its two grades with touch assistance off", () => {
+    const a = 1 << 24,
+      b = 1 << 26;
+    expect(play([sample(5500, a), sample(5510, a | b)], options).at("FlickNote").grade).toBe(1);
+    expect(play([sample(5500, a), sample(5620, b)], options).at("FlickNote").grade).toBe(4);
+  });
+  test("a HOLD remembers an interruption after contact resumes and clears it on the next tick", () => {
+    const run = play([sample(7000, 1), sample(7080, 0), sample(7160, 1)], options);
+    expect(
+      run.judgments
+        .filter((j) => j.object.className === "HoldNote")
+        .slice(0, 3)
+        .map((j) => j.grade),
+    ).toEqual([4, 2, 4]);
+    expect(play([sample(6800, 1)], options).at("HoldNote").grade).toBe(0);
+  });
+  test("a brief touch at the centre of a MINE is too short to trigger it", () => {
+    expect(play([sample(6000, 1 << 14), sample(6010, 0)], options).at("MineNote").grade).toBe(4);
+    expect(play([sample(5900, 1 << 14), sample(6100, 0)], options).at("MineNote").grade).toBe(0);
+  });
+  test("an AIR can use motion between two non-neutral beam patterns", () => {
+    expect(play([sample(4800, 0, 1), sample(5050, 0, 2)], options).at("AirNote").grade).toBe(4);
   });
 });

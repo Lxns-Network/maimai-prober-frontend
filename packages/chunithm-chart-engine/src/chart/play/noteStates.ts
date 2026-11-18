@@ -1,21 +1,15 @@
-import type { Timeline } from "@lxns-network/chunithm-chart-engine/chart/timeline/reader";
+import type { Timeline } from "../timeline/reader";
 import {
   bandColumnsOf,
   createBandStates,
   type BandStateColumns,
   type BandStates,
-} from "@lxns-network/chunithm-chart-engine/notes/bandAssembler";
-import { airBandColumnsOf } from "@lxns-network/chunithm-chart-engine/notes/airBandAssembler";
-import {
-  createModelStates,
-  type ModelStates,
-} from "@lxns-network/chunithm-chart-engine/notes/modelStates";
-import type {
-  LiveBandSink,
-  NoteLayerLive,
-} from "@lxns-network/chunithm-chart-engine/notes/noteLayer";
-import { slideColumnsOf } from "@lxns-network/chunithm-chart-engine/notes/slideAssembler";
-import { computeJudgeVisibility } from "@lxns-network/chunithm-chart-engine/notes/visibility";
+} from "../../notes/bandAssembler";
+import { airBandColumnsOf } from "../../notes/airBandAssembler";
+import { createModelStates, type ModelStates } from "../../notes/modelStates";
+import type { LiveBandSink, NoteLayerLive } from "../../notes/noteLayer";
+import { slideColumnsOf } from "../../notes/slideAssembler";
+import { computeJudgeVisibility } from "../../notes/visibility";
 
 /** Band families a note can frame; `band` is the HOLD band. */
 export type BandKind = "band" | "slide" | "airband";
@@ -87,7 +81,6 @@ export function createPlayStates(timeline: Timeline, records: readonly DataView[
     head: new Float64Array(recordCount),
     air: new Float64Array(recordCount),
   };
-  const sinks = new Set<LiveBandSink>();
   /** Every SLIDE and AIR band state so far, replayed into a band family that joins later. */
   const bandLog: { kind: BandKind; record: number; step: number; state: number }[] = [];
   /** Latest state of each SLIDE band (even keys) and AIR band (odd keys). */
@@ -106,13 +99,8 @@ export function createPlayStates(timeline: Timeline, records: readonly DataView[
   };
   const bands = new (class extends Set<LiveBandSink> {
     add(sink: LiveBandSink) {
-      sinks.add(sink);
       replay(sink);
       return super.add(sink);
-    }
-    delete(sink: LiveBandSink) {
-      sinks.delete(sink);
-      return super.delete(sink);
     }
   })();
 
@@ -148,7 +136,7 @@ export function createPlayStates(timeline: Timeline, records: readonly DataView[
       visibility.head.set(recorded.visibility.head);
       visibility.air.set(recorded.visibility.air);
     }
-    for (const sink of sinks) replay(sink);
+    for (const sink of bands) replay(sink);
   };
   reset();
 
@@ -163,8 +151,6 @@ export function createPlayStates(timeline: Timeline, records: readonly DataView[
       playing = value;
       reset();
     },
-    /** Drops every state a player produced. */
-    reset,
     model(record: number, part: number, step: number, shown: 0 | 1) {
       historyOf(models, record * 0x10000 + part).push(step, shown);
     },
@@ -178,7 +164,7 @@ export function createPlayStates(timeline: Timeline, records: readonly DataView[
       lastBand.set(key, state);
       if (kind === "airband") historyOf(airBands, record).push(step, state);
       bandLog.push({ kind, record, step, state });
-      for (const sink of sinks) if (sink.kind === kind) sink.append(record, step / 120, state);
+      for (const sink of bands) if (sink.kind === kind) sink.append(record, step / 120, state);
     },
     /** Hides the record's head or attached AIR from `step` on, as its first result does. */
     judged(record: number, air: boolean, step: number) {
