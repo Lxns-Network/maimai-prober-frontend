@@ -17,6 +17,26 @@ export interface PackedUniform {
   readonly value: number | readonly number[] | boolean;
 }
 
+/** For a single vec4 owned by the renderer. Slots are reused, so compare their values. */
+export function createVec4Setter(gl: WebGL2RenderingContext) {
+  const values = new Map<WebGLUniformLocation, Float64Array>();
+  return (location: WebGLUniformLocation | null, value: Float32List | readonly number[]) => {
+    if (location === null) return;
+    const cached = values.get(location);
+    if (cached) {
+      if (
+        cached[0] === value[0] &&
+        cached[1] === value[1] &&
+        cached[2] === value[2] &&
+        cached[3] === value[3]
+      )
+        return;
+      cached.set(value);
+    } else values.set(location, Float64Array.from(value));
+    gl.uniform4fv(location, value);
+  };
+}
+
 /** GL entry points the upload needs; structural, so a fake context can stand in. */
 export interface UniformTarget {
   readonly FLOAT: number;

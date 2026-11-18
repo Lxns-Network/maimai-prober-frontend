@@ -11,7 +11,7 @@ import { compileProgram, compilePrograms } from "../assets/shaderCompile";
 
 import { createDeviceState, mirrorDeviceState, type DeviceStateSet } from "../gpu/deviceState";
 import { createSamplerCache, samplerParameters } from "../gpu/samplers";
-import { resolveUniforms, type UniformLocations } from "../gpu/uniforms";
+import { createVec4Setter, resolveUniforms, type UniformLocations } from "../gpu/uniforms";
 import { particleEffectState, primitiveEffectState } from "./renderState";
 import {
   EFFECT_ATTRIBUTES,
@@ -307,6 +307,7 @@ export function createEffectRenderer(
   const drawSource = {};
   let drawEpoch: number | undefined;
   const deviceState = createDeviceState(gl);
+  const setVec4 = createVec4Setter(gl);
   const samplerCache = createSamplerCache(gl);
   const samplers = new Map<number, WebGLSampler>();
   const programs = new Map<number, Program>();
@@ -494,12 +495,12 @@ export function createEffectRenderer(
       }
     }
     gl.uniformMatrix4fv(program.world, false, slot.world);
-    gl.uniform4fv(program.vertexParam0, slot.vertexParam0);
-    gl.uniform4fv(program.vertexParam1, slot.vertexParam1);
-    gl.uniform4fv(program.fixedParam0, slot.fixedParam0);
+    setVec4(program.vertexParam0, slot.vertexParam0);
+    setVec4(program.vertexParam1, slot.vertexParam1);
+    setVec4(program.fixedParam0, slot.fixedParam0);
     if (slot.points) gl.uniform1f(program.pointSize, slot.pointSize);
     if (program.particle) gl.uniform4fv(program.particles, slot.parameters);
-    else if (program.effectColor) gl.uniform4fv(program.effectColor, slot.effectColor);
+    else if (program.effectColor) setVec4(program.effectColor, slot.effectColor);
     if (program.parallelLights) {
       gl.uniform3fv(
         program.parallelDirection,

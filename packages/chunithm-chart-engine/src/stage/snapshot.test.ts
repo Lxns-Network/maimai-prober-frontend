@@ -120,6 +120,7 @@ it("preserves sampled poses across repeated fractions, forward steps and rewinds
   ]) {
     const scene = rewind.sample(tick, fraction)[0];
     const pose = scene.classState.get("pose") as { frame: number; world: Float32Array };
+    rewind.prepareDisplay(tick + 1);
     expect(scene.tick).toBe(tick);
     expect(pose.frame).toBe(tick + fraction);
     expect(pose.world[0]).toBe((tick + fraction) * 2);
