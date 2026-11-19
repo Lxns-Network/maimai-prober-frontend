@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
+import type {
+  FrameBackgroundRenderer,
+  FramePresentation,
+  FrameSurface,
+} from "@lxns-network/chunithm-chart-engine/render/frameTypes";
 import type { StageScene } from "@lxns-network/chunithm-chart-engine/stage/runtime";
 import { coordinateCamera } from "@lxns-network/chunithm-chart-engine/stage/motions/coordinate";
 import { sceneCamera } from "@lxns-network/chunithm-chart-engine/stage/motions/turnCamera";
@@ -322,13 +326,16 @@ function setup() {
     bindTexture() {},
   };
   const canvas = { width: 16, height: 9, dataset: {} as Record<string, string> };
-  const device = { gl, canvas, markResourcesUnknown() {}, markExternalBindingsUnknown() {} };
-  type Device = typeof device;
-  let background: ((seconds: number, target: Device, resetHistory: boolean) => boolean) | null =
-    null;
+  const device = {
+    gl,
+    canvas,
+    markResourcesUnknown() {},
+    markExternalBindingsUnknown() {},
+  } as unknown as FramePresentation;
+  let background: FrameBackgroundRenderer | null = null;
   const identity = new Float32Array(16);
   const scene = {
-    withPresentation: (callback: (target: Device) => unknown) => callback(device),
+    withPresentation: (callback: (target: FramePresentation) => unknown) => callback(device),
     setBackgroundRenderer: (renderer: typeof background) => (background = renderer),
     readCamera: () => ({
       cameraA: identity,
@@ -350,11 +357,7 @@ function setup() {
   } as unknown as FrameSurface;
   const draw = (seconds = 0, resetHistory = false) => {
     if (!background) throw new Error("Stage renderer has not been attached");
-    (background as (seconds: number, target: Device, resetHistory: boolean) => boolean)(
-      seconds,
-      device,
-      resetHistory,
-    );
+    background(seconds, device, resetHistory, () => undefined);
   };
   return { render, scene, draw, canvas };
 }

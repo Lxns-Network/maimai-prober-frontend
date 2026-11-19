@@ -4,7 +4,9 @@ import type {
   FrameHost,
   FrameHostOptions,
   FrameDraw,
+  FrameDrawContext,
   FrameCamera,
+  FrameExternalFrame,
   FrameExternalRenderer,
   FrameBackgroundRenderer,
   FramePresentation,
@@ -28,6 +30,13 @@ function checkDraw(entry: FrameDraw): void {
   if (entry.requiresDepthSnapshot && entry.pass < DEPTH_SNAPSHOT_FIRST_PASS)
     throw new RangeError("深度快照只服务 pass 16 及之后");
   if (typeof entry.draw !== "function") throw new TypeError("绘制项缺少 draw");
+}
+
+function drawCount(entry: FrameDraw, context: FrameDrawContext): number {
+  const result = entry.draw(context);
+  if (!result || !Number.isSafeInteger(result.draws) || result.draws < 0)
+    throw new TypeError("绘制项必须同步返回绘制次数");
+  return result.draws;
 }
 
 export function createFrameHost(options: FrameHostOptions): FrameHost {
@@ -107,10 +116,7 @@ export function createFrameHost(options: FrameHostOptions): FrameHost {
       for (const entry of orderPass(byPass.get(passIndex)!, pass.sortMode)) {
         if (entry.source === undefined || entry.source !== previous) sequence++;
         previous = entry.source;
-        const result = entry.draw(context);
-        if (!result || !Number.isSafeInteger(result.draws) || result.draws < 0)
-          throw new TypeError("绘制项必须同步返回绘制次数");
-        draws += result.draws;
+        draws += drawCount(entry, context);
       }
     }
     return draws;
@@ -161,17 +167,10 @@ export function createFrameHost(options: FrameHostOptions): FrameHost {
       )
         throw new RangeError("预览时间或流速选项无效");
       clearFrame();
-      const backgroundDrawn = background
-        ? background(seconds, presentation, resetBackgroundHistory) === true
-        : false;
-      if (backgroundDrawn) resetBackgroundHistory = false;
       const camera = cameraOf();
-      const entries: FrameDraw[] = scenery
-        ? [...scenery(camera, chartSeconds, speedRow, speedMultiplier)]
-        : [];
-      let notes = 0;
+      let frame: FrameExternalFrame | undefined;
       if (external) {
-        const frame = external({
+        frame = external({
           seconds: chartSeconds,
           speedRow,
           speedMultiplier,
@@ -187,12 +186,37 @@ export function createFrameHost(options: FrameHostOptions): FrameHost {
           frame.notes < 0
         )
           throw new TypeError("Invalid external frame");
-        entries.push(...frame.entries);
-        notes = frame.notes;
         sequence++;
       }
-      const draws = runPasses(entries);
-      return { draws, notes, backgroundDrawn };
+      let remainingEffects = frame?.fieldEffects;
+      let fieldEffectDraws = 0;
+      const backgroundDrawn =
+        background?.(seconds, presentation, resetBackgroundHistory, () => {
+          const entries = remainingEffects;
+          if (!entries?.length) return;
+          for (const entry of entries) checkDraw(entry);
+          remainingEffects = undefined;
+          return {
+            entries,
+            draw(entry, context) {
+              sequence++;
+              const count = drawCount(entry, context);
+              fieldEffectDraws += count;
+              return count;
+            },
+          };
+        }) === true;
+      if (backgroundDrawn) resetBackgroundHistory = false;
+      const entries: FrameDraw[] = scenery
+        ? [...scenery(camera, chartSeconds, speedRow, speedMultiplier)]
+        : [];
+      if (frame) entries.push(...frame.entries);
+      if (remainingEffects) entries.push(...remainingEffects);
+      return {
+        draws: fieldEffectDraws + runPasses(entries),
+        notes: frame?.notes ?? 0,
+        backgroundDrawn,
+      };
     },
     dispose() {
       if (disposed) return;

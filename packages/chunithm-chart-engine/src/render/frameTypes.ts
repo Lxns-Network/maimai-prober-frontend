@@ -59,6 +59,8 @@ export interface FrameEnvironment {
 
 export interface FrameExternalFrame {
   readonly entries: readonly FrameDraw[];
+  /** Layer-zero note effects that sort alongside the Stage's MainScene field models. */
+  readonly fieldEffects?: readonly FrameDraw[];
   readonly notes: number;
 }
 
@@ -72,10 +74,16 @@ export type FrameExternalRenderer = (input: {
   environment: FloatEnv;
 }) => FrameExternalFrame;
 
+export interface FrameFieldEffects {
+  readonly entries: readonly FrameDraw[];
+  draw(entry: FrameDraw, context: FrameDrawContext): number;
+}
+
 export type FrameBackgroundRenderer = (
   seconds: number,
   presentation: FramePresentation,
   resetHistory: boolean,
+  takeFieldEffects: () => FrameFieldEffects | undefined,
 ) => boolean;
 
 /** What the page and its overlays need from the frame: the camera, the presentation, and the hooks. */

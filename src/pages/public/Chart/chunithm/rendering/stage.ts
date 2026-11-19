@@ -389,7 +389,7 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         });
       }, delay);
     };
-    scene.setBackgroundRenderer((seconds, device, resetHistory) => {
+    scene.setBackgroundRenderer((seconds, device, resetHistory, takeFieldEffects) => {
       if (disposed || signal.aborted) return false;
       if (!input.readShowBackground()) {
         previousTick = null;
@@ -748,6 +748,7 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         const field = renderer.draw({
           scene: fieldScene,
           role: "field",
+          fieldEffects: takeFieldEffects(),
           camera: fieldCamera,
           instanceCameras,
           cameraScopes: fieldCameraScopes,
