@@ -9,12 +9,15 @@ export interface SurfaceSample {
   blockedBeams?: number;
 }
 
-/** A press or release of ground lanes or AIR before it is placed on the chart clock. */
-export interface ControlChange {
+export interface ButtonHold {
   lanes: number;
   air: boolean;
-  down: boolean;
 }
+
+/** A stroke identifies one uninterrupted finger contact with the ground slider. */
+export type ControlChange =
+  | (ButtonHold & { down: boolean; stroke?: number })
+  | { flick: number; stroke: number };
 
 export function laneRows(touch: number): [number, number] {
   let front = 0;

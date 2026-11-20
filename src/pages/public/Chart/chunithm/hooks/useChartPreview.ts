@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMediaQuery } from "@mantine/hooks";
 import type { SurfaceSample } from "@lxns-network/chunithm-chart-engine/chart/play/input";
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
 import type { ControllerLightWriter } from "../input/controllers/adapter";
 import { createPreviewLiveState } from "../runtime/liveState";
 import { createPreviewSession } from "../runtime/session";
-import type { PreviewControls } from "../runtime/types";
+import type { PlayInputDevice, PlaySettings, PreviewControls } from "../runtime/types";
 import type { CanvasResolution } from "../runtime/canvasSize";
 import { useStagePresentation } from "./useStagePresentation";
 import { DEFAULT_PLAY_TIMING_ROW, PLAY_TIMING_OPTIONS } from "../options/playTiming";
@@ -26,6 +27,31 @@ export interface ChartPreviewOptions {
   musicUrl?: string | null;
   jacketUrl?: string | null;
   resolution: CanvasResolution;
+}
+
+function usePlayInputDevice() {
+  const preferredDevice = useChunithmChartSettingsStore((state) => state.inputDevice);
+  const coarsePointer = useMediaQuery("(pointer: coarse)", undefined, {
+    getInitialValueInEffect: false,
+  });
+  const primaryTouch = coarsePointer && navigator.maxTouchPoints > 0;
+  const [observedTouch, setObservedTouch] = useState(false);
+  useEffect(() => {
+    if (observedTouch) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.isTrusted && event.pointerType === "touch") setObservedTouch(true);
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => window.removeEventListener("pointerdown", onPointerDown, true);
+  }, [observedTouch]);
+
+  const touchSupported = primaryTouch || observedTouch;
+  const defaultDevice = primaryTouch ? "touch" : "keyboard";
+  const inputDevice: PlayInputDevice =
+    preferredDevice === "touch" && !touchSupported
+      ? "keyboard"
+      : (preferredDevice ?? defaultDevice);
+  return { inputDevice, touchSupported };
 }
 
 /** Page ownership of the chart scene, stage, music and cancellable resource loading. */
@@ -51,7 +77,14 @@ export function useChartPreview(options: ChartPreviewOptions) {
   const fpsLimit = useChunithmChartSettingsStore((state) => state.fpsLimit);
   const keyBindings = useChunithmChartSettingsStore((state) => state.keyBindings);
   const flickNeedsMotion = useChunithmChartSettingsStore((state) => state.flickNeedsMotion);
-  const playSettingsRef = useRef({ keyBindings, flickNeedsMotion });
+  const groundHeight = useChunithmChartSettingsStore((state) => state.groundHeight);
+  const { inputDevice, touchSupported } = usePlayInputDevice();
+  const playSettingsRef = useRef<PlaySettings>({
+    inputDevice,
+    keyBindings,
+    flickNeedsMotion,
+    groundHeight,
+  });
   const fpsLimitRef = useRef(fpsLimit);
   const offsetsRef = useRef({ musicOffset, soundOffset });
   const setOptions = useChunithmChartSettingsStore((state) => state.setOptions);
@@ -64,6 +97,7 @@ export function useChartPreview(options: ChartPreviewOptions) {
   const fieldMaskPresentation = stage.enabled ? "external" : undefined;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controls = useRef<PreviewControls | null>(null);
+  const touchProjection = useCallback(() => controls.current?.touchProjection() ?? null, []);
   const resolutionRef = useRef(resolution);
   const [playbackSpeed, setPlaybackSpeed] = useState(settings.playbackSpeed);
   const [alwaysKeepHiSpeed, setAlwaysKeepHiSpeed] = useState(settings.alwaysKeepHiSpeed);
@@ -117,7 +151,9 @@ export function useChartPreview(options: ChartPreviewOptions) {
     [],
   );
   const [difficultyValue, setDifficultyValue] = useState<string | null>(null);
-  const [playMode, setPlayMode] = useState(false);
+  const [playModeEnabled, setPlayModeEnabled] = useState(false);
+  const [controllerConnected, setControllerConnected] = useState(false);
+  const playMode = playModeEnabled && (inputDevice !== "controller" || controllerConnected);
   const playModeRef = useRef(playMode);
   const surface = useRef<SurfaceSample | null>(null);
   const lightWriter = useRef<ControllerLightWriter | null>(null);
@@ -125,7 +161,11 @@ export function useChartPreview(options: ChartPreviewOptions) {
     lightWriter.current = writer;
     controls.current?.setControllerLights(writer);
   }, []);
-  const [controllerConnected, setControllerConnected] = useState(false);
+  function controllerInput(sample: SurfaceSample | null, receivedAt: number) {
+    if (!!surface.current !== !!sample) setControllerConnected(!!sample);
+    surface.current = sample;
+    controls.current?.controllerInput(sample, receivedAt);
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -276,9 +316,13 @@ export function useChartPreview(options: ChartPreviewOptions) {
     controls.current?.setAudioOffsets(musicOffset, soundOffset);
   }, [musicOffset, soundOffset]);
   useEffect(() => {
-    playSettingsRef.current = { keyBindings, flickNeedsMotion };
+    playSettingsRef.current = { inputDevice, keyBindings, flickNeedsMotion, groundHeight };
     controls.current?.setPlaySettings(playSettingsRef.current);
-  }, [keyBindings, flickNeedsMotion]);
+  }, [inputDevice, keyBindings, flickNeedsMotion, groundHeight]);
+  useEffect(() => {
+    playModeRef.current = playMode;
+    controls.current?.setPlayMode(playMode);
+  }, [playMode]);
   return {
     canvasRef,
     live,
@@ -316,25 +360,19 @@ export function useChartPreview(options: ChartPreviewOptions) {
     difficultyOptions,
     difficultyValue,
     playMode,
+    playModeEnabled,
+    inputDevice,
+    touchSupported,
+    touchProjection,
+    groundHeight,
+    selectInputDevice(device: PlayInputDevice) {
+      if (surface.current) controllerInput(null, performance.now());
+      setOptions({ inputDevice: device });
+    },
     controllerConnected,
     setControllerLights,
-    controllerInput(sample: SurfaceSample | null, receivedAt: number) {
-      const changed = !!surface.current !== !!sample;
-      surface.current = sample;
-      if (changed) {
-        setControllerConnected(!!sample);
-        playModeRef.current = !!sample;
-        setPlayMode(!!sample);
-        controls.current?.setPlayMode(false);
-      }
-      controls.current?.controllerInput(sample, receivedAt);
-      if (changed && sample) controls.current?.setPlayMode(true);
-    },
-    selectPlayMode(value: boolean) {
-      playModeRef.current = value;
-      setPlayMode(value);
-      controls.current?.setPlayMode(value);
-    },
+    controllerInput,
+    selectPlayMode: setPlayModeEnabled,
     stage: {
       ...stage,
       selectBackground(value: boolean) {

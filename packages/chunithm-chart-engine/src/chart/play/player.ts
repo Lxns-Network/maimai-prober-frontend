@@ -33,7 +33,13 @@ import {
   createSlash,
   type GroundContacts,
 } from "./arcadeJudgment";
-import { LANE_COUNT, laneRows, type ControlChange, type SurfaceSample } from "./input";
+import {
+  LANE_COUNT,
+  laneRows,
+  type ButtonHold,
+  type ControlChange,
+  type SurfaceSample,
+} from "./input";
 import { createKeyBeams, type KeyBeamOutput } from "./keyBeams";
 import type { BandKind } from "./noteStates";
 
@@ -70,9 +76,7 @@ const LADDER_ROW = 7;
 const SLIDE_SLACK_LANES = 1;
 
 /** One change of the player's controls, at a chart time in frames. */
-export interface PlayInput extends ControlChange {
-  frames: number;
-}
+export type PlayInput = ControlChange & { frames: number };
 
 /** One result a note commits. */
 export interface Judgment {
@@ -114,13 +118,18 @@ export interface PlayerOutput {
 
 export interface PlayerOptions {
   surface?: SurfaceSample | null;
+  touchMode?: boolean;
   /** Whether a FLICK needs a slash after its touch; otherwise a touch takes it. */
   flickNeedsMotion: boolean;
 }
 
-interface Press {
+interface Strike {
   frames: number;
   lanes: number;
+  stroke?: number;
+}
+
+interface Press extends Strike {
   /** Lanes of the touch a note has already taken; each newly touched lane takes one note. */
   used: number;
 }
@@ -139,6 +148,7 @@ interface Step extends GroundContacts {
   /** Plays every note as the automatic play does, for a stretch the player skipped. */
   auto: boolean;
   presses: Press[];
+  flicks?: Press[];
   /** AIR actions in this step, by frame time; one action serves every AIR open to it. */
   airActions: number[];
   held: number;
@@ -277,8 +287,9 @@ function takePress(
   checker: ReturnType<typeof groundChecker>,
   noteFrames: number,
   priority = true,
-): { delta: number; frames: number; lanes: number } | null {
-  for (const press of state.presses) {
+  presses = state.presses,
+) {
+  for (const press of presses) {
     const delta = f(press.frames - noteFrames);
     let accepted = checker.accepting(
       press.lanes & mask & (state.arcade ? ALL_LANES : ~press.used),
@@ -291,7 +302,7 @@ function takePress(
       }
     if (!accepted) continue;
     if (!state.arcade) press.used |= accepted;
-    return { delta, frames: press.frames, lanes: accepted };
+    return { delta, frames: press.frames, lanes: accepted, stroke: press.stroke };
   }
   return null;
 }
@@ -405,10 +416,7 @@ export function createPlayer(input: {
   let current: Step;
   const state = () => current;
 
-  /**
-   * The slash of a FLICK: a later touch, by FLICK.SLASH timing, on a lane other than the first
-   * touch's, within the FLICK or within its WIDTH_MOVE beside it. It takes no lane from other notes.
-   */
+  /** Keyboard slashes use a different lane. A finger can swipe within its original lane. */
   function flickSlash(record: DataView) {
     const lane = record.getInt32(0x28, true);
     const width = widthOf(record.getInt32(0x2c, true));
@@ -421,9 +429,18 @@ export function createPlayer(input: {
     };
     return {
       checker,
-      find(s: Step, touch: { frames: number; lanes: number }, noteFrames: number) {
-        for (const press of s.presses) {
-          if (press.frames < touch.frames || !(press.lanes & area & ~touch.lanes)) continue;
+      find(s: Step, touch: Strike, noteFrames: number) {
+        const keyboard = touch.stroke === undefined;
+        const strikes = keyboard ? s.presses : s.flicks;
+        if (!strikes) return null;
+        const allowed = keyboard ? area & ~touch.lanes : area;
+        for (const press of strikes) {
+          if (
+            press.stroke !== touch.stroke ||
+            press.frames < touch.frames ||
+            !(press.lanes & allowed)
+          )
+            continue;
           const delta = f(press.frames - noteFrames);
           if (checker.early > delta || !(delta < checker.late)) continue;
           const timing = delta - offset;
@@ -442,12 +459,15 @@ export function createPlayer(input: {
     const noteFrames = f(record.getFloat32(8, true) * K);
     const checker = groundChecker(record, config, row, offset);
     const mask = recordMask(record);
-    const motion =
-      flick && options.surface
-        ? createSlash(record.getInt32(0x28, true), widthOf(record.getInt32(0x2c, true)), config)
-        : null;
+    function takeHit(s: Step) {
+      const press = takePress(s, mask, checker, noteFrames, !flick);
+      if (press || !flick || !s.flicks) return press;
+      // A finger already on the slider can rub through successive FLICKs without tapping again.
+      return takePress(s, mask, checker, noteFrames, false, s.flicks);
+    }
+    let motion: ReturnType<typeof createSlash> | null = null;
     const slash = flick ? flickSlash(record) : null;
-    let touch: { frames: number; lanes: number; grade: number; timing: number } | null = null;
+    let touch: (Strike & { grade: number; timing: number }) | null = null;
     const mine = object.className === "MineNote";
     const delay = config.getFloat32(CONFIG_MINE_DELAY, true);
     let mineContact = 0;
@@ -486,14 +506,21 @@ export function createPlayer(input: {
             ? delta >= threshold
             : !(checker.early > delta) && (delta >= threshold || !(delta < checker.late));
           if (commits) grade = 4;
-        } else if (slash && (motion || options.flickNeedsMotion || touch)) {
+        } else if (slash && (s.arcade || options.flickNeedsMotion || touch)) {
           if (!touch) {
-            const press = takePress(s, mask, checker, noteFrames, false);
+            const press = takeHit(s);
             if (press) {
+              if (s.arcade)
+                motion = createSlash(
+                  record.getInt32(0x28, true),
+                  widthOf(record.getInt32(0x2c, true)),
+                  config,
+                );
               const timing = press.delta - offset;
               touch = {
                 frames: press.frames,
                 lanes: press.lanes,
+                stroke: press.stroke,
                 grade: groundGrade(config, row, timing, s.arcade),
                 timing,
               };
@@ -535,7 +562,7 @@ export function createPlayer(input: {
             }
           }
         } else {
-          const press = takePress(s, mask, checker, noteFrames);
+          const press = takeHit(s);
           if (press) {
             timing = press.delta - offset;
             grade = groundGrade(config, row, timing, s.arcade);
@@ -877,7 +904,7 @@ export function createPlayer(input: {
     const centre = config.getFloat32(CONFIG_AIR_HOLD_CENTRE, true);
     const holdStart = slideKind ? noteFrames : f(noteFrames + offset);
     const keep = createKeep(holdStart);
-    const elementChecker = airChecker(config, AIR_ELEMENT_ROW, offset);
+    const elementWindow = airWindows(config, AIR_ELEMENT_ROW, offset);
     const elementIndices = slideKind
       ? vectors.elements.flatMap((joint, k) => (joint.getUint8(0x14) ? [k] : []))
       : vectors.elements.map((_joint, k) => k);
@@ -952,19 +979,23 @@ export function createPlayer(input: {
               keep.commit();
               pending.shift();
             }
-            const delta = f(now - elementTimes[element]);
-            const action = elements && !s.auto ? elements[element]?.manual(delta, s.actions) : null;
-            if (
-              element < elementTimes.length &&
-              (elements && !s.auto ? !!action : settles(elementChecker, delta))
-            ) {
-              const final = slideKind
-                ? elementIndices[element] === lastElement
-                : element === elementTimes.length - 1;
-              const elementGrade = action?.grade ?? grade;
-              w.judge(final ? 2 : 1, elementGrade, action?.timing ?? null, 2, true);
-              if (elementGrade > 0) w.sound(startSound(SOUND.airElement));
-              judged[element++] = true;
+            if (element < elementTimes.length) {
+              const time = elementTimes[element];
+              const delta = f(now - time);
+              const action =
+                !s.auto && (elements || options.touchMode)
+                  ? airHead(s, elements?.[element] ?? elementWindow, time)
+                  : settles(elementWindow.checker, delta)
+                    ? { grade, timing: null }
+                    : null;
+              if (action) {
+                const final = slideKind
+                  ? elementIndices[element] === lastElement
+                  : element === elementTimes.length - 1;
+                w.judge(final ? 2 : 1, action.grade, action.timing, 2, true);
+                if (action.grade > 0) w.sound(startSound(SOUND.airElement));
+                judged[element++] = true;
+              }
             }
             if (!pending.length && element === elementTimes.length) {
               holdState = AIR_DONE;
@@ -1027,9 +1058,8 @@ export function createPlayer(input: {
           // The hand was up at some point since the element's window opened.
           const raised = s.auto || s.airHeld || s.airReleased > f(time + windows.checker.early);
           let grade = -1;
-          if (samples && !s.auto) {
-            if (delta > windows.checker.early) s.airInUse = true;
-            grade = samples[e].manual(delta, s.actions)?.grade ?? -1;
+          if (!s.auto && (samples || options.touchMode)) {
+            grade = airHead(s, samples?.[e] ?? windows, time)?.grade ?? -1;
           } else if (raised && settles(windows.checker, delta)) grade = 4;
           else if (delta > windows.late) grade = 0;
           if (grade < 0) return;
@@ -1114,19 +1144,35 @@ export function createPlayer(input: {
   const released = new Float64Array(LANE_COUNT).fill(-Infinity);
   let airReleased = -Infinity;
 
+  const sampleSlider = (touch: number, frames: number, presses: Press[]) => {
+    const [nextFront, nextRear] = laneRows(touch);
+    const lanes = (nextFront & ~front) | (nextRear & ~rear);
+    front = nextFront;
+    rear = nextRear;
+    if (lanes) presses.push({ frames, lanes, used: 0 });
+  };
+
   const run = (k: number, auto: boolean) => {
     const now = stepFrames(k);
     const presses: Press[] = [];
+    let flicks: Press[] | undefined;
     const airActions: number[] = [];
     let taken = 0;
     while (taken < queue.length && (auto || queue[taken].frames <= now)) {
       const event = queue[taken++];
       if (auto) continue;
-      if ("touch" in event) {
+      if ("beams" in event) {
         surface = event;
         continue;
       }
-      if (event.air) {
+      if ("flick" in event) {
+        (flicks ??= []).push({
+          frames: event.frames,
+          lanes: event.flick,
+          stroke: event.stroke,
+          used: 0,
+        });
+      } else if (event.air) {
         if (event.down) {
           airHeld = true;
           airActions.push(event.frames);
@@ -1135,27 +1181,25 @@ export function createPlayer(input: {
           airReleased = event.frames;
         }
         continue;
+      } else {
+        const lanes = event.lanes & ALL_LANES;
+        if (event.down) {
+          held |= lanes;
+          presses.push({ frames: event.frames, lanes, used: 0, stroke: event.stroke });
+        } else {
+          for (let lifted = held & lanes; lifted; lifted &= lifted - 1)
+            released[31 - Math.clz32(lifted & -lifted)] = event.frames;
+          held &= ~lanes;
+        }
       }
-      const lanes = event.lanes & ALL_LANES;
-      if (event.down) {
-        held |= lanes;
-        presses.push({ frames: event.frames, lanes, used: 0 });
-        continue;
-      }
-      held &= ~lanes;
-      for (let lane = 0; lane < LANE_COUNT; lane++)
-        if (lanes & (1 << lane)) released[lane] = event.frames;
     }
     queue.splice(0, taken);
     const previousFront = current?.usedFront ?? 0,
       previousRear = current?.usedRear ?? 0;
     let actions = 0;
     if (arcade && !auto) {
-      const rows = laneRows(surface.touch);
-      const pressed = (rows[0] & ~front) | (rows[1] & ~rear);
-      [front, rear] = rows;
+      sampleSlider(surface.touch, now, presses);
       held = front | rear;
-      if (pressed) presses.push({ frames: now, lanes: pressed, used: 0 });
       actions = sensor(surface, current?.airInUse ?? false);
       if (airHeld && !(actions & 128)) airReleased = now;
       airHeld = !!(actions & 128);
@@ -1178,6 +1222,7 @@ export function createPlayer(input: {
       now,
       auto,
       presses,
+      flicks,
       airActions,
       held,
       airHeld,
@@ -1210,13 +1255,19 @@ export function createPlayer(input: {
     get finished() {
       return next === objects.length && lives.length === 0;
     },
-    /** Queues a change of the controls; changes must come in time order. */
+    /** Restores held inputs without treating them as new strikes when play resumes. */
+    seedControls(state: ButtonHold) {
+      held = state.lanes;
+      airHeld = state.air;
+      queue.length = 0;
+    },
     seedSurface(sample: SurfaceSample) {
       surface = sample;
       [front, rear] = laneRows(sample.touch);
       sensor = createAirSensor(config);
       queue.length = 0;
     },
+    /** Queues a change of the controls; changes must come in time order. */
     push(change: PlayInput | DeviceInput) {
       queue.push(change);
     },

@@ -166,7 +166,7 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
           data-fullscreen={isFullscreen || undefined}
           aria-busy={preview.status === "loading" || preview.seeking || preview.changingDifficulty}
         >
-          <AspectRatio ratio={16 / 9}>
+          <AspectRatio ratio={16 / 9} pos="relative">
             <Box
               component="canvas"
               ref={preview.canvasRef}
@@ -180,6 +180,18 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
               浏览器不支持 Canvas。
             </Box>
           </AspectRatio>
+          {preview.playMode && preview.inputDevice === "touch" && (
+            <Box
+              aria-hidden
+              pos="absolute"
+              left={0}
+              right={0}
+              bottom={`${preview.groundHeight}%`}
+              h={1}
+              bg="rgba(255, 255, 255, 0.35)"
+              style={{ pointerEvents: "none" }}
+            />
+          )}
           {import.meta.env.DEV && <FpsDisplay live={preview.live} />}
           <LoadingOverlay visible={preview.status === "loading"} zIndex={1} />
         </Box>
@@ -285,9 +297,13 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
     restartLabel: "重新播放当前小节",
     playInput: !preview.playMode
       ? undefined
-      : preview.controllerConnected
-        ? { device: "controller" }
-        : { device: "keyboard", boundKeys: [...bindings.lanes.flat(), ...bindings.air] },
+      : preview.inputDevice === "keyboard"
+        ? {
+            device: "keyboard",
+            boundKeys: [...bindings.lanes.flat(), ...bindings.air],
+            playing: preview.playing,
+          }
+        : { device: preview.inputDevice, playing: preview.playing },
   });
 }
 export default function ChunithmPlayer({ children }: ChartPlayerProps) {

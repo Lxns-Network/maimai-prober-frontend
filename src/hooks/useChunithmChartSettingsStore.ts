@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CanvasResolution } from "@/pages/public/Chart/chunithm/runtime/canvasSize";
+import type { PlayInputDevice } from "@/pages/public/Chart/chunithm/runtime/types";
+import { GROUND_HEIGHT } from "@/pages/public/Chart/chunithm/input/touchZones";
 import {
   DEFAULT_KEY_BINDINGS,
   type KeyBindings,
@@ -27,7 +29,8 @@ interface ChunithmChartSettings {
   musicVolume: number;
   soundVolume: number;
   keyBindings: KeyBindings;
-  /** Whether a FLICK needs a slash across its lanes; otherwise a touch takes it. */
+  inputDevice: PlayInputDevice | null;
+  groundHeight: number;
   flickNeedsMotion: boolean;
 }
 
@@ -58,6 +61,8 @@ const useChunithmChartSettingsStore = create<
       musicVolume: 0.8,
       soundVolume: 0.6,
       keyBindings: DEFAULT_KEY_BINDINGS,
+      inputDevice: null,
+      groundHeight: GROUND_HEIGHT.default,
       flickNeedsMotion: true,
       setOptions: (options) => set(options),
     }),

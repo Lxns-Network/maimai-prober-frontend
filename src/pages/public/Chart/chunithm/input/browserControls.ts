@@ -1,7 +1,8 @@
 import type { ControlChange } from "@lxns-network/chunithm-chart-engine/chart/play/input";
 import { createControls, NO_HOLD } from "./controls";
 import { keyHold, type KeyBindings } from "./keyboard";
-import { touchHold } from "./touchZones";
+import { createTouchGestures, touchPosition } from "./touchZones";
+import type { PlayInputDevice } from "../runtime/types";
 
 /** Keyboard input on a page control belongs to that control. */
 export function isChartControlTarget(target: EventTarget | null) {
@@ -17,8 +18,8 @@ export function isChartControlTarget(target: EventTarget | null) {
 interface BrowserInputOptions {
   /** Available while play handles keyboard shortcuts, including Escape in controller mode. */
   keyBindings(): KeyBindings | null;
-  keyboardPlaying(): boolean;
   touchProjection(): ArrayLike<number> | null;
+  groundHeight(): number;
   onChange(changes: ControlChange[], timeStamp: number): void;
   toggle(): void;
   onBlur(): void;
@@ -31,12 +32,13 @@ export function bindBrowserControls(
   options: BrowserInputOptions,
 ) {
   const held = createControls();
-  let enabled = false;
+  const fingers = createTouchGestures(held);
+  let device: PlayInputDevice | null = null;
   const keyChanged = (event: KeyboardEvent) => {
     const bindings = options.keyBindings();
     if (!bindings) return;
     if (event.type === "keyup") {
-      const changes = held.hold(`key:${event.code}`, NO_HOLD);
+      const changes = held.hold(event.code, NO_HOLD);
       if (changes.length) {
         event.preventDefault();
         options.onChange(changes, event.timeStamp);
@@ -52,36 +54,58 @@ export function bindBrowserControls(
       if (!event.repeat) options.toggle();
       return;
     }
-    if (!enabled) return;
+    if (device !== "keyboard") return;
     const bound = keyHold(bindings, event.code);
     if (!bound.lanes && !bound.air) return;
     event.preventDefault();
-    if (!event.repeat && options.keyboardPlaying())
-      options.onChange(held.hold(`key:${event.code}`, bound), event.timeStamp);
+    if (!event.repeat) options.onChange(held.hold(event.code, bound), event.timeStamp);
   };
   const touched = (event: PointerEvent) => {
-    if (!enabled || event.pointerType === "mouse") return;
+    if (device !== "touch" || event.pointerType === "mouse") return;
+    const id = event.pointerId;
+    if (event.type === "pointercancel" || event.type === "lostpointercapture") {
+      options.onChange(fingers.end(id), event.timeStamp);
+      return;
+    }
+    const ending = event.type === "pointerup";
+    if (!ending && !event.buttons) return;
     const projection = options.touchProjection();
-    if (!projection) return;
+    if (!projection) {
+      if (ending) options.onChange(fingers.end(id), event.timeStamp);
+      return;
+    }
     event.preventDefault();
+    if (event.type === "pointerdown") {
+      canvas.setPointerCapture(id);
+      fingers.start(id);
+    }
     const rect = canvas.getBoundingClientRect();
-    const next =
-      event.type === "pointerup" || event.type === "pointercancel" || event.buttons === 0
-        ? NO_HOLD
-        : touchHold(
-            projection,
-            (event.clientX - rect.left) / rect.width,
-            (event.clientY - rect.top) / rect.height,
-          );
-    options.onChange(held.hold(`touch:${event.pointerId}`, next), event.timeStamp);
+    const samples = event.type === "pointermove" ? event.getCoalescedEvents?.() : undefined;
+    const groundHeight = options.groundHeight();
+    for (const sample of samples?.length ? samples : [event]) {
+      const point = touchPosition(
+        projection,
+        (sample.clientX - rect.left) / rect.width,
+        (sample.clientY - rect.top) / rect.height,
+        groundHeight,
+      );
+      options.onChange(fingers.move(id, point), sample.timeStamp);
+    }
+    if (ending) options.onChange(fingers.end(id), event.timeStamp);
   };
   // A tap on the lanes must not scroll the page or bring the fullscreen controls over the field.
   const touchStarted = (event: TouchEvent) => {
-    if (!enabled) return;
+    if (device !== "touch") return;
     event.preventDefault();
     event.stopPropagation();
   };
-  const pointerEvents = ["pointerdown", "pointermove", "pointerup", "pointercancel"] as const;
+  const pointerEvents = [
+    "pointerdown",
+    "pointermove",
+    "pointerup",
+    "pointercancel",
+    "lostpointercapture",
+  ] as const;
   for (const type of pointerEvents) canvas.addEventListener(type, touched, { signal });
   canvas.addEventListener("touchstart", touchStarted, { signal, passive: false });
   document.addEventListener("keydown", keyChanged, { signal });
@@ -95,10 +119,14 @@ export function bindBrowserControls(
     { once: true },
   );
   return {
-    setEnabled(value: boolean) {
-      enabled = value;
-      canvas.style.touchAction = value ? "none" : "";
+    setDevice(value: PlayInputDevice | null) {
+      device = value;
+      canvas.style.touchAction = device === "touch" ? "none" : "";
     },
-    releaseAll: held.releaseAll,
+    snapshot: held.snapshot,
+    releaseAll() {
+      fingers.clear();
+      return held.releaseAll();
+    },
   };
 }

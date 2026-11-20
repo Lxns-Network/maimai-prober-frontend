@@ -12,7 +12,10 @@ export interface ChartPlayerParts {
   controls: ReactNode;
   playbackControls: (props: PlaybackControlsProps) => ReactNode;
   restartLabel: string;
-  playInput?: { device: "keyboard"; boundKeys: readonly string[] } | { device: "controller" };
+  playInput?: { playing: boolean } & (
+    | { device: "keyboard"; boundKeys: readonly string[] }
+    | { device: "touch" | "controller" }
+  );
 }
 
 export interface ChartPlayerProps {

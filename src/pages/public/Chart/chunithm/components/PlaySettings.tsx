@@ -1,8 +1,9 @@
-import { useState, useSyncExternalStore } from "react";
+import { type ReactNode, useId, useState, useSyncExternalStore } from "react";
 import {
   Badge,
   Button,
   Card,
+  Collapse,
   Divider,
   Group,
   Paper,
@@ -18,9 +19,11 @@ import { LANE_COUNT } from "@lxns-network/chunithm-chart-engine/chart/play/input
 import useChunithmChartSettingsStore from "@/hooks/useChunithmChartSettingsStore";
 import { BINDING_PRESETS, bindKey, keyLabel } from "../input/keyboard";
 import type { useChartPreview } from "../hooks/useChartPreview";
+import type { PlayInputDevice } from "../runtime/types";
 import { useGameStore } from "../../stores/useGameStore";
 import classes from "../../../Chart.module.css";
 import { ControllerInput } from "./ControllerInput";
+import { GroundHeightSlider } from "./GroundHeightSlider";
 import styles from "./PlaySettings.module.css";
 
 const RESULTS = [
@@ -119,13 +122,12 @@ interface PlaySettingsProps {
   disabled?: boolean;
 }
 
-function PlayProgress({
+function PlayModePanel({
   preview,
   disabled,
-  controllerSelected,
-}: PlaySettingsProps & { controllerSelected: boolean }) {
-  const ready =
-    preview.status === "ready" && !disabled && (!controllerSelected || preview.controllerConnected);
+  children,
+}: PlaySettingsProps & { children: ReactNode }) {
+  const panelId = useId();
   const liveStats = useSyncExternalStore(
     preview.live.play.subscribe,
     preview.live.play.getSnapshot,
@@ -137,69 +139,77 @@ function PlayProgress({
   else if (stats?.finished) resultLabel = fullCombo ? "FULL COMBO" : "完成";
   return (
     <>
-      <Group justify="space-between">
-        <Group gap="xs">
-          <IconDeviceGamepad2 size={20} aria-hidden />
-          <Text size="sm" fw={500}>
-            游玩模式
-          </Text>
-          {resultLabel && (
-            <Badge variant="light" color={fullCombo ? "yellow" : "blue"}>
-              {resultLabel}
-            </Badge>
-          )}
-        </Group>
-        <Switch
-          aria-label="游玩模式"
-          checked={preview.playMode}
-          onChange={(event) => preview.selectPlayMode(event.currentTarget.checked)}
-          disabled={!ready}
-        />
-      </Group>
-      <Paper radius="md" p="xs" bg={panelBackground}>
-        <SimpleGrid cols={4} spacing="xs">
-          {RESULTS.map(({ label, color }, index) => (
-            <Stack key={label} gap={0} align="center">
-              <Text
-                fz="lg"
-                fw={700}
-                ff="monospace"
-                c={`color-mix(in srgb, var(--mantine-color-${color}-text) 65%, var(--mantine-color-text))`}
-              >
-                {stats?.counts[index] ?? "—"}
+      <Switch
+        aria-label="游玩模式"
+        aria-controls={panelId}
+        labelPosition="left"
+        label={
+          <Group component="span" gap="xs">
+            <IconDeviceGamepad2 size={20} aria-hidden />
+            <Text span size="sm" fw={500}>
+              游玩模式
+            </Text>
+            {resultLabel && (
+              <Badge component="span" variant="light" color={fullCombo ? "yellow" : "blue"}>
+                {resultLabel}
+              </Badge>
+            )}
+          </Group>
+        }
+        styles={{ body: { alignItems: "center", justifyContent: "space-between" } }}
+        checked={preview.playModeEnabled}
+        onChange={(event) => preview.selectPlayMode(event.currentTarget.checked)}
+        disabled={preview.status !== "ready" || disabled}
+      />
+      <Collapse id={panelId} expanded={preview.playModeEnabled} keepMountedMode="display-none">
+        <Stack gap="md" mt="md">
+          <Paper radius="md" p="xs" bg={panelBackground}>
+            <SimpleGrid cols={4} spacing="xs">
+              {RESULTS.map(({ label, color }, index) => (
+                <Stack key={label} gap={0} align="center">
+                  <Text
+                    fz="lg"
+                    fw={700}
+                    ff="monospace"
+                    c={`color-mix(in srgb, var(--mantine-color-${color}-text) 65%, var(--mantine-color-text))`}
+                  >
+                    {stats?.counts[index] ?? "—"}
+                  </Text>
+                  <Text fz={10} c="dimmed">
+                    {label}
+                  </Text>
+                </Stack>
+              ))}
+            </SimpleGrid>
+          </Paper>
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">
+              最大连击{" "}
+              <Text span ff="monospace" c="var(--mantine-color-text)">
+                {stats?.maxCombo ?? "—"}
               </Text>
-              <Text fz={10} c="dimmed">
-                {label}
+            </Text>
+            <Text size="xs" c="dimmed">
+              FAST{" "}
+              <Text span ff="monospace" c="blue">
+                {stats?.fast ?? "—"}
+              </Text>{" "}
+              / LATE{" "}
+              <Text span ff="monospace" c="red">
+                {stats?.late ?? "—"}
               </Text>
-            </Stack>
-          ))}
-        </SimpleGrid>
-      </Paper>
-      <Group justify="space-between">
-        <Text size="xs" c="dimmed">
-          最大连击{" "}
-          <Text span ff="monospace" c="var(--mantine-color-text)">
-            {stats?.maxCombo ?? "—"}
-          </Text>
-        </Text>
-        <Text size="xs" c="dimmed">
-          FAST{" "}
-          <Text span ff="monospace" c="blue">
-            {stats?.fast ?? "—"}
-          </Text>{" "}
-          / LATE{" "}
-          <Text span ff="monospace" c="red">
-            {stats?.late ?? "—"}
-          </Text>
-        </Text>
-      </Group>
+            </Text>
+          </Group>
+          {children}
+        </Stack>
+      </Collapse>
     </>
   );
 }
 
 export function PlaySettings({ preview, disabled = false }: PlaySettingsProps) {
   const isFullscreen = useGameStore((state) => state.isFullscreen);
-  const [input, setInput] = useState("keyboard");
+  const { inputDevice } = preview;
   const flickNeedsMotion = useChunithmChartSettingsStore((state) => state.flickNeedsMotion);
   const setOptions = useChunithmChartSettingsStore((state) => state.setOptions);
   const ready = preview.status === "ready" && !disabled;
@@ -210,32 +220,21 @@ export function PlaySettings({ preview, disabled = false }: PlaySettingsProps) {
       withBorder
       display={isFullscreen ? "none" : undefined}
     >
-      <Stack gap="md">
-        <PlayProgress
-          preview={preview}
-          disabled={disabled}
-          controllerSelected={input === "controller"}
-        />
+      <PlayModePanel preview={preview} disabled={disabled}>
         <Stack gap="xs">
           <Group justify="space-between" wrap="nowrap">
             <Text size="sm">输入设备</Text>
-            <SegmentedControl
+            <SegmentedControl<PlayInputDevice>
               size="xs"
               aria-label="输入设备"
-              value={input}
+              value={inputDevice}
               data={[
+                ...(preview.touchSupported ? [{ value: "touch" as const, label: "触控" }] : []),
                 { value: "keyboard", label: "键盘" },
                 { value: "controller", label: "控制器" },
               ]}
               disabled={disabled}
-              onChange={(value) => {
-                if (value === "controller") preview.selectPlayMode(false);
-                else if (preview.controllerConnected) {
-                  preview.controllerInput(null, performance.now());
-                  preview.selectPlayMode(preview.playMode);
-                }
-                setInput(value);
-              }}
+              onChange={preview.selectInputDevice}
             />
           </Group>
           <Paper
@@ -243,12 +242,32 @@ export function PlaySettings({ preview, disabled = false }: PlaySettingsProps) {
             p="sm"
             bg={panelBackground}
             role="group"
-            aria-label={input === "keyboard" ? "键盘键位" : "控制器连接"}
+            aria-label={
+              { touch: "触控设置", keyboard: "键盘键位", controller: "控制器连接" }[inputDevice]
+            }
           >
             <Stack gap="xs">
-              {input === "keyboard" ? (
-                <KeyMap disabled={!ready} />
-              ) : (
+              {inputDevice === "touch" && (
+                <>
+                  <GroundHeightSlider preview={preview} disabled={!ready} />
+                  <Group justify="space-between">
+                    <Text size="sm">FLICK 需要擦动</Text>
+                    <Switch
+                      aria-label="FLICK 需要擦动"
+                      checked={flickNeedsMotion}
+                      onChange={(event) =>
+                        setOptions({ flickNeedsMotion: event.currentTarget.checked })
+                      }
+                      disabled={!ready}
+                    />
+                  </Group>
+                  <Text size="xs" c="dimmed">
+                    地键支持双指同列交替。按住上方区域可维持 AIR，上下划动可再次触发。
+                  </Text>
+                </>
+              )}
+              {inputDevice === "keyboard" && <KeyMap disabled={!ready} />}
+              {inputDevice === "controller" && (
                 <ControllerInput
                   onInput={preview.controllerInput}
                   onLights={preview.setControllerLights}
@@ -257,18 +276,7 @@ export function PlaySettings({ preview, disabled = false }: PlaySettingsProps) {
             </Stack>
           </Paper>
         </Stack>
-        {input === "keyboard" && (
-          <Group justify="space-between">
-            <Text size="sm">FLICK 需要擦动</Text>
-            <Switch
-              aria-label="FLICK 需要擦动"
-              checked={flickNeedsMotion}
-              onChange={(event) => setOptions({ flickNeedsMotion: event.currentTarget.checked })}
-              disabled={!ready}
-            />
-          </Group>
-        )}
-      </Stack>
+      </PlayModePanel>
     </Card>
   );
 }

@@ -375,6 +375,42 @@ describe("player input", () => {
     expect(firstTick(7070)).toBe(0);
   });
 
+  test("a touchscreen FLICK accepts only the swipe from the finger that struck it", () => {
+    const options = { touchMode: true, flickNeedsMotion: true };
+    const head = { ...touch(5500, 1 << 12)[0], stroke: 1 };
+    const swipe = { frames: 5510 * 0.06, flick: 1 << 12, stroke: 1 };
+    expect(play([head, swipe], options).at("FlickNote").grade).toBe(4);
+    expect(play([{ ...head, frames: 5000 * 0.06 }, swipe], options).at("FlickNote").grade).toBe(4);
+    expect(play([head, { ...swipe, stroke: 2 }], options).at("FlickNote").grade).toBe(1);
+    expect(play([head], { ...options, flickNeedsMotion: false }).at("FlickNote").grade).toBe(4);
+  });
+
+  test("holding AIR sustains touchscreen hold ticks while action notes require a fresh gesture", () => {
+    const options = { touchMode: true, flickNeedsMotion: true };
+    const hold = raise(8000, 6500);
+    const still = play(hold, options).judgments;
+    const moving = play([...hold, raise(9000)[0], raise(14000)[0]], options).judgments;
+    for (const notes of [still, moving]) {
+      const ticks = notes.filter(
+        (j) => j.object.className === "AirHoldNote" && j.judgePhase === 1 && !j.element,
+      );
+      expect(ticks.length).toBeGreaterThan(0);
+      expect(ticks.every((j) => j.grade === 4)).toBe(true);
+    }
+    for (const [notes, hit] of [
+      [still, false],
+      [moving, true],
+    ] as const) {
+      const actions = notes.filter(
+        (j) =>
+          (j.object.className === "AirHoldNote" && j.element) ||
+          j.object.className === "AirLadderNote",
+      );
+      expect(actions.length).toBeGreaterThan(1);
+      expect(actions.every((j) => j.grade > 0 === hit)).toBe(true);
+    }
+  });
+
   test("an AIR HOLD tick is graded by how long before it the hand came down", () => {
     // Head at about 8008 ms, ticks at about 8492, 8742 and 9000 ms; AIRHOLD gives
     // JUSTICE CRITICAL within 200 ms, JUSTICE 400, ATTACK 600.

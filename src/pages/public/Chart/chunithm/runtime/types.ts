@@ -11,13 +11,17 @@ export interface LoopRange {
   end: number;
 }
 
+export type PlayInputDevice = "touch" | "keyboard" | "controller";
+
 export interface PlaySettings {
+  inputDevice: PlayInputDevice;
   keyBindings: KeyBindings;
-  /** Whether keyboard and touch play require a slash across a FLICK's lanes. */
+  groundHeight: number;
   flickNeedsMotion: boolean;
 }
 
 export interface PreviewControls {
+  touchProjection(): Float32Array | null;
   controllerInput(sample: SurfaceSample | null, receivedAt: number): void;
   setControllerLights(writer: ControllerLightWriter | null): void;
   selectDifficulty(value: number | undefined, seconds?: number): void;

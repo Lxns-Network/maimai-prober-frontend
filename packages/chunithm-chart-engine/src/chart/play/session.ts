@@ -4,9 +4,10 @@ import { cueSimulation, type CueRow, type Sound } from "../sweep/cues";
 import { createScoreKeeper } from "../sweep/score";
 import type { LoadedChart } from "../worker/loadChart";
 import type { HudValues } from "../../hud/timelineValues";
+import { stepForSeconds } from "../../loop/audioClock";
 import type { NoteScore } from "../../notes/score";
 import { createPlayEffects, type ResultText } from "./effects";
-import type { ControlChange, SurfaceSample } from "./input";
+import type { ButtonHold, ControlChange, SurfaceSample } from "./input";
 import { createPlayStates } from "./noteStates";
 import {
   createPlayer,
@@ -212,21 +213,24 @@ export function createPlaySession(input: {
       if (player.finished && !stats.finished) publish({ ...stats, finished: true });
     },
     /**
-     * Passes a control change made at chart time `seconds` and judges up to it at once. A change
+     * Passes the control changes of one event at chart time `seconds` and judges up to it. A change
      * from before the last step played, as an event stamped before the frame that handled it is,
      * keeps its own time and is judged with the next step instead of starting the play over.
      */
-    control(change: ControlChange, seconds: number) {
+    control(changes: ControlChange | ControlChange[], seconds: number) {
       if (!player) return;
-      player.push({ ...change, frames: seconds * 60 });
-      const step = Math.floor(seconds * 120);
-      if (step > player.step) this.advance(step);
+      for (const change of Array.isArray(changes) ? changes : [changes])
+        player.push({ ...change, frames: seconds * 60 });
+      this.advance(stepForSeconds(seconds));
     },
     surface(sample: SurfaceSample, seconds: number) {
       player?.push({ ...sample, frames: seconds * 60 });
     },
     seedSurface(sample: SurfaceSample) {
       player?.seedSurface(sample);
+    },
+    seedControls(state: ButtonHold) {
+      player?.seedControls(state);
     },
     get step() {
       return player?.step ?? -1;

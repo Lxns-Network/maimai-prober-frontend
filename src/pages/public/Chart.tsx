@@ -87,8 +87,9 @@ function ChartContent({
 
   const [showControls, setShowControls] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
-  const revealControls = playInput?.device === "keyboard" && !isLocked && !showControls;
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const canvasInput = playInput && playInput.device !== "controller" ? playInput : null;
+  const revealControls = !!canvasInput && !isLocked && !showControls;
+  const playingOnCanvas = canvasInput?.playing;
   const chartCanvasRef = useRef<HTMLDivElement>(null);
   const fullscreenElementRef = useRef<HTMLDivElement>(null);
   const [fullscreenEl, setFullscreenEl] = useState<HTMLDivElement | null>(null);
@@ -101,119 +102,70 @@ function ChartContent({
     if (!isFullscreen) {
       setShowControls(true);
       setIsLocked(false);
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-        controlsTimeoutRef.current = null;
-      }
       return;
     }
 
     if (isLocked) {
       setShowControls(false);
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-        controlsTimeoutRef.current = null;
-      }
       return;
     }
 
-    let lastTouchTime = 0;
-    let isOverControls = false;
+    const element = fullscreenElementRef.current!;
+    let timeout: ReturnType<typeof setTimeout>;
+    let lastTouchTime = -Infinity;
+    const hideAfterDelay = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => setShowControls(false), 3000);
+    };
+    const isControl = (target: EventTarget | null) =>
+      target instanceof Element &&
+      target !== element &&
+      !target.closest("#fullscreen-chart-container");
 
-    const showControlsWithTimeout = () => {
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
       setShowControls(true);
-
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-      }
-
-      if (!isOverControls) {
-        controlsTimeoutRef.current = setTimeout(() => {
-          setShowControls(false);
-        }, 3000);
-      }
+      if (isControl(event.target)) clearTimeout(timeout);
+      else hideAfterDelay();
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const wasOverControls = isOverControls;
-      isOverControls = !!(
-        target.closest(".mantine-ActionIcon-root") ||
-        target.closest('[class*="fullscreenControls"]')
-      );
-
-      if (isOverControls) {
-        if (controlsTimeoutRef.current) {
-          clearTimeout(controlsTimeoutRef.current);
-          controlsTimeoutRef.current = null;
-        }
-        if (!wasOverControls) {
-          setShowControls(true);
-        }
-      } else {
-        showControlsWithTimeout();
-      }
-    };
-
-    const handleTouch = (e: TouchEvent) => {
-      const now = Date.now();
-      if (now - lastTouchTime < 300) {
+    const handleTouchStart = (event: TouchEvent) => {
+      if (isControl(event.target)) {
+        clearTimeout(timeout);
         return;
       }
-      lastTouchTime = now;
-
-      const target = e.target as HTMLElement;
-      const isTouchingControls = !!(
-        target.closest('[class*="fullscreenControls"]') ||
-        target.closest(".mantine-ActionIcon-root")
-      );
-
-      if (isTouchingControls) {
-        setShowControls(true);
-        if (controlsTimeoutRef.current) {
-          clearTimeout(controlsTimeoutRef.current);
-          controlsTimeoutRef.current = null;
-        }
-        isOverControls = true;
-      } else {
-        e.preventDefault();
-        isOverControls = false;
-        setShowControls((prev) => {
-          if (prev) {
-            if (controlsTimeoutRef.current) {
-              clearTimeout(controlsTimeoutRef.current);
-              controlsTimeoutRef.current = null;
-            }
-            return false;
-          } else {
-            if (controlsTimeoutRef.current) {
-              clearTimeout(controlsTimeoutRef.current);
-            }
-            controlsTimeoutRef.current = setTimeout(() => {
-              setShowControls(false);
-            }, 3000);
-            return true;
-          }
-        });
-      }
+      if (event.touches.length !== 1 || event.timeStamp - lastTouchTime < 300) return;
+      lastTouchTime = event.timeStamp;
+      event.preventDefault();
+      setShowControls((visible) => !visible);
+      hideAfterDelay();
+    };
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (
+        isControl(event.target) &&
+        !Array.from(event.touches).some((touch) => isControl(touch.target))
+      )
+        hideAfterDelay();
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("touchstart", handleTouch, { passive: false });
-
-    controlsTimeoutRef.current = setTimeout(() => {
-      setShowControls(false);
-    }, 3000);
+    element.addEventListener("pointermove", handlePointerMove);
+    element.addEventListener("touchstart", handleTouchStart, { passive: false });
+    element.addEventListener("touchend", handleTouchEnd);
+    element.addEventListener("touchcancel", handleTouchEnd);
+    hideAfterDelay();
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("touchstart", handleTouch);
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-        controlsTimeoutRef.current = null;
-      }
+      element.removeEventListener("pointermove", handlePointerMove);
+      element.removeEventListener("touchstart", handleTouchStart);
+      element.removeEventListener("touchend", handleTouchEnd);
+      element.removeEventListener("touchcancel", handleTouchEnd);
+      clearTimeout(timeout);
     };
   }, [isFullscreen, isLocked]);
+
+  useEffect(() => {
+    if (isFullscreen && playingOnCanvas) setShowControls(false);
+  }, [isFullscreen, playingOnCanvas]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -384,7 +336,6 @@ function ChartContent({
             color="dark"
             size="lg"
             radius="xl"
-            onTouchStart={(event) => event.stopPropagation()}
             onClick={() => {
               if (revealControls) setShowControls(true);
               else setIsLocked((prev) => !prev);

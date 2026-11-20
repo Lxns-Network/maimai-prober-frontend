@@ -1,4 +1,4 @@
-import type { Hold } from "./controls";
+import type { ButtonHold } from "@lxns-network/chunithm-chart-engine/chart/play/input";
 
 /** Physical keys (`KeyboardEvent.code`) bound to each ground lane, and to the AIR sensor. */
 export interface KeyBindings {
@@ -80,7 +80,7 @@ export function keyLabel(code: string): string {
 }
 
 /** Lanes and AIR sensor `code` is bound to. */
-export function keyHold(bindings: KeyBindings, code: string): Hold {
+export function keyHold(bindings: KeyBindings, code: string): ButtonHold {
   let lanes = 0;
   bindings.lanes.forEach((keys, lane) => {
     if (keys.includes(code)) lanes |= 1 << lane;
