@@ -99,6 +99,7 @@ export default function MaimaiPlayer({ children }: ChartPlayerProps) {
 
   useKeyboardShortcuts();
   const previewAudio = usePreviewAudio();
+  const backend = useGameSettingsStore((state) => state.rendererBackend);
 
   const loadChart = useCallback(
     async (signal: AbortSignal) => {
@@ -176,7 +177,7 @@ export default function MaimaiPlayer({ children }: ChartPlayerProps) {
         </Stack>
       </Alert>
     ) : (
-      <ChartCanvas previewAudio={previewAudio} />
+      <ChartCanvas key={backend} backend={backend} previewAudio={previewAudio} />
     ),
     controls: (
       <Controls

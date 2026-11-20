@@ -1,4 +1,4 @@
-import { BaseRenderer, RenderContext } from "./BaseRenderer";
+import { BaseRenderer, RenderContext, type ChartDrawingContext } from "./BaseRenderer";
 import {
   SlideNote,
   SlideSegment,
@@ -237,6 +237,8 @@ export class SlideRenderer extends BaseRenderer {
     _currentBeat: number,
     currentTimeMs: number,
   ): NoteRenderPosition {
+    if (this.context.skin)
+      return this.noteRenderer.calculateNotePosition(note, _currentBeat, currentTimeMs);
     const angle = this.getButtonAngle(note.position);
     const timeDiff = note.timingMs - currentTimeMs;
     const approachTime = this.getNoteApproachTimeMs(note);
@@ -343,6 +345,18 @@ export class SlideRenderer extends BaseRenderer {
     const slideStart = note.timingMs + delayMs;
 
     if (currentTimeMs > slideStart + durationMs) {
+      if (
+        this.context.skin &&
+        mode === "stars" &&
+        this.context.config.showHitEffect &&
+        segments.length
+      ) {
+        this.renderSlideJudgment(
+          segments[segments.length - 1],
+          currentTimeMs - slideStart - durationMs,
+          !!note.allSlideBreaks?.[pathIndex],
+        );
+      }
       return;
     }
 
@@ -392,6 +406,49 @@ export class SlideRenderer extends BaseRenderer {
         );
       }
     });
+  }
+
+  private renderSlideJudgment(segment: SlideSegment, age: number, isBreak: boolean) {
+    const skin = this.context.skin;
+    const frames = (age * 60) / 1000;
+    if (!skin || frames >= 20) return;
+    const end = this.mirrorPosition(segment.endPos);
+    const fan = segment.type === "w";
+    const shape = detectSlideShape(segment.type, segment.startPos, segment.endPos, segment.midPos);
+    const circle = shape?.shape.startsWith("circle");
+    const point = this.getPointOnSegment(segment, 1);
+    const previous = this.getPointOnSegment(segment, 0.99);
+    const tangent = Math.atan2(point.y - previous.y, point.x - previous.x);
+    let angle = tangent;
+    let family:
+      | "SlideFan_U"
+      | "SlideFan_D"
+      | "SlideCircle_L"
+      | "SlideCircle_R"
+      | "Slide_L"
+      | "Slide_R";
+    if (fan) {
+      const down = end >= 3 && end <= 6;
+      family = down ? "SlideFan_D" : "SlideFan_U";
+      angle += down ? -Math.PI / 2 : Math.PI / 2;
+    } else if (circle) {
+      const radiusAngle = this.getButtonAngle(segment.endPos);
+      const clockwise = Math.sin(tangent - radiusAngle) > 0;
+      family = clockwise ? "SlideCircle_R" : "SlideCircle_L";
+      angle -= ((clockwise ? 25 : 158) * Math.PI) / 180;
+    } else {
+      family = end <= 4 ? "Slide_R" : "Slide_L";
+      if (end > 4) angle += Math.PI;
+    }
+    const ctx = this.context.ctx;
+    ctx.save();
+    ctx.globalAlpha *= Math.min(1, frames / 5, (20 - frames) / 5);
+    skin.draw(this.context, `UI_GAM_${family}_Perfect`, point.x, point.y, 1, angle);
+    if (isBreak) {
+      ctx.globalAlpha *= 0.25;
+      skin.draw(this.context, `UI_GAM_${family}_Perfect_Break`, point.x, point.y, 1, angle);
+    }
+    ctx.restore();
   }
 
   // 计算轨迹透明度与淡入状态，出现时机由 config.slideDelay 决定，与星星移动进度无关
@@ -477,11 +534,35 @@ export class SlideRenderer extends BaseRenderer {
       ctx.lineJoin = "round";
 
       if (segment.type === "w") {
-        this.renderWifiBars(segment, progress);
+        if (this.context.skin)
+          this.context.skin.fan(
+            this.context,
+            this.getHiddenCount(segment, progress),
+            this.getButtonAngle(segment.startPos),
+            isBreak && !normalBreakColor,
+            isSimultaneous,
+          );
+        else this.renderWifiBars(segment, progress);
         return;
       }
 
-      this.drawSegmentArrows(segment, progress, isJunctionEnd);
+      if (this.context.skin) {
+        const bars = this.getVisibleBarsForSegment(
+          segment,
+          this.getHiddenCount(segment, progress),
+          isJunctionEnd,
+        );
+        const key =
+          isBreak && !normalBreakColor
+            ? "BreakSlide_00"
+            : isSimultaneous
+              ? "Slide_Each_00"
+              : "Slide_00";
+        for (const bar of bars ?? [])
+          this.context.skin.draw(this.context, key, bar.x, bar.y, 1, bar.angle + Math.PI);
+      } else {
+        this.drawSegmentArrows(segment, progress, isJunctionEnd);
+      }
     });
 
     return true;
@@ -614,6 +695,11 @@ export class SlideRenderer extends BaseRenderer {
     currentTimeMs: number,
     requireCompleteLayer: boolean,
   ): void {
+    if (this.context.createPath) {
+      for (const entry of entries)
+        this.renderSlide(entry.note, currentBeat, currentTimeMs, "tracks", entry.isSimultaneous);
+      return;
+    }
     const mainCtx = this.context.ctx;
     const canvas = this.context.canvas;
     const frameDeltaMs = currentTimeMs - (this.lastTrackRenderTimeMs ?? currentTimeMs);
@@ -677,7 +763,7 @@ export class SlideRenderer extends BaseRenderer {
   // 获取或初始化用于后台分帧构建的暂存画布，对齐主画布尺寸与变换
   private acquireTrackStaging(
     canvas: HTMLCanvasElement,
-    mainCtx: CanvasRenderingContext2D,
+    mainCtx: ChartDrawingContext,
   ): HTMLCanvasElement {
     if (
       !this.trackStaging ||
@@ -971,7 +1057,7 @@ export class SlideRenderer extends BaseRenderer {
       const bx1 = bx + x1 - x2;
       const by1 = by + y1 - y2;
 
-      const main = new Path2D();
+      const main = this.context.createPath?.() ?? new Path2D();
       main.moveTo(x2, y2);
       main.lineTo(x3, y3);
       main.lineTo(bx3, by3);
@@ -980,7 +1066,7 @@ export class SlideRenderer extends BaseRenderer {
       main.lineTo(x1, y1);
       main.closePath();
 
-      const shadow = new Path2D();
+      const shadow = this.context.createPath?.() ?? new Path2D();
       const sx = -cos * shadowOffset;
       const sy = -sin * shadowOffset;
       shadow.moveTo(x2 + sx, y2 + sy);
@@ -992,7 +1078,7 @@ export class SlideRenderer extends BaseRenderer {
       shadow.closePath();
 
       // Break 左半部采用覆盖绘制方式，避免相邻多边形拼接处因抗锯齿产生缝隙
-      const leftHalf = new Path2D();
+      const leftHalf = this.context.createPath?.() ?? new Path2D();
       leftHalf.moveTo(x2, y2);
       leftHalf.lineTo(bx, by);
       leftHalf.lineTo(bx3, by3);
@@ -1064,7 +1150,7 @@ export class SlideRenderer extends BaseRenderer {
       const innerArm2X = pivotX + (arm2X - pivotX) * innerScale;
       const innerArm2Y = pivotY + (arm2Y - pivotY) * innerScale;
 
-      const path = new Path2D();
+      const path = this.context.createPath?.() ?? new Path2D();
       path.moveTo(arm1X, arm1Y);
       path.lineTo(cornerX, cornerY);
       path.lineTo(arm2X, arm2Y);
@@ -1081,7 +1167,7 @@ export class SlideRenderer extends BaseRenderer {
     ctx.lineJoin = "miter";
 
     // 整组扇形合并为单一 Path2D，统一执行阴影偏移与本体填充
-    const fanPath = new Path2D();
+    const fanPath = this.context.createPath?.() ?? new Path2D();
     for (const c of chevrons) {
       const a1x = c.x + cos * c.arm1Dx - sin * c.arm1Dy;
       const a1y = c.y + sin * c.arm1Dx + cos * c.arm1Dy;
@@ -1171,7 +1257,19 @@ export class SlideRenderer extends BaseRenderer {
         color = this.context.config.pinkSlideStart ? COLORS.SLIDE_PINK : COLORS.SLIDE_CYAN;
       }
 
-      this.drawStar(starPos.x, starPos.y, size, color, rotation, note.isEx ?? false);
+      if (this.context.skin)
+        this.context.skin.star(
+          this.context,
+          starPos.x,
+          starPos.y,
+          1.5 * starScale,
+          rotation,
+          !!isBreak,
+          isSimultaneous,
+          false,
+          false,
+        );
+      else this.drawStar(starPos.x, starPos.y, size, color, rotation, note.isEx ?? false);
     });
   }
 
@@ -1239,7 +1337,19 @@ export class SlideRenderer extends BaseRenderer {
             color = this.context.config.pinkSlideStart ? COLORS.SLIDE_PINK : COLORS.SLIDE_CYAN;
           }
 
-          this.drawStar(starPos.x, starPos.y, size, color, rotation, note.isEx ?? false);
+          if (this.context.skin)
+            this.context.skin.star(
+              this.context,
+              starPos.x,
+              starPos.y,
+              1.5 * starScale,
+              rotation,
+              !!isBreak,
+              isSimultaneous,
+              false,
+              false,
+            );
+          else this.drawStar(starPos.x, starPos.y, size, color, rotation, note.isEx ?? false);
         }
       }
     });

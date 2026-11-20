@@ -103,7 +103,7 @@ export default defineConfig({
   },
   assetsInclude: ["**/*.md"],
   optimizeDeps: {
-    include: ["react-lazyload", "react-color-extractor"],
+    include: ["react-lazyload", "react-color-extractor", "twgl.js", "tess2-ts"],
   },
   build: {
     rollupOptions: {

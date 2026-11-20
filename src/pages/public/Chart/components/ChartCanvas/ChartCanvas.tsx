@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
-import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
-import { MainRenderer } from "@lxns-network/maimai-chart-engine";
+import { useGameSettingsStore, type GameSettingsState } from "../../stores/useGameSettingsStore";
+import type { MainRenderer } from "@lxns-network/maimai-chart-engine";
 import type { PreviewAudioController } from "../../hooks/usePreviewAudio";
 import { DebugOverlay } from "./DebugOverlay";
 import { beatsToMs } from "../../utils/timeConversion";
@@ -15,8 +15,16 @@ import { useWakeLock } from "./hooks/useWakeLock";
 import { useInstallBenchmarkConsole } from "../../bench/installBenchmarkConsole";
 import { CHART_BENCH_ENABLED } from "../../bench/benchEnabled";
 import { useChartProfiling } from "./hooks/useChartProfiling";
+import { loadChartRenderer } from "../../utils/loadChartRenderer";
+import { notifyChart } from "../../utils/chartNotification";
 
-export function ChartCanvas({ previewAudio }: { previewAudio: PreviewAudioController }) {
+export function ChartCanvas({
+  previewAudio,
+  backend,
+}: {
+  previewAudio: PreviewAudioController;
+  backend: GameSettingsState["rendererBackend"];
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MainRenderer | null>(null);
@@ -58,8 +66,7 @@ export function ChartCanvas({ previewAudio }: { previewAudio: PreviewAudioContro
       if (!renderer) return;
 
       if (!chart) {
-        renderer.clear();
-        renderer.renderJudgmentLine();
+        renderer.renderEmptyStage();
         return;
       }
       const currentBeats = beatsOverride ?? timeline.preciseTime;
@@ -100,36 +107,51 @@ export function ChartCanvas({ previewAudio }: { previewAudio: PreviewAudioContro
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const renderer = new MainRenderer(canvas);
-    renderer.setIsPlaying(useGameStore.getState().isPlaying);
-    applyCurrentRendererSettings(renderer);
-    rendererRef.current = renderer;
-    syncRendererProfiling();
-
+    let active = true;
+    const fallback = (message: string) => {
+      if (!active) return;
+      notifyChart("已切换到 Canvas 2D", message, "red");
+      useGameSettingsStore.getState().setRendererBackend("2d");
+    };
+    const contextLost = (event: Event) => {
+      event.preventDefault();
+      fallback("WebGL2 绘图上下文已丢失。");
+    };
+    if (backend === "webgl2") canvas.addEventListener("webglcontextlost", contextLost);
     const handleResize = () => {
-      renderer.resize(useGameStore.getState().isFullscreen);
+      rendererRef.current?.resize(useGameStore.getState().isFullscreen);
       renderFrame(playbackTimeRef.current);
     };
-
-    handleResize();
-
     const resizeObserver = new ResizeObserver(handleResize);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
     const dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     dprMediaQuery.addEventListener("change", handleResize);
-
+    void loadChartRenderer(backend)
+      .then((createRenderer) => {
+        if (!active) return;
+        const renderer = createRenderer(canvas);
+        rendererRef.current = renderer;
+        renderer.setIsPlaying(useGameStore.getState().isPlaying);
+        applyCurrentRendererSettings(renderer);
+        syncRendererProfiling();
+        handleResize();
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        const message = error instanceof Error ? error.message : String(error);
+        if (backend === "webgl2") fallback(message);
+        else notifyChart("无法创建渲染器", message, "red");
+      });
     return () => {
-      renderer.setProfilingEnabled(false);
+      active = false;
+      rendererRef.current?.dispose();
+      rendererRef.current = null;
       resizeObserver.disconnect();
+      canvas.removeEventListener("webglcontextlost", contextLost);
       dprMediaQuery.removeEventListener("change", handleResize);
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [renderFrame, syncRendererProfiling]);
+  }, [backend, renderFrame, syncRendererProfiling]);
 
   useEffect(() => {
     if (rendererRef.current) {
@@ -230,6 +252,7 @@ export function ChartCanvas({ previewAudio }: { previewAudio: PreviewAudioContro
       <video
         ref={bgVideoRef}
         muted
+        crossOrigin={backend === "webgl2" ? "anonymous" : undefined}
         playsInline
         preload="auto"
         style={{
@@ -244,6 +267,7 @@ export function ChartCanvas({ previewAudio }: { previewAudio: PreviewAudioContro
       />
       <canvas
         ref={canvasRef}
+        data-renderer={backend}
         className={clsx(classes.canvas, {
           [classes.fullscreen]: isFullscreen,
         })}

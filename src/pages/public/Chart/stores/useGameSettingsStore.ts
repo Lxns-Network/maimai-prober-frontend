@@ -11,6 +11,7 @@ export const FULLSCREEN_QUALITY_MP: Record<FullscreenQuality, number> = {
 };
 
 export interface GameSettingsState {
+  rendererBackend: "2d" | "webgl2";
   hiSpeed: number;
   alwaysKeepHiSpeed: boolean;
   slideDelay: number;
@@ -34,6 +35,7 @@ export interface GameSettingsState {
 }
 
 export interface GameSettingsActions {
+  setRendererBackend: (backend: GameSettingsState["rendererBackend"]) => void;
   setHiSpeed: (speed: number) => void;
   setAlwaysKeepHiSpeed: (enabled: boolean) => void;
   setSlideDelay: (delay: number) => void;
@@ -61,6 +63,7 @@ export type GameSettingsStore = GameSettingsState & GameSettingsActions;
 const SETTINGS_STORE_VERSION = 3;
 
 const initialState: GameSettingsState = {
+  rendererBackend: "2d",
   hiSpeed: 6,
   alwaysKeepHiSpeed: false,
   slideDelay: 0,
@@ -87,6 +90,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
   persist(
     (set) => ({
       ...initialState,
+      setRendererBackend: (rendererBackend) => set({ rendererBackend }),
       setHiSpeed: (speed: number) => set({ hiSpeed: Math.max(3, Math.min(9, speed)) }),
       setAlwaysKeepHiSpeed: (enabled: boolean) => set({ alwaysKeepHiSpeed: enabled }),
       setSlideDelay: (delay: number) => {
@@ -127,6 +131,7 @@ export const useGameSettingsStore = create<GameSettingsStore>()(
         return { ...initialState, ...persisted };
       },
       partialize: (state) => ({
+        rendererBackend: state.rendererBackend,
         hiSpeed: state.hiSpeed,
         alwaysKeepHiSpeed: state.alwaysKeepHiSpeed,
         slideDelay: state.slideDelay,

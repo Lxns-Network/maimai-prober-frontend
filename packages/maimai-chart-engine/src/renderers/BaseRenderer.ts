@@ -1,6 +1,8 @@
+import type { SpriteSkin } from "./webgl/SpriteSkin";
 import { Point2D, RendererConfig, TouchPosition, ButtonPosition } from "../types";
 import {
   BASE_ANGLE,
+  HI_SPEED_CONVERSION_FACTOR,
   BUTTON_ANGLE_OFFSET,
   BUTTON_ANGLE_STEP,
   NOTE_STROKE_WIDTH_RATIO,
@@ -53,10 +55,62 @@ export function getGradientColors(
   return [COLORS.TAP_GRADIENT_START, COLORS.TAP_GRADIENT_END];
 }
 
+export const bakedSprites = new WeakSet<HTMLCanvasElement>();
+
+/** 烘焙完成后内容固定，同一张精灵可在多个绘制调用间复用 GPU 纹理。 */
+export function createSpriteCanvas(): HTMLCanvasElement {
+  const sprite = document.createElement("canvas");
+  bakedSprites.add(sprite);
+  return sprite;
+}
+
+export type ChartDrawingContext = Pick<
+  CanvasRenderingContext2D,
+  | "save"
+  | "restore"
+  | "translate"
+  | "rotate"
+  | "scale"
+  | "setTransform"
+  | "getTransform"
+  | "beginPath"
+  | "moveTo"
+  | "lineTo"
+  | "arc"
+  | "arcTo"
+  | "quadraticCurveTo"
+  | "closePath"
+  | "fill"
+  | "stroke"
+  | "clip"
+  | "fillRect"
+  | "drawImage"
+  | "fillText"
+  | "measureText"
+  | "createLinearGradient"
+  | "createRadialGradient"
+  | "fillStyle"
+  | "strokeStyle"
+  | "lineWidth"
+  | "lineJoin"
+  | "lineCap"
+  | "globalAlpha"
+  | "globalCompositeOperation"
+  | "shadowColor"
+  | "shadowBlur"
+  | "shadowOffsetX"
+  | "shadowOffsetY"
+  | "font"
+  | "textAlign"
+  | "textBaseline"
+> & { spriteTint?: readonly [number, number, number] };
+
 /** 渲染上下文，持有 Canvas、中心半径几何参数、流速与渲染配置。 */
 export interface RenderContext {
   canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
+  ctx: ChartDrawingContext;
+  createPath?: () => Path2D;
+  skin?: SpriteSkin;
   centerX: number;
   centerY: number;
   radius: number;
@@ -136,17 +190,15 @@ export abstract class BaseRenderer {
 
   /** 全局进场时长（ms）；开启 alwaysKeepHiSpeed 时除以播放倍速，避免视觉移速随回放倍速变快。 */
   protected getApproachTimeMs(): number {
-    if (this.context.config.alwaysKeepHiSpeed) {
-      return (
-        this.context.baseApproachTimeMs / (this.context.hiSpeed / this.context.config.playbackSpeed)
-      );
-    }
-
-    return this.context.baseApproachTimeMs / this.context.hiSpeed;
+    const { skin, config, hiSpeed, baseApproachTimeMs } = this.context;
+    const approach = skin
+      ? 4800 / (1 + hiSpeed / HI_SPEED_CONVERSION_FACTOR)
+      : baseApproachTimeMs / hiSpeed;
+    return config.alwaysKeepHiSpeed ? approach * config.playbackSpeed : approach;
   }
 
   /** 音符进场时长（ms），叠加了音符自身流速倍率（<HS*x>）；负流速取绝对值，方向由 getNoteApproachDir 处理。 */
-  protected getNoteApproachTimeMs(note: { hiSpeed?: number }): number {
+  getNoteApproachTimeMs(note: { hiSpeed?: number }): number {
     return this.getApproachTimeMs() / (Math.abs(note.hiSpeed ?? 1) || 1);
   }
 

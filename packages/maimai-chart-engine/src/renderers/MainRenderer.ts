@@ -4,7 +4,7 @@ import {
   TouchDrawOrder,
   type TouchDrawCommand,
 } from "../utils/touchDrawOrder";
-import { RenderContext, getGradientColors } from "./BaseRenderer";
+import { RenderContext, getGradientColors, type ChartDrawingContext } from "./BaseRenderer";
 import { NoteRenderer } from "./NoteRenderer";
 import { SlideRenderer } from "./SlideRenderer";
 import { HoldRenderer } from "./HoldRenderer";
@@ -215,8 +215,10 @@ interface RenderNoteMeta {
   simultaneousSlideCount: number;
   simultaneousNonTouchCount: number;
   simultaneousTouchCount: number;
+  guidePartner?: ButtonPosition;
   noExBreakIndex?: number;
   sourceNoteIndex?: number;
+  holdEndMs?: number;
 }
 
 const EMPTY_RENDER_NOTE_META: RenderNoteMeta = {
@@ -238,7 +240,9 @@ interface RenderFrameTiming {
  */
 export class MainRenderer {
   private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
+  private ctx: ChartDrawingContext;
+  private readonly skin: RenderContext["skin"];
+  private readonly createPath?: () => Path2D;
 
   private centerX: number = 0;
   private centerY: number = 0;
@@ -343,7 +347,13 @@ export class MainRenderer {
   /**
    * @throws {Error} 无法获取 Canvas 2D 绘图上下文时抛出
    */
-  constructor(canvas: HTMLCanvasElement, config: MainRendererConfig = {}) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    config: MainRendererConfig = {},
+    surface?: Pick<RenderContext, "ctx" | "createPath" | "skin">,
+  ) {
+    this.skin = surface?.skin;
+    this.createPath = surface?.createPath;
     this.canvas = canvas;
     this.sensorImagePath = config.sensorImagePath ?? "/assets/maimai/chart/sensor.webp";
 
@@ -355,7 +365,7 @@ export class MainRenderer {
 
     // CSS 已将背景设为 #000，关掉 alpha 让浏览器走 RGB 快速合成路径，省掉一次 alpha blend pass。
     // 在 144Hz 高刷显示器下这是最直接的 Canvas 帧预算优化。
-    const context = canvas.getContext("2d", { alpha: false });
+    const context = surface?.ctx ?? canvas.getContext("2d", { alpha: false });
     if (!context) {
       throw new Error("Failed to get 2D canvas context");
     }
@@ -366,6 +376,11 @@ export class MainRenderer {
     this.initRenderers();
 
     this.loadAssets();
+  }
+
+  dispose(): void {
+    this.backgroundVideo = null;
+    this.backgroundVideoCache = null;
   }
 
   private initRenderers(): void {
@@ -385,6 +400,8 @@ export class MainRenderer {
     return {
       canvas: this.canvas,
       ctx: this.ctx,
+      createPath: this.createPath,
+      skin: this.skin,
       centerX: this.centerX,
       centerY: this.centerY,
       radius: this.radius,
@@ -453,7 +470,7 @@ export class MainRenderer {
 
     this.centerX = logicalSize / 2;
     this.centerY = logicalSize / 2;
-    this.radius = logicalSize * 0.45;
+    this.radius = logicalSize * (this.skin ? 480 / 1080 : 0.45);
 
     if (this.noteRenderer) {
       this.updateRenderersContext();
@@ -656,6 +673,10 @@ export class MainRenderer {
       return;
     }
 
+    if (this.skin && this.config.judgmentLineDesign === "simple") {
+      this.skin.plate(this.createRenderContext(), "Outline_18");
+      return;
+    }
     this.ctx.save();
 
     if (
@@ -741,7 +762,12 @@ export class MainRenderer {
 
     const nowMs = timing.currentTimeMs;
     // 流速倍率小于 1 的 Note 接近时间更长，粗筛提前量需按全谱最小倍率放大
-    const lookAheadMs = BASE_APPROACH_TIME_MS / this.config.hiSpeed / prepared.minHiSpeed;
+    const lookAheadMs = !this.skin
+      ? BASE_APPROACH_TIME_MS / this.config.hiSpeed / prepared.minHiSpeed
+      : Math.max(
+          this.noteRenderer.getNoteApproachTimeMs({}),
+          this.touchRenderer.getTouchApproachTimeMs({}),
+        ) / prepared.minHiSpeed;
 
     const [slideLo, slideHi] = windowRange(prepared.slideIndex, nowMs, lookAheadMs);
     const layerTracks = this.pendingStableTracks;
@@ -772,12 +798,47 @@ export class MainRenderer {
     }
     this.profileMark("slideStars");
 
-    const [groupLo, groupHi] = windowRange(prepared.approachIndex, nowMs, lookAheadMs);
-    this.renderApproachIndicators(approachGroups, groupLo, groupHi, noteMeta, timing);
-
     // Tap、Hold、Slide 星头同层按时间分层（早到的在上），已在 prepareRenderNotes 预排序
     const [headLo, headHi] = windowRange(prepared.layeredIndex, nowMs, lookAheadMs);
-    this.renderTapApproachArcs(layeredHeads, headLo, headHi, noteMeta, timing);
+    if (this.skin) {
+      const stage = this.createRenderContext();
+      for (let i = headHi - 1; i >= headLo; i--) {
+        const { note } = layeredHeads[i];
+        if (isSlideNote(note) && (note.hasDelayMarker || note.headlessMode)) continue;
+        const meta = this.getNoteMeta(noteMeta, note);
+        const pos = this.noteRenderer.calculateNotePosition(
+          note,
+          timing.currentBeat,
+          nowMs,
+          meta.holdEndMs,
+        );
+        if (!pos.visible) continue;
+        const isBreak =
+          note.type === "break" ||
+          (isHoldStartNote(note) && note.isBreakHold) ||
+          (isSlideNote(note) && note.isStartBreak);
+        const star = (isSlideNote(note) && !note.hasTapHead) || (isTapNote(note) && note.isStar);
+        const key = isBreak
+          ? "Break"
+          : meta.simultaneousNoteCount >= 2
+            ? "Each"
+            : star
+              ? "Slide"
+              : "Normal";
+        this.skin.guide(
+          stage,
+          key,
+          this.noteRenderer.getAngle(note.position),
+          Math.hypot(pos.x - this.centerX, pos.y - this.centerY),
+          pos.scale,
+          meta.guidePartner && this.noteRenderer.getAngle(meta.guidePartner),
+        );
+      }
+    } else {
+      const [groupLo, groupHi] = windowRange(prepared.approachIndex, nowMs, lookAheadMs);
+      this.renderApproachIndicators(approachGroups, groupLo, groupHi, noteMeta, timing);
+      this.renderTapApproachArcs(layeredHeads, headLo, headHi, noteMeta, timing);
+    }
     this.profileMark("approach");
     this.renderLayeredHeads(layeredHeads, headLo, headHi, holdEndMap, noteMeta, timing);
     this.profileMark("heads");
@@ -954,6 +1015,24 @@ export class MainRenderer {
         }
       }
 
+      if (this.skin) {
+        const buttons = group.filter(
+          (n): n is TapNote | HoldStartNote | SlideNote =>
+            isTapNote(n) || isHoldStartNote(n) || isSlideNote(n),
+        );
+        const leader = buttons[0];
+        if (buttons.length > 1 && leader) {
+          let maxDistance = 0;
+          for (const other of buttons.slice(1)) {
+            const delta = Math.abs(other.position - leader.position);
+            const distance = Math.min(delta, 8 - delta);
+            if (distance > maxDistance) {
+              maxDistance = distance;
+              this.getOrCreateNoteMeta(noteMeta, leader).guidePartner = other.position;
+            }
+          }
+        }
+      }
       for (const note of group) {
         const isSimultaneous = tapCount >= 2 || (breakCount >= 1 && tapCount >= 1);
         const meta = this.getOrCreateNoteMeta(noteMeta, note);
@@ -1127,6 +1206,12 @@ export class MainRenderer {
     approachGroups.sort((a, b) => a.timingMs - b.timingMs);
     fireworkTouches.sort((a, b) => fireworkTriggerMs(a) - fireworkTriggerMs(b));
 
+    if (this.skin) {
+      for (const hold of holds) {
+        const end = holdEndMap.get(this.getHoldEndKey(hold.position, hold.timing));
+        if (end) this.getOrCreateNoteMeta(noteMeta, hold).holdEndMs = end.timingMs;
+      }
+    }
     const timingOf = (note: Note) => note.timingMs;
     const holdEffectNotes = [...holds].sort((a, b) => a.timingMs - b.timingMs);
     // touches 此时已按 timingMs 升序，filter 保序；按压和释放特效共用该索引
@@ -1155,12 +1240,16 @@ export class MainRenderer {
       breakCompletionTimes,
       breakNoExCompletionTimes,
       minHiSpeed,
-      slideIndex: buildTimeWindowIndex(slides, timingOf, slideVisibleEndMs),
+      slideIndex: buildTimeWindowIndex(
+        slides,
+        timingOf,
+        (slide) => slideVisibleEndMs(slide) + (this.skin ? 1000 / 3 : 0),
+      ),
       touchIndex: buildTimeWindowIndex(touches, timingOf, touchVisibleEndMs),
       layeredIndex: buildTimeWindowIndex(
         layeredHeads,
         (item) => item.note.timingMs,
-        layeredHeadEndMs,
+        (item) => noteMeta.get(item.note)?.holdEndMs ?? layeredHeadEndMs(item),
       ),
       approachIndex: buildTimeWindowIndex(
         approachGroups,
@@ -1294,15 +1383,15 @@ export class MainRenderer {
     noteMeta: WeakMap<Note, RenderNoteMeta>,
     timing: RenderFrameTiming,
   ): void {
+    const holdEnd = holdEndMap.get(this.getHoldEndKey(hold.position, hold.timing));
+    if (!holdEnd) return;
     const startPos = this.noteRenderer.calculateNotePosition(
       hold,
       timing.currentBeat,
       timing.currentTimeMs,
+      holdEnd.timingMs,
     );
     if (!startPos.visible) return;
-
-    const holdEnd = holdEndMap.get(this.getHoldEndKey(hold.position, hold.timing));
-    if (!holdEnd) return;
 
     const endPos = this.noteRenderer.calculateNotePosition(
       holdEnd,
@@ -1352,7 +1441,9 @@ export class MainRenderer {
     noteMeta: WeakMap<Note, RenderNoteMeta>,
     currentTimeMs: number,
   ): void {
-    const baseApproachTime = BASE_APPROACH_TIME_MS / this.config.hiSpeed;
+    const baseApproachTime = this.skin
+      ? this.touchRenderer.getTouchApproachTimeMs({})
+      : BASE_APPROACH_TIME_MS / this.config.hiSpeed;
 
     const visibleByPos = this.visibleTouchCountByPos;
     visibleByPos.clear();
@@ -1403,6 +1494,7 @@ export class MainRenderer {
         slide.isEx ?? false,
         slide.timing,
         this.exScale,
+        currentTimeMs,
       );
     } else {
       const color = this.getStarHeadColor(
@@ -1414,7 +1506,19 @@ export class MainRenderer {
         ? this.slideRenderer.calculateStarRotation(slide, currentTimeMs)
         : 0;
 
-      if (slide.isSplitSlide) {
+      if (this.skin) {
+        this.skin.star(
+          this.createRenderContext(),
+          pos.x,
+          pos.y,
+          pos.scale,
+          rotation + this.noteRenderer.getAngle(slide.position) + Math.PI / 2,
+          !!slide.isStartBreak,
+          isSimultaneous,
+          !!slide.isSplitSlide,
+          !!slide.isEx,
+        );
+      } else if (slide.isSplitSlide) {
         const noteSize = this.getStarNoteSize(pos.scale);
         if (slide.isEx) {
           this.slideRenderer.renderExSplitStarRing(
@@ -1559,6 +1663,20 @@ export class MainRenderer {
     isBreak: boolean,
     isSimultaneous: boolean,
   ): void {
+    if (this.skin) {
+      this.skin.star(
+        this.createRenderContext(),
+        x,
+        y,
+        scale,
+        rotation,
+        isBreak,
+        isSimultaneous,
+        false,
+        isEx,
+      );
+      return;
+    }
     const noteSize = this.getStarNoteSize(scale);
 
     if (isEx) {
@@ -1663,6 +1781,7 @@ export class MainRenderer {
         tap.isEx ?? false,
         tap.timing,
         this.exScale,
+        currentTimeMs,
       );
     }
 
@@ -1743,6 +1862,19 @@ export class MainRenderer {
         note.position === "C"
           ? TOUCH_HOLD_CENTRE_BURST_ANGLE
           : Math.atan2(this.centerY - origin.y, this.centerX - origin.x);
+      if (this.skin) {
+        const age = currentTimeMs - endMs;
+        this.touchHitEffectRenderer.renderButtonBurst(
+          origin.x,
+          origin.y,
+          age / 1000,
+          note.sourceNoteIndex ?? note.timingMs,
+          angle,
+          false,
+        );
+        this.touchHitEffectRenderer.renderTouchJudgment(note.position, origin, age);
+        continue;
+      }
       this.tapHitEffectRenderer.renderHitEffectAt(
         origin.x,
         origin.y,
@@ -1756,7 +1888,7 @@ export class MainRenderer {
 
   private renderTapHitEffect(notes: Note[], currentTimeMs: number): void {
     // hitEffectNotes 按 timingMs 升序，二分定位进入特效窗口的起始 Note（currentTimeMs - DURATION），之后线性扫描
-    const windowStartMs = currentTimeMs - NOTE_HIT_EFFECT_DURATION_MS;
+    const windowStartMs = currentTimeMs - (this.skin ? 500 : NOTE_HIT_EFFECT_DURATION_MS);
     let lo = 0;
     let hi = notes.length;
     while (lo < hi) {
@@ -1782,6 +1914,32 @@ export class MainRenderer {
       const latest = lastHitTimingByPos.get(note.position as ButtonPosition);
       if (latest !== undefined && latest > note.timingMs) continue;
 
+      if (this.skin) {
+        const angle = this.noteRenderer.getAngle(note.position as ButtonPosition);
+        const hit = this.noteRenderer.getPositionOnRing(note.position as ButtonPosition);
+        const age = currentTimeMs - note.timingMs;
+        const isBreak =
+          note.type === "break" ||
+          (isHoldEndNote(note) && !!note.isBreakHold) ||
+          (isSlideNote(note) && !!note.isStartBreak);
+        this.touchHitEffectRenderer.renderButtonBurst(
+          hit.x,
+          hit.y,
+          age / 1000,
+          note.sourceNoteIndex ?? note.timingMs,
+          angle,
+          isBreak,
+        );
+        const inset = (this.radius * 90) / 480;
+        this.skin.judgment(
+          this.createRenderContext(),
+          { x: hit.x - Math.cos(angle) * inset, y: hit.y - Math.sin(angle) * inset },
+          angle + Math.PI / 2,
+          age,
+          isBreak,
+        );
+        continue;
+      }
       const pos = this.tapHitEffectRenderer.calculateHitEffectPosition(note, currentTimeMs);
       if (!(0 <= pos.progress && pos.progress <= 1)) continue;
 

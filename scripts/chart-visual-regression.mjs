@@ -284,6 +284,12 @@ try {
   }, useFullscreen);
   await page.waitForTimeout(600);
 
+  if (settingsOverride?.rendererBackend) {
+    const actual = await page.locator("canvas[data-renderer]").getAttribute("data-renderer");
+    if (actual !== settingsOverride.rendererBackend) {
+      throw new Error(`Requested ${settingsOverride.rendererBackend} but captured ${actual}`);
+    }
+  }
   const frames = [];
   for (const timeMs of sampleTimesMs) {
     const filename = `${String(timeMs).padStart(5, "0")}.png`;

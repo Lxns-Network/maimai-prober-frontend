@@ -6,14 +6,17 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./webgl": "./src/renderers/webgl/WebGL2Renderer.ts"
   },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "ts-pattern": "5.9.0"
+    "tess2-ts": "1.0.8",
+    "ts-pattern": "5.9.0",
+    "twgl.js": "7.0.0"
   },
   "devDependencies": {
     "vite": "8.2.2",

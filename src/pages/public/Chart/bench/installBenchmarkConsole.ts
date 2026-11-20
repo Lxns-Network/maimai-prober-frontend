@@ -221,6 +221,7 @@ function createChartBenchConsole(
       if (wasPlaying) useGameStore.getState().pause();
       const result = await runRenderBenchmark(fixture.chart, STRESS_RENDERER_SETTINGS, {
         ...STRESS_BENCHMARK_PRESET,
+        rendererBackend: useGameSettingsStore.getState().rendererBackend,
         onProgress: (done, total) => {
           if (done === total || done % 1200 === 0) {
             console.info(`[chartBench] ${done}/${total} frames`);
@@ -245,6 +246,7 @@ function createChartBenchConsole(
       if (wasPlaying) useGameStore.getState().pause();
 
       const result = await runRenderBenchmark(chart, settings, {
+        rendererBackend: settings.rendererBackend,
         onProgress: (done, total) => {
           if (done === total || done % 1200 === 0) {
             console.info(`[chartBench] ${done}/${total} frames`);

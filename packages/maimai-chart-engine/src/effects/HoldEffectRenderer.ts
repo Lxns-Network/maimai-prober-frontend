@@ -1,4 +1,4 @@
-import { BaseRenderer, RenderContext } from "../renderers/BaseRenderer";
+import { BaseRenderer, RenderContext, type ChartDrawingContext } from "../renderers/BaseRenderer";
 import { ButtonPosition, HoldEndNote, HoldStartNote } from "../types";
 import { HOLD_ACTIVE_CYCLE_MS } from "../utils/constants";
 
@@ -130,6 +130,10 @@ export class HoldEffectRenderer extends BaseRenderer {
     if (currentTimeMs < startMs || currentTimeMs >= endMs) return;
     if (this.context.radius <= 0) return;
 
+    if (this.context.skin) {
+      this.context.skin.holdGlow(this.context, x, y, (currentTimeMs - startMs) / 1000);
+      return;
+    }
     const ctx = this.context.ctx;
     ctx.save();
     ctx.globalCompositeOperation = "screen";
@@ -140,7 +144,7 @@ export class HoldEffectRenderer extends BaseRenderer {
 
   /** 枚举当前存活的波纹并按半径从大到小绘制。 */
   private drawRipples(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     ox: number,
     oy: number,
     elapsedSec: number,
@@ -184,7 +188,7 @@ export class HoldEffectRenderer extends BaseRenderer {
    * 环宽按峰半径等比缩放（实测 FWHM/峰半径恒为 0.165，非固定像素宽）。
    */
   private drawRippleRing(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     x: number,
     y: number,
     peakRadius: number,

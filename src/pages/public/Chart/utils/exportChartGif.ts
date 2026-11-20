@@ -1,6 +1,7 @@
 import { GIFEncoder, applyPalette, quantize } from "gifenc";
-import { MainRenderer, type Chart } from "@lxns-network/maimai-chart-engine";
+import type { Chart } from "@lxns-network/maimai-chart-engine";
 import type { GameSettingsState } from "../stores/useGameSettingsStore";
+import { loadChartRenderer } from "./loadChartRenderer";
 import { msToBeats } from "../utils/timeConversion";
 
 export type ChartExportRange = {
@@ -14,6 +15,7 @@ type ExportChartGifOptions = {
   beatsPerMeasure: number;
   settings: Pick<
     GameSettingsState,
+    | "rendererBackend"
     | "hiSpeed"
     | "alwaysKeepHiSpeed"
     | "slideDelay"
@@ -101,81 +103,90 @@ export async function exportChartGif({
     throw new Error("导出范围为空");
   }
 
-  const bgVideo = videoOption ? await loadExportVideo(videoOption.url) : null;
+  let bgVideo: HTMLVideoElement | null = null;
 
   const canvas = document.createElement("canvas");
-  const renderer = new MainRenderer(canvas);
-  renderer.resizeToSize(size);
-  renderer.setHiSpeed(settings.hiSpeed);
-  renderer.setAlwaysKeepHiSpeed(settings.alwaysKeepHiSpeed);
-  renderer.setSlideDelay(settings.slideDelay);
-  renderer.setPlaybackSpeed(1);
-  renderer.setSlideRotation(settings.slideRotation);
-  renderer.setMirrorMode(settings.mirrorMode);
-  renderer.setJudgmentLineDesign(settings.judgmentLineDesign);
-  renderer.setPinkSlideStart(settings.pinkSlideStart);
-  renderer.setHighlightExNotes(settings.highlightExNotes);
-  renderer.setNormalColorBreakSlide(settings.normalColorBreakSlide);
-  renderer.setShowFireworks(settings.showFireworks);
-  renderer.setShowHitEffect(settings.showHitEffect);
+  const createRenderer = await loadChartRenderer(settings.rendererBackend);
+  const renderer = createRenderer(canvas);
+  try {
+    bgVideo = videoOption ? await loadExportVideo(videoOption.url) : null;
+    renderer.resizeToSize(size);
+    renderer.setHiSpeed(settings.hiSpeed);
+    renderer.setAlwaysKeepHiSpeed(settings.alwaysKeepHiSpeed);
+    renderer.setSlideDelay(settings.slideDelay);
+    renderer.setPlaybackSpeed(1);
+    renderer.setSlideRotation(settings.slideRotation);
+    renderer.setMirrorMode(settings.mirrorMode);
+    renderer.setJudgmentLineDesign(settings.judgmentLineDesign);
+    renderer.setPinkSlideStart(settings.pinkSlideStart);
+    renderer.setHighlightExNotes(settings.highlightExNotes);
+    renderer.setNormalColorBreakSlide(settings.normalColorBreakSlide);
+    renderer.setShowFireworks(settings.showFireworks);
+    renderer.setShowHitEffect(settings.showHitEffect);
 
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("无法创建导出画布");
-  }
+    const readback =
+      settings.rendererBackend === "webgl2" ? document.createElement("canvas") : canvas;
+    if (readback !== canvas) readback.width = readback.height = size;
+    const ctx = readback.getContext("2d", { willReadFrequently: true });
+    if (!ctx) {
+      throw new Error("无法创建导出画布");
+    }
 
-  const frameDurationMs = 1000 / fps;
-  const frameCount = Math.max(1, Math.ceil(durationMs / frameDurationMs));
-  const initialCapacity = Math.min(
-    MAX_GIF_INITIAL_CAPACITY_BYTES,
-    Math.round(size * size * 1.5 * frameCount),
-  );
-  const gif = GIFEncoder({ initialCapacity });
+    const frameDurationMs = 1000 / fps;
+    const frameCount = Math.max(1, Math.ceil(durationMs / frameDurationMs));
+    const initialCapacity = Math.min(
+      MAX_GIF_INITIAL_CAPACITY_BYTES,
+      Math.round(size * size * 1.5 * frameCount),
+    );
+    const gif = GIFEncoder({ initialCapacity });
 
-  let lastReportedPercent = -1;
+    let lastReportedPercent = -1;
 
-  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-    const currentMs = Math.min(range.endMs, range.startMs + frameIndex * frameDurationMs);
-    const currentBeats = msToBeats(currentMs, chart.bpmEvents, chart.bpm);
+    for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+      const currentMs = Math.min(range.endMs, range.startMs + frameIndex * frameDurationMs);
+      const currentBeats = msToBeats(currentMs, chart.bpmEvents, chart.bpm);
 
-    if (bgVideo && videoOption) {
-      const videoTime = (currentMs - videoOption.leadInMs - videoOption.musicOffset) / 1000;
-      const dur = bgVideo.duration;
-      if (videoTime > 0 && (!Number.isFinite(dur) || videoTime < dur)) {
-        await seekExportVideo(bgVideo, videoTime);
-        renderer.setBackgroundVideo(bgVideo);
-      } else {
-        renderer.setBackgroundVideo(null);
+      if (bgVideo && videoOption) {
+        const videoTime = (currentMs - videoOption.leadInMs - videoOption.musicOffset) / 1000;
+        const dur = bgVideo.duration;
+        if (videoTime > 0 && (!Number.isFinite(dur) || videoTime < dur)) {
+          await seekExportVideo(bgVideo, videoTime);
+          renderer.setBackgroundVideo(bgVideo);
+        } else {
+          renderer.setBackgroundVideo(null);
+        }
+      }
+
+      renderer.renderFrame(chart, currentBeats, beatsPerMeasure);
+
+      if (readback !== canvas) ctx.drawImage(canvas, 0, 0);
+      const imageData = ctx.getImageData(0, 0, size, size);
+      const palette = quantize(imageData.data, 256);
+      const indexedPixels = applyPalette(imageData.data, palette);
+      gif.writeFrame(indexedPixels, size, size, {
+        palette,
+        delay: frameDurationMs,
+        repeat: 0,
+      });
+
+      const percent = Math.round(((frameIndex + 1) / frameCount) * 100);
+      if (percent !== lastReportedPercent) {
+        lastReportedPercent = percent;
+        onProgress?.((frameIndex + 1) / frameCount);
+      }
+      if (frameIndex % EXPORT_YIELD_INTERVAL_FRAMES === EXPORT_YIELD_INTERVAL_FRAMES - 1) {
+        await yieldToBrowser();
       }
     }
 
-    renderer.renderFrame(chart, currentBeats, beatsPerMeasure);
-
-    const imageData = ctx.getImageData(0, 0, size, size);
-    const palette = quantize(imageData.data, 256);
-    const indexedPixels = applyPalette(imageData.data, palette);
-    gif.writeFrame(indexedPixels, size, size, {
-      palette,
-      delay: frameDurationMs,
-      repeat: 0,
-    });
-
-    const percent = Math.round(((frameIndex + 1) / frameCount) * 100);
-    if (percent !== lastReportedPercent) {
-      lastReportedPercent = percent;
-      onProgress?.((frameIndex + 1) / frameCount);
-    }
-    if (frameIndex % EXPORT_YIELD_INTERVAL_FRAMES === EXPORT_YIELD_INTERVAL_FRAMES - 1) {
-      await yieldToBrowser();
+    gif.finish();
+    const bytes = new Uint8Array(gif.bytes());
+    return new Blob([bytes], { type: "image/gif" });
+  } finally {
+    renderer.dispose();
+    if (bgVideo) {
+      bgVideo.removeAttribute("src");
+      bgVideo.load();
     }
   }
-
-  if (bgVideo) {
-    bgVideo.removeAttribute("src");
-    bgVideo.load();
-  }
-
-  gif.finish();
-  const bytes = new Uint8Array(gif.bytes());
-  return new Blob([bytes], { type: "image/gif" });
 }

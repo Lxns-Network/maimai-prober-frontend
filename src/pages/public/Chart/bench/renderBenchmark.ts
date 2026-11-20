@@ -6,10 +6,12 @@ import {
   type RenderFrameProfile,
   type RenderProfileStage,
 } from "@lxns-network/maimai-chart-engine";
+import { loadChartRenderer } from "../utils/loadChartRenderer";
 import type { GameSettingsState } from "../stores/useGameSettingsStore";
 
 /** 谱面渲染基准的可调参数；每个字段都会写进结果的 config，方便前后对照。 */
 export interface RenderBenchmarkOptions {
+  rendererBackend?: GameSettingsState["rendererBackend"];
   /** 起止时间（谱面毫秒）。默认整张谱面。 */
   startMs?: number;
   endMs?: number;
@@ -97,6 +99,7 @@ export interface ThroughputResult {
 
 export interface RenderBenchmarkResult {
   config: {
+    rendererBackend: GameSettingsState["rendererBackend"];
     chartTitle: string;
     difficulty: number | null;
     noteCount: number;
@@ -225,6 +228,23 @@ export async function runRenderBenchmark(
   settings: RendererSettings,
   options: RenderBenchmarkOptions = {},
 ): Promise<RenderBenchmarkResult> {
+  const canvas = document.createElement("canvas");
+  const createRenderer = await loadChartRenderer(options.rendererBackend ?? "2d");
+  const renderer = createRenderer(canvas);
+  try {
+    return await measureFrames(canvas, renderer, chart, settings, options);
+  } finally {
+    renderer.dispose();
+  }
+}
+
+async function measureFrames(
+  canvas: HTMLCanvasElement,
+  renderer: MainRenderer,
+  chart: Chart,
+  settings: RendererSettings,
+  options: RenderBenchmarkOptions,
+): Promise<RenderBenchmarkResult> {
   const timeline = TimingTimeline.fromChart(chart);
   const beatsPerMeasure = 4;
   const chartEndMs = timeline.msFromBeat(chart.measures * beatsPerMeasure);
@@ -248,11 +268,11 @@ export async function runRenderBenchmark(
   const profiledFrames = throughputChunkFrames > 0 ? frames : sampledFrames;
   const workFrames = sampledFrames + (throughputChunkFrames > 0 ? profiledFrames : 0);
 
-  const canvas = document.createElement("canvas");
-  const renderer = new MainRenderer(canvas);
   renderer.resizeToSize(size, dpr);
   applySettings(renderer, settings);
-  const readbackCtx = syncGpu ? renderer.getRenderContext().ctx : null;
+  const gl = syncGpu && options.rendererBackend === "webgl2" ? canvas.getContext("webgl2") : null;
+  const readbackCtx = syncGpu && !gl ? canvas.getContext("2d") : null;
+  const pixel = new Uint8Array(4);
   const fenceCanvas = document.createElement("canvas");
   fenceCanvas.width = Math.max(1, throughputChunkFrames);
   fenceCanvas.height = 1;
@@ -267,7 +287,7 @@ export async function runRenderBenchmark(
     samples.set(stage, new Float64Array(profiledFrames));
   }
   const frameMs = new Float64Array(profiledFrames);
-  const gpuSyncMs: number[] | null = readbackCtx ? [] : null;
+  const gpuSyncMs: number[] | null = syncGpu ? [] : null;
   const throughputMsPerFrame: number[] = [];
   const throughputPasses: ThroughputPassResult[] = [];
 
@@ -277,9 +297,10 @@ export async function runRenderBenchmark(
   };
 
   const syncGpuNow = (): number => {
-    if (!readbackCtx) return 0;
+    if (!syncGpu) return 0;
     const start = performance.now();
-    readbackCtx.getImageData(0, 0, 1, 1);
+    if (gl) gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+    else readbackCtx!.getImageData(0, 0, 1, 1);
     return performance.now() - start;
   };
 
@@ -441,6 +462,7 @@ export async function runRenderBenchmark(
 
   return {
     config: {
+      rendererBackend: options.rendererBackend ?? "2d",
       chartTitle: chart.title,
       difficulty: chart.difficulty ?? null,
       noteCount: chart.notes.length,
@@ -483,7 +505,7 @@ export function formatRenderBenchmarkReport(result: RenderBenchmarkResult): stri
       ? [`benchmark: ${config.source.id} hash ${config.source.hash}`]
       : []),
     `range: ${config.startMs}ms - ${config.endMs}ms @ ${config.fps}fps = ${config.frames} frames x ${config.passes} passes`,
-    `canvas: ${config.size}px x ${config.dpr} dpr${config.syncGpu ? " (GPU sync)" : ""}, wall ${result.wallMs.toFixed(0)}ms`,
+    `canvas: ${config.rendererBackend} ${config.size}px x ${config.dpr} dpr${config.syncGpu ? " (GPU sync)" : ""}, wall ${result.wallMs.toFixed(0)}ms`,
     `stalls: ${result.stallFrames} frames over ${STALL_FRAME_MS}ms`,
     "",
     `${"stage".padEnd(REPORT_STAGE_WIDTH)}${["p50", "p95", "p99", "max", "avg"].map((h) => h.padStart(REPORT_NUMBER_WIDTH)).join("")}`,

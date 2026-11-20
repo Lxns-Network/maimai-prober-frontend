@@ -1,4 +1,9 @@
-import { BaseRenderer, type RenderContext } from "../renderers/BaseRenderer";
+import {
+  BaseRenderer,
+  type RenderContext,
+  type ChartDrawingContext,
+  createSpriteCanvas,
+} from "../renderers/BaseRenderer";
 import type { TouchNote, TouchHoldStartNote } from "../types";
 
 const FIREWORK_DURATION_MS = 1333;
@@ -58,7 +63,7 @@ export class TouchFireworkRenderer extends BaseRenderer {
 
     const half = this.context.radius * FIREWORK_EXTENT_RATIO;
     const sizePx = Math.max(2, Math.ceil(half * 2 * backingScale));
-    const sprite = document.createElement("canvas");
+    const sprite = createSpriteCanvas();
     sprite.width = sizePx;
     sprite.height = sizePx;
     const spriteCtx = sprite.getContext("2d")!;
@@ -127,7 +132,7 @@ export class TouchFireworkRenderer extends BaseRenderer {
 
   /** 矢量绘制烟花楔形（小缩放比例阶段使用）。 */
   private drawWedgesVector(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     x: number,
     y: number,
     scale: number,
@@ -216,12 +221,7 @@ export class TouchFireworkRenderer extends BaseRenderer {
   }
 
   /** 绘制烟花中心光晕（外圈光晕 + 内核高光，使用 lighter 混合）。 */
-  private drawFireworkBalls(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    growT: number,
-  ): void {
+  private drawFireworkBalls(ctx: ChartDrawingContext, x: number, y: number, growT: number): void {
     if (growT < 0) return;
     const baseRadius = this.context.radius / 4.5;
     ctx.save();

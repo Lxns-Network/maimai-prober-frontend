@@ -1026,6 +1026,8 @@ export function Controls({
   );
 
   const {
+    rendererBackend,
+    setRendererBackend,
     hiSpeed,
     alwaysKeepHiSpeed,
     slideDelay,
@@ -1382,6 +1384,22 @@ export function Controls({
 
         <Collapse expanded={showDisplaySettings}>
           <Stack gap="md" mt="md">
+            <div>
+              <Text size="sm" mb={4}>
+                渲染器
+              </Text>
+              <SegmentedControl
+                aria-label="渲染器"
+                value={rendererBackend}
+                onChange={(value) => setRendererBackend(value === "webgl2" ? "webgl2" : "2d")}
+                data={[
+                  { value: "2d", label: "Canvas 2D" },
+                  { value: "webgl2", label: "WebGL2" },
+                ]}
+                size="xs"
+                fullWidth
+              />
+            </div>
             <div>
               <Text size="sm" mb={4}>
                 镜像

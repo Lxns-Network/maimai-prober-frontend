@@ -74,6 +74,24 @@ export class HoldRenderer extends BaseRenderer {
       endY = this.context.centerY + Math.sin(angle) * approachDist;
     }
 
+    if (this.context.skin && !this.context.config.ddrColorMode) {
+      if (endNote && currentTimeMs >= endNote.timingMs) return;
+      this.context.skin.hold(
+        this.context,
+        startPosition,
+        { x: endX, y: endY },
+        startPosition.scale,
+        angle,
+        isBreakHold,
+        isSimultaneous,
+        !!startNote && currentTimeMs >= startNote.timingMs,
+        !!endNote &&
+          !!startNote &&
+          endNote.timingMs - currentTimeMs <= this.getNoteApproachTimeMs(startNote) / 2,
+        isEx,
+      );
+      return;
+    }
     const tipAngle = angle;
     const leftAngle = angle + Math.PI / 3;
     const rightAngle = angle - Math.PI / 3;

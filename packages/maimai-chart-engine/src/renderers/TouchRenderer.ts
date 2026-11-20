@@ -3,10 +3,17 @@ import {
   type TouchDrawCommand,
   type TouchPart,
 } from "../utils/touchDrawOrder";
-import { BaseRenderer, mixHexColor, RenderContext } from "./BaseRenderer";
+import {
+  BaseRenderer,
+  mixHexColor,
+  RenderContext,
+  type ChartDrawingContext,
+  createSpriteCanvas,
+} from "./BaseRenderer";
 import { TouchNote, TouchHoldStartNote, Point2D } from "../types";
 import {
   TOUCH_APPROACH_MULTIPLIER,
+  HI_SPEED_CONVERSION_FACTOR,
   TOUCH_CENTER_DOT_RATIO,
   TOUCH_PETAL_OPEN_RATIO,
   TOUCH_PETAL_CLOSED_RATIO,
@@ -86,7 +93,7 @@ export class TouchRenderer extends BaseRenderer {
 
     const half = this.getTouchSpriteHalf();
     const sizePx = Math.max(2, Math.ceil(half * 2 * backingScale));
-    sprite = document.createElement("canvas");
+    sprite = createSpriteCanvas();
     sprite.width = sizePx;
     sprite.height = sizePx;
     const sctx = sprite.getContext("2d")!;
@@ -207,7 +214,7 @@ export class TouchRenderer extends BaseRenderer {
   }
 
   private createTouchHoldPetalGradient(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     colors: readonly [string, string, string, string],
     baseX: number,
     baseY: number,
@@ -236,7 +243,7 @@ export class TouchRenderer extends BaseRenderer {
 
     const half = this.getTouchHoldProgressHalf();
     const unit = this.context.radius / PANEL_RADIUS_UNITS;
-    const sprite = document.createElement("canvas");
+    const sprite = createSpriteCanvas();
     const sizePx = Math.max(2, Math.ceil(half * 2 * backingScale));
     sprite.width = sizePx;
     sprite.height = sizePx;
@@ -297,6 +304,18 @@ export class TouchRenderer extends BaseRenderer {
   }
 
   getTouchApproachTimeMs(note: { hiSpeed?: number }): number {
+    if (this.context.skin) {
+      const speed = this.context.hiSpeed / HI_SPEED_CONVERSION_FACTOR;
+      const value =
+        speed >= 4.5
+          ? (speed - 1) * 100
+          : [275, 283, 300, 312, 325, 337, 350][Math.round((speed - 3) * 4)];
+      return (
+        ((300000 / value) *
+          (this.context.config.alwaysKeepHiSpeed ? this.context.config.playbackSpeed : 1)) /
+        (Math.abs(note.hiSpeed ?? 1) || 1)
+      );
+    }
     return this.getNoteApproachTimeMs(note) * TOUCH_APPROACH_MULTIPLIER;
   }
 
@@ -314,6 +333,33 @@ export class TouchRenderer extends BaseRenderer {
     const timeDiff = note.timingMs - currentTimeMs;
     const approachTime = this.getTouchApproachTimeMs(note);
 
+    const skin = this.context.skin;
+    if (skin && !this.context.config.ddrColorMode) {
+      const duration = isHold ? note.durationMs : 0;
+      if (timeDiff > approachTime || timeDiff <= -duration) return;
+      const commands = queue ?? [];
+      const point = this.getTouchPosition(note.position);
+      commands.push({
+        sourceIndex,
+        isHold,
+        position: this.mirrorTouchPosition(note.position),
+        registeredAtMs: note.timingMs - approachTime,
+        draw: (part) =>
+          skin.touch(
+            this.context,
+            part,
+            point,
+            isHold,
+            isSimultaneous,
+            timeDiff,
+            approachTime / 1.25,
+            duration,
+            1,
+          ),
+      });
+      if (!queue) flushTouchDrawCommands(commands);
+      return;
+    }
     let visibilityWindow = 50;
     if (isHold && "durationMs" in note && note.durationMs !== undefined) {
       visibilityWindow = note.durationMs + 50;
@@ -602,6 +648,18 @@ export class TouchRenderer extends BaseRenderer {
       return;
     }
 
+    if (this.context.skin) {
+      const key =
+        visibleTouchCount >= 3
+          ? isSimultaneous
+            ? "UI_NOTES_Touch_Each_three"
+            : "UI_NOTES_Touch_three"
+          : isSimultaneous
+            ? "UI_NOTES_Touch_Each_two"
+            : "UI_NOTES_Touch_two";
+      this.context.skin.draw(this.context, key, position.x, position.y);
+      return;
+    }
     const boxSize = this.scaleByRadius(1 / 4.46) * 1.1 * 1.2;
     const cornerRadius = this.scaleByRadius(NOTE_SIZE_RATIO);
     const color = isSimultaneous ? COLORS.SIMULTANEOUS_GOLD : COLORS.TOUCH_CYAN;

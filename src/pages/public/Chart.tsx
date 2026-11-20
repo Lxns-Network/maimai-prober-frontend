@@ -21,6 +21,7 @@ import { usePageContext } from "vike-react/usePageContext";
 import useGame from "@/hooks/useGame";
 import { EmptyState } from "@/components/EmptyState";
 import { useGameStore } from "./Chart/stores/useGameStore";
+import { CHART_BENCH_ENABLED } from "./Chart/bench/benchEnabled";
 import type { ChartPlayerParts } from "./Chart/types";
 import type { Game } from "@/types/game";
 import classes from "./Chart.module.css";
@@ -409,7 +410,7 @@ export default function Chart() {
       </Center>
     );
   const renderPlayer = (parts: ChartPlayerParts) => <ChartContent {...parts} game={game} />;
-  if (!search.chart_id && !(import.meta.env.DEV && game === "maimai"))
+  if (!search.chart_id && !(CHART_BENCH_ENABLED && game === "maimai"))
     return renderPlayer({
       canvas: null,
       controls: null,

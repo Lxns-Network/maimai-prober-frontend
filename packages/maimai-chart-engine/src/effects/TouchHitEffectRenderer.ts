@@ -1,4 +1,9 @@
-import { BaseRenderer, RenderContext } from "../renderers/BaseRenderer";
+import {
+  BaseRenderer,
+  RenderContext,
+  type ChartDrawingContext,
+  createSpriteCanvas,
+} from "../renderers/BaseRenderer";
 import { TouchHoldStartNote, TouchNote, TouchPosition } from "../types";
 import { HIT_EFFECT_COLORS, TOUCH_RING_ALPHA_PROFILE } from "./constants";
 import { PANEL_RADIUS_UNITS } from "../utils/constants";
@@ -125,6 +130,9 @@ function clampedTravel(age: number, startSpeed: number, clampSpeed: number): num
   return dist;
 }
 
+export const ringSizeAt = (life: number) => evalHermite(RING_SIZE_KEYS, life);
+export const ringAlphaAt = (life: number) => evalKeys(RING_ALPHA_KEYS, life);
+
 /** Touch 命中特效渲染器，负责中心扩散光环与星点粒子群绘制。 */
 export class TouchHitEffectRenderer extends BaseRenderer {
   // 星点贴图缓存（4 帧），backingScale 或颜色变化时失效
@@ -191,6 +199,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
         seed = (seed ^ (note.position.charCodeAt(c) * (c + 1) * 73856093)) | 0;
       }
 
+      if (this.context.skin) this.renderTouchJudgment(note.position, origin, age * 1000);
       this.drawCenterRing(ctx, origin.x, origin.y, age, unitPx, color);
       this.drawStarBurst(
         ctx,
@@ -225,9 +234,98 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     ctx.restore();
   }
 
+  renderTouchJudgment(position: TouchPosition, origin: { x: number; y: number }, ageMs: number) {
+    const { skin, ctx, centerX, centerY, radius } = this.context;
+    if (!skin) return;
+    const angle =
+      position === "C" ? -Math.PI / 2 : Math.atan2(origin.y - centerY, origin.x - centerX);
+    const offset = (-90 * radius) / 480;
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+    skin.judgment(
+      this.context,
+      { x: origin.x + Math.cos(angle) * offset, y: origin.y + Math.sin(angle) * offset },
+      angle + Math.PI / 2,
+      ageMs,
+      false,
+    );
+    ctx.restore();
+  }
+
+  renderButtonBurst(
+    x: number,
+    y: number,
+    age: number,
+    seed: number,
+    angle: number,
+    isBreak: boolean,
+  ) {
+    const skin = this.context.skin;
+    if (!skin || age < 0 || age >= LIFE) return;
+    const { ctx, radius } = this.context;
+    const unit = radius / 480;
+    ctx.save();
+    if (isBreak) {
+      const t = age - 0.01;
+      for (const [count, life, size, distance, offset] of [
+        [1, 0.38, 250, 0, 0],
+        [2, 0.3, 175, 180, Math.PI / 2],
+        [2, 0.3, 130, 180, 0],
+      ]) {
+        const progress = t / life;
+        if (progress <= 0 || progress >= 1) continue;
+        ctx.globalAlpha = Math.max(0, Math.min(1, progress / 0.112, (1 - progress) / 0.435));
+        for (let i = 0; i < count; i++) {
+          const rotation = angle + offset + i * Math.PI;
+          const r = distance ? (distance - 340 * t) * unit : 0;
+          skin.draw(
+            this.context,
+            "BreakFlash0",
+            x + Math.cos(rotation) * r,
+            y + Math.sin(rotation) * r,
+            size / 128,
+            angle + Math.PI / 2,
+          );
+        }
+      }
+    } else {
+      const tapUnit = (unit * 100) / ROOT_SCALE;
+      this.drawCenterRing(ctx, x, y, age, tapUnit, HIT_EFFECT_COLORS.perfect);
+      this.drawStarBurst(
+        ctx,
+        x,
+        y,
+        age,
+        tapUnit,
+        HIT_EFFECT_COLORS.perfect,
+        seed,
+        8,
+        SMALL_SHAPE_R,
+        SMALL_SIZE,
+        0,
+        0,
+      );
+      this.drawStarBurst(
+        ctx,
+        x,
+        y,
+        age,
+        tapUnit,
+        HIT_EFFECT_COLORS.perfect,
+        seed ^ 0x85ebca77,
+        8,
+        ROUND_SHAPE_R,
+        ROUND_SIZE,
+        ROUND_START_SPEED,
+        ROUND_CLAMP_SPEED,
+      );
+    }
+    ctx.restore();
+  }
+
   /** 绘制中心向外扩散的光环。 */
   private drawCenterRing(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     ox: number,
     oy: number,
     age: number,
@@ -235,15 +333,30 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     color: Rgb,
   ): void {
     const life = age / LIFE;
-    const sizeMul = Math.max(0, evalHermite(RING_SIZE_KEYS, life));
+    const sizeMul = Math.max(0, ringSizeAt(life));
     let diameter = RING_START_SIZE * sizeMul;
     if (diameter > RING_MAX_SIZE) diameter = RING_MAX_SIZE;
     const radius = (diameter * unitPx) / 2;
     if (radius < 0.5) return;
 
-    const alpha = evalKeys(RING_ALPHA_KEYS, life);
+    const alpha = ringAlphaAt(life);
     if (alpha <= 0.01) return;
 
+    if (this.context.skin) {
+      ctx.save();
+      ctx.globalAlpha *= alpha;
+      this.context.skin.draw(
+        this.context,
+        "HitRing",
+        ox,
+        oy,
+        (radius * 2) / 256 / (this.context.radius / 480),
+        0,
+        [1, 1, 0],
+      );
+      ctx.restore();
+      return;
+    }
     const profile = TOUCH_RING_ALPHA_PROFILE;
     const last = profile.length - 1;
     const gradient = ctx.createRadialGradient(ox, oy, 0, ox, oy, radius);
@@ -260,7 +373,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
 
   /** 绘制星点粒子群（原地缩放闪烁或带阻尼向外扩散）。 */
   private drawStarBurst(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     ox: number,
     oy: number,
     age: number,
@@ -280,7 +393,8 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     const alpha = Math.min(1, sizeMul * 1.05);
     const travel =
       startSpeed > 0 && clampSpeed > 0 ? clampedTravel(age, startSpeed, clampSpeed) : 0;
-    const sprites = this.getStarSprites(color);
+    const skin = this.context.skin;
+    const sprites = skin ? null : this.getStarSprites(color);
 
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -289,7 +403,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
       const h2 = hash01(seedBase + i * 4 + 2);
       const h3 = hash01(seedBase + i * 4 + 3);
       const h4 = hash01(seedBase + i * 4 + 4);
-      const angle = h1 * Math.PI * 2;
+      const angle = (skin ? i / count + h1 / count : h1) * Math.PI * 2;
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
 
@@ -300,12 +414,23 @@ export class TouchHitEffectRenderer extends BaseRenderer {
       const outerR = size * 0.55;
       if (outerR < 0.5) continue;
 
-      const frame = Math.min(3, Math.floor(h4 * 4)) as StarFrame;
+      const frame = (skin ? 2 + (i % 2) : Math.min(3, Math.floor(h4 * 4))) as StarFrame;
+      if (skin) {
+        skin.draw(
+          this.context,
+          `HitStar${frame}`,
+          x,
+          y,
+          size / 128 / (this.context.radius / 480),
+          h3 * Math.PI * 2,
+        );
+        continue;
+      }
       const destHalf = outerR * STAR_SPRITE_HALF_RATIO;
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(h3 * Math.PI * 2);
-      ctx.drawImage(sprites[frame], -destHalf, -destHalf, destHalf * 2, destHalf * 2);
+      ctx.drawImage(sprites![frame], -destHalf, -destHalf, destHalf * 2, destHalf * 2);
       ctx.restore();
     }
     ctx.restore();
@@ -322,7 +447,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
     const sizePx = Math.max(2, Math.ceil(half * 2 * Math.max(1, backingScale)));
     const sprites: HTMLCanvasElement[] = [];
     for (let frame = 0; frame < 4; frame++) {
-      const sprite = document.createElement("canvas");
+      const sprite = createSpriteCanvas();
       sprite.width = sprite.height = sizePx;
       const sctx = sprite.getContext("2d")!;
       sctx.setTransform(
@@ -343,7 +468,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
 
   /** 绘制单帧星点（0: 软心光晕、1: 宽实心、2: 窄实心、3: 双层描边）。 */
   private drawStarFrame(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     x: number,
     y: number,
     outerR: number,
@@ -378,7 +503,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
 
   /** 在星形裁剪区填充径向渐变（hollow 为 true 时中心微透做软心，false 为高亮白心）。 */
   private fillStarGradient(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     tipR: number,
     waistR: number,
     color: Rgb,
@@ -409,7 +534,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
 
   /** 绘制外层发光 + 内层高亮边缘的双层描边星形。 */
   private strokeStar(
-    ctx: CanvasRenderingContext2D,
+    ctx: ChartDrawingContext,
     tipR: number,
     waistR: number,
     color: Rgb,
@@ -434,7 +559,7 @@ export class TouchHitEffectRenderer extends BaseRenderer {
   }
 
   /** 构建四角星路径（尖端在 90° 方向，两尖之间用内凹二次贝塞尔连接）。 */
-  private pathSparkle(ctx: CanvasRenderingContext2D, tipR: number, waistR: number): void {
+  private pathSparkle(ctx: ChartDrawingContext, tipR: number, waistR: number): void {
     for (let i = 0; i < 4; i++) {
       const aTip = (i * Math.PI) / 2 - Math.PI / 2;
       const aWaist = aTip + Math.PI / 4;

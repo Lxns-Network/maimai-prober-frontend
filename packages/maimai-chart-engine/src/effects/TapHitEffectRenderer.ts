@@ -1,4 +1,4 @@
-import { BaseRenderer, type RenderContext } from "../renderers/BaseRenderer";
+import { BaseRenderer, type RenderContext, createSpriteCanvas } from "../renderers/BaseRenderer";
 import type { ButtonPosition, Note } from "../types";
 import {
   NOTE_SIZE_RATIO,
@@ -181,7 +181,7 @@ export class TapHitEffectRenderer extends BaseRenderer {
       strokeHalf +
       (haloBlurPx / HIT_FX_SPRITE_SUPERSAMPLE) * SPRITE_BLUR_TAIL_RATIO +
       SPRITE_AA_MARGIN_PX;
-    const sprite = document.createElement("canvas");
+    const sprite = createSpriteCanvas();
     sprite.width = sprite.height = Math.max(2, Math.ceil(half * 2 * HIT_FX_SPRITE_SUPERSAMPLE));
     const offscreenCtx = sprite.getContext("2d")!;
     offscreenCtx.setTransform(

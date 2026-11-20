@@ -1,4 +1,4 @@
-import { BaseRenderer, RenderContext, getGradientColors } from "./BaseRenderer";
+import { BaseRenderer, RenderContext, getGradientColors, createSpriteCanvas } from "./BaseRenderer";
 import { Note, Point2D, NoteRenderPosition, ButtonPosition } from "../types";
 import {
   NOTE_SIZE_RATIO,
@@ -52,12 +52,39 @@ export class NoteRenderer extends BaseRenderer {
     note: Note,
     _currentBeat: number,
     currentTimeMs: number,
+    holdEndMs?: number,
   ): NoteRenderPosition {
     const position = note.position as ButtonPosition;
     const angle = this.getButtonAngle(position);
     const timeDiff = note.timingMs - currentTimeMs;
     const approachTime = this.getNoteApproachTimeMs(note);
 
+    if (this.context.skin) {
+      const duration = approachTime / 2;
+      const hold = "isHoldStart" in note && note.isHoldStart;
+      const end =
+        holdEndMs !== undefined
+          ? holdEndMs - note.timingMs
+          : hold && "duration" in note
+            ? this.durationToMs(note.duration, note.bpm)
+            : 0;
+      if (timeDiff > approachTime || timeDiff <= -end) return INVISIBLE_NOTE_POSITION;
+      const speedRatio = 240000 / duration / 150;
+      const adjust = (-(1 - 1 / speedRatio) * 0.8 * 1000) / 60;
+      const scale = Math.max(0, Math.min(1, (approachTime - timeDiff + adjust) / duration));
+      const distance =
+        timeDiff >= duration + adjust
+          ? 120
+          : 480 - (360 * timeDiff) / duration - 3 * (speedRatio - 1);
+      const fraction = (hold ? Math.min(480, distance) : distance) / 480;
+      const r = this.context.radius * (1 + this.getNoteApproachDir(note) * (fraction - 1));
+      return {
+        x: this.context.centerX + Math.cos(angle) * r,
+        y: this.context.centerY + Math.sin(angle) * r,
+        scale,
+        visible: true,
+      };
+    }
     // Hold 起点在 duration 内持续可见；普通音符保留 NOTE_VISIBILITY_AFTER_MS
     let holdWindow = NOTE_VISIBILITY_AFTER_MS;
     if ("isHoldStart" in note && note.isHoldStart && "duration" in note) {
@@ -335,7 +362,31 @@ export class NoteRenderer extends BaseRenderer {
     isEx: boolean,
     timing: number,
     highlightExScale: number = 1,
+    currentTimeMs = 0,
   ): void {
+    if (this.context.skin && !this.context.config.ddrColorMode) {
+      const key = isBreak ? "Break_00" : isSimultaneous ? "Tap_Each_00" : "Tap_00";
+      const angle = this.getButtonAngle(position) + Math.PI / 2;
+      this.context.skin.draw(this.context, key, x, y, noteScale, angle);
+      if (isBreak) {
+        const ctx = this.context.ctx;
+        ctx.save();
+        ctx.globalAlpha *= Math.max(0, Math.sin(currentTimeMs * 0.06 * 0.19999501) * 0.5);
+        this.context.skin.draw(this.context, "Break_EFF_00", x, y, noteScale, angle);
+        ctx.restore();
+      }
+      if (isEx)
+        this.context.skin.draw(
+          this.context,
+          isBreak ? "Break_Ex_00" : "Tap_Ex_00",
+          x,
+          y,
+          noteScale * highlightExScale,
+          angle,
+          this.context.skin.exTint(isBreak, isSimultaneous),
+        );
+      return;
+    }
     // DDR 节拍颜色随 timing 实时变化，无法烘焙缓存，回退矢量路径绘制
     if (this.context.config.ddrColorMode) {
       this.drawTapNoteVector(
@@ -447,7 +498,7 @@ export class NoteRenderer extends BaseRenderer {
     if (sprite) return sprite;
 
     const half = this.scaleByRadius(NOTE_SIZE_RATIO) * 1.36 * TAP_SPRITE_HALF_RATIO;
-    sprite = document.createElement("canvas");
+    sprite = createSpriteCanvas();
     sprite.width = sprite.height = Math.max(2, Math.ceil(half * 2 * TAP_SPRITE_SUPERSAMPLE));
     const offscreenCtx = sprite.getContext("2d")!;
     offscreenCtx.setTransform(
