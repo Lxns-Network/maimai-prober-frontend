@@ -144,11 +144,14 @@ export type StagePostFilter =
  *
  * @throws RangeError when the file has more than one colour-grading filter.
  */
-export function stagePostFilters(scene: StageScene): StagePostFilter[] {
+export function stagePostFilters(
+  scene: StageScene,
+  nodes: readonly StageNode[] = liveNodes(scene),
+): StagePostFilter[] {
   const out: StagePostFilter[] = [];
   let colour = false;
   const blooms = new Set<object>();
-  for (const node of liveNodes(scene)) {
+  for (const node of nodes) {
     const type = node.record?.type;
     if (type === COLOR2_TYPE) {
       const state = node.extension as Color2State;

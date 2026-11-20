@@ -126,6 +126,8 @@ export interface StageModelState {
   readonly textureSwaps: StageTextureSwap[];
   /** Mutable material cells in the model's packed draw-vector order. */
   materialUv: StageModelMaterialUv | null;
+  /** Per-slot offsets published by an ordinary model's texture motion. */
+  uvOffsets: Float32Array | null;
   /** UV resolution failure that prevents this node from drawing, or null after a successful update. */
   materialUvError: string | null;
   /** Packed instance UV record; shared by every draw submitted for this node. */
@@ -344,6 +346,7 @@ function modelBehavior(type: number, elementType: number, settled: boolean): Nod
         blendError,
         textureSwaps: [],
         materialUv: null,
+        uvOffsets: null,
         materialUvError:
           uv && (uv.count > 0 || texture?.offsetChanged) ? "UV animation: not updated" : null,
         instanceUv: null,

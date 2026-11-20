@@ -12,9 +12,8 @@ import { createStageModelProgram, BLEND_TEXTURE_UNITS } from "./modelProgram";
 import type { StageModel, StagePack, StageSampler, StageShape } from "../pack";
 import { stageViewportRegion, withStageViewport } from "./stageViewport";
 import { createColorSnapshot, type ColorSnapshot } from "../../gpu/colorSnapshot";
-import { liveNodes, type StageNode } from "../runtime";
+import { liveNodes, type StageNode, type StageScene } from "../runtime";
 import { stageMaterial, stageUvTransforms, type StageMaterial } from "../material";
-import { stageUvOffsets } from "../motions/uvScroll";
 import {
   stageModelLive,
   stageModelPose,
@@ -749,11 +748,12 @@ export function createStageRenderer(
         NonNullable<StageModelState["instanceGroup"]>,
         ReturnType<typeof shadowFrustumPlanes>
       >();
-      const sceneNodes = selectedEntries ? [] : liveNodes(frame.scene);
+      const nodesOf = (scene: StageScene) => frame.sceneNodes?.get(scene) ?? liveNodes(scene);
+      const sceneNodes = selectedEntries ? [] : nodesOf(frame.scene);
       const sharedNodes = selectedEntries
         ? []
         : stageInstanceScenes(frame.scene).flatMap((scene) =>
-            scene === frame.scene ? sceneNodes : liveNodes(scene),
+            scene === frame.scene ? sceneNodes : nodesOf(scene),
           );
       const sceneMask = (1 << (frame.scene.options.drawIndex ?? 0)) & 0x7fffffff;
       const nodes = selectedEntries
@@ -1065,7 +1065,7 @@ export function createStageRenderer(
                   },
                   textures: swapped,
                   samplerImages,
-                  uvOffsets: node.record?.type === 6001010 ? null : stageUvOffsets(node),
+                  uvOffsets: state.uvOffsets,
                   materialUv,
                   instanceUv,
                   instanceUvFeature,

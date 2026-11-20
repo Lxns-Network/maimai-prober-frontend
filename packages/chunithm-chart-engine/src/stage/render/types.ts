@@ -23,6 +23,8 @@ export interface StageFrameCamera {
 
 export interface StageFrame {
   readonly scene: StageScene;
+  /** Depth-first node lists shared by draws of this display frame. */
+  readonly sceneNodes?: ReadonlyMap<StageScene, readonly StageNode[]>;
   readonly role: "base" | "field";
   readonly camera: StageFrameCamera;
   /** Instance-manager source camera, independent of a shadow or reflection render camera. */
