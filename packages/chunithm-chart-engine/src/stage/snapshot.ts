@@ -5,7 +5,7 @@ import {
   type StageScene,
   type StageSceneOptions,
 } from "./runtime";
-import { instancedModelNode } from "./nodes/model";
+import { instancedModelNode, modelNode } from "./nodes/model";
 
 /** The objects and buffers every copy of a scene shares: its options and what they reach. */
 interface Shared {
@@ -73,12 +73,16 @@ function cloneStageScenes(
   scenes: readonly StageScene[],
   copies = new Map<object, unknown>(),
   previous = new Map<object, unknown>(),
-  displayOnly = false,
+  sources?: WeakMap<object, object>,
 ): StageSceneCopy[] {
   const shared = scenes.map(sharedStageData);
   const buffers = new Map<ArrayBufferLike, ArrayBuffer>();
   let bytes = 0;
-  const copy = (value: unknown, presentation = displayOnly): unknown => {
+  const remember = (source: object, result: object, retained: unknown) => {
+    copies.set(source, result);
+    if (sources && result !== retained) sources.set(result, source);
+  };
+  const copy = (value: unknown, presentation = sources !== undefined): unknown => {
     if (value === null || typeof value !== "object") return value;
     for (const data of shared) if (data.objects.has(value)) return value;
     const done = copies.get(value);
@@ -91,7 +95,13 @@ function cloneStageScenes(
         buffer = ArrayBuffer.isView(retained)
           ? (retained.buffer as ArrayBuffer)
           : new ArrayBuffer(value.buffer.byteLength);
-        new Uint8Array(buffer).set(new Uint8Array(value.buffer));
+        if (
+          value instanceof Float32Array &&
+          retained instanceof Float32Array &&
+          value.byteLength === value.buffer.byteLength
+        )
+          retained.set(value);
+        else new Uint8Array(buffer).set(new Uint8Array(value.buffer));
         buffers.set(value.buffer, buffer);
         bytes += buffer.byteLength;
       }
@@ -106,13 +116,13 @@ function cloneStageScenes(
           : value instanceof DataView
             ? new DataView(buffer, value.byteOffset, length)
             : new view.constructor(buffer, value.byteOffset, length);
-      copies.set(value, result);
+      remember(value, result, retained);
       return result;
     }
     if (Array.isArray(value)) {
       const result: unknown[] = Array.isArray(retained) ? retained : [];
       result.length = value.length;
-      copies.set(value, result);
+      remember(value, result, retained);
       bytes += 16 + 8 * value.length;
       for (let i = 0; i < value.length; i++)
         result[i] =
@@ -124,7 +134,7 @@ function cloneStageScenes(
     if (value instanceof Map) {
       const result = retained instanceof Map ? retained : new Map();
       result.clear();
-      copies.set(value, result);
+      remember(value, result, retained);
       bytes += 32 + 24 * value.size;
       value.forEach((v, k) => result.set(copy(k, presentation), copy(v, presentation)));
       return result;
@@ -132,7 +142,7 @@ function cloneStageScenes(
     if (value instanceof Set) {
       const result = retained instanceof Set ? retained : new Set();
       result.clear();
-      copies.set(value, result);
+      remember(value, result, retained);
       bytes += 32 + 16 * value.size;
       for (const v of value) result.add(copy(v, presentation));
       return result;
@@ -145,6 +155,7 @@ function cloneStageScenes(
     const node =
       presentation && "record" in value && "birth" in value ? (value as StageNode) : null;
     const held = node?.record && node.scene.options.heldStates?.has(node.record.id);
+    const behavior = node?.record && !held ? node.scene.options.nodes.get(node.record.type) : null;
     const provider = presentation && "poses" in value && "pose" in value && "playback" in value;
     const controller = presentation && "schedule" in value && "killWhenChildrenDone" in value;
     // Pose, blend and post-process publications retain fresh identities for render caches.
@@ -154,7 +165,7 @@ function cloneStageScenes(
     if (result === retained)
       for (const key of Object.keys(result))
         if (!Object.prototype.hasOwnProperty.call(value, key)) delete result[key];
-    copies.set(value, result);
+    remember(value, result, retained);
     for (const key of keys) {
       const item = (value as Record<string, unknown>)[key];
       // Drawing consumes published bone worlds, not animation samples or future spawn schedules.
@@ -168,7 +179,7 @@ function cloneStageScenes(
         result[key] = null;
         continue;
       }
-      // Display scenes never run the scheduler. Held nodes can still apply a presentation override.
+      // Models draw their published state. Held nodes still need their components to apply overrides.
       if (
         node &&
         !held &&
@@ -176,7 +187,8 @@ function cloneStageScenes(
           key === "stateMotions" ||
           key === "after" ||
           key === "pending" ||
-          key === "graveyard")
+          key === "graveyard" ||
+          (key === "elements" && (behavior === modelNode || behavior === instancedModelNode)))
       ) {
         const empty = result[key];
         if (Array.isArray(empty)) empty.length = 0;
@@ -241,7 +253,7 @@ export function createStageRewind(
   let sampledTick = -1;
   let sampled: StageScene[] = [];
   const interpolate = new StageInterpolation();
-  const next = new Map<object, unknown>();
+  const displaySources = new WeakMap<object, object>();
   let spareCopies = new Map<object, unknown>();
   let displayCopies = new Map<object, unknown>();
   let prepared: { tick: number; scenes: StageScene[]; source: readonly StageScene[] } | null = null;
@@ -314,7 +326,7 @@ export function createStageRewind(
     prepareDisplay(tick) {
       if (prepared || !scenes || scenes[0].tick !== tick || sampledTick !== tick - 1) return;
       spareCopies.clear();
-      const display = cloneStageScenes(scenes, spareCopies, idleCopies, true).map(
+      const display = cloneStageScenes(scenes, spareCopies, idleCopies, displaySources).map(
         (copy) => copy.scene,
       );
       prepared = { tick, scenes: display, source: scenes };
@@ -335,20 +347,17 @@ export function createStageRewind(
         idleCopies = displayCopies;
       } else {
         copies.clear();
-        sampled = cloneStageScenes(live, copies, displayCopies, true).map((copy) => copy.scene);
+        sampled = cloneStageScenes(live, copies, displayCopies, displaySources).map(
+          (copy) => copy.scene,
+        );
         spareCopies = displayCopies;
       }
       spareCopies.clear();
       displayCopies = copies;
-      next.clear();
-      copies.forEach((copy, original) => {
-        next.set(copy as object, original);
-      });
       stepStageScenes(live);
       finishStageScenes(live);
       keep(scenes!);
-      interpolate.prepare(next);
-      next.clear();
+      interpolate.prepare(sampled, displaySources);
       sampledTick = tick;
       interpolate.apply(fraction);
       return sampled;
@@ -397,6 +406,8 @@ class StageInterpolation {
   private readonly scalars: ScalarInterpolation[] = [];
   private scalarCount = 0;
   private readonly paired = new Set<object>();
+  private readonly unpublished: object[] = [];
+  private readonly views: (Float32Array | Float64Array)[] = [];
   private readonly discontinuous = new Set<object>();
   private readonly packedVertices = new Map<object, number>();
   private readonly packedRecords = new Set<ArrayBufferLike>();
@@ -428,162 +439,147 @@ class StageInterpolation {
     }
   }
 
-  prepare(next: Map<object, unknown>): void {
+  prepare(scenes: readonly StageScene[], sources: WeakMap<object, object>): void {
     this.clear();
-    // Publications can replace a pose or camera object while keeping their owning node alive.
-    const { paired, discontinuous, packedVertices, packedRecords } = this;
-    paired.clear();
-    discontinuous.clear();
-    packedVertices.clear();
-    packedRecords.clear();
-    const align = (original: unknown, future: unknown) => {
-      if (
-        !original ||
-        !future ||
-        typeof original !== "object" ||
-        typeof future !== "object" ||
-        !next.has(original) ||
-        paired.has(original)
-      )
-        return;
-      paired.add(original);
-      if ("record" in original && "birth" in original && next.get(original) !== future) return;
-      next.set(original, future);
-      if (ArrayBuffer.isView(original)) return;
-      if (original instanceof Map && future instanceof Map) {
-        original.forEach((value, key) => align(value, future.get(next.get(key) ?? key)));
-      } else if (Array.isArray(original) && Array.isArray(future)) {
-        for (let i = 0; i < original.length; i++) {
-          const value: unknown = original[i];
-          if (value !== null && typeof value === "object") align(value, future[i]);
-        }
-      } else {
-        for (const key of Object.keys(original)) {
-          const value = (original as Record<string, unknown>)[key];
-          if (value !== null && typeof value === "object")
-            align(value, (future as Record<string, unknown>)[key]);
-        }
-      }
-    };
-    for (const original of next.keys())
-      if ("top" in original && "classState" in original) align(original, next.get(original));
+    const { paired, unpublished, discontinuous, packedVertices, packedRecords, views } = this;
     const transformChanged = (node: StageNode): boolean => {
-      const future = next.get(node) as StageNode | undefined;
+      const live = sources.get(node) as StageNode;
       return (
-        (future !== undefined && node.transformEpoch !== future.transformEpoch) ||
+        node.transformEpoch !== live.transformEpoch ||
         (node.coordinateMode !== 1 &&
           node.coordinateParent != null &&
           transformChanged(node.coordinateParent))
       );
     };
-    for (const original of next.keys()) {
-      if ("record" in original && "birth" in original) {
-        const node = original as StageNode;
-        if (transformChanged(node)) discontinuous.add(node.world);
+    const align = (out: unknown, published: unknown) => {
+      if (out === null || typeof out !== "object" || out === published || paired.has(out)) return;
+      const source = sources.get(out);
+      if (!source) return;
+      if (published === null || typeof published !== "object") {
+        unpublished.push(out);
+        return;
       }
-      const value = original as { vertices?: Float32Array; normalVertices?: Float32Array };
-      if (value.vertices) packedVertices.set(value.vertices, 6);
-      if (value.normalVertices) packedVertices.set(value.normalVertices, 9);
-      // Integer views share packed particle flags and links that must not be interpolated.
-      if (
-        ArrayBuffer.isView(original) &&
-        !(original instanceof Float32Array || original instanceof Float64Array)
-      )
-        packedRecords.add(original.buffer);
-    }
-    next.forEach((future, original) => {
-      if (!future) return;
-      if (original instanceof Float32Array || original instanceof Float64Array) {
-        const stride = packedVertices.get(original);
-        if (!stride && packedRecords.has(original.buffer)) return;
-        const b = future as Float32Array | Float64Array;
-        if (original.length !== b.length) return;
-        const holdTransform = discontinuous.has(original);
-        // Copy constant arrays too: held-state presentation can mutate them between samples.
-        let unchanged = !stride;
-        if (!stride) {
-          for (let i = 0; i < original.length; i++) {
-            const value = original[i];
-            if (value !== b[i] || !Number.isFinite(value) || Object.is(value, -0)) {
-              unchanged = false;
-              break;
-            }
-          }
+      paired.add(out);
+      // A replacement publication belongs to its slot. A spawned node always keeps its own identity.
+      const node = "record" in out && "birth" in out ? (out as StageNode) : null;
+      const future = node ? source : published;
+      if (ArrayBuffer.isView(out)) {
+        if (out instanceof Float32Array || out instanceof Float64Array) {
+          if (future instanceof Float32Array || future instanceof Float64Array)
+            views.push(out, future);
+        } else packedRecords.add(out.buffer);
+        return;
+      }
+      if (Array.isArray(out)) {
+        for (let i = 0; i < out.length; i++) align(out[i], (future as unknown[])[i]);
+        return;
+      }
+      if (out instanceof Map && future instanceof Map) {
+        for (const [key, value] of out) {
+          const liveKey = typeof key === "object" && key !== null ? (sources.get(key) ?? key) : key;
+          if (key !== liveKey) unpublished.push(key);
+          align(value, future.get(liveKey));
         }
-        const index = this.arrayCount++;
-        let entry = this.active[index];
-        if (
-          !entry ||
-          entry.stride !== stride ||
-          entry.start.constructor !== original.constructor ||
-          entry.start.length !== original.length
-        ) {
-          const start = original.slice();
-          entry = {
-            start,
-            end: b,
-            out: original,
-            stride,
-            constant: unchanged,
-            startWords: stride
-              ? new Uint32Array(start.buffer, start.byteOffset, start.length)
-              : null,
-            endWords: null,
-            outWords: stride
-              ? new Uint32Array(original.buffer, original.byteOffset, original.length)
-              : null,
-          };
-          this.active[index] = entry;
-        } else entry.start.set(original);
-        entry.out = original;
-        if (
-          stride &&
-          (!entry.outWords ||
-            entry.outWords.buffer !== original.buffer ||
-            entry.outWords.byteOffset !== original.byteOffset)
-        )
-          entry.outWords = new Uint32Array(original.buffer, original.byteOffset, original.length);
-        entry.constant = unchanged || holdTransform;
-        entry.end = b;
-        if (
-          stride &&
-          (!entry.endWords ||
-            entry.endWords.buffer !== b.buffer ||
-            entry.endWords.byteOffset !== b.byteOffset)
-        )
-          entry.endWords = new Uint32Array(b.buffer, b.byteOffset, b.length);
         return;
       }
-      if (
-        ArrayBuffer.isView(original) ||
-        Array.isArray(original) ||
-        original instanceof Map ||
-        original instanceof Set
-      )
+      if (out instanceof Set) {
+        for (const value of out) align(value, undefined);
         return;
-      const a = original as Record<string, unknown>;
+      }
+      if (node && transformChanged(node)) discontinuous.add(node.world);
+      const a = out as Record<string, unknown>;
       const b = future as Record<string, unknown>;
-      const out = a;
+      if (a.vertices instanceof Float32Array) packedVertices.set(a.vertices, 6);
+      if (a.normalVertices instanceof Float32Array) packedVertices.set(a.normalVertices, 9);
       for (const key of Object.keys(a)) {
         const start = a[key];
         const end = b[key];
+        if (start !== null && typeof start === "object") {
+          align(start, end);
+          continue;
+        }
         if (typeof start !== "number" || typeof end !== "number" || start === end) continue;
         const colour = colourFields.has(key);
         if (!colour && !(scalarFields.has(key) && Number.isFinite(start) && Number.isFinite(end)))
           continue;
         let entry = this.scalars[this.scalarCount++];
         if (!entry) {
-          entry = { out, key, start, end, colour };
+          entry = { out: a, key, start, end, colour };
           this.scalars.push(entry);
         } else {
-          entry.out = out;
+          entry.out = a;
           entry.key = key;
           entry.start = start;
           entry.end = end;
           entry.colour = colour;
         }
       }
-    });
+    };
+    for (const scene of scenes) align(scene, sources.get(scene));
+    // Set members and removed slots may also be reachable through a newer publication.
+    for (const out of unpublished) align(out, sources.get(out));
+    unpublished.length = 0;
+    // A later sibling may expose integer words over the same buffer as a float view.
+    for (let i = 0; i < views.length; i += 2) {
+      const original = views[i];
+      const b = views[i + 1];
+      const stride = packedVertices.get(original);
+      if (!stride && packedRecords.has(original.buffer)) continue;
+      if (original.length !== b.length) continue;
+      const holdTransform = discontinuous.has(original);
+      // Copy constant arrays too: held-state presentation can mutate them between samples.
+      let unchanged = !stride;
+      if (!stride) {
+        for (let i = 0; i < original.length; i++) {
+          const value = original[i];
+          if (value !== b[i] || !Number.isFinite(value) || Object.is(value, -0)) {
+            unchanged = false;
+            break;
+          }
+        }
+      }
+      const index = this.arrayCount++;
+      let entry = this.active[index];
+      if (
+        !entry ||
+        entry.stride !== stride ||
+        entry.start.constructor !== original.constructor ||
+        entry.start.length !== original.length
+      ) {
+        const start = original.slice();
+        entry = {
+          start,
+          end: b,
+          out: original,
+          stride,
+          constant: unchanged,
+          startWords: stride ? new Uint32Array(start.buffer, start.byteOffset, start.length) : null,
+          endWords: null,
+          outWords: stride
+            ? new Uint32Array(original.buffer, original.byteOffset, original.length)
+            : null,
+        };
+        this.active[index] = entry;
+      } else entry.start.set(original);
+      entry.out = original;
+      if (
+        stride &&
+        (!entry.outWords ||
+          entry.outWords.buffer !== original.buffer ||
+          entry.outWords.byteOffset !== original.byteOffset)
+      )
+        entry.outWords = new Uint32Array(original.buffer, original.byteOffset, original.length);
+      entry.constant = unchanged || holdTransform;
+      entry.end = b;
+      if (
+        stride &&
+        (!entry.endWords ||
+          entry.endWords.buffer !== b.buffer ||
+          entry.endWords.byteOffset !== b.byteOffset)
+      )
+        entry.endWords = new Uint32Array(b.buffer, b.byteOffset, b.length);
+    }
+    views.length = 0;
     this.active.length = this.arrayCount;
     this.scalars.length = this.scalarCount;
     paired.clear();

@@ -389,7 +389,7 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         });
       }, delay);
     };
-    scene.setBackgroundRenderer((seconds, device, resetHistory) => {
+    scene.setBackgroundRenderer((seconds, device, resetHistory, takeFieldEffects) => {
       if (disposed || signal.aborted) return false;
       if (!input.readShowBackground()) {
         previousTick = null;
@@ -412,11 +412,17 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         rewind ??= createStageRewind(build);
         const fraction = frame - tick;
         const [fieldScene, baseScene] = rewind.sample(tick, fraction, resized || fieldChanged);
+        const fieldNodes = liveNodes(fieldScene);
+        const baseNodes = liveNodes(baseScene);
+        const sceneNodes = new Map([
+          [fieldScene, fieldNodes],
+          [baseScene, baseNodes],
+        ]);
         scheduleDisplay(tick);
         scheduleWarm();
         const fieldState = held.get(FIELD_BRIGHTNESS_RECORD);
         if (fieldState) {
-          for (const node of liveNodes(fieldScene)) {
+          for (const node of fieldNodes) {
             if (node.record?.id !== FIELD_BRIGHTNESS_RECORD) continue;
             const index = resolveState(node, fieldState.state, false);
             if (node.stateIndex !== index) {
@@ -520,6 +526,7 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
           const result = renderer.draw({
             // The rim scene keeps draw index 0; the named source supplies its camera, not its queue.
             scene: fieldScene,
+            sceneNodes,
             role: "field",
             camera: sourceCamera,
             instanceCameras,
@@ -594,6 +601,7 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
             const queue = renderer.prepareShadow(
               {
                 scene: casterScene,
+                sceneNodes,
                 role: casterRole,
                 camera: sourceCamera,
                 instanceCameras,
@@ -692,6 +700,7 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
           );
           const reflected = renderer.draw({
             scene: casters,
+            sceneNodes,
             role: casters === fieldScene ? "field" : "base",
             camera: reflectionRenderCamera(sourceCamera, cullProjection, reflection.plane),
             instanceCameras,
@@ -713,6 +722,7 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         {
           const stats = renderer.draw({
             scene: baseScene,
+            sceneNodes,
             role: "base",
             camera,
             instanceCameras,
@@ -731,7 +741,7 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
           for (const reason of stats.skipped.values()) skipped.add(reason);
         }
         post.end(
-          stagePostFilters(baseScene),
+          stagePostFilters(baseScene, baseNodes),
           destination,
           () => {
             if (!front) return;
@@ -747,7 +757,9 @@ export async function prepareStagePresentation(input: StagePresentationInput): P
         gl.clear(gl.DEPTH_BUFFER_BIT);
         const field = renderer.draw({
           scene: fieldScene,
+          sceneNodes,
           role: "field",
+          fieldEffects: takeFieldEffects(),
           camera: fieldCamera,
           instanceCameras,
           cameraScopes: fieldCameraScopes,

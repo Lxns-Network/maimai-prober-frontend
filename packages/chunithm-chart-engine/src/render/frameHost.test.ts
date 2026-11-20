@@ -246,8 +246,7 @@ describe("frame host clear", () => {
       return true;
     });
     host.setExternalNoteRenderer(({ seconds }) => {
-      order.push(`notes ${seconds}`);
-      return { entries: [], notes: 0 };
+      return { entries: [entry(order, `notes ${seconds}`, 16, 1, 1)], notes: 1 };
     });
     host.render(2.5, 0, 2.4);
     host.render(3, 0);

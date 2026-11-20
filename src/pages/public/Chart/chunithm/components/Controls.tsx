@@ -226,7 +226,7 @@ export function Controls({
           onChange={preview.selectFieldWall}
         />
       </SettingsCard>
-      <AudioSettings disabled={disabled} />
+      <AudioSettings preview={preview} disabled={disabled} />
       <SettingsCard label="背景设置" icon={<IconMovie size={20} />}>
         <Group justify="space-between">
           <Text size="sm">显示谱面背景</Text>

@@ -3,7 +3,10 @@ import {
   createSortDepthCamera,
   type SortDepthCamera,
 } from "@lxns-network/chunithm-chart-engine/render/sortDepth";
-import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
+import type {
+  FrameDraw,
+  FrameSurface,
+} from "@lxns-network/chunithm-chart-engine/render/frameTypes";
 import {
   fetchPack,
   loadChunithmAssets,
@@ -339,7 +342,7 @@ export async function createNoteHost(input: {
           judgePositionOffset: judgePositionOffset(),
           criticalDisplayRow: criticalDisplayRow(),
         });
-        const notes = frame.entries.map((entry) => {
+        const entries: FrameDraw[] = frame.entries.map((entry) => {
           const pass =
             entry.pass === 0
               ? 8
@@ -355,10 +358,13 @@ export async function createNoteHost(input: {
           if (pass === null) throw new RangeError(`Unsupported note pass ${entry.pass}`);
           return { ...entry, pass };
         });
-        return {
-          notes: frame.notes,
-          entries: effects ? [...notes, ...effects] : notes,
-        };
+        let fieldEffects: FrameDraw[] | undefined;
+        if (effects)
+          for (const effect of effects) {
+            if (effect.key < 0x100) (fieldEffects ??= []).push(effect);
+            else entries.push(effect);
+          }
+        return { notes: frame.notes, entries, fieldEffects };
       },
     );
     registered = true;

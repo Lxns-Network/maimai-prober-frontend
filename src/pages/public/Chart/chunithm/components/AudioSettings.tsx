@@ -1,9 +1,20 @@
-import { ActionIcon, Group, Text, Slider, Stack } from "@mantine/core";
-import { IconRefresh, IconVolume } from "@tabler/icons-react";
+import { useState } from "react";
+import { ActionIcon, Button, Group, Text, Slider, Stack } from "@mantine/core";
+import { IconMetronome, IconRefresh, IconVolume } from "@tabler/icons-react";
 import useChunithmChartSettingsStore from "@/hooks/useChunithmChartSettingsStore";
+import { MusicCalibration } from "@/pages/public/Chart/components/MusicCalibration/MusicCalibration";
+import type { useChartPreview } from "../hooks/useChartPreview";
 import { SettingsCard } from "./SettingsCard";
 
-export function AudioSettings({ disabled = false }: { disabled?: boolean }) {
+export function AudioSettings({
+  preview,
+  disabled = false,
+}: {
+  preview: ReturnType<typeof useChartPreview>;
+  disabled?: boolean;
+}) {
+  const [calibrating, setCalibrating] = useState(false);
+  const calibrationDisabled = disabled || preview.status !== "ready" || preview.changingDifficulty;
   const musicVolume = useChunithmChartSettingsStore((state) => state.musicVolume);
   const soundVolume = useChunithmChartSettingsStore((state) => state.soundVolume);
   const musicOffset = useChunithmChartSettingsStore((state) => state.musicOffset);
@@ -53,7 +64,22 @@ export function AudioSettings({ disabled = false }: { disabled?: boolean }) {
       </Stack>
       <div>
         <Group justify="space-between" mb={4}>
-          <Text size="sm">音乐偏移</Text>
+          <Group gap="xs">
+            <Text size="sm">音乐偏移</Text>
+            <Button
+              size="compact-xs"
+              variant="light"
+              leftSection={<IconMetronome size={14} />}
+              aria-label="校准音乐偏移"
+              disabled={calibrationDisabled}
+              onClick={() => {
+                preview.pause();
+                setCalibrating(true);
+              }}
+            >
+              校准
+            </Button>
+          </Group>
           <Group gap={4}>
             <Text size="sm" c="dimmed" ff="monospace">
               {musicOffset}ms
@@ -100,6 +126,15 @@ export function AudioSettings({ disabled = false }: { disabled?: boolean }) {
         <Text size="xs" c="dimmed" mt={4}>
           正值: 音乐延后 | 负值: 音乐提前
         </Text>
+        <MusicCalibration
+          opened={calibrating}
+          onClose={() => setCalibrating(false)}
+          disabled={calibrationDisabled}
+          muted={musicVolume === 0}
+          currentOffset={musicOffset}
+          start={preview.startMusicCalibration}
+          onApply={setMusicOffset}
+        />
       </div>
 
       <div>

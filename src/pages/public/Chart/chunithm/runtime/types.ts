@@ -1,5 +1,6 @@
 import type { SurfaceSample } from "@lxns-network/chunithm-chart-engine/chart/play/input";
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
+import type { StartMusicCalibration } from "@/pages/public/Chart/utils/musicCalibration";
 import type { PreviewLiveState } from "./liveState";
 import type { CanvasResolution } from "./canvasSize";
 import type { KeyBindings } from "../input/keyboard";
@@ -28,6 +29,8 @@ export interface PreviewControls {
     progress: (value: number) => void,
   ): Promise<Blob>;
   toggle(): void;
+  pause(): void;
+  startMusicCalibration: StartMusicCalibration;
   scrub(seconds: number): void;
   seek(seconds: number): void;
   selectSpeed(value: string): void;

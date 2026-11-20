@@ -392,6 +392,11 @@ export function useChartPreview(options: ChartPreviewOptions) {
       if (!controls.current) return Promise.reject(new Error("播放器尚未就绪"));
       return controls.current.exportGif(range, signal, progress);
     },
+    pause: () => controls.current?.pause(),
+    startMusicCalibration: ((signal, onProgress, mode) => {
+      if (!controls.current) return Promise.reject(new Error("播放器尚未就绪"));
+      return controls.current.startMusicCalibration(signal, onProgress, mode);
+    }) satisfies PreviewControls["startMusicCalibration"],
     toggle: () => controls.current?.toggle(),
     scrub: (seconds: number) => controls.current?.scrub(seconds),
     seek: (seconds: number) => controls.current?.seek(seconds),

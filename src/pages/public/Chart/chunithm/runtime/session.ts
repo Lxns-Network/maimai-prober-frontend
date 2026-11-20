@@ -822,6 +822,16 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         request();
       }
     },
+    pause() {
+      if (scrubbing) scrubbing.resume = false;
+      if (desiredPlaying) controls.toggle();
+    },
+    startMusicCalibration(signal, onProgress, mode) {
+      if (!ready || !audio || changingDifficulty || capturing)
+        return Promise.reject(new Error("播放器尚未就绪"));
+      controls.pause();
+      return audio.startMusicCalibration(signal, onProgress, mode);
+    },
     scrub(target) {
       if (!music || !Number.isFinite(target) || target < 0 || target > durationSeconds) return;
       if (!scrubbing) {

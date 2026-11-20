@@ -4,6 +4,7 @@ import type { StageScene, StageNode } from "../runtime";
 import type { StageLighting } from "../nodes/lights";
 import type { StageWind } from "../nodes/wind";
 import type { EffectDrawContext } from "../../effects/render";
+import type { FrameFieldEffects } from "../../render/frameTypes";
 import type { StageReflection } from "../nodes/reflection";
 import type { StageShadowLight } from "../nodes/shadow";
 import type { StageShadowCamera } from "../nodes/shadowCamera";
@@ -22,6 +23,8 @@ export interface StageFrameCamera {
 
 export interface StageFrame {
   readonly scene: StageScene;
+  /** Depth-first node lists shared by draws of this display frame. */
+  readonly sceneNodes?: ReadonlyMap<StageScene, readonly StageNode[]>;
   readonly role: "base" | "field";
   readonly camera: StageFrameCamera;
   /** Instance-manager source camera, independent of a shadow or reflection render camera. */
@@ -39,6 +42,7 @@ export interface StageFrame {
   readonly captureAlpha?: boolean;
   /** Captures the current scene's depth before its translucent effect passes. */
   readonly snapshotDepth?: () => NonNullable<EffectDrawContext["depth"]>;
+  readonly fieldEffects?: FrameFieldEffects;
   readonly mirror?: StageReflection;
   readonly shadowPass?: StageShadowLight;
   readonly shadows?: readonly StageShadowFrame[];

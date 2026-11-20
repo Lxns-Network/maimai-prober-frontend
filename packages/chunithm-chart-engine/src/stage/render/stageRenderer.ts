@@ -12,9 +12,8 @@ import { createStageModelProgram, BLEND_TEXTURE_UNITS } from "./modelProgram";
 import type { StageModel, StagePack, StageSampler, StageShape } from "../pack";
 import { stageViewportRegion, withStageViewport } from "./stageViewport";
 import { createColorSnapshot, type ColorSnapshot } from "../../gpu/colorSnapshot";
-import { liveNodes, type StageNode } from "../runtime";
+import { liveNodes, type StageNode, type StageScene } from "../runtime";
 import { stageMaterial, stageUvTransforms, type StageMaterial } from "../material";
-import { stageUvOffsets } from "../motions/uvScroll";
 import {
   stageModelLive,
   stageModelPose,
@@ -80,6 +79,7 @@ import { createStagePrimitives3d } from "./stagePrimitives3d";
 import { createStageCameraDebug } from "./stageCameraDebug";
 import type { EffectDrawContext } from "../../effects/render";
 import { DEPTH_SNAPSHOT_FIRST_PASS } from "../../render/passOrder";
+import type { FrameDraw } from "../../render/frameTypes";
 import { stageGroupShadow, type StageShadowFrame } from "./stageShadowFrame";
 import { stageGroupReflection, type StageReflectionFrame } from "./stageReflectionFrame";
 import type { StageShadowCamera } from "../nodes/shadowCamera";
@@ -697,7 +697,8 @@ export function createStageRenderer(
 
     const instanceStreams = new Map<ShapeProgram, Float32Array>();
 
-    type DrawEntry = Entry | StageParticleEntry | StagePrimitiveEntry;
+    type StageEntry = Entry | StageParticleEntry | StagePrimitiveEntry;
+    type DrawEntry = StageEntry | FrameDraw;
 
     const batchInstances = (entries: readonly DrawEntry[]): DrawEntry[] => {
       const result: DrawEntry[] = [];
@@ -747,11 +748,12 @@ export function createStageRenderer(
         NonNullable<StageModelState["instanceGroup"]>,
         ReturnType<typeof shadowFrustumPlanes>
       >();
-      const sceneNodes = selectedEntries ? [] : liveNodes(frame.scene);
+      const nodesOf = (scene: StageScene) => frame.sceneNodes?.get(scene) ?? liveNodes(scene);
+      const sceneNodes = selectedEntries ? [] : nodesOf(frame.scene);
       const sharedNodes = selectedEntries
         ? []
         : stageInstanceScenes(frame.scene).flatMap((scene) =>
-            scene === frame.scene ? sceneNodes : liveNodes(scene),
+            scene === frame.scene ? sceneNodes : nodesOf(scene),
           );
       const sceneMask = (1 << (frame.scene.options.drawIndex ?? 0)) & 0x7fffffff;
       const nodes = selectedEntries
@@ -1063,7 +1065,7 @@ export function createStageRenderer(
                   },
                   textures: swapped,
                   samplerImages,
-                  uvOffsets: node.record?.type === 6001010 ? null : stageUvOffsets(node),
+                  uvOffsets: state.uvOffsets,
                   materialUv,
                   instanceUv,
                   instanceUvFeature,
@@ -1140,18 +1142,20 @@ export function createStageRenderer(
               sceneNodes,
             ),
           ];
-      const drawEntries: DrawEntry[] = [...entries, ...particleEntries, ...primitiveEntries];
+      const drawEntries: StageEntry[] = [...entries, ...particleEntries, ...primitiveEntries];
       if (particleEntries.length || primitiveEntries.length) {
         const nodeOrder = new Map(nodes.map((node, index) => [node, index]));
         // Pass-sort ties retain graph traversal followed by the instance-manager flush.
         drawEntries.sort((a, b) => nodeOrder.get(a.node)! - nodeOrder.get(b.node)!);
       }
       const entriesByPass = new Map<number, DrawEntry[]>();
-      for (const entry of drawEntries) {
+      const addEntry = (entry: DrawEntry) => {
         let group = entriesByPass.get(entry.pass);
         if (!group) entriesByPass.set(entry.pass, (group = []));
         group.push(entry);
-      }
+      };
+      for (const entry of drawEntries) addEntry(entry);
+      if (frame.fieldEffects) for (const entry of frame.fieldEffects.entries) addEntry(entry);
       gl.useProgram(program);
       const viewProjection = transpose(camera.viewProjection);
       const cameraView = transpose(camera.view);
@@ -1292,8 +1296,12 @@ export function createStageRenderer(
       device.invalidate();
       const needsDepth = (entry: StageParticleEntry | StagePrimitiveEntry) =>
         "requiresDepthSnapshot" in entry && entry.requiresDepthSnapshot;
-      const depthNeeded = particleEntries.some(needsDepth) || primitiveEntries.some(needsDepth);
+      const depthNeeded =
+        particleEntries.some(needsDepth) ||
+        primitiveEntries.some(needsDepth) ||
+        frame.fieldEffects?.entries.some((entry) => entry.requiresDepthSnapshot);
       let depthContext: EffectDrawContext | undefined;
+      const noDepth = { depth: null };
       let colorCaptured = false;
       const runPasses = (list: typeof STAGE_PASSES): void => {
         gl.uniformMatrix4fv(u("viewProjection"), false, viewProjection);
@@ -1311,7 +1319,9 @@ export function createStageRenderer(
           if (!passEntries) continue;
           for (const entry of sortStagePass<DrawEntry>(batchInstances(passEntries), sort)) {
             if ("draw" in entry) {
-              if ("requiresDepthSnapshot" in entry) {
+              if (!("node" in entry)) {
+                frame.fieldEffects!.draw(entry, depthContext ?? noDepth);
+              } else if ("requiresDepthSnapshot" in entry) {
                 if (entry.requiresColorSnapshot && !colorCaptured) {
                   colorSnapshot ??= createColorSnapshot(gl);
                   colorSnapshot.capture();

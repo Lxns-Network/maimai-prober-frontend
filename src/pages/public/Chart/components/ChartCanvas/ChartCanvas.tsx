@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useGameStore, playbackTimeRef } from "../../stores/useGameStore";
 import { useGameSettingsStore } from "../../stores/useGameSettingsStore";
 import { MainRenderer } from "@lxns-network/maimai-chart-engine";
-import { usePreviewAudio } from "../../hooks/usePreviewAudio";
+import type { PreviewAudioController } from "../../hooks/usePreviewAudio";
 import { DebugOverlay } from "./DebugOverlay";
 import { beatsToMs } from "../../utils/timeConversion";
 import classes from "./ChartCanvas.module.css";
@@ -16,7 +16,7 @@ import { useInstallBenchmarkConsole } from "../../bench/installBenchmarkConsole"
 import { CHART_BENCH_ENABLED } from "../../bench/benchEnabled";
 import { useChartProfiling } from "./hooks/useChartProfiling";
 
-export function ChartCanvas() {
+export function ChartCanvas({ previewAudio }: { previewAudio: PreviewAudioController }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<MainRenderer | null>(null);
@@ -32,7 +32,6 @@ export function ChartCanvas() {
   const { setOverlayProfiling, subscribeFrameProfile, reportFrameProfile, syncRendererProfiling } =
     useChartProfiling(rendererRef);
 
-  const previewAudio = usePreviewAudio();
   const previewAudioRef = useRef({
     syncFrame: previewAudio.syncFrame,
     getClockSource: previewAudio.getClockSource,

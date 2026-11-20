@@ -56,6 +56,7 @@ export function applyModelUv(node: StageNode, state: StageModelState): void {
     applyInstanceUv(node, state, element, offsets);
     return;
   }
+  state.uvOffsets = offsets;
   if (!element?.count && !state.materialUv && !offsets) return;
   if (element?.count && !resolve)
     throw new RangeError("UV animation: animation resolver is missing");

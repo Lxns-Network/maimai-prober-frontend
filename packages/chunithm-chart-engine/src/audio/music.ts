@@ -54,20 +54,20 @@ export function isMusicOutputPending(cause: unknown): boolean {
   return cause instanceof MusicOutputPending;
 }
 
-/** Projects the device timestamp to now, bounded by audio already processed by the context. */
-function readOutputTime(
+/** Returns audible context seconds at a DOM event timestamp, or null before the clock is ready. */
+export function readAudioOutputTime(
   context: MusicContext,
-  sample: AudioTimestamp,
   performanceTime: number,
-): number {
-  if (context.state !== "running") throw new Error("Running output clock required");
+  sample = context.getOutputTimestamp(),
+): number | null {
   if (
+    context.state !== "running" ||
     !Number.isFinite(sample.contextTime) ||
     sample.contextTime! < 0 ||
     !Number.isFinite(sample.performanceTime) ||
     sample.performanceTime! <= 0
   )
-    throw new MusicOutputPending("Audible output timestamp is not initialized");
+    return null;
   return Math.max(
     0,
     Math.min(
@@ -75,6 +75,17 @@ function readOutputTime(
       sample.contextTime! + (performanceTime - sample.performanceTime!) / 1000,
     ),
   );
+}
+
+function readOutputTime(
+  context: MusicContext,
+  sample: AudioTimestamp,
+  performanceTime: number,
+): number {
+  if (context.state !== "running") throw new Error("Running output clock required");
+  const time = readAudioOutputTime(context, performanceTime, sample);
+  if (time === null) throw new MusicOutputPending("Audible output timestamp is not initialized");
+  return time;
 }
 
 interface Node {
