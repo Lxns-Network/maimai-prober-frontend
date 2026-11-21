@@ -1,4 +1,4 @@
-import { createAbortScope, throwIfAborted } from "@lxns-network/chunithm-chart-engine/assets/abort";
+import { throwIfAborted } from "@lxns-network/chunithm-chart-engine/assets/abort";
 import {
   createMusicPlayer,
   readAudioOutputTime,
@@ -20,6 +20,7 @@ import {
 /** Silence at either end supports the full music-offset range without clipping chart time. */
 const MUSIC_PADDING_SECONDS = 2;
 const SCHEDULE_LEAD_SECONDS = 0.05;
+const LIVE_SOUND_LATENCY_LIMIT_MS = 100;
 
 interface PreviewAudioInput {
   assetBase: string;
@@ -31,6 +32,7 @@ interface PreviewAudioInput {
   soundOffset: number;
   musicVolume: number;
   soundVolume: number;
+  setLiveSoundsMuted(muted: boolean): void;
 }
 
 export type PreviewMusic = Pick<
@@ -56,6 +58,31 @@ export function createPreviewAudio(input: PreviewAudioInput) {
   let sfx: SfxPlayer | null = null;
   let library: Awaited<ReturnType<typeof loadSfxLibrary>> | null = null;
   let liveCues: ReturnType<typeof createLiveCuePlayer> | null = null;
+  let liveSoundsMuted: boolean | undefined;
+  let feedbackRate = input.playbackSpeed;
+  const refreshLiveSoundsMuted = () => {
+    const reportedSeconds = (context.baseLatency ?? 0) + (context.outputLatency ?? 0);
+    // Live cues start at the later of processing time and the requested offset on the output clock.
+    // Calibration measures the remaining delay in real seconds, independently of playback rate.
+    const latencyMs =
+      (Math.max(reportedSeconds, soundOffset / feedbackRate) + Math.max(0, -musicOffset)) * 1000;
+    const muted = latencyMs >= LIVE_SOUND_LATENCY_LIMIT_MS;
+    if (muted === liveSoundsMuted) return;
+    liveSoundsMuted = muted;
+    if (muted) liveCues?.silence();
+    input.setLiveSoundsMuted(muted);
+  };
+  const setFeedbackRate = (rate: number) => {
+    if (rate === feedbackRate) return;
+    feedbackRate = rate;
+    refreshLiveSoundsMuted();
+  };
+  refreshLiveSoundsMuted();
+  const listenerOptions = { signal: input.signal };
+  context.addEventListener("statechange", refreshLiveSoundsMuted, listenerOptions);
+  context.addEventListener("sinkchange", refreshLiveSoundsMuted, listenerOptions);
+  navigator.mediaDevices?.addEventListener("devicechange", refreshLiveSoundsMuted, listenerOptions);
+  let nextLatencyCheckMs = 0;
   /** Where the sounds' chart time was at the last poll, for cues played as they happen. */
   let clock = { outputTime: 0, seconds: 0, rate: 1 };
   const contextTime = (seconds: number) =>
@@ -108,9 +135,13 @@ export function createPreviewAudio(input: PreviewAudioInput) {
       play: () => player.play(),
       pause: () => player.pause(),
       seek: (seconds) => player.seek(musicSeconds(seconds)),
-      setPlaybackRate: (rate) => player.setPlaybackRate(rate),
+      setPlaybackRate(rate) {
+        player.setPlaybackRate(rate);
+        if (context.state !== "running") setFeedbackRate(rate);
+      },
       poll() {
         const state = player.poll();
+        setFeedbackRate(state.position.playbackRate);
         return {
           ...state,
           position: {
@@ -140,29 +171,15 @@ export function createPreviewAudio(input: PreviewAudioInput) {
     get running() {
       return context.state === "running";
     },
-    startMusicCalibration: (async (signal, onProgress, mode) => {
-      const scope = createAbortScope([input.signal, signal]);
-      scope.signal.addEventListener(
-        "abort",
-        () => {
-          if (!signal.aborted) onProgress({ count: 0, result: "interrupted" });
-        },
-        { once: true },
-      );
-      try {
-        return await startMusicCalibration(
-          context,
-          musicGain,
-          (at) => readAudioOutputTime(context, at),
-          scope.signal,
-          onProgress,
-          mode,
-        );
-      } catch (cause) {
-        scope.dispose();
-        throw cause;
-      }
-    }) satisfies StartMusicCalibration,
+    startMusicCalibration: ((signal, onProgress, mode) =>
+      startMusicCalibration(
+        context,
+        musicGain,
+        (at) => readAudioOutputTime(context, at),
+        signal,
+        onProgress,
+        mode,
+      )) satisfies StartMusicCalibration,
     async connectSfx(timeline: Timeline) {
       if (!library) {
         const bytes = await sfxBytes!;
@@ -175,27 +192,33 @@ export function createPreviewAudio(input: PreviewAudioInput) {
       throwIfAborted(input.signal);
       replaceSfx(timeline);
     },
-    updateSfx(state: MusicPoll, playTiming: number) {
+    updateSfx(state: MusicPoll, playTiming: number, playMode: boolean) {
       const position = !state.intendedPlaying
         ? { ...state.position, phase: "paused" as const }
         : state.scheduledPosition
           ? { ...state.scheduledPosition, phase: "playing" as const }
           : state.position;
-      sfx?.update({
-        phase: position.phase,
-        outputTime: position.outputTime,
-        playbackRate: position.playbackRate,
-        bufferSeconds: position.bufferSeconds - playTiming - soundOffset,
-      });
-    },
-    pauseSfx() {
-      sfx?.pause();
-      liveCues?.pause();
-    },
-    /** Follows the music for cues played as they happen, in place of the timeline's cues. */
-    trackLiveSfx(state: MusicPoll, playTiming: number) {
-      sfx?.pause();
-      if (state.intendedPlaying && !state.transitioning && state.position.phase === "playing")
+      sfx?.update(
+        {
+          phase: position.phase,
+          outputTime: position.outputTime,
+          playbackRate: position.playbackRate,
+          bufferSeconds: position.bufferSeconds - playTiming - soundOffset,
+        },
+        playMode ? "guides" : "judgments",
+      );
+      if (!playMode) return;
+      // The default output route can change without a sinkchange event on this context.
+      if (state.position.performanceTime >= nextLatencyCheckMs) {
+        refreshLiveSoundsMuted();
+        nextLatencyCheckMs = state.position.performanceTime + 1000;
+      }
+      if (
+        !liveSoundsMuted &&
+        state.intendedPlaying &&
+        !state.transitioning &&
+        state.position.phase === "playing"
+      )
         liveCues?.resume();
       clock = {
         outputTime: state.position.outputTime,
@@ -203,10 +226,14 @@ export function createPreviewAudio(input: PreviewAudioInput) {
         rate: state.position.playbackRate ?? 1,
       };
     },
+    pauseSfx() {
+      sfx?.pause();
+      liveCues?.pause();
+    },
     /** Cue starts and stops played as they happen, at chart times in seconds. */
     liveSounds: {
       start(row: number, cue: number, gain: number, seconds: number) {
-        if (!library || context.state !== "running") return;
+        if (liveSoundsMuted || !library || context.state !== "running") return;
         liveCues ??= createLiveCuePlayer({ context, destination: soundGain, library });
         liveCues.start(row, cue, gain, contextTime(seconds), seconds);
       },
@@ -224,6 +251,7 @@ export function createPreviewAudio(input: PreviewAudioInput) {
       const changedMusic = nextMusic !== musicOffset;
       musicOffset = nextMusic;
       soundOffset = nextSound;
+      refreshLiveSoundsMuted();
       sfx?.pause();
       if (changedMusic && transport) {
         const end =

@@ -113,7 +113,7 @@ async function setup(
   const clock = { current: 1, output: 1 };
   vi.spyOn(performance, "now").mockReturnValue(100);
   const sources: { start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> }[] = [];
-  class Context {
+  class Context extends EventTarget {
     state: AudioContextState = "running";
     sampleRate = 48000;
     destination = {} as AudioDestinationNode;
@@ -265,6 +265,7 @@ async function setup(
       setChangingDifficulty() {},
       setStatus: (value) => statuses.push(value),
       setError() {},
+      setLiveSoundsMuted() {},
       setPlaying: (value) => playing.push(value),
       setSeeking: (value) => seeking.push(value),
       setDurationSeconds() {},
@@ -465,20 +466,26 @@ describe("preview play timing", () => {
       await vi.waitFor(() => {
         expect(f.sources).toHaveLength(1);
       });
-      expect(mock.sfxUpdate).toHaveBeenLastCalledWith({
-        phase: "playing",
-        playbackRate: 1,
-        bufferSeconds: -2 / 60,
-        outputTime: 1 + 256 / 48000,
-      });
+      expect(mock.sfxUpdate).toHaveBeenLastCalledWith(
+        {
+          phase: "playing",
+          playbackRate: 1,
+          bufferSeconds: -2 / 60,
+          outputTime: 1 + 256 / 48000,
+        },
+        "judgments",
+      );
       f.advance(0.1);
       f.flushFrame();
-      expect(mock.sfxUpdate).toHaveBeenLastCalledWith({
-        phase: "playing",
-        playbackRate: 1,
-        bufferSeconds: expect.closeTo(0.1 - 256 / 48000 - 2 / 60, 9),
-        outputTime: expect.closeTo(1.1, 9),
-      });
+      expect(mock.sfxUpdate).toHaveBeenLastCalledWith(
+        {
+          phase: "playing",
+          playbackRate: 1,
+          bufferSeconds: expect.closeTo(0.1 - 256 / 48000 - 2 / 60, 9),
+          outputTime: expect.closeTo(1.1, 9),
+        },
+        "judgments",
+      );
     } finally {
       f.cleanup();
     }

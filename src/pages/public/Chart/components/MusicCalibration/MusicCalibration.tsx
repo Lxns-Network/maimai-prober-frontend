@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Group, Kbd, Modal, Paper, Progress, SimpleGrid, Stack, Text } from "@mantine/core";
+import { useTimeout } from "@mantine/hooks";
 import { IconArrowRight, IconHandClick, IconPlayerPlay, IconPlayerStop } from "@tabler/icons-react";
 import {
   MUSIC_CALIBRATION_TAPS,
@@ -9,11 +10,15 @@ import {
 } from "../../utils/musicCalibration";
 import { CalibrationBeats } from "./CalibrationBeats";
 
+// Replacing the tap button under a finger can send the release click to the modal overlay.
+const TOUCH_RESULT_DELAY_MS = 350;
+
 interface MusicCalibrationProps {
   opened: boolean;
   onClose(): void;
   disabled: boolean;
   muted: boolean;
+  controllerConnected?: boolean;
   currentOffset: number;
   start: StartMusicCalibration;
   onApply(value: number): void;
@@ -47,6 +52,7 @@ export function MusicCalibration({
   onClose,
   disabled,
   muted,
+  controllerConnected,
   currentOffset,
   start,
   onApply,
@@ -55,6 +61,8 @@ export function MusicCalibration({
   const [progress, setProgress] = useState<MusicCalibrationProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [startingOffset, setStartingOffset] = useState(currentOffset);
+  const [settlingTouch, setSettlingTouch] = useState(false);
+  const touchRelease = useTimeout(() => setSettlingTouch(false), TOUCH_RESULT_DELAY_MS);
   const tapButton = useRef<HTMLButtonElement>(null);
   const resultSummary = useRef<HTMLParagraphElement>(null);
   const run = useRef<{ controller: AbortController; tap?: (timeStamp: number) => void } | null>(
@@ -63,8 +71,10 @@ export function MusicCalibration({
   useEffect(() => {
     if (opened) return () => run.current?.controller.abort();
   }, [opened]);
-  const result = progress?.result;
-  const listening = progress?.result === "listening";
+  const tapsComplete = progress?.count === MUSIC_CALIBRATION_TAPS;
+  const result = tapsComplete && settlingTouch ? "listening" : progress?.result;
+  const listening = progress !== null && result === "listening";
+  const beat = listening ? (tapsComplete ? 4 : progress.beat) : undefined;
   const measuring = listening && mode === "measure";
   const demonstrating = listening && mode === "demo";
   const needsRetry = result === "interrupted" || result === "unstable" || !!error;
@@ -123,7 +133,10 @@ export function MusicCalibration({
     <Modal
       opened={opened}
       onClose={close}
+      closeOnClickOutside={!tapsComplete}
       onExitTransitionEnd={() => {
+        touchRelease.clear();
+        setSettlingTouch(false);
         setError(null);
         setProgress(null);
       }}
@@ -187,10 +200,7 @@ export function MusicCalibration({
                   </Button>
                 )}
               </Group>
-              <CalibrationBeats
-                beat={listening ? progress.beat : undefined}
-                tapped={measuring && progress.beat === 4}
-              />
+              <CalibrationBeats beat={beat} tapped={measuring && beat === 4} />
             </Stack>
             {muted && (
               <Text size="sm" c="dimmed">
@@ -219,7 +229,10 @@ export function MusicCalibration({
                     <Text size="sm" c="dimmed" aria-live="polite">
                       已跟拍 {progress.count} / {MUSIC_CALIBRATION_TAPS} 次
                     </Text>
-                    <Kbd size="sm">空格</Kbd>
+                    <Group gap={4}>
+                      <Kbd size="sm">空格</Kbd>
+                      {controllerConnected && <Kbd size="sm">控制器地键</Kbd>}
+                    </Group>
                   </Group>
                   <Progress
                     value={(progress.count / MUSIC_CALIBRATION_TAPS) * 100}
@@ -235,7 +248,19 @@ export function MusicCalibration({
                   onPointerDown={(event) => {
                     if (!event.isPrimary || event.button !== 0) return;
                     event.preventDefault();
+                    if (
+                      event.pointerType === "touch" &&
+                      progress.count >= MUSIC_CALIBRATION_TAPS - 1
+                    ) {
+                      touchRelease.clear();
+                      setSettlingTouch(true);
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                    }
                     run.current?.tap?.(event.timeStamp);
+                  }}
+                  onLostPointerCapture={(event) => {
+                    if (event.isPrimary && event.pointerType === "touch" && settlingTouch)
+                      touchRelease.start();
                   }}
                   onKeyDown={(event) => {
                     if (event.key !== " " && event.key !== "Enter") return;

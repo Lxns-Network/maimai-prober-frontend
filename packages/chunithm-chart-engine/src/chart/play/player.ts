@@ -578,6 +578,8 @@ export function createPlayer(input: {
           if (playsExtra(record) && !mine) w.sound(startSound(SOUND.extra));
           w.sound(startSound(SOUND.tap));
           if (flick) w.sound(startSound(SOUND.flickSecond));
+        } else if (!mine && !flick) {
+          w.sound(startSound(SOUND.tapMiss));
         }
         w.model(s.step, GROUND_MAIN_PART, 0);
         live.done = true;
@@ -1250,6 +1252,9 @@ export function createPlayer(input: {
     /** The last grid step played, or -1 before the first. */
     get step() {
       return step;
+    },
+    get hasPendingInput() {
+      return queue.length > 0;
     },
     /** Whether every note has been played to its end. */
     get finished() {

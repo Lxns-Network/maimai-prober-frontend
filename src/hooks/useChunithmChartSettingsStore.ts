@@ -24,6 +24,7 @@ interface ChunithmChartSettings {
   resolution: CanvasResolution;
   fpsLimit: number;
   hasConfirmed4k: boolean;
+  hasSeenMusicCalibration: boolean;
   musicOffset: number;
   soundOffset: number;
   musicVolume: number;
@@ -56,6 +57,7 @@ const useChunithmChartSettingsStore = create<
       resolution: "auto",
       fpsLimit: 0,
       hasConfirmed4k: false,
+      hasSeenMusicCalibration: false,
       musicOffset: 0,
       soundOffset: 0,
       musicVolume: 0.8,

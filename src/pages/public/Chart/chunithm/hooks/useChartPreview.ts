@@ -152,8 +152,13 @@ export function useChartPreview(options: ChartPreviewOptions) {
   );
   const [difficultyValue, setDifficultyValue] = useState<string | null>(null);
   const [playModeEnabled, setPlayModeEnabled] = useState(false);
+  const [musicCalibration, setMusicCalibration] = useState<"play" | "manual" | null>(null);
   const [controllerConnected, setControllerConnected] = useState(false);
-  const playMode = playModeEnabled && (inputDevice !== "controller" || controllerConnected);
+  const playMode =
+    playModeEnabled &&
+    musicCalibration !== "play" &&
+    (inputDevice !== "controller" || controllerConnected);
+  const [liveSoundsMuted, setLiveSoundsMuted] = useState(false);
   const playModeRef = useRef(playMode);
   const surface = useRef<SurfaceSample | null>(null);
   const lightWriter = useRef<ControllerLightWriter | null>(null);
@@ -161,6 +166,17 @@ export function useChartPreview(options: ChartPreviewOptions) {
     lightWriter.current = writer;
     controls.current?.setControllerLights(writer);
   }, []);
+  function openMusicCalibration(from: "play" | "manual") {
+    controls.current?.pause();
+    setMusicCalibration(from);
+  }
+
+  function selectPlayMode(value: boolean) {
+    setPlayModeEnabled(value);
+    if (value && !useChunithmChartSettingsStore.getState().hasSeenMusicCalibration)
+      openMusicCalibration("play");
+  }
+
   function controllerInput(sample: SurfaceSample | null, receivedAt: number) {
     if (!!surface.current !== !!sample) setControllerConnected(!!sample);
     surface.current = sample;
@@ -202,6 +218,7 @@ export function useChartPreview(options: ChartPreviewOptions) {
           setStatus,
           setChangingDifficulty,
           setError,
+          setLiveSoundsMuted,
           setPlaying(value) {
             if (publishedPlaying === value) return;
             publishedPlaying = value;
@@ -369,10 +386,21 @@ export function useChartPreview(options: ChartPreviewOptions) {
       if (surface.current) controllerInput(null, performance.now());
       setOptions({ inputDevice: device });
     },
+    musicCalibrationOpened: musicCalibration !== null,
+    openMusicCalibration: () => openMusicCalibration("manual"),
+    closeMusicCalibration() {
+      if (
+        musicCalibration === "play" &&
+        !useChunithmChartSettingsStore.getState().hasSeenMusicCalibration
+      )
+        setOptions({ hasSeenMusicCalibration: true });
+      setMusicCalibration(null);
+    },
+    liveSoundsMuted,
     controllerConnected,
     setControllerLights,
     controllerInput,
-    selectPlayMode: setPlayModeEnabled,
+    selectPlayMode,
     stage: {
       ...stage,
       selectBackground(value: boolean) {

@@ -219,7 +219,9 @@ export function createPlaySession(input: {
       this.advance(stepForSeconds(seconds));
     },
     surface(sample: SurfaceSample, seconds: number) {
-      player?.push({ ...sample, frames: seconds * 60 });
+      if (!player) return;
+      player.push({ ...sample, frames: seconds * 60 });
+      this.advance(stepForSeconds(seconds));
     },
     seedSurface(sample: SurfaceSample) {
       player?.seedSurface(sample);
@@ -229,6 +231,10 @@ export function createPlaySession(input: {
     },
     get step() {
       return player?.step ?? -1;
+    },
+    /** Next sampling step for input left between grid boundaries, or sent after its own step. */
+    get pendingInputStep() {
+      return player?.hasPendingInput ? player.step + 1 : null;
     },
     /** Whether every note of the play has been played to its end. */
     get finished() {

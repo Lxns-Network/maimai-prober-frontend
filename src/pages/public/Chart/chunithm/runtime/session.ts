@@ -6,11 +6,17 @@ import {
 import { createSliderLights } from "@lxns-network/chunithm-chart-engine/chart/play/sliderLights";
 import type { ControllerLightWriter } from "../input/controllers/adapter";
 import { exportPreviewGif } from "./exportGif";
-import { createAbortScope } from "@lxns-network/chunithm-chart-engine/assets/abort";
+import { createAbortScope, throwIfAborted } from "@lxns-network/chunithm-chart-engine/assets/abort";
 import { createPreviewAudio, type PreviewMusic } from "./audio";
 import { loadEffectResourceList } from "@lxns-network/chunithm-chart-engine/effects/textures";
-import { stepForSeconds } from "@lxns-network/chunithm-chart-engine/loop/audioClock";
-import { isMusicOutputPending } from "@lxns-network/chunithm-chart-engine/audio/music";
+import {
+  secondsForStep,
+  stepForSeconds,
+} from "@lxns-network/chunithm-chart-engine/loop/audioClock";
+import {
+  isMusicOutputPending,
+  type MusicPoll,
+} from "@lxns-network/chunithm-chart-engine/audio/music";
 import { readFieldPack, type FieldPackData } from "@lxns-network/chunithm-chart-engine/field";
 import type { Pack } from "@lxns-network/chunithm-chart-engine/assets/packFormat";
 import { createFrameHost } from "@lxns-network/chunithm-chart-engine/render/frameHost";
@@ -152,6 +158,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   /** Whether the player plays the chart instead of watching the automatic play. */
   let playMode = false;
   let surface: SurfaceSample | null = null;
+  let calibrationTap: ((timeStamp: number) => void) | null = null;
   let play: PlaySession | null = null;
   let lightWriter: ControllerLightWriter | null = null;
   let sliderLights: ReturnType<typeof createSliderLights> | undefined;
@@ -163,6 +170,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   let liveInput: { chart: ChartInput; judgeTimingRow: number } | null = null;
   /** The music at its last poll, for placing key and touch events on the chart's clock. */
   const clock = { performance: 0, seconds: 0, rate: 1, playing: false };
+  let inputTimer: ReturnType<typeof setTimeout> | null = null;
   let playSettings: PlaySettings | null = null;
   let desiredPlaying = false;
   let loopRange: LoopRange | null = null;
@@ -237,9 +245,53 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const syncBrowserControls = () => {
     if (play?.playing && !surface) play.seedControls(browserControls.snapshot());
   };
+  const readInputClock = (state: MusicPoll) => {
+    const { position } = state;
+    const playing =
+      state.intendedPlaying && position.phase === "playing" && state.requestedSeconds === null;
+    if (playing && !clock.playing) syncBrowserControls();
+    clock.performance = position.performanceTime;
+    clock.seconds = position.bufferSeconds;
+    clock.rate = position.playbackRate;
+    clock.playing = playing;
+  };
   const inputSeconds = (timeStamp: number) =>
     clock.seconds + ((timeStamp - clock.performance) / 1000) * clock.rate - playTiming;
+  const cancelInputWake = () => {
+    if (inputTimer !== null) clearTimeout(inputTimer);
+    inputTimer = null;
+  };
+  const wakeForInput = () => {
+    const step = play?.pendingInputStep;
+    if (step == null || inputTimer !== null || !clock.playing || !desiredPlaying) return;
+    const secondsLeft = secondsForStep(step) - inputSeconds(performance.now());
+    inputTimer = setTimeout(flushInput, Math.max(0, Math.ceil((secondsLeft * 1000) / clock.rate)));
+  };
+  function flushInput() {
+    inputTimer = null;
+    if (
+      !play?.playing ||
+      play.pendingInputStep === null ||
+      !desiredPlaying ||
+      !audio?.running ||
+      !music
+    )
+      return;
+    try {
+      const state = music.poll();
+      readInputClock(state);
+      if (!clock.playing || state.transitioning) return;
+      const at = state.position.bufferSeconds;
+      if (at >= (loopRange?.end ?? durationSeconds)) return;
+      audio.updateSfx(state, playTiming, true);
+      play.advance(playStep(at));
+      wakeForInput();
+    } catch (cause) {
+      if (!isMusicOutputPending(cause)) fail(cause);
+    }
+  }
   const restartPlayAt = (at: number) => {
+    cancelInputWake();
     clock.playing = false;
     sliderLights?.reset();
     play?.restart(playStep(at));
@@ -261,6 +313,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   };
   /** The play of a newly computed chart, judging with the lane layout on screen. */
   const liveFor = (chart: LoadedChart) => {
+    cancelInputWake();
     const requested = liveInput ?? { chart: chartInput!, judgeTimingRow: appliedJudgeTimingRow };
     sliderLights?.reset();
     const next = createPlaySession({
@@ -298,6 +351,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const send = (changes: ControlChange[], timeStamp: number) => {
     if (!changes.length || !play || !clock.playing || !desiredPlaying) return;
     play.control(changes, inputSeconds(timeStamp));
+    wakeForInput();
     request(false);
   };
   /** Lets go of every key and touch and pauses a play the page lost focus during. */
@@ -317,6 +371,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     onBlur: focusLost,
   });
   const release = () => {
+    cancelInputWake();
     resetFps();
     changeController?.abort();
     viewport.dispose();
@@ -393,16 +448,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           request();
           return;
         }
-        if (play?.playing) audio?.trackLiveSfx(state, playTiming);
-        else audio?.updateSfx(state, playTiming);
-        const { position } = state;
-        const playing =
-          state.intendedPlaying && position.phase === "playing" && state.requestedSeconds === null;
-        if (playing && !clock.playing) syncBrowserControls();
-        clock.performance = position.performanceTime;
-        clock.seconds = position.bufferSeconds;
-        clock.rate = position.playbackRate;
-        clock.playing = playing;
+        audio?.updateSfx(state, playTiming, play?.playing ?? false);
+        readInputClock(state);
         if (
           !state.transitioning &&
           state.requestedSeconds === null &&
@@ -578,6 +625,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     changeController = controller;
     const scope = createAbortScope([signal, controller.signal]);
     changingDifficulty = true;
+    cancelInputWake();
     sliderLights?.reset();
     resetFps();
     ui.setChangingDifficulty(true);
@@ -650,9 +698,11 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     controllerInput(sample, receivedAt) {
       const previousTouch = surface?.touch;
       surface = sample;
+      if (previousTouch === 0 && sample?.touch) calibrationTap?.(receivedAt);
       if (!playMode || !sample) return;
       if (clock.playing && desiredPlaying && !scrubbing) {
         play?.surface(sample, inputSeconds(receivedAt));
+        wakeForInput();
       } else {
         play?.seedSurface(sample);
         if (
@@ -709,6 +759,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       let restoreLive: (() => void) | undefined;
       const exportScope = createAbortScope([signal, exportSignal]);
       try {
+        cancelInputWake();
         desiredPlaying = false;
         clock.playing = false;
         active.pause();
@@ -813,8 +864,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
               try {
                 const state = active.poll();
                 audibleRate = state.position.playbackRate;
-                if (play?.playing) audio?.trackLiveSfx(state, playTiming);
-                else audio?.updateSfx(state, playTiming);
+                audio?.updateSfx(state, playTiming, play?.playing ?? false);
               } catch (cause) {
                 if (!isMusicOutputPending(cause)) throw cause;
               }
@@ -823,6 +873,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           })
           .catch(fail);
       else {
+        cancelInputWake();
         seconds = live.time.getSnapshot();
         clock.playing = false;
         sliderLights?.reset();
@@ -836,15 +887,10 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       if (scrubbing) scrubbing.resume = false;
       if (desiredPlaying) controls.toggle();
     },
-    startMusicCalibration(signal, onProgress, mode) {
-      if (!ready || !audio || changingDifficulty || capturing)
-        return Promise.reject(new Error("播放器尚未就绪"));
-      controls.pause();
-      return audio.startMusicCalibration(signal, onProgress, mode);
-    },
     scrub(target) {
       if (!music || !Number.isFinite(target) || target < 0 || target > durationSeconds) return;
       if (!scrubbing) {
+        cancelInputWake();
         scrubbing = { seconds: target, resume: desiredPlaying };
         sliderLights?.reset();
         if (desiredPlaying) music.pause();
@@ -977,6 +1023,29 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       resetFps();
       request();
     },
+    async startMusicCalibration(calibrationSignal, onProgress, mode = "measure") {
+      if (!ready || !audio || changingDifficulty || capturing) throw new Error("播放器尚未就绪");
+      controls.pause();
+      const scope = createAbortScope([signal, calibrationSignal]);
+      let tap: ((timeStamp: number) => void) | undefined;
+      scope.signal.addEventListener(
+        "abort",
+        () => {
+          if (calibrationTap === tap) calibrationTap = null;
+          if (!calibrationSignal.aborted) onProgress({ count: 0, result: "interrupted" });
+        },
+        { once: true },
+      );
+      try {
+        tap = await audio.startMusicCalibration(scope.signal, onProgress, mode);
+        throwIfAborted(scope.signal);
+        if (mode === "measure") calibrationTap = tap;
+        return tap;
+      } catch (cause) {
+        scope.dispose();
+        throw cause;
+      }
+    },
     setAudioOffsets(nextMusicOffset, nextSoundOffset) {
       audio?.setOffsets(nextMusicOffset, nextSoundOffset, scrubbing?.seconds ?? seconds);
       if (music) {
@@ -995,6 +1064,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     },
     setPlayMode(value) {
       if (value === playMode) return;
+      cancelInputWake();
       playMode = value;
       bindLights();
       if (!value) lightWriter?.(null);
@@ -1098,6 +1168,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       soundOffset: input.soundOffset ?? 0,
       musicVolume: input.musicVolume ?? 0.8,
       soundVolume: input.soundVolume ?? 0.6,
+      setLiveSoundsMuted: ui.setLiveSoundsMuted,
     });
     const musicReady = audio.ready;
     for (const pending of [
@@ -1320,6 +1391,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           musicUrl: new URL(await musicAddress, window.location.href).href,
           sfxUrl: audio.sfxUrl,
           begin(value: CanvasResolution) {
+            cancelInputWake();
             capturing = true;
             if (frame) cancelAnimationFrame(frame);
             frame = 0;

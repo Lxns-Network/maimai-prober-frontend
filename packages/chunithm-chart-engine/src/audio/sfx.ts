@@ -1,4 +1,5 @@
 import type { Timeline } from "../chart/timeline/reader";
+import { SOUND } from "../chart/sweep/cues";
 import { packSlice, readPack } from "../assets/packFormat";
 
 /** Name of the sample pack's engine tag. */
@@ -231,6 +232,8 @@ export interface SfxPlayerOptions {
   volume?: number;
 }
 
+type CueGroup = "judgments" | "guides";
+
 interface Playing {
   source: SfxSourceLike;
   gain: SfxGainLike;
@@ -287,6 +290,7 @@ export function createSfxPlayer(options: SfxPlayerOptions) {
   const curves = new Map<string, Float32Array>();
 
   let cursor = 0;
+  let cueGroup: CueGroup | undefined;
   let offset: number | null = null;
   let playbackRate = 1;
   let live: Playing[] = [];
@@ -311,7 +315,10 @@ export function createSfxPlayer(options: SfxPlayerOptions) {
     dropLate = false,
     loopsOnly = false,
   ) {
-    const cue = library.cues.get(cues[row]);
+    const id = cues[row];
+    const group = id === SOUND.guide.cue ? "guides" : "judgments";
+    if (cueGroup !== undefined && group !== cueGroup) return;
+    const cue = library.cues.get(id);
     if (!cue) return;
     const voices = picked[row] >= 0 ? [cue.voices[picked[row]]] : cue.voices;
     for (const voice of voices) {
@@ -392,9 +399,13 @@ export function createSfxPlayer(options: SfxPlayerOptions) {
   }
 
   return Object.freeze({
-    /** Schedules what is due; call once per poll of the music session. */
-    update(position: SfxPosition) {
+    /** Changing groups cancels cues already scheduled by the previous playback mode. */
+    update(position: SfxPosition, group?: CueGroup) {
       available();
+      if (cueGroup !== group) {
+        cueGroup = group;
+        offset = null;
+      }
       if (position.phase !== "playing") {
         if (!silent) silence();
         offset = null;
@@ -542,15 +553,9 @@ export function createLiveCuePlayer(options: {
       if (!cue) return;
       const pick = cue.combo ? pickComboTrack(combo, cue, id, seconds) : -1;
       const started: Track[] = [];
+      const onset = Math.max(context.currentTime, at);
       for (const voice of pick >= 0 ? [cue.voices[pick]] : cue.voices)
-        startVoice(
-          row,
-          started,
-          voice,
-          gain,
-          Math.max(context.currentTime, at + voice.delayMilliseconds / 1000),
-          0,
-        );
+        startVoice(row, started, voice, gain, onset + voice.delayMilliseconds / 1000, 0);
       if (started.length) rows.set(row, started);
     },
     /** Stops row `row` at context time `at`: its tracks release, and one not sounding yet never does. */

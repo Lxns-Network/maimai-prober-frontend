@@ -14,9 +14,10 @@ const SCRIPT_CHANNEL = 0xff;
 const f = Math.fround;
 const K = SPAWN_CONSTANTS.framesPerMs;
 
-/** Channels and cues of each judgment sound at the automatic grade. */
+/** Channels and cues used by the chart and live judgments. */
 export const SOUND = Object.freeze({
   tap: { channel: 6, cue: 60 },
+  tapMiss: { channel: 16, cue: 61 },
   holdTail: { channel: 9, cue: 71 },
   slideTail: { channel: 12, cue: 72 },
   flickSecond: { channel: 22, cue: 99 },
@@ -72,6 +73,7 @@ const CUES: ReadonlyMap<number, CueProgram> = new Map([
   [57, program(9)],
   [58, program(10)],
   [60, program(12, 1, [54, 57], { after: 50, cues: [54, 57] })],
+  [61, program(13)],
   [71, program(null)],
   [72, program(null)],
   [84, program(14)],

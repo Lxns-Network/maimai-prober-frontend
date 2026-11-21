@@ -107,6 +107,7 @@ export interface PreviewSessionInput {
     setError(message: string | null): void;
     setPlaying(playing: boolean): void;
     setSeeking(seeking: boolean): void;
+    setLiveSoundsMuted(muted: boolean): void;
     setChangingDifficulty(changing: boolean): void;
     setDurationSeconds(seconds: number): void;
     setSpeedOptions(options: FrameSurface["speedOptions"]): void;
