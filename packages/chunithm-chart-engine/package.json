@@ -2,6 +2,7 @@
   "name": "@lxns-network/chunithm-chart-engine",
   "version": "0.0.0",
   "private": true,
+  "license": "(PolyForm-Noncommercial-1.0.0 AND MIT)",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

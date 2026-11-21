@@ -76,6 +76,7 @@ jobs:
       - name: Package
         run: |
           mkdir -p build
+          install -Dm644 packages/chunithm-chart-engine/LICENSE dist/client/licenses/chunithm-chart-engine.txt
           tar -czf build/dist-client.tar.gz -C dist/client .
           cd build && sha256sum dist-client.tar.gz > dist-client.tar.gz.sha256
 

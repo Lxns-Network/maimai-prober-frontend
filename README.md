@@ -14,6 +14,12 @@ maimai DX 查分器
 
 了解查分器的使用方法，请参见：[官方文档](https://maimai.lxns.net/docs)
 
+## 许可
+
+前端代码默认采用 [MIT](./LICENSE)。[CHUNITHM 谱面引擎](./packages/chunithm-chart-engine/LICENSE)的新增代码和修改采用 PolyForm Noncommercial 1.0.0。`v1.2.32` 及此前按 MIT 发布的引擎代码仍可按 MIT 使用。
+
+游戏商标、谱面、音乐、音效及 Stage 素材的权利归各自权利人所有，代码许可不授予使用这些内容的权利。
+
 ## 特性
 
 - 📱 支持「舞萌 DX」与「中二节奏」的游戏数据同步

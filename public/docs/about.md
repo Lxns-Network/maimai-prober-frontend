@@ -14,9 +14,9 @@ GitHub：[@Lxns-Network](https://github.com/Lxns-Network)
 
 哔哩哔哩：[@软糖酱\_Official](https://space.bilibili.com/1432317833)
 
-## 开放源代码
+## 源代码与许可
 
-查分器前端的源代码是开放的，您可以在 [GitHub](https://github.com/Lxns-Network/maimai-prober-frontend) 上查看并下载源代码。
+查分器前端源码可在 [GitHub](https://github.com/Lxns-Network/maimai-prober-frontend) 查看，默认采用 MIT 许可。CHUNITHM 谱面引擎的新增代码和修改采用 [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)。游戏商标和素材的使用权限由各自权利人决定。
 
 ## 赞助
 
