@@ -5,7 +5,7 @@ import {
   Box,
   Button,
   Card,
-  Group,
+  Flex,
   LoadingOverlay,
   Stack,
   Text,
@@ -217,7 +217,7 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
         <Controls preview={preview} disabled={exporting}>
           <PlaySettings preview={preview} disabled={exporting} />
           {preview.difficultyOptions.length > 0 && (
-            <Group gap="xs" grow>
+            <Flex gap={{ base: 4, xs: "xs" }}>
               {preview.difficultyOptions.map((option) => {
                 const index = Number(option.value);
                 const selected = option.value === preview.difficultyValue;
@@ -246,7 +246,7 @@ function Preview({ onRetry, children, ...options }: PreviewProps & ChartPlayerPr
                   </UnstyledButton>
                 );
               })}
-            </Group>
+            </Flex>
           )}
         </Controls>
       </Box>

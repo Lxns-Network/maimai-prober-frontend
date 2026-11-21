@@ -82,6 +82,7 @@ export function createPlaySession(input: {
   let keeper = createScoreKeeper(score);
   let player: Player | null = null;
   let stats = EMPTY_STATS;
+  let gauge = 0;
   let skippedJudgment = false;
   const rows: CueRow[] = [];
   let simulation = cueSimulation(rows);
@@ -92,8 +93,6 @@ export function createPlaySession(input: {
     stats = next;
     for (const listener of listeners) listener();
   };
-  const hud: HudValues = { score: 0, combo: 0, gauge: 0, counts: [0, 0, 0, 0] };
-
   const judge = (judgment: Judgment) => {
     const { object } = judgment;
     if (judgment.judgePhase === 0) states.judged(object.record, judgment.part === 2, judgment.step);
@@ -103,10 +102,7 @@ export function createPlaySession(input: {
       return;
     }
     const values = keeper.judge(object.record, judgment.part, judgment.judgePhase, judgment.grade);
-    hud.score = values.score;
-    hud.combo = values.combo;
-    hud.gauge = values.gauge;
-    hud.counts = values.counts;
+    gauge = values.gauge;
     const timedHead =
       judgment.judgePhase === 0 &&
       (object.className === "TapNote" ||
@@ -146,8 +142,7 @@ export function createPlaySession(input: {
     states.setPlaying(true);
     effects = createPlayEffects(score, input.text);
     keeper = createScoreKeeper(score);
-    hud.score = hud.combo = hud.gauge = 0;
-    hud.counts = [0, 0, 0, 0];
+    gauge = 0;
     rows.length = 0;
     simulation = cueSimulation(rows);
     cues = 0;
@@ -245,10 +240,10 @@ export function createPlaySession(input: {
     },
     /** HUD values of the play so far. */
     hudValues(_step: number, out: HudValues): HudValues {
-      out.score = hud.score;
-      out.combo = hud.combo;
-      out.gauge = hud.gauge;
-      out.counts = [...hud.counts];
+      out.score = stats.score;
+      out.combo = stats.maxCombo;
+      out.gauge = gauge;
+      out.counts = [...stats.counts];
       return out;
     },
     stats: {

@@ -17,6 +17,7 @@ import {
   Card,
   Checkbox,
   Collapse,
+  Flex,
   Group,
   HoverCard,
   Menu,
@@ -1316,7 +1317,7 @@ export function Controls({
       </Card>
 
       {availableDifficulties && Object.keys(availableDifficulties).length > 0 && (
-        <Group gap="xs" grow>
+        <Flex gap={{ base: 4, xs: "xs" }}>
           {([1, 2, 3, 4, 5, 6] as ChartDifficulty[]).map((diff) => {
             const isAvailable = availableDifficulties[diff];
             if (!isAvailable) return null;
@@ -1358,7 +1359,7 @@ export function Controls({
               </Tooltip>
             );
           })}
-        </Group>
+        </Flex>
       )}
 
       <Card className={classes.card} radius="lg" withBorder>
