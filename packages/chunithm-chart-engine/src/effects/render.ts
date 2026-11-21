@@ -52,6 +52,7 @@ export interface EffectPass {
 
 /** Indexed triangles, lines or point sprites with per-vertex colour. */
 export interface EffectPrimitivePacket {
+  instanceId?: number;
   interpolationKey?: string;
   topology?: "lines" | "points";
   /** Diameter in framebuffer pixels for point primitives. */
@@ -107,6 +108,7 @@ export interface EffectBillboardPacket extends Omit<
 
 /** A particle draw: a run of births from a pool, four vertices each. */
 export interface EffectParticlePacket {
+  instanceId?: number;
   interpolationKey?: string;
   frame?: EffectFrame;
   shadow?: boolean;

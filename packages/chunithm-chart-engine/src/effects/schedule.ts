@@ -38,10 +38,20 @@ export interface EffectSchedulerOptions {
   criticalDisplayRow?: number;
 }
 
-// The native selector uses state 12 when a CRITICAL has no FAST/LATE text to show.
+const PLAIN_CRITICAL_STATE = 0;
 const NO_JUDGE_TEXT_STATE = 12;
 
 export interface EffectScheduler {
+  /**
+   * Retains immutable instances with matching ids and catches up new ones to the current step.
+   * Publishes only the additions; the caller merges them into any retained frame snapshots.
+   * Returns false without changes when ids are absent or a live instance was removed.
+   */
+  update(
+    effects: Pick<EffectSchedulerOptions, "instances" | "consumption" | "moves">,
+    camera: EffectCamera,
+    sinkAtStep: (step: number) => EffectDrawSink | null,
+  ): boolean;
   /**
    * Brings the live effects to `step` and passes that step's draws to `sink`, player by player in
    * registry order and, within a player, in creation order. Steps forward from the last one
@@ -78,7 +88,8 @@ function groupByInstance(owner: Uint32Array, instanceCount: number): Groups {
 }
 
 export function createEffectScheduler(options: EffectSchedulerOptions): EffectScheduler {
-  const { resources, instances, consumption, moves } = options;
+  const { resources } = options;
+  let { instances, consumption, moves } = options;
   const judgePositionOffset = options.judgePositionOffset ?? 0;
   if (!Number.isFinite(judgePositionOffset))
     throw new RangeError("Effect judge position must be finite");
@@ -86,20 +97,28 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
   if (!Number.isInteger(criticalDisplayRow) || criticalDisplayRow < 0 || criticalDisplayRow > 3)
     throw new RangeError("Invalid critical display option");
   const delta = options.delta ?? 0.5;
-  const count = instances.created.length;
+  let count = instances.created.length;
   const playerCount = PLAYER_ORDER.length;
   const playerSlot = new Int32Array(Math.max(...PLAYER_ORDER) + 1).fill(-1);
   PLAYER_ORDER.forEach((id, slot) => (playerSlot[id] = slot));
 
-  const moveGroups = groupByInstance(moves.instance, count);
-  const birthGroups = groupByInstance(consumption.instance, count);
-  const creation = Uint32Array.from({ length: count }, (_, i) => i).sort(
-    (a, b) => instances.created[a] - instances.created[b] || a - b,
-  );
+  let moveGroups: Groups;
+  let birthGroups: Groups;
+  let creation: Uint32Array;
   let span = 1;
-  for (let i = 0; i < count; i++)
-    if (instances.reveal[i] === instances.created[i])
-      span = Math.max(span, instances.end[i] - instances.created[i]);
+  const indexSource = () => {
+    count = instances.created.length;
+    moveGroups = groupByInstance(moves.instance, count);
+    birthGroups = groupByInstance(consumption.instance, count);
+    creation = Uint32Array.from({ length: count }, (_, i) => i).sort(
+      (a, b) => instances.created[a] - instances.created[b] || a - b,
+    );
+    span = 1;
+    for (let i = 0; i < count; i++)
+      if (instances.reveal[i] === instances.created[i])
+        span = Math.max(span, instances.end[i] - instances.created[i]);
+  };
+  indexSource();
 
   const players: (EffectPlayer | undefined)[] = [];
   const live: Live[][] = Array.from({ length: playerCount }, () => []);
@@ -131,9 +150,11 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
       players[id] = player;
     }
     const inst = createEffectInstance(player, {
-      instanceId: index + 1,
+      instanceId: instances.ids?.[index] ?? index + 1,
       displayState:
-        instances.group[index] === EFFECT_GROUP.text && criticalDisplayRow >= 2
+        instances.group[index] === EFFECT_GROUP.text &&
+        instances.displayState[index] === PLAIN_CRITICAL_STATE &&
+        criticalDisplayRow >= 2
           ? NO_JUDGE_TEXT_STATE
           : instances.displayState[index],
       animation: instances.animation[index],
@@ -167,6 +188,13 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
       position[2] = moves.z[move];
       setInstancePosition(inst, position);
       entry.move++;
+    }
+    const path = moves.paths?.[index];
+    if (path && step >= instances.reveal[index]) {
+      position[0] = path(step / 2);
+      position[1] = instances.posY[index];
+      position[2] = instances.posZ[index];
+      setInstancePosition(inst, position);
     }
     const created = instances.created[index];
     const reveal = instances.reveal[index];
@@ -208,6 +236,7 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
       let kept = 0;
       for (let k = 0; k < n; k++) {
         const entry = list[k];
+        if (instances.end[entry.index] <= step) continue;
         if (settle(entry, step, sink)) list[kept++] = entry;
       }
       list.length = kept;
@@ -238,6 +267,58 @@ export function createEffectScheduler(options: EffectSchedulerOptions): EffectSc
   };
 
   return {
+    update(effects, cameraOverride, sinkAtStep) {
+      if (!instances.ids || !effects.instances.ids) return false;
+      const indices = new Map(Array.from(effects.instances.ids, (id, i) => [id, i]));
+      // The publishers already hold the current and preceding steps. Rebuild if a
+      // newly reported eviction invalidates packets in either one.
+      for (let i = 0; i < instances.ids.length; i++) {
+        const next = indices.get(instances.ids[i]);
+        if (next === undefined) continue;
+        const end = effects.instances.end[next];
+        if (end < instances.end[i] && end <= current && instances.end[i] > current - 1)
+          return false;
+      }
+      for (const list of live)
+        for (const entry of list) if (!indices.has(entry.inst.instanceId)) return false;
+      const previousIds = new Set(instances.ids);
+      const previousMoves = moveGroups;
+      const previousBirths = birthGroups;
+      ({ instances, consumption, moves } = effects);
+      indexSource();
+      camera = cameraOverride;
+      for (const list of live) {
+        for (const entry of list) {
+          const index = indices.get(entry.inst.instanceId)!;
+          entry.move += moveGroups.start[index] - previousMoves.start[entry.index];
+          entry.birth += birthGroups.start[index] - previousBirths.start[entry.index];
+          entry.moveEnd = moveGroups.start[index + 1];
+          entry.birthEnd = birthGroups.start[index + 1];
+          entry.index = index;
+        }
+      }
+      nextCreate = 0;
+      while (nextCreate < count && instances.created[creation[nextCreate]] <= current) {
+        const index = creation[nextCreate++];
+        if (previousIds.has(instances.ids![index])) continue;
+        if (instances.end[index] <= instances.created[index]) continue;
+        const entry = activate(index);
+        let alive = true;
+        for (let t = instances.created[index]; alive && t <= current; t++) {
+          prepare(entry, t);
+          alive = settle(entry, t, sinkAtStep(t));
+        }
+        if (alive) {
+          live[slotOf(index)].push(entry);
+          liveCount++;
+        }
+      }
+      for (const list of live)
+        list.sort(
+          (a, b) => instances.created[a.index] - instances.created[b.index] || a.index - b.index,
+        );
+      return true;
+    },
     advanceTo(step, cameraOverride, sink) {
       camera = cameraOverride ?? options.camera;
       if (!camera) throw new RangeError("No camera to advance the effects with");

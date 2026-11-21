@@ -1,10 +1,12 @@
 import type { ObjectRun } from "../chart/lifecycle/emissions";
+import { GROUND_MAIN_PART } from "../chart/bake/events";
 import { ACTIVE_AFTER } from "../chart/lifecycle/emissions";
 import { motionParts } from "../chart/lifecycle/motion";
 import { spawnSteps } from "../chart/lifecycle/spawnStep";
 import { createActiveSet } from "./active";
 import { TIMELINE_ORIGIN, timelineFramesAt, timelineFrameDisplacement } from "./extapClock";
 import { advanceMotionFrame, motionSeed } from "./motionClock";
+import type { ModelStates } from "./modelStates";
 import type { NoteScore } from "./score";
 import { effectiveTime, spawnPredicate, windowPredicate } from "./timing";
 import { NOTE_FIELDS, speedForRowIndex } from "./tables";
@@ -15,15 +17,26 @@ export interface LivePlaybackData {
   runs: ObjectRun[];
 }
 
-/** Advances only candidate records and their clocks; changing speed never rebuilds a chart. */
-export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[], state: DataView) {
+/**
+ * Advances only candidate records and their clocks; changing speed never rebuilds a chart. A
+ * `slack` keeps every record a candidate, and its clocks running, that many steps past the run's
+ * end, for notes a player judges later than the automatic play. Animation clocks follow the same
+ * model visibility as the renderer, including parts still shown while awaiting a late judgment.
+ */
+export function createLivePlayback(
+  score: NoteScore,
+  runs: readonly ObjectRun[],
+  state: DataView,
+  modelStates: ModelStates,
+  slack = 0,
+) {
   const count = score.records.length;
   const starts = new Int32Array(count).fill(-1);
   const ends = new Int32Array(count);
   for (const run of runs) {
     const record = run.object.record;
     starts[record] = run.object.spawn;
-    ends[record] = Math.max(ends[record], run.removal);
+    ends[record] = Math.max(ends[record], run.removal + slack);
   }
   const intervalCounts = new Uint32Array(count);
   const intervals: number[] = [];
@@ -85,16 +98,13 @@ export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[],
       clock = { frame: part.initial ?? inherited, step: spawned[record] - 1, seeded: false };
       clocks.set(part, clock);
     }
-    const end = Math.min(step, part.release - 1);
+    const end = Math.min(step, part.release + slack - 1);
     for (let k = clock.step + 1; k <= end; k++) {
-      let lo = 0;
-      let hi = part.shownSteps.length;
-      while (lo < hi) {
-        const mid = (lo + hi) >>> 1;
-        if (part.shownSteps[mid] <= k) lo = mid + 1;
-        else hi = mid;
-      }
-      const shown = lo > 0 && part.shownValues[lo - 1] !== 0;
+      const shown = modelStates.shownAt(
+        record,
+        part.pool === null ? GROUND_MAIN_PART : part.part,
+        k,
+      );
       const active = k >= spawned[record] + ACTIVE_AFTER;
       state.setFloat32(NOTE_FIELDS.now, Math.fround(k * 0.5), true);
       const window = part.window;
@@ -125,7 +135,7 @@ export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[],
     clock.step = end;
     if (part.slot) {
       part.slot.frame = clock.frame;
-      if (step >= part.release) part.slot.busy = false;
+      if (step >= part.release + slack) part.slot.busy = false;
     }
   };
   return {
@@ -147,7 +157,7 @@ export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[],
       }
       state.setFloat32(NOTE_FIELDS.speed, speedForRowIndex(row) * multiplier, true);
       for (const [part] of clocks)
-        if (part.release <= step) {
+        if (part.release + slack <= step) {
           advance(part, step);
           clocks.delete(part);
         }
@@ -161,7 +171,8 @@ export function createLivePlayback(score: NoteScore, runs: readonly ObjectRun[],
           if (!spawnPredicate(state, score, score.records[record])) continue;
           spawned[record] = Math.max(0, step - ACTIVE_AFTER);
         }
-        for (const part of byRecord.get(record) ?? []) if (step < part.release) advance(part, step);
+        for (const part of byRecord.get(record) ?? [])
+          if (step < part.release + slack) advance(part, step);
         visible[written++] = record;
       }
       state.setFloat32(NOTE_FIELDS.now, Math.fround(step * 0.5), true);

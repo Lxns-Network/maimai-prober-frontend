@@ -37,6 +37,7 @@ export function OptionSlider({
       </Group>
       <Slider
         thumbLabel={label}
+        thumbValueText={options[index]?.label}
         min={0}
         max={Math.max(1, options.length - 1)}
         step={1}

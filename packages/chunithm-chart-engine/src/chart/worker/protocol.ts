@@ -3,9 +3,15 @@ import type { ObjectLifetimes } from "../lifecycle/nativeChart";
 import type { Consumption, EffectInstances, EffectMoves } from "../sweep/effects";
 import type { NoteScore } from "../../notes/score";
 import type { LivePlaybackData } from "../../notes/livePlayback";
+import type { KeyBeamFrame } from "../play/keyBeams";
 
 /** Effect instance columns, random-stream starts and position changes; instances are in effect row order. */
 export interface ChartEffects {
+  /** Identity of a live effect stream; instance ids are only unique within this stream. */
+  sequence?: object;
+  /** Ground input beams, updated independently of the chart's note effects. */
+  keyBeams?: KeyBeamFrame;
+  possibleResources?: readonly number[];
   instances: EffectInstances;
   consumption: Consumption;
   moves: EffectMoves;

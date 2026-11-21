@@ -1,3 +1,10 @@
+import {
+  laneRows,
+  type ControlChange,
+  type SurfaceSample,
+} from "@lxns-network/chunithm-chart-engine/chart/play/input";
+import { createSliderLights } from "@lxns-network/chunithm-chart-engine/chart/play/sliderLights";
+import type { ControllerLightWriter } from "../input/controllers/adapter";
 import { exportPreviewGif } from "./exportGif";
 import { createAbortScope } from "@lxns-network/chunithm-chart-engine/assets/abort";
 import { createPreviewAudio, type PreviewMusic } from "./audio";
@@ -8,7 +15,13 @@ import { readFieldPack, type FieldPackData } from "@lxns-network/chunithm-chart-
 import type { Pack } from "@lxns-network/chunithm-chart-engine/assets/packFormat";
 import { createFrameHost } from "@lxns-network/chunithm-chart-engine/render/frameHost";
 import type { FrameHost } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
-import type { LoopRange, PreviewControls, PreviewSessionInput, PreviewWarmState } from "./types";
+import type {
+  LoopRange,
+  PlaySettings,
+  PreviewControls,
+  PreviewSessionInput,
+  PreviewWarmState,
+} from "./types";
 import type { CanvasResolution } from "./canvasSize";
 import { createPreviewViewport } from "./viewport";
 import { loadChartInput, readChartSong } from "../assets/chartInput";
@@ -21,7 +34,10 @@ import {
   readNotePack,
   type NoteHost,
 } from "../rendering/notes";
-import type { ChartSession } from "@lxns-network/chunithm-chart-engine/chart/worker/loadChart";
+import type {
+  ChartSession,
+  LoadedChart,
+} from "@lxns-network/chunithm-chart-engine/chart/worker/loadChart";
 import {
   DEFAULT_PLAY_TIMING_ROW,
   PLAY_TIMING_OPTIONS,
@@ -31,6 +47,18 @@ import { DEFAULT_JUDGE_POSITION_ROW, JUDGE_POSITION_OPTIONS } from "../options/j
 import { DEFAULT_JUDGE_DISPLAY_ROW, JUDGE_DISPLAY_OPTIONS } from "../options/judgeDisplay";
 import { DEFAULT_JUDGE_TIMING_ROW, JUDGE_TIMING_OPTIONS } from "../options/judgeTiming";
 import { createChartOverview } from "./chartOverview";
+import {
+  compileJudgeTimingIni,
+  JUDGE_TIMING_BYTES,
+} from "@lxns-network/chunithm-chart-engine/chart/bind/config";
+import type { ChartInput } from "../rendering/notes";
+import {
+  createPlaySession,
+  type PlaySession,
+} from "@lxns-network/chunithm-chart-engine/chart/play/session";
+import type { Judgment } from "@lxns-network/chunithm-chart-engine/chart/play/player";
+import { bindBrowserControls } from "../input/browserControls";
+import { GROUND_HEIGHT } from "../input/touchZones";
 
 const EFFECT_LIST = "effects/resources.json";
 /**
@@ -38,6 +66,31 @@ const EFFECT_LIST = "effects/resources.json";
  * schedules ahead.
  */
 const HIDDEN_POLL_MILLISECONDS = 100;
+/** Highest difficulty row the judge-window binding distinguishes. */
+const MAX_BIND_DIFFICULTY = 3;
+/**
+ * Steps a note stays drawable past its automatic run while a player plays: the latest a player can
+ * judge it, past the widest late window of an AIR, is later than the automatic play judges it.
+ */
+const LIVE_SLACK_STEPS = 60;
+/**
+ * Display states of the result text, each plain, with FAST and with LATE; the last row shows only
+ * FAST or LATE, and its plain state shows nothing.
+ */
+const RESULT_TEXT = {
+  critical: [0, 8, 9],
+  justice: [1, 2, 3],
+  attack: [4, 5, 6],
+  miss: 7,
+  timingOnly: [12, 10, 11],
+} as const;
+
+/** The judge-timing configuration a chart input carries, compiled. */
+function judgeConfig(bytes: Uint8Array): DataView {
+  return bytes.byteLength === JUDGE_TIMING_BYTES
+    ? new DataView(bytes.slice().buffer)
+    : compileJudgeTimingIni(bytes);
+}
 
 /**
  * Runs the page with engine notes and interface over the scene's field, driven by the music clock.
@@ -59,7 +112,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   let frameHost: FrameHost | null = null;
 
   let wallRawId = 0;
-  let dividerRow = 2;
+  let dividerRow = input.initialDividerRow ?? 2;
   let dividerColor = 0;
   let dividerOptions: FieldPackData["dividers"] | null = null;
   let field: Field | null = null;
@@ -96,6 +149,21 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     throw new RangeError("Invalid initial critical display option");
   let durationSeconds = Infinity;
   let seconds = input.initialSeconds;
+  /** Whether the player plays the chart instead of watching the automatic play. */
+  let playMode = false;
+  let surface: SurfaceSample | null = null;
+  let play: PlaySession | null = null;
+  let lightWriter: ControllerLightWriter | null = null;
+  let sliderLights: ReturnType<typeof createSliderLights> | undefined;
+  const bindLights = () => {
+    sliderLights =
+      playMode && lightWriter ? createSliderLights(lightWriter, dividerRow) : undefined;
+  };
+  /** Chart and judge row the next computed chart was requested with. */
+  let liveInput: { chart: ChartInput; judgeTimingRow: number } | null = null;
+  /** The music at its last poll, for placing key and touch events on the chart's clock. */
+  const clock = { performance: 0, seconds: 0, rate: 1, playing: false };
+  let playSettings: PlaySettings | null = null;
   let desiredPlaying = false;
   let loopRange: LoopRange | null = null;
   /** Where a drag of the timeline is, and whether playback picks up there once it is let go. */
@@ -111,6 +179,18 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   const warmState: PreviewWarmState = { playing: false, busy: true, blockedUntil: 0 };
   let previousFrameTime = 0;
   let displayInterval = 1000 / 60;
+  let fpsSampleStart: number | null = null;
+  let renderedFrames = 0;
+  let frameCallbacks = 0;
+  let frameWorkMs = 0;
+  let maximumFrameWorkMs = 0;
+  const resetFps = () => {
+    fpsSampleStart = null;
+    renderedFrames = 0;
+    frameCallbacks = 0;
+    frameWorkMs = maximumFrameWorkMs = 0;
+    live.setFrameStats(null);
+  };
   const readWarmState = () => {
     warmState.playing = desiredPlaying;
     warmState.busy =
@@ -145,9 +225,99 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   };
   /** The loop's draw: a hidden page keeps polling the music without rendering unseen frames. */
   const present = (at: number) => {
-    if (document.visibilityState !== "hidden") draw(at);
+    if (document.visibilityState === "hidden") return;
+    draw(at);
+    if (!desiredPlaying) {
+      resetFps();
+      return;
+    }
+    if (import.meta.env.DEV) renderedFrames++;
   };
+  const playStep = (at: number) => stepForSeconds(at - playTiming);
+  const syncBrowserControls = () => {
+    if (play?.playing && !surface) play.seedControls(browserControls.snapshot());
+  };
+  const inputSeconds = (timeStamp: number) =>
+    clock.seconds + ((timeStamp - clock.performance) / 1000) * clock.rate - playTiming;
+  const restartPlayAt = (at: number) => {
+    clock.playing = false;
+    sliderLights?.reset();
+    play?.restart(playStep(at));
+  };
+  /** Display state of a judgment's result text, under the critical display option. */
+  const resultText = (judgment: Judgment): number | null => {
+    const { grade } = judgment;
+    const timing = !judgment.timing || grade === 4 ? 0 : judgment.timing < 0 ? 1 : 2;
+    if (grade === 0) return RESULT_TEXT.miss;
+    if (grade === 1) return RESULT_TEXT.attack[timing];
+    if (grade === 2) return RESULT_TEXT.justice[timing];
+    // The critical display option: its text, its text with FAST/LATE, FAST/LATE alone, or nothing.
+    const state = [
+      RESULT_TEXT.critical[0],
+      RESULT_TEXT.critical[timing],
+      RESULT_TEXT.timingOnly[timing],
+    ][criticalDisplayRow];
+    return state === undefined || state === RESULT_TEXT.timingOnly[0] ? null : state;
+  };
+  /** The play of a newly computed chart, judging with the lane layout on screen. */
+  const liveFor = (chart: LoadedChart) => {
+    const requested = liveInput ?? { chart: chartInput!, judgeTimingRow: appliedJudgeTimingRow };
+    sliderLights?.reset();
+    const next = createPlaySession({
+      chart,
+      config: judgeConfig(requested.chart.config),
+      difficulty: Math.min(requested.chart.difficulty, MAX_BIND_DIFFICULTY),
+      judgeTimingRow: requested.judgeTimingRow,
+      sounds: () => audio?.liveSounds ?? null,
+      get sliderLights() {
+        return sliderLights;
+      },
+      text: resultText,
+      options: () => ({
+        surface,
+        get touchMode() {
+          return playSettings?.inputDevice === "touch";
+        },
+        get flickNeedsMotion() {
+          return playSettings?.inputDevice !== "touch" || playSettings.flickNeedsMotion;
+        },
+      }),
+    });
+    if (mirror !== requested.chart.mirror && chart.mirrored)
+      next.selectScore(chart.mirrored.score, 0);
+    next.stats.subscribe(() => live.setPlayStats(next.playing ? next.stats.getSnapshot() : null));
+    play = next;
+    if (playMode) {
+      next.setPlaying(true, playStep(seconds));
+      syncBrowserControls();
+      hud?.readValuesFrom(next.hudValues);
+    }
+    return next.live;
+  };
+  /** Passes control changes an event made at `timeStamp` to a running play. */
+  const send = (changes: ControlChange[], timeStamp: number) => {
+    if (!changes.length || !play || !clock.playing || !desiredPlaying) return;
+    play.control(changes, inputSeconds(timeStamp));
+    request(false);
+  };
+  /** Lets go of every key and touch and pauses a play the page lost focus during. */
+  const focusLost = () => {
+    const releases = browserControls.releaseAll();
+    if (clock.playing && releases.length) play?.control(releases, clock.seconds - playTiming);
+    if (playMode) controls.pause();
+  };
+  const touchProjection = () => notes?.viewProjection ?? null;
+  const browserControls = bindBrowserControls(canvas, signal, {
+    keyBindings: () =>
+      playMode && play && !capturing ? (playSettings?.keyBindings ?? null) : null,
+    touchProjection,
+    groundHeight: () => playSettings?.groundHeight ?? GROUND_HEIGHT.default,
+    onChange: send,
+    toggle: () => controls.toggle(),
+    onBlur: focusLost,
+  });
   const release = () => {
+    resetFps();
     changeController?.abort();
     viewport.dispose();
     document.removeEventListener("visibilitychange", visibilityChanged);
@@ -155,6 +325,9 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     hiddenTimer = null;
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
+    lightWriter?.(null);
+    lightWriter = null;
+    sliderLights = undefined;
     input.setControls(null);
     releasePresentation?.();
     releasePresentation = null;
@@ -215,11 +388,21 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           audio?.pauseSfx();
           frameHost?.resetBackgroundHistory();
           seconds = loopRange.start;
+          restartPlayAt(seconds);
           present(seconds);
           request();
           return;
         }
-        audio?.updateSfx(state, playTiming);
+        if (play?.playing) audio?.trackLiveSfx(state, playTiming);
+        else audio?.updateSfx(state, playTiming);
+        const { position } = state;
+        const playing =
+          state.intendedPlaying && position.phase === "playing" && state.requestedSeconds === null;
+        if (playing && !clock.playing) syncBrowserControls();
+        clock.performance = position.performanceTime;
+        clock.seconds = position.bufferSeconds;
+        clock.rate = position.playbackRate;
+        clock.playing = playing;
         if (
           !state.transitioning &&
           state.requestedSeconds === null &&
@@ -230,6 +413,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           desiredPlaying = false;
           ui.setPlaying(false);
           seconds = durationSeconds;
+          if (play?.playing) play.advance(playStep(seconds), true);
+          sliderLights?.reset();
           present(seconds);
           if (state.position.phase === "playing" || hud?.scrolling) request();
           return;
@@ -238,6 +423,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         ui.setPlaying(state.intendedPlaying);
         ui.setSeeking(state.transitioning);
         seconds = state.requestedSeconds ?? state.position.bufferSeconds;
+        if (play?.playing && desiredPlaying && !state.transitioning)
+          play.advance(playStep(seconds));
         if (!fpsLimit || !desiredPlaying || state.transitioning || timestamp >= nextDrawTime) {
           present(seconds);
           if (fpsLimit) {
@@ -255,9 +442,39 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       if (isMusicOutputPending(cause)) request();
       else fail(cause);
     } finally {
+      const now = performance.now();
+      const workMs = now - started;
       const budget = fpsLimit ? Math.max(displayInterval, 1000 / fpsLimit) : displayInterval;
-      if (performance.now() - started > budget * 0.7)
-        warmState.blockedUntil = performance.now() + 200;
+      if (workMs > budget * 0.7) warmState.blockedUntil = now + 200;
+      if (
+        import.meta.env.DEV &&
+        valid() &&
+        desiredPlaying &&
+        document.visibilityState !== "hidden"
+      ) {
+        if (fpsSampleStart === null) {
+          fpsSampleStart = now;
+          renderedFrames = 0;
+        } else {
+          frameCallbacks++;
+          frameWorkMs += workMs;
+          maximumFrameWorkMs = Math.max(maximumFrameWorkMs, workMs);
+          const elapsed = now - fpsSampleStart;
+          if (elapsed >= 1000) {
+            live.setFrameStats({
+              fps: Math.round((renderedFrames * 1000) / elapsed),
+              callbacksPerSecond: Math.round((frameCallbacks * 1000) / elapsed),
+              averageWorkMs: frameWorkMs / frameCallbacks,
+              maximumWorkMs: maximumFrameWorkMs,
+              width: canvas.width,
+              height: canvas.height,
+            });
+            fpsSampleStart = now;
+            renderedFrames = frameCallbacks = 0;
+            frameWorkMs = maximumFrameWorkMs = 0;
+          }
+        }
+      }
     }
   };
   const request = (redraw = true) => {
@@ -275,12 +492,14 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
    * there for looping, the end of the chart and SFX scheduling. Showing the page draws again.
    */
   const visibilityChanged = () => {
+    resetFps();
     if (hiddenTimer !== null) clearInterval(hiddenTimer);
     hiddenTimer = null;
     if (document.visibilityState !== "hidden") {
       request();
       return;
     }
+    if (playMode) focusLost();
     hiddenTimer = setInterval(() => {
       if (!desiredPlaying) return;
       // A frame requested by the previous poll never ran; left queued, they all run on return.
@@ -319,6 +538,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       if (scope.signal.aborted) return;
       // Export keeps its original timeline for the whole capture.
       if (capturing) return;
+      liveInput = { chart: chartInput, judgeTimingRow: row };
       notes.replaceChart(next, chartInput.mirror);
       notes.selectMirror(mirror);
       hud.replaceChart(chartInput.song, next.timeline);
@@ -358,8 +578,11 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     changeController = controller;
     const scope = createAbortScope([signal, controller.signal]);
     changingDifficulty = true;
+    sliderLights?.reset();
+    resetFps();
     ui.setChangingDifficulty(true);
     desiredPlaying = false;
+    clock.playing = false;
     scrubbing = null;
     music.pause();
     audio.pauseSfx();
@@ -382,11 +605,13 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       await effectHost?.ensureEffects(next.effects);
       if (next.mirrored) await effectHost?.ensureEffects(next.mirrored.effects);
       if (scope.signal.aborted) return;
+      await audio.connectSfx(next.timeline);
+      if (scope.signal.aborted) return;
+      seconds = Math.min(requestedChartSeconds, durationSeconds);
+      liveInput = { chart: nextInput, judgeTimingRow: timingRow };
       notes.replaceChart(next, nextInput.mirror);
       notes.selectMirror(mirror);
       hud.replaceChart(nextInput.song, next.timeline);
-      await audio.connectSfx(next.timeline);
-      if (scope.signal.aborted) return;
       chartInput = nextInput;
       appliedJudgeTimingRow = timingRow;
       live.setChart(createChartOverview(next.timeline, next.score));
@@ -395,7 +620,6 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           timeline: next.timeline,
         });
       ui.setDifficultyValue(String(difficulty));
-      seconds = Math.min(requestedChartSeconds, durationSeconds);
       music.seek(seconds);
       frameHost?.resetBackgroundHistory();
       draw(seconds);
@@ -416,6 +640,34 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
   };
 
   const controls: PreviewControls = {
+    touchProjection,
+    setControllerLights(writer) {
+      if (lightWriter === writer) return;
+      lightWriter?.(null);
+      lightWriter = writer;
+      bindLights();
+    },
+    controllerInput(sample, receivedAt) {
+      const previousTouch = surface?.touch;
+      surface = sample;
+      if (!playMode || !sample) return;
+      if (clock.playing && desiredPlaying && !scrubbing) {
+        play?.surface(sample, inputSeconds(receivedAt));
+      } else {
+        play?.seedSurface(sample);
+        if (
+          sliderLights &&
+          sample.touch !== previousTouch &&
+          !desiredPlaying &&
+          !scrubbing &&
+          !capturing &&
+          !changingDifficulty
+        ) {
+          const [front, rear] = laneRows(sample.touch);
+          sliderLights.reset(front | rear);
+        }
+      }
+    },
     selectDifficulty(value, at = 0) {
       requestedDifficulty = value;
       requestedChartSeconds = at;
@@ -450,11 +702,15 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       const restoreRate = audibleRate;
       const exportTextSeconds = (performance.now() - hudStartedAt) / 1000;
       capturing = true;
+      sliderLights?.reset();
+      resetFps();
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
+      let restoreLive: (() => void) | undefined;
       const exportScope = createAbortScope([signal, exportSignal]);
       try {
         desiredPlaying = false;
+        clock.playing = false;
         active.pause();
         audio?.pauseSfx();
         ui.setPlaying(false);
@@ -489,6 +745,10 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         });
         audibleRate = playbackSpeed;
         frameHost?.resetBackgroundHistory();
+        if (play?.playing) {
+          restoreLive = notes?.showRecorded();
+          hud?.readValuesFrom(null);
+        }
         return await exportPreviewGif(
           canvas,
           range,
@@ -502,6 +762,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         capturing = false;
         audibleRate = restoreRate;
         if (valid()) {
+          restoreLive?.();
+          if (restoreLive && play?.playing) hud?.readValuesFrom(play.hudValues);
           seconds = restoreSeconds;
           frameHost?.resetBackgroundHistory();
           active.seek(restoreSeconds);
@@ -520,16 +782,21 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     },
     toggle() {
       if (!music || !audio || changingDifficulty || capturing) return;
+      resetFps();
       if (scrubbing) {
         seconds = scrubbing.seconds;
         scrubbing = null;
         frameHost?.resetBackgroundHistory();
+        restartPlayAt(seconds);
         music.seek(seconds);
         live.setSeconds(seconds);
       }
       desiredPlaying = !desiredPlaying;
-      if (desiredPlaying && live.time.getSnapshot() >= durationSeconds) {
+      if (desiredPlaying && playMode && playSettings?.inputDevice === "keyboard")
+        canvas.focus({ preventScroll: true });
+      if (desiredPlaying && (live.time.getSnapshot() >= durationSeconds || play?.finished)) {
         seconds = 0;
+        restartPlayAt(seconds);
         music.seek(seconds);
         frameHost?.resetBackgroundHistory();
         live.setSeconds(seconds);
@@ -546,7 +813,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
               try {
                 const state = active.poll();
                 audibleRate = state.position.playbackRate;
-                audio?.updateSfx(state, playTiming);
+                if (play?.playing) audio?.trackLiveSfx(state, playTiming);
+                else audio?.updateSfx(state, playTiming);
               } catch (cause) {
                 if (!isMusicOutputPending(cause)) throw cause;
               }
@@ -556,6 +824,8 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
           .catch(fail);
       else {
         seconds = live.time.getSnapshot();
+        clock.playing = false;
+        sliderLights?.reset();
         active.seek(seconds);
         active.pause();
         audio.pauseSfx();
@@ -576,6 +846,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       if (!music || !Number.isFinite(target) || target < 0 || target > durationSeconds) return;
       if (!scrubbing) {
         scrubbing = { seconds: target, resume: desiredPlaying };
+        sliderLights?.reset();
         if (desiredPlaying) music.pause();
         desiredPlaying = false;
         ui.setPlaying(false);
@@ -609,6 +880,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
         return;
       }
       seconds = target;
+      restartPlayAt(target);
       frameHost?.resetBackgroundHistory();
       music.seek(target);
       if (resume && target < durationSeconds) {
@@ -637,6 +909,15 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       request();
     },
     selectMirror(value) {
+      const chart = notes?.chart;
+      sliderLights?.reset();
+      if (chart && chartInput) {
+        play?.selectScore(
+          value === chartInput.mirror ? chart.score : (chart.mirrored?.score ?? chart.score),
+          playStep(seconds),
+        );
+        syncBrowserControls();
+      }
       notes?.selectMirror(value);
       hud?.selectMirror(value);
       mirror = value;
@@ -684,6 +965,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     selectDivider(value) {
       if (!dividerOptions?.rows.some((row) => row.value === value)) return;
       dividerRow = Number(value);
+      sliderLights?.selectDivider(dividerRow);
       ui.setDividerValue(value);
       request();
     },
@@ -692,6 +974,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     },
     setFpsLimit(value) {
       fpsLimit = value;
+      resetFps();
       request();
     },
     setAudioOffsets(nextMusicOffset, nextSoundOffset) {
@@ -709,6 +992,47 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     },
     refreshPresentation() {
       request();
+    },
+    setPlayMode(value) {
+      if (value === playMode) return;
+      playMode = value;
+      bindLights();
+      if (!value) lightWriter?.(null);
+      browserControls.releaseAll();
+      browserControls.setDevice(value && playSettings ? playSettings.inputDevice : null);
+      if (value && desiredPlaying && playSettings?.inputDevice === "keyboard")
+        canvas.focus({ preventScroll: true });
+      audio?.pauseSfx();
+      if (value && notes && effectHost)
+        void effectHost
+          .ensureEffects(notes.effects, true)
+          .then(() => request())
+          .catch(fail);
+      notes?.setLiveSlack(value ? LIVE_SLACK_STEPS : 0);
+      play?.setPlaying(value, playStep(scrubbing?.seconds ?? seconds));
+      hud?.readValuesFrom(value && play ? play.hudValues : null);
+      live.setPlayStats(value && play ? play.stats.getSnapshot() : null);
+      request();
+    },
+    setPlaySettings(value) {
+      const previousDevice = playSettings?.inputDevice;
+      const deviceChanged = previousDevice !== value.inputDevice;
+      if (
+        deviceChanged ||
+        (value.inputDevice === "keyboard" && playSettings?.keyBindings !== value.keyBindings) ||
+        (value.inputDevice === "touch" && playSettings?.groundHeight !== value.groundHeight)
+      )
+        send(browserControls.releaseAll(), performance.now());
+      playSettings = value;
+      browserControls.setDevice(playMode ? value.inputDevice : null);
+      if (deviceChanged && playMode) {
+        if (previousDevice === "controller") {
+          restartPlayAt(scrubbing?.seconds ?? seconds);
+          request();
+        }
+        if (desiredPlaying && value.inputDevice === "keyboard")
+          canvas.focus({ preventScroll: true });
+      }
     },
   };
   input.setControls(controls);
@@ -805,6 +1129,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     dividerRow = input.initialDividerRow ?? data.dividers.defaultRow;
     if (!data.dividers.rows.some((row) => Number(row.value) === dividerRow))
       throw new RangeError("Invalid initial field divider option");
+    sliderLights?.selectDivider(dividerRow);
     dividerColor = data.dividers.defaultColor;
     const host = createFrameHost({
       canvas,
@@ -868,6 +1193,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
             effectList,
             manifest: effectManifest,
             effects: first.effects,
+            playMode,
             signal,
             textureOverride: search.get("texture"),
           });
@@ -877,7 +1203,10 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       () => mark("effects-failed"),
     );
     const chart = await chartReady;
+    liveInput = { chart, judgeTimingRow };
     const noteHost = await createNoteHost({
+      live: liveFor,
+      liveEffects: () => (!capturing && play?.playing ? play.effects : null),
       canvas,
       field: data,
       scene: host,
@@ -902,6 +1231,7 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       return;
     }
     notes = noteHost;
+    if (playMode) notes.setLiveSlack(LIVE_SLACK_STEPS);
     if (mirror !== input.mirror) notes.selectMirror(mirror);
     live.setChart(createChartOverview(noteHost.timeline, noteHost.score));
     mark("notes");
@@ -941,6 +1271,9 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
       timeline: noteHost.timeline,
       onChange: request,
     });
+    // The note host made the play while it was built.
+    const created = play as PlaySession | null;
+    if (playMode && created) hud.readValuesFrom(created.hudValues);
     hudStartedAt = performance.now();
     mark("hud");
     void resources.jacket.then(
@@ -962,8 +1295,17 @@ export function createPreviewSession(input: PreviewSessionInput): () => void {
     draw(seconds);
     draw(seconds);
     mark("first-frame");
-    await audio.connectSfx(noteHost.timeline);
-    effectHost = await effectsReady;
+    await Promise.all([
+      audio.connectSfx(noteHost.timeline),
+      effectsReady?.then(async (loaded) => {
+        if (!valid()) return;
+        effectHost = loaded;
+        if (playMode) {
+          await loaded.ensureEffects(noteHost.effects, true);
+          request();
+        }
+      }),
+    ]);
     if (!valid()) return;
     mark("sfx");
     chartInput = chart;

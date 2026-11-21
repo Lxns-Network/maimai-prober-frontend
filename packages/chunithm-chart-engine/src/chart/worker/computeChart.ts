@@ -112,6 +112,7 @@ function answer(
       runs,
     };
     const effects: ChartEffects = {
+      possibleResources: chart.effects.possibleResources,
       instances: chart.effects.instances,
       consumption: chart.effects.consumption,
       moves: chart.effects.moves,
@@ -128,6 +129,7 @@ function answer(
           return {
             score,
             effects: {
+              possibleResources: sweep.possibleResources,
               instances: sweep.instances,
               consumption: sweep.consumption,
               moves: sweep.moves,

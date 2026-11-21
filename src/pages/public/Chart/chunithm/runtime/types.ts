@@ -1,14 +1,29 @@
+import type { SurfaceSample } from "@lxns-network/chunithm-chart-engine/chart/play/input";
 import type { FrameSurface } from "@lxns-network/chunithm-chart-engine/render/frameTypes";
 import type { StartMusicCalibration } from "@/pages/public/Chart/utils/musicCalibration";
 import type { PreviewLiveState } from "./liveState";
 import type { CanvasResolution } from "./canvasSize";
+import type { KeyBindings } from "../input/keyboard";
+import type { ControllerLightWriter } from "../input/controllers/adapter";
 
 export interface LoopRange {
   start: number;
   end: number;
 }
 
+export type PlayInputDevice = "touch" | "keyboard" | "controller";
+
+export interface PlaySettings {
+  inputDevice: PlayInputDevice;
+  keyBindings: KeyBindings;
+  groundHeight: number;
+  flickNeedsMotion: boolean;
+}
+
 export interface PreviewControls {
+  touchProjection(): Float32Array | null;
+  controllerInput(sample: SurfaceSample | null, receivedAt: number): void;
+  setControllerLights(writer: ControllerLightWriter | null): void;
   selectDifficulty(value: number | undefined, seconds?: number): void;
   setLoop(range: LoopRange | null): void;
   captureFrame(): Promise<Blob>;
@@ -37,6 +52,9 @@ export interface PreviewControls {
   setAudioOffsets(musicOffset: number, soundOffset: number): void;
   setVolume(musicVolume: number, soundVolume: number): void;
   refreshPresentation(): void;
+  /** Plays the chart with the player's controls instead of showing the automatic play. */
+  setPlayMode(value: boolean): void;
+  setPlaySettings(value: PlaySettings): void;
 }
 
 /** Live scheduling limits for optional Stage checkpoint work. Times are in milliseconds. */

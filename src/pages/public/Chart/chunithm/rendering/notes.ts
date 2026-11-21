@@ -21,7 +21,10 @@ import {
   NOTE_CAMERA,
   cameraViewProjection,
 } from "@lxns-network/chunithm-chart-engine/notes/camera";
-import { createNoteLayer } from "@lxns-network/chunithm-chart-engine/notes/noteLayer";
+import {
+  createNoteLayer,
+  type NoteLayerLive,
+} from "@lxns-network/chunithm-chart-engine/notes/noteLayer";
 import { buildRecordPlans } from "@lxns-network/chunithm-chart-engine/notes/recordPlans";
 import type { FieldPackData } from "@lxns-network/chunithm-chart-engine/field/fieldPack";
 import { createEffectSlot, type EffectHost } from "./effects";
@@ -72,6 +75,8 @@ export function readNotePack(base: string, signal: AbortSignal): Promise<Pack> {
 }
 
 export interface NoteHost {
+  /** The computed chart the layers currently draw. */
+  readonly chart: LoadedChart;
   readonly score: LoadedChart["score"];
   /** Timeline of the currently selected difficulty. */
   readonly timeline: LoadedChart["timeline"];
@@ -79,8 +84,13 @@ export interface NoteHost {
   readonly effects: LoadedChart["effects"];
   /** The note pack textures by id, for the field drawn over the same pack. */
   readonly textures: ReadonlyMap<string, { readonly texture: WebGLTexture }>;
+  /** View-projection the notes were last drawn with: row-major, for column vectors. */
+  readonly viewProjection: Float32Array;
+  showRecorded(): () => void;
   selectMirror(mirror: boolean): void;
   replaceChart(chart: LoadedChart, mirror: boolean): void;
+  /** Keeps notes drawable this many steps past their automatic run, for a player's late results. */
+  setLiveSlack(steps: number): void;
   dispose(): void;
 }
 
@@ -111,6 +121,10 @@ export async function createNoteHost(input: {
   signal: AbortSignal;
   /** Called when effect resources become ready, so the page can draw again. */
   onChange?: () => void;
+  /** Note states a player produces for a computed chart, read in place of its timeline's. */
+  live?: (chart: LoadedChart) => NoteLayerLive;
+  /** Result effects drawn in place of the chart's own, while the page has any. */
+  liveEffects?: () => LoadedChart["effects"] | null;
 }): Promise<NoteHost> {
   const {
     canvas,
@@ -220,6 +234,8 @@ export async function createNoteHost(input: {
     for (const [name, { texture }] of assets.textures) texturesByName.set(name, texture);
 
     const viewProjection = cameraViewProjection(NOTE_CAMERA, canvas.width, canvas.height);
+    let live = input.live?.(first);
+    let liveSlack = 0;
     const layerOptions = {
       gl,
       strictResources: true,
@@ -236,6 +252,8 @@ export async function createNoteHost(input: {
       motion: first.motion,
       lifetimes: first.lifetimes,
       livePlayback: first.livePlayback,
+      live,
+      liveSlack,
     };
     layer = createNoteLayer({ ...initialOptions, recordPlans });
     renderer = layer.renderer;
@@ -316,7 +334,9 @@ export async function createNoteHost(input: {
           speedRow,
           camera,
           environment,
-          effects: mirror === layoutMirror ? first.effects : first.mirrored!.effects,
+          effects:
+            input.liveEffects?.() ??
+            (mirror === layoutMirror ? first.effects : first.mirrored!.effects),
           playbackRate,
           playbackEpoch,
           judgePositionOffset: judgePositionOffset(),
@@ -350,7 +370,71 @@ export async function createNoteHost(input: {
     registered = true;
     signal.addEventListener("abort", dispose, { once: true });
     throwIfAborted(signal);
+    /** Rebuilds both layouts' layers for a computed chart, with the note states they read. */
+    const rebuild = (
+      next: LoadedChart,
+      nextMirror: boolean,
+      nextLive: NoteLayerLive | undefined,
+    ) => {
+      const plans = buildRecordPlans(assets.pack, next.score);
+      const alternate = next.mirrored
+        ? buildRecordPlans(assets.pack, next.mirrored.score)
+        : undefined;
+      const models = new Set([...plans.requiredModels, ...(alternate?.requiredModels ?? [])]);
+      const ids = new Set<string>();
+      for (const name of models) {
+        const materials = assets.pack.entries.get(name)!.meta.materials as {
+          textureNames?: (string | null)[];
+        }[];
+        for (const material of materials)
+          for (const id of material.textureNames ?? []) if (id !== null) ids.add(id);
+      }
+      let nextLayer: ReturnType<typeof createNoteLayer> | undefined;
+      let nextAlternate: ReturnType<typeof createNoteLayer> | undefined;
+      try {
+        assets.ensureTextures(ids);
+        for (const [name, { texture }] of assets.textures) texturesByName.set(name, texture);
+        renderer!.ensureModels(models);
+        const options = {
+          ...layerOptions,
+          timeline: next.timeline,
+          score: next.score,
+          motion: next.motion,
+          lifetimes: next.lifetimes,
+          livePlayback: next.livePlayback,
+          live: nextLive,
+          liveSlack,
+          speedRow,
+          renderer,
+        };
+        nextLayer = createNoteLayer({ ...options, recordPlans: plans });
+        if (next.mirrored)
+          nextAlternate = createNoteLayer({
+            ...options,
+            score: next.mirrored.score,
+            recordPlans: alternate,
+          });
+        nextLayer.setSpeed(speedRow, speedMultiplier);
+        nextAlternate?.setSpeed(speedRow, speedMultiplier);
+      } catch (error) {
+        nextAlternate?.dispose();
+        nextLayer?.dispose();
+        throw error;
+      } finally {
+        scene.withPresentation((device) => device.markResourcesUnknown());
+      }
+      mirroredLayer?.dispose();
+      layer!.dispose();
+      layer = nextLayer;
+      mirroredLayer = nextAlternate;
+      first = next;
+      layoutMirror = nextMirror;
+      live = nextLive;
+    };
     return {
+      get chart() {
+        return first;
+      },
       get score() {
         return first.score;
       },
@@ -361,58 +445,19 @@ export async function createNoteHost(input: {
         return first.effects;
       },
       textures: assets.textures,
+      viewProjection,
       replaceChart(next, nextMirror) {
-        const plans = buildRecordPlans(assets.pack, next.score);
-        const alternate = next.mirrored
-          ? buildRecordPlans(assets.pack, next.mirrored.score)
-          : undefined;
-        const models = new Set([...plans.requiredModels, ...(alternate?.requiredModels ?? [])]);
-        const ids = new Set<string>();
-        for (const name of models) {
-          const materials = assets.pack.entries.get(name)!.meta.materials as {
-            textureNames?: (string | null)[];
-          }[];
-          for (const material of materials)
-            for (const id of material.textureNames ?? []) if (id !== null) ids.add(id);
-        }
-        let nextLayer: ReturnType<typeof createNoteLayer> | undefined;
-        let nextAlternate: ReturnType<typeof createNoteLayer> | undefined;
-        try {
-          assets.ensureTextures(ids);
-          for (const [name, { texture }] of assets.textures) texturesByName.set(name, texture);
-          renderer!.ensureModels(models);
-          const options = {
-            ...layerOptions,
-            timeline: next.timeline,
-            score: next.score,
-            motion: next.motion,
-            lifetimes: next.lifetimes,
-            livePlayback: next.livePlayback,
-            speedRow,
-            renderer,
-          };
-          nextLayer = createNoteLayer({ ...options, recordPlans: plans });
-          if (next.mirrored)
-            nextAlternate = createNoteLayer({
-              ...options,
-              score: next.mirrored.score,
-              recordPlans: alternate,
-            });
-          nextLayer.setSpeed(speedRow, speedMultiplier);
-          nextAlternate?.setSpeed(speedRow, speedMultiplier);
-        } catch (error) {
-          nextAlternate?.dispose();
-          nextLayer?.dispose();
-          throw error;
-        } finally {
-          scene.withPresentation((device) => device.markResourcesUnknown());
-        }
-        mirroredLayer?.dispose();
-        layer!.dispose();
-        layer = nextLayer;
-        mirroredLayer = nextAlternate;
-        first = next;
-        layoutMirror = nextMirror;
+        rebuild(next, nextMirror, input.live?.(next));
+      },
+      showRecorded() {
+        const previous = live;
+        rebuild(first, layoutMirror, undefined);
+        return () => rebuild(first, layoutMirror, previous);
+      },
+      setLiveSlack(value) {
+        if (value === liveSlack) return;
+        liveSlack = value;
+        rebuild(first, layoutMirror, live);
       },
       selectMirror(value) {
         if (value !== layoutMirror && !mirroredLayer)

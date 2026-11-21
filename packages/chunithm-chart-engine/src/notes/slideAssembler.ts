@@ -153,6 +153,14 @@ export function createSlideBandAssembler(input: {
     };
   };
   return {
+    /** Adds a band state from `time` on, after every state the record already has. */
+    append(record: number, time: number, mode: number) {
+      plans.get(record)?.events.push({ time, mode });
+    },
+    /** Drops every band state, keeping each band's geometry. */
+    clear() {
+      for (const plan of plans.values()) plan.events.length = 0;
+    },
     assemble(
       step: number,
       nowFrames: number,

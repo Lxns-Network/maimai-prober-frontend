@@ -1,6 +1,17 @@
+import type { PlayStats } from "@lxns-network/chunithm-chart-engine/chart/play/session";
 import type { DensityNote } from "../../components/ChartDensityTimeline/ChartDensityTimeline";
 
 type Listener = () => void;
+
+export interface PreviewFrameStats {
+  fps: number;
+  callbacksPerSecond: number;
+  /** Synchronous frame callback duration; excludes asynchronous GPU execution and input handlers. */
+  averageWorkMs: number;
+  maximumWorkMs: number;
+  width: number;
+  height: number;
+}
 
 function subscriptions() {
   const listeners = new Set<Listener>();
@@ -23,13 +34,30 @@ export function createPreviewLiveState() {
   const time = subscriptions();
   let chart: { notes: readonly DensityNote[]; measureTimesMs: readonly number[] } | null = null;
   const chartChanges = subscriptions();
+  let playStats: PlayStats | null = null;
+  const playChanges = subscriptions();
+  let frameStats: PreviewFrameStats | null = null;
+  const frameChanges = subscriptions();
   return {
+    frameStats: { subscribe: frameChanges.subscribe, getSnapshot: () => frameStats },
+    setFrameStats(next: PreviewFrameStats | null) {
+      if (next === frameStats) return;
+      frameStats = next;
+      frameChanges.notify();
+    },
     chart: { subscribe: chartChanges.subscribe, getSnapshot: () => chart },
     setChart(value: NonNullable<typeof chart>) {
       chart = value;
       chartChanges.notify();
     },
     time: { subscribe: time.subscribe, getSnapshot: () => seconds },
+    /** Totals of the current play, or null while the automatic play shows. */
+    play: { subscribe: playChanges.subscribe, getSnapshot: () => playStats },
+    setPlayStats(next: PlayStats | null) {
+      if (next === playStats) return;
+      playStats = next;
+      playChanges.notify();
+    },
     setSeconds(next: number) {
       if (Object.is(seconds, next)) return;
       seconds = next;

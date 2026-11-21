@@ -6,6 +6,7 @@ import {
   type MusicPoll,
 } from "@lxns-network/chunithm-chart-engine/audio/music";
 import {
+  createLiveCuePlayer,
   createSfxPlayer,
   loadSfxLibrary,
   type SfxPlayer,
@@ -54,6 +55,11 @@ export function createPreviewAudio(input: PreviewAudioInput) {
   let transport: MusicPlayer | null = null;
   let sfx: SfxPlayer | null = null;
   let library: Awaited<ReturnType<typeof loadSfxLibrary>> | null = null;
+  let liveCues: ReturnType<typeof createLiveCuePlayer> | null = null;
+  /** Where the sounds' chart time was at the last poll, for cues played as they happen. */
+  let clock = { outputTime: 0, seconds: 0, rate: 1 };
+  const contextTime = (seconds: number) =>
+    clock.outputTime + (seconds - clock.seconds) / clock.rate;
   let disposed = false;
   const musicSeconds = (chart: number) => chart + MUSIC_PADDING_SECONDS - musicOffset;
   const chartSeconds = (buffer: number) => buffer - MUSIC_PADDING_SECONDS + musicOffset;
@@ -176,12 +182,40 @@ export function createPreviewAudio(input: PreviewAudioInput) {
           ? { ...state.scheduledPosition, phase: "playing" as const }
           : state.position;
       sfx?.update({
-        ...position,
+        phase: position.phase,
+        outputTime: position.outputTime,
+        playbackRate: position.playbackRate,
         bufferSeconds: position.bufferSeconds - playTiming - soundOffset,
       });
     },
     pauseSfx() {
       sfx?.pause();
+      liveCues?.pause();
+    },
+    /** Follows the music for cues played as they happen, in place of the timeline's cues. */
+    trackLiveSfx(state: MusicPoll, playTiming: number) {
+      sfx?.pause();
+      if (state.intendedPlaying && !state.transitioning && state.position.phase === "playing")
+        liveCues?.resume();
+      clock = {
+        outputTime: state.position.outputTime,
+        seconds: state.position.bufferSeconds - playTiming - soundOffset,
+        rate: state.position.playbackRate ?? 1,
+      };
+    },
+    /** Cue starts and stops played as they happen, at chart times in seconds. */
+    liveSounds: {
+      start(row: number, cue: number, gain: number, seconds: number) {
+        if (!library || context.state !== "running") return;
+        liveCues ??= createLiveCuePlayer({ context, destination: soundGain, library });
+        liveCues.start(row, cue, gain, contextTime(seconds), seconds);
+      },
+      stop(row: number, seconds: number) {
+        liveCues?.stop(row, contextTime(seconds));
+      },
+      silence() {
+        liveCues?.silence();
+      },
     },
     setOffsets(nextMusicMs: number, nextSoundMs: number, seconds: number) {
       const nextMusic = nextMusicMs / 1000;
@@ -205,6 +239,7 @@ export function createPreviewAudio(input: PreviewAudioInput) {
       if (disposed) return;
       disposed = true;
       sfx?.dispose();
+      liveCues?.dispose();
       transport?.dispose();
       library = null;
       sfxBytes = null;

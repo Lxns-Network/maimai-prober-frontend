@@ -26,9 +26,10 @@ import {
   createBandAssembler,
   createBandStates,
   type BandInstance,
+  type BandStates,
 } from "./bandAssembler";
 import { computeEnd } from "./end";
-import { createModelStates } from "./modelStates";
+import { createModelStates, type ModelStates } from "./modelStates";
 import { coverRuns, groundRunsOf } from "./groundRuns";
 import { extapFrame, timelineFramesAt } from "./extapClock";
 import { createMotionSupply } from "./motionSupply";
@@ -37,7 +38,12 @@ import type { MotionTracks } from "../chart/lifecycle/motion";
 import type { ObjectLifetimes } from "../chart/lifecycle/nativeChart";
 import { createLivePlayback, type LivePlaybackData } from "./livePlayback";
 import { assertBakedSpeed } from "./bakedSpeed";
-import { createEvaluateStore, evaluateInstances, type EvaluatedInstance } from "./evaluate";
+import {
+  createEvaluateStore,
+  evaluateInstances,
+  type EvaluatedInstance,
+  type JudgeVisibility,
+} from "./evaluate";
 import { buildRecordPlans, DEPTH_SCALE } from "./recordPlans";
 import { bindHitDepth } from "./space";
 import { speedForRowIndex } from "./tables";
@@ -60,6 +66,26 @@ const PASS_SORT_MODES: ReadonlyMap<number, PassSortMode> = new Map([
   [0, "depthDescending"],
   [2, "keyAscending"],
 ]);
+
+/** A SLIDE or AIR band family's states, fed as they happen instead of read from the timeline. */
+export interface LiveBandSink {
+  /** The timeline segment the family's states come from. */
+  readonly kind: "slide" | "airband";
+  append(record: number, time: number, mode: number): void;
+  clear(): void;
+}
+
+/**
+ * Note states a player produces while the chart plays. The layer reads them in place of the ones
+ * the timeline records; the timeline still decides which parts and bands each record has.
+ */
+export interface NoteLayerLive {
+  modelStates: ModelStates;
+  bandStates: BandStates;
+  visibility: JudgeVisibility;
+  /** Band families the layer draws; it adds them when built and removes them when disposed. */
+  bands: Set<LiveBandSink>;
+}
 
 export interface NoteLayerInput {
   gl: WebGL2RenderingContext;
@@ -88,6 +114,10 @@ export interface NoteLayerInput {
   textures?: ReadonlyMap<number, WebGLTexture>;
   /** Borrowed renderer for an alternate layout using the same model resources; the caller owns it. */
   renderer?: NoteRenderer;
+  /** States a player produces while the chart plays, read in place of the timeline's. */
+  live?: NoteLayerLive;
+  /** Steps each record stays drawable past its automatic run, for notes a player judges late. */
+  liveSlack?: number;
 }
 
 export interface PreparedNoteLayerFrame extends PreparedNoteFrame {
@@ -168,7 +198,7 @@ function buildNoteLayer(input: NoteLayerInput): NoteLayer {
   const records = score.records;
   const { plans, meshMatrices, requiredModels } =
     input.recordPlans ?? buildRecordPlans(pack, score);
-  const modelStates = createModelStates(timeline, records.length);
+  const modelStates = input.live?.modelStates ?? createModelStates(timeline, records.length);
   const groundRuns = groundRunsOf(timeline, records.length);
   if (input.strictResources) {
     if (records.some((record) => record.getInt32(0x10, true) === 1) && !pack.entries.has(HOLD_BAND))
@@ -202,13 +232,15 @@ function buildNoteLayer(input: NoteLayerInput): NoteLayer {
 
   const judgeTimes = timeline.column("judge", "time") as Float64Array;
   const judgeRecords = timeline.column("judge", "note") as Uint32Array;
-  const visibility = computeJudgeVisibility({
-    records,
-    times: judgeTimes,
-    notes: judgeRecords,
-    phases: timeline.column("judge", "kind") as Uint8Array,
-    parts: timeline.column("judge", "part") as Uint8Array,
-  });
+  const visibility =
+    input.live?.visibility ??
+    computeJudgeVisibility({
+      records,
+      times: judgeTimes,
+      notes: judgeRecords,
+      phases: timeline.column("judge", "kind") as Uint8Array,
+      parts: timeline.column("judge", "part") as Uint8Array,
+    });
   const removal = computeEnd({
     judgeTimes,
     judgeRecords,
@@ -238,7 +270,7 @@ function buildNoteLayer(input: NoteLayerInput): NoteLayer {
   state.setFloat32(0x354, speedForRowIndex(input.speedRow), true);
   state.setFloat32(0x358, DEPTH_SCALE, true);
   const livePlayback = input.livePlayback
-    ? createLivePlayback(score, input.livePlayback.runs, state)
+    ? createLivePlayback(score, input.livePlayback.runs, state, modelStates, input.liveSlack)
     : null;
   if (livePlayback)
     motionFrames = { animated: motion.animated, has: livePlayback.has, at: livePlayback.at };
@@ -266,7 +298,20 @@ function buildNoteLayer(input: NoteLayerInput): NoteLayer {
   const airSlides = score.airSlides?.size
     ? createAirSlideBandAssembler({ score, manager: state, pack, timeline })
     : null;
-  const bandStates = createBandStates(bandColumnsOf(timeline), records.length);
+  const bandStates =
+    input.live?.bandStates ?? createBandStates(bandColumnsOf(timeline), records.length);
+  const liveBands: LiveBandSink[] = [];
+  if (input.live)
+    for (const [kind, family] of [
+      ["slide", slides],
+      ["airband", ladders],
+      ["airband", airSlides],
+    ] as const)
+      if (family) {
+        const sink: LiveBandSink = { kind, append: family.append, clear: family.clear };
+        input.live.bands.add(sink);
+        liveBands.push(sink);
+      }
   const holdBand = pack.entries.get(HOLD_BAND);
   const assembler =
     holdBand && timeline.count("band") > 0
@@ -407,6 +452,7 @@ function buildNoteLayer(input: NoteLayerInput): NoteLayer {
       ownsRenderer = false;
     },
     dispose() {
+      for (const sink of liveBands) input.live!.bands.delete(sink);
       if (ownsRenderer) renderer.dispose();
       ownsRenderer = false;
     },

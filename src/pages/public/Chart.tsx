@@ -15,7 +15,13 @@ import {
   Button,
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-import { IconArrowLeft, IconLock, IconLockOpen, IconDatabaseOff } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconLock,
+  IconLockOpen,
+  IconDatabaseOff,
+  IconAdjustmentsHorizontal,
+} from "@tabler/icons-react";
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import useGame from "@/hooks/useGame";
@@ -26,37 +32,41 @@ import type { Game } from "@/types/game";
 import classes from "./Chart.module.css";
 const MaimaiPlayer = lazy(() => import("./Chart/components/MaimaiPlayer"));
 const ChunithmPlayer = lazy(() => import("./Chart/components/ChunithmPlayer"));
-function KeyboardShortcuts({ restartLabel }: { restartLabel: string }) {
+function KeyboardShortcuts({
+  restartLabel,
+  playInput,
+}: Pick<ChartPlayerParts, "restartLabel" | "playInput">) {
+  const available = (code: string) =>
+    playInput?.device !== "keyboard" || !playInput.boundKeys.includes(code);
+  const shortcuts = [
+    [[playInput && "Esc", available("Space") && "Space"].filter(Boolean).join(" / "), "播放/暂停"],
+    [available("KeyR") && "R", restartLabel],
+    [
+      [available("ArrowLeft") && "←", available("ArrowRight") && "→"].filter(Boolean).join(" "),
+      "步进",
+    ],
+    [
+      [available("ArrowUp") && "↑", available("ArrowDown") && "↓"].filter(Boolean).join(" "),
+      "流速",
+    ],
+  ] as const;
   return (
     <Card className={classes.card} radius="lg" withBorder>
       <Text size="sm" fw={500} mb="sm">
         键盘快捷键
       </Text>
       <SimpleGrid cols={2} spacing="xs">
-        <Group justify="space-between">
-          <Kbd>Space</Kbd>
-          <Text size="xs" c="dimmed">
-            播放/暂停
-          </Text>
-        </Group>
-        <Group justify="space-between">
-          <Kbd>R</Kbd>
-          <Text size="xs" c="dimmed">
-            {restartLabel}
-          </Text>
-        </Group>
-        <Group justify="space-between">
-          <Kbd>← →</Kbd>
-          <Text size="xs" c="dimmed">
-            步进
-          </Text>
-        </Group>
-        <Group justify="space-between">
-          <Kbd>↑ ↓</Kbd>
-          <Text size="xs" c="dimmed">
-            流速
-          </Text>
-        </Group>
+        {shortcuts.map(
+          ([keys, label]) =>
+            keys && (
+              <Group key={label} justify="space-between">
+                <Kbd>{keys}</Kbd>
+                <Text size="xs" c="dimmed">
+                  {label}
+                </Text>
+              </Group>
+            ),
+        )}
       </SimpleGrid>
     </Card>
   );
@@ -68,6 +78,7 @@ function ChartContent({
   controls,
   playbackControls,
   restartLabel,
+  playInput,
   game,
 }: ChartPlayerParts & { game: Game }) {
   const isFullscreen = useGameStore((s) => s.isFullscreen);
@@ -76,7 +87,9 @@ function ChartContent({
 
   const [showControls, setShowControls] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const canvasInput = playInput && playInput.device !== "controller" ? playInput : null;
+  const revealControls = !!canvasInput && !isLocked && !showControls;
+  const playingOnCanvas = canvasInput?.playing;
   const chartCanvasRef = useRef<HTMLDivElement>(null);
   const fullscreenElementRef = useRef<HTMLDivElement>(null);
   const [fullscreenEl, setFullscreenEl] = useState<HTMLDivElement | null>(null);
@@ -89,119 +102,70 @@ function ChartContent({
     if (!isFullscreen) {
       setShowControls(true);
       setIsLocked(false);
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-        controlsTimeoutRef.current = null;
-      }
       return;
     }
 
     if (isLocked) {
       setShowControls(false);
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-        controlsTimeoutRef.current = null;
-      }
       return;
     }
 
-    let lastTouchTime = 0;
-    let isOverControls = false;
+    const element = fullscreenElementRef.current!;
+    let timeout: ReturnType<typeof setTimeout>;
+    let lastTouchTime = -Infinity;
+    const hideAfterDelay = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => setShowControls(false), 3000);
+    };
+    const isControl = (target: EventTarget | null) =>
+      target instanceof Element &&
+      target !== element &&
+      !target.closest("#fullscreen-chart-container");
 
-    const showControlsWithTimeout = () => {
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
       setShowControls(true);
-
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-      }
-
-      if (!isOverControls) {
-        controlsTimeoutRef.current = setTimeout(() => {
-          setShowControls(false);
-        }, 3000);
-      }
+      if (isControl(event.target)) clearTimeout(timeout);
+      else hideAfterDelay();
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const wasOverControls = isOverControls;
-      isOverControls = !!(
-        target.closest(".mantine-ActionIcon-root") ||
-        target.closest('[class*="fullscreenControls"]')
-      );
-
-      if (isOverControls) {
-        if (controlsTimeoutRef.current) {
-          clearTimeout(controlsTimeoutRef.current);
-          controlsTimeoutRef.current = null;
-        }
-        if (!wasOverControls) {
-          setShowControls(true);
-        }
-      } else {
-        showControlsWithTimeout();
-      }
-    };
-
-    const handleTouch = (e: TouchEvent) => {
-      const now = Date.now();
-      if (now - lastTouchTime < 300) {
+    const handleTouchStart = (event: TouchEvent) => {
+      if (isControl(event.target)) {
+        clearTimeout(timeout);
         return;
       }
-      lastTouchTime = now;
-
-      const target = e.target as HTMLElement;
-      const isTouchingControls = !!(
-        target.closest('[class*="fullscreenControls"]') ||
-        target.closest(".mantine-ActionIcon-root")
-      );
-
-      if (isTouchingControls) {
-        setShowControls(true);
-        if (controlsTimeoutRef.current) {
-          clearTimeout(controlsTimeoutRef.current);
-          controlsTimeoutRef.current = null;
-        }
-        isOverControls = true;
-      } else {
-        e.preventDefault();
-        isOverControls = false;
-        setShowControls((prev) => {
-          if (prev) {
-            if (controlsTimeoutRef.current) {
-              clearTimeout(controlsTimeoutRef.current);
-              controlsTimeoutRef.current = null;
-            }
-            return false;
-          } else {
-            if (controlsTimeoutRef.current) {
-              clearTimeout(controlsTimeoutRef.current);
-            }
-            controlsTimeoutRef.current = setTimeout(() => {
-              setShowControls(false);
-            }, 3000);
-            return true;
-          }
-        });
-      }
+      if (event.touches.length !== 1 || event.timeStamp - lastTouchTime < 300) return;
+      lastTouchTime = event.timeStamp;
+      event.preventDefault();
+      setShowControls((visible) => !visible);
+      hideAfterDelay();
+    };
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (
+        isControl(event.target) &&
+        !Array.from(event.touches).some((touch) => isControl(touch.target))
+      )
+        hideAfterDelay();
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("touchstart", handleTouch, { passive: false });
-
-    controlsTimeoutRef.current = setTimeout(() => {
-      setShowControls(false);
-    }, 3000);
+    element.addEventListener("pointermove", handlePointerMove);
+    element.addEventListener("touchstart", handleTouchStart, { passive: false });
+    element.addEventListener("touchend", handleTouchEnd);
+    element.addEventListener("touchcancel", handleTouchEnd);
+    hideAfterDelay();
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("touchstart", handleTouch);
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-        controlsTimeoutRef.current = null;
-      }
+      element.removeEventListener("pointermove", handlePointerMove);
+      element.removeEventListener("touchstart", handleTouchStart);
+      element.removeEventListener("touchend", handleTouchEnd);
+      element.removeEventListener("touchcancel", handleTouchEnd);
+      clearTimeout(timeout);
     };
   }, [isFullscreen, isLocked]);
+
+  useEffect(() => {
+    if (isFullscreen && playingOnCanvas) setShowControls(false);
+  }, [isFullscreen, playingOnCanvas]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -237,7 +201,9 @@ function ChartContent({
 
   useEffect(() => {
     const element = fullscreenElementRef.current;
-    if (!element) return;
+    // A home-screen app has no browser interface to hide, and iPadOS Safari warns of phishing when
+    // the page is tapped rapidly under the Fullscreen API, which touch play does.
+    if (!element || window.matchMedia("(display-mode: standalone)").matches) return;
 
     const enterFullscreen = async () => {
       try {
@@ -342,7 +308,7 @@ function ChartContent({
 
             <Stack gap="md" className={classes.sidebar}>
               {controls}
-              <KeyboardShortcuts restartLabel={restartLabel} />
+              <KeyboardShortcuts restartLabel={restartLabel} playInput={playInput} />
             </Stack>
           </div>
         )}
@@ -365,15 +331,24 @@ function ChartContent({
             })}
           </div>
           <ActionIcon
-            className={`${classes.lockButton} ${isLocked || showControls ? classes.showButton : ""}`}
+            className={`${classes.lockButton} ${isLocked || showControls || revealControls ? classes.showButton : ""}`}
             variant="filled"
             color="dark"
             size="lg"
             radius="xl"
-            onClick={() => setIsLocked((prev) => !prev)}
-            aria-label={isLocked ? "解锁控制" : "锁定控制"}
+            onClick={() => {
+              if (revealControls) setShowControls(true);
+              else setIsLocked((prev) => !prev);
+            }}
+            aria-label={revealControls ? "显示播放控制" : isLocked ? "解锁控制" : "锁定控制"}
           >
-            {isLocked ? <IconLock size={20} /> : <IconLockOpen size={20} />}
+            {revealControls ? (
+              <IconAdjustmentsHorizontal size={20} />
+            ) : isLocked ? (
+              <IconLock size={20} />
+            ) : (
+              <IconLockOpen size={20} />
+            )}
           </ActionIcon>
           <Notifications withinPortal={false} />
         </div>

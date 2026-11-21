@@ -8,6 +8,8 @@ export interface MusicPosition {
   readonly phase: "scheduled" | "playing" | "paused" | "ended";
   /** The context time currently reaching the output. */
   readonly outputTime: number;
+  /** Monotonic clock time in milliseconds at which this position was sampled. */
+  readonly performanceTime: number;
   /** Seconds into the music at `outputTime`. */
   readonly bufferSeconds: number;
   readonly playbackRate: number;
@@ -75,9 +77,13 @@ export function readAudioOutputTime(
   );
 }
 
-function readOutputTime(context: MusicContext, sample = context.getOutputTimestamp()): number {
+function readOutputTime(
+  context: MusicContext,
+  sample: AudioTimestamp,
+  performanceTime: number,
+): number {
   if (context.state !== "running") throw new Error("Running output clock required");
-  const time = readAudioOutputTime(context, performance.now(), sample);
+  const time = readAudioOutputTime(context, performanceTime, sample);
   if (time === null) throw new MusicOutputPending("Audible output timestamp is not initialized");
   return time;
 }
@@ -133,7 +139,9 @@ function createTransport(context: MusicContext, buffer: AudioBuffer, destination
 
   const read = (): MusicPosition => {
     available();
-    const time = Math.max(lastTime, readOutputTime(context));
+    const sample = context.getOutputTimestamp();
+    const performanceTime = performance.now();
+    const time = Math.max(lastTime, readOutputTime(context, sample, performanceTime));
     finite(time);
     lastTime = time;
     if (pending && time >= pending.at) {
@@ -149,6 +157,7 @@ function createTransport(context: MusicContext, buffer: AudioBuffer, destination
     return Object.freeze({
       phase: current ? "playing" : pending ? "scheduled" : frame >= frames ? "ended" : "paused",
       outputTime: time,
+      performanceTime,
       bufferSeconds: frame / rate,
       playbackRate: current?.playbackRate ?? playbackRate,
     });
@@ -297,7 +306,7 @@ function waitForOutput(context: MusicContext, signal: AbortSignal): Promise<void
           frame = requestAnimationFrame(poll);
           return;
         }
-        readOutputTime(context, stamp);
+        readOutputTime(context, stamp, performance.now());
         finish();
       } catch (error) {
         finish(error);

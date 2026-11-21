@@ -38,6 +38,7 @@ export function Controls({
   const fpsLimit = useChunithmChartSettingsStore((state) => state.fpsLimit);
   const hasConfirmed4k = useChunithmChartSettingsStore((state) => state.hasConfirmed4k);
   const setOptions = useChunithmChartSettingsStore((state) => state.setOptions);
+  const judgeDisplayLabel = preview.playMode ? "CRITICAL 判定显示" : "判定显示";
 
   return (
     <Stack gap="md">
@@ -116,9 +117,9 @@ export function Controls({
         </Group>
 
         <Group justify="space-between">
-          <Text size="sm">判定显示</Text>
+          <Text size="sm">{judgeDisplayLabel}</Text>
           <Switch
-            aria-label="判定显示"
+            aria-label={judgeDisplayLabel}
             checked={preview.criticalDisplayValue === "0" || preview.criticalDisplayValue === "1"}
             onChange={(event) =>
               preview.selectCriticalDisplay(event.currentTarget.checked ? "0" : "3")

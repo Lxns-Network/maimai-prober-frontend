@@ -116,6 +116,14 @@ export function createAirBandAssembler(input: {
     };
   };
   return {
+    /** Adds a band mode from `time` on, after every mode the record already has. */
+    append(record: number, time: number, mode: number) {
+      states.get(record)?.events.push({ time, mode });
+    },
+    /** Drops every band mode; the family's zero-depth reference stays the chart's first band. */
+    clear() {
+      for (const owner of states.values()) owner.events.length = 0;
+    },
     assemble(
       step: number,
       nowFrames: number,

@@ -14,6 +14,7 @@ import { loadHudTextureImages } from "@lxns-network/chunithm-chart-engine/hud/hu
 import {
   createHudValueReader,
   createHudValues,
+  type HudValues,
 } from "@lxns-network/chunithm-chart-engine/hud/timelineValues";
 import type { Timeline } from "@lxns-network/chunithm-chart-engine/chart/timeline/reader";
 
@@ -127,6 +128,8 @@ export interface HudHost {
   selectSpeed(speedRow: number): void;
   selectMirror(mirror: boolean): void;
   replaceChart(song: HudSong, timeline: Timeline): void;
+  /** Reads the score, combo and gauge from `read` instead of the timeline; null goes back. */
+  readValuesFrom(read: ((step: number, out: HudValues) => HudValues) | null): void;
   dispose(): void;
 }
 
@@ -187,7 +190,8 @@ export function createHudHost(input: {
     throw error;
   }
   const geometry = createHudGeometry(hud);
-  let read = createHudValueReader(input.timeline);
+  let recorded = createHudValueReader(input.timeline);
+  let override: ((step: number, out: HudValues) => HudValues) | null = null;
   const values = createHudValues();
   let revision = 0;
   let assembled = "";
@@ -235,7 +239,7 @@ export function createHudHost(input: {
     draw(step, textSeconds = step / 120) {
       if (disposed) return;
       if (textureFailure) throw textureFailure.cause;
-      read(step, values);
+      (override ?? recorded)(step, values);
       const key = `${values.score}:${values.combo}:${values.gauge}:${values.counts.join()}`;
       if (key !== assembled || hasScrollingText()) {
         assembled = key;
@@ -255,9 +259,14 @@ export function createHudHost(input: {
         }
       });
     },
+    readValuesFrom(next) {
+      override = next;
+      assembled = "";
+      onChange();
+    },
     replaceChart(nextSong, timeline) {
       song = nextSong;
-      read = createHudValueReader(timeline);
+      recorded = createHudValueReader(timeline);
       chart = prepareHudChart(hud, chartOf());
       assembled = "";
     },

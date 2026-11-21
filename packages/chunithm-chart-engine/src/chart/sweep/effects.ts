@@ -20,7 +20,7 @@ const intervalMs = GROUP_INTERVAL_FRAMES.map((frames) =>
 );
 
 /** One group's emission count resets each update; its cooldown spans updates. */
-function createEffectAdmission() {
+export function createEffectAdmission() {
   const emitted = new Uint8Array(GROUP_CAPACITY.length);
   const nextTime = new Float64Array(GROUP_CAPACITY.length);
   let previousStep = -1;
@@ -172,7 +172,7 @@ const NO_DISPLAY = -1;
 const BEAM_ANIMATION = 400;
 const SLIDE_KEEP_ANIMATION = 1000;
 const FLAG_MIRROR = 1;
-const DEPTH = -65;
+export const EFFECT_DEPTH = -65;
 const BEAM_Y = -15.574000358581543;
 const HEIGHT_STEP = 0.10000000149011612;
 
@@ -190,6 +190,8 @@ export type EffectRow = Extract<BakeEvent, { kind: "effect" }>;
 
 /** Per-instance creation parameters and fate, one entry per effect row in row order. */
 export interface EffectInstances {
+  /** Stable creation identities for live input, including instances ended early by eviction. */
+  ids?: Uint32Array;
   resource: Uint16Array;
   group: Uint8Array;
   /** Step the instance is created at. */
@@ -250,6 +252,8 @@ export interface Consumption {
  * placed at `(x[i], y[i], z[i])` from the start of grid step `step[i]` on.
  */
 export interface EffectMoves {
+  /** Live slide positions sampled at chart time, in 60 Hz frames. */
+  paths?: readonly (((now: number) => number) | undefined)[];
   instance: Uint32Array;
   step: Int32Array;
   x: Float32Array;
@@ -262,6 +266,7 @@ export interface EffectSweep {
   instances: EffectInstances;
   moves: EffectMoves;
   streams: RandomStreams;
+  possibleResources: number[];
   consumption: Consumption;
 }
 
@@ -327,7 +332,7 @@ class Requests {
     this.kind[at] = extra.kind ?? 255;
     this.posX[at] = extra.x ?? 0;
     this.posY[at] = extra.y ?? 0;
-    this.posZ[at] = extra.z ?? DEPTH;
+    this.posZ[at] = extra.z ?? EFFECT_DEPTH;
   }
 
   private grow(): void {
@@ -362,7 +367,7 @@ interface Item {
   phase: number;
   order: number;
   seq: number;
-  run: ObjectRun;
+  object: ObjectRun["object"];
   judge: JudgeEmission | null;
   /** Index of the tick or element this judgment belongs to, where it has one. */
   part: number;
@@ -372,7 +377,7 @@ interface Item {
 }
 
 /** Chara effects are admitted per half lane and, chart-wide, once per window. */
-function charaGate() {
+export function createCharaGate() {
   const deadlines = new Float32Array(CHARA_LANES);
   let global = 0;
   return (lane: number, width: number, now: number) => {
@@ -403,7 +408,7 @@ function flagged(rows: readonly DataView[] | undefined) {
 }
 
 /** Every effect request the notes make, in order. */
-function collectRequests(input: EffectInput): Requests {
+function collectRequests(input: EffectInput, gate: ReturnType<typeof createCharaGate>): Requests {
   const { score, runs, steps } = input;
   const requests = new Requests();
   const items: Item[] = [];
@@ -415,7 +420,7 @@ function collectRequests(input: EffectInput): Requests {
         phase: PHASE.spawn,
         order,
         seq: 0,
-        run,
+        object: run.object,
         judge: null,
         part: 0,
         tick: 0,
@@ -431,7 +436,7 @@ function collectRequests(input: EffectInput): Requests {
         phase: judge.phase,
         order,
         seq,
-        run,
+        object: run.object,
         judge,
         part,
         tick,
@@ -444,163 +449,215 @@ function collectRequests(input: EffectInput): Requests {
   }
   items.sort((a, b) => a.step - b.step || a.phase - b.phase || a.order - b.order || a.seq - b.seq);
 
-  const gate = charaGate();
-  let toggle = 0;
-  for (const item of items) {
-    const { step, run, judge } = item;
-    const { className, record: index } = run.object;
-    const record = score.records[index];
-    const type = record.getInt32(0x10, true);
-    const lane = record.getInt32(0x28, true);
-    const width = widthOf(record.getInt32(0x2c, true));
-    if (!judge) {
-      if (className === "FlickNote") toggle = 1;
-      else {
-        const colour = colourOf(width);
-        requests.push(step, EFFECT_GROUP.slideKeep, SLIDE_KEEP_RESOURCE, index, 0, colour + 1, {
-          displayState: 1,
-          animation: SLIDE_KEEP_ANIMATION,
-          x: lanePosition(lane, width),
-        });
-      }
-      continue;
-    }
-    const result = (kind: number, at: number, span: number, x = lanePosition(at, span), y = 0) => {
-      const long = kind >= 2 && kind <= 6;
-      const mirror = kind === 15 ? FLAG_MIRROR : 0;
-      requests.push(step, EFFECT_GROUP.text, RESULT_EFFECTS.text[kind], index, at, span, {
-        kind,
-        x,
-        y: kind === 12 || kind === 13 ? 0 : y,
-        z: f(DEPTH + LABEL_Z[kind]),
+  const state = { toggle: 0 };
+  for (const item of items) writeEffectRequests(score, item, requests, gate, state);
+  return requests;
+}
+
+type EffectItem = Omit<Item, "phase" | "order">;
+
+function writeEffectRequests(
+  score: NoteScore,
+  item: EffectItem,
+  requests: Pick<Requests, "push">,
+  gate: ReturnType<typeof createCharaGate>,
+  state: { toggle: number },
+) {
+  const { step, object, judge } = item;
+  const { className, record: index } = object;
+  const record = score.records[index];
+  const type = record.getInt32(0x10, true);
+  const lane = record.getInt32(0x28, true);
+  const width = widthOf(record.getInt32(0x2c, true));
+  if (!judge) {
+    if (className === "FlickNote") state.toggle = 1;
+    else {
+      const colour = colourOf(width);
+      requests.push(step, EFFECT_GROUP.slideKeep, SLIDE_KEEP_RESOURCE, index, 0, colour + 1, {
+        displayState: 1,
+        animation: SLIDE_KEEP_ANIMATION,
+        x: lanePosition(lane, width),
       });
-      const bucket = bucketOf(span);
-      const burst = bucket < 0 ? 0 : RESULT_EFFECTS.burst[kind * BURST_ROWS + bucket];
-      if (burst)
-        requests.push(step, EFFECT_GROUP.burst, burst, index, at, span, {
-          flags: mirror,
-          scaleX: kind >= 7 && kind <= 9 ? f(f(span) / f(WIDTH_BUCKETS[bucket])) : 1,
-          kind,
-          x,
-          y,
-        });
-      if (!long && RESULT_EFFECTS.reaction[kind])
-        requests.push(step, EFFECT_GROUP.reaction, RESULT_EFFECTS.reaction[kind], index, at, span, {
-          flags: mirror,
-          kind,
-          x,
-          y,
-        });
-    };
-    const chara = (at: number, span: number) => {
-      const resource = CHARA_GLOBAL_RESOURCES[record.getInt32(0x88, true)];
-      if (resource === undefined) return;
-      const { local, global } = gate(at, span, stepFrames(step));
-      if (local)
-        requests.push(step, EFFECT_GROUP.charaLocal, CHARA_LOCAL_RESOURCE, index, at, span, {
-          displayState: 1,
-          x: lanePosition(at, span),
-        });
-      if (global) requests.push(step, EFFECT_GROUP.charaGlobal, resource, index, 0, 0, { z: 0 });
-    };
-    const section = (colour: number, x: number, y: number) => {
-      requests.push(step, EFFECT_GROUP.section, SECTION_RESOURCE[colour], index, 0, colour + 1, {
-        displayState: NO_DISPLAY,
+    }
+    return;
+  }
+  const result = (kind: number, at: number, span: number, x = lanePosition(at, span), y = 0) => {
+    const long = kind >= 2 && kind <= 6;
+    const mirror = kind === 15 ? FLAG_MIRROR : 0;
+    requests.push(step, EFFECT_GROUP.text, RESULT_EFFECTS.text[kind], index, at, span, {
+      kind,
+      x,
+      y: kind === 12 || kind === 13 ? 0 : y,
+      z: f(EFFECT_DEPTH + LABEL_Z[kind]),
+    });
+    const bucket = bucketOf(span);
+    const burst = bucket < 0 ? 0 : RESULT_EFFECTS.burst[kind * BURST_ROWS + bucket];
+    if (burst)
+      requests.push(step, EFFECT_GROUP.burst, burst, index, at, span, {
+        flags: mirror,
+        scaleX: kind >= 7 && kind <= 9 ? f(f(span) / f(WIDTH_BUCKETS[bucket])) : 1,
+        kind,
         x,
         y,
       });
-      requests.push(step, EFFECT_GROUP.beam, BEAM_RESOURCE, index, 0, 0, {
-        displayState: NO_DISPLAY,
-        animation: BEAM_ANIMATION,
+    if (!long && RESULT_EFFECTS.reaction[kind])
+      requests.push(step, EFFECT_GROUP.reaction, RESULT_EFFECTS.reaction[kind], index, at, span, {
+        flags: mirror,
+        kind,
         x,
-        y: BEAM_Y,
+        y,
       });
-    };
-    const air = { lane, width };
-    if (type === 2 && className.startsWith("Air")) {
-      const joints = score.slideJoints?.get(index) ?? [];
-      const last = joints[joints.length - 1];
-      air.lane = last.getInt32(0x10, true);
-      air.width = widthOf(last.getInt32(0x20, true));
-    }
-    const extended = type > 0 && ((type <= 2 && record.getUint8(0x8c) !== 0) || type === 4);
-    switch (className) {
-      case "TapNote":
-        result(0, lane, width);
-        break;
-      case "CharaTapNote":
-        result(1, lane, width);
-        chara(lane, width);
-        break;
-      case "FlickNote": {
-        const side = (toggle & 255) !== 0 ? 0 : 1;
-        toggle = side;
-        result(14 + side, lane, width);
-        break;
-      }
-      case "MineNote":
-        result(17, lane, width);
-        break;
-      case "HoldNote":
-        if (judge.judgePhase === 0) {
-          result(Number(extended), lane, width);
-          if (extended) chara(lane, width);
-        } else result(judge.judgePhase === 2 ? 3 : 2, lane, width);
-        break;
-      case "SlideNote":
-        if (judge.judgePhase === 0) {
-          result(Number(extended), lane, width);
-          if (extended) chara(lane, width);
-        } else {
-          const tick = flagged(score.ticks?.get(index))[item.part];
-          const laneAt = tick.getFloat32(0x18, true);
-          result(4, Math.min(15, Math.floor(laneAt) >>> 0), width, effectLane(laneAt));
-        }
-        break;
-      case "AirNote":
-        result(record.getInt32(0x90, true) < AIR_UP_DIRECTIONS ? 7 : 8, air.lane, air.width);
-        break;
-      case "AirHoldNote":
-        if (judge.element)
-          section(colourOf(air.width), lanePosition(air.lane, air.width), AIR_HOLD_ELEMENT_Y);
-        break;
-      case "AirSlideNote":
-        if (judge.element) {
-          const joint = flagged(score.airSlides?.get(index))[item.element];
-          const x = lanePosition(
-            joint.getInt32(0x10, true),
-            f(widthOf(joint.getInt32(0x20, true))),
-          );
-          const y = heightY(f(f(joint.getInt32(0x18, true)) * HEIGHT_STEP));
-          result(judge.judgePhase === 2 ? 13 : 12, air.lane, air.width, x, y);
-          section(joint.getInt32(0x20, true), x, y);
-        } else if (judge.judgePhase === 0) result(9, air.lane, air.width);
-        else {
-          const tick = flagged(score.secondaryTicks?.get(index))[item.tick];
-          result(11, air.lane, air.width, effectLane(tick.getFloat32(0x18, true)));
-        }
-        break;
-      case "AirLadderNote": {
-        const sample = score.ladders?.get(index)?.samples[item.seq];
-        if (!sample) result(18, lane, width);
-        else {
-          const sampleLane = sample.getFloat32(0x10, true);
-          const sampleWidth = sample.getFloat32(0x18, true);
-          result(
-            18,
-            lane,
-            width,
-            effectLane(f(f(sampleWidth * 0.5) + sampleLane)),
-            heightY(sample.getFloat32(0x14, true)),
-          );
-        }
-        break;
-      }
-      default:
-        throw new RangeError(`Note class ${className} has no effects`);
-    }
+  };
+  const chara = (at: number, span: number) => {
+    const resource = CHARA_GLOBAL_RESOURCES[record.getInt32(0x88, true)];
+    if (resource === undefined) return;
+    const { local, global } = gate(at, span, stepFrames(step));
+    if (local)
+      requests.push(step, EFFECT_GROUP.charaLocal, CHARA_LOCAL_RESOURCE, index, at, span, {
+        displayState: 1,
+        x: lanePosition(at, span),
+      });
+    if (global) requests.push(step, EFFECT_GROUP.charaGlobal, resource, index, 0, 0, { z: 0 });
+  };
+  const section = (colour: number, x: number, y: number) => {
+    requests.push(step, EFFECT_GROUP.section, SECTION_RESOURCE[colour], index, 0, colour + 1, {
+      displayState: NO_DISPLAY,
+      x,
+      y,
+    });
+    requests.push(step, EFFECT_GROUP.beam, BEAM_RESOURCE, index, 0, 0, {
+      displayState: NO_DISPLAY,
+      animation: BEAM_ANIMATION,
+      x,
+      y: BEAM_Y,
+    });
+  };
+  const air = { lane, width };
+  if (type === 2 && className.startsWith("Air")) {
+    const joints = score.slideJoints?.get(index) ?? [];
+    const last = joints[joints.length - 1];
+    air.lane = last.getInt32(0x10, true);
+    air.width = widthOf(last.getInt32(0x20, true));
   }
-  return requests;
+  const extended = type > 0 && ((type <= 2 && record.getUint8(0x8c) !== 0) || type === 4);
+  switch (className) {
+    case "TapNote":
+      result(0, lane, width);
+      break;
+    case "CharaTapNote":
+      result(1, lane, width);
+      chara(lane, width);
+      break;
+    case "FlickNote": {
+      const side = (state.toggle & 255) !== 0 ? 0 : 1;
+      state.toggle = side;
+      result(14 + side, lane, width);
+      break;
+    }
+    case "MineNote":
+      result(17, lane, width);
+      break;
+    case "HoldNote":
+      if (judge.judgePhase === 0) {
+        result(Number(extended), lane, width);
+        if (extended) chara(lane, width);
+      } else result(judge.judgePhase === 2 ? 3 : 2, lane, width);
+      break;
+    case "SlideNote":
+      if (judge.judgePhase === 0) {
+        result(Number(extended), lane, width);
+        if (extended) chara(lane, width);
+      } else {
+        const tick = flagged(score.ticks?.get(index))[item.part];
+        const laneAt = tick.getFloat32(0x18, true);
+        result(4, Math.min(15, Math.floor(laneAt) >>> 0), width, effectLane(laneAt));
+      }
+      break;
+    case "AirNote":
+      result(record.getInt32(0x90, true) < AIR_UP_DIRECTIONS ? 7 : 8, air.lane, air.width);
+      break;
+    case "AirHoldNote":
+      if (judge.element)
+        section(colourOf(air.width), lanePosition(air.lane, air.width), AIR_HOLD_ELEMENT_Y);
+      break;
+    case "AirSlideNote":
+      if (judge.element) {
+        const joint = flagged(score.airSlides?.get(index))[item.element];
+        const x = lanePosition(joint.getInt32(0x10, true), f(widthOf(joint.getInt32(0x20, true))));
+        const y = heightY(f(f(joint.getInt32(0x18, true)) * HEIGHT_STEP));
+        result(judge.judgePhase === 2 ? 13 : 12, air.lane, air.width, x, y);
+        section(joint.getInt32(0x20, true), x, y);
+      } else if (judge.judgePhase === 0) result(9, air.lane, air.width);
+      else {
+        const tick = flagged(score.secondaryTicks?.get(index))[item.tick];
+        result(11, air.lane, air.width, effectLane(tick.getFloat32(0x18, true)));
+      }
+      break;
+    case "AirLadderNote": {
+      const sample = score.ladders?.get(index)?.samples[item.seq];
+      if (!sample) result(18, lane, width);
+      else {
+        const sampleLane = sample.getFloat32(0x10, true);
+        const sampleWidth = sample.getFloat32(0x18, true);
+        result(
+          18,
+          lane,
+          width,
+          effectLane(f(f(sampleWidth * 0.5) + sampleLane)),
+          heightY(sample.getFloat32(0x14, true)),
+        );
+      }
+      break;
+    }
+    default:
+      throw new RangeError(`Note class ${className} has no effects`);
+  }
+}
+
+/** Emit one live lifecycle event using the same selection as the chart bake. */
+export function liveEffectRequests(score: NoteScore, emit: Requests["push"]) {
+  const gate = createCharaGate();
+  const state = { toggle: 0 };
+  const sink = { push: emit };
+  return (item: EffectItem, success: boolean) =>
+    writeEffectRequests(
+      score,
+      item,
+      sink,
+      success ? gate : () => ({ local: false, global: false }),
+      state,
+    );
+}
+
+export function advanceEffectRandom(
+  random: { low: number; high: number; crt: number },
+  effect: number,
+  particle: number,
+) {
+  let { low, high, crt } = random;
+  for (let k = 0; k < effect; k++) {
+    const mask = (-1400276635 << (low & 3)) >>> 0;
+    const vl = (low ^ mask) >>> 0;
+    const vh = high;
+    const al = (vl << 1) >>> 0;
+    const ah = ((vh << 1) | (vl >>> 31)) >>> 0;
+    const bl = (vl ^ al) >>> 0;
+    const bh = (vh ^ ah) >>> 0;
+    const cl = (bl << 2) >>> 0;
+    const ch = ((bh << 2) | (bl >>> 30)) >>> 0;
+    const dl = ((vl >>> 1) | (vh << 31)) >>> 0;
+    const dh = vh >>> 1;
+    const el = (vl ^ dl) >>> 0;
+    const eh = (vh ^ dh) >>> 0;
+    const fl = ((el >>> 2) | (eh << 30)) >>> 0;
+    const fh = eh >>> 2;
+    low = (vl ^ cl ^ fl) >>> 0;
+    high = (vh ^ ch ^ fh) >>> 0;
+  }
+  for (let k = 0; k < particle; k++) crt = (Math.imul(crt, 0x343fd) + 0x269ec3) >>> 0;
+  random.low = low;
+  random.high = high;
+  random.crt = crt;
 }
 
 const modeSteps = (events: readonly BakeEvent[]) => {
@@ -615,14 +672,14 @@ const modeSteps = (events: readonly BakeEvent[]) => {
   return { begun, ended };
 };
 
-const ACTIVE_AFTER_BEGIN = 2;
+export const ACTIVE_AFTER_BEGIN = 2;
 const NEVER = 0x7fffffff;
 const SLIDE_HALF = 0.5;
 const SLIDE_EPSILON = 0.0010000000474974513;
 const SLIDE_FRAMES_PER_MS = 0.05999999865889549;
 
 /** Where a SLIDE's effect stands at a frame time: the lane of its band, projected to effect space. */
-function slideKeepPath(score: NoteScore, record: number): (now: number) => number {
+export function slideKeepPath(score: NoteScore, record: number): (now: number) => number {
   const head = score.records[record];
   const joints = score.slideJoints?.get(record) ?? [];
   const n = joints.length;
@@ -666,9 +723,25 @@ const KEY_ENTRY = 16;
  * room or their slide stops, and replays the random draws of every instance that lives to make
  * them. Everything derives from the notes' own runs.
  */
-export function effectSweep(input: EffectInput): EffectSweep {
+export function effectSweep(input: EffectInput, gate = createCharaGate()): EffectSweep {
   const { runs, steps } = input;
-  const requests = collectRequests(input);
+  const possible = new Set<number>();
+  const requests = collectRequests(input, gate);
+  for (let i = 0; i < requests.length; i++) possible.add(requests.resource[i]);
+  for (const { object } of runs) {
+    const record = input.score.records[object.record];
+    if (
+      object.className === "CharaTapNote" ||
+      ((object.className === "SlideNote" || object.className === "HoldNote") &&
+        record.getUint8(0x8c))
+    ) {
+      const id = CHARA_GLOBAL_RESOURCES[record.getInt32(0x88, true)];
+      if (id !== undefined) {
+        possible.add(id);
+        possible.add(CHARA_LOCAL_RESOURCE);
+      }
+    }
+  }
   const { begun, ended } = modeSteps(input.events);
   const removal = new Map<number, number>();
   for (const run of runs)
@@ -798,7 +871,7 @@ export function effectSweep(input: EffectInput): EffectSweep {
     step: new Int32Array(moved),
     x: new Float32Array(moved),
     y: new Float32Array(moved),
-    z: new Float32Array(moved).fill(DEPTH),
+    z: new Float32Array(moved).fill(EFFECT_DEPTH),
   };
   for (let i = 0; i < moved; i++) {
     const key = moveKeys[order[i]];
@@ -823,6 +896,7 @@ export function effectSweep(input: EffectInput): EffectSweep {
   let low = 1;
   let high = 0;
   let crt = 1;
+  const random = { low, high, crt };
   let lastStep = -1;
   for (let i = 0; i < planned; i++) {
     let key = plan[i];
@@ -847,26 +921,8 @@ export function effectSweep(input: EffectInput): EffectSweep {
     consumption.high[i] = high;
     consumption.crt[i] = crt;
     const [, effect, particle] = EFFECT_DRAWS.get(resource[instance])![entry];
-    for (let k = 0; k < effect; k++) {
-      const mask = (-1400276635 << (low & 3)) >>> 0;
-      const vl = (low ^ mask) >>> 0;
-      const vh = high;
-      const al = (vl << 1) >>> 0;
-      const ah = ((vh << 1) | (vl >>> 31)) >>> 0;
-      const bl = (vl ^ al) >>> 0;
-      const bh = (vh ^ ah) >>> 0;
-      const cl = (bl << 2) >>> 0;
-      const ch = ((bh << 2) | (bl >>> 30)) >>> 0;
-      const dl = ((vl >>> 1) | (vh << 31)) >>> 0;
-      const dh = vh >>> 1;
-      const el = (vl ^ dl) >>> 0;
-      const eh = (vh ^ dh) >>> 0;
-      const fl = ((el >>> 2) | (eh << 30)) >>> 0;
-      const fh = eh >>> 2;
-      low = (vl ^ cl ^ fl) >>> 0;
-      high = (vh ^ ch ^ fh) >>> 0;
-    }
-    for (let k = 0; k < particle; k++) crt = (Math.imul(crt, 0x343fd) + 0x269ec3) >>> 0;
+    advanceEffectRandom(random, effect, particle);
+    ({ low, high, crt } = random);
   }
   if (lastStep >= 0) {
     stepsOut.push(lastStep);
@@ -917,6 +973,7 @@ export function effectSweep(input: EffectInput): EffectSweep {
   };
   return {
     rows,
+    possibleResources: [...possible],
     moves,
     instances: {
       resource,
