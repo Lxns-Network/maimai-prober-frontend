@@ -5,6 +5,9 @@ import vike from "vike/plugin";
 import * as fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
+import { remark } from "remark";
+import remarkSlug from "remark-slug";
+import remarkHeadings from "@vcarl/remark-headings";
 
 // A release stamps its tag here so /version.json names the build that is live, the
 // way /api/v0/health does for the backend. Local builds keep the timestamp.
@@ -36,6 +39,57 @@ function generateVersionPlugin(): Plugin {
       const outputPath = path.resolve(projectRoot, "dist/client/version.json");
       fs.mkdirSync(path.dirname(outputPath), { recursive: true });
       fs.writeFileSync(outputPath, JSON.stringify({ version: buildVersion }));
+    },
+  };
+}
+
+const DOCS_SEARCH_INDEX_ID = "virtual:docs-search-index";
+
+/** 与文档页目录取标题的方式相同；`remark-slug` 与页面渲染用的 `rehype-slug` 同为 github-slugger，锚点一致。 */
+function getDocHeadings(markdown: string) {
+  const file = remark()
+    // @ts-expect-error remark-slug uses an older unified plugin type
+    .use(remarkSlug)
+    .use(remarkHeadings)
+    .processSync(markdown);
+  return file.data.headings as { depth: number; value: string; data: { id: string } }[];
+}
+
+/** 从 `public/docs` 提取每篇文档的一至三级标题供全局搜索；`public` 下的文件不能被源码直接导入。 */
+function docsSearchIndexPlugin(): Plugin {
+  const resolvedId = `\0${DOCS_SEARCH_INDEX_ID}`;
+  let docsDir = "";
+
+  return {
+    name: "docs-search-index",
+    configResolved(config) {
+      docsDir = path.join(config.publicDir, "docs");
+    },
+    resolveId(id) {
+      return id === DOCS_SEARCH_INDEX_ID ? resolvedId : undefined;
+    },
+    load(id) {
+      if (id !== resolvedId) return;
+      const slugs = fs
+        .readdirSync(docsDir, { recursive: true })
+        .map((file) => file.toString().replace(/\\/g, "/"))
+        .filter((file) => file.endsWith(".md"))
+        .map((file) => file.replace(/\.md$/, ""))
+        .sort((a, b) => (a === "index" ? -1 : b === "index" ? 1 : a.localeCompare(b)));
+
+      const docs = slugs.map((slug) => {
+        const file = path.join(docsDir, `${slug}.md`);
+        this.addWatchFile(file);
+        const headings = getDocHeadings(fs.readFileSync(file, "utf-8"))
+          .filter((heading) => heading.depth <= 3)
+          .map((heading) => ({ id: heading.data.id, text: heading.value, depth: heading.depth }));
+        return {
+          path: slug === "index" ? "/docs" : `/docs/${slug}`,
+          title: headings.find((heading) => heading.depth === 1)?.text ?? slug,
+          headings,
+        };
+      });
+      return `export default ${JSON.stringify(docs)};`;
     },
   };
 }
@@ -83,6 +137,7 @@ export default defineConfig({
       },
     },
     generateVersionPlugin(),
+    docsSearchIndexPlugin(),
     sentryVitePlugin({
       org: "lxns-network",
       project: "maimai-prober-frontend",

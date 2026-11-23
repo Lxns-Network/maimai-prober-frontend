@@ -1,4 +1,5 @@
 import { ASSET_URL } from "@/main";
+import { type FriendItem } from "@/types/friend";
 import { type Game } from "@/types/game";
 
 export const profilePath = (username: string) => `/profile/${encodeURIComponent(username)}`;
@@ -15,6 +16,12 @@ export const gameAvatarSrc = (game: Game, profile?: GameAvatarProfile) =>
   game === "maimai"
     ? profile?.icon && `${ASSET_URL}/maimai/icon/${profile.icon.id}.png!webp`
     : profile?.character && `${ASSET_URL}/chunithm/character/${profile.character.id}.png!webp`;
+
+/** 好友列表与全局搜索共用的匹配字段：用户名、备注，以及当前游戏的玩家名与称号。 */
+export const friendSearchFields = (friend: FriendItem, game: Game) => {
+  const profile = friend.games[game].profile;
+  return [friend.username, friend.remark, profile?.name, profile?.trophy?.name];
+};
 
 /**
  * 从用户输入中取出用户名：接受纯用户名，也接受粘贴进来的好友链接（任意域名的 `/profile/<用户名>`）。

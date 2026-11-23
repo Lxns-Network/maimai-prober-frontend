@@ -38,6 +38,7 @@ import useGame from "@/hooks/useGame";
 import { FriendItem } from "@/types/friend";
 import { Game } from "@/types/game";
 import { getFriendLoadErrorMessage, MAX_FRIENDS } from "@/utils/api/friend";
+import { friendSearchFields } from "@/utils/profile";
 import { AddFriendButton } from "./AddFriendButton";
 import { FriendCard, FriendCardSkeleton, SelfRankCard } from "./FriendCard";
 
@@ -145,13 +146,8 @@ export const FriendsListSection = () => {
         .filter((friend) => {
           if (onlyFavorite && !friend.is_favorite) return false;
           if (!term) return true;
-
-          const profile = friend.games[game].profile;
-          return (
-            friend.username.toLowerCase().includes(term) ||
-            friend.remark?.toLowerCase().includes(term) ||
-            profile?.name?.toLowerCase().includes(term) ||
-            profile?.trophy?.name?.toLowerCase().includes(term)
+          return friendSearchFields(friend, game).some((field) =>
+            field?.toLowerCase().includes(term),
           );
         })
         .sort((a, b) => {

@@ -3,6 +3,7 @@ import Logo from "./Logo";
 import { IconChevronDown } from "@tabler/icons-react";
 import classes from "./Header.module.css";
 import { ColorSchemeToggle } from "./ColorSchemeToggle.tsx";
+import { GlobalSearch } from "./GlobalSearch.tsx";
 import { GameTabs } from "./GameTabs.tsx";
 import { Game } from "@/types/game";
 import useGame from "@/hooks/useGame.ts";
@@ -82,7 +83,10 @@ export default function Header({ navbarOpened, onNavbarToggle, gameTabsVisible }
               </Menu.Dropdown>
             </Menu>
           </Group>
-          <ColorSchemeToggle />
+          <Group gap="xs" wrap="nowrap">
+            <GlobalSearch />
+            <ColorSchemeToggle />
+          </Group>
         </Group>
 
         <Transition

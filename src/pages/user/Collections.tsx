@@ -11,26 +11,11 @@ import { Page } from "@/components/Page/Page.tsx";
 import { useCollectionList } from "@/hooks/queries/useCollectionList.ts";
 import { CollectionProps, CollectionRequiredSongProps } from "@/types/player";
 import useGame from "@/hooks/useGame.ts";
-import { Game } from "@/types/game";
 import { CollectionCard } from "@/components/Collections/CollectionCard.tsx";
+import { collectionTypeData } from "@/components/Collections/collectionTypes.ts";
 import { usePageContext } from "vike-react/usePageContext";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
-
-const collectionTypeData: Record<Game, { label: string; value: string }[]> = {
-  maimai: [
-    { label: "姓名框", value: "plate" },
-    { label: "称号", value: "trophy" },
-    { label: "头像", value: "icon" },
-    { label: "背景", value: "frame" },
-  ],
-  chunithm: [
-    { label: "称号", value: "trophy" },
-    { label: "角色", value: "character" },
-    { label: "名牌版", value: "plate" },
-    { label: "地图头像", value: "icon" },
-  ],
-};
 
 interface State {
   collectionType: string | null;
@@ -81,20 +66,29 @@ const reducer = (state: State, action: Action): State => {
 
 const CollectionsContent = () => {
   const pageContext = usePageContext();
-  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const [game] = useGame();
   const prevGame = usePrevious(game);
-  const [state, dispatch] = useReducer(reducer, {
-    collectionType: (() => {
-      const type = searchParams.get("collection_type");
-      if (type && collectionTypeData[game].some((item) => item.value === type)) return type;
-      return game === "maimai" ? "plate" : "trophy";
-    })(),
-    collectionId: (() => {
-      const id = searchParams.get("collection_id");
-      return id && !isNaN(parseInt(id)) ? parseInt(id) : null;
-    })(),
-  });
+  const readUrlState = () => {
+    const searchParams = new URLSearchParams(pageContext.urlParsed.search);
+    const type = searchParams.get("collection_type");
+    const id = searchParams.get("collection_id");
+    return {
+      collectionType:
+        type && collectionTypeData[game].some((item) => item.value === type)
+          ? type
+          : game === "maimai"
+            ? "plate"
+            : "trophy",
+      collectionId: id && !isNaN(parseInt(id)) ? parseInt(id) : null,
+    };
+  };
+  const [state, dispatch] = useReducer(reducer, undefined, readUrlState);
+  // 每次导航都会得到新的 pageContext；已在本页时（如从全局搜索跳转）据此重新读取 URL 参数。
+  const [navigation, setNavigation] = useState(pageContext);
+  if (navigation !== pageContext) {
+    setNavigation(pageContext);
+    dispatch({ type: "SET_FROM_URL", payload: readUrlState() });
+  }
 
   const { collectionType, collectionId } = state;
   const { collections, isLoading: isCollectionListLoading } = useCollectionList(

@@ -911,6 +911,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mantine/spotlight@npm:9.5.1":
+  version: 9.5.1
+  resolution: "@mantine/spotlight@npm:9.5.1"
+  dependencies:
+    "@mantine/store": "npm:9.5.1"
+  peerDependencies:
+    "@mantine/core": 9.5.1
+    "@mantine/hooks": 9.5.1
+    react: ^19.2.0
+    react-dom: ^19.2.0
+  checksum: 10c0/1bb6314959dfb140eaa414a8a61c9d195b9752738d55702ee0fadc8f5e3f60f5a622b0bd984af8fa79a628238d16ebfe3a47e0fec93269969904607e089d8c07
+  languageName: node
+  linkType: hard
+
 "@mantine/store@npm:9.5.1":
   version: 9.5.1
   resolution: "@mantine/store@npm:9.5.1"
@@ -5091,6 +5105,7 @@ __metadata:
     "@mantine/modals": "npm:9.5.1"
     "@mantine/notifications": "npm:9.5.1"
     "@mantine/nprogress": "npm:9.5.1"
+    "@mantine/spotlight": "npm:9.5.1"
     "@mantine/tiptap": "npm:9.5.1"
     "@mdi/js": "npm:7.4.47"
     "@sentry/react": "npm:10.70.0"

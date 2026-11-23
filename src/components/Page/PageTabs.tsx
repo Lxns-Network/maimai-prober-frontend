@@ -6,11 +6,17 @@ import { usePageContext } from "vike-react/usePageContext";
 
 export const PageTabs = (props: PageProps) => {
   const pageContext = usePageContext();
-  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
-  const requestedTab = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState(
-    props.tabs?.some((tab) => tab.id === requestedTab) ? requestedTab : props.tabs?.[0].id,
-  );
+  const readUrlTab = () => {
+    const requestedTab = new URLSearchParams(pageContext.urlParsed.search).get("tab");
+    return props.tabs?.some((tab) => tab.id === requestedTab) ? requestedTab : props.tabs?.[0].id;
+  };
+  const [activeTab, setActiveTab] = useState(readUrlTab);
+  // 每次导航都会得到新的 pageContext；已在本页时（如从全局搜索跳转）据此重新读取 `tab` 参数。
+  const [navigation, setNavigation] = useState(pageContext);
+  if (navigation !== pageContext) {
+    setNavigation(pageContext);
+    setActiveTab(readUrlTab());
+  }
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
