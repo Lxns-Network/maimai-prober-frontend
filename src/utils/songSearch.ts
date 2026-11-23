@@ -46,7 +46,6 @@ export function buildSongSearchIndex(
   });
 }
 
-/** 归一化后为空时返回 `null`，由调用方按空白查询处理。 */
 function parseQuery(search: string): SongQuery | null {
   const text = normalizeSearchText(search);
   if (!text) return null;
@@ -57,7 +56,6 @@ function parseQuery(search: string): SongQuery | null {
   };
 }
 
-/** 不匹配时返回 `null`；0 为 ID、曲名或别名完全一致，1 为曲名前缀，2 为其余子串匹配。 */
 function matchRank(entry: SongSearchIndex, query: SongQuery): number | null {
   const { text, hiragana, id } = query;
   if (id !== null && entry.song.id === id) return 0;
@@ -75,14 +73,14 @@ function matchRank(entry: SongSearchIndex, query: SongQuery): number | null {
   return null;
 }
 
-/** 按曲目 ID、曲名、艺术家（含罗马音转假名）与别名过滤，保持曲目列表原有顺序；空白查询返回全部曲目。 */
+/** 保持曲目列表原有顺序；空白查询返回全部曲目。 */
 export function searchSongs(index: SongSearchIndex[], search: string): SongProps[] {
   const query = parseQuery(search);
   if (!query) return index.map((entry) => entry.song);
   return index.filter((entry) => matchRank(entry, query) !== null).map((entry) => entry.song);
 }
 
-/** 与 {@link searchSongs} 匹配范围相同，但按相关度排序（同档保持原有顺序）并截取前 `limit` 首；空白查询返回空数组。 */
+/** 按相关度稳定排序并截取前 `limit` 首；空白查询返回空数组。 */
 export function searchSongsByRelevance(
   index: SongSearchIndex[],
   search: string,
@@ -101,10 +99,7 @@ export function searchSongsByRelevance(
     .map((match) => match.song);
 }
 
-/**
- * `Highlight` 只能字面匹配，故同时按原文、平假名、片假名高亮，让罗马音匹配到的假名标题也能高亮。
- * 汉字标题与罗马音没有子串对应，无法高亮，属固有限制。
- */
+/** `Highlight` 只做字面匹配，故额外给出平假名与片假名，让罗马音查询也能高亮假名。 */
 export function getSongHighlightTerms(search: string): string[] {
   return search ? [search, toHiragana(search), toKatakana(search)] : [];
 }

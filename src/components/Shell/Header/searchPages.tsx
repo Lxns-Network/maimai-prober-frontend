@@ -10,7 +10,7 @@ export interface SearchPage {
   to: string;
 }
 
-/** 侧边栏、用户菜单与个人档案中的年度总结入口，以及它们可直达的标签页；权限位在调用时从 token 读取。 */
+/** 页面入口及其可直达的标签页；权限位在调用时从 token 读取。 */
 export function getSearchPages(isLoggedOut: boolean, username?: string): SearchPage[] {
   const { profile, notifications, settings } = userMenuItems;
   const pages: (SearchPage & { tabs?: readonly PageTab[] })[] = getNavItems(isLoggedOut).filter(

@@ -1,8 +1,7 @@
-/** 统一全角半角等兼容字符（NFKC）、忽略大小写并去掉空白；查询与被搜索的文本须经同样处理后再比较。 */
+/** NFKC 统一全角与半角；查询与被搜索的文本须经同样处理后再比较。 */
 export const normalizeSearchText = (text: string) =>
   text.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
 
-/** 0 为某字段与查询完全一致，1 为前缀，2 为子串；取各字段中最好的一档，都不匹配时返回 `null`。 */
 function matchRank(fields: (string | undefined)[], query: string): number | null {
   let best: number | null = null;
   for (const field of fields) {
@@ -14,7 +13,7 @@ function matchRank(fields: (string | undefined)[], query: string): number | null
   return best;
 }
 
-/** 按 {@link normalizeSearchText} 匹配各字段，按相关度排序（同档保持原有顺序）并截取前 `limit` 项；空白查询返回空数组。 */
+/** 字段无需预先归一化；按相关度稳定排序并截取前 `limit` 项，空白查询返回空数组。 */
 export function searchByRelevance<T>(
   items: readonly T[],
   search: string,

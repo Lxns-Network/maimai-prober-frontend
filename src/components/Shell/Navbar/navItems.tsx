@@ -135,7 +135,7 @@ export const helpNavItem = {
   to: "/docs",
 };
 
-/** 侧边栏底部用户菜单中的页面入口；图标为组件，由使用方决定尺寸。 */
+/** 图标为组件，由使用方决定尺寸。 */
 export const userMenuItems = {
   profile: { label: "资料", icon: IconUserCircle, to: profilePath },
   notifications: { label: "通知", icon: IconBell, to: "/notifications" },

@@ -35,7 +35,7 @@ const SongsContent = () => {
     };
   };
   const [selection, setSelection] = useState(readUrlSelection);
-  // 每次导航都会得到新的 pageContext；已在本页时（如从全局搜索跳转）据此重新读取 URL 参数。
+  // 每次导航都会得到新的 pageContext；已在本页时据此重新读取 URL 参数。
   const [navigation, setNavigation] = useState(pageContext);
   if (navigation !== pageContext) {
     setNavigation(pageContext);
