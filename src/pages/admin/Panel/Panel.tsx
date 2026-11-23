@@ -1,8 +1,10 @@
 import { Page } from "@/components/Page/Page.tsx";
+import { withTabContent } from "@/components/Page/pageTabs.ts";
 import { AdminUsersSection } from "@/pages/admin/Panel/users/AdminUsersSection.tsx";
 import { AdminDevelopersSection } from "@/pages/admin/Panel/developers/AdminDevelopersSection.tsx";
 import { AdminOAuthAppsSection } from "@/pages/admin/Panel/oauth/AdminOAuthAppsSection.tsx";
 import { AdminNotificationsSection } from "@/pages/admin/Panel/notifications/AdminNotificationsSection.tsx";
+import { adminPanelTabs } from "./adminPanelTabs.ts";
 
 export function Panel() {
   return (
@@ -11,12 +13,12 @@ export function Panel() {
         title: "管理面板",
         description: "管理 maimai DX 查分器的用户和开发者",
       }}
-      tabs={[
-        { id: "users", name: "用户列表", children: <AdminUsersSection /> },
-        { id: "developers", name: "开发者列表", children: <AdminDevelopersSection /> },
-        { id: "oauth", name: "OAuth 应用", children: <AdminOAuthAppsSection /> },
-        { id: "notifications", name: "通知管理", children: <AdminNotificationsSection /> },
-      ]}
+      tabs={withTabContent(adminPanelTabs, {
+        users: <AdminUsersSection />,
+        developers: <AdminDevelopersSection />,
+        oauth: <AdminOAuthAppsSection />,
+        notifications: <AdminNotificationsSection />,
+      })}
     />
   );
 }

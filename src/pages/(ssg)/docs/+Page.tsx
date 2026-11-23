@@ -54,6 +54,7 @@ import {
 import clsx from "clsx";
 import { ErrorBoundary } from "react-error-boundary";
 import { useData } from "vike-react/useData";
+import { usePageContext } from "vike-react/usePageContext";
 
 async function loadShiki() {
   const { createHighlighterCore } = await import("@shikijs/core");
@@ -527,6 +528,7 @@ const Content = ({ markdown }: { markdown: string }) => {
 export default function Page() {
   const data = useData<{ markdown: string; slug: string }>();
   const { markdown, slug } = data;
+  const pageContext = usePageContext();
   const headings = useMemo(() => {
     if (!markdown) return [];
 
@@ -541,7 +543,7 @@ export default function Page() {
   }, [markdown]);
 
   useEffect(() => {
-    // hydration 后将 hash 重新定位到 Shell 的 ScrollArea
+    // hydration 及每次导航（含同页跳转到其他标题）后将 hash 重新定位到 Shell 的 ScrollArea
     const scrollToHash = () => {
       if (window.location.hash) {
         scrollTo(decodeURIComponent(window.location.hash.slice(1)), false);
@@ -554,7 +556,7 @@ export default function Page() {
       cancelAnimationFrame(frameId);
       window.removeEventListener("hashchange", scrollToHash);
     };
-  }, [markdown]);
+  }, [markdown, pageContext]);
 
   if (!markdown) {
     return (

@@ -3,12 +3,12 @@ import { Box, Highlight, InputBaseProps, ElementProps, Group, Badge } from "@man
 import { useDebouncedValue } from "@mantine/hooks";
 import { MaimaiSongList, MaimaiSongProps } from "../utils/api/song/maimai.ts";
 import { ChunithmSongList, ChunithmSongProps } from "../utils/api/song/chunithm.ts";
-import { toHiragana, toKatakana } from "wanakana";
 import useSongListStore from "../hooks/useSongListStore.ts";
 import useAliasListStore from "../hooks/useAliasListStore.ts";
 import useGame from "@/hooks/useGame.ts";
 import { VirtualizedCombobox } from "./VirtualizedCombobox.tsx";
 import { isMaimaiUtageSongId, isWorldsEndSongId } from "@/utils/score.ts";
+import { buildSongSearchIndex, getSongHighlightTerms, searchSongs } from "@/utils/songSearch.ts";
 
 interface SongComboboxProps extends InputBaseProps, ElementProps<"input", keyof InputBaseProps> {
   value?: number;
@@ -18,74 +18,39 @@ interface SongComboboxProps extends InputBaseProps, ElementProps<"input", keyof 
   onOptionSubmit?: (value: number) => void;
 }
 
-interface SongSearchIndex {
-  song: MaimaiSongProps | ChunithmSongProps;
-  titleLower: string;
-  artistLower: string;
-  titleHiragana: string;
-  artistHiragana: string;
-  aliasesLower: string[];
-}
-
-function buildSearchIndex(
-  songs: (MaimaiSongProps | ChunithmSongProps)[],
-  aliases?: { song_id: number; aliases: string[] }[],
-): SongSearchIndex[] {
-  const aliasMap = new Map<number, string[]>();
-  if (aliases) {
-    for (const alias of aliases) {
-      aliasMap.set(
-        alias.song_id,
-        alias.aliases.map((a) => a.toLowerCase()),
-      );
-    }
-  }
-
-  return songs.map((song) => ({
-    song,
-    titleLower: song.title.toLowerCase(),
-    artistLower: song.artist.toLowerCase(),
-    titleHiragana: toHiragana(song.title).toLowerCase(),
-    artistHiragana: toHiragana(song.artist).toLowerCase(),
-    aliasesLower: aliasMap.get(song.id) || [],
-  }));
-}
-
-function searchSongs(
-  index: SongSearchIndex[],
-  search: string,
-): (MaimaiSongProps | ChunithmSongProps)[] {
-  if (!search) return index.map((entry) => entry.song);
-
-  const searchLower = search.toLowerCase();
-  const searchHiragana = toHiragana(search).toLowerCase();
-  const searchNumber = !isNaN(Number(search)) ? Number(search) : null;
-
-  const result: (MaimaiSongProps | ChunithmSongProps)[] = [];
-
-  for (const entry of index) {
-    if (searchNumber !== null && entry.song.id === searchNumber) {
-      result.push(entry.song);
-      continue;
-    }
-
-    if (
-      entry.titleLower.includes(searchLower) ||
-      entry.titleHiragana.includes(searchHiragana) ||
-      entry.artistLower.includes(searchLower) ||
-      entry.artistHiragana.includes(searchHiragana) ||
-      entry.aliasesLower.some((alias) => alias.includes(searchLower))
-    ) {
-      result.push(entry.song);
-    }
-  }
-
-  return result;
-}
-
 type SongProps = MaimaiSongProps | ChunithmSongProps;
 
 const ITEM_HEIGHT = 52;
+
+interface SongOptionProps {
+  song: SongProps;
+  songList: MaimaiSongList | ChunithmSongList;
+  highlight: string[];
+}
+
+/** 文本用 `lineClamp` 而非 `truncate`：nowrap 文本会把 `ScrollArea.Autosize`（`min-width: min-content`）撑出容器。 */
+export const SongOption = ({ song, songList, highlight }: SongOptionProps) => (
+  <Group justify="space-between" wrap="nowrap">
+    <Box miw={0} flex={1}>
+      <Highlight fz="sm" fw={500} lineClamp={1} highlight={highlight}>
+        {song.title}
+      </Highlight>
+      <Highlight fz="xs" c="dimmed" lineClamp={1} highlight={highlight}>
+        {song.artist}
+      </Highlight>
+    </Box>
+    {songList instanceof MaimaiSongList && isMaimaiUtageSongId(song.id) && (
+      <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
+        宴
+      </Badge>
+    )}
+    {songList instanceof ChunithmSongList && isWorldsEndSongId(song.id) && (
+      <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
+        {(song as ChunithmSongProps).difficulties[0].kanji}
+      </Badge>
+    )}
+  </Group>
+);
 
 export const SongCombobox = ({
   value,
@@ -106,7 +71,7 @@ export const SongCombobox = ({
   const aliases = getAliasList(game).aliases;
   const songs = songList?.songs;
   const searchIndex = useMemo(
-    () => (songs ? buildSearchIndex(songs, aliases) : []),
+    () => (songs ? buildSongSearchIndex(songs, aliases) : []),
     [aliases, songs],
   );
   const filteredSongs = useMemo(
@@ -136,39 +101,10 @@ export const SongCombobox = ({
     setInternalSearch(song?.title || "");
   }, [searchValue, songList, value]);
 
-  // 搜索支持罗马音（转假名匹配），Highlight 只能字面匹配，故同时按 原文/平假名/片假名 高亮，
-  // 让罗马音匹配到的假名标题也能高亮（汉字标题与罗马音无子串对应，无法高亮，属固有限制）。
-  const highlightTerms = useMemo(
-    () =>
-      debouncedSearch
-        ? [debouncedSearch, toHiragana(debouncedSearch), toKatakana(debouncedSearch)]
-        : [],
-    [debouncedSearch],
-  );
+  const highlightTerms = useMemo(() => getSongHighlightTerms(debouncedSearch), [debouncedSearch]);
 
   const renderOption = useCallback(
-    (song: SongProps) => (
-      <Group justify="space-between" wrap="nowrap">
-        <Box miw={0} flex={1}>
-          <Highlight fz="sm" fw={500} truncate highlight={highlightTerms}>
-            {song.title}
-          </Highlight>
-          <Highlight fz="xs" c="dimmed" truncate highlight={highlightTerms}>
-            {song.artist}
-          </Highlight>
-        </Box>
-        {songList instanceof MaimaiSongList && isMaimaiUtageSongId(song.id) && (
-          <Badge variant="filled" color="rgb(234, 61, 232)" size="xs">
-            宴
-          </Badge>
-        )}
-        {songList instanceof ChunithmSongList && isWorldsEndSongId(song.id) && (
-          <Badge variant="filled" color="rgb(14, 45, 56)" size="xs">
-            {(song as ChunithmSongProps).difficulties[0].kanji}
-          </Badge>
-        )}
-      </Group>
-    ),
+    (song: SongProps) => <SongOption song={song} songList={songList} highlight={highlightTerms} />,
     [songList, highlightTerms],
   );
 

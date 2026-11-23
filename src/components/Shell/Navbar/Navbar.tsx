@@ -3,25 +3,9 @@ import { usePageContext } from "vike-react/usePageContext";
 import { Box, Container, Divider, ScrollArea } from "@mantine/core";
 import { NavbarButton } from "./NavbarButton";
 import { NavbarUserMenu } from "./NavbarUserMenu";
-import { checkPermission, UserPermission } from "@/utils/session.ts";
-import {
-  IconAward,
-  IconChartBar,
-  IconCloudUpload,
-  IconCode,
-  IconDoorEnter,
-  IconGavel,
-  IconHelp,
-  IconHome,
-  IconMusic,
-  IconSettings2,
-  IconTable,
-  IconTransferIn,
-  IconUserCircle,
-  IconUsers,
-} from "@tabler/icons-react";
 import classes from "./Navbar.module.css";
 import { useFriendRequestCounts } from "@/hooks/queries/useFriends.ts";
+import { getNavItems, helpNavItem } from "./navItems.tsx";
 
 interface NavbarProps {
   style?: React.CSSProperties;
@@ -33,78 +17,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
   const isLoggedOut = typeof window !== "undefined" ? !localStorage.getItem("token") : true;
   const { incoming: pendingFriendRequests } = useFriendRequestCounts();
 
-  const navbarData = useMemo(
-    () => [
-      { label: "首页", icon: <IconHome stroke={1.5} />, to: "/", enabled: true },
-      { label: "同步游戏数据", icon: <IconCloudUpload stroke={1.5} />, to: "/sync", enabled: true },
-      {
-        label: "账号详情",
-        icon: <IconUserCircle stroke={1.5} />,
-        to: "/user/profile",
-        enabled: !isLoggedOut,
-      },
-      {
-        label: "成绩管理",
-        icon: <IconChartBar stroke={1.5} />,
-        to: "/user/scores",
-        enabled: !isLoggedOut,
-      },
-      {
-        label: "好友",
-        icon: <IconUsers stroke={1.5} />,
-        to: "/friends",
-        enabled: !isLoggedOut,
-      },
-      { label: "曲目查询", icon: <IconMusic stroke={1.5} />, to: "/songs", enabled: true },
-      { label: "收藏品查询", icon: <IconAward stroke={1.5} />, to: "/collections", enabled: true },
-      {
-        label: "登录账号",
-        icon: <IconDoorEnter stroke={1.5} />,
-        to: "/login",
-        enabled: isLoggedOut,
-        divider: true,
-      },
-      {
-        label: "新用户注册",
-        icon: <IconTransferIn stroke={1.5} />,
-        to: "/register",
-        enabled: isLoggedOut,
-      },
-      {
-        label: "曲目别名投票",
-        icon: <IconGavel stroke={1.5} />,
-        to: "/alias/vote",
-        enabled: !isLoggedOut,
-        divider: true,
-      },
-      {
-        label: "开发者面板",
-        icon: <IconCode stroke={1.5} />,
-        to: "/developer",
-        enabled: !isLoggedOut && checkPermission(UserPermission.Developer),
-      },
-      {
-        label: "申请成为开发者",
-        icon: <IconCode stroke={1.5} />,
-        to: "/developer/apply",
-        enabled: !(isLoggedOut || checkPermission(UserPermission.Developer)),
-      },
-      {
-        label: "管理面板",
-        icon: <IconTable stroke={1.5} />,
-        to: "/admin/panel",
-        enabled: checkPermission(UserPermission.Administrator),
-        divider: true,
-      },
-      {
-        label: "系统设置",
-        icon: <IconSettings2 stroke={1.5} />,
-        to: "/admin/settings",
-        enabled: checkPermission(UserPermission.Administrator),
-      },
-    ],
-    [isLoggedOut],
-  );
+  const navbarData = useMemo(() => getNavItems(isLoggedOut), [isLoggedOut]);
 
   // 只在已启用的入口里匹配，并取最长前缀：避免「开发者面板」(/developer) 抢走 /developer/apply。
   const active =
@@ -137,12 +50,7 @@ export default function Navbar({ style, onClose }: NavbarProps) {
       </ScrollArea>
       <div className={classes.navbarFooter}>
         <Container>
-          <NavbarButton
-            label="帮助文档"
-            icon={<IconHelp stroke={1.5} />}
-            to="/docs"
-            onClose={onClose}
-          />
+          <NavbarButton {...helpNavItem} onClose={onClose} />
           {!isLoggedOut && <NavbarUserMenu onClose={onClose} />}
         </Container>
       </div>

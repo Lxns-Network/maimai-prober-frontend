@@ -1,8 +1,10 @@
 import { LoginAlert } from "@/components/LoginAlert";
 import { Page } from "@/components/Page/Page.tsx";
+import { visibleTabs, withTabContent } from "@/components/Page/pageTabs.ts";
 import { Game } from "@/types/game";
 import { HtmlSyncSection } from "./Sync/HtmlSyncSection";
 import { ProxySyncSection } from "./Sync/ProxySyncSection";
+import { syncTabs } from "./syncTabs.ts";
 
 export interface ScoreChangeDetailProps {
   new: unknown;
@@ -41,31 +43,19 @@ export default function Sync() {
         title: "同步游戏数据",
         description: "同步你的「舞萌 DX」与「中二节奏」游戏数据",
       }}
-      tabs={[
-        {
-          id: "proxy",
-          name: "代理同步",
-          children: (
-            <div>
-              <ProxySyncSection />
-              <LoginAlert
-                content="你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。"
-                mt="xs"
-                radius="md"
-              />
-            </div>
-          ),
-        },
-        ...(!isLoggedOut
-          ? [
-              {
-                id: "html",
-                name: "上传 HTML",
-                children: <HtmlSyncSection />,
-              },
-            ]
-          : []),
-      ]}
+      tabs={withTabContent(visibleTabs(syncTabs, isLoggedOut), {
+        proxy: (
+          <div>
+            <ProxySyncSection />
+            <LoginAlert
+              content="你需要登录查分器账号才能查看数据同步状态，并管理你同步的游戏数据。"
+              mt="xs"
+              radius="md"
+            />
+          </div>
+        ),
+        html: <HtmlSyncSection />,
+      })}
     />
   );
 }

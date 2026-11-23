@@ -16,22 +16,31 @@ import { usePageContext } from "vike-react/usePageContext";
 import { useSongBests } from "@/hooks/queries/useSongBests.ts";
 import { useShellViewportRef } from "@/components/Shell/ShellViewportContext.ts";
 import { ReleaseTimeline } from "@/components/Songs/ReleaseTimeline.tsx";
+import { withTabContent } from "@/components/Page/pageTabs.ts";
+import { songsTabs } from "./songsTabs.ts";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
 
 const SongsContent = () => {
   const [game] = useGame();
   const pageContext = usePageContext();
-  const searchParams = new URLSearchParams(pageContext.urlParsed.search);
   const songList = useSongListStore((state) => state[game]);
-  const [selection, setSelection] = useState(() => {
+  const readUrlSelection = () => {
+    const searchParams = new URLSearchParams(pageContext.urlParsed.search);
     const id = searchParams.get("song_id");
     const urlGame = searchParams.get("game");
     return {
       game,
       songId: id && (!urlGame || urlGame === game) && !isNaN(parseInt(id)) ? parseInt(id) : null,
     };
-  });
+  };
+  const [selection, setSelection] = useState(readUrlSelection);
+  // 每次导航都会得到新的 pageContext；已在本页时据此重新读取 URL 参数。
+  const [navigation, setNavigation] = useState(pageContext);
+  if (navigation !== pageContext) {
+    setNavigation(pageContext);
+    setSelection(readUrlSelection());
+  }
   if (selection.game !== game) setSelection({ game, songId: null });
   const songId = selection.game === game ? selection.songId : null;
   const song = songId ? (songList.find(songId) ?? null) : null;
@@ -156,10 +165,10 @@ export default function Songs() {
         title: "曲目查询",
         description: "查询「舞萌 DX」与「中二节奏」的曲目详情",
       }}
-      tabs={[
-        { id: "details", name: "曲目详情", children: <SongsContent /> },
-        { id: "calendar", name: "更新日历", children: <ReleaseTimeline /> },
-      ]}
+      tabs={withTabContent(songsTabs, {
+        details: <SongsContent />,
+        calendar: <ReleaseTimeline />,
+      })}
     />
   );
 }

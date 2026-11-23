@@ -24,6 +24,7 @@ import { IconCheck, IconCopy, IconEdit, IconRefresh } from "@tabler/icons-react"
 import classes from "../Page.module.css";
 
 import { Page } from "@/components/Page/Page.tsx";
+import { withTabContent } from "@/components/Page/pageTabs.ts";
 import { DeveloperOAuthSection } from "@/components/Developer/DeveloperOAuthSection.tsx";
 import { EditDeveloperModal } from "@/components/Developer/EditDeveloperModal.tsx";
 import { useDeveloper } from "@/hooks/queries/useDeveloper.ts";
@@ -31,6 +32,7 @@ import { DeveloperUsageSection } from "@/components/Developer/DeveloperUsageSect
 import { useResetDeveloperApiKey } from "@/hooks/mutations/useDeveloperMutations.ts";
 import { useEffect } from "react";
 import { navigate } from "vike/client/router";
+import { developerTabs } from "./developerTabs.ts";
 
 const DeveloperInfoContent = () => {
   const { developer, isLoading, error, setData, invalidate } = useDeveloper();
@@ -233,10 +235,10 @@ export default function DeveloperInfo() {
         title: "开发者面板",
         description: "查看你的 maimai DX 查分器开发者信息",
       }}
-      tabs={[
-        { id: "info", name: "基本信息", children: <DeveloperInfoContent /> },
-        { id: "usage", name: "API 用量", children: <DeveloperUsageSection /> },
-      ]}
+      tabs={withTabContent(developerTabs, {
+        info: <DeveloperInfoContent />,
+        usage: <DeveloperUsageSection />,
+      })}
     />
   );
 }

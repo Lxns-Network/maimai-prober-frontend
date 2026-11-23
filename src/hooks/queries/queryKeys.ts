@@ -33,6 +33,9 @@ export const queryKeys = {
     list: (game: Game, collectionType: string, required: boolean) =>
       [`${game}/${collectionType}/list?required=${required}`] as const,
   },
+  docs: {
+    searchIndex: () => ["docs/search-index"] as const,
+  },
   developer: {
     apply: () => ["user/developer/apply"] as const,
     usage: () => ["user/developer/usage"] as const,

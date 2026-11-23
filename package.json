@@ -35,6 +35,7 @@
     "@mantine/modals": "9.5.1",
     "@mantine/notifications": "9.5.1",
     "@mantine/nprogress": "9.5.1",
+    "@mantine/spotlight": "9.5.1",
     "@mantine/tiptap": "9.5.1",
     "@mdi/js": "7.4.47",
     "@sentry/react": "10.70.0",
