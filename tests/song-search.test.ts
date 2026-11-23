@@ -42,11 +42,23 @@ describe("searchSongs", () => {
   it("matches song ids alongside title substrings", () => {
     expect(ids(searchSongs(index, "7"))).toEqual([6, 7]);
   });
+
+  it("treats a whitespace-only query as empty", () => {
+    expect(searchSongs(index, "　")).toEqual(songs);
+  });
+
+  it("matches across full-width and half-width forms and ignores whitespace", () => {
+    expect(ids(searchSongs(index, "ＦＩＲＥ"))).toEqual([1, 2, 3, 5]);
+    expect(searchSongs(index, "ﾎﾞｸﾗ")).toEqual([bokura]);
+    expect(searchSongs(index, "nightoffire")).toEqual([nightOfFire]);
+    expect(ids(searchSongs(index, "７"))).toEqual([6, 7]);
+  });
 });
 
 describe("searchSongsByRelevance", () => {
   it("returns nothing for an empty query", () => {
     expect(searchSongsByRelevance(index, "", 10)).toEqual([]);
+    expect(searchSongsByRelevance(index, "　", 10)).toEqual([]);
   });
 
   it("ranks exact titles, then title prefixes, then other substrings", () => {
@@ -56,6 +68,7 @@ describe("searchSongsByRelevance", () => {
   it("ranks an exact id or alias first", () => {
     expect(ids(searchSongsByRelevance(index, "7", 10))).toEqual([7, 6]);
     expect(searchSongsByRelevance(index, "风暴", 10)).toEqual([firestorm]);
+    expect(ids(searchSongsByRelevance(index, "７", 10))).toEqual([7, 6]);
   });
 
   it("truncates to the limit after ranking", () => {

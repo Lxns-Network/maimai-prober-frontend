@@ -39,6 +39,7 @@ import { FriendItem } from "@/types/friend";
 import { Game } from "@/types/game";
 import { getFriendLoadErrorMessage, MAX_FRIENDS } from "@/utils/api/friend";
 import { friendSearchFields } from "@/utils/profile";
+import { normalizeSearchText } from "@/utils/textSearch";
 import { AddFriendButton } from "./AddFriendButton";
 import { FriendCard, FriendCardSkeleton, SelfRankCard } from "./FriendCard";
 
@@ -117,7 +118,7 @@ export const FriendsListSection = () => {
   const small = useMediaQuery("(max-width: 30rem)");
   const reduceMotion = useReducedMotion();
 
-  const term = search.trim().toLowerCase();
+  const term = normalizeSearchText(search);
   const isRatingSort = sortBy === "rating_desc" || sortBy === "rating_asc";
 
   /** 全部好友加上本人的评分名次（并列同名次），不受搜索与筛选影响。 */
@@ -146,8 +147,8 @@ export const FriendsListSection = () => {
         .filter((friend) => {
           if (onlyFavorite && !friend.is_favorite) return false;
           if (!term) return true;
-          return friendSearchFields(friend, game).some((field) =>
-            field?.toLowerCase().includes(term),
+          return friendSearchFields(friend, game).some(
+            (field) => !!field && normalizeSearchText(field).includes(term),
           );
         })
         .sort((a, b) => {
