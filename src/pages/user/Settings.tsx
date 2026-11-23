@@ -1,7 +1,9 @@
 import { Page } from "@/components/Page/Page.tsx";
+import { withTabContent } from "@/components/Page/pageTabs.ts";
 import { GeneralSettingsSection } from "./Settings/GeneralSettingsSection.tsx";
 import { SecuritySettingsSection } from "./Settings/SecuritySettingsSection.tsx";
 import { SiteSettingsSection } from "./Settings/SiteSettingsSection.tsx";
+import { settingsTabs } from "./settingsTabs.ts";
 
 export default function Settings() {
   return (
@@ -10,11 +12,11 @@ export default function Settings() {
         title: "账号设置",
         description: "设置你的 maimai DX 查分器账号",
       }}
-      tabs={[
-        { id: "general", name: "常规设置", children: <GeneralSettingsSection /> },
-        { id: "site", name: "站点设置", children: <SiteSettingsSection /> },
-        { id: "security", name: "账号安全", children: <SecuritySettingsSection /> },
-      ]}
+      tabs={withTabContent(settingsTabs, {
+        general: <GeneralSettingsSection />,
+        site: <SiteSettingsSection />,
+        security: <SecuritySettingsSection />,
+      })}
     />
   );
 }

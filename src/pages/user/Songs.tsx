@@ -16,6 +16,8 @@ import { usePageContext } from "vike-react/usePageContext";
 import { useSongBests } from "@/hooks/queries/useSongBests.ts";
 import { useShellViewportRef } from "@/components/Shell/ShellViewportContext.ts";
 import { ReleaseTimeline } from "@/components/Songs/ReleaseTimeline.tsx";
+import { withTabContent } from "@/components/Page/pageTabs.ts";
+import { songsTabs } from "./songsTabs.ts";
 import { AnimatePresence, motion } from "motion/react";
 import { match } from "ts-pattern";
 
@@ -163,10 +165,10 @@ export default function Songs() {
         title: "曲目查询",
         description: "查询「舞萌 DX」与「中二节奏」的曲目详情",
       }}
-      tabs={[
-        { id: "details", name: "曲目详情", children: <SongsContent /> },
-        { id: "calendar", name: "更新日历", children: <ReleaseTimeline /> },
-      ]}
+      tabs={withTabContent(songsTabs, {
+        details: <SongsContent />,
+        calendar: <ReleaseTimeline />,
+      })}
     />
   );
 }

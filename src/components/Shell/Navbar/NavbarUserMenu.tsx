@@ -1,18 +1,14 @@
 import { Badge, Group, Indicator, Menu, Text, UnstyledButton } from "@mantine/core";
-import {
-  IconBell,
-  IconLogout,
-  IconSelector,
-  IconSettings2,
-  IconUserCircle,
-} from "@tabler/icons-react";
+import { IconLogout, IconSelector } from "@tabler/icons-react";
 import { navigate } from "vike/client/router";
 import { UserAvatar } from "@/components/Friends/UserAvatar";
 import { useUser } from "@/hooks/queries/useUser.ts";
 import { useUnreadCount } from "@/hooks/queries/useUnreadCount.ts";
 import { useLogoutUser } from "@/hooks/mutations/useUserMutations.ts";
-import { profilePath } from "@/utils/profile.ts";
 import classes from "./Navbar.module.css";
+import { userMenuItems } from "./navItems.tsx";
+
+const { profile, notifications, settings } = userMenuItems;
 
 interface NavbarUserMenuProps {
   onClose(): void;
@@ -61,14 +57,14 @@ export const NavbarUserMenu = ({ onClose }: NavbarUserMenuProps) => {
       </Menu.Target>
       <Menu.Dropdown>
         <Menu.Item
-          leftSection={<IconUserCircle size={18} stroke={1.5} />}
+          leftSection={<profile.icon size={18} stroke={1.5} />}
           disabled={!user}
-          onClick={() => user && go(profilePath(user.name))}
+          onClick={() => user && go(profile.to(user.name))}
         >
-          资料
+          {profile.label}
         </Menu.Item>
         <Menu.Item
-          leftSection={<IconBell size={18} stroke={1.5} />}
+          leftSection={<notifications.icon size={18} stroke={1.5} />}
           rightSection={
             !!unreadCount && (
               <Badge size="sm" circle color="red">
@@ -76,15 +72,15 @@ export const NavbarUserMenu = ({ onClose }: NavbarUserMenuProps) => {
               </Badge>
             )
           }
-          onClick={() => go("/notifications")}
+          onClick={() => go(notifications.to)}
         >
-          通知
+          {notifications.label}
         </Menu.Item>
         <Menu.Item
-          leftSection={<IconSettings2 size={18} stroke={1.5} />}
-          onClick={() => go("/user/settings")}
+          leftSection={<settings.icon size={18} stroke={1.5} />}
+          onClick={() => go(settings.to)}
         >
-          设置
+          {settings.label}
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item color="red" leftSection={<IconLogout size={18} stroke={1.5} />} onClick={logout}>
